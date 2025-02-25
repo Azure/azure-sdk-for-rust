@@ -15,6 +15,7 @@ use azure_core::{
     ClientMethodOptions, ClientOptions, Context, Method, Pipeline, Request, RequestContent, Result,
     Url,
 };
+use tracing::Span;
 
 /// The test-proxy client.
 ///
@@ -45,6 +46,7 @@ impl Client {
         &self.endpoint
     }
 
+    #[tracing::instrument(level = "trace", skip_all, fields(endpoint = %self.endpoint), err)]
     pub async fn record_start(
         &self,
         body: RequestContent<StartPayload>,
@@ -66,6 +68,7 @@ impl Client {
         Ok(RecordStartResult { recording_id })
     }
 
+    #[tracing::instrument(level = "trace", skip_all, fields(endpoint = %self.endpoint, recording_id), err)]
     pub async fn record_stop(
         &self,
         recording_id: &str,
@@ -85,12 +88,17 @@ impl Client {
         Ok(())
     }
 
+    #[tracing::instrument(level = "trace", skip_all, fields(endpoint = %self.endpoint, recording_id), err)]
     pub async fn playback_start(
         &self,
         body: RequestContent<StartPayload>,
         options: Option<ClientPlaybackStartOptions<'_>>,
     ) -> Result<PlaybackStartResult> {
         let options = options.unwrap_or_default();
+        Span::current().record(
+            stringify!(recording_id),
+            options.recording_id.map(AsRef::as_ref),
+        );
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Playback/Start")?;
@@ -109,6 +117,7 @@ impl Client {
         Ok(result)
     }
 
+    #[tracing::instrument(level = "trace", skip_all, fields(endpoint = %self.endpoint, recording_id), err)]
     pub async fn playback_stop(
         &self,
         recording_id: &str,
@@ -126,12 +135,17 @@ impl Client {
         Ok(())
     }
 
+    #[tracing::instrument(level = "trace", skip_all, fields(endpoint = %self.endpoint, recording_id), err)]
     pub async fn set_matcher(
         &self,
         matcher: Matcher,
         options: Option<ClientSetMatcherOptions<'_>>,
     ) -> Result<()> {
         let options = options.unwrap_or_default();
+        Span::current().record(
+            stringify!(recording_id),
+            options.recording_id.map(AsRef::as_ref),
+        );
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/SetMatcher")?;
@@ -144,6 +158,7 @@ impl Client {
         Ok(())
     }
 
+    #[tracing::instrument(level = "trace", skip_all, fields(endpoint = %self.endpoint, recording_id), err)]
     pub async fn add_sanitizer<S>(
         &self,
         sanitizer: S,
@@ -154,6 +169,10 @@ impl Client {
         azure_core::Error: From<<S as AsHeaders>::Error>,
     {
         let options = options.unwrap_or_default();
+        Span::current().record(
+            stringify!(recording_id),
+            options.recording_id.map(AsRef::as_ref),
+        );
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/AddSanitizer")?;
@@ -166,12 +185,17 @@ impl Client {
         Ok(())
     }
 
+    #[tracing::instrument(level = "trace", skip_all, fields(endpoint = %self.endpoint, recording_id), err)]
     pub async fn remove_sanitizers(
         &self,
         body: RequestContent<SanitizerList>,
         options: Option<ClientRemoveSanitizersOptions<'_>>,
     ) -> Result<RemovedSanitizers> {
         let options = options.unwrap_or_default();
+        Span::current().record(
+            stringify!(recording_id),
+            options.recording_id.map(AsRef::as_ref),
+        );
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/RemoveSanitizers")?;
@@ -187,8 +211,13 @@ impl Client {
             .await
     }
 
+    #[tracing::instrument(level = "trace", skip_all, fields(endpoint = %self.endpoint, recording_id), err)]
     pub async fn reset(&self, options: Option<ClientResetOptions<'_>>) -> Result<()> {
         let options = options.unwrap_or_default();
+        Span::current().record(
+            stringify!(recording_id),
+            options.recording_id.map(AsRef::as_ref),
+        );
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/Reset")?;

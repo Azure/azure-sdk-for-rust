@@ -1,0 +1,69 @@
+name: Bug report
+description: Report a bug in the Azure SDK for Rust
+labels: ["needs-triage"]
+type: "Bug"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+
+  - type: input
+    id: title
+    attributes:
+      label: Bug Title
+      description: A short summary of the bug
+      placeholder: "Enter the bug title"
+
+  - type: input
+    id: CrateName
+    attributes:
+      label: Crate Name
+      description: The name of the crate where the bug was found. e.g. `azure_core`, `azure_identity`, etc.
+      placeholder: "Enter the crate name"
+    validations:
+      required: true
+
+  - type: input
+    id: CrateVersion
+    attributes:
+      label: Crate Version
+      description: The version of the crate where the bug was found. e.g. `0.1.0`, `1.1.0-beta.1`, etc.
+      placeholder: "Enter the crate version"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A detailed description of the bug
+      placeholder: "Enter the bug description"
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: The steps to reproduce the bug. A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is required unless you are absolutely sure that the issue is obvious and the provided information is enough to understand the problem.
+      placeholder: Repro steps |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Before submitting the issue, please make sure you do the following
+      options:
+        - label: Follow our [Code of Conduct](https://github.com/Azure/azure-sdk-for-rust/blob/main/CODE_OF_CONDUCT.md)
+          required: true
+
+        - label: Check that there isn't already an issue that request the same bug to avoid creating a duplicate.
+          required: true
+
+        - label: The provided reproduction is a [minimal reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) of the bug.
+          required: true

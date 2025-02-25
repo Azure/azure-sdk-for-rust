@@ -33,7 +33,7 @@ Param (
   [string] $PackageName,
   [string] $NewVersionString,
   [string] $ReleaseDate,
-  [boolean] $ReplaceLatestEntryTitle = $true
+  [boolean] $ReplaceLatestEntryTitle
 )
 
 . (Join-Path $PSScriptRoot '../common/scripts/common.ps1')
@@ -47,13 +47,15 @@ Write-Host "  Version: $($pkgProperties.Version)"
 Write-Host "  Directory: $($pkgProperties.DirectoryPath)"
 Write-Host "  ChangeLogPath: $($pkgProperties.ChangeLogPath)"
 
-$packageSemVer = [AzureEngSemanticVersion]::new($pkgProperties.Version)
-$isUnreleased = !$NewVersionString
-if ($isUnreleased) {
-  $packageSemVer.IncrementAndSetToPrerelease();
+#If we're just bumping the version with no release date, we want to set the changelog entry to unreleased
+$setChangeLogEntryToUnreleased = !$ReleaseDate -and !$NewVersionString
+
+if ($NewVersionString) {
+  $packageSemVer = [AzureEngSemanticVersion]::new($NewVersionString)
 }
 else {
-  $packageSemVer = [AzureEngSemanticVersion]::new($NewVersionString)
+  $packageSemVer = [AzureEngSemanticVersion]::new($pkgProperties.Version)
+  $packageSemVer.IncrementAndSetToPrerelease();
 }
 
 if ($packageSemVer.HasValidPrereleaseLabel() -ne $true) {
@@ -64,7 +66,7 @@ if ($packageSemVer.HasValidPrereleaseLabel() -ne $true) {
 if ($pkgProperties.ChangeLogPath) {
   Write-Host "Updating changelog for $PackageName in $ServiceDirectory."
   & "$EngCommonScriptsDir/Update-ChangeLog.ps1" -Version $packageSemVer.ToString() `
-    -ChangelogPath $pkgProperties.ChangeLogPath -Unreleased $isUnreleased `
+    -ChangelogPath $pkgProperties.ChangeLogPath -Unreleased $setChangeLogEntryToUnreleased `
     -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle -ReleaseDate $ReleaseDate
 }
 
@@ -78,7 +80,7 @@ if ($content -ne $updated) {
 
   cargo metadata --format-version 1 | Out-Null
   Write-Host "Updated Cargo.lock using 'cargo metadata'."
-} 
+}
 else {
   Write-Host "$tomlPath already contains version $packageSemVer"
 }

@@ -14,22 +14,22 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-typespec = { workspace = true, features = ["http", "json"] }
-typespec_client_core = { workspace = true, features = ["http", "json"] }
 async-lock = { workspace = true }
 async-trait.workspace = true
 bytes.workspace = true
 futures.workspace = true
-tracing.workspace = true
+hmac = { workspace = true, optional = true }
+once_cell.workspace = true
+openssl = { workspace = true, optional = true }
+paste.workspace = true
+pin-project.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-pin-project.workspace = true
-paste.workspace = true
-tokio = { workspace = true, optional = true }
-hmac = { workspace = true, optional = true }
 sha2 = { workspace = true, optional = true }
-openssl = { workspace = true, optional = true }
-once_cell.workspace = true
+tokio = { workspace = true, optional = true }
+tracing.workspace = true
+typespec = { workspace = true, features = ["http", "json"] }
+typespec_client_core = { workspace = true, features = ["http", "json"] }
 
 [build-dependencies]
 rustc_version.workspace = true
@@ -37,20 +37,25 @@ rustc_version.workspace = true
 [dev-dependencies]
 azure_identity.path = "../../identity/azure_identity"
 azure_security_keyvault_secrets.path = "../../keyvault/azure_security_keyvault_secrets"
-time.workspace = true
-tracing-subscriber.workspace = true
-tokio.workspace = true
 thiserror.workspace = true
+time.workspace = true
+tokio.workspace = true
+tracing-subscriber.workspace = true
 
 [features]
-default = []
+default = [
+  "reqwest",
+  "reqwest_deflate",
+  "reqwest_gzip",
+]
 azurite_workaround = []
 hmac_openssl = ["dep:openssl"]
 hmac_rust = ["dep:sha2", "dep:hmac"]
 reqwest = ["typespec_client_core/reqwest"]
+reqwest_deflate = ["typespec_client_core/reqwest_deflate"]
 reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
-test = []
+test = ["typespec_client_core/test"]
 tokio_fs = ["typespec_client_core/tokio_fs"]
 tokio_sleep = ["typespec_client_core/tokio_sleep"]
 xml = ["typespec_client_core/xml"]
@@ -60,9 +65,9 @@ features = [
   "hmac_openssl",
   "hmac_rust",
   "reqwest",
+  "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_rustls",
-  "test",
   "tokio_fs",
   "tokio_sleep",
   "xml",
