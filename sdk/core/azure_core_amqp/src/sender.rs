@@ -103,7 +103,7 @@ pub enum AmqpSendOutcome {
     /// acquisition of a message at a node is revoked to allow for delivery
     /// to an alternative consumer with the message modified in some way to
     /// denote the previous failed, e.g., with delivery-failed set to true).
-
+    ///
     /// At the target, the modified outcome is used to indicate that a given transfer was
     /// not and will not be acted upon, and that the message SHOULD be modified in the
     /// specified ways at the node.

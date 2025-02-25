@@ -2,12 +2,13 @@
 // Licensed under the MIT license.
 
 use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
+#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+use crate::fe2o3::error::Fe2o3SerializationError;
 #[cfg(feature = "cplusplus")]
 use crate::Deserializable;
-use crate::{fe2o3::error::Fe2o3SerializationError, Uuid};
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
-use azure_core::Result;
+use azure_core::{Result, Uuid};
 
 #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
 type DeliveryImplementation = super::fe2o3::messaging::messaging_types::Fe2o3AmqpDelivery;
