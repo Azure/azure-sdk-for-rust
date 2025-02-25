@@ -400,7 +400,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -419,7 +419,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
