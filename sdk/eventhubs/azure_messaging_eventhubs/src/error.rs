@@ -96,7 +96,7 @@ impl std::fmt::Debug for EventHubsError {
 
 impl From<EventHubsError> for azure_core::Error {
     fn from(e: EventHubsError) -> Self {
-        Self::new(azure_core::error::ErrorKind::EventHubs, Box::new(e))
+        Self::new(azure_core::error::ErrorKind::Other, Box::new(e))
     }
 }
 

@@ -20,9 +20,6 @@ pub enum ErrorKind {
     /// An error from the AMQP protocol.
     #[cfg(feature = "amqp_errors")]
     Amqp,
-    /// An error from the EventHubs service.
-    #[cfg(feature = "eventhubs_errors")]
-    EventHubs,
     /// An HTTP status code that was not expected.
     #[cfg(feature = "http")]
     HttpResponse {
@@ -72,8 +69,6 @@ impl Display for ErrorKind {
             ErrorKind::Other => f.write_str("Other"),
             #[cfg(feature = "amqp_errors")]
             ErrorKind::Amqp => f.write_str("Amqp"),
-            #[cfg(feature = "eventhubs_errors")]
-            ErrorKind::EventHubs => f.write_str("Event Hubs"),
         }
     }
 }

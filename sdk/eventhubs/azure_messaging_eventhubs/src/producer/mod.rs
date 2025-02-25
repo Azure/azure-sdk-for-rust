@@ -219,7 +219,7 @@ impl ProducerClient {
         // We treat all outcomes other than "rejected" as successful.
         match outcome {
             azure_core_amqp::AmqpSendOutcome::Rejected(error) => Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::EventHubs,
+                azure_core::error::ErrorKind::Other,
                 EventHubsError {
                     kind: ErrorKind::SendRejected(error),
                 },
@@ -329,7 +329,7 @@ impl ProducerClient {
         // We treat all outcomes other than "rejected" as successful.
         match outcome {
             azure_core_amqp::AmqpSendOutcome::Rejected(error) => Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::EventHubs,
+                azure_core::error::ErrorKind::Other,
                 EventHubsError {
                     kind: ErrorKind::SendRejected(error),
                 },
