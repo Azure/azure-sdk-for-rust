@@ -58,9 +58,9 @@ pub(crate) mod error {
                 }
                 AmqpManagementError::InvalidManagementResponse(s) => {
                     if let Some(e) = self.source() {
-                        f.write_fmt(format_args!("Invalid Management Response: {}: {}", s, e))
+                        f.write_fmt(format_args!("Invalid Management Response: {s}: {e}"))
                     } else {
-                        f.write_fmt(format_args!("Invalid Management Response: {}", s))
+                        f.write_fmt(format_args!("Invalid Management Response: {s}"))
                     }
                 }
                 AmqpManagementError::SendError(s) => {

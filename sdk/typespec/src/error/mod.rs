@@ -18,7 +18,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ErrorKind {
     /// An error from the AMQP protocol.
-    #[cfg(feature = "amqp_errors")]
+    #[cfg(feature = "amqp")]
     Amqp,
     /// An HTTP status code that was not expected.
     #[cfg(feature = "http")]
@@ -67,7 +67,7 @@ impl Display for ErrorKind {
             ErrorKind::Credential => f.write_str("Credential"),
             ErrorKind::MockFramework => f.write_str("MockFramework"),
             ErrorKind::Other => f.write_str("Other"),
-            #[cfg(feature = "amqp_errors")]
+            #[cfg(feature = "amqp")]
             ErrorKind::Amqp => f.write_str("Amqp"),
         }
     }
