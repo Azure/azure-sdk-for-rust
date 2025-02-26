@@ -13,6 +13,7 @@ use azure_security_keyvault_test::Retry;
 use futures::TryStreamExt;
 use std::collections::HashMap;
 
+#[cfg(not(target_arch = "wasm32"))]
 const REMOVE_SANITIZERS: &[&str] = &[
     // BodyKeySanitizer("$..id"): the resource ID contains the required name and version.
     "AZSDK3430",

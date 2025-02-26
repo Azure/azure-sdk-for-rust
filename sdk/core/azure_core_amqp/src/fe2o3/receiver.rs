@@ -1,17 +1,21 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::error::{AmqpIllegalLinkState, AmqpLinkDetach, AmqpReceiver, AmqpReceiverAttach};
 use crate::{
+    error::AmqpErrorKind,
+    fe2o3::error::{Fe2o3IllegalLinkStateError, Fe2o3ReceiverError},
     messaging::{AmqpDelivery, AmqpSource},
     receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::AmqpSession,
+    AmqpError,
 };
 use azure_core::error::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
 use tokio::sync::Mutex;
 use tracing::{info, trace, warn};
+
+use super::error::Fe2o3ReceiverAttachError;
 
 #[derive(Default)]
 pub(crate) struct Fe2o3AmqpReceiver {
@@ -48,10 +52,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         options: Option<AmqpReceiverOptions>,
     ) -> Result<()> {
         if self.receiver.get().is_some() {
-            return Err(crate::error::Error::new(
-                crate::error::ErrorKind::AmqpReceiverAlreadyAttached,
-            )
-            .into());
+            return Err(Self::receiver_already_attached());
         }
         let options = options.unwrap_or_default();
         let name = options.name.unwrap_or_default();
@@ -69,32 +70,24 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
             .name(name)
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
-            .map_err(AmqpReceiverAttach::from)?;
-        self.receiver.set(Mutex::new(receiver)).map_err(|_| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Could not set message receiver.",
-            )
-        })?;
+            .map_err(|e| azure_core::Error::from(Fe2o3ReceiverAttachError(e)))?;
+        self.receiver
+            .set(Mutex::new(receiver))
+            .map_err(|_| Self::could_not_set_message_receiver())?;
         Ok(())
     }
 
     async fn detach(mut self) -> Result<()> {
-        let receiver = self.receiver.take().ok_or_else(|| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Message Sender not set.",
-            )
-        })?;
+        let receiver = self.receiver.take().ok_or(Self::receiver_not_set())?;
         let res = receiver
             .into_inner()
             .detach()
             .await
-            .map_err(|e| AmqpLinkDetach::from(e.1));
+            .map_err(|e| AmqpError::from(e.1));
         match res {
             Ok(_) => Ok(()),
-            Err(e) => match e.0 {
-                fe2o3_amqp::link::DetachError::ClosedByRemote => {
+            Err(e) => match e.kind() {
+                AmqpErrorKind::ClosedByRemote(_) => {
                     info!("Error detaching receiver: {:?} - ignored", e);
                     Ok(())
                 }
@@ -107,23 +100,13 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
     }
 
     async fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
-        let receiver = self.receiver.get().ok_or_else(|| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Message receiver is not set.",
-            )
-        })?;
+        let receiver = self.receiver.get().ok_or(Self::receiver_not_set())?;
         receiver.lock().await.set_credit_mode(credit_mode.into());
         Ok(())
     }
 
     async fn credit_mode(&self) -> Result<ReceiverCreditMode> {
-        let receiver = self.receiver.get().ok_or_else(|| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Message receiver is not set.",
-            )
-        })?;
+        let receiver = self.receiver.get().ok_or(Self::receiver_not_set())?;
         Ok(receiver.lock().await.credit_mode().into())
     }
 
@@ -131,21 +114,17 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let mut receiver = self
             .receiver
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message receiver is not set.",
-                )
-            })?
+            .ok_or(Self::receiver_not_set())?
             .lock()
             .await;
 
         let delivery: fe2o3_amqp::link::delivery::Delivery<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = receiver.recv().await.map_err(AmqpReceiver::from)?;
-
+        > = receiver
+            .recv()
+            .await
+            .map_err(|e| azure_core::Error::from(Fe2o3ReceiverError(e)))?;
         trace!("Received delivery: {:?}", delivery);
-
         Ok(delivery.into())
     }
 
@@ -153,12 +132,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message receiver is not set.",
-                )
-            })?
+            .ok_or(Self::receiver_not_set())?
             .lock()
             .await;
 
@@ -166,7 +140,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         receiver
             .accept(&delivery.0.delivery)
             .await
-            .map_err(AmqpIllegalLinkState::from)?;
+            .map_err(|e| azure_core::Error::from(Fe2o3IllegalLinkStateError(e)))?;
         trace!("Accepted delivery.");
 
         Ok(())
@@ -176,12 +150,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message receiver is not set.",
-                )
-            })?
+            .ok_or(Self::receiver_not_set())?
             .lock()
             .await;
 
@@ -189,7 +158,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         receiver
             .reject(&delivery.0.delivery, None)
             .await
-            .map_err(AmqpIllegalLinkState::from)?;
+            .map_err(|e| azure_core::Error::from(Fe2o3IllegalLinkStateError(e)))?;
         trace!("Rejected delivery.");
 
         Ok(())
@@ -199,12 +168,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message receiver is not set.",
-                )
-            })?
+            .ok_or(Self::receiver_not_set())?
             .lock()
             .await;
 
@@ -212,7 +176,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         receiver
             .release(&delivery.0.delivery)
             .await
-            .map_err(AmqpIllegalLinkState::from)?;
+            .map_err(|e| azure_core::Error::from(Fe2o3IllegalLinkStateError(e)))?;
         trace!("Released delivery.");
 
         Ok(())
@@ -223,6 +187,76 @@ impl Fe2o3AmqpReceiver {
     pub fn new() -> Self {
         Self {
             receiver: OnceLock::new(),
+        }
+    }
+
+    fn receiver_already_attached() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "AMQP Receiver is already attached",
+        )
+    }
+
+    fn could_not_set_message_receiver() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "Could not set message receiver",
+        )
+    }
+
+    fn receiver_not_set() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "AMQP Receiver is not set",
+        )
+    }
+}
+
+impl From<Fe2o3ReceiverAttachError> for azure_core::Error {
+    fn from(e: Fe2o3ReceiverAttachError) -> Self {
+        AmqpError::from(e.0).into()
+    }
+}
+
+impl From<fe2o3_amqp::link::ReceiverAttachError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::ReceiverAttachError) -> Self {
+        match e {
+            fe2o3_amqp::link::ReceiverAttachError::RemoteClosedWithError(e) => {
+                AmqpErrorKind::ClosedByRemote(Some(e.into())).into()
+            }
+            fe2o3_amqp::link::ReceiverAttachError::IllegalSessionState
+            | fe2o3_amqp::link::ReceiverAttachError::IllegalState => {
+                AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
+            }
+            _ => AmqpErrorKind::TransportImplementationError(Box::new(e)).into(),
+        }
+    }
+}
+
+impl From<Fe2o3ReceiverError> for azure_core::Error {
+    fn from(e: Fe2o3ReceiverError) -> Self {
+        AmqpError::from(e.0).into()
+    }
+}
+
+impl From<fe2o3_amqp::link::RecvError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::RecvError) -> Self {
+        match e {
+            fe2o3_amqp::link::RecvError::LinkStateError(_) => {
+                AmqpErrorKind::LinkStateError(Box::new(e)).into()
+            }
+            fe2o3_amqp::link::RecvError::TransferLimitExceeded => {
+                AmqpErrorKind::TransferLimitExceeded(Box::new(e)).into()
+            }
+            // cspell: ignore Imeplemented
+            fe2o3_amqp::link::RecvError::DeliveryIdIsNone
+            | fe2o3_amqp::link::RecvError::DeliveryTagIsNone
+            | fe2o3_amqp::link::RecvError::MessageDecode(_)
+            | fe2o3_amqp::link::RecvError::IllegalRcvSettleModeInTransfer
+            | fe2o3_amqp::link::RecvError::InconsistentFieldInMultiFrameDelivery
+            | fe2o3_amqp::link::RecvError::TransactionalAcquisitionIsNotImeplemented => {
+                AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
+            }
         }
     }
 }

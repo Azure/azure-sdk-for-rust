@@ -21,7 +21,7 @@ pub(crate) mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
 pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions};
-pub use error::Error;
+pub use error::{AmqpDescribedError, AmqpError};
 pub use management::{AmqpManagement, AmqpManagementApis};
 pub use messaging::{
     AmqpAnnotationKey, AmqpAnnotations, AmqpDelivery, AmqpDeliveryApis, AmqpMessage,
@@ -29,7 +29,7 @@ pub use messaging::{
     AmqpSourceFilter, AmqpTarget,
 };
 pub use receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
-pub use sender::{AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSenderOptions};
+pub use sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSender, AmqpSenderApis, AmqpSenderOptions};
 pub use session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions};
 use std::fmt::Debug;
 pub use uuid::Uuid;

@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest an idea for this project
+type: "Feature"
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to open a feature request! Please provide us with as much detail as possible to help us understand your idea.
+
+  - type: input
+    id: feature-summary
+    attributes:
+      label: Feature Summary
+      description: A brief summary of the feature you are requesting.
+      placeholder: "Enter your feature summary here"
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: A detailed description of the feature you are requesting.
+      placeholder: "Enter your feature description here"
+    validations:
+      required: true
+
+  - type: input
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe the use case(s) for this feature.
+      placeholder: "Enter the use case(s) here"
+    validations:
+      required: false
+
+  - type: input
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Describe any alternative solutions or features you've considered.
+      placeholder: "Enter any alternatives here"
+    validations:
+      required: false
+
+  - type: input
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context or screenshots about the feature request here.
+      placeholder: "Enter additional context here"
+    validations:
+      required: false

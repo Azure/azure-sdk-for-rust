@@ -4,22 +4,19 @@
 use std::borrow::BorrowMut;
 
 use crate::{
+    error::AmqpErrorKind,
+    fe2o3::error::Fe2o3ManagementError,
     management::AmqpManagementApis,
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
+    AmqpError,
 };
-use azure_core::{
-    credentials::AccessToken,
-    error::{ErrorKind, Result},
-    Error,
-};
+use azure_core::{credentials::AccessToken, Result};
 use fe2o3_amqp_management::operations::ReadResponse;
 use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::SimpleValue};
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 use tracing::debug;
-
-use super::error::{AmqpLinkDetach, AmqpManagement, AmqpManagementAttach};
 
 #[derive(Debug)]
 pub(crate) struct Fe2o3AmqpManagement {
@@ -51,6 +48,19 @@ impl Fe2o3AmqpManagement {
             management: OnceLock::new(),
         })
     }
+
+    fn amqp_management_already_attached() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "AMQP Management is already attached",
+        )
+    }
+    fn amqp_management_not_attached() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "AMQP Management is not attached",
+        )
+    }
 }
 
 impl AmqpManagementApis for Fe2o3AmqpManagement {
@@ -59,14 +69,11 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .client_node_addr(&self.client_node_name)
             .attach(self.session.lock().await.borrow_mut())
             .await
-            .map_err(AmqpManagementAttach::from)?;
+            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
 
-        self.management.set(Mutex::new(management)).map_err(|_| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Management is already set.",
-            )
-        })?;
+        self.management
+            .set(Mutex::new(management))
+            .map_err(|_| Self::amqp_management_already_attached())?;
         Ok(())
     }
 
@@ -75,9 +82,9 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         let management = self
             .management
             .take()
-            .ok_or_else(|| Error::message(ErrorKind::Other, "Unattached management node."))?;
+            .ok_or(Self::amqp_management_not_attached())?;
         let management = management.into_inner();
-        management.close().await.map_err(AmqpLinkDetach::from)?;
+        management.close().await.map_err(AmqpError::from)?;
         Ok(())
     }
 
@@ -89,12 +96,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         let mut management = self
             .management
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "management is not set.",
-                )
-            })?
+            .ok_or(Self::amqp_management_not_attached())?
             .lock()
             .await;
 
@@ -104,11 +106,59 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             application_properties,
         );
 
-        let response = management
-            .call(request)
-            .await
-            .map_err(AmqpManagement::from)?;
-        Ok(response.entity_attributes.into())
+        let response = management.call(request).await;
+        if let Err(e) = response {
+            let e = azure_core::Error::try_from(Fe2o3ManagementError(e))?;
+            Err(e)
+        } else {
+            Ok(response.unwrap().entity_attributes.into())
+        }
+    }
+}
+
+impl TryFrom<Fe2o3ManagementError> for azure_core::Error {
+    type Error = azure_core::Error;
+    fn try_from(e: Fe2o3ManagementError) -> std::result::Result<Self, Self::Error> {
+        let e = AmqpError::try_from(e.0)?;
+        Ok(e.into())
+    }
+}
+
+impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpError {
+    type Error = azure_core::Error;
+    fn try_from(e: fe2o3_amqp_management::error::Error) -> std::result::Result<Self, Self::Error> {
+        match e {
+            fe2o3_amqp_management::error::Error::DecodeError(_)
+            | fe2o3_amqp_management::error::Error::StatusCodeNotFound
+            | fe2o3_amqp_management::error::Error::NotAccepted(_)
+            | fe2o3_amqp_management::error::Error::CorrelationIdAndMessageIdAreNone => Ok(
+                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e))),
+            ),
+
+            fe2o3_amqp_management::error::Error::Status(s) => {
+                Ok(AmqpError::from(AmqpErrorKind::ManagementStatusCode(
+                    azure_core::StatusCode::try_from(s.code.0.get()).map_err(|_| {
+                        azure_core::Error::message(
+                            azure_core::error::ErrorKind::DataConversion,
+                            format!("invalid status code {s}"),
+                        )
+                    })?,
+                    s.description.clone(),
+                )))
+            }
+            fe2o3_amqp_management::error::Error::Send(s) => Ok(AmqpError::from(s)),
+            fe2o3_amqp_management::error::Error::Recv(r) => Ok(AmqpError::from(r)),
+            fe2o3_amqp_management::error::Error::Disposition(d) => Ok(AmqpError::from(d)),
+        }
+    }
+}
+
+impl From<fe2o3_amqp_management::error::AttachError> for AmqpError {
+    fn from(e: fe2o3_amqp_management::error::AttachError) -> Self {
+        match e {
+            fe2o3_amqp_management::error::AttachError::Sender(s) => AmqpError::from(s),
+            fe2o3_amqp_management::error::AttachError::Receiver(r) => AmqpError::from(r),
+        }
     }
 }
 

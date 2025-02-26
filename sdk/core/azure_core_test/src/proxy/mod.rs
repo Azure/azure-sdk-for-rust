@@ -21,8 +21,6 @@ use std::process::ExitStatus;
 use std::{fmt, str::FromStr};
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::process::Child;
-#[cfg(not(target_arch = "wasm32"))]
-use tracing::Level;
 
 const ABSTRACTION_IDENTIFIER: HeaderName = HeaderName::from_static("x-abstraction-identifier");
 const RECORDING_ID: HeaderName = HeaderName::from_static("x-recording-id");
@@ -36,9 +34,11 @@ pub use bootstrap::start;
 #[cfg(not(target_arch = "wasm32"))]
 mod bootstrap {
     use super::*;
-    use azure_core::Result;
+    use azure_core::{test::TestMode, Result};
+    use serde_json::json;
     use std::{env, io, path::Path, process::Stdio, time::Duration};
     use tokio::{
+        fs,
         io::{AsyncBufReadExt, BufReader},
         process::{ChildStdout, Command},
     };
@@ -58,21 +58,59 @@ mod bootstrap {
     /// Starts the test-proxy.
     ///
     /// This is intended for internal use only and should not be called directly in tests.
+    #[tracing::instrument(level = "debug", fields(crate_dir = ?crate_dir.as_ref(), ?options), err)]
     pub async fn start(
+        test_mode: Option<TestMode>,
         crate_dir: impl AsRef<Path>,
         options: Option<ProxyOptions>,
     ) -> Result<Proxy> {
         if env::var(PROXY_MANUAL_START).is_ok_and(|v| v.eq_ignore_ascii_case("true")) {
-            tracing::event!(target: crate::SPAN_TARGET, Level::WARN, "environment variable {PROXY_MANUAL_START} is 'true'; not starting test proxy");
+            tracing::warn!(
+                "environment variable {PROXY_MANUAL_START} is 'true'; not starting test-proxy"
+            );
             return Ok(Proxy::default());
         }
 
         // Find root of git repo or work tree: a ".git" directory or file will exist either way.
-        let git_dir = crate::find_ancestor_file(crate_dir, ".git")?;
+        let git_dir = crate::find_ancestor_file(crate_dir.as_ref(), ".git")?;
         let git_dir = git_dir.parent().ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, "parent git repository not found")
         })?;
+        tracing::debug!(
+            "starting test-proxy with storage location {git_dir}",
+            git_dir = git_dir.display()
+        );
 
+        // Create an assets.json file in the crate_dir if a parent doesn't already exist.
+        #[cfg(not(target_arch = "wasm32"))]
+        if test_mode == Some(TestMode::Record)
+            && matches!(crate::find_ancestor_file(crate_dir.as_ref(), "assets.json"), Err(err) if err.kind() == &ErrorKind::Io)
+        {
+            let assets_file = crate_dir.as_ref().join("assets.json");
+            tracing::trace!("creating {path}", path = assets_file.display());
+
+            let assets_dir = assets_file
+                .parent()
+                .and_then(Path::file_name)
+                .map(|dir| dir.to_ascii_lowercase())
+                .ok_or_else(|| {
+                    azure_core::Error::message(
+                        ErrorKind::Io,
+                        "failed to get assets.json parent directory name",
+                    )
+                })?;
+            let assets_dir = assets_dir.to_string_lossy();
+            let assets_content = json!({
+                "AssetsRepo": "Azure/azure-sdk-assets",
+                "AssetsRepoPrefixPath": "rust",
+                "TagPrefix": format!("rust/{assets_dir}"),
+                "Tag": "",
+            });
+            let file = fs::File::create_new(assets_file).await?;
+            serde_json::to_writer_pretty(file.into_std().await, &assets_content)?;
+        }
+
+        // Construct the command line arguments and start the test-proxy service.
         let mut args: Vec<String> = Vec::new();
         args.extend_from_slice(&[
             "start".into(),
@@ -101,7 +139,7 @@ mod bootstrap {
         let mut stdout = command.stdout.take();
         let max_seconds = Duration::from_secs(env::var(SYSTEM_TEAMPROJECTID).map_or(5, |_| 20));
         let url = tokio::select! {
-            v = wait_till_listening(&mut stdout) => { v? },
+            v = wait_till_listening(command.id(), &mut stdout) => { v? },
             _ = tokio::time::sleep(max_seconds) => {
                 command.kill().await?;
                 return Err(azure_core::Error::message(ErrorKind::Other, "timed out waiting for test-proxy to start"));
@@ -114,7 +152,10 @@ mod bootstrap {
         })
     }
 
-    async fn wait_till_listening(stdout: &mut Option<ChildStdout>) -> Result<Url> {
+    async fn wait_till_listening(
+        pid: Option<u32>,
+        stdout: &mut Option<ChildStdout>,
+    ) -> Result<Url> {
         let Some(stdout) = stdout else {
             return Err(azure_core::Error::message(
                 ErrorKind::Io,
@@ -131,7 +172,7 @@ mod bootstrap {
             if let Some(idx) = line.find(RUNNING_PATTERN) {
                 let idx = idx + RUNNING_PATTERN.len();
                 let version: Version = line[idx..].parse()?;
-                tracing::event!(target: crate::SPAN_TARGET, Level::INFO, "starting test-proxy version {version}");
+                tracing::info!(?pid, %version, "started test-proxy version {version}");
 
                 // Need to check version since `test-proxy start` does not fail with unknown parameters.
                 if version < MIN_VERSION {
@@ -146,11 +187,11 @@ mod bootstrap {
 
             if let Some(idx) = line.find(LISTENING_PATTERN) {
                 let idx = idx + LISTENING_PATTERN.len();
-                let mut url: Url = line[idx..].parse()?;
-                url.set_host(Some("localhost"))?;
-                tracing::event!(target: crate::SPAN_TARGET, Level::INFO, "listening on {url}");
+                let mut endpoint: Url = line[idx..].parse()?;
+                endpoint.set_host(Some("localhost"))?;
+                tracing::info!(?pid, %endpoint, "test-proxy listening on {endpoint}");
 
-                return Ok(url);
+                return Ok(endpoint);
             }
         }
 
@@ -184,7 +225,7 @@ impl Proxy {
     /// Waits until the process is killed.
     pub async fn stop(&mut self) -> Result<()> {
         if let Some(command) = &mut self.command {
-            tracing::event!(target: crate::SPAN_TARGET, Level::DEBUG, "stopping");
+            tracing::debug!(pid = ?command.id(), "stopping");
             return Ok(command.kill().await?);
         }
         Ok(())
@@ -192,7 +233,7 @@ impl Proxy {
 }
 
 impl Proxy {
-    /// Gets the [`Url`] to which the test proxy is listening.
+    /// Gets the [`Url`] to which the test-proxy is listening.
     pub fn endpoint(&self) -> &Url {
         &self.url
     }
@@ -200,10 +241,11 @@ impl Proxy {
 
 impl Default for Proxy {
     fn default() -> Self {
+        let url = "http://localhost:5000".parse().unwrap();
         Self {
             #[cfg(not(target_arch = "wasm32"))]
             command: None,
-            url: "http://localhost:5000".parse().unwrap(),
+            url,
         }
     }
 }

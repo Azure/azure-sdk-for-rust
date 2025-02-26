@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
 use std::sync::{Arc, Once};
@@ -90,7 +93,7 @@ impl TestAccount {
 
         let context_id = format!(
             "{}_{}_{}",
-            context.test_name(),
+            context.name(),
             OffsetDateTime::now_utc().format(format_description!(
                 "[year]_[month]_[day]T[hour]_[minute]_[second]"
             ))?,

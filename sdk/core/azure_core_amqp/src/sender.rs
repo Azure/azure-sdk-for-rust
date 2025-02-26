@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use crate::error::AmqpDescribedError;
+
 use super::messaging::{AmqpMessage, AmqpSource, AmqpTarget};
 use super::session::AmqpSession;
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
@@ -41,10 +43,83 @@ pub trait AmqpSenderApis {
         &self,
         message: impl Into<AmqpMessage> + std::fmt::Debug,
         options: Option<AmqpSendOptions>,
-    ) -> impl std::future::Future<Output = Result<()>>;
+    ) -> impl std::future::Future<Output = Result<AmqpSendOutcome>>;
 }
 
-#[derive(Default)]
+/// Possible outcomes from a Send operation.
+pub enum AmqpSendOutcome {
+    /// The message was accepted by the receiver.
+    ///
+    /// At the source the accepted state means that the message has been retired
+    /// from the node, and transfer of payload data will not be able to be resumed
+    ///  if the link becomes suspended. A delivery can become accepted at the source
+    ///  even before all transfer frames have been sent, this does not imply that
+    /// the remaining transfers for the delivery will not be sent - only the
+    /// aborted flag on the transfer performative can be used to indicate a
+    /// premature termination of the transfer.
+    ///
+    /// At the target, the accepted outcome is used to indicate that an incoming
+    /// message has been successfully processed, and that the receiver of the
+    /// message is expecting the sender to transition the delivery to the accepted
+    /// state at the source.
+    ///
+    /// The accepted outcome does not increment the delivery-count in the header of the accepted message.
+    Accepted,
+    /// The message was rejected by the receiver.
+    ///
+    /// At the target, the rejected outcome is used to indicate that an incoming message is invalid and therefore unprocessable. The rejected outcome when applied to a message will cause the delivery-count to be incremented in the header of the rejected message.
+    /// At the source, the rejected outcome means that the target has informed the source that the message was rejected, and the source has taken the necessary action. The delivery SHOULD NOT ever spontaneously attain the rejected state at the source.
+    Rejected(Option<AmqpDescribedError>),
+
+    /// The message was released by the receiver.
+    ///
+    /// At the source the released outcome means that the message is no longer acquired
+    ///  by the receiver, and has been made available for (re-)delivery to the same or
+    /// other targets receiving from the node. The message is unchanged at the node (i.e., the
+    /// delivery-count of the header of the released message MUST NOT be incremented). As released
+    /// is a terminal outcome, transfer of payload data will not be able to be resumed if the
+    /// link becomes suspended. A delivery can become released at the source even before all
+    /// transfer frames have been sent. This does not imply that the remaining transfers for
+    /// the delivery will not be sent. The source MAY spontaneously attain the released outcome
+    /// for a message (for example the source might implement some sort of time-bound
+    /// acquisition lock, after which the acquisition of a message at a node is revoked
+    /// to allow for delivery to an alternative consumer).
+    ///
+    /// At the target, the released outcome is used to indicate that a given transfer was
+    /// not and will not be acted upon.
+    Released,
+    /// The message was modified by the receiver.
+    ///
+    /// At the source the modified outcome means that the message is no longer acquired
+    /// by the receiver, and has been made available for (re-)delivery to the same or
+    /// other targets receiving from the node. The message has been changed at the node
+    /// in the ways indicated by the fields of the outcome. As modified is a terminal
+    /// outcome, transfer of payload data will not be able to be resumed if the link
+    /// becomes suspended. A delivery can become modified at the source even before all
+    /// transfer frames have been sent. This does not imply that the remaining
+    /// transfers for the delivery will not be sent. The source MAY spontaneously
+    /// attain the modified outcome for a message (for example the source might
+    /// implement some sort of time-bound acquisition lock, after which the
+    /// acquisition of a message at a node is revoked to allow for delivery
+    /// to an alternative consumer with the message modified in some way to
+    /// denote the previous failed, e.g., with delivery-failed set to true).
+    ///
+    /// At the target, the modified outcome is used to indicate that a given transfer was
+    /// not and will not be acted upon, and that the message SHOULD be modified in the
+    /// specified ways at the node.
+    Modified(SendModification),
+}
+
+/// If the message was modified in transit, this struct contains the details of the modification.
+pub struct SendModification {
+    /// The message was not delivered to the receiver.
+    pub delivery_failed: Option<bool>,
+    /// The message was not delivered to the receiver because it was undeliverable at the receiver.
+    pub undeliverable_here: Option<bool>,
+    /// The message was not delivered to the receiver because it was not accepted by the receiver.
+    pub message_annotations: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+}
+
 pub struct AmqpSender {
     implementation: SenderImplementation,
 }
@@ -72,16 +147,23 @@ impl AmqpSenderApis for AmqpSender {
         &self,
         message: impl Into<AmqpMessage> + std::fmt::Debug,
         options: Option<AmqpSendOptions>,
-    ) -> Result<()> {
+    ) -> Result<AmqpSendOutcome> {
         self.implementation.send(message, options).await
     }
 }
 
 impl AmqpSender {
+    /// Construct a new AMQP message sender.
     pub fn new() -> Self {
         Self {
             implementation: SenderImplementation::new(),
         }
+    }
+}
+
+impl Default for AmqpSender {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -96,6 +178,57 @@ pub struct AmqpSendOptions {
 }
 
 impl AmqpSendOptions {}
+
+pub(crate) mod error {
+    use crate::{
+        error::{AmqpDescribedError, AmqpErrorKind},
+        AmqpError,
+    };
+
+    pub enum AmqpSenderError {
+        // Sender Errors
+        NonTerminalDeliveryState,
+        IllegalDeliveryState,
+
+        /// Remote peer rejected delivery of the message
+        NotAccepted(Option<AmqpDescribedError>),
+    }
+
+    impl std::error::Error for AmqpSenderError {}
+
+    impl std::fmt::Debug for AmqpSenderError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "AmqpSenderError: {}", self)?;
+            Ok(())
+        }
+    }
+
+    impl std::fmt::Display for AmqpSenderError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                AmqpSenderError::NotAccepted(e) => {
+                    write!(f, "Message delivery was not accepted: {:?}", e)
+                }
+                AmqpSenderError::NonTerminalDeliveryState => {
+                    write!(f, "Non-terminal delivery state")
+                }
+                AmqpSenderError::IllegalDeliveryState => write!(f, "Illegal delivery state"),
+            }
+        }
+    }
+
+    impl From<AmqpSenderError> for AmqpError {
+        fn from(e: AmqpSenderError) -> Self {
+            AmqpError::from(AmqpErrorKind::SenderError(e))
+        }
+    }
+
+    impl From<AmqpSenderError> for azure_core::Error {
+        fn from(e: AmqpSenderError) -> Self {
+            AmqpError::from(e).into()
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

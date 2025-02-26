@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use crate::Uuid;
 use std::borrow::Borrow;
 
-use crate::Uuid;
-
+#[cfg(feature = "cplusplus")]
+use crate::fe2o3::error::Fe2o3SerializationError;
 #[cfg(all(
     feature = "cplusplus",
     feature = "fe2o3-amqp",
     not(target_arch = "wasm32")
 ))]
-use crate::fe2o3::error::AmqpSerialization;
 #[cfg(feature = "cplusplus")]
 use crate::{Deserializable, Serializable};
 #[cfg(feature = "cplusplus")]
@@ -274,7 +274,8 @@ impl Serializable for AmqpValue {
         #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
         {
             let fe2o3_value = fe2o3_amqp_types::primitives::Value::from(self.clone());
-            Ok(serde_amqp::serialized_size(&fe2o3_value).map_err(AmqpSerialization::from)?)
+            serde_amqp::serialized_size(&fe2o3_value)
+                .map_err(|e| azure_core::Error::from(Fe2o3SerializationError(e)))
         }
         #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
         {
@@ -480,15 +481,6 @@ impl From<Box<AmqpDescribed>> for AmqpDescribed {
         *b
     }
 }
-
-// impl From<AmqpValue> for AmqpDescribed {
-//     fn from(v: AmqpValue) -> Self {
-//         match v {
-//             AmqpValue::Described(d) => *d,
-//             _ => panic!("Expected a described value"),
-//         }
-//     }
-// }
 
 impl From<&str> for AmqpValue {
     fn from(b: &str) -> Self {

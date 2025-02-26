@@ -28,8 +28,8 @@ tokio = { workspace = true, optional = true }
 tracing.workspace = true
 typespec = { workspace = true, default-features = false }
 typespec_macros = { workspace = true, optional = true }
-uuid.workspace = true
 url.workspace = true
+uuid.workspace = true
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
@@ -46,13 +46,15 @@ tracing-subscriber.workspace = true
 typespec_macros.path = "../typespec_macros"
 
 [features]
-default = ["http", "json", "reqwest", "reqwest_gzip"]
+default = ["http", "json", "reqwest", "reqwest_deflate", "reqwest_gzip"]
 derive = ["dep:typespec_macros"]
 http = ["dep:http-types", "typespec/http"]
 json = ["typespec/json"]
 reqwest = ["reqwest/native-tls"]
+reqwest_deflate = ["reqwest/deflate"]
 reqwest_gzip = ["reqwest/gzip"]
 reqwest_rustls = ["reqwest/rustls-tls-native-roots"]
+test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio_fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
 tokio_sleep = ["tokio/time"]
 xml = ["dep:quick-xml"]
@@ -66,4 +68,15 @@ name = "stream_response"
 required-features = ["derive"]
 
 [package.metadata.docs.rs]
-all-features = true
+features = [
+  "derive",
+  "http",
+  "json",
+  "reqwest",
+  "reqwest_deflate",
+  "reqwest_gzip",
+  "reqwest_rustls",
+  "tokio_fs",
+  "tokio_sleep",
+  "xml",
+]
