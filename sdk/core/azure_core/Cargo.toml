@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.22.0"
+version = "0.23.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors.workspace = true
@@ -28,8 +28,11 @@ serde_json.workspace = true
 sha2 = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
-typespec = { workspace = true, features = ["http", "json"] }
-typespec_client_core = { workspace = true, features = ["http", "json"] }
+typespec = { path = "../../typespec", features = ["http", "json"] }
+typespec_client_core = { path = "../../typespec/typespec_client_core", features = [
+  "http",
+  "json",
+] }
 
 [build-dependencies]
 rustc_version.workspace = true
