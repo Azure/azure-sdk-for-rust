@@ -63,7 +63,9 @@ pub mod models {
     pub use blob_properties::BlobProperties;
 }
 
-pub use crate::generated::clients::{BlobClient, BlobClientOptions};
+pub use crate::generated::clients::{
+    BlobClient, BlobClientOptions, BlobContainerClient, BlobServiceClient,
+};
 // END GENERATED CODE
 
 pub(crate) mod pipeline;
