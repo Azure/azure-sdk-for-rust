@@ -674,7 +674,7 @@ pub mod builders {
         /// * `endpoint` - The custom endpoint for the Event Hub.
         ///
         /// # Returns
-        /// The updated [`ProducerClientBuilder`].
+        /// The updated [`ConsumerClientBuilder`].
         ///
         /// Note: The custom endpoint option allows a customer to specify an AMQP proxy
         /// which will be used to forward requests to the actual Event Hub instance.
