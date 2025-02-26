@@ -100,6 +100,7 @@ impl ProducerClient {
             sender_instances: Mutex::new(HashMap::new()),
             mgmt_client: Mutex::new(OnceLock::new()),
             connection_manager: ConnectionManager::new(
+                url.clone(),
                 application_id.clone(),
                 custom_endpoint.clone(),
             ),
@@ -133,7 +134,7 @@ impl ProducerClient {
     ///
     /// Note that dropping the ProducerClient will also close the connection.
     pub async fn close(self) -> Result<()> {
-        self.connection_manager.close_connection(&self.url).await
+        self.connection_manager.close_connection().await
     }
 
     /// Sends an event to the Event Hub.
@@ -408,8 +409,8 @@ impl ProducerClient {
         &self.url
     }
 
-    async fn ensure_connection(&self, url: &Url) -> Result<()> {
-        self.connection_manager.ensure_connection(url).await?;
+    async fn ensure_connection(&self) -> Result<()> {
+        self.connection_manager.ensure_connection().await?;
         Ok(())
     }
     async fn ensure_management_client(&self) -> Result<()> {
@@ -425,7 +426,7 @@ impl ProducerClient {
         // Clients must call ensure_connection before calling ensure_management_client.
 
         trace!("Create management session.");
-        let connection = self.connection_manager.get_connection(&self.url).await?;
+        let connection = self.connection_manager.get_connection().await?;
 
         let session = AmqpSession::new();
         session.begin(connection.as_ref(), None).await?;
@@ -452,9 +453,9 @@ impl ProducerClient {
     async fn ensure_sender(&self, path: &Url) -> Result<Arc<Mutex<AmqpSender>>> {
         let mut sender_instances = self.sender_instances.lock().await;
         if !sender_instances.contains_key(path) {
-            self.connection_manager.ensure_connection(path).await?;
+            self.connection_manager.ensure_connection().await?;
 
-            let connection = self.connection_manager.get_connection(path).await?;
+            let connection = self.connection_manager.get_connection().await?;
 
             self.connection_manager
                 .authorize_path(&connection, path, self.credential.clone())
@@ -616,7 +617,7 @@ pub mod builders {
                 custom_endpoint,
             );
 
-            client.ensure_connection(&url).await?;
+            client.ensure_connection().await?;
             Ok(client)
         }
     }

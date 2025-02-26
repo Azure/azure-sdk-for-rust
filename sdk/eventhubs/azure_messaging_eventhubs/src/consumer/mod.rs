@@ -103,6 +103,7 @@ impl ConsumerClient {
             session_instances: Mutex::new(HashMap::new()),
             mgmt_client: Mutex::new(OnceLock::new()),
             connection_manager: ConnectionManager::new(
+                url.clone(),
                 options.application_id,
                 options.custom_endpoint.clone(),
             ),
@@ -150,7 +151,7 @@ impl ConsumerClient {
     /// }
     /// ```
     pub async fn close(self) -> Result<()> {
-        self.connection_manager.close_connection(&self.url).await
+        self.connection_manager.close_connection().await
     }
 
     /// Attaches a message receiver to a specific partition of the Event Hub.
@@ -218,7 +219,7 @@ impl ConsumerClient {
             .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
         let start_expression = StartPosition::start_expression(&options.start_position);
 
-        self.connection_manager.ensure_connection(&self.url).await?;
+        self.connection_manager.ensure_connection().await?;
 
         trace!(
             "Opening receiver on url {} partition {partition_id}.",
@@ -228,7 +229,7 @@ impl ConsumerClient {
         let source_url = format!("{}/Partitions/{}", self.url, partition_id);
         let source_url = Url::parse(&source_url).map_err(azure_core::Error::from)?;
 
-        let connection = self.connection_manager.get_connection(&self.url).await?;
+        let connection = self.connection_manager.get_connection().await?;
 
         self.connection_manager
             .authorize_path(&connection, &source_url, self.credential.clone())
@@ -386,7 +387,7 @@ impl ConsumerClient {
         // Clients must call ensure_connection before calling ensure_management_client.
 
         trace!("Create management session.");
-        let connection = self.connection_manager.get_connection(&self.url).await?;
+        let connection = self.connection_manager.get_connection().await?;
         let session = AmqpSession::new();
         session.begin(connection.as_ref(), None).await?;
         trace!("Session created.");
@@ -413,8 +414,8 @@ impl ConsumerClient {
         Ok(())
     }
 
-    async fn ensure_connection(&self, url: &Url) -> Result<()> {
-        self.connection_manager.ensure_connection(url).await?;
+    async fn ensure_connection(&self) -> Result<()> {
+        self.connection_manager.ensure_connection().await?;
         Ok(())
     }
 
@@ -422,7 +423,7 @@ impl ConsumerClient {
         let mut session_instances = self.session_instances.lock().await;
         if !session_instances.contains_key(partition_id) {
             debug!("Creating session for partition: {:?}", partition_id);
-            let connection = self.connection_manager.get_connection(&self.url).await?;
+            let connection = self.connection_manager.get_connection().await?;
 
             let session = AmqpSession::new();
             session.begin(connection.as_ref(), None).await?;
@@ -742,7 +743,7 @@ pub mod builders {
                     custom_endpoint,
                 },
             )?;
-            consumer.ensure_connection(&consumer.url).await?;
+            consumer.ensure_connection().await?;
             Ok(consumer)
         }
     }
