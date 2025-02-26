@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError};
+use super::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError};
 use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
-use crate::error::{AmqpConnectionError, AmqpErrorKind};
+use crate::error::AmqpErrorKind;
 use crate::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use crate::AmqpError;
 use azure_core::{Result, Url};
@@ -160,17 +160,13 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         // that's ok.
         match res {
             Ok(_) => Ok(()),
-            Err(e) => {
-                match e.kind() {
-                    azure_core::error::ErrorKind::Io => {
-                        warn!("I/O closing connection, ignored: {:?}", e);
-                        Ok(())
-                    }
-                    _ => Err(e),
+            Err(e) => match e.kind() {
+                azure_core::error::ErrorKind::Io => {
+                    warn!("I/O closing connection, ignored: {:?}", e);
+                    Ok(())
                 }
-                //                warn!("Error detaching receiver: {:?}", e);
-                //                Err(e)
-            }
+                _ => Err(e),
+            },
         }
     }
 }
@@ -188,60 +184,10 @@ impl From<Fe2o3ConnectionOpenError> for azure_core::Error {
             fe2o3_amqp::connection::OpenError::RemoteClosedWithError(error) => {
                 AmqpError::from(AmqpErrorKind::ClosedByRemote(Some(error.into()))).into()
             }
-            fe2o3_amqp::connection::OpenError::TransportError(error) => match error {
-                fe2o3_amqp::transport::Error::Io(e) => azure_core::Error::from(e),
-                fe2o3_amqp::transport::Error::IdleTimeoutElapsed => {
-                    AmqpConnectionError::IdleTimeoutElapsed.into()
-                }
-                fe2o3_amqp::transport::Error::DecodeError(s) => {
-                    AmqpConnectionError::DecodeError(s).into()
-                }
-                fe2o3_amqp::transport::Error::NotImplemented(o) => {
-                    AmqpConnectionError::NotImplemented(o).into()
-                }
-                fe2o3_amqp::transport::Error::FramingError => {
-                    AmqpConnectionError::FramingError.into()
-                }
-            },
-            _ => AmqpError::from(AmqpErrorKind::from(AmqpConnectionError::from(e.0))).into(),
-        }
-    }
-}
-
-impl From<fe2o3_amqp::connection::OpenError> for AmqpConnectionError {
-    fn from(e: fe2o3_amqp::connection::OpenError) -> Self {
-        match e {
-            fe2o3_amqp::connection::OpenError::Io(e) => panic!(
-                "Io error: {:?} cannot be directly mapped to AmqpConnectionError.",
-                e
-            ),
-            fe2o3_amqp::connection::OpenError::UrlError(parse_error) => panic!(
-                "Url error: {:?} cannot be directly mapped to AmqpConnectionError.",
-                parse_error
-            ),
-            fe2o3_amqp::connection::OpenError::TransportError(error) => panic!(
-                "Transport error: {:?} cannot be directly mapped to AmqpConnectionError.",
-                error
-            ),
-            fe2o3_amqp::connection::OpenError::RemoteClosed => {
-                panic!("RemoteClosed cannot be directly mapped to AmqpConnectionError.")
+            fe2o3_amqp::connection::OpenError::TransportError(error) => {
+                azure_core::Error::from(Fe2o3TransportError(error))
             }
-            fe2o3_amqp::connection::OpenError::RemoteClosedWithError(_) => {
-                panic!("RemoteClosedWithError cannot be directly mapped to AmqpConnectionError.")
-            }
-            fe2o3_amqp::connection::OpenError::InvalidDomain => Self::InvalidDomain,
-            fe2o3_amqp::connection::OpenError::TlsConnectorNotFound => Self::TlsConnectorNotFound,
-            fe2o3_amqp::connection::OpenError::InvalidScheme => Self::InvalidScheme,
-            fe2o3_amqp::connection::OpenError::ProtocolHeaderMismatch(_) => {
-                Self::ProtocolHeaderMismatch(Box::new(e))
-            }
-            fe2o3_amqp::connection::OpenError::SaslError {
-                code: _,
-                additional_data: _,
-            } => Self::SaslError(Box::new(e)),
-            fe2o3_amqp::connection::OpenError::IllegalState => Self::IllegalState,
-            fe2o3_amqp::connection::OpenError::NotImplemented(s) => Self::NotImplemented(s),
-            fe2o3_amqp::connection::OpenError::DecodeError(d) => Self::DecodeError(d),
+            _ => AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e.0))).into(),
         }
     }
 }
@@ -249,21 +195,9 @@ impl From<fe2o3_amqp::connection::OpenError> for AmqpConnectionError {
 impl From<Fe2o3ConnectionError> for azure_core::Error {
     fn from(e: Fe2o3ConnectionError) -> Self {
         match e.0 {
-            fe2o3_amqp::connection::Error::TransportError(error) => match error {
-                fe2o3_amqp::transport::Error::Io(e) => azure_core::Error::from(e),
-                fe2o3_amqp::transport::Error::DecodeError(s) => {
-                    AmqpConnectionError::DecodeError(s).into()
-                }
-                fe2o3_amqp::transport::Error::NotImplemented(o) => {
-                    AmqpConnectionError::NotImplemented(o).into()
-                }
-                fe2o3_amqp::transport::Error::IdleTimeoutElapsed => {
-                    AmqpConnectionError::IdleTimeoutElapsed.into()
-                }
-                fe2o3_amqp::transport::Error::FramingError => {
-                    AmqpConnectionError::FramingError.into()
-                }
-            },
+            fe2o3_amqp::connection::Error::TransportError(error) => {
+                azure_core::Error::from(Fe2o3TransportError(error))
+            }
             fe2o3_amqp::connection::Error::RemoteClosed => {
                 AmqpError::from(AmqpErrorKind::ClosedByRemote(None)).into()
             }
@@ -271,32 +205,7 @@ impl From<Fe2o3ConnectionError> for azure_core::Error {
                 AmqpError::from(AmqpErrorKind::ClosedByRemote(Some(error.into()))).into()
             }
 
-            _ => AmqpError::from(AmqpErrorKind::from(AmqpConnectionError::from(e.0))).into(),
-        }
-    }
-}
-
-impl From<fe2o3_amqp::connection::Error> for AmqpConnectionError {
-    fn from(e: fe2o3_amqp::connection::Error) -> Self {
-        match e {
-            // Transport errors and RemoteClosed errors are expressed directly in the AmqpError.
-            fe2o3_amqp::connection::Error::TransportError(e) => panic!(
-                "Transport error: {:?} cannot be directly mapped to AmqpConnectionError.",
-                e
-            ),
-            fe2o3_amqp::connection::Error::RemoteClosed => {
-                panic!("RemoteClosed error cannot be directly mapped to AmqpConnectionError.")
-            }
-            fe2o3_amqp::connection::Error::RemoteClosedWithError(_) => panic!(
-                "RemoteClosedWithError error cannot be directly mapped to AmqpConnectionError."
-            ),
-            fe2o3_amqp::connection::Error::IllegalState => Self::IllegalState,
-            fe2o3_amqp::connection::Error::NotImplemented(s) => Self::NotImplemented(s),
-            fe2o3_amqp::connection::Error::NotFound(s) => Self::NotFound(s),
-            fe2o3_amqp::connection::Error::NotAllowed(s) => Self::NotAllowed(s),
-            fe2o3_amqp::connection::Error::JoinError(join_error) => {
-                Self::JoinError(Box::new(join_error))
-            }
+            _ => AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e.0))).into(),
         }
     }
 }

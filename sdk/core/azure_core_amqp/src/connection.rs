@@ -84,42 +84,6 @@ pub(crate) mod error {
     use crate::{error::AmqpErrorKind, AmqpError};
 
     pub enum AmqpConnectionError {
-        //        ConnectionNotSet,
-
-        //        ConnectionAlreadySet,
-        /// Domain is invalid or not found
-        InvalidDomain,
-
-        /// Missing client config for TLS connection
-        TlsConnectorNotFound,
-
-        /// Scheme is invalid or not found
-        InvalidScheme,
-
-        /// Protocol negotiation failed due to protocol header mismatch
-        ProtocolHeaderMismatch(Box<dyn std::error::Error + Send + Sync>),
-
-        /// SASL negotiation failed
-        SaslError(Box<dyn std::error::Error + Send + Sync>),
-
-        /// Illegal local connection state
-        IllegalState,
-
-        /// Not implemented
-        NotImplemented(Option<String>),
-
-        /// Decode error
-        DecodeError(String),
-
-        /// Session is not found
-        NotFound(Option<String>),
-
-        /// Not allowed
-        NotAllowed(Option<String>),
-
-        /// This could occur only when the user attempts to close the connection
-        JoinError(Box<dyn std::error::Error + Send + Sync>),
-
         /// Idle timeout elapsed
         IdleTimeoutElapsed,
 
@@ -143,48 +107,6 @@ pub(crate) mod error {
             match self {
                 Self::FramingError => write!(f, "Framing error"),
                 Self::IdleTimeoutElapsed => write!(f, "Idle timeout elapsed"),
-                Self::NotFound(e) => {
-                    if let Some(e) = e {
-                        write!(f, "Not found: {}", e)
-                    } else {
-                        write!(f, "Not found")
-                    }
-                }
-                Self::NotAllowed(e) => {
-                    if let Some(e) = e {
-                        write!(f, "Not allowed: {}", e)
-                    } else {
-                        write!(f, "Not allowed")
-                    }
-                }
-                Self::JoinError(e) => {
-                    write!(f, "Join error: {}", e)
-                }
-                Self::InvalidDomain => write!(f, "Invalid domain"),
-                Self::TlsConnectorNotFound => {
-                    write!(f, "TLS connector is not found")
-                }
-                Self::InvalidScheme => {
-                    write!(
-                        f,
-                        r#"Invalid scheme. Only "amqp" and "amqps" are supported."#
-                    )
-                }
-                Self::ProtocolHeaderMismatch(e) => {
-                    write!(f, "Protocol header mismatch: {:?}", e)
-                }
-                Self::SaslError(e) => {
-                    write!(f, "SASL error code {}", e)
-                }
-                Self::IllegalState => write!(f, "Illegal local state"),
-                Self::NotImplemented(e) => {
-                    if let Some(e) = e {
-                        write!(f, "Not implemented: {}", e)
-                    } else {
-                        write!(f, "Not implemented")
-                    }
-                }
-                Self::DecodeError(e) => write!(f, "Decode error: {}", e),
             }
         }
     }

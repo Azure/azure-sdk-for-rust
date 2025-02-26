@@ -189,69 +189,12 @@ pub(crate) mod error {
         // Sender Errors
         NonTerminalDeliveryState,
         IllegalDeliveryState,
-        MessageEncodeError,
-
-        /// Could not set message sender.
-        CouldNotSetMessageSender,
-
-        ///  Could not get message sender.
-        CouldNotGetMessageSender,
-        // Illegal session state
-        /// Session stopped
-        IllegalSessionState,
-
-        /// Link name duplicated
-        DuplicatedLinkName,
-
-        /// Illegal link state
-        IllegalState,
-
-        /// The local terminus is expecting an Attach from the remote peer
-        NonAttachFrameReceived,
-
-        /// The link is expected to be detached immediately but didn't receive
-        /// an incoming Detach frame
-        ExpectImmediateDetach,
-
-        /// Incoming Attach frame's Target field is None
-        IncomingTargetIsNone,
-
-        /// The remote Attach contains a [`Coordinator`] in the Target
-        CoordinatorIsNotImplemented,
-
-        /// When set at the sender this indicates the actual settlement mode in use.
-        ///
-        /// The sender SHOULD respect the receiver’s desired settlement mode ***if
-        /// the receiver initiates*** the attach exchange and the sender supports the desired mode
-        SndSettleModeNotSupported,
-
-        /// "When set at the receiver this indicates the actual settlement mode in use"
-        ///
-        /// The receiver SHOULD respect the sender’s desired settlement mode ***if
-        /// the sender initiates*** the attach exchange and the receiver supports the desired mode
-        RcvSettleModeNotSupported,
-
-        /// When set to true by the receiving link endpoint this field indicates creation of a
-        /// dynamically created node. In this case the address field will contain the address of the
-        /// created node.
-        TargetAddressIsNoneWhenDynamicIsTrue,
-
-        /// When set to true by the receiving link endpoint, this field constitutes a request for the sending
-        /// peer to dynamically create a node at the source. In this case the address field MUST NOT be set
-        SourceAddressIsSomeWhenDynamicIsTrue,
-
-        /// If the dynamic field is not set to true this field MUST be left unset.
-        DynamicNodePropertiesIsSomeWhenDynamicIsFalse,
 
         /// Remote peer rejected delivery of the message
         NotAccepted(Option<AmqpDescribedError>),
     }
 
-    impl std::error::Error for AmqpSenderError {
-        fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-            None
-        }
-    }
+    impl std::error::Error for AmqpSenderError {}
 
     impl std::fmt::Debug for AmqpSenderError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -263,54 +206,13 @@ pub(crate) mod error {
     impl std::fmt::Display for AmqpSenderError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             match self {
-                AmqpSenderError::NotAccepted(e) => write!(f, "Message delivery was not accepted: {:?}", e),
-                AmqpSenderError::IllegalSessionState => {
-                    write!(f, "Illegal session state. Session might have stopped.")
-                }
-                AmqpSenderError::DuplicatedLinkName => write!(f, "Link name is not unique."),
-                AmqpSenderError::IllegalState => write!(f, "Illegal session state"),
-                AmqpSenderError::NonAttachFrameReceived => {
-                    write!(f, "Expecting an Attach frame but received a non-Attach frame")
-                }
-                AmqpSenderError::ExpectImmediateDetach => {
-                    write!(f, "Expecting the remote peer to immediately detach")
-                }
-                AmqpSenderError::IncomingTargetIsNone => write!(f, "Target field is None"),
-                AmqpSenderError::CoordinatorIsNotImplemented => write!(
-                    f,
-                    "Control link is not implemented without enabling the `transaction` feature"
-                ),
-                AmqpSenderError::SndSettleModeNotSupported => write!(
-                    f,
-                    "When set at the sender this indicates the actual settlement mode in use"
-                ),
-                AmqpSenderError::RcvSettleModeNotSupported => write!(
-                    f,
-                    "The desired ReceiverSettleMode is not supported by the remote peer"
-                ),
-                AmqpSenderError::TargetAddressIsNoneWhenDynamicIsTrue => write!(
-                    f,
-                    "The address field contains the address of the created node when dynamic is set by the receiving endpoint"
-                ),
-                AmqpSenderError::SourceAddressIsSomeWhenDynamicIsTrue => write!(
-                    f,
-                    "Source address must not be set when dynamic is set by the receiving endpoint"
-                ),
-                AmqpSenderError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => write!(
-                    f,
-                    "If the dynamic field is not set to true this field MUST be left unset."
-                ),
-                AmqpSenderError::CouldNotSetMessageSender => {
-                    write!(f, "Could not set message sender")
-                }
-                AmqpSenderError::CouldNotGetMessageSender => {
-                    write!(f, "Could not get message sender")
+                AmqpSenderError::NotAccepted(e) => {
+                    write!(f, "Message delivery was not accepted: {:?}", e)
                 }
                 AmqpSenderError::NonTerminalDeliveryState => {
                     write!(f, "Non-terminal delivery state")
                 }
                 AmqpSenderError::IllegalDeliveryState => write!(f, "Illegal delivery state"),
-                AmqpSenderError::MessageEncodeError => write!(f, "Message encode error"),
             }
         }
     }
