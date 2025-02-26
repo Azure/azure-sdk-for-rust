@@ -11,6 +11,7 @@ use azure_core_amqp::{
 };
 use std::time::SystemTime;
 
+pub(crate) mod connection_manager;
 pub(crate) mod user_agent;
 
 pub(crate) struct ManagementInstance {

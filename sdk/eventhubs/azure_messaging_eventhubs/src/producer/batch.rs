@@ -9,7 +9,7 @@ use crate::{
     error::{ErrorKind, EventHubsError},
     models::EventData,
 };
-use azure_core::{error::Result, Error};
+use azure_core::{error::Result, Error, Url};
 use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
 use tracing::debug;
 use uuid::Uuid;
@@ -81,7 +81,7 @@ impl<'a> EventDataBatch<'a> {
     }
 
     pub(crate) async fn attach(&mut self) -> Result<()> {
-        let sender = self.producer.ensure_sender(self.get_batch_path()).await?;
+        let sender = self.producer.ensure_sender(&self.get_batch_path()?).await?;
         self.max_size_in_bytes =
             sender
                 .lock()
@@ -298,11 +298,12 @@ impl<'a> EventDataBatch<'a> {
         batch_envelope
     }
 
-    pub(crate) fn get_batch_path(&self) -> String {
+    pub(crate) fn get_batch_path(&self) -> Result<Url> {
         if let Some(partition_id) = self.partition_id.as_ref() {
-            format!("{}/Partitions/{}", self.producer.base_url(), partition_id)
+            let batch_path = self.producer.base_url().join("/Partitions/")?;
+            Ok(batch_path.join(partition_id)?)
         } else {
-            self.producer.base_url()
+            Ok(self.producer.base_url().clone())
         }
     }
 
