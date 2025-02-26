@@ -19,10 +19,18 @@ jobs:
     os: linux
 
   steps:
-  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-    parameters:
-      paths:
-      - "/*"
+  # Pull requests require the target branch ref, but fetchDepth: 1 doesn't fetch additional refs.
+  # SDL Baselining requires a github token, but sparse checkout doesn't set one.
+  # Use Sparse Checkout for pull requests and native, shallow checkout for everything else.
+  - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+    - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+      parameters:
+        paths:
+        - "/*"
+  - ${{ else }}:
+    - checkout: self
+      fetchDepth: 1
+      persistCredentials: true
 
   - ${{ if and(eq(variables['System.TeamProject'], 'internal'), ne(variables['Build.Reason'], '')) }}:
     - script: |
