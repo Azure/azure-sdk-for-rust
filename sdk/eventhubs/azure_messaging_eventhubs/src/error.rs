@@ -40,6 +40,9 @@ pub enum ErrorKind {
     /// Unable to add authentication token.
     UnableToAddAuthenticationToken,
 
+    /// Unable to add a connection.
+    UnableToAddConnection,
+
     /// The message was rejected.
     SendRejected(Option<AmqpDescribedError>),
 
@@ -66,6 +69,7 @@ impl std::error::Error for EventHubsError {
 impl std::fmt::Display for EventHubsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
+            ErrorKind::UnableToAddConnection => f.write_str("Unable to add connection."),
             ErrorKind::MissingMessageSender => f.write_str("Missing message sender."),
             ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
             ErrorKind::ArithmeticError => f.write_str("Arithmetic overflow has occurred."),

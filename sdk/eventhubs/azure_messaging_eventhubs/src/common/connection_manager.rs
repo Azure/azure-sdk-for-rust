@@ -14,7 +14,7 @@ use azure_core_amqp::{
     AmqpConnectionApis as _, AmqpConnectionOptions, AmqpSession, AmqpSessionApis as _, AmqpSymbol,
 };
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 use tracing::{debug, trace};
 use url::Url;
@@ -25,7 +25,7 @@ pub(crate) struct ConnectionManager {
     url: Url,
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
-    connections: Mutex<HashMap<Url, Arc<AmqpConnection>>>,
+    connections: Mutex<OnceLock<Arc<AmqpConnection>>>,
     authorization_scopes: Mutex<HashMap<Url, AccessToken>>,
 }
 
@@ -35,14 +35,15 @@ impl ConnectionManager {
             url,
             application_id,
             custom_endpoint,
-            connections: Mutex::new(HashMap::new()),
+            connections: Mutex::new(OnceLock::new()),
             authorization_scopes: Mutex::new(HashMap::new()),
         }
     }
 
     pub(crate) async fn ensure_connection(&self) -> Result<()> {
-        let mut connections = self.connections.lock().await;
-        if connections.contains_key(&self.url) {
+        let connections = self.connections.lock().await;
+        if connections.get().is_some() {
+            trace!("Connection for {} already exists.", self.url);
             return Ok(());
         }
 
@@ -73,24 +74,26 @@ impl ConnectionManager {
             .await?;
 
         trace!("Connection for {} created.", self.url);
-        connections.insert(self.url.clone(), connection);
+        connections
+            .set(connection)
+            .map_err(|_| EventHubsError::from(ErrorKind::UnableToAddConnection))?;
         Ok(())
     }
 
     pub(crate) async fn get_connection(&self) -> Result<Arc<AmqpConnection>> {
         let connections = self.connections.lock().await;
 
-        let connection = connections.get(&self.url).cloned();
-        trace!("get_connection, found: {}", self.url);
-        let connection =
-            connection.ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+        let connection = connections
+            .get()
+            .cloned()
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
         Ok(connection)
     }
 
     pub(crate) async fn close_connection(&self) -> Result<()> {
         let connections = self.connections.lock().await;
         let connection = connections
-            .get(&self.url)
+            .get()
             .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
 
         connection.close().await?;
