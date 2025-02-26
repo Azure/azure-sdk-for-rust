@@ -10,11 +10,20 @@ rust-version.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-trait.workspace = true
 azure_storage_common.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
-serde = { workspace = true }
-time = { workspace = true }
+azure_identity = { workspace = true }
+serde.workspace = true
+time.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
+uuid.workspace = true
+url.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros"] }
+azure_identity.workspace = true
+azure_core_test.path = "../../core/azure_core_test"
