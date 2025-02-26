@@ -300,8 +300,9 @@ impl<'a> EventDataBatch<'a> {
 
     pub(crate) fn get_batch_path(&self) -> Result<Url> {
         if let Some(partition_id) = self.partition_id.as_ref() {
-            let batch_path = self.producer.base_url().join("/Partitions/")?;
-            Ok(batch_path.join(partition_id)?)
+            let batch_path = format!("{}/Partitions/{}", self.producer.base_url(), partition_id);
+
+            Url::parse(&batch_path).map_err(azure_core::Error::from)
         } else {
             Ok(self.producer.base_url().clone())
         }

@@ -95,6 +95,8 @@ impl ConsumerClient {
             fully_qualified_namespace, eventhub_name, consumer_group
         );
         let url = Url::parse(&url).map_err(azure_core::Error::from)?;
+
+        trace!("Creating consumer client for {url}.");
         Ok(Self {
             instance_id: options.instance_id,
             retry_options: options.retry_options,
@@ -215,13 +217,21 @@ impl ConsumerClient {
             .clone()
             .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
         let start_expression = StartPosition::start_expression(&options.start_position);
-        let source_url = self.url.join("/Partitions/")?;
-        let source_url = source_url.join(partition_id)?;
 
-        self.ensure_connection(&source_url).await?;
+        self.connection_manager.ensure_connection(&self.url).await?;
+
+        trace!(
+            "Opening receiver on url {} partition {partition_id}.",
+            self.url
+        );
+
+        let source_url = format!("{}/Partitions/{}", self.url, partition_id);
+        let source_url = Url::parse(&source_url).map_err(azure_core::Error::from)?;
+
+        let connection = self.connection_manager.get_connection(&self.url).await?;
 
         self.connection_manager
-            .authorize_path(&source_url, self.credential.clone())
+            .authorize_path(&connection, &source_url, self.credential.clone())
             .await?;
 
         let session = self.get_session(partition_id).await?;
@@ -381,10 +391,12 @@ impl ConsumerClient {
         session.begin(connection.as_ref(), None).await?;
         trace!("Session created.");
 
-        let management_path = self.url.join("/$management")?;
+        let management_path = self.url.to_string() + "/$management";
+        let management_path = Url::parse(&management_path)?;
+
         let access_token = self
             .connection_manager
-            .authorize_path(&management_path, self.credential.clone())
+            .authorize_path(&connection, &management_path, self.credential.clone())
             .await?;
 
         trace!("Create management client.");

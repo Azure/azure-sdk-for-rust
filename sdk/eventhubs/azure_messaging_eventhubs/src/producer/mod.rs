@@ -431,10 +431,11 @@ impl ProducerClient {
         session.begin(connection.as_ref(), None).await?;
         trace!("Session created.");
 
-        let management_path = self.url.join("/$management")?;
+        let management_path = self.url.to_string() + "/$management";
+        let management_path = Url::parse(&management_path)?;
         let access_token = self
             .connection_manager
-            .authorize_path(&management_path, self.credential.clone())
+            .authorize_path(&connection, &management_path, self.credential.clone())
             .await?;
 
         trace!("Create management client.");
@@ -456,7 +457,7 @@ impl ProducerClient {
             let connection = self.connection_manager.get_connection(path).await?;
 
             self.connection_manager
-                .authorize_path(path, self.credential.clone())
+                .authorize_path(&connection, path, self.credential.clone())
                 .await?;
             let session = AmqpSession::new();
             session

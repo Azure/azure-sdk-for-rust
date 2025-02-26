@@ -98,13 +98,13 @@ impl ConnectionManager {
 
     pub(crate) async fn authorize_path(
         &self,
+        connection: &Arc<AmqpConnection>,
         url: &Url,
         credential: Arc<dyn azure_core::credentials::TokenCredential>,
     ) -> Result<AccessToken> {
         debug!("Authorizing path: {url}");
         let mut scopes = self.authorization_scopes.lock().await;
 
-        let connection = self.get_connection(url).await?;
         if !scopes.contains_key(url) {
             // Create an ephemeral session to host the authentication.
             let session = AmqpSession::new();
