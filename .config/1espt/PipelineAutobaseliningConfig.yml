@@ -123,7 +123,7 @@ pipelines:
         credscan:
           lastModifiedDate: 2025-02-14
         binskim:
-          lastModifiedDate: 2025-02-25
+          lastModifiedDate: 2025-02-26
         spotbugs:
           lastModifiedDate: 2025-02-14
   7472:
