@@ -1,233 +1,171 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-macro_rules! impl_from_external_error {
-    ($(($amqp_error:ident, $foreign_error:ty)),*) => {
-        $(
-            pub struct $amqp_error(pub $foreign_error);
+use crate::{
+    error::{AmqpDescribedError, AmqpErrorKind},
+    AmqpError,
+};
 
-            impl From<$foreign_error> for $amqp_error {
-                fn from(e: $foreign_error) -> Self {
-                    $amqp_error(e)
+pub(crate) struct Fe2o3SerializationError(pub serde_amqp::error::Error);
+impl From<serde_amqp::error::Error> for Fe2o3SerializationError {
+    fn from(e: serde_amqp::error::Error) -> Self {
+        Fe2o3SerializationError(e)
+    }
+}
+
+pub(crate) struct Fe2o3ConnectionOpenError(pub fe2o3_amqp::connection::OpenError);
+impl From<fe2o3_amqp::connection::OpenError> for Fe2o3ConnectionOpenError {
+    fn from(e: fe2o3_amqp::connection::OpenError) -> Self {
+        Fe2o3ConnectionOpenError(e)
+    }
+}
+
+pub(crate) struct Fe2o3ConnectionError(pub fe2o3_amqp::connection::Error);
+impl From<fe2o3_amqp::connection::Error> for Fe2o3ConnectionError {
+    fn from(e: fe2o3_amqp::connection::Error) -> Self {
+        Fe2o3ConnectionError(e)
+    }
+}
+
+pub(crate) struct Fe2o3ReceiverError(pub fe2o3_amqp::link::RecvError);
+impl From<fe2o3_amqp::link::RecvError> for Fe2o3ReceiverError {
+    fn from(e: fe2o3_amqp::link::RecvError) -> Self {
+        Fe2o3ReceiverError(e)
+    }
+}
+
+pub(crate) struct Fe2o3ReceiverAttachError(pub fe2o3_amqp::link::ReceiverAttachError);
+impl From<fe2o3_amqp::link::ReceiverAttachError> for Fe2o3ReceiverAttachError {
+    fn from(e: fe2o3_amqp::link::ReceiverAttachError) -> Self {
+        Fe2o3ReceiverAttachError(e)
+    }
+}
+
+pub(crate) struct Fe2o3LinkStateError(pub fe2o3_amqp::link::LinkStateError);
+impl From<fe2o3_amqp::link::LinkStateError> for Fe2o3LinkStateError {
+    fn from(e: fe2o3_amqp::link::LinkStateError) -> Self {
+        Fe2o3LinkStateError(e)
+    }
+}
+
+pub(crate) struct Fe2o3IllegalLinkStateError(pub fe2o3_amqp::link::IllegalLinkStateError);
+impl From<fe2o3_amqp::link::IllegalLinkStateError> for Fe2o3IllegalLinkStateError {
+    fn from(e: fe2o3_amqp::link::IllegalLinkStateError) -> Self {
+        Fe2o3IllegalLinkStateError(e)
+    }
+}
+
+pub(crate) struct Fe2o3ManagementError(pub fe2o3_amqp_management::error::Error);
+impl From<fe2o3_amqp_management::error::Error> for Fe2o3ManagementError {
+    fn from(e: fe2o3_amqp_management::error::Error) -> Self {
+        Fe2o3ManagementError(e)
+    }
+}
+
+pub(crate) struct Fe2o3TransportError(pub fe2o3_amqp::transport::Error);
+impl From<fe2o3_amqp::transport::Error> for Fe2o3TransportError {
+    fn from(e: fe2o3_amqp::transport::Error) -> Self {
+        Fe2o3TransportError(e)
+    }
+}
+
+// Specializations of From for common AMQP types.
+impl From<fe2o3_amqp_types::definitions::Error> for AmqpDescribedError {
+    fn from(e: fe2o3_amqp_types::definitions::Error) -> Self {
+        AmqpDescribedError::new(
+            match e.condition {
+                fe2o3_amqp_types::definitions::ErrorCondition::AmqpError(amqp_error) => {
+                    fe2o3_amqp_types::primitives::Symbol::from(&amqp_error).into()
                 }
-            }
-
-            impl From<$amqp_error> for Fe2o3AmqpError {
-                fn from(e: $amqp_error) -> Self {
-                    Fe2o3AmqpError {
-                        kind: ErrorKind::$amqp_error { source: e },
-                    }
+                fe2o3_amqp_types::definitions::ErrorCondition::ConnectionError(
+                    connection_error,
+                ) => fe2o3_amqp_types::primitives::Symbol::from(&connection_error).into(),
+                fe2o3_amqp_types::definitions::ErrorCondition::SessionError(session_error) => {
+                    fe2o3_amqp_types::primitives::Symbol::from(&session_error).into()
                 }
-            }
-
-            impl From<$foreign_error> for Fe2o3AmqpError {
-                fn from(e: $foreign_error) -> Self {
-                    Fe2o3AmqpError {
-                        kind: ErrorKind::$amqp_error {
-                            source: $amqp_error(e),
-                        },
-                    }
+                fe2o3_amqp_types::definitions::ErrorCondition::LinkError(link_error) => {
+                    fe2o3_amqp_types::primitives::Symbol::from(&link_error).into()
                 }
-            }
-
-            impl From<$amqp_error> for azure_core::Error {
-                fn from(e: $amqp_error) -> Self {
-                    Self::new(
-                        azure_core::error::ErrorKind::Other,
-                        Box::new(Fe2o3AmqpError::from(e)),
-                    )
-                }
-            }
-
-            impl std::fmt::Debug for $amqp_error {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    write!(f, "{:?}", self.0)
-                }
-            }
-        )*
-    }
-}
-
-impl_from_external_error! {
-    (AmqpSerialization, serde_amqp::error::Error),
-    (TimeError, time::error::ComponentRange),
-    (AmqpSession, fe2o3_amqp::session::Error),
-    (AmqpLinkDetach, fe2o3_amqp::link::DetachError),
-    (AmqpOpen, fe2o3_amqp::connection::OpenError),
-    (AmqpConnection, fe2o3_amqp::connection::Error),
-    (AmqpManagementAttach, fe2o3_amqp_management::error::AttachError),
-    (AmqpManagement, fe2o3_amqp_management::error::Error),
-    (AmqpBegin, fe2o3_amqp::session::BeginError),
-    (AmqpSenderAttach, fe2o3_amqp::link::SenderAttachError),
-    (AmqpReceiverAttach, fe2o3_amqp::link::ReceiverAttachError),
-    (AmqpReceiver, fe2o3_amqp::link::RecvError),
-    (AmqpIllegalLinkState, fe2o3_amqp::link::IllegalLinkStateError),
-    (AmqpSenderSend, fe2o3_amqp::link::SendError),
-    (AmqpDeliveryRejected, fe2o3_amqp::types::messaging::Rejected)
-}
-
-#[derive(Debug)]
-pub enum AmqpNotAccepted {
-    Rejected {
-        source: fe2o3_amqp_types::messaging::Rejected,
-    },
-    Released {
-        source: fe2o3_amqp_types::messaging::Released,
-    },
-    Modified {
-        source: fe2o3_amqp_types::messaging::Modified,
-    },
-}
-
-impl From<fe2o3_amqp_types::messaging::Outcome> for AmqpNotAccepted {
-    fn from(outcome: fe2o3_amqp_types::messaging::Outcome) -> Self {
-        match outcome {
-            fe2o3_amqp_types::messaging::Outcome::Accepted(_) => {
-                panic!("Accepted outcomes should not be converted to errors")
-            }
-            fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
-                AmqpNotAccepted::Rejected { source: rejected }
-            }
-            fe2o3_amqp_types::messaging::Outcome::Released(released) => {
-                AmqpNotAccepted::Released { source: released }
-            }
-            fe2o3_amqp_types::messaging::Outcome::Modified(modified) => {
-                AmqpNotAccepted::Modified { source: modified }
-            }
-        }
-    }
-}
-
-impl From<AmqpNotAccepted> for Fe2o3AmqpError {
-    fn from(e: AmqpNotAccepted) -> Self {
-        Fe2o3AmqpError {
-            kind: ErrorKind::NotAccepted { source: e },
-        }
-    }
-}
-
-pub enum ErrorKind {
-    AmqpSerialization { source: AmqpSerialization },
-    AmqpDeliveryRejected { source: AmqpDeliveryRejected },
-    NotAccepted { source: AmqpNotAccepted },
-    TimeError { source: TimeError },
-    AmqpOpen { source: AmqpOpen },
-    AmqpManagementAttach { source: AmqpManagementAttach },
-    AmqpBegin { source: AmqpBegin },
-    AmqpManagement { source: AmqpManagement },
-    AmqpConnection { source: AmqpConnection },
-    AmqpLinkDetach { source: AmqpLinkDetach },
-    AmqpSession { source: AmqpSession },
-    AmqpSenderAttach { source: AmqpSenderAttach },
-    AmqpSenderSend { source: AmqpSenderSend },
-    AmqpReceiverAttach { source: AmqpReceiverAttach },
-    AmqpReceiver { source: AmqpReceiver },
-    AmqpIllegalLinkState { source: AmqpIllegalLinkState },
-}
-
-pub struct Fe2o3AmqpError {
-    kind: ErrorKind,
-}
-
-impl From<ErrorKind> for Fe2o3AmqpError {
-    fn from(e: ErrorKind) -> Self {
-        Fe2o3AmqpError { kind: e }
-    }
-}
-
-impl std::error::Error for Fe2o3AmqpError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self.kind {
-            ErrorKind::AmqpSerialization { source } => source.0.source(),
-            ErrorKind::AmqpDeliveryRejected { source: _ } => None,
-            ErrorKind::NotAccepted { source: _ } => None,
-            ErrorKind::TimeError { source } => source.0.source(),
-            ErrorKind::AmqpOpen { source } => source.0.source(),
-            ErrorKind::AmqpManagementAttach { source } => source.0.source(),
-            ErrorKind::AmqpBegin { source } => source.0.source(),
-            ErrorKind::AmqpManagement { source } => source.0.source(),
-            ErrorKind::AmqpConnection { source } => source.0.source(),
-            ErrorKind::AmqpLinkDetach { source } => source.0.source(),
-            ErrorKind::AmqpSession { source } => source.0.source(),
-            ErrorKind::AmqpSenderAttach { source } => source.0.source(),
-            ErrorKind::AmqpSenderSend { source } => source.0.source(),
-            ErrorKind::AmqpReceiverAttach { source } => source.0.source(),
-            ErrorKind::AmqpReceiver { source } => source.0.source(),
-            ErrorKind::AmqpIllegalLinkState { source } => source.0.source(),
-        };
-        None
-    }
-}
-
-impl std::fmt::Display for Fe2o3AmqpError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.kind {
-            ErrorKind::TimeError { source } => {
-                write!(f, "Time Component Range Error {:?}", source.0)
-            }
-            ErrorKind::AmqpIllegalLinkState { source } => {
-                write!(f, "Illegal Link State Error {:?}", source.0)
-            }
-            ErrorKind::AmqpDeliveryRejected { source } => {
-                write!(f, "Delivery Rejected Error: {:?}", source.0)
-            }
-            ErrorKind::AmqpOpen { source } => {
-                write!(f, "Connection Open Error: {:?}", source.0)
-            }
-            ErrorKind::AmqpManagementAttach { source } => {
-                write!(f, "Management Attach Error: {:?}", source.0)
-            }
-            ErrorKind::AmqpLinkDetach { source } => {
-                write!(f, "Link Detach Error: {:?}", source.0)
-            }
-            ErrorKind::AmqpReceiverAttach { source } => {
-                write!(f, "Receiver attach error {:?}", source.0)
-            }
-            ErrorKind::AmqpBegin { source } => write!(f, "BeginError: {:?}", source.0),
-            ErrorKind::AmqpManagement { source } => {
-                write!(f, "Management Error: {:?}", source.0)
-            }
-            ErrorKind::AmqpConnection { source } => {
-                write!(f, "Connection : {:?}", source.0)
-            }
-            ErrorKind::AmqpSession { source } => write!(f, "Session error: {:?}", source.0),
-            ErrorKind::AmqpSenderAttach { source } => {
-                write!(f, "Sender attach error {:?}", source.0)
-            }
-            // ErrorKind::AmqpSerializationError { source } => {
-            ErrorKind::NotAccepted { source } => {
-                write!(f, "Not accepted error: {:?}", source)
-            }
-            ErrorKind::AmqpReceiver { source } => {
-                write!(f, "Receiver error: {:?}", source.0)
-            }
-            ErrorKind::AmqpSenderSend { source } => {
-                write!(f, "Sender send error {:?}", source.0)
-            }
-            ErrorKind::AmqpSerialization { source } => {
-                write!(f, "Serialization error: {:?}", source.0)
-            }
-        }
-    }
-}
-
-impl std::fmt::Debug for Fe2o3AmqpError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Fe2o3 Error: {}", self)
-    }
-}
-
-impl From<Fe2o3AmqpError> for azure_core::Error {
-    fn from(e: Fe2o3AmqpError) -> Self {
-        Self::new(azure_core::error::ErrorKind::Other, Box::new(e))
-    }
-}
-
-impl From<ErrorKind> for azure_core::Error {
-    fn from(e: ErrorKind) -> Self {
-        Self::new(
-            azure_core::error::ErrorKind::Other,
-            Box::new(Fe2o3AmqpError { kind: e }),
+                fe2o3_amqp_types::definitions::ErrorCondition::Custom(symbol) => symbol.into(),
+            },
+            e.description,
+            e.info.unwrap_or_default().into(),
         )
+    }
+}
+
+impl From<fe2o3_amqp::link::DetachError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::DetachError) -> Self {
+        match e {
+            fe2o3_amqp::link::DetachError::DetachedByRemote => {
+                Self::from(AmqpErrorKind::DetachedByRemote(None))
+            }
+            fe2o3_amqp::link::DetachError::RemoteDetachedWithError(error) => {
+                Self::from(AmqpErrorKind::DetachedByRemote(Some(error.into())))
+            }
+            fe2o3_amqp::link::DetachError::ClosedByRemote => {
+                Self::from(AmqpErrorKind::ClosedByRemote(None))
+            }
+            fe2o3_amqp::link::DetachError::RemoteClosedWithError(error) => {
+                Self::from(AmqpErrorKind::ClosedByRemote(Some(error.into())))
+            }
+            _ => Self::from(AmqpErrorKind::DetachError(Box::new(e))),
+        }
+    }
+}
+
+impl From<Fe2o3LinkStateError> for azure_core::Error {
+    fn from(e: Fe2o3LinkStateError) -> Self {
+        AmqpErrorKind::LinkStateError(e.0.into()).into()
+    }
+}
+
+impl From<fe2o3_amqp::link::LinkStateError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::LinkStateError) -> Self {
+        match e {
+            fe2o3_amqp::link::LinkStateError::RemoteClosedWithError(e) => {
+                AmqpErrorKind::ClosedByRemote(Some(e.into())).into()
+            }
+            fe2o3_amqp::link::LinkStateError::RemoteDetachedWithError(e) => {
+                AmqpErrorKind::DetachedByRemote(Some(e.into())).into()
+            }
+            fe2o3_amqp::link::LinkStateError::RemoteClosed => {
+                AmqpErrorKind::ClosedByRemote(None).into()
+            }
+            fe2o3_amqp::link::LinkStateError::RemoteDetached => {
+                AmqpErrorKind::DetachedByRemote(None).into()
+            }
+            _ => AmqpErrorKind::LinkStateError(e.into()).into(),
+        }
+    }
+}
+
+impl From<Fe2o3IllegalLinkStateError> for azure_core::Error {
+    fn from(e: Fe2o3IllegalLinkStateError) -> Self {
+        AmqpErrorKind::LinkStateError(e.0.into()).into()
+    }
+}
+
+impl From<fe2o3_amqp::link::IllegalLinkStateError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::IllegalLinkStateError) -> Self {
+        AmqpError::from(AmqpErrorKind::ConnectionDropped(Box::new(e)))
+    }
+}
+
+impl From<Fe2o3TransportError> for azure_core::Error {
+    fn from(e: Fe2o3TransportError) -> Self {
+        match e.0 {
+            fe2o3_amqp::transport::Error::Io(e) => azure_core::Error::from(e),
+            fe2o3_amqp::transport::Error::IdleTimeoutElapsed => {
+                AmqpError::from(AmqpErrorKind::IdleTimeoutElapsed(Box::new(e.0))).into()
+            }
+            fe2o3_amqp::transport::Error::FramingError => {
+                AmqpError::from(AmqpErrorKind::FramingError(Box::new(e.0))).into()
+            }
+            fe2o3_amqp::transport::Error::NotImplemented(_)
+            | fe2o3_amqp::transport::Error::DecodeError(_) => {
+                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e.0))).into()
+            }
+        }
     }
 }

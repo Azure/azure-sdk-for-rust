@@ -76,8 +76,8 @@ cargo_metadata = "0.18.1"
 clap = { version = "4.4.16", features = ["derive"] }
 dyn-clone = "1.0"
 fe2o3-amqp = { version = "0.12", features = ["native-tls", "tracing", "uuid"] }
-fe2o3-amqp-ext = { version = "0.12", features = [] }
-fe2o3-amqp-management = { version = "0.12" }
+fe2o3-amqp-ext = { version = "0.12" }
+fe2o3-amqp-management = { version = "0.12", features = ["tracing"] }
 fe2o3-amqp-cbs = { version = "0.12" }
 fe2o3-amqp-types = { version = "0.12" }
 futures = "0.3"

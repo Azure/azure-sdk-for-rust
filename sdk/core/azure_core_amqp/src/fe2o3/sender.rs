@@ -1,13 +1,15 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::error::{
-    AmqpDeliveryRejected, AmqpLinkDetach, AmqpNotAccepted, AmqpSenderAttach, AmqpSenderSend,
-    Fe2o3AmqpError,
+use crate::{
+    error::{AmqpDescribedError, AmqpError, AmqpErrorKind},
+    messaging::{AmqpMessage, AmqpTarget},
+    sender::{
+        AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis, AmqpSenderOptions, SendModification,
+    },
+    session::AmqpSession,
+    AmqpOrderedMap, AmqpSymbol, AmqpValue,
 };
-use crate::messaging::{AmqpMessage, AmqpTarget};
-use crate::sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions};
-use crate::session::AmqpSession;
 use azure_core::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
@@ -17,6 +19,21 @@ use tracing::{info, warn};
 #[derive(Default)]
 pub(crate) struct Fe2o3AmqpSender {
     sender: OnceLock<Mutex<fe2o3_amqp::Sender>>,
+}
+
+impl Fe2o3AmqpSender {
+    fn could_not_set_message_sender() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "Could not set message sender",
+        )
+    }
+    fn could_not_get_message_sender() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::Amqp,
+            "Could not get message sender",
+        )
+    }
 }
 
 impl AmqpSenderApis for Fe2o3AmqpSender {
@@ -66,32 +83,27 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .target(target.into())
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
-            .map_err(AmqpSenderAttach::from)?;
-        self.sender.set(Mutex::new(sender)).map_err(|_| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Could not set message sender.",
-            )
-        })?;
+            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
+        self.sender
+            .set(Mutex::new(sender))
+            .map_err(|_| Self::could_not_set_message_sender())?;
         Ok(())
     }
 
     async fn detach(mut self) -> Result<()> {
-        let sender = self.sender.take().ok_or_else(|| {
-            azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "Message Sender not set.",
-            )
-        })?;
+        let sender = self
+            .sender
+            .take()
+            .ok_or(Self::could_not_get_message_sender())?;
         let res = sender
             .into_inner()
             .detach()
             .await
-            .map_err(|e| AmqpLinkDetach::from(e.1));
+            .map_err(|e| AmqpError::from(e.1));
         match res {
             Ok(_) => Ok(()),
-            Err(e) => match e.0 {
-                fe2o3_amqp::link::DetachError::ClosedByRemote => {
+            Err(e) => match e.kind() {
+                AmqpErrorKind::ClosedByRemote(_) => {
                     info!("Error detaching sender: {:?}", e);
                     Ok(())
                 }
@@ -107,12 +119,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         Ok(self
             .sender
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message Sender not set.",
-                )
-            })?
+            .ok_or(Self::could_not_get_message_sender())?
             .lock()
             .await
             .max_message_size())
@@ -122,7 +129,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         &self,
         message: impl Into<AmqpMessage> + std::fmt::Debug,
         options: Option<AmqpSendOptions>,
-    ) -> Result<()> {
+    ) -> Result<AmqpSendOutcome> {
         let message: AmqpMessage = message.into();
         let message: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
@@ -142,25 +149,35 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         let outcome = self
             .sender
             .get()
-            .ok_or_else(|| {
-                azure_core::Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "Message Sender not set.",
-                )
-            })?
+            .ok_or(Self::could_not_get_message_sender())?
             .lock()
             .await
             .borrow_mut()
             .send(sendable)
             .await
-            .map_err(AmqpSenderSend::from)?;
+            .map_err(AmqpError::from)?;
 
-        match outcome {
-            fe2o3_amqp_types::messaging::Outcome::Accepted(_) => Ok(()),
+        Ok(match outcome {
+            fe2o3_amqp_types::messaging::Outcome::Accepted(_) => AmqpSendOutcome::Accepted,
             fe2o3_amqp_types::messaging::Outcome::Rejected(rejected) => {
-                Err(AmqpDeliveryRejected(rejected).into())
+                AmqpSendOutcome::Rejected(rejected.error.map(AmqpDescribedError::from))
             }
-            _ => Err(Fe2o3AmqpError::from(AmqpNotAccepted::from(outcome)).into()),
+            fe2o3_amqp_types::messaging::Outcome::Released(_) => AmqpSendOutcome::Released,
+            fe2o3_amqp_types::messaging::Outcome::Modified(m) => {
+                AmqpSendOutcome::Modified(m.into())
+            }
+        })
+    }
+}
+
+impl From<fe2o3_amqp_types::messaging::Modified> for SendModification {
+    fn from(m: fe2o3_amqp_types::messaging::Modified) -> Self {
+        Self {
+            delivery_failed: m.delivery_failed,
+            undeliverable_here: m.undeliverable_here,
+            message_annotations: m
+                .message_annotations
+                .map(AmqpOrderedMap::<AmqpSymbol, AmqpValue>::from),
         }
     }
 }
@@ -169,6 +186,48 @@ impl Fe2o3AmqpSender {
     pub fn new() -> Self {
         Self {
             sender: OnceLock::new(),
+        }
+    }
+}
+
+impl From<fe2o3_amqp::link::SendError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::SendError) -> Self {
+        match e {
+            fe2o3_amqp::link::SendError::LinkStateError(link_state_error) => {
+                AmqpError::from(link_state_error)
+            }
+            fe2o3_amqp::link::SendError::Detached(detach_error) => AmqpError::from(detach_error),
+            fe2o3_amqp::link::SendError::NonTerminalDeliveryState
+            | fe2o3_amqp::link::SendError::IllegalDeliveryState
+            | fe2o3_amqp::link::SendError::MessageEncodeError => {
+                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e)))
+            }
+        }
+    }
+}
+
+impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
+    fn from(e: fe2o3_amqp::link::SenderAttachError) -> Self {
+        match e {
+            fe2o3_amqp::link::SenderAttachError::RemoteClosedWithError(e) => {
+                AmqpErrorKind::ClosedByRemote(Some(e.into())).into()
+            }
+            fe2o3_amqp::link::SenderAttachError::IllegalSessionState
+            | fe2o3_amqp::link::SenderAttachError::IllegalState => {
+                AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
+            }
+            fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName
+            | fe2o3_amqp::link::SenderAttachError::NonAttachFrameReceived => todo!(),
+            fe2o3_amqp::link::SenderAttachError::ExpectImmediateDetach
+            | fe2o3_amqp::link::SenderAttachError::IncomingTargetIsNone => todo!(),
+            fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented
+            | fe2o3_amqp::link::SenderAttachError::SndSettleModeNotSupported
+            | fe2o3_amqp::link::SenderAttachError::RcvSettleModeNotSupported
+            | fe2o3_amqp::link::SenderAttachError::TargetAddressIsNoneWhenDynamicIsTrue
+            | fe2o3_amqp::link::SenderAttachError::SourceAddressIsSomeWhenDynamicIsTrue
+            | fe2o3_amqp::link::SenderAttachError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => {
+                AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
+            }
         }
     }
 }

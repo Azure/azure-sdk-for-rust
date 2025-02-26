@@ -1,12 +1,20 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::value::{
-    AmqpDescribed, AmqpDescriptor, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue,
+use crate::{
+    error::AmqpErrorKind,
+    value::{
+        AmqpDescribed, AmqpDescriptor, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp,
+        AmqpValue,
+    },
+    AmqpError,
 };
 use serde_amqp::primitives::Timestamp;
 use serde_bytes::ByteBuf;
 use std::time::UNIX_EPOCH;
+use typespec::error::ErrorKind;
+
+use super::error::Fe2o3SerializationError;
 
 impl From<fe2o3_amqp_types::primitives::Symbol> for AmqpSymbol {
     fn from(s: fe2o3_amqp_types::primitives::Symbol) -> AmqpSymbol {
@@ -525,6 +533,24 @@ impl From<fe2o3_amqp_types::definitions::ReceiverSettleMode> for crate::Receiver
             fe2o3_amqp_types::definitions::ReceiverSettleMode::Second => {
                 crate::ReceiverSettleMode::Second
             }
+        }
+    }
+}
+
+impl From<Fe2o3SerializationError> for azure_core::Error {
+    fn from(err: Fe2o3SerializationError) -> Self {
+        match err.0 {
+            serde_amqp::Error::Message(m) => azure_core::Error::message(ErrorKind::Amqp, m),
+            serde_amqp::Error::Io(error) => azure_core::Error::new(ErrorKind::Io, error),
+            serde_amqp::Error::InvalidFormatCode
+            | serde_amqp::Error::InvalidUtf8Encoding
+            | serde_amqp::Error::SequenceLengthMismatch
+            | serde_amqp::Error::InvalidLength
+            | serde_amqp::Error::InvalidValue
+            | serde_amqp::Error::IsDescribedType => azure_core::Error::new(
+                ErrorKind::Amqp,
+                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(err.0))),
+            ),
         }
     }
 }

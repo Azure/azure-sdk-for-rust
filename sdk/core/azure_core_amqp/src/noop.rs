@@ -11,7 +11,7 @@ use super::{
         DeliveryTag,
     },
     receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
-    sender::{AmqpSendOptions, AmqpSenderApis, AmqpSenderOptions},
+    sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis, AmqpSenderOptions},
     session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
@@ -164,7 +164,7 @@ impl AmqpSenderApis for NoopAmqpSender {
         &self,
         message: impl Into<AmqpMessage>,
         options: Option<AmqpSendOptions>,
-    ) -> Result<()> {
+    ) -> Result<AmqpSendOutcome> {
         unimplemented!();
     }
 }

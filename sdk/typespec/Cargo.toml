@@ -24,3 +24,4 @@ thiserror.workspace = true
 default = ["http", "json"]
 http = ["dep:http-types"]
 json = ["dep:serde_json"]
+amqp = []

@@ -292,6 +292,7 @@ mod tests {
 
     #[tokio::test]
     async fn amqp_connection_close_with_error() {
+        tracing_subscriber::fmt::init();
         let address = std::env::var("TEST_BROKER_ADDRESS");
         if address.is_ok() {
             let connection = AmqpConnection::new();
@@ -310,6 +311,7 @@ mod tests {
             match res {
                 Ok(_) => {}
                 Err(err) => {
+                    println!("Error: {:?}", err);
                     assert!(err.to_string().contains("Internal error."));
                 }
             }
