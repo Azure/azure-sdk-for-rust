@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use azure_core_test::recorded;
-use azure_identity::DefaultAzureCredentialBuilder;
-use azure_storage_blob::{BlobBlobClientGetPropertiesOptions, BlobClient, BlobClientOptions};
+use azure_identity::DefaultAzureCredential;
+use azure_storage_blob::{BlobBlobClientGetPropertiesOptions, BlobClient};
 use std::{env, error::Error};
 
 #[recorded::test(live)]
@@ -12,7 +12,7 @@ async fn test_get_blob_properties() -> Result<(), Box<dyn Error>> {
     let storage_account_name = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Failed to get environment variable: AZURE_STORAGE_ACCOUNT_NAME");
     let endpoint = format!("https://{}.blob.core.windows.net/", storage_account_name);
-    let credential = DefaultAzureCredentialBuilder::default().build()?;
+    let credential = DefaultAzureCredential::new()?;
 
     // Act
     let blob_client = BlobClient::new(
@@ -20,7 +20,7 @@ async fn test_get_blob_properties() -> Result<(), Box<dyn Error>> {
         String::from("testcontainer"),
         String::from("test_blob.txt"),
         credential,
-        Some(BlobClientOptions::default()),
+        None,
     )?;
     blob_client
         .get_blob_properties(Some(BlobBlobClientGetPropertiesOptions::default()))
@@ -36,7 +36,7 @@ async fn test_get_blob_properties_invalid_container() -> Result<(), Box<dyn Erro
     let storage_account_name = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Failed to get environment variable: AZURE_STORAGE_ACCOUNT_NAME");
     let endpoint = format!("https://{}.blob.core.windows.net/", storage_account_name);
-    let credential = DefaultAzureCredentialBuilder::default().build()?;
+    let credential = DefaultAzureCredential::new()?;
 
     // Act
     let blob_client = BlobClient::new(
@@ -44,7 +44,7 @@ async fn test_get_blob_properties_invalid_container() -> Result<(), Box<dyn Erro
         String::from("missingcontainer"),
         String::from("test_blob.txt"),
         credential,
-        Some(BlobClientOptions::default()),
+        None,
     )?;
     let response = blob_client
         .get_blob_properties(Some(BlobBlobClientGetPropertiesOptions::default()))

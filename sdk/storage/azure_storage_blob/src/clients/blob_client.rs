@@ -63,7 +63,6 @@ impl BlobClient {
             .get_properties(options)
             .await?;
 
-        // let blob_properties: Option<BlobProperties> = response.headers().get_optional()?;
         let blob_properties: BlobProperties = response.headers().get()?;
         Ok(blob_properties)
     }
