@@ -6,7 +6,7 @@ use std::borrow::BorrowMut;
 use crate::{
     error::AmqpErrorKind,
     fe2o3::error::Fe2o3ManagementError,
-    management::{error::AmqpManagementError, AmqpManagementApis},
+    management::AmqpManagementApis,
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
     AmqpError,
@@ -135,8 +135,8 @@ impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpError {
                 AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e))),
             ),
 
-            fe2o3_amqp_management::error::Error::Status(s) => Ok(AmqpError::from(
-                AmqpErrorKind::from(AmqpManagementError::HttpStatusCode(
+            fe2o3_amqp_management::error::Error::Status(s) => {
+                Ok(AmqpError::from(AmqpErrorKind::ManagementStatusCode(
                     azure_core::StatusCode::try_from(s.code.0.get()).map_err(|_| {
                         azure_core::Error::message(
                             azure_core::error::ErrorKind::DataConversion,
@@ -144,9 +144,8 @@ impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpError {
                         )
                     })?,
                     s.description.clone(),
-                )),
-            )),
-
+                )))
+            }
             fe2o3_amqp_management::error::Error::Send(s) => Ok(AmqpError::from(s)),
             fe2o3_amqp_management::error::Error::Recv(r) => Ok(AmqpError::from(r)),
             fe2o3_amqp_management::error::Error::Disposition(d) => Ok(AmqpError::from(d)),

@@ -1,11 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-pub use crate::connection::error::AmqpConnectionError;
-pub use crate::management::error::AmqpManagementError;
-pub use crate::receiver::error::AmqpReceiverError;
 pub use crate::sender::error::AmqpSenderError;
-pub use crate::session::error::AmqpSessionError;
 use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 
 /// Type of AMQP error.
@@ -21,12 +17,18 @@ pub enum AmqpErrorKind {
 
     /// Link State error.
     LinkStateError(Box<dyn std::error::Error + Send + Sync>),
+
+    FramingError(Box<dyn std::error::Error + Send + Sync>),
+    IdleTimeoutElapsed(Box<dyn std::error::Error + Send + Sync>),
+
+    /// Transfer Limit Exceeded
+    TransferLimitExceeded(Box<dyn std::error::Error + Send + Sync>),
+
+    /// Management Status code
+    ManagementStatusCode(azure_core::StatusCode, Option<String>),
+
     DetachError(Box<dyn std::error::Error + Send + Sync>),
-    ConnectionError(AmqpConnectionError),
-    SessionError(AmqpSessionError),
-    ManagementError(AmqpManagementError),
     SenderError(AmqpSenderError),
-    ReceiverError(AmqpReceiverError),
     TransportImplementationError(Box<dyn std::error::Error + Send + Sync>),
 }
 
@@ -86,12 +88,12 @@ impl std::error::Error for AmqpError {
             | AmqpErrorKind::DetachError(s)
             | AmqpErrorKind::LinkStateError(s)
             | AmqpErrorKind::ConnectionDropped(s) => Some(s.as_ref()),
-            AmqpErrorKind::ManagementError(e) => e.source(),
             AmqpErrorKind::SenderError(e) => e.source(),
-            AmqpErrorKind::ReceiverError(e) => e.source(),
-            AmqpErrorKind::SessionError(_) => None,
-            AmqpErrorKind::ConnectionError(e) => e.source(),
+            AmqpErrorKind::ManagementStatusCode(_, _) => None,
             AmqpErrorKind::ClosedByRemote(_) | AmqpErrorKind::DetachedByRemote(_) => None,
+            AmqpErrorKind::TransferLimitExceeded(e) => Some(e.as_ref()),
+            AmqpErrorKind::FramingError(e) => Some(e.as_ref()),
+            AmqpErrorKind::IdleTimeoutElapsed(e) => Some(e.as_ref()),
         }
     }
 }
@@ -99,23 +101,25 @@ impl std::error::Error for AmqpError {
 impl std::fmt::Display for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
+            AmqpErrorKind::ManagementStatusCode(status_code, d) => {
+                if let Some(d) = d {
+                    write!(
+                        f,
+                        "Management API returned status code: {} ({})",
+                        status_code, d
+                    )
+                } else {
+                    write!(f, "Management API returned status code: {}", status_code,)
+                }
+            }
             AmqpErrorKind::DetachedByRemote(err) => {
                 write!(f, "Remote detached with error: {:?}", err)
             }
             AmqpErrorKind::ClosedByRemote(err) => {
                 write!(f, "Remote closed with error: {:?}", err)
             }
-            AmqpErrorKind::ConnectionError(err) => {
-                write!(f, "AMQP Connection Error: {} ", err)
-            }
             AmqpErrorKind::DetachError(err) => {
                 write!(f, "AMQP Detach Error: {} ", err)
-            }
-            AmqpErrorKind::SessionError(err) => {
-                write!(f, "AMQP Session Error: {} ", err)
-            }
-            AmqpErrorKind::ManagementError(err) => {
-                write!(f, "AMQP Management Error: {} ", err)
             }
             AmqpErrorKind::TransportImplementationError(s) => {
                 write!(f, "Transport Implementation Error: {}", s)
@@ -123,14 +127,20 @@ impl std::fmt::Display for AmqpError {
             AmqpErrorKind::ConnectionDropped(s) => {
                 write!(f, "Connection dropped: {}", s)
             }
+            AmqpErrorKind::FramingError(s) => {
+                write!(f, "Connection Framing error: {}", s)
+            }
+            AmqpErrorKind::IdleTimeoutElapsed(s) => {
+                write!(f, "Connection Idle Timeout elapsed: {}", s)
+            }
             AmqpErrorKind::SenderError(err) => {
                 write!(f, "AMQP Sender Error: {} ", err)
             }
-            AmqpErrorKind::ReceiverError(err) => {
-                write!(f, "AMQP Receiver Error: {} ", err)
-            }
             AmqpErrorKind::LinkStateError(err) => {
                 write!(f, "AMQP Link State Error: {} ", err)
+            }
+            AmqpErrorKind::TransferLimitExceeded(e) => {
+                write!(f, "AMQP Transfer Limit Exceeded: {e}")
             }
         }
     }

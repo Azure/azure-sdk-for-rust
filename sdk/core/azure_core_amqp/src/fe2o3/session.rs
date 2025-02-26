@@ -3,7 +3,7 @@
 
 use crate::{
     connection::AmqpConnection,
-    error::{AmqpErrorKind, AmqpSessionError},
+    error::AmqpErrorKind,
     session::{AmqpSessionApis, AmqpSessionOptions},
     AmqpError,
 };
@@ -155,7 +155,7 @@ impl From<fe2o3_amqp::session::BeginError> for AmqpError {
                 AmqpErrorKind::ClosedByRemote(Some(error.into())).into()
             }
             fe2o3_amqp::session::BeginError::LocalChannelMaxReached => {
-                AmqpErrorKind::SessionError(AmqpSessionError::LocalChannelMaxReached).into()
+                AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }
         }
     }

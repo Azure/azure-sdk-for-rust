@@ -97,41 +97,6 @@ impl AmqpSession {
     }
 }
 
-pub(crate) mod error {
-    use crate::error::AmqpErrorKind;
-
-    pub enum AmqpSessionError {
-        SessionImplementationError(Box<dyn std::error::Error + Send + Sync>),
-
-        /// Channel max reached
-        LocalChannelMaxReached,
-    }
-
-    impl std::fmt::Display for AmqpSessionError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                AmqpSessionError::SessionImplementationError(e) => {
-                    write!(f, "Session Implementation Error: {}", e.as_ref())
-                }
-                AmqpSessionError::LocalChannelMaxReached => {
-                    write!(f, "Local channel-max reached")
-                }
-            }
-        }
-    }
-
-    impl std::fmt::Debug for AmqpSessionError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "AmqpSessionError: {}", self)
-        }
-    }
-    impl From<AmqpSessionError> for AmqpErrorKind {
-        fn from(e: AmqpSessionError) -> Self {
-            AmqpErrorKind::SessionError(e)
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

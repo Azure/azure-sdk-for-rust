@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{
-    error::{AmqpErrorKind, AmqpReceiverError},
+    error::AmqpErrorKind,
     fe2o3::error::{Fe2o3IllegalLinkStateError, Fe2o3ReceiverError},
     messaging::{AmqpDelivery, AmqpSource},
     receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
@@ -246,7 +246,7 @@ impl From<fe2o3_amqp::link::RecvError> for AmqpError {
                 AmqpErrorKind::LinkStateError(Box::new(e)).into()
             }
             fe2o3_amqp::link::RecvError::TransferLimitExceeded => {
-                AmqpErrorKind::ReceiverError(AmqpReceiverError::TransferLimitExceeded).into()
+                AmqpErrorKind::TransferLimitExceeded(Box::new(e)).into()
             }
             // cspell: ignore Imeplemented
             fe2o3_amqp::link::RecvError::DeliveryIdIsNone

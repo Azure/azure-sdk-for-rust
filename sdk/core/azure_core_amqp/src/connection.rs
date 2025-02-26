@@ -79,47 +79,6 @@ impl AmqpConnection {
     }
 }
 
-pub(crate) mod error {
-
-    use crate::{error::AmqpErrorKind, AmqpError};
-
-    pub enum AmqpConnectionError {
-        /// Idle timeout elapsed
-        IdleTimeoutElapsed,
-
-        /// Framing error
-        FramingError,
-    }
-
-    impl From<AmqpConnectionError> for AmqpErrorKind {
-        fn from(e: AmqpConnectionError) -> Self {
-            AmqpErrorKind::ConnectionError(e)
-        }
-    }
-
-    impl From<AmqpConnectionError> for azure_core::Error {
-        fn from(e: AmqpConnectionError) -> Self {
-            AmqpError::from(AmqpErrorKind::from(e)).into()
-        }
-    }
-    impl std::fmt::Display for AmqpConnectionError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Self::FramingError => write!(f, "Framing error"),
-                Self::IdleTimeoutElapsed => write!(f, "Idle timeout elapsed"),
-            }
-        }
-    }
-
-    impl std::fmt::Debug for AmqpConnectionError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "AmqpConnectionError: {}", self)
-        }
-    }
-
-    impl std::error::Error for AmqpConnectionError {}
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

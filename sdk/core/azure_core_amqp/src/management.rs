@@ -24,60 +24,6 @@ pub trait AmqpManagementApis {
         application_properties: AmqpOrderedMap<String, AmqpValue>,
     ) -> impl std::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>>;
 }
-pub(crate) mod error {
-    use std::fmt::Debug;
-
-    use crate::{error::AmqpErrorKind, AmqpError};
-
-    pub enum AmqpManagementError {
-        /// An error has occurred with Sending the management request.
-        HttpStatusCode(azure_core::StatusCode, Option<String>),
-    }
-
-    impl std::fmt::Display for AmqpManagementError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match &self {
-                AmqpManagementError::HttpStatusCode(status_code, d) => {
-                    if let Some(d) = d {
-                        f.write_fmt(format_args!(
-                            "Management HTTP Status code: {} ({})",
-                            status_code, d
-                        ))
-                    } else {
-                        f.write_fmt(format_args!("Management HTTP Status code: {}", status_code,))
-                    }
-                }
-            }
-        }
-    }
-
-    impl Debug for AmqpManagementError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "AmqpManagementError: {}", self)?;
-            Ok(())
-        }
-    }
-
-    impl std::error::Error for AmqpManagementError {
-        fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-            match self {
-                AmqpManagementError::HttpStatusCode(_, _) => None,
-            }
-        }
-    }
-
-    impl From<AmqpManagementError> for AmqpErrorKind {
-        fn from(e: AmqpManagementError) -> Self {
-            AmqpErrorKind::ManagementError(e)
-        }
-    }
-
-    impl From<AmqpManagementError> for azure_core::Error {
-        fn from(e: AmqpManagementError) -> Self {
-            AmqpError::from(AmqpErrorKind::from(e)).into()
-        }
-    }
-}
 
 pub struct AmqpManagement {
     implementation: ManagementImplementation,

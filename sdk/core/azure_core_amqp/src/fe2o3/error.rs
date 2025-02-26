@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{
-    error::{AmqpConnectionError, AmqpDescribedError, AmqpErrorKind},
+    error::{AmqpDescribedError, AmqpErrorKind},
     AmqpError,
 };
 
@@ -157,10 +157,10 @@ impl From<Fe2o3TransportError> for azure_core::Error {
         match e.0 {
             fe2o3_amqp::transport::Error::Io(e) => azure_core::Error::from(e),
             fe2o3_amqp::transport::Error::IdleTimeoutElapsed => {
-                AmqpError::from(AmqpErrorKind::from(AmqpConnectionError::IdleTimeoutElapsed)).into()
+                AmqpError::from(AmqpErrorKind::IdleTimeoutElapsed(Box::new(e.0))).into()
             }
             fe2o3_amqp::transport::Error::FramingError => {
-                AmqpError::from(AmqpErrorKind::from(AmqpConnectionError::FramingError)).into()
+                AmqpError::from(AmqpErrorKind::FramingError(Box::new(e.0))).into()
             }
             fe2o3_amqp::transport::Error::NotImplemented(_)
             | fe2o3_amqp::transport::Error::DecodeError(_) => {

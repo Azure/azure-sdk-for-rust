@@ -135,35 +135,6 @@ impl AmqpReceiver {
     }
 }
 
-pub(crate) mod error {
-    use crate::error::AmqpErrorKind;
-
-    /// Receiver Errors
-    #[derive(Debug)]
-    pub enum AmqpReceiverError {
-        /// The peer sent more message transfers than currently allowed on the link.
-        TransferLimitExceeded,
-    }
-
-    impl std::fmt::Display for AmqpReceiverError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                AmqpReceiverError::TransferLimitExceeded => f.write_str(
-                    "The peer sent more message transfers than currently allowed on the link",
-                ),
-            }
-        }
-    }
-
-    impl std::error::Error for AmqpReceiverError {}
-
-    impl From<AmqpReceiverError> for azure_core::Error {
-        fn from(e: AmqpReceiverError) -> Self {
-            AmqpErrorKind::ReceiverError(e).into()
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
