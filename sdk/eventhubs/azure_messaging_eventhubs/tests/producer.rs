@@ -3,7 +3,7 @@
 
 use azure_core::StatusCode;
 use azure_core_amqp::{AmqpError, AmqpList, AmqpMessageProperties};
-use azure_core_test::{recorded, TestContext};
+use azure_core_test::recorded;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
 use std::{env, error::Error};
@@ -147,7 +147,7 @@ async fn get_partition_properties() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-async fn create_eventdata(_ctx: TestContext) -> Result<(), Box<dyn Error>> {
+fn create_eventdata() -> Result<(), Box<dyn Error>> {
     common::setup();
     let data = b"hello world";
     let ed1 = azure_messaging_eventhubs::models::EventData::builder()
