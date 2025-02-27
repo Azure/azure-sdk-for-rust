@@ -495,7 +495,7 @@ impl ProducerClient {
         }
         Ok(sender_instances
             .get(path)
-            .ok_or(EventHubsError::from(ErrorKind::MissingMessageSender))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingMessageSender))?
             .sender
             .clone())
     }
