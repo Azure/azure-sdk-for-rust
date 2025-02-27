@@ -146,7 +146,7 @@ async fn get_partition_properties() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test]
+#[test]
 async fn create_eventdata(_ctx: TestContext) -> Result<(), Box<dyn Error>> {
     common::setup();
     let data = b"hello world";
