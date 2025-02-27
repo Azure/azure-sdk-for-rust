@@ -64,7 +64,7 @@ pub struct ProducerClient {
     connection_manager: ConnectionManager,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
     eventhub: String,
-    url: Url,
+    endpoint: Url,
     application_id: Option<String>,
 
     /// The options used to configure retry operations.
@@ -89,7 +89,7 @@ pub struct SendMessageOptions {}
 
 impl ProducerClient {
     pub(crate) fn new(
-        url: Url,
+        endpoint: Url,
         eventhub: String,
         credential: Arc<dyn azure_core::credentials::TokenCredential>,
         application_id: Option<String>,
@@ -100,13 +100,13 @@ impl ProducerClient {
             sender_instances: Mutex::new(HashMap::new()),
             mgmt_client: Mutex::new(OnceLock::new()),
             connection_manager: ConnectionManager::new(
-                url.clone(),
+                endpoint.clone(),
                 application_id.clone(),
                 custom_endpoint.clone(),
             ),
             credential: credential.clone(),
             eventhub,
-            url,
+            endpoint,
             retry_options,
             application_id,
         }
@@ -190,7 +190,7 @@ impl ProducerClient {
         message: impl Into<AmqpMessage> + Debug,
         #[allow(unused_variables)] options: Option<SendMessageOptions>,
     ) -> Result<()> {
-        let sender = self.ensure_sender(&self.url).await.unwrap();
+        let sender = self.ensure_sender(&self.endpoint).await.unwrap();
 
         let outcome = sender
             .lock()
@@ -406,7 +406,7 @@ impl ProducerClient {
     }
 
     pub(crate) fn base_url(&self) -> &Url {
-        &self.url
+        &self.endpoint
     }
 
     async fn ensure_connection(&self) -> Result<()> {
@@ -432,7 +432,7 @@ impl ProducerClient {
         session.begin(connection.as_ref(), None).await?;
         trace!("Session created.");
 
-        let management_path = self.url.to_string() + "/$management";
+        let management_path = self.endpoint.to_string() + "/$management";
         let management_path = Url::parse(&management_path)?;
         let access_token = self
             .connection_manager

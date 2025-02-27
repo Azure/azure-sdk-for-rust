@@ -37,7 +37,7 @@ pub struct ConsumerClient {
     //    connection: OnceLock<AmqpConnection>,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
     eventhub: String,
-    url: Url,
+    endpoint: Url,
     /// The instance ID to set.
     instance_id: Option<String>,
     /// The retry options to set.
@@ -110,7 +110,7 @@ impl ConsumerClient {
             ),
             credential,
             eventhub: eventhub_name,
-            url,
+            endpoint: url,
         })
     }
 
@@ -224,10 +224,10 @@ impl ConsumerClient {
 
         trace!(
             "Opening receiver on url {} partition {partition_id}.",
-            self.url
+            self.endpoint
         );
 
-        let source_url = format!("{}/Partitions/{}", self.url, partition_id);
+        let source_url = format!("{}/Partitions/{}", self.endpoint, partition_id);
         let source_url = Url::parse(&source_url)?;
 
         let connection = self.connection_manager.get_connection().await?;
@@ -393,7 +393,7 @@ impl ConsumerClient {
         session.begin(connection.as_ref(), None).await?;
         trace!("Session created.");
 
-        let management_path = self.url.to_string() + "/$management";
+        let management_path = self.endpoint.to_string() + "/$management";
         let management_path = Url::parse(&management_path)?;
 
         let access_token = self
