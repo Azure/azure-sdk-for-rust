@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::{clients::BlobContainerClient, BlobClientOptions};
+use azure_storage_blob::{clients::ContainerClient, BlobClientOptions};
 use std::{env, error::Error};
 
 #[recorded::test]
@@ -19,7 +19,7 @@ async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     );
 
     // Act
-    let container_client = BlobContainerClient::new(
+    let container_client = ContainerClient::new(
         &endpoint,
         String::from("testcontainer11"),
         recording.credential(),

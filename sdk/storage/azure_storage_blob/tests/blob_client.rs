@@ -4,7 +4,7 @@
 use azure_core::{headers::HeaderName, Bytes, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
-    clients::{BlobClient, BlobContainerClient},
+    clients::{BlobClient, ContainerClient},
     models::{BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions, BlobType},
     BlobClientOptions,
 };
@@ -24,7 +24,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     );
 
     // Act
-    let container_client = BlobContainerClient::new(
+    let container_client = ContainerClient::new(
         &endpoint,
         String::from("testcontainer1"),
         recording.credential(),
@@ -113,7 +113,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     );
 
     // Act
-    let container_client = BlobContainerClient::new(
+    let container_client = ContainerClient::new(
         &endpoint,
         String::from("testcontainer2"),
         recording.credential(),
@@ -168,7 +168,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     );
 
     // Act
-    let container_client = BlobContainerClient::new(
+    let container_client = ContainerClient::new(
         &endpoint,
         String::from("testcontainer3"),
         recording.credential(),
@@ -215,7 +215,7 @@ async fn test_upload_blob_overwrite(ctx: TestContext) -> Result<(), Box<dyn Erro
     );
 
     // Act
-    let container_client = BlobContainerClient::new(
+    let container_client = ContainerClient::new(
         &endpoint,
         String::from("testcontainer4"),
         recording.credential(),
