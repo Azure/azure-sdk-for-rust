@@ -45,7 +45,8 @@ pub struct ConsumerClient {
     retry_options: Option<RetryOptions>,
 }
 
-// Clippy complains if a method has too many parameters, so we put some of the functions
+// Clippy complains if a method has too many parameters, so we put some of the
+// parameters into a private client options structure.
 struct ConsumerClientOptions {
     application_id: Option<String>,
     instance_id: Option<String>,
