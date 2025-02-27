@@ -314,7 +314,7 @@ impl ConsumerClient {
             .lock()
             .await
             .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
+            .ok_or(EventHubsError::from(ErrorKind::MissingManagementClient))?
             .get_eventhub_properties(self.eventhub.as_str())
             .await
     }
@@ -369,7 +369,7 @@ impl ConsumerClient {
             .lock()
             .await
             .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
+            .ok_or(EventHubsError::from(ErrorKind::MissingManagementClient))?
             .get_eventhub_partition_properties(self.eventhub.as_str(), partition_id)
             .await
     }
@@ -431,7 +431,7 @@ impl ConsumerClient {
         }
         let rv = session_instances
             .get(partition_id)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingSession))?
+            .ok_or(EventHubsError::from(ErrorKind::MissingSession))?
             .clone();
         debug!("Cloning session for partition {:?}", partition_id);
         Ok(rv)

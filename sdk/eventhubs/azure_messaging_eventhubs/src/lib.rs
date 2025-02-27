@@ -11,7 +11,7 @@ pub(crate) mod common;
 pub(crate) mod consumer;
 
 /// Types related to errors processing events.
-mod error;
+pub(crate) mod error;
 
 /// Types to create and send events to an Event Hubs instance.
 pub(crate) mod producer;
@@ -33,3 +33,5 @@ pub mod builders {
     pub use crate::consumer::builders::ConsumerClientBuilder;
     pub use crate::producer::builders::ProducerClientBuilder;
 }
+
+pub use crate::error::{ErrorKind, EventHubsError};

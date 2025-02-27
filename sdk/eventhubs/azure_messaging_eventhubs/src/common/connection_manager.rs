@@ -19,8 +19,11 @@ use tokio::sync::Mutex;
 use tracing::{debug, trace};
 use url::Url;
 
-// The connection manager is responsible for managing the connection to the Event Hubs service.
-// It also handles authorization and connection recovery.
+/// The connection manager is responsible for managing the connection to the Event Hubs service.
+/// It also handles authorization and connection recovery.
+///
+/// Currently the connection manager only handles a *single* connection, eventually it will manage
+/// a pool of connections to the service.
 pub(crate) struct ConnectionManager {
     url: Url,
     application_id: Option<String>,
@@ -43,7 +46,6 @@ impl ConnectionManager {
     pub(crate) async fn ensure_connection(&self) -> Result<()> {
         let connections = self.connections.lock().await;
         if connections.get().is_some() {
-            trace!("Connection for {} already exists.", self.url);
             return Ok(());
         }
 
@@ -86,7 +88,7 @@ impl ConnectionManager {
         let connection = connections
             .get()
             .cloned()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+            .ok_or(EventHubsError::from(ErrorKind::MissingConnection))?;
         Ok(connection)
     }
 
@@ -94,7 +96,7 @@ impl ConnectionManager {
         let connections = self.connections.lock().await;
         let connection = connections
             .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+            .ok_or(EventHubsError::from(ErrorKind::MissingConnection))?;
 
         connection.close().await?;
         Ok(())
@@ -140,7 +142,9 @@ impl ConnectionManager {
         }
         Ok(scopes
             .get(path)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken))?
+            .ok_or(EventHubsError::from(
+                ErrorKind::UnableToAddAuthenticationToken,
+            ))?
             .clone())
     }
 }

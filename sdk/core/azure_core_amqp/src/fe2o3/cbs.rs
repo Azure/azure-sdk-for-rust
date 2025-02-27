@@ -97,12 +97,10 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
                     .to_offset(time::UtcOffset::UTC)
                     .unix_timestamp()
                     .checked_mul(1_000)
-                    .ok_or_else(|| {
-                        azure_core::Error::message(
-                            azure_core::error::ErrorKind::Amqp,
-                            "Unable to convert time to unix timestamp.",
-                        )
-                    })?,
+                    .ok_or(azure_core::Error::message(
+                        azure_core::error::ErrorKind::Amqp,
+                        "Unable to convert time to unix timestamp.",
+                    ))?,
             )),
         );
         self.cbs

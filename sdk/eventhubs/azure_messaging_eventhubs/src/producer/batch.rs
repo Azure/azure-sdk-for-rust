@@ -5,10 +5,7 @@ use std::sync::Mutex;
 
 use super::ProducerClient;
 
-use crate::{
-    error::{ErrorKind, EventHubsError},
-    models::EventData,
-};
+use crate::models::EventData;
 use azure_core::{error::Result, Error, Url};
 use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
 use tracing::debug;
@@ -88,12 +85,10 @@ impl<'a> EventDataBatch<'a> {
                 .await
                 .max_message_size()
                 .await?
-                .ok_or_else(|| {
-                    Error::message(
-                        azure_core::error::ErrorKind::Other,
-                        "No message size available.",
-                    )
-                })?;
+                .ok_or(Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "No message size available.",
+                ))?;
         Ok(())
     }
 
@@ -128,19 +123,24 @@ impl<'a> EventDataBatch<'a> {
         self.len() == 0
     }
 
+    fn arithmetic_error() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::DataConversion,
+            "Arithmetic error calculating Batch size.",
+        )
+    }
+
     fn calculate_actual_size_for_payload(length: usize) -> Result<u64> {
         const MESSAGE_HEADER_SIZE_32: usize = 8;
         const MESSAGE_HEADER_SIZE_8: usize = 5;
         if length < 256 {
             Ok(length
                 .checked_add(MESSAGE_HEADER_SIZE_8)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::ArithmeticError))?
-                as u64)
+                .ok_or(Self::arithmetic_error())? as u64)
         } else {
             Ok(length
                 .checked_add(MESSAGE_HEADER_SIZE_32)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::ArithmeticError))?
-                as u64)
+                .ok_or(Self::arithmetic_error())? as u64)
         }
     }
 
@@ -243,11 +243,10 @@ impl<'a> EventDataBatch<'a> {
         let message_len = AmqpMessage::serialize(&message)?.len();
         if batch_state.serialized_messages.is_empty() {
             // The first message serialized is the batch envelope - we capture the parameters from the first message to use for the batch
-            batch_state.size_in_bytes =
-                batch_state
-                    .size_in_bytes
-                    .checked_add(message_len as u64)
-                    .ok_or_else(|| EventHubsError::from(ErrorKind::ArithmeticError))?;
+            batch_state.size_in_bytes = batch_state
+                .size_in_bytes
+                .checked_add(message_len as u64)
+                .ok_or(Self::arithmetic_error())?;
             batch_state.batch_envelope = Some(self.create_batch_envelope(&message));
         }
         let serialized_message = AmqpMessage::serialize(&message)?;
@@ -256,7 +255,7 @@ impl<'a> EventDataBatch<'a> {
         if batch_state
             .size_in_bytes
             .checked_add(actual_message_size)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::ArithmeticError))?
+            .ok_or(Self::arithmetic_error())?
             > self.max_size_in_bytes
         {
             debug!("Batch is full. Cannot add more messages.");

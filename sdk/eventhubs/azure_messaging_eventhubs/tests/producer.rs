@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use azure_core_amqp::{AmqpList, AmqpMessageProperties};
-use azure_core_test::recorded;
+use azure_core::StatusCode;
+use azure_core_amqp::{AmqpError, AmqpList, AmqpMessageProperties};
+use azure_core_test::{recorded, TestContext};
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
 use std::{env, error::Error};
@@ -43,7 +44,7 @@ async fn test_new_with_error() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_open() -> Result<(), Box<dyn Error>> {
+async fn open() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -56,7 +57,7 @@ async fn test_open() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 #[recorded::test(live)]
-async fn test_close() -> Result<(), Box<dyn Error>> {
+async fn close() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -71,7 +72,7 @@ async fn test_close() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_get_properties() -> Result<(), Box<dyn Error>> {
+async fn get_properties() -> Result<(), Box<dyn Error>> {
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -90,7 +91,9 @@ async fn test_get_properties() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
+async fn get_partition_properties() -> Result<(), Box<dyn Error>> {
+    use azure_core_amqp::AmqpErrorKind;
+
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
@@ -111,11 +114,32 @@ async fn test_get_partition_properties() -> Result<(), Box<dyn Error>> {
         assert_eq!(partition_properties.id, partition_id);
     }
 
+    let result = client.get_partition_properties("partition_id").await;
+    assert!(result.is_err());
+    if let Err(err) = result {
+        info!("Error: {:?}", err);
+        let kind = err.kind();
+        assert_eq!(*kind, azure_core::error::ErrorKind::Amqp);
+        let amqp_error = err.source();
+        assert!(amqp_error.is_some());
+        let amqp_error = amqp_error.unwrap();
+        assert!(amqp_error.is::<Box<AmqpError>>());
+        let amqp_error = amqp_error.downcast_ref::<Box<AmqpError>>();
+        assert!(amqp_error.is_some());
+        let amqp_error = amqp_error.unwrap();
+        info!("AMQP error: {:?}", amqp_error);
+        if let AmqpErrorKind::ManagementStatusCode(code, _) = amqp_error.kind() {
+            assert_eq!(*code, StatusCode::BadRequest);
+        } else {
+            panic!("Expected AmqpErrorKind::ManagementStatusCode");
+        }
+    }
+
     Ok(())
 }
 
-#[recorded::test(live)]
-async fn test_create_eventdata() -> Result<(), Box<dyn Error>> {
+#[recorded::test]
+async fn create_eventdata(_ctx: TestContext) -> Result<(), Box<dyn Error>> {
     common::setup();
     let data = b"hello world";
     let ed1 = azure_messaging_eventhubs::models::EventData::builder()

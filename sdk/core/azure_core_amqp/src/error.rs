@@ -32,7 +32,7 @@ pub enum AmqpErrorKind {
     TransportImplementationError(Box<dyn std::error::Error + Send + Sync>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AmqpDescribedError {
     condition: AmqpSymbol,
     description: Option<String>,
