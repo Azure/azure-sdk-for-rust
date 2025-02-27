@@ -133,6 +133,14 @@ async fn get_partition_properties() -> Result<(), Box<dyn Error>> {
         } else {
             panic!("Expected AmqpErrorKind::ManagementStatusCode");
         }
+
+        // Simplest form of the above:
+        let amqp_error = err
+            .source()
+            .unwrap()
+            .downcast_ref::<Box<AmqpError>>()
+            .unwrap();
+        info!("AMQP error: {:?}", amqp_error);
     }
 
     Ok(())
