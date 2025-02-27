@@ -17,6 +17,23 @@ pub mod lease;
 pub trait TemplateOperation {
     /// Process the template and return a formatted string representation
     fn process(&self) -> String;
+
+    /// An unsafe method example
+    ///
+    /// # Safety
+    ///
+    /// This method is unsafe because it dereferences a raw pointer.
+    unsafe fn unsafe_process(&self) -> String {
+        let ptr: *const u8 = self as *const _ as *const u8;
+        format!("Unsafe processing at address: {:?}", ptr)
+    }
+}
+
+/// A blanket implementation of TemplateOperation for all types that implement Display
+impl<T: std::fmt::Display> TemplateOperation for T {
+    fn process(&self) -> String {
+        format!("Processed value: {}", self)
+    }
 }
 
 /// A generic template type that can hold any displayable value

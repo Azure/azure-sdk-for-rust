@@ -45,3 +45,29 @@ pub enum Message {
     User { name: String, id: u64 },
     Empty,
 }
+
+/// A tuple struct example representing a point in 2D space
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Point2D(pub f32, pub f32);
+
+impl Point2D {
+    /// Creates a new point at the origin (0, 0)
+    pub fn origin() -> Self {
+        Self(0.0, 0.0)
+    }
+
+    /// Calculates the distance from this point to another point
+    pub fn distance_to(&self, other: &Self) -> f32 {
+        let dx = self.0 - other.0;
+        let dy = self.1 - other.1;
+        (dx * dx + dy * dy).sqrt()
+    }
+}
+
+impl DataProcessor for Point2D {
+    type Output = f32;
+
+    fn process(&self) -> Self::Output {
+        self.distance_to(&Self::origin())
+    }
+}
