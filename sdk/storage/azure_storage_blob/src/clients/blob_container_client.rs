@@ -9,6 +9,7 @@ use azure_core::{
     credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result, Url,
 };
 use std::sync::Arc;
+
 pub struct BlobContainerClient {
     endpoint: Url,
     container_name: String,

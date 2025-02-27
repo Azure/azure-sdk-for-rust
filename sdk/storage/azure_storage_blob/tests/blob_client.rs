@@ -231,28 +231,51 @@ async fn test_upload_blob_overwrite(ctx: TestContext) -> Result<(), Box<dyn Erro
         Some(options),
     )?;
 
-    let data = b"hello rusty world";
+    let old_data = b"hello rusty world";
     blob_client
         .upload_blob(
-            RequestContent::from(data.to_vec()),
+            RequestContent::from(old_data.to_vec()),
             false,
-            i64::try_from(data.len())?,
+            i64::try_from(old_data.len())?,
             None,
         )
         .await?;
 
-    let data2 = b"hello overwritten rusty world";
-    let response = blob_client
+    let new_data = b"hello overwritten rusty world";
+
+    // Error Case (overwrite=false/none)
+    let error_response = blob_client
         .upload_blob(
-            RequestContent::from(data2.to_vec()),
-            true,
-            i64::try_from(data2.len())?,
+            RequestContent::from(new_data.to_vec()),
+            false,
+            i64::try_from(new_data.len())?,
             None,
         )
+        .await;
+    assert!(error_response.is_err());
+
+    // Working Case (overwrite=true)
+    let upload_response = blob_client
+        .upload_blob(
+            RequestContent::from(new_data.to_vec()),
+            true,
+            i64::try_from(new_data.len())?,
+            None,
+        )
+        .await?;
+    let response = blob_client
+        .download_blob(Some(BlobBlobClientDownloadOptions::default()))
         .await?;
 
     // Assert
-    assert_eq!(response.status(), StatusCode::Created);
+    assert_eq!(upload_response.status(), StatusCode::Created);
+    let (status_code, headers, response_body) = response.deconstruct();
+    assert!(status_code.is_success());
+    assert_eq!(
+        "29",
+        headers.get_str(&HeaderName::from_static("content-length"))?
+    );
+    assert_eq!(Bytes::from_static(new_data), response_body.collect().await?);
 
     container_client.delete_container(None).await?;
     Ok(())
