@@ -149,7 +149,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         let mut connection = self
             .connection
             .get()
-            .ok_or(Self::connection_not_set())?
+            .ok_or_else(Self::connection_not_set)?
             .lock()
             .await;
         let res = connection

@@ -55,7 +55,7 @@ impl ConnectionManager {
             .open(
                 self.application_id
                     .clone()
-                    .unwrap_or(uuid::Uuid::new_v4().to_string()),
+                    .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
                 self.url.clone(),
                 Some(AmqpConnectionOptions {
                     properties: Some(
@@ -88,7 +88,7 @@ impl ConnectionManager {
         let connection = connections
             .get()
             .cloned()
-            .ok_or(EventHubsError::from(ErrorKind::MissingConnection))?;
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
         Ok(connection)
     }
 
@@ -96,7 +96,7 @@ impl ConnectionManager {
         let connections = self.connections.lock().await;
         let connection = connections
             .get()
-            .ok_or(EventHubsError::from(ErrorKind::MissingConnection))?;
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
 
         connection.close().await?;
         Ok(())
@@ -123,7 +123,6 @@ impl ConnectionManager {
             let token = credential
                 .get_token(&["https://eventhubs.azure.net/.default"])
                 .await?;
-            debug!("Got token: {:?}", token.token.secret());
             let expires_at = token.expires_on;
             cbs.authorize_path(
                 path.as_str().to_string(),
@@ -142,9 +141,7 @@ impl ConnectionManager {
         }
         Ok(scopes
             .get(path)
-            .ok_or(EventHubsError::from(
-                ErrorKind::UnableToAddAuthenticationToken,
-            ))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken))?
             .clone())
     }
 }

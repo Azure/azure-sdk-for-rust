@@ -8,7 +8,7 @@ use azure_core_amqp::AmqpDescribedError;
 pub enum ErrorKind {
     /// The session was missing for the partition.
     MissingSession,
-    //
+
     /// The host is missing in the endpoint.
     MissingHostInEndpoint,
 

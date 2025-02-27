@@ -94,7 +94,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         let sender = self
             .sender
             .take()
-            .ok_or(Self::could_not_get_message_sender())?;
+            .ok_or_else(Self::could_not_get_message_sender)?;
         let res = sender
             .into_inner()
             .detach()
@@ -119,7 +119,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         Ok(self
             .sender
             .get()
-            .ok_or(Self::could_not_get_message_sender())?
+            .ok_or_else(Self::could_not_get_message_sender)?
             .lock()
             .await
             .max_message_size())
@@ -149,7 +149,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         let outcome = self
             .sender
             .get()
-            .ok_or(Self::could_not_get_message_sender())?
+            .ok_or_else(Self::could_not_get_message_sender)?
             .lock()
             .await
             .borrow_mut()

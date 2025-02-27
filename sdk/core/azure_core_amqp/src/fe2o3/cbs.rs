@@ -71,7 +71,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
     }
 
     async fn detach(mut self) -> Result<()> {
-        let cbs = self.cbs.take().ok_or(Self::cbs_not_set())?;
+        let cbs = self.cbs.take().ok_or_else(Self::cbs_not_set)?;
         let cbs = cbs.into_inner();
         cbs.close().await.map_err(AmqpError::from)?;
         Ok(())
@@ -97,10 +97,12 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
                     .to_offset(time::UtcOffset::UTC)
                     .unix_timestamp()
                     .checked_mul(1_000)
-                    .ok_or(azure_core::Error::message(
-                        azure_core::error::ErrorKind::Amqp,
-                        "Unable to convert time to unix timestamp.",
-                    ))?,
+                    .ok_or_else(|| {
+                        azure_core::Error::message(
+                            azure_core::error::ErrorKind::Amqp,
+                            "Unable to convert time to unix timestamp.",
+                        )
+                    })?,
             )),
         );
         self.cbs

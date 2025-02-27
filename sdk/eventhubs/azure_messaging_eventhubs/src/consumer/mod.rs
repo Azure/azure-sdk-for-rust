@@ -95,7 +95,7 @@ impl ConsumerClient {
             "amqps://{}/{}/ConsumerGroups/{}",
             fully_qualified_namespace, eventhub_name, consumer_group
         );
-        let url = Url::parse(&url).map_err(azure_core::Error::from)?;
+        let url = Url::parse(&url)?;
 
         trace!("Creating consumer client for {url}.");
         Ok(Self {
@@ -228,7 +228,7 @@ impl ConsumerClient {
         );
 
         let source_url = format!("{}/Partitions/{}", self.url, partition_id);
-        let source_url = Url::parse(&source_url).map_err(azure_core::Error::from)?;
+        let source_url = Url::parse(&source_url)?;
 
         let connection = self.connection_manager.get_connection().await?;
 
@@ -315,7 +315,7 @@ impl ConsumerClient {
             .lock()
             .await
             .get()
-            .ok_or(EventHubsError::from(ErrorKind::MissingManagementClient))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
             .get_eventhub_properties(self.eventhub.as_str())
             .await
     }
@@ -370,7 +370,7 @@ impl ConsumerClient {
             .lock()
             .await
             .get()
-            .ok_or(EventHubsError::from(ErrorKind::MissingManagementClient))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
             .get_eventhub_partition_properties(self.eventhub.as_str(), partition_id)
             .await
     }
@@ -432,7 +432,7 @@ impl ConsumerClient {
         }
         let rv = session_instances
             .get(partition_id)
-            .ok_or(EventHubsError::from(ErrorKind::MissingSession))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingSession))?
             .clone();
         debug!("Cloning session for partition {:?}", partition_id);
         Ok(rv)

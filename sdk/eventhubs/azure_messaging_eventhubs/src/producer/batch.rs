@@ -85,10 +85,12 @@ impl<'a> EventDataBatch<'a> {
                 .await
                 .max_message_size()
                 .await?
-                .ok_or(Error::message(
-                    azure_core::error::ErrorKind::Other,
-                    "No message size available.",
-                ))?;
+                .ok_or_else(|| {
+                    Error::message(
+                        azure_core::error::ErrorKind::Other,
+                        "No message size available.",
+                    )
+                })?;
         Ok(())
     }
 
@@ -136,11 +138,11 @@ impl<'a> EventDataBatch<'a> {
         if length < 256 {
             Ok(length
                 .checked_add(MESSAGE_HEADER_SIZE_8)
-                .ok_or(Self::arithmetic_error())? as u64)
+                .ok_or_else(Self::arithmetic_error)? as u64)
         } else {
             Ok(length
                 .checked_add(MESSAGE_HEADER_SIZE_32)
-                .ok_or(Self::arithmetic_error())? as u64)
+                .ok_or_else(Self::arithmetic_error)? as u64)
         }
     }
 
@@ -246,7 +248,7 @@ impl<'a> EventDataBatch<'a> {
             batch_state.size_in_bytes = batch_state
                 .size_in_bytes
                 .checked_add(message_len as u64)
-                .ok_or(Self::arithmetic_error())?;
+                .ok_or_else(Self::arithmetic_error)?;
             batch_state.batch_envelope = Some(self.create_batch_envelope(&message));
         }
         let serialized_message = AmqpMessage::serialize(&message)?;
@@ -255,7 +257,7 @@ impl<'a> EventDataBatch<'a> {
         if batch_state
             .size_in_bytes
             .checked_add(actual_message_size)
-            .ok_or(Self::arithmetic_error())?
+            .ok_or_else(Self::arithmetic_error)?
             > self.max_size_in_bytes
         {
             debug!("Batch is full. Cannot add more messages.");

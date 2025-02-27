@@ -359,7 +359,7 @@ impl ProducerClient {
             .lock()
             .await
             .get()
-            .ok_or(EventHubsError::from(ErrorKind::MissingManagementClient))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
             .get_eventhub_properties(self.eventhub.as_str())
             .await
     }
@@ -400,7 +400,7 @@ impl ProducerClient {
             .lock()
             .await
             .get()
-            .ok_or(EventHubsError::from(ErrorKind::MissingManagementClient))?
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
             .get_eventhub_partition_properties(self.eventhub.as_str(), partition_id)
             .await
     }
