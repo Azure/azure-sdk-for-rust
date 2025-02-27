@@ -92,7 +92,7 @@ async fn get_properties() -> Result<(), Box<dyn Error>> {
 
 #[recorded::test(live)]
 async fn get_partition_properties() -> Result<(), Box<dyn Error>> {
-    use azure_core_amqp::AmqpErrorKind;
+    use azure_core_amqp::error::AmqpErrorKind;
 
     common::setup();
     let host = env::var("EVENTHUBS_HOST")?;

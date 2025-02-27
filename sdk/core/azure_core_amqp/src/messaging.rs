@@ -175,7 +175,7 @@ pub enum AmqpMessageId {
     Ulong(u64),
 }
 
-impl From<crate::Uuid> for AmqpMessageId {
+impl From<azure_core::Uuid> for AmqpMessageId {
     fn from(uuid: Uuid) -> Self {
         AmqpMessageId::Uuid(uuid)
     }
