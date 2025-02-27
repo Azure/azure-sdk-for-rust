@@ -19,8 +19,8 @@ edition = "2021"
 
 [dependencies]
 async-stream.workspace = true
-azure_core = { path = "../../core/azure_core", default-features = false }
-azure_core_amqp.path = "../../core/azure_core_amqp"
+azure_core = { path = "../../core/azure_core", version = "0.23.0", default-features = false }
+azure_core_amqp = { path = "../../core/azure_core_amqp", version = "0.2.0" }
 futures.workspace = true
 time.workspace = true
 tokio.workspace = true

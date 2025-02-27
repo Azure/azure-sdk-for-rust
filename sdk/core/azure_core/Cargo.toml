@@ -28,8 +28,11 @@ serde_json.workspace = true
 sha2 = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
-typespec = { path = "../../typespec", features = ["http", "json"] }
-typespec_client_core = { path = "../../typespec/typespec_client_core", features = [
+typespec = { path = "../../typespec", version = "0.3.0", features = [
+  "http",
+  "json",
+] }
+typespec_client_core = { path = "../../typespec/typespec_client_core", version = "0.2.0", features = [
   "http",
   "json",
 ] }
