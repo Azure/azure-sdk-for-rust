@@ -1,0 +1,15 @@
+[package]
+name = "azure_analytics_purview_scanning"
+version = "0.0.1"
+description = "An SDK for interacting with the Azure Purview Catalog service"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_analytics_purview_scanning"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

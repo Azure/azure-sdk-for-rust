@@ -1,5 +1,6 @@
 # Build output.
 target/
+packages.csv
 
 # Track only workspace Cargo.lock
 Cargo.lock

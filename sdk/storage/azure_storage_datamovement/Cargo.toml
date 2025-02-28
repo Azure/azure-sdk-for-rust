@@ -1,0 +1,15 @@
+[package]
+name = "azure_storage_datamovement"
+version = "0.0.1"
+description = "This client library is the base package for the Azure Storage Data Movement library. The Azure Storage Data Movement library is designed for high-performance, multi-threaded uploading, downloading and copying Azure Storage blobs and files. This library is inteneded to be used with one or more of the Data Movement sub-packages, such as Azure.Storage.DataMovement.Blobs or Azure.Storage.DataMovement.Files.Shares. For this release see notes - https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/storage/Azure.Storage.DataMovement/README.md and https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/storage/Azure.Storage.DataMovement/CHANGELOG.md"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_storage_datamovement"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "azure_ai_inference"
+version = "0.0.1"
+description = "This is the Microsoft Azure AI Inference Service client library"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_ai_inference"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

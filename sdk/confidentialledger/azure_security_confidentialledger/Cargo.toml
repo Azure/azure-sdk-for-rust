@@ -1,0 +1,15 @@
+[package]
+name = "azure_security_confidentialledger"
+version = "0.0.1"
+description = "Client SDK for the Azure Confidential Ledger service"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_security_confidentialledger"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

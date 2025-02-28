@@ -1,0 +1,15 @@
+[package]
+name = "azure_maps_weather"
+version = "0.0.1"
+description = "Azure Maps Azure.Maps.Weather"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_maps_weather"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

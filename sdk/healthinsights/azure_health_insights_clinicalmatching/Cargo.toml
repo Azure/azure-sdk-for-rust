@@ -1,0 +1,15 @@
+[package]
+name = "azure_health_insights_clinicalmatching"
+version = "0.0.1"
+description = "This is the Azure Health Insights ClinicalMatching client library for developing .NET applications with rich experience."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_health_insights_clinicalmatching"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

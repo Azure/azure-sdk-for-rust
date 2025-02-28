@@ -251,6 +251,202 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
+name = "azure_ai_anomalydetector"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_contentsafety"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_documentintelligence"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_formrecognizer"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_inference"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_language_conversations"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_language_conversations_authoring"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_language_questionanswering"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_language_text"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_language_text_authoring"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_metricsadvisor"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_openai"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_openai_assistants"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_personalizer"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_projects"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_textanalytics"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_translation_document"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_translation_text"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_vision_face"
+version = "0.0.1"
+
+[[package]]
+name = "azure_ai_vision_imageanalysis"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_defender_easm"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_purview_account"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_purview_administration"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_purview_catalog"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_purview_datamap"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_purview_scanning"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_purview_sharing"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_purview_workflows"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_synapse_accesscontrol"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_synapse_artifacts"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_synapse_managedprivateendpoints"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_synapse_monitoring"
+version = "0.0.1"
+
+[[package]]
+name = "azure_analytics_synapse_spark"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_alphaids"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_callautomation"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_callingserver"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_chat"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_common"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_email"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_identity"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_jobrouter"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_messages"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_phonenumbers"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_programmableconnectivity"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_rooms"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_shortcodes"
+version = "0.0.1"
+
+[[package]]
+name = "azure_communication_sms"
+version = "0.0.1"
+
+[[package]]
+name = "azure_compute_batch"
+version = "0.0.1"
+
+[[package]]
+name = "azure_containers_containerregistry"
+version = "0.0.1"
+
+[[package]]
 name = "azure_core"
 version = "0.22.0"
 dependencies = [
@@ -334,6 +530,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_data_appconfiguration"
+version = "0.0.1"
+
+[[package]]
 name = "azure_data_cosmos"
 version = "0.23.0"
 dependencies = [
@@ -353,6 +553,46 @@ dependencies = [
  "typespec_client_core",
  "url",
 ]
+
+[[package]]
+name = "azure_data_schemaregistry"
+version = "0.0.1"
+
+[[package]]
+name = "azure_developer_devcenter"
+version = "0.0.1"
+
+[[package]]
+name = "azure_developer_loadtesting"
+version = "0.0.1"
+
+[[package]]
+name = "azure_developer_microsoftplaywrighttesting_nunit"
+version = "0.0.1"
+
+[[package]]
+name = "azure_developer_microsoftplaywrighttesting_testlogger"
+version = "0.0.1"
+
+[[package]]
+name = "azure_digitaltwins_core"
+version = "0.0.1"
+
+[[package]]
+name = "azure_health_deidentification"
+version = "0.0.1"
+
+[[package]]
+name = "azure_health_insights_cancerprofiling"
+version = "0.0.1"
+
+[[package]]
+name = "azure_health_insights_clinicalmatching"
+version = "0.0.1"
+
+[[package]]
+name = "azure_health_insights_radiologyinsights"
+version = "0.0.1"
 
 [[package]]
 name = "azure_identity"
@@ -382,6 +622,62 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_iot_deviceupdate"
+version = "0.0.1"
+
+[[package]]
+name = "azure_iot_hub_service"
+version = "0.0.1"
+
+[[package]]
+name = "azure_iot_modelsrepository"
+version = "0.0.1"
+
+[[package]]
+name = "azure_iot_timeseriesinsights"
+version = "0.0.1"
+
+[[package]]
+name = "azure_maps_common"
+version = "0.0.1"
+
+[[package]]
+name = "azure_maps_geolocation"
+version = "0.0.1"
+
+[[package]]
+name = "azure_maps_rendering"
+version = "0.0.1"
+
+[[package]]
+name = "azure_maps_routing"
+version = "0.0.1"
+
+[[package]]
+name = "azure_maps_search"
+version = "0.0.1"
+
+[[package]]
+name = "azure_maps_timezones"
+version = "0.0.1"
+
+[[package]]
+name = "azure_maps_weather"
+version = "0.0.1"
+
+[[package]]
+name = "azure_media_videoanalyzer_edge"
+version = "0.0.1"
+
+[[package]]
+name = "azure_messaging_eventgrid_namespaces"
+version = "0.0.1"
+
+[[package]]
+name = "azure_messaging_eventgrid_systemevents"
+version = "0.0.1"
+
+[[package]]
 name = "azure_messaging_eventhubs"
 version = "0.2.0"
 dependencies = [
@@ -401,8 +697,852 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_messaging_eventhubs_processor"
+version = "0.0.1"
+
+[[package]]
+name = "azure_messaging_webpubsub"
+version = "0.0.1"
+
+[[package]]
+name = "azure_messaging_webpubsub_client"
+version = "0.0.1"
+
+[[package]]
+name = "azure_mixedreality_authentication"
+version = "0.0.1"
+
+[[package]]
+name = "azure_mixedreality_objectanchors_conversion"
+version = "0.0.1"
+
+[[package]]
+name = "azure_mixedreality_remoterendering"
+version = "0.0.1"
+
+[[package]]
+name = "azure_monitor_ingestion"
+version = "0.0.1"
+
+[[package]]
+name = "azure_monitor_opentelemetry_aspnetcore"
+version = "0.0.1"
+
+[[package]]
+name = "azure_monitor_opentelemetry_exporter"
+version = "0.0.1"
+
+[[package]]
+name = "azure_monitor_opentelemetry_livemetrics"
+version = "0.0.1"
+
+[[package]]
+name = "azure_monitor_query"
+version = "0.0.1"
+
+[[package]]
+name = "azure_quantum_jobs"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_advisor"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_agfoodplatform"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_alertsmanagement"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_analysis"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_apicenter"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_apimanagement"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_appcomplianceautomation"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_appconfiguration"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_appcontainers"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_applicationinsights"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_appplatform"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_appservice"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_astro"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_attestation"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_authorization"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_automanage"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_automation"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_avs"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_batch"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_billing"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_billingbenefits"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_blueprint"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_botservice"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_cdn"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_changeanalysis"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_chaos"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_cognitiveservices"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_communication"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_compute"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_computefleet"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_computeschedule"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_confidentialledger"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_confluent"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_connectedvmwarevsphere"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_consumption"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_containerinstance"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_containerorchestratorruntime"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_containerregistry"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_containerservice"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_containerservicefleet"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_cosmosdb"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_cosmosdbforpostgresql"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_costmanagement"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_customerinsights"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_databox"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_databoxedge"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_datadog"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_datafactory"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_datalakeanalytics"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_datalakestore"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_datamigration"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_dataprotectionbackup"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_datashare"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_defendereasm"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_desktopvirtualization"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_devcenter"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_deviceprovisioningservices"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_deviceregistry"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_deviceupdate"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_devopsinfrastructure"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_devspaces"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_devtestlabs"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_digitaltwins"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_dns"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_dnsresolver"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_dynatrace"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_edgeorder"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_edgezones"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_elastic"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_elasticsan"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_energyservices"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_eventgrid"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_eventhubs"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_extendedlocations"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_fabric"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_fluidrelay"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_frontdoor"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_grafana"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_graphservices"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_guestconfiguration"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_hardwaresecuritymodules"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_hci"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_hdinsight"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_hdinsight_containers"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_healthbot"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_healthcareapis"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_healthdataaiservices"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_hybridcompute"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_hybridconnectivity"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_hybridcontainerservice"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_hybridnetwork"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_informaticadatamanagement"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_iotcentral"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_iotfirmwaredefense"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_iothub"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_iotoperations"
+version = "0.0.1"
+
+[[package]]
 name = "azure_resourcemanager_keyvault"
-version = "0.1.0"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_kubernetes"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_kubernetesconfiguration"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_kusto"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_labservices"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_largeinstance"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_loadtesting"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_logic"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_machinelearning"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_machinelearningcompute"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_maintenance"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_managednetwork"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_managednetworkfabric"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_managedserviceidentities"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_managedservices"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_managementpartner"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_maps"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_marketplace"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_marketplaceordering"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_media"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_migrationdiscoverysap"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_mixedreality"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_mobilenetwork"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_mongocluster"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_monitor"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_mysql"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_neonpostgres"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_netapp"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_network"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_networkanalytics"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_networkcloud"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_networkfunction"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_newrelicobservability"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_nginx"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_notificationhubs"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_operationalinsights"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_oracledatabase"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_orbital"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_paloaltonetworks_ngfw"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_peering"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_playwrighttesting"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_policyinsights"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_postgresql"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_powerbidedicated"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_privatedns"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_providerhub"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_purview"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_quantum"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_qumulo"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_quota"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_recoveryservices"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_recoveryservicesbackup"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_recoveryservicesdatareplication"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_recoveryservicessiterecovery"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_redis"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_redisenterprise"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_relay"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_reservations"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_resourceconnector"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_resourcegraph"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_resourcehealth"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_resourcemover"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_resources"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_scvmm"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_search"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_securitycenter"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_securitydevops"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_securityinsights"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_selfhelp"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_servicebus"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_servicefabric"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_servicefabricmanagedclusters"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_servicelinker"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_servicenetworking"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_signalr"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_sphere"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_springappdiscovery"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_sql"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_sqlvirtualmachine"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_standbypool"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_storage"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_storageactions"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_storagecache"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_storagemover"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_storagepool"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_storagesync"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_streamanalytics"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_subscription"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_support"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_synapse"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_terraform"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_trafficmanager"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_trustedsigning"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_voiceservices"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_webpubsub"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_workloadmonitor"
+version = "0.0.1"
+
+[[package]]
+name = "azure_resourcemanager_workloads"
+version = "0.0.1"
+
+[[package]]
+name = "azure_search_documents"
+version = "0.0.1"
+
+[[package]]
+name = "azure_security_attestation"
+version = "0.0.1"
+
+[[package]]
+name = "azure_security_codetransparency"
+version = "0.0.1"
+
+[[package]]
+name = "azure_security_confidentialledger"
+version = "0.0.1"
+
+[[package]]
+name = "azure_security_keyvault_administration"
+version = "0.0.1"
+
+[[package]]
+name = "azure_security_keyvault_certificates"
+version = "0.0.1"
 
 [[package]]
 name = "azure_security_keyvault_keys"
@@ -468,6 +1608,26 @@ dependencies = [
 [[package]]
 name = "azure_storage_common"
 version = "0.1.0"
+
+[[package]]
+name = "azure_storage_datamovement"
+version = "0.0.1"
+
+[[package]]
+name = "azure_storage_datamovement_blobs"
+version = "0.0.1"
+
+[[package]]
+name = "azure_storage_datamovement_files_shares"
+version = "0.0.1"
+
+[[package]]
+name = "azure_storage_files_datalake"
+version = "0.0.1"
+
+[[package]]
+name = "azure_storage_files_shares"
+version = "0.0.1"
 
 [[package]]
 name = "azure_template"

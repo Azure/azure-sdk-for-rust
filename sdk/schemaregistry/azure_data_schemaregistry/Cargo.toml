@@ -1,0 +1,15 @@
+[package]
+name = "azure_data_schemaregistry"
+version = "0.0.1"
+description = "Azure Schema Registry SDK"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_data_schemaregistry"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

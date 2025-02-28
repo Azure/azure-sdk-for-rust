@@ -1,0 +1,15 @@
+[package]
+name = "azure_ai_language_questionanswering"
+version = "0.0.1"
+description = "This is the client library for the Question Answering service, a cloud-based Natural Language Processing (NLP) service that allows you to create a natural conversational layer over your data. It is used to find the most appropriate answer for any input from your custom knowledge base (KB) of information."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_ai_language_questionanswering"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

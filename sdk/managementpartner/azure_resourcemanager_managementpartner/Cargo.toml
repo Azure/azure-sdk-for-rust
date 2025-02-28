@@ -1,0 +1,15 @@
+[package]
+name = "azure_resourcemanager_managementpartner"
+version = "0.0.1"
+description = "Microsoft Azure Resource Manager client SDK for Azure resource provider Microsoft.ManagementPartner."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_resourcemanager_managementpartner"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

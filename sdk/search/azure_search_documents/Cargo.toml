@@ -1,0 +1,15 @@
+[package]
+name = "azure_search_documents"
+version = "0.0.1"
+description = "This is the Azure Cognitive Search client library for developing .NET applications with rich search experiences.  It enables you to query your indexes, update documents in your indexes, and manage indexes, synonym maps, indexers, data sources, or other service-level resources."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_search_documents"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

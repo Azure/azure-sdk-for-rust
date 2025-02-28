@@ -1,0 +1,15 @@
+[package]
+name = "azure_storage_datamovement_files_shares"
+version = "0.0.1"
+description = "This client library enables high-performance, multi-threaded uploading, downloading and copying Azure File Share files and directories. The package depends on the Azure.Storage.DataMovement package and can be used in conjuction with other Data Movement sub-packages, such as Azure.Storage.DataMovement.Blobs to transfer data between services. For this release see notes - https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/storage/Azure.Storage.DataMovement.Files.Shares/README.md and https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/storage/Azure.Storage.DataMovement.Files.Shares/CHANGELOG.md"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_storage_datamovement_files_shares"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

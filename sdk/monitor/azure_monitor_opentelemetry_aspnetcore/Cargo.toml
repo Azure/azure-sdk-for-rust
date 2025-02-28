@@ -1,0 +1,15 @@
+[package]
+name = "azure_monitor_opentelemetry_aspnetcore"
+version = "0.0.1"
+description = "An OpenTelemetry .NET distro that exports to Azure Monitor"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_monitor_opentelemetry_aspnetcore"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

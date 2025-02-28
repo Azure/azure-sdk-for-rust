@@ -1,0 +1,15 @@
+[package]
+name = "azure_communication_programmableconnectivity"
+version = "0.0.1"
+description = "This is the ProgrammableConnectivity client library for developing .NET applications interacting with Azure Programmable Connectivity Gateways."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_communication_programmableconnectivity"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

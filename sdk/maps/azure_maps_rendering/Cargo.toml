@@ -1,0 +1,15 @@
+[package]
+name = "azure_maps_rendering"
+version = "0.0.1"
+description = "Azure Maps Azure.Maps.Rendering"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_maps_rendering"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

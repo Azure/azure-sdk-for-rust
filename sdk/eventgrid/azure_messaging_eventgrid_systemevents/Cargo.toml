@@ -1,0 +1,15 @@
+[package]
+name = "azure_messaging_eventgrid_systemevents"
+version = "0.0.1"
+description = "Azure Event Grid is a publish-subscribe service that allows cloud events to be passed from producers to consumers. This library contains the system event models used by Azure Event Grid. For more information about Event Grid, see https://azure.microsoft.com/services/event-grid."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_messaging_eventgrid_systemevents"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

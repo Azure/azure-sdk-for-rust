@@ -1,0 +1,15 @@
+[package]
+name = "azure_iot_timeseriesinsights"
+version = "0.0.1"
+description = "This project provides .Net client library implementation for Azure IoT Time Series Insights."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_iot_timeseriesinsights"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true
