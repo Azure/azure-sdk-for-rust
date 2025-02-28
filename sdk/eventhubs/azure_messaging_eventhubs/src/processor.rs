@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::time::SystemTime;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::{Duration, SystemTime};
+use tokio::task::JoinHandle;
 
 #[derive(Serialize, Deserialize)]
 pub struct Checkpoint {
@@ -33,24 +36,77 @@ pub struct Ownership {
     last_modified_time: Option<SystemTime>,
 }
 
+pub enum ProcessorStrategy {
+    Balanced,
+    Greedy,
+}
+
+#[derive(Default)]
+pub struct EventProcessorOptions {
+    pub load_balancing_strategy: Option<ProcessorStrategy>,
+    pub update_interval: Option<Duration>,
+    pub partition_expiration_duration: Option<Duration>,
+    pub start_positions: Option<Vec<StartPosition>>,
+    pub prefetch: Option<i32>,
+}
+
 pub struct EventProcessor {
-    // Add fields here
+    checkpoint_store: Box<dyn CheckpointStore>,
+    consumer_client: ConsumerClient,
+    running: Arc<Mutex<bool>>,
+    processing_thread: Option<thread::JoinHandle<()>>,
+    options: ProcessorOptions,
 }
 
 impl EventProcessor {
-    pub fn new() -> Self {
-        // Initialize the processor
+    pub fn new(
+        consumer_client: ConsumerClient,
+        checkpoint_store: Box<dyn CheckpointStore>,
+        options: Option<EventProcessorOptions>,
+    ) -> Self {
         EventProcessor {
-            // Initialize fields here
+            checkpoint_store,
+            consumer_client,
+            running: Arc::new(Mutex::new(false)),
+            processing_thread: None,
+            options: options.some_or_default(),
         }
     }
 
-    pub fn start(&self) {
-        // Start processing events
+    pub fn start(&mut self) {
+        let mut running = self.running.lock().unwrap();
+        if *running {
+            return;
+        }
+        *running = true;
+        let running_clone = Arc::clone(&self.running);
+        let consumer_client = self.consumer_client.clone();
+        let checkpoint_store = self.checkpoint_store.clone();
+        let strategy = self.strategy.clone();
+
+        self.processing_thread = Some(thread::spawn(move || {
+            // Add logic to start processing events
+            loop {
+                let running = running_clone.lock().unwrap();
+                if !*running {
+                    break;
+                }
+                drop(running); // Release the lock before processing
+                               // Event processing logic based on strategy
+            }
+        }));
     }
 
-    pub fn stop(&self) {
-        // Stop processing events
+    pub fn stop(&mut self) {
+        let mut running = self.running.lock().unwrap();
+        if !*running {
+            return;
+        }
+        *running = false;
+        if let Some(thread) = self.processing_thread.take() {
+            thread.join().unwrap();
+        }
+        // Add logic to stop processing events
     }
 }
 
