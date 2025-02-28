@@ -426,7 +426,7 @@ impl ProducerClient {
         // Clients must call ensure_connection before calling ensure_management_client.
 
         trace!("Create management session.");
-        let connection = self.connection_manager.get_connection().await?;
+        let connection = self.connection_manager.get_connection()?;
 
         let session = AmqpSession::new();
         session.begin(connection.as_ref(), None).await?;
@@ -455,7 +455,7 @@ impl ProducerClient {
         if !sender_instances.contains_key(path) {
             self.connection_manager.ensure_connection().await?;
 
-            let connection = self.connection_manager.get_connection().await?;
+            let connection = self.connection_manager.get_connection()?;
 
             self.connection_manager
                 .authorize_path(&connection, path, self.credential.clone())

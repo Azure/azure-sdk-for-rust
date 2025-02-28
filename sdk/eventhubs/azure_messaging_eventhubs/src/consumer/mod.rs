@@ -230,7 +230,7 @@ impl ConsumerClient {
         let source_url = format!("{}/Partitions/{}", self.endpoint, partition_id);
         let source_url = Url::parse(&source_url)?;
 
-        let connection = self.connection_manager.get_connection().await?;
+        let connection = self.connection_manager.get_connection()?;
 
         self.connection_manager
             .authorize_path(&connection, &source_url, self.credential.clone())
@@ -388,7 +388,7 @@ impl ConsumerClient {
         // Clients must call ensure_connection before calling ensure_management_client.
 
         trace!("Create management session.");
-        let connection = self.connection_manager.get_connection().await?;
+        let connection = self.connection_manager.get_connection()?;
         let session = AmqpSession::new();
         session.begin(connection.as_ref(), None).await?;
         trace!("Session created.");
@@ -424,7 +424,7 @@ impl ConsumerClient {
         let mut session_instances = self.session_instances.lock().await;
         if !session_instances.contains_key(partition_id) {
             debug!("Creating session for partition: {:?}", partition_id);
-            let connection = self.connection_manager.get_connection().await?;
+            let connection = self.connection_manager.get_connection()?;
 
             let session = AmqpSession::new();
             session.begin(connection.as_ref(), None).await?;
