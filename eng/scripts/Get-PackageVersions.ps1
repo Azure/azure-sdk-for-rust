@@ -6,14 +6,16 @@ param(
   [switch]$Dependencies
 )
 
+. $PSScriptRoot/../common/scripts/common.ps1
+
 $metadata = cargo metadata --format-version 1 --no-deps --all-features | ConvertFrom-Json -AsHashtable
 $packages = $metadata.packages
 foreach ($package in $packages) {
   try {
     $name = $package.name
     $resp = Invoke-WebRequest "https://index.crates.io/$($name.Substring(0,2))/$($name.Substring(2,2))/$name"
-    $latest = $resp.Content.Trim().Split("`n") | Select-Object -last 1 | ConvertFrom-Json
-    $package.released_version = $latest.vers
+    $packageVersions = $resp.Content.Trim().Split("`n") | ConvertFrom-Json | Select-Object -ExpandProperty vers
+    $package.released_version = $packageVersions | Sort-Object { [AzureEngSemanticVersion]::ParseVersionString($_) } | Select-Object -Last 1
   }
   catch {
   }
