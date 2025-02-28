@@ -1,0 +1,3 @@
+variables:
+  RUSTFLAGS: "-D warnings"
+  RUSTDOCFLAGS: "-D warnings"

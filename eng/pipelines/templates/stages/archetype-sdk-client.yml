@@ -1,39 +1,40 @@
 parameters:
-- name: ServiceDirectory
-  type: string
-- name: Artifacts
-  type: object
-  default: []
-- name: TestTimeoutInMinutes
-  type: number
-  default: 60
-- name: oneESTemplateTag
-  type: string
-  default: release
+  - name: ServiceDirectory
+    type: string
+  - name: Artifacts
+    type: object
+    default: []
+  - name: TestTimeoutInMinutes
+    type: number
+    default: 60
+  - name: oneESTemplateTag
+    type: string
+    default: release
 
 extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
   parameters:
     oneESTemplateTag: ${{ parameters.oneESTemplateTag }}
     stages:
-    - stage: Build
-      variables:
-      - template: /eng/pipelines/templates/variables/image.yml
-      jobs:
-      - template: /eng/pipelines/templates/jobs/ci.yml
+      - stage: Build
+        variables:
+          - template: /eng/pipelines/templates/variables/image.yml
+          - template: /eng/pipelines/templates/variables/rust.yml
+        jobs:
+          - template: /eng/pipelines/templates/jobs/ci.yml
+            parameters:
+              ServiceDirectory: ${{ parameters.ServiceDirectory }}
+              Artifacts: ${{ parameters.Artifacts }}
+              ${{ if eq(parameters.ServiceDirectory, 'template') }}:
+                TestPipeline: true
+              TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+              PipelineArtifactName: packages
+
+      - template: archetype-rust-release.yml
         parameters:
+          DependsOn: "Build"
           ServiceDirectory: ${{ parameters.ServiceDirectory }}
           Artifacts: ${{ parameters.Artifacts }}
           ${{ if eq(parameters.ServiceDirectory, 'template') }}:
             TestPipeline: true
-          TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           PipelineArtifactName: packages
-
-    - template: archetype-rust-release.yml
-      parameters:
-        DependsOn: "Build"
-        ServiceDirectory: ${{ parameters.ServiceDirectory }}
-        Artifacts: ${{ parameters.Artifacts }}
-        ${{ if eq(parameters.ServiceDirectory, 'template') }}:
-          TestPipeline: true
-        PipelineArtifactName: packages
