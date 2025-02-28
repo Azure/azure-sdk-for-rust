@@ -3,11 +3,6 @@
 
 //! Examples of functions in Rust
 
-/// A simple function that adds two numbers
-pub fn add(a: i32, b: i32) -> i32 {
-    a + b
-}
-
 /// A function with multiple parameters and documentation
 pub fn greet(name: &str, formal: bool) -> String {
     if formal {
@@ -24,7 +19,11 @@ pub fn process_string(s: String) -> usize {
 
 /// A generic function
 pub fn first<T>(list: &[T]) -> Option<&T> {
-    if list.is_empty() { None } else { Some(&list[0]) }
+    if list.is_empty() {
+        None
+    } else {
+        Some(&list[0])
+    }
 }
 
 /// A function with a where clause for more complex trait bounds
@@ -59,7 +58,11 @@ pub fn greater_than(n: i32) -> impl Fn(i32) -> bool {
 /// A recursive function with tail recursion
 pub fn factorial(n: u64) -> u64 {
     fn fact_tail(n: u64, acc: u64) -> u64 {
-        if n == 0 { acc } else { fact_tail(n - 1, n * acc) }
+        if n == 0 {
+            acc
+        } else {
+            fact_tail(n - 1, n * acc)
+        }
     }
     fact_tail(n, 1)
 }
@@ -78,5 +81,9 @@ impl Counter {
 
 /// Function with a lifetime parameter
 pub fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
-    if x.len() > y.len() { x } else { y }
+    if x.len() > y.len() {
+        x
+    } else {
+        y
+    }
 }

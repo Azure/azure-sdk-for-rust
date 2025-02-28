@@ -14,9 +14,13 @@ pub struct Person {
 impl Person {
     /// Creates a new Person with the specified name and age
     pub fn new(name: String, age: u32) -> Self {
-        Self { name, age, email: None }
+        Self {
+            name,
+            age,
+            email: None,
+        }
     }
-    
+
     /// Sets the email address
     pub fn with_email(mut self, email: String) -> Self {
         self.email = Some(email);
@@ -33,7 +37,7 @@ impl Point2D {
     pub fn origin() -> Self {
         Self(0.0, 0.0)
     }
-    
+
     /// Calculates the distance between points
     pub fn distance_to(&self, other: &Self) -> f32 {
         let dx = self.0 - other.0;
@@ -62,7 +66,10 @@ pub struct Borrowed<'a> {
 
 impl<'a> Borrowed<'a> {
     pub fn new(text: &'a str) -> Self {
-        Self { text, additional_text: None }
+        Self {
+            text,
+            additional_text: None,
+        }
     }
 }
 
@@ -78,10 +85,7 @@ impl Employee {
     pub fn full_description(&self) -> String {
         format!(
             "{} (age: {}), ID: {}, Position: {}",
-            self.personal_info.name,
-            self.personal_info.age,
-            self.employee_id,
-            self.position
+            self.personal_info.name, self.personal_info.age, self.employee_id, self.position
         )
     }
 }

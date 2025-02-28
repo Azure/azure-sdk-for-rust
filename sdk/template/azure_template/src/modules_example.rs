@@ -16,7 +16,11 @@ pub mod user {
     impl User {
         /// Creates a new active user
         pub fn new(username: String, email: String) -> Self {
-            Self { username, email, is_active: true }
+            Self {
+                username,
+                email,
+                is_active: true,
+            }
         }
     }
 
@@ -56,7 +60,10 @@ pub mod networking {
             /// HTTP request method enum
             #[derive(Debug, Clone, Copy)]
             pub enum Method {
-                GET, POST, PUT, DELETE,
+                GET,
+                POST,
+                PUT,
+                DELETE,
             }
 
             /// Function to create an HTTP request

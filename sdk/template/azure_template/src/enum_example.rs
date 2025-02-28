@@ -37,7 +37,11 @@ impl Message {
             Self::Text(text) => text.clone(),
             Self::Number(num) => num.to_string(),
             Self::Empty => String::new(),
-            Self::Complex { subject, content, urgent } => {
+            Self::Complex {
+                subject,
+                content,
+                urgent,
+            } => {
                 let priority = if *urgent { "URGENT" } else { "Normal" };
                 format!("[{}] {}: {}", priority, subject, content)
             }

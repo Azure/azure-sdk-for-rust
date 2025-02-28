@@ -15,7 +15,11 @@ pub trait Shape {
 
     /// Default implementation to describe the shape
     fn describe(&self) -> String {
-        format!("A shape with area {} and perimeter {}", self.area(), self.perimeter())
+        format!(
+            "A shape with area {} and perimeter {}",
+            self.area(),
+            self.perimeter()
+        )
     }
 }
 
