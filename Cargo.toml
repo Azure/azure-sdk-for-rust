@@ -18,6 +18,7 @@ members = [
   "sdk/storage/azure_storage_blob",
   "sdk/template/azure_template_core",
   "sdk/template/azure_template",
+  "sdk/keyvault/azure_resourcemanager_keyvault",
 ]
 
 [workspace.package]
