@@ -36,11 +36,11 @@ tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 workspace = true
 
 [features]
-default = ["hmac_rust"]
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
+default = ["hmac_rust"]
 
 [package.metadata.docs.rs]
 features = ["key_auth"]

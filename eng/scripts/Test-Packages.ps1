@@ -11,9 +11,13 @@ Set-StrictMode -Version 2.0
 
 . "$PSScriptRoot\..\common\scripts\common.ps1"
 
-Write-Host "Testing packages with
+Write-Host @"
+Testing packages with
     Toolchain: '$Toolchain'
-    PackageInfoDirectory: '$PackageInfoDirectory'"
+    PackageInfoDirectory: '$PackageInfoDirectory'
+    RUSTFLAGS: '${env:RUSTFLAGS}'
+    RUSTDOCFLAGS: '${env:RUSTDOCFLAGS}'
+"@
 
 if ($PackageInfoDirectory) {
   if (!(Test-Path $PackageInfoDirectory)) {
@@ -33,9 +37,6 @@ Write-Host "Testing packages:"
 foreach ($package in $packagesToTest) {
   Write-Host "  '$($package.Name)' in '$($package.DirectoryPath)'"
 }
-
-Write-Host "Setting RUSTFLAGS to '-Dwarnings'"
-$env:RUSTFLAGS = "-Dwarnings"
 
 foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))

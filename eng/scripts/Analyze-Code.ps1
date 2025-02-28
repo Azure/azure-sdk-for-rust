@@ -13,11 +13,12 @@ Set-StrictMode -Version 2.0
 
 . (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
 
-Write-Host "Analyzing code with
-    Toolchain: '$Toolchain'`n"
-
-$env:RUSTDOCFLAGS = "-D warnings"
-$env:RUSTFLAGS = "-Dwarnings"
+Write-Host @"
+Analyzing code with
+    Toolchain: '$Toolchain'
+    RUSTFLAGS: '${env:RUSTFLAGS}'
+    RUSTDOCFLAGS: '${env:RUSTDOCFLAGS}'
+"@
 
 if ($CheckWasm) {
   Invoke-LoggedCommand "rustup target add --toolchain $Toolchain wasm32-unknown-unknown"
