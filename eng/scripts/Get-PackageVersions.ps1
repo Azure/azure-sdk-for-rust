@@ -10,8 +10,10 @@ $metadata = cargo metadata --format-version 1 --no-deps --all-features | Convert
 $packages = $metadata.packages
 foreach ($package in $packages) {
   try {
-    $resp = Invoke-RestMEthod "https://crates.io/api/v1/crates/$($package.name)"
-    $package.released_version = $resp.crate.max_stable_version
+    $name = $package.name
+    $resp = Invoke-WebRequest "https://index.crates.io/$($name.Substring(0,2))/$($name.Substring(2,2))/$name"
+    $latest = $resp.Content.Trim().Split("`n") | Select-Object -last 1 | ConvertFrom-Json
+    $package.released_version = $latest.vers
   }
   catch {
   }
