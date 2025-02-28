@@ -25,7 +25,7 @@ url.workspace = true
 
 [dev-dependencies]
 azure_identity = "0.22.0"
-azure_core_test.workspace = true
+azure_core_test.path = "../../core/azure_core_test"
 clap.workspace = true
 reqwest.workspace = true
 time.workspace = true
