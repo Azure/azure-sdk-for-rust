@@ -169,14 +169,14 @@ function Add-PathVersions($packages) {
 
 Push-Location $RepoRoot
 try {
+  Write-Host "Setting RUSTFLAGS to '-Dwarnings'"
+  $env:RUSTFLAGS = "-Dwarnings"
+
   $localRegistryPath = Initialize-VendorDirectory
 
   [array]$packages = Get-PackagesToBuild
 
   Add-PathVersions $packages
-
-  # Deny warnings while we're publishing
-  $env:RUSTFLAGS = "-D warnings"
 
   Write-Host "Building packages in the following order:"
   foreach ($package in $packages) {
