@@ -38,7 +38,7 @@ Before create a pull request (PR), it's a good practice to build and lint your p
 ## Testing
 
 To test any crate in the Azure SDK for Rust navigate to the crate's project folder and run `cargo test`.
-Alternatively, you can build any one or more crates by passing their crate names to `--package` (short: `-p`) e.g., `cargo test -p azure_security_keyvault_secrets`.
+Alternatively, you can test any one or more crates by passing their crate names to `--package` (short: `-p`) e.g., `cargo test -p azure_security_keyvault_secrets`.
 
 This command will run all tests in the selected packages, including unit tests, integration tests, any tests within examples, and doc tests.
 To learn more about the different styles of tests and where they are located in a project, see [Tests in The Cargo Book](https://doc.rust-lang.org/cargo/reference/cargo-targets.html#tests).
