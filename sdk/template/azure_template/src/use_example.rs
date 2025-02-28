@@ -7,7 +7,7 @@
 pub use std::fmt::Display;
 
 // Importing multiple items from the same module
-pub use std::collections::{HashMap, HashSet, VecDeque};
+pub use std::collections::{HashMap, HashSet};
 
 // Importing all public items from a module with the glob operator
 pub use std::io::prelude::*;
