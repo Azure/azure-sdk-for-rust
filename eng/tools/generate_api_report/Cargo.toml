@@ -7,8 +7,8 @@ repository = "https://github.com/azure/azure-sdk-for-rust"
 rust-version = "1.80"
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 toml = "0.8.20"
+rustdoc-types = "0.33.0"
 
 [workspace]

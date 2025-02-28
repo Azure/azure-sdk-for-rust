@@ -1,12 +1,10 @@
-use crate::models::Crate;
+use rustdoc_types::Crate;
 use std::env;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
-
-mod models;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Get the package name from command-line arguments
@@ -50,20 +48,29 @@ fn main() -> Result<(), Box<dyn Error>> {
     // 1. with item.inner.impl.is_synthetic set to true - [auto traits]
     // 2. with item.inner.impl.blanket_impl is not null - [blanket impls]
     root.index.retain(|_id, item| {
-        if let Some(inner_impl) = item.inner.get("impl") {
-            if let Some(is_synthetic) = inner_impl.get("is_synthetic") {
-                if is_synthetic.as_bool().unwrap_or(false) {
-                    return false;
-                }
+        if let rustdoc_types::ItemEnum::Impl(impl_item) = &item.inner {
+            // Filter out auto traits
+            if impl_item.is_synthetic {
+                return false;
             }
-            if let Some(blanket_impl) = inner_impl.get("blanket_impl") {
-                if !blanket_impl.is_null() {
-                    return false;
-                }
+            // Filter out blanket implementations
+            if impl_item.blanket_impl.is_some() {
+                return false;
             }
         }
         true
     });
+
+    // Clear unnecessary fields in the Crate structure
+    // 1. paths
+    // 2. external_crates
+    // 3. span in all items
+    root.paths.clear();
+    root.external_crates.clear();
+    for (_id, item) in root.index.iter_mut() {
+        // Reset span to default empty value
+        item.span = Default::default();
+    }
 
     // Navigate to Cargo.toml and get the path for the package
     let cargo_toml_path = Path::new("Cargo.toml");
