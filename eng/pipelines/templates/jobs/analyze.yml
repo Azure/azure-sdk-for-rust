@@ -6,9 +6,6 @@ parameters:
 - name: TimeoutInMinutes
   type: number
 
-variables:
-- template: /eng/pipelines/templates/variables/rust.yml
-
 jobs:
 - job: "Analyze"
   condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], 'true'))

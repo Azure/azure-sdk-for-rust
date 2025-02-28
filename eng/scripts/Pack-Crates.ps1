@@ -13,6 +13,11 @@ $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
 
+Write-Host @"
+Packing crates with
+    RUSTFLAGS: '${env:RUSTFLAGS}'
+"@
+
 if ($OutputPath) {
   $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
 }
@@ -76,7 +81,7 @@ function Get-PackagesToBuild() {
 
   # We start with output packages, then recursively add unreleased dependencies to the list of packages that need to be built
   [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
-  
+
   $toProcess = $packagesToBuild
   while ($toProcess.Length -gt 0) {
     $package = $toProcess[0]
@@ -89,14 +94,14 @@ function Get-PackagesToBuild() {
       }
     }
   }
-  
+
   $buildOrder = @()
 
   # Then we order the packages to that dependencies are built first
   while ($packagesToBuild.Count -gt 0) {
     # Pick any package with no unreleased dependencies, add it to the build order and remove it from the list of other packages' unreleased dependencies
     $package = $packagesToBuild | Where-Object { $_.UnreleasedDependencies.Count -eq 0 } | Select-Object -First 1
-    
+
     if (-not $package) {
       Write-Error "These packages cannot be built because they depend on unreleased dependencies that aren't being built." -ErrorAction Continue
       foreach ($package in $packagesToBuild) {
@@ -150,7 +155,7 @@ function Add-PathVersions($packages) {
 
     foreach ($name in $toml.dependencies.Keys) {
       # we want to look at the dependency as it was resolved by `cargo metadata`
-      # this will resolve workspace depdencies, but retain their path/no-version state 
+      # this will resolve workspace depdencies, but retain their path/no-version state
       $dependency = $package.dependencies | Where-Object -Property name -EQ -Value $name | Select-Object -First 1
       # If the dependency is a path dependency, set the version to the version of the package in the workspace
       if ($dependency.path -and !$dependency.version) {

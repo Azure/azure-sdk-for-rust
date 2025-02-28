@@ -11,9 +11,13 @@ Set-StrictMode -Version 2.0
 
 . "$PSScriptRoot\..\common\scripts\common.ps1"
 
-Write-Host "Testing packages with
+Write-Host @"
+Testing packages with
     Toolchain: '$Toolchain'
-    PackageInfoDirectory: '$PackageInfoDirectory'"
+    PackageInfoDirectory: '$PackageInfoDirectory'
+    RUSTFLAGS: '${env:RUSTFLAGS}'
+    RUSTDOCFLAGS: '${env:RUSTDOCFLAGS}'
+"@
 
 if ($PackageInfoDirectory) {
   if (!(Test-Path $PackageInfoDirectory)) {

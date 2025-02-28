@@ -8,9 +8,6 @@ parameters:
 - name: PipelineArtifactName
   type: string
 
-variables:
-- template: /eng/pipelines/templates/variables/rust.yml
-
 jobs:
 - job: Pack
   displayName: "Pack Crates"
