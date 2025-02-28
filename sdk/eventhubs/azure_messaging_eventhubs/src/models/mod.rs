@@ -20,6 +20,7 @@ pub mod builders {
 /// Event sent to an Event Hub.
 pub use event_data::EventData;
 
+use azure_core::Uuid;
 use azure_core_amqp::AmqpMessageId;
 use std::fmt::Debug;
 
@@ -138,7 +139,7 @@ pub enum MessageId {
     Ulong(u64),
 
     /// A UUID representation of the message identifier.
-    Uuid(uuid::Uuid),
+    Uuid(Uuid),
 }
 
 impl From<u64> for MessageId {
@@ -147,8 +148,8 @@ impl From<u64> for MessageId {
     }
 }
 
-impl From<uuid::Uuid> for MessageId {
-    fn from(value: uuid::Uuid) -> Self {
+impl From<Uuid> for MessageId {
+    fn from(value: Uuid) -> Self {
         Self::Uuid(value)
     }
 }
@@ -171,7 +172,7 @@ impl From<String> for MessageId {
     }
 }
 
-impl From<MessageId> for uuid::Uuid {
+impl From<MessageId> for Uuid {
     fn from(message_id: MessageId) -> Self {
         match message_id {
             MessageId::Uuid(uuid) => uuid,
@@ -243,7 +244,7 @@ mod tests {
 
     #[test]
     fn test_message_id_from_uuid() {
-        let value = uuid::Uuid::new_v4();
+        let value = Uuid::new_v4();
         let message_id = MessageId::from(value);
         assert_eq!(message_id, MessageId::Uuid(value));
     }
@@ -264,7 +265,7 @@ mod tests {
 
     #[test]
     fn test_message_id_into_uuid() {
-        let value = uuid::Uuid::new_v4();
+        let value = Uuid::new_v4();
         let message_id: MessageId = value.into();
         assert_eq!(message_id, MessageId::Uuid(value));
     }

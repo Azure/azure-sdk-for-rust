@@ -26,18 +26,17 @@ fe2o3-amqp-management = { workspace = true, optional = true }
 fe2o3-amqp-types = { workspace = true, optional = true }
 serde_amqp = { workspace = true, optional = true }
 serde_bytes = { workspace = true, optional = true }
-typespec = { workspace = true, features = ["amqp"] }
 time.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-uuid = { workspace = true }
-url = { workspace = true }
+typespec = { workspace = true, features = ["amqp"] }
 
 [dev-dependencies]
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
 default = ["fe2o3-amqp"]
+cplusplus = []
 fe2o3-amqp = [
   "dep:fe2o3-amqp",
   "fe2o3-amqp-types",
@@ -47,7 +46,6 @@ fe2o3-amqp = [
   "serde_amqp",
   "serde_bytes",
 ]
-cplusplus = []
 
 [package.metadata.docs.rs]
 features = ["fe2o3-amqp"]

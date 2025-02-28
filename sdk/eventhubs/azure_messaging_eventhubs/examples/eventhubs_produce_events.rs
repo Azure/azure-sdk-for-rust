@@ -1,10 +1,10 @@
 use core::f32;
 
+use azure_core::Uuid;
 /// This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
 ///
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{models::EventData, ProducerClient, SendEventOptions};
-use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

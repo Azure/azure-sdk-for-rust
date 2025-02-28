@@ -6,10 +6,9 @@ use std::sync::Mutex;
 use super::ProducerClient;
 
 use crate::models::EventData;
-use azure_core::{error::Result, Error, Url};
+use azure_core::{error::Result, Error, Url, Uuid};
 use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
 use tracing::debug;
-use uuid::Uuid;
 
 /// Represents the options that can be set when adding event data to an [`EventDataBatch`].
 pub struct AddEventDataOptions {}

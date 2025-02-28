@@ -11,8 +11,7 @@ use super::{
     models::{EventHubPartitionProperties, EventHubProperties},
 };
 use crate::{common::connection_manager::ConnectionManager, error::EventHubsError};
-use azure_core::Url;
-use azure_core::{credentials::TokenCredential, error::Result, RetryOptions};
+use azure_core::{credentials::TokenCredential, error::Result, RetryOptions, Url, Uuid};
 use azure_core_amqp::{
     AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap, AmqpReceiver,
     AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSessionApis, AmqpSource,
@@ -217,7 +216,7 @@ impl ConsumerClient {
         let receiver_name = self
             .instance_id
             .clone()
-            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+            .unwrap_or_else(|| Uuid::new_v4().to_string());
         let start_expression = StartPosition::start_expression(&options.start_position);
 
         self.connection_manager.ensure_connection().await?;

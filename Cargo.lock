@@ -295,8 +295,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "typespec",
- "url",
- "uuid",
 ]
 
 [[package]]
@@ -396,8 +394,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "url",
- "uuid",
 ]
 
 [[package]]
