@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::Uuid;
+use azure_core::Uuid;
 use std::borrow::Borrow;
 
 #[cfg(feature = "cplusplus")]

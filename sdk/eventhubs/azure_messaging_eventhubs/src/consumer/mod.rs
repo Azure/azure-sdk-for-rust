@@ -5,30 +5,19 @@
 /// Receive messages from a partition.
 pub(crate) mod event_receiver;
 
-pub use event_receiver::EventReceiver;
-
-use crate::error::EventHubsError;
-
 use super::{
-    common::{
-        user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
-        ManagementInstance,
-    },
+    common::ManagementInstance,
     error::ErrorKind,
     models::{EventHubPartitionProperties, EventHubProperties},
 };
-
-use azure_core::{
-    credentials::{AccessToken, TokenCredential},
-    error::{Error, Result},
-    RetryOptions,
-};
+use crate::{common::connection_manager::ConnectionManager, error::EventHubsError};
+use azure_core::{credentials::TokenCredential, error::Result, RetryOptions, Url, Uuid};
 use azure_core_amqp::{
-    AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpConnectionApis,
-    AmqpConnectionOptions, AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap,
-    AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSessionApis, AmqpSource,
+    AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap, AmqpReceiver,
+    AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSessionApis, AmqpSource,
     AmqpSourceFilter, AmqpSymbol, AmqpValue, ReceiverCreditMode,
 };
+pub use event_receiver::EventReceiver;
 use std::{
     collections::HashMap,
     default::Default,
@@ -38,25 +27,32 @@ use std::{
 };
 use tokio::sync::Mutex;
 use tracing::{debug, trace};
-use url::Url;
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
     session_instances: Mutex<HashMap<String, Arc<AmqpSession>>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
-    connection: OnceLock<AmqpConnection>,
+    connection_manager: ConnectionManager,
+    //    connection: OnceLock<AmqpConnection>,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
     eventhub: String,
-    url: String,
-    authorization_scopes: Mutex<HashMap<String, AccessToken>>,
-    /// The application ID to set.
-    application_id: Option<String>,
+    endpoint: Url,
     /// The instance ID to set.
     instance_id: Option<String>,
     /// The retry options to set.
     #[allow(dead_code)]
     retry_options: Option<RetryOptions>,
 }
+
+// Clippy complains if a method has too many parameters, so we put some of the
+// parameters into a private client options structure.
+struct ConsumerClientOptions {
+    application_id: Option<String>,
+    instance_id: Option<String>,
+    retry_options: Option<RetryOptions>,
+    custom_endpoint: Option<Url>,
+}
+
 impl ConsumerClient {
     /// Builds a new [`ConsumerClient`] instance with the specified parameters.
     ///
@@ -91,27 +87,30 @@ impl ConsumerClient {
         eventhub_name: String,
         consumer_group: Option<String>,
         credential: Arc<dyn TokenCredential>,
-        application_id: Option<String>,
-        instance_id: Option<String>,
-        retry_options: Option<RetryOptions>,
-    ) -> Self {
+        options: ConsumerClientOptions,
+    ) -> Result<Self> {
         let consumer_group = consumer_group.unwrap_or("$Default".into());
         let url = format!(
             "amqps://{}/{}/ConsumerGroups/{}",
             fully_qualified_namespace, eventhub_name, consumer_group
         );
-        Self {
-            application_id,
-            instance_id,
-            retry_options,
+        let url = Url::parse(&url)?;
+
+        trace!("Creating consumer client for {url}.");
+        Ok(Self {
+            instance_id: options.instance_id,
+            retry_options: options.retry_options,
             session_instances: Mutex::new(HashMap::new()),
             mgmt_client: Mutex::new(OnceLock::new()),
-            connection: OnceLock::new(),
+            connection_manager: ConnectionManager::new(
+                url.clone(),
+                options.application_id,
+                options.custom_endpoint.clone(),
+            ),
             credential,
             eventhub: eventhub_name,
-            url,
-            authorization_scopes: Mutex::new(HashMap::new()),
-        }
+            endpoint: url,
+        })
     }
 
     /// Closes the connection to the Event Hub.
@@ -152,12 +151,7 @@ impl ConsumerClient {
     /// }
     /// ```
     pub async fn close(self) -> Result<()> {
-        self.connection
-            .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
-            .close()
-            .await?;
-        Ok(())
+        self.connection_manager.close_connection().await
     }
 
     /// Attaches a message receiver to a specific partition of the Event Hub.
@@ -222,15 +216,28 @@ impl ConsumerClient {
         let receiver_name = self
             .instance_id
             .clone()
-            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+            .unwrap_or_else(|| Uuid::new_v4().to_string());
         let start_expression = StartPosition::start_expression(&options.start_position);
-        let source_url = format!("{}/Partitions/{}", self.url, partition_id);
 
-        self.authorize_path(source_url.clone()).await?;
+        self.connection_manager.ensure_connection().await?;
+
+        trace!(
+            "Opening receiver on url {} partition {partition_id}.",
+            self.endpoint
+        );
+
+        let source_url = format!("{}/Partitions/{}", self.endpoint, partition_id);
+        let source_url = Url::parse(&source_url)?;
+
+        let connection = self.connection_manager.get_connection()?;
+
+        self.connection_manager
+            .authorize_path(&connection, &source_url, self.credential.clone())
+            .await?;
 
         let session = self.get_session(partition_id).await?;
         let message_source = AmqpSource::builder()
-            .with_address(source_url)
+            .with_address(source_url.to_string())
             .add_to_filter(
                 AmqpSourceFilter::selector_filter().description().into(),
                 Box::new(AmqpDescribed::new(
@@ -378,21 +385,20 @@ impl ConsumerClient {
         }
 
         // Clients must call ensure_connection before calling ensure_management_client.
-        if self.connection.get().is_none() {
-            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
-        }
 
         trace!("Create management session.");
-        let connection = self
-            .connection
-            .get()
-            .ok_or(EventHubsError::from(ErrorKind::MissingConnection))?;
+        let connection = self.connection_manager.get_connection()?;
         let session = AmqpSession::new();
-        session.begin(connection, None).await?;
+        session.begin(connection.as_ref(), None).await?;
         trace!("Session created.");
 
-        let management_path = self.url.clone() + "/$management";
-        let access_token = self.authorize_path(management_path).await?;
+        let management_path = self.endpoint.to_string() + "/$management";
+        let management_path = Url::parse(&management_path)?;
+
+        let access_token = self
+            .connection_manager
+            .authorize_path(&connection, &management_path, self.credential.clone())
+            .await?;
 
         trace!("Create management client.");
         let management = AmqpManagement::new(
@@ -408,95 +414,19 @@ impl ConsumerClient {
         Ok(())
     }
 
-    async fn ensure_connection(&self, url: &str) -> Result<()> {
-        if self.connection.get().is_none() {
-            let connection = AmqpConnection::new();
-            connection
-                .open(
-                    self.application_id
-                        .clone()
-                        .unwrap_or(uuid::Uuid::new_v4().to_string()),
-                    Url::parse(url).map_err(Error::from)?,
-                    Some(AmqpConnectionOptions {
-                        properties: Some(
-                            vec![
-                                ("user-agent", get_user_agent(&self.application_id)),
-                                ("version", get_package_version()),
-                                ("platform", get_platform_info()),
-                                ("product", get_package_name()),
-                            ]
-                            .into_iter()
-                            .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-                            .collect(),
-                        ),
-                        ..Default::default()
-                    }),
-                )
-                .await?;
-            self.connection
-                .set(connection)
-                .map_err(|_| EventHubsError::from(ErrorKind::MissingManagementClient))?
-        }
+    async fn ensure_connection(&self) -> Result<()> {
+        self.connection_manager.ensure_connection().await?;
         Ok(())
-    }
-
-    async fn authorize_path(&self, url: String) -> Result<AccessToken> {
-        debug!("Authorizing path: {:?}", url);
-        let mut scopes = self.authorization_scopes.lock().await;
-        if self.connection.get().is_none() {
-            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
-        }
-        if !scopes.contains_key(url.as_str()) {
-            let connection = self
-                .connection
-                .get()
-                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
-
-            // Create an ephemeral session to host the authentication.
-            let session = AmqpSession::new();
-            session.begin(connection, None).await?;
-
-            let cbs = AmqpClaimsBasedSecurity::new(&session)?;
-            cbs.attach().await?;
-
-            debug!("Get Token.");
-            let token = self
-                .credential
-                .get_token(&["https://eventhubs.azure.net/.default"])
-                .await?;
-            debug!("Got token: {:?}", token.token.secret());
-            let expires_at = token.expires_on;
-            cbs.authorize_path(
-                url.clone(),
-                None,
-                token.token.secret().to_string(),
-                expires_at,
-            )
-            .await?;
-
-            // insert returns some if it *fails* to insert, None if it succeeded.
-            let present = scopes.insert(url.clone(), token);
-            if present.is_some() {
-                return Err(EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken).into());
-            }
-            trace!("Token added.");
-        }
-        Ok(scopes
-            .get(url.as_str())
-            .ok_or_else(|| EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken))?
-            .clone())
     }
 
     async fn get_session(&self, partition_id: &str) -> Result<Arc<AmqpSession>> {
         let mut session_instances = self.session_instances.lock().await;
         if !session_instances.contains_key(partition_id) {
             debug!("Creating session for partition: {:?}", partition_id);
-            let connection = self
-                .connection
-                .get()
-                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+            let connection = self.connection_manager.get_connection()?;
+
             let session = AmqpSession::new();
-            session.begin(connection, None).await?;
+            session.begin(connection.as_ref(), None).await?;
             session_instances.insert(partition_id.to_string(), Arc::new(session));
         }
         let rv = session_instances
@@ -676,20 +606,19 @@ pub mod builders {
     ///   Ok(())
     /// }
     /// ```
+    #[derive(Default)]
     pub struct ConsumerClientBuilder {
         consumer_group: Option<String>,
         application_id: Option<String>,
         instance_id: Option<String>,
         retry_options: Option<RetryOptions>,
+        custom_endpoint: Option<String>,
     }
 
     impl ConsumerClientBuilder {
         pub(super) fn new() -> Self {
             Self {
-                consumer_group: None,
-                application_id: None,
-                instance_id: None,
-                retry_options: None,
+                ..Default::default()
             }
         }
 
@@ -740,6 +669,22 @@ pub mod builders {
             self
         }
 
+        /// Sets a custom endpoint for the Event Hub.
+        ///
+        /// # Arguments
+        /// * `endpoint` - The custom endpoint for the Event Hub.
+        ///
+        /// # Returns
+        /// The updated [`ConsumerClientBuilder`].
+        ///
+        /// Note: The custom endpoint option allows a customer to specify an AMQP proxy
+        /// which will be used to forward requests to the actual Event Hub instance.
+        ///
+        pub fn with_custom_endpoint(mut self, endpoint: &str) -> Self {
+            self.custom_endpoint = Some(endpoint.to_string());
+            self
+        }
+
         /// Opens a connection to the Event Hub.
         ///
         /// This method establishes a connection to the Event Hubs instance associated
@@ -781,16 +726,24 @@ pub mod builders {
             eventhub_name: &str,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<super::ConsumerClient> {
+            let custom_endpoint = match self.custom_endpoint {
+                Some(endpoint) => Some(Url::parse(&endpoint)?),
+                None => None,
+            };
+            trace!("Opening consumer client on {fully_qualified_namespace}.");
             let consumer = super::ConsumerClient::new(
                 fully_qualified_namespace.to_string(),
                 eventhub_name.to_string(),
                 self.consumer_group,
                 credential,
-                self.application_id,
-                self.instance_id,
-                self.retry_options,
-            );
-            consumer.ensure_connection(&consumer.url).await?;
+                ConsumerClientOptions {
+                    application_id: self.application_id,
+                    instance_id: self.instance_id,
+                    retry_options: self.retry_options,
+                    custom_endpoint,
+                },
+            )?;
+            consumer.ensure_connection().await?;
             Ok(consumer)
         }
     }

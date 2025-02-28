@@ -5,14 +5,10 @@ use std::sync::Mutex;
 
 use super::ProducerClient;
 
-use crate::{
-    error::{ErrorKind, EventHubsError},
-    models::EventData,
-};
-use azure_core::{error::Result, Error};
+use crate::models::EventData;
+use azure_core::{error::Result, Error, Url, Uuid};
 use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
 use tracing::debug;
-use uuid::Uuid;
 
 /// Represents the options that can be set when adding event data to an [`EventDataBatch`].
 pub struct AddEventDataOptions {}
@@ -81,7 +77,7 @@ impl<'a> EventDataBatch<'a> {
     }
 
     pub(crate) async fn attach(&mut self) -> Result<()> {
-        let sender = self.producer.ensure_sender(self.get_batch_path()).await?;
+        let sender = self.producer.ensure_sender(&self.get_batch_path()?).await?;
         self.max_size_in_bytes =
             sender
                 .lock()
@@ -128,19 +124,24 @@ impl<'a> EventDataBatch<'a> {
         self.len() == 0
     }
 
+    fn arithmetic_error() -> azure_core::Error {
+        azure_core::Error::message(
+            azure_core::error::ErrorKind::DataConversion,
+            "Arithmetic error calculating Batch size.",
+        )
+    }
+
     fn calculate_actual_size_for_payload(length: usize) -> Result<u64> {
         const MESSAGE_HEADER_SIZE_32: usize = 8;
         const MESSAGE_HEADER_SIZE_8: usize = 5;
         if length < 256 {
             Ok(length
                 .checked_add(MESSAGE_HEADER_SIZE_8)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::ArithmeticError))?
-                as u64)
+                .ok_or_else(Self::arithmetic_error)? as u64)
         } else {
             Ok(length
                 .checked_add(MESSAGE_HEADER_SIZE_32)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::ArithmeticError))?
-                as u64)
+                .ok_or_else(Self::arithmetic_error)? as u64)
         }
     }
 
@@ -243,11 +244,10 @@ impl<'a> EventDataBatch<'a> {
         let message_len = AmqpMessage::serialize(&message)?.len();
         if batch_state.serialized_messages.is_empty() {
             // The first message serialized is the batch envelope - we capture the parameters from the first message to use for the batch
-            batch_state.size_in_bytes =
-                batch_state
-                    .size_in_bytes
-                    .checked_add(message_len as u64)
-                    .ok_or_else(|| EventHubsError::from(ErrorKind::ArithmeticError))?;
+            batch_state.size_in_bytes = batch_state
+                .size_in_bytes
+                .checked_add(message_len as u64)
+                .ok_or_else(Self::arithmetic_error)?;
             batch_state.batch_envelope = Some(self.create_batch_envelope(&message));
         }
         let serialized_message = AmqpMessage::serialize(&message)?;
@@ -256,7 +256,7 @@ impl<'a> EventDataBatch<'a> {
         if batch_state
             .size_in_bytes
             .checked_add(actual_message_size)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::ArithmeticError))?
+            .ok_or_else(Self::arithmetic_error)?
             > self.max_size_in_bytes
         {
             debug!("Batch is full. Cannot add more messages.");
@@ -298,11 +298,13 @@ impl<'a> EventDataBatch<'a> {
         batch_envelope
     }
 
-    pub(crate) fn get_batch_path(&self) -> String {
+    pub(crate) fn get_batch_path(&self) -> Result<Url> {
         if let Some(partition_id) = self.partition_id.as_ref() {
-            format!("{}/Partitions/{}", self.producer.base_url(), partition_id)
+            let batch_path = format!("{}/Partitions/{}", self.producer.base_url(), partition_id);
+
+            Url::parse(&batch_path).map_err(azure_core::Error::from)
         } else {
-            self.producer.base_url()
+            Ok(self.producer.base_url().clone())
         }
     }
 

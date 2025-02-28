@@ -71,7 +71,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
     }
 
     async fn detach(mut self) -> Result<()> {
-        let cbs = self.cbs.take().ok_or(Self::cbs_not_set())?;
+        let cbs = self.cbs.take().ok_or_else(Self::cbs_not_set)?;
         let cbs = cbs.into_inner();
         cbs.close().await.map_err(AmqpError::from)?;
         Ok(())

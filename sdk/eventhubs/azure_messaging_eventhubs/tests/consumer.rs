@@ -164,6 +164,7 @@ async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
         .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
+    info!("Client open, create receiver.");
     let receiver = client
         .open_receiver_on_partition(
             "0",

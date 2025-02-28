@@ -2,29 +2,20 @@
 // Licensed under the MIT license.
 
 use crate::{
-    common::{
-        user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
-        ManagementInstance,
-    },
+    common::{connection_manager::ConnectionManager, ManagementInstance},
     error::{ErrorKind, EventHubsError},
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
 };
-use azure_core::{
-    credentials::AccessToken,
-    error::{Error, Result},
-    RetryOptions, Uuid,
-};
+use azure_core::{error::Result, RetryOptions, Url, Uuid};
 use azure_core_amqp::{
-    AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpConnectionApis,
-    AmqpConnectionOptions, AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender,
-    AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSymbol, AmqpValue,
+    AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSession,
+    AmqpSessionApis, AmqpSessionOptions, AmqpSymbol,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::sync::{Arc, OnceLock};
 use std::{collections::HashMap, fmt::Debug};
 use tokio::sync::Mutex;
-use tracing::{debug, trace};
-use url::Url;
+use tracing::trace;
 
 /// Types used to collect messages into a "batch" before submitting them to an Event Hub.
 pub(crate) mod batch;
@@ -68,14 +59,12 @@ pub struct SendBatchOptions {}
 /// }
 /// ```
 pub struct ProducerClient {
-    sender_instances: Mutex<HashMap<String, SenderInstance>>,
+    sender_instances: Mutex<HashMap<Url, SenderInstance>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
-    connection: OnceLock<AmqpConnection>,
+    connection_manager: ConnectionManager,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
     eventhub: String,
-    url: String,
-    authorization_scopes: Mutex<HashMap<String, AccessToken>>,
-    /// The application id that will be used to identify the client.
+    endpoint: Url,
     application_id: Option<String>,
 
     /// The options used to configure retry operations.
@@ -100,22 +89,26 @@ pub struct SendMessageOptions {}
 
 impl ProducerClient {
     pub(crate) fn new(
-        url: String,
+        endpoint: Url,
         eventhub: String,
         credential: Arc<dyn azure_core::credentials::TokenCredential>,
         application_id: Option<String>,
         retry_options: Option<RetryOptions>,
+        custom_endpoint: Option<Url>,
     ) -> Self {
         Self {
             sender_instances: Mutex::new(HashMap::new()),
             mgmt_client: Mutex::new(OnceLock::new()),
-            connection: OnceLock::new(),
+            connection_manager: ConnectionManager::new(
+                endpoint.clone(),
+                application_id.clone(),
+                custom_endpoint.clone(),
+            ),
             credential: credential.clone(),
             eventhub,
-            url,
-            authorization_scopes: Mutex::new(HashMap::new()),
-            application_id,
+            endpoint,
             retry_options,
+            application_id,
         }
     }
 
@@ -141,12 +134,7 @@ impl ProducerClient {
     ///
     /// Note that dropping the ProducerClient will also close the connection.
     pub async fn close(self) -> Result<()> {
-        self.connection
-            .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
-            .close()
-            .await?;
-        Ok(())
+        self.connection_manager.close_connection().await
     }
 
     /// Sends an event to the Event Hub.
@@ -202,7 +190,7 @@ impl ProducerClient {
         message: impl Into<AmqpMessage> + Debug,
         #[allow(unused_variables)] options: Option<SendMessageOptions>,
     ) -> Result<()> {
-        let sender = self.ensure_sender(self.url.clone()).await.unwrap();
+        let sender = self.ensure_sender(&self.endpoint).await.unwrap();
 
         let outcome = sender
             .lock()
@@ -312,7 +300,7 @@ impl ProducerClient {
         batch: &EventDataBatch<'_>,
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
-        let sender = self.ensure_sender(batch.get_batch_path()).await?;
+        let sender = self.ensure_sender(&batch.get_batch_path()?).await?;
         let messages = batch.get_messages();
 
         let outcome = sender
@@ -417,10 +405,14 @@ impl ProducerClient {
             .await
     }
 
-    pub(crate) fn base_url(&self) -> String {
-        self.url.clone()
+    pub(crate) fn base_url(&self) -> &Url {
+        &self.endpoint
     }
 
+    async fn ensure_connection(&self) -> Result<()> {
+        self.connection_manager.ensure_connection().await?;
+        Ok(())
+    }
     async fn ensure_management_client(&self) -> Result<()> {
         trace!("Ensure management client.");
 
@@ -432,22 +424,20 @@ impl ProducerClient {
         }
 
         // Clients must call ensure_connection before calling ensure_management_client.
-        if self.connection.get().is_none() {
-            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
-        }
 
         trace!("Create management session.");
-        let connection = self
-            .connection
-            .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+        let connection = self.connection_manager.get_connection()?;
 
         let session = AmqpSession::new();
-        session.begin(connection, None).await?;
+        session.begin(connection.as_ref(), None).await?;
         trace!("Session created.");
 
-        let management_path = self.url.clone() + "/$management";
-        let access_token = self.authorize_path(management_path).await?;
+        let management_path = self.endpoint.to_string() + "/$management";
+        let management_path = Url::parse(&management_path)?;
+        let access_token = self
+            .connection_manager
+            .authorize_path(&connection, &management_path, self.credential.clone())
+            .await?;
 
         trace!("Create management client.");
         let management =
@@ -460,52 +450,20 @@ impl ProducerClient {
         Ok(())
     }
 
-    async fn ensure_connection(&self, url: &str) -> Result<()> {
-        if self.connection.get().is_none() {
-            let connection = AmqpConnection::new();
-            connection
-                .open(
-                    self.application_id
-                        .clone()
-                        .unwrap_or(Uuid::new_v4().to_string()),
-                    Url::parse(url).map_err(Error::from)?,
-                    Some(AmqpConnectionOptions {
-                        properties: Some(
-                            vec![
-                                ("user-agent", get_user_agent(&self.application_id)),
-                                ("version", get_package_version()),
-                                ("platform", get_platform_info()),
-                                ("product", get_package_name()),
-                            ]
-                            .into_iter()
-                            .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-                            .collect(),
-                        ),
-                        ..Default::default()
-                    }),
-                )
-                .await?;
-            self.connection
-                .set(connection)
-                .map_err(|_| EventHubsError::from(ErrorKind::MissingConnection))?;
-        }
-        Ok(())
-    }
-
-    async fn ensure_sender(&self, path: String) -> Result<Arc<Mutex<AmqpSender>>> {
+    async fn ensure_sender(&self, path: &Url) -> Result<Arc<Mutex<AmqpSender>>> {
         let mut sender_instances = self.sender_instances.lock().await;
-        if !sender_instances.contains_key(&path) {
-            self.ensure_connection(&path).await?;
-            let connection = self
-                .connection
-                .get()
-                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+        if !sender_instances.contains_key(path) {
+            self.connection_manager.ensure_connection().await?;
 
-            self.authorize_path(path.clone()).await?;
+            let connection = self.connection_manager.get_connection()?;
+
+            self.connection_manager
+                .authorize_path(&connection, path, self.credential.clone())
+                .await?;
             let session = AmqpSession::new();
             session
                 .begin(
-                    connection,
+                    connection.as_ref(),
                     Some(AmqpSessionOptions {
                         incoming_window: Some(u32::MAX),
                         outgoing_window: Some(u32::MAX),
@@ -523,7 +481,7 @@ impl ProducerClient {
                             .as_ref()
                             .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
                     ),
-                    path.clone(),
+                    path.to_string(),
                     None,
                 )
                 .await?;
@@ -536,61 +494,18 @@ impl ProducerClient {
             );
         }
         Ok(sender_instances
-            .get(&path)
+            .get(path)
             .ok_or_else(|| EventHubsError::from(ErrorKind::MissingMessageSender))?
             .sender
-            .clone())
-    }
-
-    async fn authorize_path(&self, url: String) -> Result<AccessToken> {
-        debug!("Authorizing path: {:?}", url);
-        let mut scopes = self.authorization_scopes.lock().await;
-        if self.connection.get().is_none() {
-            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
-        }
-        if !scopes.contains_key(url.as_str()) {
-            let connection = self
-                .connection
-                .get()
-                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
-
-            // Create an ephemeral session to host the authentication.
-            let session = AmqpSession::new();
-            session.begin(connection, None).await?;
-
-            let cbs = AmqpClaimsBasedSecurity::new(&session)?;
-            cbs.attach().await?;
-
-            debug!("Get Token.");
-            let token = self
-                .credential
-                .get_token(&["https://eventhubs.azure.net/.default"])
-                .await?;
-            debug!("Got token: {:?}", token.token.secret());
-            let expires_at = token.expires_on;
-            cbs.authorize_path(
-                url.clone(),
-                None,
-                token.token.secret().to_string(),
-                expires_at,
-            )
-            .await?;
-            let present = scopes.insert(url.clone(), token);
-            // insert returns some if it *fails* to insert, None if it succeeded.
-            if present.is_some() {
-                return Err(EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken).into());
-            }
-        }
-        Ok(scopes
-            .get(url.as_str())
-            .ok_or_else(|| EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken))?
             .clone())
     }
 }
 
 pub mod builders {
     use super::ProducerClient;
+    use azure_core::Error;
     use azure_core::RetryOptions;
+    use azure_core::Url;
     use std::sync::Arc;
 
     /// A builder for creating a [`ProducerClient`].
@@ -610,12 +525,16 @@ pub mod builders {
     ///      .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
     /// }
     /// ```
+    #[derive(Default)]
     pub struct ProducerClientBuilder {
         /// The application id that will be used to identify the client.
         application_id: Option<String>,
 
         /// The options used to configure retry operations.
         retry_options: Option<RetryOptions>,
+
+        /// The custom endpoint for the Event Hub.
+        custom_endpoint: Option<String>,
     }
 
     impl ProducerClientBuilder {
@@ -631,8 +550,7 @@ pub mod builders {
         /// A new instance of [`ProducerClientBuilder`].
         pub(super) fn new() -> Self {
             Self {
-                application_id: None,
-                retry_options: None,
+                ..Default::default()
             }
         }
 
@@ -656,6 +574,22 @@ pub mod builders {
             self
         }
 
+        /// Sets a custom endpoint for the Event Hub.
+        ///
+        /// # Arguments
+        /// * `endpoint` - The custom endpoint for the Event Hub.
+        ///
+        /// # Returns
+        /// The updated [`ProducerClientBuilder`].
+        ///
+        /// Note: The custom endpoint option allows a customer to specify an AMQP proxy
+        /// which will be used to forward requests to the actual Event Hub instance.
+        ///
+        pub fn with_custom_endpoint(mut self, endpoint: &str) -> Self {
+            self.custom_endpoint = Some(endpoint.to_string());
+            self
+        }
+
         /// Opens the connection to the Event Hub.
         ///
         /// This method must be called before any other operation on the EventHub producer.
@@ -667,6 +601,12 @@ pub mod builders {
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> azure_core::Result<ProducerClient> {
             let url = format!("amqps://{}/{}", fully_qualified_namespace, eventhub);
+            let url = Url::parse(&url)?;
+
+            let custom_endpoint = match self.custom_endpoint {
+                Some(endpoint) => Some(Url::parse(&endpoint).map_err(Error::from)?),
+                None => None,
+            };
 
             let client = ProducerClient::new(
                 url.clone(),
@@ -674,9 +614,10 @@ pub mod builders {
                 credential,
                 self.application_id,
                 self.retry_options,
+                custom_endpoint,
             );
 
-            client.ensure_connection(&url).await?;
+            client.ensure_connection().await?;
             Ok(client)
         }
     }

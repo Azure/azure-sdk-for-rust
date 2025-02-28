@@ -82,7 +82,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         let management = self
             .management
             .take()
-            .ok_or(Self::amqp_management_not_attached())?;
+            .ok_or_else(Self::amqp_management_not_attached)?;
         let management = management.into_inner();
         management.close().await.map_err(AmqpError::from)?;
         Ok(())
@@ -96,7 +96,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
         let mut management = self
             .management
             .get()
-            .ok_or(Self::amqp_management_not_attached())?
+            .ok_or_else(Self::amqp_management_not_attached)?
             .lock()
             .await;
 

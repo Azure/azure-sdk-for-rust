@@ -35,7 +35,11 @@ impl Fe2o3AmqpSession {
 
     /// Returns a reference to the session handle
     pub fn get(&self) -> Result<Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>> {
-        Ok(self.session.get().ok_or(Self::session_not_set())?.clone())
+        Ok(self
+            .session
+            .get()
+            .ok_or_else(Self::session_not_set)?
+            .clone())
     }
 
     fn session_already_attached() -> azure_core::Error {
@@ -68,7 +72,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             .implementation
             .get()
             .get()
-            .ok_or(Self::session_already_attached())?
+            .ok_or_else(Self::session_already_attached)?
             .lock()
             .await;
 
@@ -126,7 +130,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         let mut session = self
             .session
             .get()
-            .ok_or(Self::session_not_set())?
+            .ok_or_else(Self::session_not_set)?
             .lock()
             .await;
         if session.is_ended() {

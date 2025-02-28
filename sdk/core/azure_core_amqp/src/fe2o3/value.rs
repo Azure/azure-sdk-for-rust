@@ -558,7 +558,7 @@ impl From<Fe2o3SerializationError> for azure_core::Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Uuid;
+    use azure_core::Uuid;
 
     #[test]
     fn test_from_fe2o3_amqp_types_primitives_symbol() {

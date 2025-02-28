@@ -78,7 +78,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
     }
 
     async fn detach(mut self) -> Result<()> {
-        let receiver = self.receiver.take().ok_or(Self::receiver_not_set())?;
+        let receiver = self.receiver.take().ok_or_else(Self::receiver_not_set)?;
         let res = receiver
             .into_inner()
             .detach()
@@ -100,13 +100,13 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
     }
 
     async fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()> {
-        let receiver = self.receiver.get().ok_or(Self::receiver_not_set())?;
+        let receiver = self.receiver.get().ok_or_else(Self::receiver_not_set)?;
         receiver.lock().await.set_credit_mode(credit_mode.into());
         Ok(())
     }
 
     async fn credit_mode(&self) -> Result<ReceiverCreditMode> {
-        let receiver = self.receiver.get().ok_or(Self::receiver_not_set())?;
+        let receiver = self.receiver.get().ok_or_else(Self::receiver_not_set)?;
         Ok(receiver.lock().await.credit_mode().into())
     }
 
@@ -114,7 +114,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let mut receiver = self
             .receiver
             .get()
-            .ok_or(Self::receiver_not_set())?
+            .ok_or_else(Self::receiver_not_set)?
             .lock()
             .await;
 
@@ -132,7 +132,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or(Self::receiver_not_set())?
+            .ok_or_else(Self::receiver_not_set)?
             .lock()
             .await;
 
@@ -150,7 +150,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or(Self::receiver_not_set())?
+            .ok_or_else(Self::receiver_not_set)?
             .lock()
             .await;
 
@@ -168,7 +168,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         let receiver = self
             .receiver
             .get()
-            .ok_or(Self::receiver_not_set())?
+            .ok_or_else(Self::receiver_not_set)?
             .lock()
             .await;
 

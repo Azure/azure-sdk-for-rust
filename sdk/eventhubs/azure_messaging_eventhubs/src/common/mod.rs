@@ -11,6 +11,7 @@ use azure_core_amqp::{
 };
 use std::time::SystemTime;
 
+pub(crate) mod connection_manager;
 pub(crate) mod user_agent;
 
 pub(crate) struct ManagementInstance {
@@ -65,8 +66,6 @@ impl ManagementInstance {
                 .clone(),
         )
         .0;
-        //        let partition_count: i32 =
-        //            Into::<i32>::into(response.get("partition_count".to_string()).ok_or_else(|| azure_core::Error::from(ErrorKind::InvalidManagementResponse))?.clone());
 
         let partition_ids = response
             .get(EVENTHUB_PROPERTY_PARTITION_IDS)

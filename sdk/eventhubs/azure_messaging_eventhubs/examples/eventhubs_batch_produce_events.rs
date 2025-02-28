@@ -1,8 +1,8 @@
+use azure_core::Uuid;
 /// This sample demonstrates how to send events to all partitions using a batch sender.
 ///
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{models::EventData, EventDataBatchOptions, ProducerClient};
-use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

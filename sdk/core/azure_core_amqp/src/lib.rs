@@ -11,7 +11,7 @@ mod noop;
 
 pub(crate) mod cbs;
 pub(crate) mod connection;
-pub(crate) mod error;
+pub mod error;
 pub(crate) mod management;
 pub(crate) mod messaging;
 pub(crate) mod receiver;
@@ -32,12 +32,10 @@ pub use receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, Receiver
 pub use sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSender, AmqpSenderApis, AmqpSenderOptions};
 pub use session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions};
 use std::fmt::Debug;
-pub use uuid::Uuid;
 pub use value::{AmqpDescribed, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 
 // AMQP Settle mode:
 // https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-sender-settle-mode
-
 const AMQP_SENDER_SETTLE_MODE_UNSETTLED: isize = 0;
 const AMQP_SENDER_SETTLE_MODE_SETTLED: isize = 1;
 const AMQP_SENDER_SETTLE_MODE_MIXED: isize = 2;

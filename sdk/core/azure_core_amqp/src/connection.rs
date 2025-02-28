@@ -12,17 +12,29 @@ type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
 #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
 type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
+/// Options for configuring an AMQP connection.
 #[derive(Debug, Default, Clone)]
 pub struct AmqpConnectionOptions {
+    /// Maximum frame size for the connection in bytes.
     pub max_frame_size: Option<u32>,
+    /// Maximum number of channels for the connection.
     pub channel_max: Option<u16>,
+    /// Idle timeout for the connection.
     pub idle_timeout: Option<Duration>,
+    /// List of outgoing locales for the connection.
     pub outgoing_locales: Option<Vec<String>>,
+    /// List of incoming locales for the connection.
     pub incoming_locales: Option<Vec<String>>,
+    /// List of offered capabilities for the connection.
     pub offered_capabilities: Option<Vec<AmqpSymbol>>,
+    /// List of desired capabilities for the connection.
     pub desired_capabilities: Option<Vec<AmqpSymbol>>,
+    /// Properties for the connection.
     pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+    /// Buffer size for the connection.
     pub buffer_size: Option<usize>,
+    /// Custom endpoint for the connection. Used to connect to a local AMQP proxy server.
+    pub custom_endpoint: Option<Url>,
 }
 
 impl AmqpConnectionOptions {}
@@ -205,6 +217,7 @@ mod tests {
             incoming_locales: Some(vec!["en-US".to_string()]),
             offered_capabilities: Some(vec!["capability".into()]),
             desired_capabilities: Some(vec!["capability".into()]),
+            custom_endpoint: Some(Url::parse("http://localhost:8080").unwrap()),
             properties: Some(
                 vec![("key", "value")]
                     .into_iter()
@@ -241,6 +254,10 @@ mod tests {
             Some(
                 vec![("key".into(), "value".into())].into_iter().collect() // convert to AmqpOrderedMap
             )
+        );
+        assert_eq!(
+            connection_options.custom_endpoint,
+            Some(Url::parse("http://localhost:8080").unwrap())
         );
     }
 
