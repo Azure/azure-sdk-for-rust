@@ -8,9 +8,8 @@ parameters:
 - name: PipelineArtifactName
   type: string
 
-env:
-  RUSTFLAGS: "-Dwarnings"
-  RUSTDOCFLAGS: "-Dwarnings"
+variables:
+- template: /eng/pipelines/templates/variables/rust.yml
 
 jobs:
 - job: Pack

@@ -6,9 +6,8 @@ parameters:
 - name: TimeoutInMinutes
   type: number
 
-env:
-  RUSTFLAGS: "-Dwarnings"
-  RUSTDOCFLAGS: "-Dwarnings"
+variables:
+- template: /eng/pipelines/templates/variables/rust.yml
 
 jobs:
 - job: "Analyze"

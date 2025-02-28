@@ -36,9 +36,8 @@ parameters:
   type: string
   default: stable
 
-env:
-  RUSTFLAGS: "-Dwarnings"
-  RUSTDOCFLAGS: "-Dwarnings"
+variables:
+- template: /eng/pipelines/templates/variables/rust.yml
 
 jobs:
 - template: /eng/pipelines/templates/jobs/pack.yml
