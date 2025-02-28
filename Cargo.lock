@@ -1640,18 +1640,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mock_transport"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "azure_core",
- "bytes",
- "log",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "native-tls"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
