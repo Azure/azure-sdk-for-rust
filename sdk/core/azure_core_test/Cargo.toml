@@ -21,7 +21,7 @@ tracing = ["tracing-subscriber"]
 [dependencies]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["test"] }
-azure_core_test_macros.workspace = true
+azure_core_test_macros.path = "../azure_core_test_macros"
 azure_identity.workspace = true
 futures.workspace = true
 rand.workspace = true
