@@ -83,7 +83,7 @@ impl ReplaceCommand {
                     .replace_item(pk, &item_id, item, Some(options))
                     .await;
                 match response {
-                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    Err(e) if e.http_status() == Some(StatusCode::NOT_FOUND) => {
                         println!("Item not found!")
                     }
                     Ok(r) => {

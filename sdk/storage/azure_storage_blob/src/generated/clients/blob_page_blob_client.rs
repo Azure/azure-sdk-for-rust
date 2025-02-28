@@ -48,7 +48,7 @@ impl BlobPageBlobClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-length", content_length.to_string());
         request.insert_header("content-type", "application/octet-stream");
@@ -139,7 +139,7 @@ impl BlobPageBlobClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
@@ -187,7 +187,7 @@ impl BlobPageBlobClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-length", content_length.to_string());
         request.insert_header("content-type", "application/octet-stream");
@@ -305,7 +305,7 @@ impl BlobPageBlobClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
@@ -373,7 +373,7 @@ impl BlobPageBlobClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
@@ -435,7 +435,7 @@ impl BlobPageBlobClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
@@ -545,7 +545,7 @@ impl BlobPageBlobClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-length", content_length.to_string());
         request.insert_header("content-type", "application/octet-stream");

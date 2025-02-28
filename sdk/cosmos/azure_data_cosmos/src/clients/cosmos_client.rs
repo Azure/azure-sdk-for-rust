@@ -132,7 +132,7 @@ impl CosmosClient {
     ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.databases_link);
-        let base_request = Request::new(url, azure_core::Method::Post);
+        let base_request = Request::new(url, azure_core::Method::POST);
 
         self.pipeline.send_query_request(
             options.method_options.context,
@@ -162,7 +162,7 @@ impl CosmosClient {
         }
 
         let url = self.pipeline.url(&self.databases_link);
-        let mut req = Request::new(url, Method::Post);
+        let mut req = Request::new(url, Method::POST);
         req.insert_headers(&options.throughput)?;
         req.set_json(&RequestBody { id })?;
 

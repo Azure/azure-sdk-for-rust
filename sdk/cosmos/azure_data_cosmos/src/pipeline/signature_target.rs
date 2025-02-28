@@ -49,15 +49,15 @@ impl<'a> SignatureTarget<'a> {
             "{}\n{}\n{}\n{}\n\n",
             // Cosmos' signature algorithm requires lower-case methods, so we use our own match instead of the impl of AsRef<str>, which is uppercase.
             match self.http_method {
-                azure_core::Method::Get => "get",
-                azure_core::Method::Put => "put",
-                azure_core::Method::Post => "post",
-                azure_core::Method::Delete => "delete",
-                azure_core::Method::Head => "head",
-                azure_core::Method::Trace => "trace",
-                azure_core::Method::Options => "options",
-                azure_core::Method::Connect => "connect",
-                azure_core::Method::Patch => "patch",
+                azure_core::Method::GET => "get",
+                azure_core::Method::PUT => "put",
+                azure_core::Method::POST => "post",
+                azure_core::Method::DELETE => "delete",
+                azure_core::Method::HEAD => "head",
+                azure_core::Method::TRACE => "trace",
+                azure_core::Method::OPTIONS => "options",
+                azure_core::Method::CONNECT => "connect",
+                azure_core::Method::PATCH => "patch",
                 _ => "extension",
             },
             self.link.resource_type().path_segment(),
@@ -85,7 +85,7 @@ mod tests {
         let date_string = date::to_rfc7231(&time_nonce).to_lowercase();
 
         let ret = SignatureTarget::new(
-            azure_core::Method::Get,
+            azure_core::Method::GET,
             &ResourceLink::root(ResourceType::Databases)
                 .item("MyDatabase")
                 .feed(ResourceType::Containers)

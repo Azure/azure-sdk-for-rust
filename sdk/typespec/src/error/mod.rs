@@ -4,7 +4,7 @@
 //! Interfaces for working with errors.
 
 #[cfg(feature = "http")]
-use http_types::StatusCode;
+use http::StatusCode;
 
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};

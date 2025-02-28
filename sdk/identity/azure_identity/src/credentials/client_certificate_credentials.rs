@@ -240,7 +240,7 @@ impl ClientCertificateCredential {
             encoded.finish()
         };
 
-        let mut req = Request::new(url, Method::Post);
+        let mut req = Request::new(url, Method::POST);
         req.insert_header(
             headers::CONTENT_TYPE,
             content_type::APPLICATION_X_WWW_FORM_URLENCODED,

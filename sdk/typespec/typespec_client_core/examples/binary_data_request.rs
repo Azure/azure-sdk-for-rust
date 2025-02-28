@@ -71,7 +71,7 @@ mod client {
         println!("{content}");
 
         Ok(Response::new(
-            StatusCode::NoContent,
+            StatusCode::NO_CONTENT,
             Headers::new(),
             Box::pin(BytesStream::new_empty()),
         ))

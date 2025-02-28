@@ -59,7 +59,7 @@ impl BlobServiceClient {
         if let Some(where_param) = options.where_param {
             url.query_pairs_mut().append_pair("where", &where_param);
         }
-        let mut request = Request::new(url, Method::Get);
+        let mut request = Request::new(url, Method::GET);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
@@ -85,7 +85,7 @@ impl BlobServiceClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Get);
+        let mut request = Request::new(url, Method::GET);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
@@ -112,7 +112,7 @@ impl BlobServiceClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Get);
+        let mut request = Request::new(url, Method::GET);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
@@ -139,7 +139,7 @@ impl BlobServiceClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Get);
+        let mut request = Request::new(url, Method::GET);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
@@ -167,7 +167,7 @@ impl BlobServiceClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
@@ -197,7 +197,7 @@ impl BlobServiceClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Put);
+        let mut request = Request::new(url, Method::PUT);
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
@@ -234,7 +234,7 @@ impl BlobServiceClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header("accept", "multipart/mixed");
         request.insert_header("content-length", content_length.to_string());
         request.insert_header("content-type", "multipart/mixed");

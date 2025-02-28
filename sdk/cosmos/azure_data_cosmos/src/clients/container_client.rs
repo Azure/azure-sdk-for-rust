@@ -64,7 +64,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Get);
+        let mut req = Request::new(url, Method::GET);
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
@@ -108,7 +108,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Put);
+        let mut req = Request::new(url, Method::PUT);
         req.set_json(&properties)?;
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
@@ -175,7 +175,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Delete);
+        let mut req = Request::new(url, Method::DELETE);
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
@@ -255,7 +255,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
-        let mut req = Request::new(url, Method::Post);
+        let mut req = Request::new(url, Method::POST);
         if !options.enable_content_response_on_write {
             req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
         }
@@ -346,7 +346,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Put);
+        let mut req = Request::new(url, Method::PUT);
         if !options.enable_content_response_on_write {
             req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
         }
@@ -434,7 +434,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Response> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
-        let mut req = Request::new(url, Method::Post);
+        let mut req = Request::new(url, Method::POST);
         if !options.enable_content_response_on_write {
             req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
         }
@@ -492,7 +492,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Get);
+        let mut req = Request::new(url, Method::GET);
         req.insert_headers(&partition_key.into())?;
         self.pipeline
             .send(options.method_options.context, &mut req, link)
@@ -528,7 +528,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Delete);
+        let mut req = Request::new(url, Method::DELETE);
         req.insert_headers(&partition_key.into())?;
         self.pipeline
             .send(options.method_options.context, &mut req, link)
@@ -601,7 +601,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
-        let mut req = Request::new(url, Method::Patch);
+        let mut req = Request::new(url, Method::PATCH);
         if !options.enable_content_response_on_write {
             req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
         }
@@ -674,7 +674,7 @@ impl ContainerClient {
     ) -> azure_core::Result<Pager<QueryResults<T>>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
-        let mut base_request = Request::new(url, Method::Post);
+        let mut base_request = Request::new(url, Method::POST);
         let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
         base_request.insert_headers(&partition_key)?;
 
