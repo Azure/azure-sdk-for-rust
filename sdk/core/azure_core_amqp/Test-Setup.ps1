@@ -33,7 +33,7 @@ try {
 
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
-  Invoke-LoggedCommand "dotnet build -p RollForward=LatestMajor --framework net6.0"
+  Invoke-LoggedCommand "dotnet build -p RollForward=LatestMajor --framework net45"
   if (!$? -ne 0) {
     Write-Error "Failed to build TestAmqpBroker."
     exit 1
