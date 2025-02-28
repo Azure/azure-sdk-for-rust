@@ -11,6 +11,10 @@ parameters:
   type: boolean
   default: true
 
+env:
+  RUSTFLAGS: "-Dwarnings"
+  RUSTDOCFLAGS: "-Dwarnings"
+
 jobs:
 - job: Test_${{ parameters.Matrix.pool.os }}_${{ parameters.Toolchain }}
   displayName: "Test: ${{ parameters.Matrix.pool.os }} ${{ parameters.Toolchain }}"

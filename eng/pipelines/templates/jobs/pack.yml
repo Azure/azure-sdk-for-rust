@@ -8,6 +8,10 @@ parameters:
 - name: PipelineArtifactName
   type: string
 
+env:
+  RUSTFLAGS: "-Dwarnings"
+  RUSTDOCFLAGS: "-Dwarnings"
+
 jobs:
 - job: Pack
   displayName: "Pack Crates"

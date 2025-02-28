@@ -6,6 +6,10 @@ parameters:
 - name: TimeoutInMinutes
   type: number
 
+env:
+  RUSTFLAGS: "-Dwarnings"
+  RUSTDOCFLAGS: "-Dwarnings"
+
 jobs:
 - job: "Analyze"
   condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], 'true'))

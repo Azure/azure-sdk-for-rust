@@ -34,9 +34,6 @@ foreach ($package in $packagesToTest) {
   Write-Host "  '$($package.Name)' in '$($package.DirectoryPath)'"
 }
 
-Write-Host "Setting RUSTFLAGS to '-Dwarnings'"
-$env:RUSTFLAGS = "-Dwarnings"
-
 foreach ($package in $packagesToTest) {
   Push-Location ([System.IO.Path]::Combine($RepoRoot, $package.DirectoryPath))
   try {

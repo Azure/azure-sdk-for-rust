@@ -36,6 +36,10 @@ parameters:
   type: string
   default: stable
 
+env:
+  RUSTFLAGS: "-Dwarnings"
+  RUSTDOCFLAGS: "-Dwarnings"
+
 jobs:
 - template: /eng/pipelines/templates/jobs/pack.yml
   parameters:

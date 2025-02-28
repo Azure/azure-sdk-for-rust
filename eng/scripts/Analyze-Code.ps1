@@ -16,9 +16,6 @@ Set-StrictMode -Version 2.0
 Write-Host "Analyzing code with
     Toolchain: '$Toolchain'`n"
 
-$env:RUSTDOCFLAGS = "-D warnings"
-$env:RUSTFLAGS = "-Dwarnings"
-
 if ($CheckWasm) {
   Invoke-LoggedCommand "rustup target add --toolchain $Toolchain wasm32-unknown-unknown"
 }
