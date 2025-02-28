@@ -10,23 +10,79 @@
 
 ## Generated code
 
-If you want to contribute to a file that is generated (the file is located in a `generated` subdirectory), the best approach is to open a PR on the TypeSpec specification since we cannot replace generated code that will be replaced when regenerated. Please visit the [Azure/azure-rest-api-specs repo](https://github.com/Azure/azure-rest-api-specs/) to view and make changes to Azure service API specifications.
+If you want to contribute to a file that is generated (the file is located in a `generated` subdirectory), the best approach is to open a PR on the TypeSpec specification since we cannot replace generated code that will be replaced when regenerated.
+Please visit the [Azure/azure-rest-api-specs repo](https://github.com/Azure/azure-rest-api-specs/) to view and make changes to Azure service API specifications.
+
+## Coding
+
+We welcome contributions! But before you start coding, please read our [Rust Guidelines] including [implementation details](https://azure.github.io/azure-sdk/rust_implementation.html) for contributors.
+
+Most of our code is generated from [TypeSpec] and, more specifically for Azure services, [TypeSpec Azure] libraries. Changes to any services - including documentation improvements - need to made in TypeSpec specifications
+found in <https://github.com/Azure/azure-rest-api-specs>. Only TypeSpec is supported at this time, so any changes to OpenAPI v2 a.k.a., "swagger", specifications will not be used.
+
+Crates containing the majority of written code include `azure_core` and its dependencies. Some crates like `azure_security_keyvault_secrets` might also have some written code to improve usability.
 
 ## Building
 
-To build any library in the Azure SDK for Rust navigate to the library's project folder and run `cargo build`.
+To build any crate in the Azure SDK for Rust navigate to the crate's project folder and run `cargo build`.
+Alternatively, you can build any one or more crates by passing their crate names to `--package` (short: `-p`) e.g., `cargo build -p azure_security_keyvault_secrets`.
+
+You can also build the entire workspace by either building from the root source directory or running `cargo build --workspace`, but unless you're making changes to `azure_core`
+or its dependencies, this is generally unnecessary nor recommended. It will take considerable time and drive space.
+
+### Linting
+
+You can run `cargo clippy` to check for common issues. Like `cargo build`, you can pass one or more crate names to `--package`.
+Before create a pull request (PR), it's a good practice to build and lint your project to avoid a lot of commits that can make the review process tedious for reviewers.
 
 ## Testing
 
-[TODO] Add instructions on how to run tests for a specific project.
-[TODO] Add instructions for write new tests.
+To test any crate in the Azure SDK for Rust navigate to the crate's project folder and run `cargo test`.
+Alternatively, you can build any one or more crates by passing their crate names to `--package` (short: `-p`) e.g., `cargo test -p azure_security_keyvault_secrets`.
+
+This command will run all tests in the selected packages, including unit tests, integration tests, any tests within examples, and doc tests.
+To learn more about the different styles of tests and where they are located in a project, see [Tests in The Cargo Book](https://doc.rust-lang.org/cargo/reference/cargo-targets.html#tests).
+
+### Integration Tests
+
+We use integration tests - tests defined under a crate's `tests/` directory - for testing against provisioned resources.
+Most crates use recorded tests to record (and sanitize) or play back HTTP traffic during test execution by attributing tests with `#[recorded::test]`.
+
+If your crate does not communicate over HTTP or provisioning resources cannot be fully automated, you can also mark tests as `#[recorded::test(live)]`.
+
+For more details about recorded tests, please refer to the [`azure_core_test` crate](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core_test/README.md).
+
+### Documentation Tests
+
+Though you should use integration tests for testing client methods, or create examples under `examples/` that show customers how to do common tasks,
+[documentation tests](https://doc.rust-lang.org/rustdoc/write-documentation/documentation-tests.html) can be helpful to show customers examples of calling your code
+e.g., utility code to parse some resource identifier, that are also runnable (or just compilable) and will fail `cargo test` if the test assertions fail.
+
+Each crate should define document tests to highlight common scenarios. Unlike markdown comments in Rust `.rs` source code, however, you need to define the code fence
+using the `rust no_run` declaration e.g.,
+
+````markdown
+```rust no_run
+#[tokio::main]
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    todo!()
+}
+```
+````
+
+This is because when GitHub renders the `README.md` file, it needs to know the syntax. The `no_run` tells `cargo test` to only compile the test - to make sure it indeed compiles - but not to run it,
+which is important if it shows an example running against live resources that likely include placeholder values e.g., `https://my-vault.vault.azure.net`.
+
+More guidance for writing documentation tests can be found in our [Rust Guidelines].
 
 ### Debugging with Visual Studio Code
 
 [Visual Studio Code] with recommended extensions installed can be used to run and debug tests for a module or individual tests.
+In most cases you can click **Run Test** or **Debug** found right above the test function.
+For integration tests - those tests found under the `tests/` directory - this will run or debug the test using a previously recorded session, if one exists.
 
-If you need to debug a test, you can use the LLDB extension and set environment variables as needed. For example, to debug recording a specific test,
-your `.vscode/launch.json` file might look something like:
+If a recording for an integration test does not exist or needs to be updated, along with the LLDB extension installed
+you can create or update a `.vscode/launch.json` file to debug recording a session e.g.:
 
 ```json
 {
@@ -49,37 +105,12 @@ your `.vscode/launch.json` file might look something like:
           "kind": "test"
         },
         "env": {
+          "AZURE_TEST_MODE": "record"
         }
       },
       "cwd": "${workspaceFolder}",
       "env": {
         "AZURE_KEYVAULT_URL": "https://my-vault.vault.azure.net/",
-        "PROXY_MANUAL_START": "true",
-        "RUST_LOG": "trace"
-      }
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Play back secret_roundtrip",
-      "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--test=secret_client",
-          "--package=azure_security_keyvault_secrets",
-          "secret_roundtrip"
-        ],
-        "filter": {
-          "name": "secret_client",
-          "kind": "test"
-        },
-        "env": {
-          "AZURE_TEST_MODE": "playback"
-        }
-      },
-      "cwd": "${workspaceFolder}",
-      "env": {
         "RUST_LOG": "trace"
       }
     }
@@ -87,9 +118,25 @@ your `.vscode/launch.json` file might look something like:
 }
 ```
 
-You can also start the [Test Proxy] manually, in which can you add to the outer `env` above to `"PROXY_MANUAL_START": "true"`.
+If you don't need to debug recording the test or running live, you can record from the command line e.g.:
 
-To enable tracing, you can add the `RUST_LOG` environment variable as shown above using the [same format supported by `env_logger`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging).
+```sh
+AZURE_KEYVAULT_URL=https://my-vault.vault.azure.net AZURE_TEST_MODE=record cargo test -p azure_security_keyvault_secrets --test secret_client
+```
+
+In either case above, the [Test Proxy] will be started automatically if installed.
+
+#### Running Test Proxy Manually
+
+You can also start the [Test Proxy] manually, which may provide additional diagnostics.
+
+If you're using a `.vscode/launch.json` file, in the outer `env` above add `"PROXY_MANUAL_START": "true"`.
+
+Similarly, if running on the command line pass `PROXY_MANUAL_START=true`.
+
+#### Enabling Trace Logging
+
+To log tracing information to the terminal, you can add the `RUST_LOG` environment variable as shown above using the [same format supported by `env_logger`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging).
 The targets are the crate names if you want to trace more or less for specific targets e.g., `RUST_LOG=info,azure_core=trace` to trace information messages by default but detailed traces for the `azure_core` crate.
 
 ## Code Review Process
@@ -166,5 +213,8 @@ Samples may take the following categories of dependencies:
 
 In general, we prefer taking dependencies on licensed components in the order of the listed categories. In cases where the category may not be well known, we'll document the category so that readers understand the choice that they're making by using that dependency.
 
+[Rust Guidelines]: https://azure.github.io/azure-sdk/rust_introduction.html
 [Test Proxy]: https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md
+[TypeSpec]: https://aka.ms/typespec
+[TypeSpec Azure]: https://aka.ms/typespec/azure
 [Visual Studio Code]: https://code.visualstudio.com
