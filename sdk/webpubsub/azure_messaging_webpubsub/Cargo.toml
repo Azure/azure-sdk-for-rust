@@ -1,0 +1,15 @@
+[package]
+name = "azure_messaging_webpubsub"
+version = "0.0.1"
+description = "Azure SDK client library for the WebPubSub service"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_messaging_webpubsub"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

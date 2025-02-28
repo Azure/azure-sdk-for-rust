@@ -1,0 +1,15 @@
+[package]
+name = "azure_iot_modelsrepository"
+version = "0.0.1"
+description = "SDK for the Azure IoT Models Repository"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_iot_modelsrepository"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

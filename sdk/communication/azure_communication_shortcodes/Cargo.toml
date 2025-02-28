@@ -1,0 +1,15 @@
+[package]
+name = "azure_communication_shortcodes"
+version = "0.0.1"
+description = "This client library enables working with the Microsoft Azure Communication Short Codes service. For this release, see notes - https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/communication/Azure.Communication.ShortCodes/README.md and https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/communication/Azure.Communication.ShortCodes/CHANGELOG.md."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_communication_shortcodes"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

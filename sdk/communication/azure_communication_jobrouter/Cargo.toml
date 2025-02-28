@@ -1,0 +1,15 @@
+[package]
+name = "azure_communication_jobrouter"
+version = "0.0.1"
+description = "This client library enables working with the Microsoft Azure Communication Router service. For this release, see notes - Coming Soon Microsoft Azure Communication Router quickstart - Coming Soon"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_communication_jobrouter"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

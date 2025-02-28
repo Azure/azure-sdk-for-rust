@@ -105,6 +105,11 @@
       "noSuggest": true
     },
     {
+      "name": "service-directories",
+      "path": "../eng/dict/service-directories.txt",
+      "noSuggest": true
+    },
+    {
       "name": "storage",
       "path": "../sdk/storage/.dict.txt",
       "noSuggest": true
@@ -115,7 +120,8 @@
       "filename": "**/Cargo.toml",
       "dictionaries": [
         "crates",
-        "rust-custom"
+        "rust-custom",
+        "service-directories"
       ]
     },
     {

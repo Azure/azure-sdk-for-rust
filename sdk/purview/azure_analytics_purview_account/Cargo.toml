@@ -1,0 +1,15 @@
+[package]
+name = "azure_analytics_purview_account"
+version = "0.0.1"
+description = "An SDK for interacting with the Azure Purview Account service"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_analytics_purview_account"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

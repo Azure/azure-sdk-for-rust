@@ -1,0 +1,15 @@
+[package]
+name = "azure_quantum_jobs"
+version = "0.0.1"
+description = "Azure Quantum Jobs library that enables you to submit and manage Quantum Jobs on Azure Quantum"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_quantum_jobs"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

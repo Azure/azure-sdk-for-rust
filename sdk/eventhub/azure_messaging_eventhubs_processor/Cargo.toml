@@ -1,0 +1,15 @@
+[package]
+name = "azure_messaging_eventhubs_processor"
+version = "0.0.1"
+description = "Azure Event Hubs is a highly scalable publish-subscribe service that can ingest millions of events per second and stream them to multiple consumers.  This library extends its Event Processor with durable storage for checkpoint information using Azure Blob storage.  For more information about Event Hubs, see https://azure.microsoft.com/en-us/services/event-hubs/"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_messaging_eventhubs_processor"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "azure_ai_language_conversations"
+version = "0.0.1"
+description = "This is the client library for the Conversations service, a cloud-based conversational AI service that applies custom machine-learning intelligence to a user's conversational, natural language text to predict overall meaning, and pull out relevant, detailed information."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_ai_language_conversations"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

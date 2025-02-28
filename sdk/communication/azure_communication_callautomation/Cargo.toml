@@ -1,0 +1,15 @@
+[package]
+name = "azure_communication_callautomation"
+version = "0.0.1"
+description = "This client library enables working with the Microsoft Azure Communication Call Automation service. For this release, see notes - https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/communication/Azure.Communication.CallAutomation/README.md and https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/communication/Azure.Communication.CallAutomation/CHANGELOG.md. Microsoft Azure Communication Call Automation quickstart - https://learn.microsoft.com/azure/communication-services/quickstarts/voice-video-calling/callflows-for-customer-interactions?pivots=programming-language-csharp"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_communication_callautomation"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

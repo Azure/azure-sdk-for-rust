@@ -1,0 +1,15 @@
+[package]
+name = "azure_monitor_query"
+version = "0.0.1"
+description = "A library for querying Azure Monitor's Logs and Metrics data sources."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_monitor_query"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

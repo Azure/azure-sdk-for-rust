@@ -1,0 +1,15 @@
+[package]
+name = "azure_maps_common"
+version = "0.0.1"
+description = "This client library enables working with the Microsoft Azure Maps services which provides developers from all industries with powerful geospatial capabilities. For this release see notes - https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/maps/Azure.Maps.Common/README.md and https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/maps/Azure.Maps.Common/CHANGELOG.md Microsoft Azure Maps quickstarts and tutorials - https://docs.microsoft.com/azure/azure-maps/ Microsoft Azure Maps REST API Reference - https://docs.microsoft.com/rest/api/maps/"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_maps_common"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

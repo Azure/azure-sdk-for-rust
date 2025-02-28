@@ -1,0 +1,15 @@
+[package]
+name = "azure_developer_microsoftplaywrighttesting_nunit"
+version = "0.0.1"
+description = "Package to integrate your Playwright test suite with Microsoft Playwright Testing service"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_developer_microsoftplaywrighttesting_nunit"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

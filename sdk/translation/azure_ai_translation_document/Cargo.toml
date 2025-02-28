@@ -1,0 +1,15 @@
+[package]
+name = "azure_ai_translation_document"
+version = "0.0.1"
+description = "Translator is a cloud-based machine translation service and is part of the Azure Cognitive Services family of cognitive APIs used to build intelligent apps. Translator is easy to integrate in your applications, websites, tools, and solutions. It allows you to add multi-language user experiences in 90 languages and dialects. And it can be used on any hardware platform with any operating system for text translation."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_ai_translation_document"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "azure_ai_openai_assistants"
+version = "0.0.1"
+description = "Azure's official .NET library for OpenAI assistants. Works with Azure OpenAI resources as well as the non-Azure OpenAI endpoint."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_ai_openai_assistants"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

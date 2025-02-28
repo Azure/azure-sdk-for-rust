@@ -1,0 +1,15 @@
+[package]
+name = "azure_ai_translation_text"
+version = "0.0.1"
+description = "This is the Text Translation client library for developing .NET applications with rich experience."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_ai_translation_text"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

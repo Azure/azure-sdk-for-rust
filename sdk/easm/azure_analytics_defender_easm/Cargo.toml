@@ -1,0 +1,15 @@
+[package]
+name = "azure_analytics_defender_easm"
+version = "0.0.1"
+description = "This client library provides access to the Microsoft Defender EASM (External Attack Surface Management) API. With this SDK, developers can leverage the capabilities of Defener EASM to enhance the security posture of their applications and infrastructure."
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_analytics_defender_easm"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

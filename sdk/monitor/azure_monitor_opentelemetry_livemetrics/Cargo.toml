@@ -1,0 +1,15 @@
+[package]
+name = "azure_monitor_opentelemetry_livemetrics"
+version = "0.0.1"
+description = "Microsoft Azure SDK for Rust: azure_monitor_opentelemetry_livemetrics"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_monitor_opentelemetry_livemetrics"
+categories = ["api-bindings"]
+
+[lints]
+workspace = true

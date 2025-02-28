@@ -9,7 +9,7 @@ toml = "0.8.10"
 ---
 
 use cargo_util_schemas::manifest::TomlManifest;
-use std::{fs, path::PathBuf};
+use std::{ffi::OsStr, fs, io::Write as _, path::PathBuf};
 
 fn main() {
     let workspace_root = get_workspace_root();
@@ -21,13 +21,34 @@ fn main() {
     let workspace_manifest: TomlManifest =
         toml::from_str(&workspace_manifest).expect("deserialize workspace manifest");
 
+    // Extract dependencies.
     let dependencies = workspace_manifest
         .workspace
+        .as_ref()
         .expect("expected workspace")
         .dependencies
+        .as_ref()
         .expect("expected workspace dependencies");
-    let crate_names: Vec<&str> = dependencies.iter().map(|(name, _)| name.as_str()).collect();
+    let mut crate_names: Vec<String> = dependencies.iter().map(|(name, _)| name.to_string()).collect();
 
+    // Extract workspace members.
+    for relative_path in workspace_manifest
+        .workspace
+        .as_ref()
+        .expect("expected workspace")
+        .members
+        .as_ref()
+        .expect("expected workspace members")
+        .into_iter() {
+            let crate_name = PathBuf::from(relative_path)
+                .file_stem()
+                .and_then(OsStr::to_str)
+                .expect("expected crate name")
+                .to_string();
+            crate_names.push(crate_name);
+        }
+
+    crate_names.sort();
     let crate_names_path = workspace_root
         .join("eng/dict/crates.txt")
         .canonicalize()
@@ -37,7 +58,9 @@ fn main() {
         "Writing {} crate names to {crate_names_path:?}",
         crate_names.len()
     );
-    fs::write(crate_names_path, crate_names.join("\n")).expect("serialize crate names")
+
+    let mut f = fs::File::create(crate_names_path).expect("create eng/dict/crates.txt");
+    writeln!(f, "{}", crate_names.join("\n")).expect("serialize crate names");
 }
 
 fn get_workspace_root() -> PathBuf {
