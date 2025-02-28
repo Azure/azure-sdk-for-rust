@@ -15,7 +15,7 @@ foreach ($package in $packages) {
     $name = $package.name
     $resp = Invoke-WebRequest "https://index.crates.io/$($name.Substring(0,2))/$($name.Substring(2,2))/$name"
     $packageVersions = $resp.Content.Trim().Split("`n") | ConvertFrom-Json | Select-Object -ExpandProperty vers
-    $package.released_version = $packageVersions | Sort-Object { [AzureEngSemanticVersion]::ParseVersionString($_) } | Select-Object -Last 1
+    $package.indexVersion = $packageVersions | Sort-Object { [AzureEngSemanticVersion]::ParseVersionString($_) } | Select-Object -Last 1
   }
   catch {
   }
@@ -26,9 +26,9 @@ foreach ($package in $packages) {
 
     if ($dependencyPackage) {
       $ordered = [ordered]@{
-        dependant        = $package.name
-        pathVersion      = $dependencyPackage.version
-        released_version = $dependencyPackage.released_version
+        dependant    = $package.name
+        pathVersion  = $dependencyPackage.version
+        indexVersion = $dependencyPackage.indexVersion
       }
 
       foreach ($key in $dependency.Keys) {
@@ -45,11 +45,19 @@ foreach ($package in $packages) {
 }
 
 if ($Versions) {
-  $packages | Select-Object name, version, publish, released_version
+  $packages | Select-Object name, version, publish, indexVersion
 }
 elseif ($Dependencies) {
-  $packages.packageDependencies | Select-Object dependant, @{Name = 'dependency'; Expression = { $_.name } }, kind, req, @{Name = 'released'; Expression = { $_.released_version } }, pathVersion, @{Name = 'byPath'; Expression = { !!$_.path } }
+  $packages.packageDependencies | Select-Object -Property @(
+    @{ Name = 'from'; Expression = { $_.name } },
+    @{ Name = 'to'; Expression = { $_.dependant } },
+    'kind',
+    'req',
+    @{ Name = 'version'; Expression = { $_.pathVersion } },
+    @{ Name = 'index'; Expression = { $_.indexVersion } },
+    @{ Name = 'byPath'; Expression = { !!$_.path } }
+  )
 }
 else {
-  $packages | Select-Object name, version, publish, released_version, packageDependencies, dependantPackages
+  $packages | Select-Object name, version, publish, indexVersion, packageDependencies, dependantPackages
 }
