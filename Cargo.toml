@@ -196,7 +196,6 @@ members = [
   "sdk/modelsrepository/azure_iot_modelsrepository",
   "sdk/mongocluster/azure_resourcemanager_mongocluster",
   "sdk/monitor/azure_monitor_ingestion",
-  "sdk/monitor/azure_monitor_opentelemetry_aspnetcore",
   "sdk/monitor/azure_monitor_opentelemetry_exporter",
   "sdk/monitor/azure_monitor_opentelemetry_livemetrics",
   "sdk/monitor/azure_monitor_query",

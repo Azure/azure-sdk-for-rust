@@ -725,10 +725,6 @@ name = "azure_monitor_ingestion"
 version = "0.0.1"
 
 [[package]]
-name = "azure_monitor_opentelemetry_aspnetcore"
-version = "0.0.1"
-
-[[package]]
 name = "azure_monitor_opentelemetry_exporter"
 version = "0.0.1"
 
