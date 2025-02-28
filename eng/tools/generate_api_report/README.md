@@ -43,8 +43,7 @@ Contributions are welcome! Please open an issue or submit a pull request with yo
 
 ## Troubleshooting
 
-If you encounter any issues, please check the following:
-
+If you encounter any issues, please check the [Version Compatibility](#version-compatibility) section.
 
 ## License
 
