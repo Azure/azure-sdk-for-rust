@@ -10,6 +10,7 @@ rust-version.workspace = true
 
 [dependencies]
 azure_template_core = { path = "../azure_template_core" }
+serde = { version = "1", features = ["derive"] }
 
 [lints]
 workspace = true
