@@ -17,7 +17,7 @@
     ".vscode/tasks.json",
     "NOTICE.txt",
     "eng/",
-    "*.dict.txt",
+    "**/.dict.txt",
     "rust-toolchain.toml"
   ],
   "words": [
@@ -25,6 +25,7 @@
     "asyncoperation",
     "azsdk",
     "azurecli",
+    "bugbug",
     "clippy",
     "contoso",
     "cplusplus",
