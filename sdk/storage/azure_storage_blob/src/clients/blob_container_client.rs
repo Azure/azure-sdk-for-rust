@@ -53,7 +53,7 @@ impl BlobContainerClient {
         &self.endpoint
     }
 
-    pub fn container_name(&self) -> &String {
+    pub fn container_name(&self) -> &str {
         &self.container_name
     }
 

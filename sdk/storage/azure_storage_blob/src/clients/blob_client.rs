@@ -61,11 +61,11 @@ impl BlobClient {
         &self.endpoint
     }
 
-    pub fn container_name(&self) -> &String {
+    pub fn container_name(&self) -> &str {
         &self.container_name
     }
 
-    pub fn blob_name(&self) -> &String {
+    pub fn blob_name(&self) -> &str {
         &self.blob_name
     }
 
