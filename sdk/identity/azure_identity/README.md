@@ -69,6 +69,59 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+### Authenticate with `ClientAssertionCredential`
+
+This example demonstrates how to use the `ClientAssertionCredential` in conjunction with `VirtualMachineManagedIdentityCredential` in order to retrieve an access token as an app registration
+that a virtual machine identity has been federated for, which can be used in "service to service"
+authentication flows. For more details on this scenario see [Configure an application to trust a managed identity](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-config-app-trust-managed-identity?tabs=microsoft-entra-admin-center)
+
+```rust no_run
+use azure_core::credentials::{AccessToken, TokenCredential};
+use azure_identity::{ClientAssertionCredential, ImdsId, VirtualMachineManagedIdentityCredential};
+
+#[derive(Debug)]
+struct VmClientAssertion {
+    credential: Arc<dyn TokenCredential>,
+    scope: String,
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl ClientAssertion for VmClientAssertion {
+    async fn secret(&self) -> azure_core::Result<String> {
+        Ok(self
+            .credential
+            .get_token(&[&self.scope])
+            .await?
+            .token
+            .secret()
+            .to_string())
+    }
+}
+
+async fn get_federated_token() -> azure_core::Result<AccessToken> {
+    let assertion = VmClientAssertion {
+        credential: VirtualMachineManagedIdentityCredential::new(
+            ImdsId::SystemAssigned,
+            TokenCredentialOptions::default(),
+        )?,
+        scope: String::from("api://AzureADTokenExchange/.default"),
+    };
+
+    let client_assertion_credential = ClientAssertionCredential::new(
+        azure_core::new_http_client(),
+        Url::parse("https://login.microsoftonline.com")?,
+        String::from("guid-for-aad-tenant-id"),
+        String::from("guid-for-app-id-of-client-app-registration"),
+        assertion,
+    )?;
+
+    let fic_scope = String::from("your-service-app.com/scope");
+    client_assertion_credential.get_token(&[&fic_scope]).await
+}
+
+```
+
 
 ## Credential classes
 
