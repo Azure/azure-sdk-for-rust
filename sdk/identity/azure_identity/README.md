@@ -99,8 +99,9 @@ impl ClientAssertion for VmClientAssertion {
     }
 }
 
-async fn get_federated_token() -> azure_core::Result<AccessToken> {
-    let assertion = VmClientAssertion {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+        let assertion = VmClientAssertion {
         credential: VirtualMachineManagedIdentityCredential::new(
             ImdsId::SystemAssigned,
             TokenCredentialOptions::default(),
@@ -117,7 +118,8 @@ async fn get_federated_token() -> azure_core::Result<AccessToken> {
     )?;
 
     let fic_scope = String::from("your-service-app.com/scope");
-    client_assertion_credential.get_token(&[&fic_scope]).await
+    let fic_token = client_assertion_credential.get_token(&[&fic_scope]).await?;
+    Ok(())
 }
 
 ```
