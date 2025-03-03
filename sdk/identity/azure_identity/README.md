@@ -77,7 +77,8 @@ authentication flows. For more details on this scenario see [Configure an applic
 
 ```rust no_run
 use azure_core::credentials::{AccessToken, TokenCredential};
-use azure_identity::{ClientAssertionCredential, ImdsId, VirtualMachineManagedIdentityCredential};
+use azure_identity::{ClientAssertion, ClientAssertionCredential, ImdsId, TokenCredentialOptions, VirtualMachineManagedIdentityCredential};
+use std::sync::Arc;
 
 #[derive(Debug)]
 struct VmClientAssertion {
@@ -111,7 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client_assertion_credential = ClientAssertionCredential::new(
         azure_core::new_http_client(),
-        Url::parse("https://login.microsoftonline.com")?,
+        azure_core::Url::parse("https://login.microsoftonline.com")?,
         String::from("guid-for-aad-tenant-id"),
         String::from("guid-for-app-id-of-client-app-registration"),
         assertion,
