@@ -15,7 +15,7 @@ extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
   parameters:
     oneESTemplateTag: ${{ parameters.oneESTemplateTag }}
-    autoBaseline: ${{ and(eq(variables['Build.DefinitionName'], 'rust - core'), eq(variables['Build.SourceBranchName'], 'users/pahallis/baselining'), eq(variables['System.TeamProject'], 'internal')) }}
+    autoBaseline: ${{ and(eq(variables['Build.DefinitionName'], 'rust - core'), eq(variables['Build.SourceBranchName'], 'main'), eq(variables['System.TeamProject'], 'internal')) }}
     stages:
     - stage: Build
       variables:
