@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 This example demonstrates how to use the `ClientAssertionCredential` in conjunction with `VirtualMachineManagedIdentityCredential` in order to retrieve an access token as an app registration
 that a virtual machine identity has been federated for, which can be used in "service to service"
-authentication flows. For more details on this scenario see [Configure an application to trust a managed identity](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-config-app-trust-managed-identity?tabs=microsoft-entra-admin-center)
+authentication flows. For more details on this scenario see [Configure an application to trust a managed identity](https://learn.microsoft.com/entra/workload-id/workload-identity-federation-config-app-trust-managed-identity?tabs=microsoft-entra-admin-center)
 
 ```rust no_run
 use azure_core::credentials::{AccessToken, TokenCredential};
