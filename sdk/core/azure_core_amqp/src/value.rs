@@ -8,7 +8,7 @@ use std::borrow::Borrow;
 use crate::fe2o3::error::Fe2o3SerializationError;
 #[cfg(all(
     feature = "cplusplus",
-    feature = "fe2o3-amqp",
+    feature = "fe2o3_amqp",
     not(target_arch = "wasm32")
 ))]
 #[cfg(feature = "cplusplus")]
@@ -271,13 +271,13 @@ pub enum AmqpValue {
 #[cfg(feature = "cplusplus")]
 impl Serializable for AmqpValue {
     fn encoded_size(&self) -> Result<usize> {
-        #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+        #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
             let fe2o3_value = fe2o3_amqp_types::primitives::Value::from(self.clone());
             serde_amqp::serialized_size(&fe2o3_value)
                 .map_err(|e| azure_core::Error::from(Fe2o3SerializationError(e)))
         }
-        #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+        #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
         {
             unimplemented!("Serialization of AMQP values is not supported")
         }
@@ -285,7 +285,7 @@ impl Serializable for AmqpValue {
 
     #[allow(unused_variables)]
     fn serialize(&self, buffer: &mut [u8]) -> Result<()> {
-        #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+        #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
             let fe2o3_value = fe2o3_amqp_types::primitives::Value::from(self.clone());
             let vec = serde_amqp::to_vec(&fe2o3_value).map_err(|e| {
@@ -295,7 +295,7 @@ impl Serializable for AmqpValue {
             buffer.copy_from_slice(bytes);
             Ok(())
         }
-        #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+        #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
         {
             unimplemented!("Serialization of AMQP values is not supported")
         }
@@ -306,7 +306,7 @@ impl Serializable for AmqpValue {
 impl Deserializable<AmqpValue> for AmqpValue {
     #[allow(unused_variables)]
     fn decode(data: &[u8]) -> azure_core::Result<AmqpValue> {
-        #[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+        #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
             let fe2o3_value: fe2o3_amqp_types::primitives::Value = serde_amqp::from_slice(data)
                 .map_err(|e| {
@@ -314,7 +314,7 @@ impl Deserializable<AmqpValue> for AmqpValue {
                 })?;
             Ok(fe2o3_value.into())
         }
-        #[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+        #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
         {
             unimplemented!("Deserialization of AMQP values is not supported")
         }
