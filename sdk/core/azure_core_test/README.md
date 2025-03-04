@@ -118,7 +118,7 @@ the log levels used are a level lower than typical client libraries:
 
 The `azure_core_test` crate also traces useful information that the `test-proxy` process itself writes to `stdout` using the `test-proxy` target and the `TRACE` logging level.
 
-You can configuring using the [`RUST_LOG`](https://docs.rs/env_logger) environment variable.
+You can configure tracing using the [`RUST_LOG`](https://docs.rs/env_logger) environment variable.
 For example, if you wanted to see debug information from all sources by default but see `test-proxy` messages written to `stdout` you'd run:
 
 ```bash
