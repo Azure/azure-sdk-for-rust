@@ -52,19 +52,16 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
         Some(options),
     )?;
     container_client.create_container(None).await?;
-    let response = container_client
+    let container_properties = container_client
         .get_container_properties(Some(BlobContainerClientGetPropertiesOptions::default()))
-        .await;
+        .await?;
 
     // Assert
-    assert!(response.is_ok());
-
-    let container_properties = response?;
     assert_eq!(
         container_properties.lease_state,
         Some(LeaseState::Available)
     );
-    assert!(container_properties.version.is_some());
+    assert_eq!(container_properties.has_immutability_policy, Some(false));
 
     container_client.delete_container(None).await?;
     Ok(())

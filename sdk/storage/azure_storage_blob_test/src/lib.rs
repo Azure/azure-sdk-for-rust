@@ -17,8 +17,3 @@ pub async fn recorded_test_setup(
 
     (options, endpoint)
 }
-
-pub fn get_name(recording: &Recording, resource_type: &str) -> String {
-    let rand: u128 = recording.random();
-    format!("{}{}{}", "test", resource_type, Uuid::from_u128(rand))
-}

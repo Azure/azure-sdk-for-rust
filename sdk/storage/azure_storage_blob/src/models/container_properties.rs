@@ -4,7 +4,7 @@
 use azure_core::{
     headers::{
         FromHeaders, HeaderName, Headers, ETAG, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD,
-        LEASE_STATE, LEASE_STATUS, VERSION,
+        LEASE_STATE, LEASE_STATUS,
     },
     Error, Etag, LeaseStatus,
 };
@@ -27,7 +27,6 @@ pub struct ContainerProperties {
     pub has_legal_hold: Option<bool>,
     pub immutable_storage_with_versioning_enabled: Option<String>,
     pub etag: Option<Etag>,
-    pub version: Option<String>,
 }
 
 impl FromHeaders for ContainerProperties {
@@ -40,7 +39,6 @@ impl FromHeaders for ContainerProperties {
             "x-ms-lease-status",
             "x-ms-immutable-storage-with-versioning-enabled",
             "x-ms-has-immutability-policy",
-            "x-ms-version",
             "x-ms-has-legal-hold",
         ]
     }
@@ -70,9 +68,6 @@ impl FromHeaders for ContainerProperties {
             headers.get_optional_str(&IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED);
         properties.immutable_storage_with_versioning_enabled =
             immutable_storage_with_versioning_enabled.map(|s| s.to_string());
-
-        let version = headers.get_optional_str(&VERSION);
-        properties.version = version.map(|s| s.to_string());
 
         let etag: Option<Etag> = headers.get_optional_as(&ETAG)?;
         properties.etag = etag;
