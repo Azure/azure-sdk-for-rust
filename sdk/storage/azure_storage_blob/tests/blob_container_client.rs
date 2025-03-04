@@ -1,27 +1,29 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::StatusCode;
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::{clients::ContainerClient, BlobClientOptions};
-use std::{env, error::Error};
+use azure_storage_blob::{
+    clients::ContainerClient,
+    models::{BlobContainerClientGetPropertiesOptions, LeaseState},
+    BlobClientOptions,
+};
+use azure_storage_blob_test::recorded_test_setup;
+use std::error::Error;
 
 #[recorded::test]
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let mut options = BlobClientOptions::default();
-    recording.instrument(&mut options.client_options);
-
-    // Setup
-    let endpoint = format!(
-        "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
 
     // Act
     let container_client = ContainerClient::new(
         &endpoint,
-        String::from("testcontainer11"),
+        container_name,
         recording.credential(),
         Some(options),
     )?;
@@ -30,5 +32,70 @@ async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     container_client.create_container(None).await?;
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+
+    // Act
+    let container_client = ContainerClient::new(
+        &endpoint,
+        container_name,
+        recording.credential(),
+        Some(options),
+    )?;
+    container_client.create_container(None).await?;
+    let response = container_client
+        .get_container_properties(Some(BlobContainerClientGetPropertiesOptions::default()))
+        .await;
+
+    // Assert
+    assert!(response.is_ok());
+
+    let container_properties = response?;
+    assert_eq!(
+        container_properties.lease_state,
+        Some(LeaseState::Available)
+    );
+    assert!(container_properties.version.is_some());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_container_properties_invalid_container(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+
+    // Act
+    let container_client = ContainerClient::new(
+        &endpoint,
+        container_name,
+        recording.credential(),
+        Some(options),
+    )?;
+    let response = container_client
+        .get_container_properties(Some(BlobContainerClientGetPropertiesOptions::default()))
+        .await;
+
+    // Assert
+    assert!(response.is_err());
+    let error = response.unwrap_err().http_status();
+    assert_eq!(Some(StatusCode::NotFound), error);
+
     Ok(())
 }

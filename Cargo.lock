@@ -449,6 +449,7 @@ dependencies = [
  "azure_core",
  "azure_core_test",
  "azure_identity",
+ "azure_storage_blob_test",
  "azure_storage_common",
  "serde",
  "time",
@@ -456,6 +457,16 @@ dependencies = [
  "typespec_client_core",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "azure_storage_blob_test"
+version = "0.1.0"
+dependencies = [
+ "azure_core",
+ "azure_core_test",
+ "azure_storage_blob",
+ "tokio",
 ]
 
 [[package]]
