@@ -44,6 +44,7 @@ impl ConnectionManager {
     async fn create_connection(&self) -> Result<Arc<AmqpConnection>> {
         trace!("Creating connection for {}.", self.url);
         let connection = Arc::new(AmqpConnection::new());
+
         connection
             .open(
                 self.application_id

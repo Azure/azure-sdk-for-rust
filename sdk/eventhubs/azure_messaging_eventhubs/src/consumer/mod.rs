@@ -10,7 +10,7 @@ use super::{
     error::ErrorKind,
     models::{EventHubPartitionProperties, EventHubProperties},
 };
-use crate::{common::connection_manager::ConnectionManager, error::EventHubsError};
+use crate::{common::connection_manager::ConnectionManager, error::EventHubsError, models};
 use azure_core::{credentials::TokenCredential, error::Result, RetryOptions, Url, Uuid};
 use azure_core_amqp::{
     AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap, AmqpReceiver,
@@ -33,8 +33,9 @@ pub struct ConsumerClient {
     session_instances: Mutex<HashMap<String, Arc<AmqpSession>>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
     connection_manager: ConnectionManager,
-    //    connection: OnceLock<AmqpConnection>,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
+    consumer_group: String,
+    application_id: String,
     eventhub: String,
     endpoint: Url,
     /// The instance ID to set.
@@ -104,12 +105,14 @@ impl ConsumerClient {
             mgmt_client: Mutex::new(OnceLock::new()),
             connection_manager: ConnectionManager::new(
                 url.clone(),
-                options.application_id,
+                options.application_id.clone(),
                 options.custom_endpoint.clone(),
             ),
             credential,
             eventhub: eventhub_name,
             endpoint: url,
+            consumer_group,
+            application_id: options.application_id.unwrap_or_default(),
         })
     }
 
@@ -152,6 +155,15 @@ impl ConsumerClient {
     /// ```
     pub async fn close(self) -> Result<()> {
         self.connection_manager.close_connection().await
+    }
+
+    pub(crate) fn get_details(&self) -> models::ConsumerClientDetails {
+        models::ConsumerClientDetails {
+            eventhub_name: self.eventhub.clone(),
+            consumer_group: self.consumer_group.clone(),
+            fully_qualified_namespace: self.endpoint.host().unwrap().to_string(),
+            client_id: self.application_id.clone(),
+        }
     }
 
     /// Attaches a message receiver to a specific partition of the Event Hub.

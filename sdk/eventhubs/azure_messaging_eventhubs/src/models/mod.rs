@@ -13,6 +13,8 @@ pub use azure_core_amqp::AmqpValue;
 /// An event received from an Event Hub.
 pub use event_data::ReceivedEventData;
 
+pub use crate::processor::processor::models::{Checkpoint, Ownership};
+
 /// Event data builders.
 pub mod builders {
     pub use crate::models::event_data::builders::EventDataBuilder;
@@ -228,6 +230,21 @@ impl From<MessageId> for AmqpMessageId {
             MessageId::Ulong(ulong) => AmqpMessageId::Ulong(ulong),
         }
     }
+}
+
+/// Represents the details of a consumer client.
+pub struct ConsumerClientDetails {
+    /// The fully qualified namespace of the Event Hub.
+    pub fully_qualified_namespace: String,
+
+    /// The name of the consumer group.
+    pub consumer_group: String,
+
+    /// The name of the Event Hub.
+    pub eventhub_name: String,
+
+    /// A unique name used to identify this consumer.
+    pub client_id: String,
 }
 
 #[cfg(test)]

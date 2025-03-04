@@ -7,14 +7,9 @@
 
 pub(crate) mod common;
 pub(crate) mod consumer;
-
-/// Types related to errors processing events.
 pub(crate) mod error;
-
-/// Types to create and send events to an Event Hubs instance.
-pub(crate) mod producer;
-
 pub(crate) mod processor;
+pub(crate) mod producer;
 
 /// Types sent to and received from the Event Hubs service.
 pub mod models;
