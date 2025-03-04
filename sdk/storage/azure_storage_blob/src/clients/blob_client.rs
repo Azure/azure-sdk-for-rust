@@ -5,9 +5,8 @@ use crate::{
     clients::GeneratedBlobClient,
     models::{
         BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
-        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientGetBlockListOptions,
-        BlobBlockBlobClientStageBlockOptions, BlobBlockBlobClientUploadOptions, BlobProperties,
-        BlockListType, BlockLookupList,
+        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientStageBlockOptions,
+        BlobBlockBlobClientUploadOptions, BlobProperties, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions,
@@ -133,18 +132,19 @@ impl BlobClient {
         Ok(response)
     }
 
-    pub async fn get_block_list(
-        &self,
-        list_type: BlockListType,
-        options: Option<BlobBlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockLookupList>> {
-        let response = self
-            .client
-            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .get_block_list(list_type, options)
-            .await?;
-        Ok(response)
-    }
+    // Currently blocked by generated code, uncomment when we can consume newest definition
+    // pub async fn get_block_list(
+    //     &self,
+    //     list_type: BlockListType,
+    //     options: Option<BlobBlockBlobClientGetBlockListOptions<'_>>,
+    // ) -> Result<Response<BlockList>> {
+    //     let response = self
+    //         .client
+    //         .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
+    //         .get_block_list(list_type, options)
+    //         .await?;
+    //     Ok(response)
+    // }
 
     pub async fn stage_block(
         &self,
