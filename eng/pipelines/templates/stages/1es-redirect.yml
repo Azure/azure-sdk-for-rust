@@ -19,6 +19,9 @@ parameters:
   - name: oneESTemplateTag
     type: string
     default: release
+  - name: AutoBaseline
+    type: boolean
+    default: false
 
 extends:
   ${{ if and(parameters.Use1ESOfficial, eq(parameters.oneESTemplateTag, 'canary')) }}:
@@ -36,7 +39,15 @@ extends:
         - 1ES.PT.Tag-refs/tags/canary
     settings:
       skipBuildTagsForGitHubPullRequests: true
+       # only enable autoBaseline for the internal build of rust-core on main branch
+      ${{ if parameters.AutoBaseline }}:
+        featureFlags:
+          autoBaseline: true
     sdl:
+      ${{ if parameters.AutoBaseline }}:
+        autoBaseline:
+          isMainPipeline: true
+          enableForGitHub: true
       sourceAnalysisPool:
         name: azsdk-pool-mms-win-2022-general
         image: azsdk-pool-mms-win-2022-1espt
