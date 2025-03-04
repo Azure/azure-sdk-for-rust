@@ -350,7 +350,7 @@ impl Recording {
     // #[cfg(any(test, doctest))] // BUGBUG: https://github.com/rust-lang/rust/issues/67295
     #[doc(hidden)]
     pub fn with_seed() -> Self {
-        let span = tracing::trace_span!("Recording::seeded");
+        let span = tracing::trace_span!("Recording::with_seed");
         Self {
             test_mode: TestMode::Playback,
             span: span.entered(),

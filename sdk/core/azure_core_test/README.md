@@ -105,6 +105,26 @@ cargo test
 If you get errors, they could indicate regressions in your tests or perhaps variables or random data wasn't saved correctly.
 Review any data you generate or use not coming from the service.
 
+## Troubleshooting
+
+Like all Azure SDK client libraries, the `azure_core_test` crate writes information with the target rooted in the crate name
+followed by any modules in which the span was created e.g., `azure_core_test::proxy`.
+Because this crate is used to test Azure SDK client libraries and developers will most likely want to see fewer traces from this crate,
+the log levels used are a level lower than typical client libraries:
+
+- `INFO` includes only important information e.g., the version of `test-proxy` and on what port it's listening.
+- `DEBUG` includes when a test recording or playback has started and stopped.
+- `TRACE` includes details like communications with the `test-proxy` itself.
+
+The `azure_core_test` crate also traces useful information that the `test-proxy` process itself writes to `stdout` using the `test-proxy` target and the `TRACE` logging level.
+
+You can configuring using the [`RUST_LOG`](https://docs.rs/env_logger) environment variable.
+For example, if you wanted to see debug information from all sources by default but see `test-proxy` messages written to `stdout` you'd run:
+
+```bash
+RUST_LOG=debug,test-proxy=trace cargo test
+```
+
 [PowerShell]: https://learn.microsoft.com/powershell/scripting/install/installing-powershell
 [Test Proxy]: https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md
 [Test Resources]: https://github.com/Azure/azure-sdk-tools/blob/main/eng/common/TestResources/README.md
