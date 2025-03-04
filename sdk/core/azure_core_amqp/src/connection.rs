@@ -6,10 +6,10 @@ use azure_core::{error::Result, Url};
 use std::fmt::Debug;
 use time::Duration;
 
-#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type ConnectionImplementation = super::fe2o3::connection::Fe2o3AmqpConnection;
 
-#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+#[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
 type ConnectionImplementation = super::noop::NoopAmqpConnection;
 
 /// Options for configuring an AMQP connection.

@@ -5,10 +5,10 @@ use azure_core::error::Result;
 
 use super::session::AmqpSession;
 
-#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type CbsImplementation<'a> = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity<'a>;
 
-#[cfg(any(not(any(feature = "fe2o3-amqp")), target_arch = "wasm32"))]
+#[cfg(any(not(any(feature = "fe2o3_amqp")), target_arch = "wasm32"))]
 type CbsImplementation<'a> = super::noop::NoopAmqpClaimsBasedSecurity<'a>;
 
 pub trait AmqpClaimsBasedSecurityApis {
