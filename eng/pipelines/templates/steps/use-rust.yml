@@ -11,7 +11,7 @@ steps:
       $toolchain = '${{ parameters.Toolchain }}'
       if ($toolchain -eq 'msrv') {
           Write-Host "Reading MSRV from azure_core"
-          $toolchain = cargo metadata --manifest-path ./sdk/core/azure_core/Cargo.toml --format-version 1 | convertfrom-json | select -expand packages | where { $_.name -eq 'azure_core' } | select -expand rust_version
+          $toolchain = cargo read-manifest --manifest-path ./sdk/core/azure_core/Cargo.toml | ConvertFrom-Json | Select-Object -ExpandProperty rust_version
       }
 
       Write-Host "Setting Toolchain variable to $toolchain"
@@ -24,10 +24,10 @@ steps:
         $attempts++
         Write-Host "> rustup toolchain install --no-self-update $toolchain"
         rustup toolchain install --no-self-update $toolchain
-        
+
         if ($?) { exit 0 }
 
-        if ($attempts -lt $maxAttempts) { 
+        if ($attempts -lt $maxAttempts) {
           Write-Host "Failed to install $toolchain, attempt $attempts, retrying..."
         } else {
           Write-Host "Failed to install $toolchain after $attempts attempts."

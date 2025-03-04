@@ -1,5 +1,4 @@
 [toolchain]
-channel = "stable"
 components = [
   "rustc",
   "rustfmt",
