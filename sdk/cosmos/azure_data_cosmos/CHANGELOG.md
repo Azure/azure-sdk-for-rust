@@ -7,7 +7,8 @@
 ### Breaking Changes
 
 ### Bugs Fixed
-* Fixed a publishing issue that caused the `key_auth` feature to be omitted. [#2241](https://github.com/Azure/azure-sdk-for-rust/issues/2241)
+
+* Fixed a publishing issue that caused the `key_auth` feature to be omitted. ([#2241](https://github.com/Azure/azure-sdk-for-rust/issues/2241))
 
 ### Other Changes
 
@@ -15,4 +16,4 @@
 
 ### Features Added
 
-- Initial supported release.
+* Initial supported release.
