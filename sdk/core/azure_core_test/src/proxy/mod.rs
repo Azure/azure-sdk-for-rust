@@ -42,6 +42,7 @@ mod bootstrap {
         io::{AsyncBufReadExt, BufReader},
         process::{ChildStdout, Command},
     };
+    pub(super) use tracing::Level;
 
     // cspell:ignore aspnetcore devcert teamprojectid testproxy
     pub(super) const KESTREL_CERT_PATH_ENV: &str =
@@ -148,10 +149,18 @@ mod bootstrap {
         Ok(())
     }
 
-    pub(super) fn trace_line(line: &str) {
+    pub(super) fn trace_line(level: Level, line: &str) {
         if !line.starts_with('[') {
             let line = line.trim();
-            tracing::trace!(target: "test-proxy", "{line}");
+            if line.is_empty() {
+                return;
+            }
+
+            // tracing::*!() macros require constant Level, so we have to use a match here.
+            match level {
+                Level::ERROR => tracing::error!(target: "test-proxy", "{line}"),
+                _ => tracing::trace!(target: "test-proxy", "{line}"),
+            }
         }
     }
 }
@@ -178,7 +187,7 @@ impl Proxy {
             )
             .env(KESTREL_CERT_PASSWORD_ENV, KESTREL_CERT_PASSWORD)
             .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
+            .stderr(Stdio::piped())
             .spawn()
             .map_err(|err| azure_core::Error::full(ErrorKind::Io, err, "test-proxy not found"))?;
 
@@ -186,18 +195,30 @@ impl Proxy {
             .stdout
             .take()
             .ok_or_else(|| azure_core::Error::message(ErrorKind::Io, "no stdout pipe"))?;
+        // Take stderr now but we won't listen until after start up, such that messages should buffer.
+        let mut stderr = command
+            .stderr
+            .take()
+            .ok_or_else(|| azure_core::Error::message(ErrorKind::Io, "no stderr pipe"))?;
         self.command = Some(command);
 
         // Wait until the service is listening on a port.
         self.wait_till_listening(&mut stdout).await?;
 
-        // Then spawn a thread to keep pumping messages to stdout.
+        // Then spawn a thread to keep pumping messages to stdout and stderr.
         // The pipe will be closed when the process is shut down, which will terminate the task.
         tokio::spawn(async move {
             let mut reader = BufReader::new(&mut stdout).lines();
             while let Some(line) = reader.next_line().await.unwrap_or(None) {
                 // Trace useful lines that test-proxy writes to stdout.
-                trace_line(&line);
+                trace_line(Level::TRACE, &line);
+            }
+        });
+        tokio::spawn(async move {
+            let mut reader = BufReader::new(&mut stderr).lines();
+            while let Some(line) = reader.next_line().await.unwrap_or(None) {
+                // Trace useful lines that test-proxy writes to stdout.
+                trace_line(Level::ERROR, &line);
             }
         });
 
@@ -231,7 +252,7 @@ impl Proxy {
             const LISTENING_PATTERN: &str = "Now listening on: ";
 
             // Trace useful lines that test-proxy writes to stdout.
-            trace_line(&line);
+            trace_line(Level::TRACE, &line);
 
             if let Some(idx) = line.find(RUNNING_PATTERN) {
                 let idx = idx + RUNNING_PATTERN.len();
