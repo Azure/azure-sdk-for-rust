@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::Uuid;
 use azure_core_test::Recording;
 use azure_storage_blob::BlobClientOptions;
 
