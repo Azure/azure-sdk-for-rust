@@ -6,8 +6,6 @@
 #![doc = include_str!("../README.md")]
 
 pub(crate) mod common;
-
-/// Types related to consuming events from an Event Hubs instance.
 pub(crate) mod consumer;
 
 /// Types related to errors processing events.

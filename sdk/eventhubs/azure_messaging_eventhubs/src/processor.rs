@@ -1,38 +1,23 @@
-use serde::{Deserialize, Serialize};
+use crate::{ConsumerClient, StartPosition};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, SystemTime};
-use tokio::task::JoinHandle;
 
-#[derive(Serialize, Deserialize)]
 pub struct Checkpoint {
-    #[serde(rename = "ConsumerGroup")]
     consumer_group: String,
-    #[serde(rename = "EventHubName")]
     event_hub_name: String,
-    #[serde(rename = "FullyQualifiedNamespaceName")]
     fully_qualified_namespace_name: String,
-    #[serde(rename = "PartitionId")]
     partition_id: String,
-    #[serde(rename = "Offset")]
     offset: Option<String>,
-    #[serde(rename = "SequenceNumber")]
     sequence_number: Option<i64>,
 }
 
-#[derive(Serialize, Deserialize)]
 pub struct Ownership {
-    #[serde(rename = "ConsumerGroup")]
     consumer_group: String,
-    #[serde(rename = "EventHubName")]
     event_hub_name: String,
-    #[serde(rename = "FullyQualifiedNamespace")]
     fully_qualified_namespace: String,
-    #[serde(rename = "PartitionId")]
     partition_id: String,
-    #[serde(rename = "ETag")]
     etag: Option<String>,
-    #[serde(rename = "LastModifiedTime")]
     last_modified_time: Option<SystemTime>,
 }
 
