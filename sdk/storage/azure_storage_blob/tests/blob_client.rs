@@ -7,8 +7,8 @@ use azure_storage_blob::{
     clients::{BlobClient, ContainerClient},
     models::{
         BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
-        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientGetBlockListOptions,
-        BlobBlockBlobClientStageBlockOptions, BlobType, BlockListType, BlockLookupList,
+        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientStageBlockOptions, BlobType,
+        BlockLookupList,
     },
     BlobClientOptions,
 };
