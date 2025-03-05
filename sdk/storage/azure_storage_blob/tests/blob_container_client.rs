@@ -52,9 +52,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
         Some(options),
     )?;
     container_client.create_container(None).await?;
-    let container_properties = container_client
-        .get_container_properties(Some(BlobContainerClientGetPropertiesOptions::default()))
-        .await?;
+    let container_properties = container_client.get_container_properties(None).await?;
 
     // Assert
     assert_eq!(
@@ -85,9 +83,7 @@ async fn test_get_container_properties_invalid_container(
         recording.credential(),
         Some(options),
     )?;
-    let response = container_client
-        .get_container_properties(Some(BlobContainerClientGetPropertiesOptions::default()))
-        .await;
+    let response = container_client.get_container_properties(None).await;
 
     // Assert
     assert!(response.is_err());

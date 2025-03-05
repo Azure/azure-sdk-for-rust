@@ -52,9 +52,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
             None,
         )
         .await?;
-    let response = blob_client
-        .get_blob_properties(Some(BlobBlobClientGetPropertiesOptions::default()))
-        .await;
+    let response = blob_client.get_blob_properties(None).await;
 
     // Assert
     assert!(response.is_ok());
@@ -89,9 +87,7 @@ async fn test_get_blob_properties_invalid_container(
         recording.credential(),
         Some(options),
     )?;
-    let response = blob_client
-        .get_blob_properties(Some(BlobBlobClientGetPropertiesOptions::default()))
-        .await;
+    let response = blob_client.get_blob_properties(None).await;
 
     // Assert
     assert_eq!(
@@ -139,9 +135,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             None,
         )
         .await?;
-    let response = blob_client
-        .download_blob(Some(BlobBlobClientDownloadOptions::default()))
-        .await?;
+    let response = blob_client.download_blob(None).await?;
 
     // Assert
     let (status_code, headers, response_body) = response.deconstruct();
@@ -263,9 +257,7 @@ async fn test_upload_blob_overwrite(ctx: TestContext) -> Result<(), Box<dyn Erro
             None,
         )
         .await?;
-    let response = blob_client
-        .download_blob(Some(BlobBlobClientDownloadOptions::default()))
-        .await?;
+    let response = blob_client.download_blob(None).await?;
 
     // Assert
     assert_eq!(upload_response.status(), StatusCode::Created);
@@ -319,7 +311,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             "1",
             i64::try_from(block_1.len())?,
             RequestContent::from(block_1.to_vec()),
-            Some(BlobBlockBlobClientStageBlockOptions::default()),
+            None,
         )
         .await?;
 
@@ -328,7 +320,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             "2",
             i64::try_from(block_2.len())?,
             RequestContent::from(block_2.to_vec()),
-            Some(BlobBlockBlobClientStageBlockOptions::default()),
+            None,
         )
         .await?;
     blob_client
@@ -336,7 +328,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             "3",
             i64::try_from(block_3.len())?,
             RequestContent::from(block_3.to_vec()),
-            Some(BlobBlockBlobClientStageBlockOptions::default()),
+            None,
         )
         .await?;
 
@@ -354,16 +346,9 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let request_content = RequestContent::try_from(block_lookup_list)?;
 
-    blob_client
-        .commit_block_list(
-            request_content,
-            Some(BlobBlockBlobClientCommitBlockListOptions::default()),
-        )
-        .await?;
+    blob_client.commit_block_list(request_content, None).await?;
 
-    let response = blob_client
-        .download_blob(Some(BlobBlobClientDownloadOptions::default()))
-        .await?;
+    let response = blob_client.download_blob(None).await?;
 
     // Assert
     let (status_code, headers, response_body) = response.deconstruct();
