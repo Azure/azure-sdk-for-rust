@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use super::ProcessRunner;
 use async_trait::async_trait;
 use futures::channel::oneshot;
