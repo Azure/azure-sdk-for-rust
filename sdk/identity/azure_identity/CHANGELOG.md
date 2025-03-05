@@ -8,6 +8,7 @@
 - `AzureCliCredentialOptions` (new) accepts a `azure_core::process::Executor` to run the Azure CLI asynchronously.
   The `tokio` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
   Callers can also implement the trait themselves to use a different asynchronous runtime.
+- Added `ImdsId` param to `AppServiceManagedIdentityCredential::new`
 
 ### Breaking Changes
 
@@ -16,6 +17,7 @@
 - `ClientAssertionCredential` constructors moved some parameters to an `Option<ClientAssertionCredentialOptions>` parameter.
 - Removed `get_subscription()` and `get_tenant()` from `AzureCliCredential`.
 - `WorkloadIdentityCredential` constructors moved some parameters to an `Option<ClientAssertionCredentialOptions>` parameter.
+- Added `ImdsId` param to `AppServiceManagedIdentityCredential::new`
 
 ### Bugs Fixed
 
