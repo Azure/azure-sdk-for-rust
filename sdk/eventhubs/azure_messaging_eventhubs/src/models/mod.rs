@@ -13,7 +13,7 @@ pub use azure_core_amqp::AmqpValue;
 /// An event received from an Event Hub.
 pub use event_data::ReceivedEventData;
 
-pub use crate::processor::processor::models::{Checkpoint, Ownership};
+pub use crate::event_processor::processor::models::{Checkpoint, Ownership};
 
 /// Event data builders.
 pub mod builders {

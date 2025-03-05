@@ -390,6 +390,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity",
  "futures",
+ "rand 0.8.5",
  "rustc_version",
  "time",
  "tokio",

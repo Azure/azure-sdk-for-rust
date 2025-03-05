@@ -23,6 +23,7 @@ async-trait.workspace = true
 azure_core = { path = "../../core/azure_core", default-features = false }
 azure_core_amqp.workspace = true
 futures.workspace = true
+rand.workspace = true
 time.workspace = true
 tokio.workspace = true
 tracing.workspace = true

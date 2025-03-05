@@ -8,7 +8,7 @@
 pub(crate) mod common;
 pub(crate) mod consumer;
 pub(crate) mod error;
-pub(crate) mod processor;
+pub(crate) mod event_processor;
 pub(crate) mod producer;
 
 /// Types sent to and received from the Event Hubs service.
