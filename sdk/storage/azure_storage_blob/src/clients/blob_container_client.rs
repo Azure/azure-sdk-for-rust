@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::clients::BlobContainerClient as GenBlobContainerClient;
+use crate::clients::GeneratedBlobContainerClient;
 use crate::models::{
     BlobContainerClientCreateOptions, BlobContainerClientCreateResult,
     BlobContainerClientDeleteOptions, BlobContainerClientDeleteResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-    ContainerProperties,
 };
 use crate::pipeline::StorageHeadersPolicy;
 use crate::BlobContainerClientOptions;
@@ -18,7 +17,7 @@ use std::sync::Arc;
 pub struct BlobContainerClient {
     endpoint: Url,
     container_name: String,
-    client: GenBlobContainerClient,
+    client: GeneratedBlobContainerClient,
 }
 
 impl BlobContainerClient {
@@ -45,7 +44,7 @@ impl BlobContainerClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GenBlobContainerClient::new(
+        let client = GeneratedBlobContainerClient::new(
             endpoint,
             credential,
             container_name.clone(),
