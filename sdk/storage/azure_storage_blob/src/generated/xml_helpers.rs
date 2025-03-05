@@ -6,25 +6,80 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use crate::models::{ArrowField, BlobTag, CorsRule, FilterBlobItem};
+use crate::models::{
+    ArrowField, BlobItemInternal, BlobPrefix, BlobTag, Block, ClearRange, ContainerItem, CorsRule,
+    FilterBlobItem, PageRange,
+};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "BlobItems")]
+pub struct Blob_itemsBlobItemInternal {
+    #[serde(default)]
+    BlobItemInternal: Vec<BlobItemInternal>,
+}
+
+impl Blob_itemsBlobItemInternal {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<BlobItemInternal>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Blob_itemsBlobItemInternal::deserialize(deserializer)?.BlobItemInternal)
+    }
+
+    pub fn wrap<S>(to_serialize: &Vec<BlobItemInternal>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Blob_itemsBlobItemInternal {
+            BlobItemInternal: to_serialize.to_owned(),
+        }
+        .serialize(serializer)
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "BlobPrefixes")]
+pub struct Blob_prefixesBlobPrefix {
+    #[serde(default)]
+    BlobPrefix: Vec<BlobPrefix>,
+}
+
+impl Blob_prefixesBlobPrefix {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<BlobPrefix>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Blob_prefixesBlobPrefix::deserialize(deserializer)?.BlobPrefix)
+    }
+
+    pub fn wrap<S>(to_serialize: &Vec<BlobPrefix>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Blob_prefixesBlobPrefix {
+            BlobPrefix: to_serialize.to_owned(),
+        }
+        .serialize(serializer)
+    }
+}
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename = "TagSet")]
 pub struct Blob_tag_setBlobTag {
     #[serde(default)]
-    BlobTag: Option<Vec<BlobTag>>,
+    BlobTag: Vec<BlobTag>,
 }
 
 impl Blob_tag_setBlobTag {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<BlobTag>>, D::Error>
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<BlobTag>, D::Error>
     where
         D: Deserializer<'de>,
     {
         Ok(Blob_tag_setBlobTag::deserialize(deserializer)?.BlobTag)
     }
 
-    pub fn wrap<S>(to_serialize: &Option<Vec<BlobTag>>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn wrap<S>(to_serialize: &Vec<BlobTag>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -39,21 +94,18 @@ impl Blob_tag_setBlobTag {
 #[serde(rename = "Blobs")]
 pub struct BlobsFilterBlobItem {
     #[serde(default)]
-    FilterBlobItem: Option<Vec<FilterBlobItem>>,
+    FilterBlobItem: Vec<FilterBlobItem>,
 }
 
 impl BlobsFilterBlobItem {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<FilterBlobItem>>, D::Error>
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<FilterBlobItem>, D::Error>
     where
         D: Deserializer<'de>,
     {
         Ok(BlobsFilterBlobItem::deserialize(deserializer)?.FilterBlobItem)
     }
 
-    pub fn wrap<S>(
-        to_serialize: &Option<Vec<FilterBlobItem>>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
+    pub fn wrap<S>(to_serialize: &Vec<FilterBlobItem>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -65,21 +117,99 @@ impl BlobsFilterBlobItem {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename = "ClearRange")]
+pub struct Clear_rangeClearRange {
+    #[serde(default)]
+    ClearRange: Vec<ClearRange>,
+}
+
+impl Clear_rangeClearRange {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<ClearRange>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Clear_rangeClearRange::deserialize(deserializer)?.ClearRange)
+    }
+
+    pub fn wrap<S>(to_serialize: &Vec<ClearRange>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Clear_rangeClearRange {
+            ClearRange: to_serialize.to_owned(),
+        }
+        .serialize(serializer)
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "CommittedBlocks")]
+pub struct Committed_blocksBlock {
+    #[serde(default)]
+    Block: Vec<Block>,
+}
+
+impl Committed_blocksBlock {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<Block>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Committed_blocksBlock::deserialize(deserializer)?.Block)
+    }
+
+    pub fn wrap<S>(to_serialize: &Vec<Block>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Committed_blocksBlock {
+            Block: to_serialize.to_owned(),
+        }
+        .serialize(serializer)
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "Containers")]
+pub struct Container_itemsContainerItem {
+    #[serde(default)]
+    ContainerItem: Vec<ContainerItem>,
+}
+
+impl Container_itemsContainerItem {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<ContainerItem>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Container_itemsContainerItem::deserialize(deserializer)?.ContainerItem)
+    }
+
+    pub fn wrap<S>(to_serialize: &Vec<ContainerItem>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Container_itemsContainerItem {
+            ContainerItem: to_serialize.to_owned(),
+        }
+        .serialize(serializer)
+    }
+}
+
+#[derive(Deserialize, Serialize)]
 #[serde(rename = "Cors")]
 pub struct CorsCorsRule {
     #[serde(default)]
-    CorsRule: Option<Vec<CorsRule>>,
+    CorsRule: Vec<CorsRule>,
 }
 
 impl CorsCorsRule {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<CorsRule>>, D::Error>
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<CorsRule>, D::Error>
     where
         D: Deserializer<'de>,
     {
         Ok(CorsCorsRule::deserialize(deserializer)?.CorsRule)
     }
 
-    pub fn wrap<S>(to_serialize: &Option<Vec<CorsRule>>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn wrap<S>(to_serialize: &Vec<CorsRule>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -91,26 +221,78 @@ impl CorsCorsRule {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename = "PageRange")]
+pub struct Page_rangePageRange {
+    #[serde(default)]
+    PageRange: Vec<PageRange>,
+}
+
+impl Page_rangePageRange {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<PageRange>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Page_rangePageRange::deserialize(deserializer)?.PageRange)
+    }
+
+    pub fn wrap<S>(to_serialize: &Vec<PageRange>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Page_rangePageRange {
+            PageRange: to_serialize.to_owned(),
+        }
+        .serialize(serializer)
+    }
+}
+
+#[derive(Deserialize, Serialize)]
 #[serde(rename = "Schema")]
 pub struct SchemaArrowField {
     #[serde(default)]
-    ArrowField: Option<Vec<ArrowField>>,
+    ArrowField: Vec<ArrowField>,
 }
 
 impl SchemaArrowField {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<ArrowField>>, D::Error>
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<ArrowField>, D::Error>
     where
         D: Deserializer<'de>,
     {
         Ok(SchemaArrowField::deserialize(deserializer)?.ArrowField)
     }
 
-    pub fn wrap<S>(to_serialize: &Option<Vec<ArrowField>>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn wrap<S>(to_serialize: &Vec<ArrowField>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         SchemaArrowField {
             ArrowField: to_serialize.to_owned(),
+        }
+        .serialize(serializer)
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "UncommittedBlocks")]
+pub struct Uncommitted_blocksBlock {
+    #[serde(default)]
+    Block: Vec<Block>,
+}
+
+impl Uncommitted_blocksBlock {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<Block>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Uncommitted_blocksBlock::deserialize(deserializer)?.Block)
+    }
+
+    pub fn wrap<S>(to_serialize: &Vec<Block>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Uncommitted_blocksBlock {
+            Block: to_serialize.to_owned(),
         }
         .serialize(serializer)
     }

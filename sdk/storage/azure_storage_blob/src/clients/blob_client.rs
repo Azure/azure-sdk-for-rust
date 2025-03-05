@@ -2,11 +2,13 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::GeneratedBlobClient,
+    clients::{BlockBlobClient, GeneratedBlobClient},
     models::{
-        BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
-        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientStageBlockOptions,
-        BlobBlockBlobClientUploadOptions, BlobProperties, BlockLookupList,
+        BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientGetPropertiesOptions,
+        BlobClientGetPropertiesResult, BlockBlobClientCommitBlockListOptions,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockOptions,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
+        BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions,
@@ -21,6 +23,7 @@ pub struct BlobClient {
     endpoint: Url,
     container_name: String,
     blob_name: String,
+    credential: Arc<dyn TokenCredential>,
     client: GeneratedBlobClient,
 }
 
@@ -49,11 +52,19 @@ impl BlobClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
+        let client = GeneratedBlobClient::new(
+            endpoint,
+            credential.clone(),
+            "2025-05-05".to_string(),
+            container_name.clone(),
+            blob_name.clone(),
+            Some(options),
+        )?;
         Ok(Self {
             endpoint: endpoint.parse()?,
             container_name,
             blob_name,
+            credential,
             client,
         })
     }
@@ -70,29 +81,23 @@ impl BlobClient {
         &self.blob_name
     }
 
+    pub fn credential(&self) -> Arc<dyn TokenCredential> {
+        self.credential.clone()
+    }
+
     pub async fn get_blob_properties(
         &self,
-        options: Option<BlobBlobClientGetPropertiesOptions<'_>>,
-    ) -> Result<BlobProperties> {
-        let response = self
-            .client
-            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .get_properties(options)
-            .await?;
-
-        let blob_properties: BlobProperties = response.headers().get()?;
-        Ok(blob_properties)
+        options: Option<BlobClientGetPropertiesOptions<'_>>,
+    ) -> Result<Response<BlobClientGetPropertiesResult>> {
+        let response = self.client.get_properties(options).await?;
+        Ok(response)
     }
 
     pub async fn download_blob(
         &self,
-        options: Option<BlobBlobClientDownloadOptions<'_>>,
-    ) -> Result<Response> {
-        let response = self
-            .client
-            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .download(options)
-            .await?;
+        options: Option<BlobClientDownloadOptions<'_>>,
+    ) -> Result<Response<BlobClientDownloadResult>> {
+        let response = self.client.download(options).await?;
         Ok(response)
     }
 
@@ -101,9 +106,9 @@ impl BlobClient {
         &self,
         data: RequestContent<Bytes>,
         overwrite: bool,
-        content_length: i64,
-        options: Option<BlobBlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<()>> {
+        content_length: u64,
+        options: Option<BlockBlobClientUploadOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientUploadResult>> {
         let mut options = options.unwrap_or_default();
 
         // Check if they want overwrite, by default overwrite=False
@@ -111,9 +116,17 @@ impl BlobClient {
             options.if_none_match = Some(String::from("*"));
         }
 
-        let response = self
-            .client
-            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
+        // Currently there is no way to alter what options you pass to the BlockBlobClient we spin up on-demand
+        let block_blob_client = BlockBlobClient::new(
+            self.endpoint().as_str(),
+            self.credential(),
+            "2025-05-05".to_string(),
+            self.container_name().to_string(),
+            self.blob_name().to_string(),
+            None,
+        )?;
+
+        let response = block_blob_client
             .upload(data, content_length, Some(options))
             .await?;
         Ok(response)
@@ -122,27 +135,40 @@ impl BlobClient {
     pub async fn commit_block_list(
         &self,
         blocks: RequestContent<BlockLookupList>,
-        options: Option<BlobBlockBlobClientCommitBlockListOptions<'_>>,
-    ) -> Result<Response<()>> {
-        let response = self
-            .client
-            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .commit_block_list(blocks, options)
-            .await?;
+        options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientCommitBlockListResult>> {
+        // Currently there is no way to alter what options you pass to the BlockBlobClient we spin up on-demand
+        let block_blob_client = BlockBlobClient::new(
+            self.endpoint().as_str(),
+            self.credential(),
+            "2025-05-05".to_string(),
+            self.container_name().to_string(),
+            self.blob_name().to_string(),
+            None,
+        )?;
+        let response = block_blob_client.commit_block_list(blocks, options).await?;
         Ok(response)
     }
 
     pub async fn stage_block(
         &self,
         block_id: &str,
-        content_length: i64,
+        content_length: u64,
         body: RequestContent<Bytes>,
-        options: Option<BlobBlockBlobClientStageBlockOptions<'_>>,
-    ) -> Result<Response<()>> {
+        options: Option<BlockBlobClientStageBlockOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientStageBlockResult>> {
         let block_id = base64::encode(block_id);
-        let response = self
-            .client
-            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
+        // Currently there is no way to alter what options you pass to the BlockBlobClient we spin up on-demand
+        let block_blob_client = BlockBlobClient::new(
+            self.endpoint().as_str(),
+            self.credential(),
+            "2025-05-05".to_string(),
+            self.container_name().to_string(),
+            self.blob_name().to_string(),
+            None,
+        )?;
+
+        let response = block_blob_client
             .stage_block(&block_id, content_length, body, options)
             .await?;
         Ok(response)
