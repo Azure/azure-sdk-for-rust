@@ -5,11 +5,7 @@ use azure_core::{headers::HeaderName, Bytes, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     clients::{BlobClient, ContainerClient},
-    models::{
-        BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions, BlobBlock,
-        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientStageBlockOptions, BlobType,
-        BlockLookupList,
-    },
+    models::{BlobBlock, BlobType, BlockLookupList},
     BlobClientOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;

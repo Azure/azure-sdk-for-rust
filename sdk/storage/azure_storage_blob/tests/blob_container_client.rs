@@ -3,11 +3,7 @@
 
 use azure_core::StatusCode;
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::{
-    clients::ContainerClient,
-    models::{BlobContainerClientGetPropertiesOptions, LeaseState},
-    BlobClientOptions,
-};
+use azure_storage_blob::{clients::ContainerClient, models::LeaseState, BlobClientOptions};
 use azure_storage_blob_test::recorded_test_setup;
 use std::error::Error;
 
