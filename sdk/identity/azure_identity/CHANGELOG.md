@@ -9,6 +9,7 @@
   The `tokio` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
   Callers can also implement the trait themselves to use a different asynchronous runtime.
 - Added `ImdsId` param to `AppServiceManagedIdentityCredential::new`
+- Expose `azure_identity::credentials::TokenCache` for external `TokenCredential` implementations to leverage
 
 ### Breaking Changes
 

@@ -8,20 +8,20 @@ use std::collections::HashMap;
 use tracing::trace;
 
 #[derive(Debug)]
-pub(crate) struct TokenCache(RwLock<HashMap<Vec<String>, AccessToken>>);
+pub struct TokenCache(RwLock<HashMap<Vec<String>, AccessToken>>);
 
 impl TokenCache {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self(RwLock::new(HashMap::new()))
     }
 
-    pub(crate) async fn clear(&self) -> azure_core::Result<()> {
+    pub async fn clear(&self) -> azure_core::Result<()> {
         let mut token_cache = self.0.write().await;
         token_cache.clear();
         Ok(())
     }
 
-    pub(crate) async fn get_token(
+    pub async fn get_token(
         &self,
         scopes: &[&str],
         callback: impl Future<Output = azure_core::Result<AccessToken>>,
