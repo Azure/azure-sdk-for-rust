@@ -1,5 +1,15 @@
 # Release History
 
+## 0.23.0 (?)
+
+### Features Added
+
+- Added `ImdsId` param to `AppServiceManagedIdentityCredential::new`
+
+### Breaking Changes
+
+- Added `ImdsId` param to `AppServiceManagedIdentityCredential::new`
+
 ## 0.22.0 (2025-02-18)
 
 ### Features Added
