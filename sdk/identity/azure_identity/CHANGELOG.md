@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `ImdsId` param to `AppServiceManagedIdentityCredential::new`
+- Expose `azure_identity::credentials::TokenCache` for external `TokenCredential` implementations to leverage
 
 ### Breaking Changes
 
