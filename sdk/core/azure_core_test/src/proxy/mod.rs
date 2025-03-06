@@ -55,6 +55,7 @@ impl Proxy {
             .args(args)
             .env(
                 KESTREL_CERT_PATH_ENV,
+                // cspell:ignore testproxy devcert
                 git_dir.join("eng/common/testproxy/dotnet-devcert.pfx"),
             )
             .env(KESTREL_CERT_PASSWORD_ENV, KESTREL_CERT_PASSWORD)

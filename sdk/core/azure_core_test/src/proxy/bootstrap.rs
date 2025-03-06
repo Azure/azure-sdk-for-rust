@@ -276,14 +276,14 @@ fn extract_test_proxy(
     })
 }
 
-// cspell:ignore bufread,untar
+// cspell:ignore bufread untar
 fn untar(
     archive_file: &std::fs::File,
     output_dir: &Path,
 ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let reader = std::io::BufReader::new(archive_file);
-    let gzipped = flate2::bufread::GzDecoder::new(reader);
-    let mut archive = tar::Archive::new(gzipped);
+    let decoder = flate2::bufread::GzDecoder::new(reader);
+    let mut archive = tar::Archive::new(decoder);
     archive.unpack(output_dir)?;
 
     Ok(())
