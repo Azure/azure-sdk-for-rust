@@ -3,10 +3,10 @@
 
 #![doc = include_str!("../README.md")]
 
-#[cfg(all(feature = "fe2o3-amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 mod fe2o3;
 
-#[cfg(any(not(feature = "fe2o3-amqp"), target_arch = "wasm32"))]
+#[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
 mod noop;
 
 pub(crate) mod cbs;

@@ -35,9 +35,9 @@ typespec = { workspace = true, features = ["amqp"] }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
-default = ["fe2o3-amqp"]
+default = ["fe2o3_amqp"]
 cplusplus = []
-fe2o3-amqp = [
+fe2o3_amqp = [
   "dep:fe2o3-amqp",
   "fe2o3-amqp-types",
   "fe2o3-amqp-ext",
@@ -48,4 +48,4 @@ fe2o3-amqp = [
 ]
 
 [package.metadata.docs.rs]
-features = ["fe2o3-amqp"]
+features = ["fe2o3_amqp"]

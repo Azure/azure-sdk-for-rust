@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use clap::Parser;
+use clap::{ArgAction, Parser};
 
 #[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
@@ -46,26 +46,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[derive(Debug, Parser)]
 #[command(about = "Starts the Test-Proxy service", version)]
 struct Args {
+    /// Bind to any available port.
+    ///
+    /// If not set, only port `5000` will be tried.
+    /// You can start the `test-proxy` service this way
+    /// and pass `PROXY_MANUAL_START=true` when running `cargo test` to easily view trace information.
+    #[arg(long)]
+    auto: bool,
+
     /// Allow insecure upstream SSL certs.
     #[arg(long)]
     insecure: bool,
 
     /// Number of seconds to automatically shut down when no activity.
     #[arg(long, default_value_t = 300)]
-    pub auto_shutdown_in_seconds: u32,
+    auto_shutdown_in_seconds: u32,
 
     /// Enable verbose logging.
-    #[arg(short, long)]
-    verbose: bool,
+    ///
+    /// Trace level `INFO` is used by default.
+    /// Pass `-v` to enable `DEBUG` level tracing,
+    /// or `-vv` to enable `TRACE` level tracing.
+    #[arg(short, long, action = ArgAction::Count)]
+    verbose: u8,
 }
 
 impl Args {
     #[cfg(not(target_arch = "wasm32"))]
     fn trace_level(&self) -> tracing::level_filters::LevelFilter {
-        if self.verbose {
-            return tracing::level_filters::LevelFilter::DEBUG;
+        use tracing::level_filters::LevelFilter;
+        match self.verbose {
+            0 => LevelFilter::INFO,
+            1 => LevelFilter::DEBUG,
+            _ => LevelFilter::TRACE,
         }
-        tracing::level_filters::LevelFilter::INFO
     }
 }
 
@@ -73,6 +87,7 @@ impl Args {
 impl From<Args> for azure_core_test::proxy::ProxyOptions {
     fn from(args: Args) -> Self {
         Self {
+            auto: args.auto,
             insecure: args.insecure,
             auto_shutdown_in_seconds: args.auto_shutdown_in_seconds,
         }

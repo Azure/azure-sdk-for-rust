@@ -3,7 +3,7 @@
 
 //! The [`Recording`] and other types used in recorded tests.
 
-// cspell:ignore csprng seedable
+// cspell:ignore csprng seedable tpbwhbkhckmk
 use crate::{
     proxy::{
         client::{
@@ -26,7 +26,7 @@ use azure_core::{
 };
 use azure_identity::DefaultAzureCredential;
 use rand::{
-    distributions::{Distribution, Standard},
+    distributions::{Alphanumeric, DistString, Distribution, Standard},
     Rng, SeedableRng,
 };
 use rand_chacha::ChaCha20Rng;
@@ -143,10 +143,29 @@ impl Recording {
     ///
     /// # Examples
     ///
+    /// Generate a random integer.
+    ///
+    /// ```
+    /// # let recording = azure_core_test::Recording::with_seed();
+    /// let i: i32 = recording.random();
+    /// # assert_eq!(i, 1054672670);
+    /// ```
+    ///
     /// Generate a symmetric data encryption key (DEK).
     ///
-    /// ```no_compile
+    /// ```
+    /// # let recording = azure_core_test::Recording::with_seed();
     /// let dek: [u8; 32] = recording.random();
+    /// # assert_eq!(typespec_client_core::base64::encode(dek), "HumPRAN6RqKWf0YhFV2CAFWu/8L/pwh0LRzeam5VlGo=");
+    /// ```
+    ///
+    /// Generate a UUID.
+    ///
+    /// ```
+    /// use azure_core::Uuid;
+    /// # let recording = azure_core_test::Recording::with_seed();
+    /// let uuid: Uuid = Uuid::from_u128(recording.random());
+    /// # assert_eq!(uuid.to_string(), "fe906b44-5838-cc8f-05e3-c7e93edd071e");
     /// ```
     ///
     /// # Panics
@@ -158,45 +177,7 @@ impl Recording {
     where
         Standard: Distribution<T>,
     {
-        const NAME: &str = "RandomSeed";
-
-        // Use ChaCha20 for a deterministic, portable CSPRNG.
-        let rng = self.rand.get_or_init(|| match self.test_mode {
-            TestMode::Live => ChaCha20Rng::from_entropy().into(),
-            TestMode::Playback => {
-                let variables = self
-                    .variables
-                    .read()
-                    .map_err(read_lock_error)
-                    .unwrap_or_else(|err| panic!("{err}"));
-                let seed: String = variables
-                    .get(NAME)
-                    .map(Into::into)
-                    .unwrap_or_else(|| panic!("random seed variable not set"));
-                let seed = base64::decode(seed)
-                    .unwrap_or_else(|err| panic!("failed to decode random seed: {err}"));
-                let seed = seed
-                    .first_chunk::<32>()
-                    .unwrap_or_else(|| panic!("insufficient random seed variable"));
-
-                ChaCha20Rng::from_seed(*seed).into()
-            }
-            TestMode::Record => {
-                let rng = ChaCha20Rng::from_entropy();
-                let seed = rng.get_seed();
-                let seed = base64::encode(seed);
-
-                let mut variables = self
-                    .variables
-                    .write()
-                    .map_err(write_lock_error)
-                    .unwrap_or_else(|err| panic!("{err}"));
-                variables.insert(NAME.to_string(), Value::from(Some(seed), None));
-
-                rng.into()
-            }
-        });
-
+        let rng = self.rng();
         let Ok(mut rng) = rng.lock() else {
             panic!("failed to lock RNG");
         };
@@ -204,6 +185,60 @@ impl Recording {
         rng.gen()
     }
 
+    /// Generate a random string with optional prefix.
+    ///
+    /// This will always be the OS cryptographically secure pseudo-random number generator (CSPRNG) when running live.
+    /// When recording, it will initialize from the OS CSPRNG but save the seed value to the recording file.
+    /// When playing back, the saved seed value is read from the recording to reproduce the same sequence of random data.
+    ///
+    /// # Examples
+    ///
+    /// Generate a random string.
+    ///
+    /// ```
+    /// # let recording = azure_core_test::Recording::with_seed();
+    /// let id = recording.random_string::<12>(Some("t")).to_ascii_lowercase();
+    /// # assert_eq!(id, "tpbwhbkhckmk");
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the recording variables cannot be locked for reading or writing,
+    /// if the random seed cannot be encoded or decoded properly,
+    /// if `LEN` is 0,
+    /// or if the length of `prefix` is greater than or equal to `LEN`.
+    ///
+    /// ```should_panic
+    /// # let recording = azure_core_test::Recording::with_seed();
+    /// let vault_name = recording.random_string::<8>(Some("keyvault"));
+    /// ```
+    ///
+    pub fn random_string<const LEN: usize>(&self, prefix: Option<&str>) -> String {
+        struct NonZero<const N: usize>;
+        impl<const N: usize> NonZero<N> {
+            const ASSERT: () = assert!(N > 0, "LEN must be greater than 0");
+        }
+        #[allow(clippy::let_unit_value)]
+        let _ = NonZero::<LEN>::ASSERT;
+        let len = match prefix {
+            Some(p) => {
+                assert!(p.len() < LEN, "prefix length must be less than LEN");
+                LEN - p.len()
+            }
+            None => LEN,
+        };
+
+        let rng = self.rng();
+        let Ok(mut rng) = rng.lock() else {
+            panic!("failed to lock RNG");
+        };
+
+        let value = Alphanumeric.sample_string(&mut *rng, len);
+        match prefix {
+            Some(prefix) => prefix.to_string() + &value,
+            None => value,
+        }
+    }
     /// Removes the list of sanitizers from the recording.
     ///
     /// You can find a list of default sanitizers in [source code](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/Common/SanitizerDictionary.cs).
@@ -285,6 +320,8 @@ impl Recording {
     }
 }
 
+const RANDOM_SEED_NAME: &str = "RandomSeed";
+
 impl Recording {
     pub(crate) fn new(
         test_mode: TestMode,
@@ -310,6 +347,28 @@ impl Recording {
         }
     }
 
+    // #[cfg(any(test, doctest))] // BUGBUG: https://github.com/rust-lang/rust/issues/67295
+    #[doc(hidden)]
+    pub fn with_seed() -> Self {
+        let span = tracing::trace_span!("Recording::with_seed");
+        Self {
+            test_mode: TestMode::Playback,
+            span: span.entered(),
+            _proxy: None,
+            client: None,
+            policy: OnceCell::new(),
+            service_directory: String::from("sdk/core"),
+            recording_file: String::from("none"),
+            recording_assets_file: None,
+            id: None,
+            variables: RwLock::new(HashMap::from([(
+                RANDOM_SEED_NAME.into(),
+                "8S9UCR2yV8LU01tq+VNEwGssAXVUbL0Hd488GAYVosM=".into(),
+            )])),
+            rand: OnceLock::new(),
+        }
+    }
+
     fn env<K>(&self, key: K) -> Option<String>
     where
         K: AsRef<str>,
@@ -320,6 +379,45 @@ impl Recording {
             .or_else(|| env::var_os(key.as_ref()))
             .or_else(|| env::var_os(String::from(AZURE_PREFIX) + key.as_ref()))
             .and_then(|v| v.into_string().ok())
+    }
+
+    fn rng(&self) -> &Mutex<ChaCha20Rng> {
+        // Use ChaCha20 for a deterministic, portable CSPRNG.
+        self.rand.get_or_init(|| match self.test_mode {
+            TestMode::Live => ChaCha20Rng::from_entropy().into(),
+            TestMode::Playback => {
+                let variables = self
+                    .variables
+                    .read()
+                    .map_err(read_lock_error)
+                    .unwrap_or_else(|err| panic!("{err}"));
+                let seed: String = variables
+                    .get(RANDOM_SEED_NAME)
+                    .map(Into::into)
+                    .unwrap_or_else(|| panic!("random seed variable not set"));
+                let seed = base64::decode(seed)
+                    .unwrap_or_else(|err| panic!("failed to decode random seed: {err}"));
+                let seed = seed
+                    .first_chunk::<32>()
+                    .unwrap_or_else(|| panic!("insufficient random seed variable"));
+
+                ChaCha20Rng::from_seed(*seed).into()
+            }
+            TestMode::Record => {
+                let rng = ChaCha20Rng::from_entropy();
+                let seed = rng.get_seed();
+                let seed = base64::encode(seed);
+
+                let mut variables = self
+                    .variables
+                    .write()
+                    .map_err(write_lock_error)
+                    .unwrap_or_else(|err| panic!("{err}"));
+                variables.insert(RANDOM_SEED_NAME.to_string(), Value::from(Some(seed), None));
+
+                rng.into()
+            }
+        })
     }
 
     fn set_skip(&self, skip: Option<Skip>) -> azure_core::Result<()> {
@@ -498,6 +596,15 @@ impl Value {
                 Some(options) if options.sanitize => Some(options.sanitize_value.clone()),
                 _ => None,
             },
+        }
+    }
+}
+
+impl From<&str> for Value {
+    fn from(value: &str) -> Self {
+        Self {
+            value: value.into(),
+            sanitized: None,
         }
     }
 }
