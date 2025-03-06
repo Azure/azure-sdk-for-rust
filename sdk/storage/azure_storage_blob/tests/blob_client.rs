@@ -1,11 +1,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{headers::HeaderName, Bytes, RequestContent, StatusCode};
+use azure_core::{
+    headers::{CONTENT_LENGTH, LEASE_STATE, LEASE_STATUS},
+    Bytes, LeaseStatus, RequestContent, StatusCode,
+};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     clients::{BlobClient, ContainerClient},
-    models::{BlobBlock, BlobType, BlockLookupList},
+    models::{
+        AccessTier, BlobBlobClientAcquireLeaseOptions, BlobBlobClientDownloadOptions, BlobBlock,
+        BlobBlockBlobClientUploadOptions, BlobType, BlockLookupList, LeaseState,
+    },
     BlobClientOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
@@ -136,11 +142,85 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     let (status_code, headers, response_body) = response.deconstruct();
     assert!(status_code.is_success());
-    assert_eq!(
-        "21",
-        headers.get_str(&HeaderName::from_static("content-length"))?
-    );
+    assert_eq!("21", headers.get_str(&CONTENT_LENGTH)?);
     assert_eq!(Bytes::from_static(data), response_body.collect().await?);
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_download_leased_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test tests the Option bag for download_blob(), acquire_lease(), and that the change is reflected in BlobProperties response
+    // Recording Setup
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
+
+    // Act
+    let container_client = ContainerClient::new(
+        &endpoint,
+        container_name.clone(),
+        recording.credential(),
+        Some(options.clone()),
+    )?;
+    container_client.create_container(None).await?;
+
+    let blob_client = BlobClient::new(
+        &endpoint,
+        container_name,
+        blob_name,
+        recording.credential(),
+        Some(options),
+    )?;
+    let data = b"test download content";
+
+    // Acquire lease Options bag
+    let acquire_lease_options_bag = BlobBlobClientAcquireLeaseOptions {
+        proposed_lease_id: Some("f85862b4-3705-49ad-b87c-234a68041da2".to_string()),
+        ..Default::default()
+    };
+
+    blob_client
+        .upload_blob(
+            RequestContent::from(data.to_vec()),
+            true,
+            i64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+
+    // Acquire lease
+    blob_client
+        .acquire_lease(Some(acquire_lease_options_bag))
+        .await?;
+
+    // Download blob Options bag
+    let download_options_bag = BlobBlobClientDownloadOptions {
+        lease_id: Some("f85862b4-3705-49ad-b87c-234a68041da2".to_string()),
+        ..Default::default()
+    };
+    let response = blob_client
+        .download_blob(Some(download_options_bag))
+        .await?;
+
+    // Assert
+    let (status_code, headers, response_body) = response.deconstruct();
+    assert!(status_code.is_success());
+    assert_eq!("21", headers.get_str(&CONTENT_LENGTH)?);
+    assert_eq!("leased", headers.get_str(&LEASE_STATE)?);
+    assert_eq!("locked", headers.get_str(&LEASE_STATUS)?);
+    assert_eq!(Bytes::from_static(data), response_body.collect().await?);
+
+    let blob_properties = blob_client.get_blob_properties(None).await?;
+
+    assert_eq!(Some(LeaseState::Leased), blob_properties.lease_state);
+    assert_eq!(Some(LeaseStatus::Locked), blob_properties.lease_status);
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -187,6 +267,65 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     assert_eq!(response.status(), StatusCode::Created);
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_blob_tier_specified(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // This test tests the Option bag for upload_blob(), and that the change is reflected in BlobProperties response
+    // Recording Setup
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
+
+    // Act
+    let container_client = ContainerClient::new(
+        &endpoint,
+        container_name.clone(),
+        recording.credential(),
+        Some(options.clone()),
+    )?;
+    container_client.create_container(None).await?;
+
+    let blob_client = BlobClient::new(
+        &endpoint,
+        container_name,
+        blob_name,
+        recording.credential(),
+        Some(options),
+    )?;
+
+    let data = b"hello rusty world";
+
+    // Upload blob Options bag
+    let upload_options_bag = BlobBlockBlobClientUploadOptions {
+        tier: Some(AccessTier::Cool),
+        ..Default::default()
+    };
+
+    let response = blob_client
+        .upload_blob(
+            RequestContent::from(data.to_vec()),
+            false,
+            i64::try_from(data.len())?,
+            Some(upload_options_bag),
+        )
+        .await?;
+
+    let blob_properties = blob_client.get_blob_properties(None).await?;
+
+    assert_eq!(blob_properties.blob_type, Some(BlobType::BlockBlob));
+
+    // Assert
+    assert_eq!(response.status(), StatusCode::Created);
+    assert_eq!(blob_properties.access_tier, Some(AccessTier::Cool));
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -259,10 +398,7 @@ async fn test_upload_blob_overwrite(ctx: TestContext) -> Result<(), Box<dyn Erro
     assert_eq!(upload_response.status(), StatusCode::Created);
     let (status_code, headers, response_body) = response.deconstruct();
     assert!(status_code.is_success());
-    assert_eq!(
-        "29",
-        headers.get_str(&HeaderName::from_static("content-length"))?
-    );
+    assert_eq!("29", headers.get_str(&CONTENT_LENGTH)?);
     assert_eq!(Bytes::from_static(new_data), response_body.collect().await?);
 
     container_client.delete_container(None).await?;
@@ -349,10 +485,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     let (status_code, headers, response_body) = response.deconstruct();
     assert!(status_code.is_success());
-    assert_eq!(
-        "9",
-        headers.get_str(&HeaderName::from_static("content-length"))?
-    );
+    assert_eq!("9", headers.get_str(&CONTENT_LENGTH)?);
     assert_eq!(
         Bytes::from_static(b"AAABBBCCC"),
         response_body.collect().await?

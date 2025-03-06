@@ -8,6 +8,7 @@ use crate::models::{AccessTier, BlobExpiryOptions, BlobTags, QueryRequest};
 use azure_core::{
     base64, date, Context, Method, Pipeline, Request, RequestContent, Response, Result, Url,
 };
+use time::OffsetDateTime;
 
 pub struct BlobBlobClient {
     pub(crate) blob: String,
@@ -81,13 +82,17 @@ impl BlobBlobClient {
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
-            .append_key_only("acquire")
+            // Same issue we've had previously, this is not supposed to be a URI parameter
+            // .append_key_only("acquire")
             .append_pair("comp", "lease");
+
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
+        // GENERATED CODE SUPPORT: Need to include the lease action!
+        request.insert_header("x-ms-lease-action", "acquire".to_string());
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
@@ -114,6 +119,8 @@ impl BlobBlobClient {
         if let Some(duration) = options.duration {
             request.insert_header("x-ms-lease-duration", duration.to_string());
         }
+        // For now only indefinite leases
+        request.insert_header("x-ms-lease-duration", "-1".to_string());
         if let Some(proposed_lease_id) = options.proposed_lease_id {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }

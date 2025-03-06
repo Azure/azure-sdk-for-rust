@@ -4,9 +4,10 @@
 use crate::{
     clients::GeneratedBlobClient,
     models::{
-        BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
-        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientStageBlockOptions,
-        BlobBlockBlobClientUploadOptions, BlobProperties, BlockLookupList,
+        BlobBlobClientAcquireLeaseOptions, BlobBlobClientDownloadOptions,
+        BlobBlobClientGetPropertiesOptions, BlobBlockBlobClientCommitBlockListOptions,
+        BlobBlockBlobClientStageBlockOptions, BlobBlockBlobClientUploadOptions, BlobProperties,
+        BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions,
@@ -144,6 +145,18 @@ impl BlobClient {
             .client
             .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
             .stage_block(&block_id, content_length, body, options)
+            .await?;
+        Ok(response)
+    }
+
+    pub async fn acquire_lease(
+        &self,
+        options: Option<BlobBlobClientAcquireLeaseOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let response = self
+            .client
+            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
+            .acquire_lease(options)
             .await?;
         Ok(response)
     }
