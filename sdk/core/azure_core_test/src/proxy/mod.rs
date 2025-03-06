@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 //! Wrappers for the [Test Proxy](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md) service.
+#[cfg(not(target_arch = "wasm32"))]
+mod bootstrap;
 pub(crate) mod client;
 pub(crate) mod matchers;
 pub(crate) mod models;
@@ -15,6 +17,8 @@ use azure_core::{
     headers::{HeaderName, HeaderValue},
     Header, Url,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use bootstrap::*;
 use serde::Serializer;
 #[cfg(not(target_arch = "wasm32"))]
 use std::process::ExitStatus;
@@ -31,140 +35,6 @@ const RECORDING_UPSTREAM_BASE_URI: HeaderName =
 #[cfg(not(target_arch = "wasm32"))]
 pub use bootstrap::start;
 
-#[cfg(not(target_arch = "wasm32"))]
-mod bootstrap {
-    pub(super) use super::*;
-    pub(super) use azure_core::{test::TestMode, Result};
-    pub(super) use serde_json::json;
-    pub(super) use std::{env, io, path::Path, process::Stdio, time::Duration};
-    pub(super) use tokio::{
-        fs,
-        io::{AsyncBufReadExt, BufReader},
-        process::{ChildStdout, Command},
-    };
-    pub(super) use tracing::Level;
-
-    // cspell:ignore aspnetcore devcert teamprojectid testproxy
-    pub(super) const KESTREL_CERT_PATH_ENV: &str =
-        "ASPNETCORE_Kestrel__Certificates__Default__Path";
-    pub(super) const KESTREL_CERT_PASSWORD_ENV: &str =
-        "ASPNETCORE_Kestrel__Certificates__Default__Password";
-    pub(super) const KESTREL_CERT_PASSWORD: &str = "password";
-    pub(super) const MIN_VERSION: Version = Version {
-        major: 20241213,
-        minor: 1,
-        metadata: None,
-    };
-    const PROXY_MANUAL_START: &str = "PROXY_MANUAL_START";
-    const SYSTEM_TEAMPROJECTID: &str = "SYSTEM_TEAMPROJECTID";
-
-    /// Starts the test-proxy.
-    ///
-    /// This is intended for internal use only and should not be called directly in tests.
-    #[tracing::instrument(level = "debug", fields(crate_dir = ?crate_dir.as_ref(), ?options), err)]
-    pub async fn start(
-        test_mode: Option<TestMode>,
-        crate_dir: impl AsRef<Path>,
-        options: Option<ProxyOptions>,
-    ) -> Result<Proxy> {
-        if env::var(PROXY_MANUAL_START).is_ok_and(|v| v.eq_ignore_ascii_case("true")) {
-            tracing::warn!(
-                "environment variable {PROXY_MANUAL_START} is 'true'; not starting test-proxy"
-            );
-            return Ok(Proxy::existing());
-        }
-
-        // Find root of git repo or work tree: a ".git" directory or file will exist either way.
-        let git_dir = crate::find_ancestor_file(crate_dir.as_ref(), ".git")?;
-        let git_dir = git_dir.parent().ok_or_else(|| {
-            io::Error::new(io::ErrorKind::NotFound, "parent git repository not found")
-        })?;
-        tracing::debug!(
-            "starting test-proxy with storage location {git_dir}",
-            git_dir = git_dir.display()
-        );
-
-        // Create an assets.json file in the crate_dir if a parent doesn't already exist.
-        ensure_assets_file(test_mode, crate_dir).await?;
-
-        // Construct the command line arguments and start the test-proxy service.
-        let mut args: Vec<String> = Vec::new();
-        args.extend_from_slice(&[
-            "start".into(),
-            "--storage-location".into(),
-            git_dir
-                .to_str()
-                .ok_or_else(|| ErrorKind::Other.into_error())?
-                .into(),
-        ]);
-        options.unwrap_or_default().copy_to(&mut args);
-
-        let mut proxy = Proxy::default();
-        let max_seconds = Duration::from_secs(env::var(SYSTEM_TEAMPROJECTID).map_or(5, |_| 20));
-        tokio::select! {
-            _ = proxy.start(git_dir, args.into_iter()) => {
-                proxy.endpoint()
-            }
-            _ = tokio::time::sleep(max_seconds) => {
-                proxy.stop().await?;
-                return Err(azure_core::Error::message(ErrorKind::Other, "timed out waiting for test-proxy to start"));
-            },
-        };
-
-        Ok(proxy)
-    }
-
-    async fn ensure_assets_file(
-        test_mode: Option<TestMode>,
-        crate_dir: impl AsRef<Path>,
-    ) -> Result<()> {
-        if test_mode == Some(TestMode::Record)
-            && matches!(crate::find_ancestor_file(crate_dir.as_ref(), "assets.json"), Err(err) if err.kind() == &ErrorKind::Io)
-        {
-            let assets_file = crate_dir.as_ref().join("assets.json");
-            tracing::debug!("creating {path}", path = assets_file.display());
-
-            let assets_dir = assets_file
-                .parent()
-                .and_then(Path::file_name)
-                .map(|dir| dir.to_ascii_lowercase())
-                .ok_or_else(|| {
-                    azure_core::Error::message(
-                        ErrorKind::Io,
-                        "failed to get assets.json parent directory name",
-                    )
-                })?;
-            let assets_dir = assets_dir.to_string_lossy();
-            let assets_content = json!({
-                "AssetsRepo": "Azure/azure-sdk-assets",
-                "AssetsRepoPrefixPath": "rust",
-                "TagPrefix": format!("rust/{assets_dir}"),
-                "Tag": "",
-            });
-            let file = fs::File::create_new(assets_file).await?;
-            return serde_json::to_writer_pretty(file.into_std().await, &assets_content)
-                .map_err(azure_core::Error::from);
-        }
-
-        Ok(())
-    }
-
-    pub(super) fn trace_line(level: Level, line: &str) {
-        if !line.starts_with('[') {
-            let line = line.trim();
-            if line.is_empty() {
-                return;
-            }
-
-            // tracing::*!() macros require constant Level, so we have to use a match here.
-            match level {
-                Level::ERROR => tracing::error!(target: "test-proxy", "{line}"),
-                _ => tracing::trace!(target: "test-proxy", "{line}"),
-            }
-        }
-    }
-}
-
 /// Represents the running `test-proxy` service.
 #[derive(Debug, Default)]
 pub struct Proxy {
@@ -174,12 +44,14 @@ pub struct Proxy {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-use bootstrap::*;
-
-#[cfg(not(target_arch = "wasm32"))]
 impl Proxy {
-    async fn start<I: Iterator<Item = String>>(&mut self, git_dir: &Path, args: I) -> Result<()> {
-        let mut command = Command::new("test-proxy")
+    async fn start<I: Iterator<Item = String>>(
+        &mut self,
+        git_dir: &Path,
+        executable_file_path: &Path,
+        args: I,
+    ) -> Result<()> {
+        let mut command = Command::new(executable_file_path)
             .args(args)
             .env(
                 KESTREL_CERT_PATH_ENV,

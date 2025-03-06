@@ -23,11 +23,14 @@ async-trait.workspace = true
 azure_core = { workspace = true, features = ["test"] }
 azure_core_test_macros.workspace = true
 azure_identity.workspace = true
+flate2.workspace = true
 futures.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
+reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+tar.workspace = true
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = [
   "env-filter",
@@ -35,6 +38,7 @@ tracing-subscriber = { workspace = true, features = [
 ], optional = true }
 typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
+zip.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { workspace = true, features = [
