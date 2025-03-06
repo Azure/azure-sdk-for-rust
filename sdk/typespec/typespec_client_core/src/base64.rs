@@ -73,13 +73,36 @@ pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
 where
     D: Deserializer<'de>,
 {
+    deserialize_opt(deserializer).map(Option::unwrap_or_default)
+}
+
+/// Helper that can be used in a serde deserialize_with derive macro
+/// for struct fields that contain base64 encoded data.
+///
+/// Uses the standard base64 decoder.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// # use serde::{Deserialize};
+/// # use typespec_client_core::base64;
+/// #[derive(Deserialize)]
+/// struct SomeType {
+///     #[serde(deserialize_with = "base64::deserialize_opt")]
+///     pub value: Option<Vec<u8>>,
+/// }
+/// ```
+pub fn deserialize_opt<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
     let decoded = <Option<String>>::deserialize(deserializer)?;
     match decoded {
         Some(d) => {
             let d = decode(d).map_err(serde::de::Error::custom)?;
-            Ok(d)
+            Ok(Some(d))
         }
-        None => Ok(Vec::default()),
+        None => Ok(None),
     }
 }
 
@@ -103,13 +126,36 @@ pub fn deserialize_url_safe<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error
 where
     D: Deserializer<'de>,
 {
+    deserialize_url_safe_opt(deserializer).map(Option::unwrap_or_default)
+}
+
+/// Helper that can be used in a serde deserialize_with derive macro
+/// for struct fields that contain base64 encoded data.
+///
+/// Uses the URL safe base64 decoder.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// # use serde::{Deserialize};
+/// # use typespec_client_core::base64;
+/// #[derive(Deserialize)]
+/// struct SomeType {
+///     #[serde(deserialize_with = "base64::deserialize_url_safe_opt")]
+///     pub value: Option<Vec<u8>>,
+/// }
+/// ```
+pub fn deserialize_url_safe_opt<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
     let decoded = <Option<String>>::deserialize(deserializer)?;
     match decoded {
         Some(d) => {
             let d = decode_url_safe(d).map_err(serde::de::Error::custom)?;
-            Ok(d)
+            Ok(Some(d))
         }
-        None => Ok(Vec::default()),
+        None => Ok(None),
     }
 }
 
@@ -134,8 +180,32 @@ where
     S: Serializer,
     T: AsRef<[u8]>,
 {
-    let encoded = encode(to_serialize);
-    String::serialize(&encoded, serializer)
+    serialize_opt(&Some(to_serialize), serializer)
+}
+
+/// Helper that can be used in a serde serialize_with derive macro
+/// for struct fields that contain base64 encoded data.
+///
+/// Uses the standard base64 encoder.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// # use serde::{Serialize};
+/// # use typespec_client_core::base64;
+/// #[derive(Serialize)]
+/// struct SomeType {
+///     #[serde(serialize_with = "base64::serialize_opt")]
+///     pub value: Option<Vec<u8>>,
+/// }
+/// ```
+pub fn serialize_opt<S, T>(to_serialize: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+    T: AsRef<[u8]>,
+{
+    let encoded = to_serialize.as_ref().map(encode);
+    Option::serialize(&encoded, serializer)
 }
 
 /// Helper that can be used in a serde serialize_with derive macro
@@ -159,6 +229,33 @@ where
     S: Serializer,
     T: AsRef<[u8]>,
 {
-    let encoded = encode_url_safe(to_serialize);
-    String::serialize(&encoded, serializer)
+    serialize_url_safe_opt(&Some(to_serialize), serializer)
+}
+
+/// Helper that can be used in a serde serialize_with derive macro
+/// for struct fields that contain base64 encoded data.
+///
+/// Uses the URL safe base64 encoder.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// # use serde::{Serialize};
+/// # use typespec_client_core::base64;
+/// #[derive(Serialize)]
+/// struct SomeType {
+///     #[serde(serialize_with = "base64::serialize_url_safe_opt")]
+///     pub value: Option<Vec<u8>>,
+/// }
+/// ```
+pub fn serialize_url_safe_opt<S, T>(
+    to_serialize: &Option<T>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+    T: AsRef<[u8]>,
+{
+    let encoded = to_serialize.as_ref().map(encode_url_safe);
+    Option::serialize(&encoded, serializer)
 }

@@ -17,8 +17,8 @@ pub struct BackupSecretResult {
     /// The backup blob containing the backed up secret.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe",
-        serialize_with = "base64::serialize_url_safe",
+        deserialize_with = "base64::deserialize_url_safe_opt",
+        serialize_with = "base64::serialize_url_safe_opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub value: Option<Vec<u8>>,
@@ -271,9 +271,9 @@ pub struct SecretRestoreParameters {
     /// The backup blob associated with a secret bundle.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe",
+        deserialize_with = "base64::deserialize_url_safe_opt",
         rename = "value",
-        serialize_with = "base64::serialize_url_safe",
+        serialize_with = "base64::serialize_url_safe_opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub secret_bundle_backup: Option<Vec<u8>>,
