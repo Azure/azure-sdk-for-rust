@@ -117,6 +117,7 @@ impl BlobClient {
         }
 
         // Currently there is no way to alter what options you pass to the BlockBlobClient we spin up on-demand
+        // We could inherit the ClientOptions from the current BlobClient to resolve the recording issue
         let block_blob_client = BlockBlobClient::new(
             self.endpoint().as_str(),
             self.credential(),

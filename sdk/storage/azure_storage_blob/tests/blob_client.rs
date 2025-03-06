@@ -11,53 +11,6 @@ use azure_storage_blob::{
 use azure_storage_blob_test::recorded_test_setup;
 use std::error::Error;
 
-// #[recorded::test(live)]
-// async fn test_get_blob_properties_live() -> Result<(), Box<dyn Error>> {
-//     // Live Resource Setup
-
-//     use azure_identity::DefaultAzureCredentialBuilder;
-//     let container_name = "testcontainer01".to_string();
-//     let blob_name = "testblob001".to_string();
-//     let endpoint = format!("https://{}.blob.core.windows.net/", "ruststoragedev");
-//     let credential = DefaultAzureCredentialBuilder::default().build()?;
-
-//     // Act
-//     let container_client = BlobContainerClient::new(
-//         &endpoint,
-//         container_name.clone(),
-//         credential.clone(),
-//         None, // default options bag
-//     )?;
-//     container_client.create_container(None).await?;
-
-//     let blob_client = BlobClient::new(
-//         &endpoint,
-//         container_name,
-//         blob_name,
-//         credential,
-//         None, // default options bag
-//     )?;
-//     let data = b"hello rusty world";
-//     blob_client
-//         .upload_blob(
-//             RequestContent::from(data.to_vec()),
-//             true,
-//             u64::try_from(data.len())?,
-//             None,
-//         )
-//         .await?;
-
-//     println!("Made it past upload");
-//     let response = blob_client.get_blob_properties(None).await?;
-
-//     // // Assert
-//     println!("{:?}", response);
-
-//     container_client.delete_container(None).await?;
-//     Ok(())
-// }
-// The way this is currently implemented, yields a recording with only a CONTAINER PUT and DELETE
-// For some reason the blob doesn't seem to get created despite upload_blob response returning 'status: Created'
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -70,6 +23,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         .random_string::<12>(Some("blob"))
         .to_ascii_lowercase();
 
+    // This is to shove the modified pipeline policy into the container client options
     let container_client_options = BlobContainerClientOptions {
         client_options: options.client_options.clone(),
         ..Default::default()
@@ -91,6 +45,9 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         Some(options),
     )?;
     let data = b"hello rusty world";
+
+    // This is completely absent from the recording due to the fact that this spins up a BlockBlobClient w/ default options (thus no recording policy)
+    // I didn't inherit from the base BlobClient and haven't introduced a knob for these options, only the API-specific options bag
     blob_client
         .upload_blob(
             RequestContent::from(data.to_vec()),
@@ -100,12 +57,10 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         )
         .await?;
 
-    println!("Made it past upload");
-    // Next line will fail for blobNotFound
-    // let response = blob_client.get_blob_properties(None).await?;
-
-    // // Assert
-    // println!("{:?}", response);
+    // Not really sure how to read this
+    let response = blob_client.get_blob_properties(None).await?;
+    println!("{:?}", response);
+    // Assert
 
     // container_client.delete_container(None).await?;
     Ok(())

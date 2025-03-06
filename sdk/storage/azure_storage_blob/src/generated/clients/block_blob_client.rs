@@ -664,7 +664,9 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blob}/");
+
+        // This path has an extra '/' character
+        let mut path = String::from("{containerName}/{blob}");
         path = path.replace("{blob}", &self.blob);
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
