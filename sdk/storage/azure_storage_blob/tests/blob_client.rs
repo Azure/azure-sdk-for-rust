@@ -5,7 +5,9 @@ use azure_core::{headers::HeaderName, Bytes, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     clients::{BlobClient, BlobContainerClient},
-    models::{BlobBlock, BlobType, BlockLookupList},
+    models::{
+        BlobBlock, BlobClientGetPropertiesResultHeaders, BlobType, BlockLookupList, LeaseState,
+    },
     BlobClientOptions, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
@@ -57,8 +59,10 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         )
         .await?;
 
-    // Not really sure how to read this
+    // Where's my Intellisense!!!
     let response = blob_client.get_blob_properties(None).await?;
+    let field = response.lease_state()?;
+    assert_eq!(field, Some(LeaseState::Available));
     println!("{:?}", response);
     // Assert
 
