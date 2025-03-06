@@ -129,6 +129,7 @@ impl BlobClient {
         let response = block_blob_client
             .upload(data, content_length, Some(options))
             .await?;
+        println!("Resp inside of upload_blob API: {:?}", response);
         Ok(response)
     }
 
