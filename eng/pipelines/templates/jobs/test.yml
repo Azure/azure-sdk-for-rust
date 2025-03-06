@@ -36,9 +36,6 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
-  - ${{ if eq(parameters.TestProxy, true) }}:
-    - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
-
   - task: Powershell@2
     displayName: "Test Packages"
     condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
