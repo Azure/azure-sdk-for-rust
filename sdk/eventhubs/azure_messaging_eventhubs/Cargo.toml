@@ -30,7 +30,7 @@ tracing.workspace = true
 rustc_version.workspace = true
 
 [dev-dependencies]
-azure_core_test.path = "../../core/azure_core_test"
-azure_identity.path = "../../identity/azure_identity"
+azure_core_test.workspace = true
+azure_identity.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
