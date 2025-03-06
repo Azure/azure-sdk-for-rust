@@ -20,8 +20,8 @@ pub struct BackupKeyResult {
     /// The backup blob containing the backed up key.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub value: Option<Vec<u8>>,
@@ -148,8 +148,8 @@ pub struct JsonWebKey {
     /// RSA private exponent, or the D component of an EC private key.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub d: Option<Vec<u8>>,
@@ -157,8 +157,8 @@ pub struct JsonWebKey {
     /// RSA private key parameter.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub dp: Option<Vec<u8>>,
@@ -166,8 +166,8 @@ pub struct JsonWebKey {
     /// RSA private key parameter.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub dq: Option<Vec<u8>>,
@@ -175,8 +175,8 @@ pub struct JsonWebKey {
     /// RSA public exponent.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub e: Option<Vec<u8>>,
@@ -184,8 +184,8 @@ pub struct JsonWebKey {
     /// Symmetric key.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub k: Option<Vec<u8>>,
@@ -205,8 +205,8 @@ pub struct JsonWebKey {
     /// RSA modulus.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub n: Option<Vec<u8>>,
@@ -214,8 +214,8 @@ pub struct JsonWebKey {
     /// RSA secret prime.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub p: Option<Vec<u8>>,
@@ -223,8 +223,8 @@ pub struct JsonWebKey {
     /// RSA secret prime, with p < q.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub q: Option<Vec<u8>>,
@@ -232,8 +232,8 @@ pub struct JsonWebKey {
     /// RSA private key parameter.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub qi: Option<Vec<u8>>,
@@ -241,9 +241,9 @@ pub struct JsonWebKey {
     /// Protected Key, used with 'Bring Your Own Key'.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "key_hsm",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub t: Option<Vec<u8>>,
@@ -251,8 +251,8 @@ pub struct JsonWebKey {
     /// X component of an EC public key.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub x: Option<Vec<u8>>,
@@ -260,8 +260,8 @@ pub struct JsonWebKey {
     /// Y component of an EC public key.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub y: Option<Vec<u8>>,
@@ -273,9 +273,9 @@ pub struct KeyAttestation {
     /// A base64url-encoded string containing certificates in PEM format, used for attestation validation.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "certificatePemFile",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub certificate_pem_file: Option<Vec<u8>>,
@@ -283,9 +283,9 @@ pub struct KeyAttestation {
     /// The attestation blob bytes encoded as base64url string corresponding to a private key.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "privateKeyAttestation",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub private_key_attestation: Option<Vec<u8>>,
@@ -293,9 +293,9 @@ pub struct KeyAttestation {
     /// The attestation blob bytes encoded as base64url string corresponding to a public key in case of asymmetric key.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "publicKeyAttestation",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub public_key_attestation: Option<Vec<u8>>,
@@ -496,9 +496,9 @@ pub struct KeyOperationResult {
     /// Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "aad",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub additional_authenticated_data: Option<Vec<u8>>,
@@ -506,9 +506,9 @@ pub struct KeyOperationResult {
     /// The tag to authenticate when performing decryption with an authenticated algorithm.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "tag",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub authentication_tag: Option<Vec<u8>>,
@@ -516,8 +516,8 @@ pub struct KeyOperationResult {
     /// Cryptographically random, non-repeating initialization vector for symmetric algorithms.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub iv: Option<Vec<u8>>,
@@ -529,9 +529,9 @@ pub struct KeyOperationResult {
     /// The result of the operation.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "value",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub result: Option<Vec<u8>>,
@@ -543,8 +543,8 @@ pub struct KeyOperationsParameters {
     /// Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub aad: Option<Vec<u8>>,
@@ -556,8 +556,8 @@ pub struct KeyOperationsParameters {
     /// Cryptographically random, non-repeating initialization vector for symmetric algorithms.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub iv: Option<Vec<u8>>,
@@ -565,8 +565,8 @@ pub struct KeyOperationsParameters {
     /// The tag to authenticate when performing decryption with an authenticated algorithm.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub tag: Option<Vec<u8>>,
@@ -574,8 +574,8 @@ pub struct KeyOperationsParameters {
     /// The value to operate on.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub value: Option<Vec<u8>>,
@@ -607,9 +607,9 @@ pub struct KeyReleasePolicy {
     /// Blob encoding the policy rules under which the key can be released. Blob must be base64 URL encoded.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "data",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub encoded_policy: Option<Vec<u8>>,
@@ -635,9 +635,9 @@ pub struct KeyRestoreParameters {
     /// The backup blob associated with a key bundle.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "value",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub key_bundle_backup: Option<Vec<u8>>,
@@ -696,8 +696,8 @@ pub struct KeySignParameters {
     /// The value to operate on.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub value: Option<Vec<u8>>,
@@ -733,9 +733,9 @@ pub struct KeyVerifyParameters {
     /// The digest used for signing.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "digest",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub digest: Option<Vec<u8>>,
@@ -743,9 +743,9 @@ pub struct KeyVerifyParameters {
     /// The signature to be verified.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
         rename = "value",
-        serialize_with = "base64::serialize_url_safe_opt",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub signature: Option<Vec<u8>>,
@@ -800,8 +800,8 @@ pub struct RandomBytes {
     /// The bytes encoded as a base64url string.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize_url_safe_opt",
-        serialize_with = "base64::serialize_url_safe_opt",
+        deserialize_with = "base64::option::deserialize_url_safe",
+        serialize_with = "base64::option::serialize_url_safe",
         skip_serializing_if = "Option::is_none"
     )]
     pub value: Option<Vec<u8>>,
