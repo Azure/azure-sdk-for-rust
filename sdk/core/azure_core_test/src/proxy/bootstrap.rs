@@ -179,23 +179,19 @@ async fn required_proxy_version(git_dir: &Path) -> Result<String> {
 }
 
 fn download_file_name() -> Option<&'static str> {
-    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    return Some("test-proxy-standalone-linux-x64.tar.gz");
-
-    #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
-    return Some("test-proxy-standalone-linux-arm64.tar.gz");
-
-    #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-    return Some("test-proxy-standalone-osx-x64.zip");
-
-    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-    return Some("test-proxy-standalone-osx-arm64.zip");
-
-    #[cfg(all(target_os = "windows", not(target_arch = "x86")))]
-    return Some("test-proxy-standalone-win-x64.zip");
-
-    #[allow(unreachable_code)]
-    None
+    if cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+        Some("test-proxy-standalone-linux-x64.tar.gz")
+    } else if cfg!(all(target_os = "linux", target_arch = "aarch64")) {
+        Some("test-proxy-standalone-linux-arm64.tar.gz")
+    } else if cfg!(all(target_os = "macos", target_arch = "x86_64")) {
+        Some("test-proxy-standalone-osx-x64.zip")
+    } else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+        Some("test-proxy-standalone-osx-arm64.zip")
+    } else if cfg!(all(target_os = "windows", not(target_arch = "x86"))) {
+        Some("test-proxy-standalone-win-x64.zip")
+    } else {
+        None
+    }
 }
 
 #[tracing::instrument(level = "debug", fields(url), err)]
@@ -243,13 +239,8 @@ async fn download_test_proxy(
 
     #[cfg(unix)]
     {
-        use std::os::unix::fs::PermissionsExt as _;
-        let executable_file = File::open(&executable_file_path).await?;
-        executable_file
-            .metadata()
-            .await?
-            .permissions()
-            .set_mode(0o755);
+        use std::{fs::Permissions, os::unix::fs::PermissionsExt as _};
+        tokio::fs::set_permissions(executable_file_path, Permissions::from_mode(0o755)).await?;
     }
 
     Ok(())
