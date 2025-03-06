@@ -22,7 +22,7 @@ pub struct LoadBalancerInfo {
 }
 
 pub struct LoadBalancer {
-    checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
+    checkpoint_store: Arc<dyn CheckpointStore>,
     processor_strategy: ProcessorStrategy,
     duration: Duration,
     consumer_client_details: ConsumerClientDetails,
@@ -30,7 +30,7 @@ pub struct LoadBalancer {
 
 impl LoadBalancer {
     pub fn new(
-        checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
+        checkpoint_store: Arc<dyn CheckpointStore>,
         consumer_client_details: ConsumerClientDetails,
         processor_strategy: ProcessorStrategy,
         duration: Duration,

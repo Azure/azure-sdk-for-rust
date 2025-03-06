@@ -3,6 +3,7 @@ use super::processor::{
     CheckpointStore, ClaimOwnershipOptions, ListCheckpointsOptions, ListOwnershipOptions,
 };
 //use async_trait::async_trait;
+use async_trait::async_trait;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -21,7 +22,7 @@ impl InMemoryCheckpointStore {
         }
     }
 
-    pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
+    fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
         if ownership.partition_id.is_empty()
             || ownership.event_hub_name.is_empty()
             || ownership.fully_qualified_namespace.is_empty()
@@ -59,10 +60,10 @@ impl InMemoryCheckpointStore {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl CheckpointStore for InMemoryCheckpointStore {
-    async fn claim_ownership(
-        &self,
+    async fn claim_ownership<'a>(
+        &'a self,
         ownerships: Vec<Ownership>,
         #[allow(unused_variables)] _options: Option<ClaimOwnershipOptions>,
     ) -> Result<Vec<Ownership>> {
@@ -111,23 +112,24 @@ impl CheckpointStore for InMemoryCheckpointStore {
             Ownership::get_ownership_prefix_name(namespace, event_hub_name, consumer_group)?;
         debug!("list_ownerships: list ownerships for prefix {prefix}");
         let mut ownerships = Vec::new();
-        for (key, value) in store.iter() {
-            if key.starts_with(&prefix) {
-                ownerships.push(value.clone());
-            }
-        }
+        ownerships.extend(
+            store
+                .iter()
+                .filter(|(key, _)| key.starts_with(&prefix))
+                .map(|(_, value)| value.clone()),
+        );
         debug!("list_ownerships: found {} ownerships", ownerships.len());
         Ok(ownerships)
     }
 
     async fn update_checkpoint(&self, checkpoint: Checkpoint) -> Result<()> {
-        let mut store = self.checkpoints.lock().map_err(|e| {
+        let mut checkpoints = self.checkpoints.lock().map_err(|e| {
             Error::message(
                 AzureErrorKind::Other,
                 format!("Failed to lock checkpoint store: {}", e),
             )
         })?;
-        store.insert(
+        checkpoints.insert(
             Checkpoint::get_checkpoint_blob_name(
                 checkpoint.fully_qualified_namespace.as_str(),
                 checkpoint.event_hub_name.as_str(),
@@ -136,6 +138,127 @@ impl CheckpointStore for InMemoryCheckpointStore {
             )?,
             checkpoint,
         );
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use azure_core_test::{recorded, TestContext};
+
+    use super::*;
+    use crate::event_processor::processor::models::{Checkpoint, Ownership};
+
+    #[test]
+    fn test_update_ownership() {
+        let store = InMemoryCheckpointStore::new();
+        let ownership = Ownership {
+            fully_qualified_namespace: "namespace".to_string(),
+            event_hub_name: "event_hub".to_string(),
+            consumer_group: "consumer_group".to_string(),
+            partition_id: "partition_id".to_string(),
+            owner_id: "owner_id".to_string(),
+            etag: Some("etag".to_string()),
+            ..Default::default()
+        };
+        let result = store.update_ownership(&ownership);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_update_ownership_invalid() {
+        let store = InMemoryCheckpointStore::new();
+        let ownership = Ownership {
+            fully_qualified_namespace: "".to_string(),
+            event_hub_name: "event_hub".to_string(),
+            consumer_group: "consumer_group".to_string(),
+            partition_id: "partition_id".to_string(),
+            owner_id: "owner_id".to_string(),
+            etag: Some("etag".to_string()),
+            ..Default::default()
+        };
+        let result = store.update_ownership(&ownership);
+        assert!(result.is_err());
+        assert_eq!(*result.unwrap_err().kind(), AzureErrorKind::Other);
+    }
+
+    #[tokio::test]
+    async fn test_update_checkpoint() {
+        let store = InMemoryCheckpointStore::new();
+        let checkpoint = Checkpoint {
+            fully_qualified_namespace: "namespace".to_string(),
+            event_hub_name: "event_hub".to_string(),
+            consumer_group: "consumer_group".to_string(),
+            partition_id: "partition_id".to_string(),
+            ..Default::default()
+        };
+        let result = store.update_checkpoint(checkpoint).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_list_checkpoints() {
+        let store = InMemoryCheckpointStore::new();
+        let checkpoint = Checkpoint {
+            fully_qualified_namespace: "namespace".to_string(),
+            event_hub_name: "event_hub".to_string(),
+            consumer_group: "consumer_group".to_string(),
+            partition_id: "partition_id".to_string(),
+            ..Default::default()
+        };
+        store.update_checkpoint(checkpoint).await.unwrap();
+        let checkpoints = store
+            .list_checkpoints("namespace", "event_hub", "consumer_group", None)
+            .await
+            .unwrap();
+        assert_eq!(checkpoints.len(), 1);
+    }
+
+    fn get_random_name(prefix: &str) -> String {
+        format!("{}{}", prefix, azure_core::Uuid::new_v4().to_string())
+    }
+
+    #[tokio::test]
+    async fn checkpoints() -> azure_core::Result<()> {
+        let test_name = get_random_name("checkpoint");
+
+        let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
+        let checkpoints = checkpoint_store
+            .list_checkpoints(
+                "fully-qualified-namespace",
+                "event-hub-name",
+                "consumer-group",
+                None,
+            )
+            .await
+            .unwrap();
+        assert_eq!(checkpoints.len(), 0);
+
+        let checkpoint = Checkpoint {
+            fully_qualified_namespace: "ns.servicebus.windows.net".to_string(),
+            event_hub_name: "event-hub-name".to_string(),
+            consumer_group: "consumer-group".to_string(),
+            partition_id: test_name.clone(),
+            offset: Some("offset".to_string()),
+            sequence_number: Some(0),
+        };
+
+        // Even though we added a checkpoint in one namespace, it doesn't change the older namespace.
+        checkpoint_store
+            .update_checkpoint(checkpoint.clone())
+            .await
+            .unwrap();
+        let checkpoints = checkpoint_store
+            .list_checkpoints(
+                "fully-qualified-namespace",
+                "event-hub-name",
+                "consumer-group",
+                None,
+            )
+            .await
+            .unwrap();
+        assert_eq!(checkpoints.len(), 0);
+
         Ok(())
     }
 }
