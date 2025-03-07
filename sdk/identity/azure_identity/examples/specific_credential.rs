@@ -112,7 +112,7 @@ impl SpecificAzureCredential {
             // case insensitive and allow spaces
             match credential_type.replace(' ', "").to_lowercase().as_str() {
                 azure_credential_kinds::APP_SERVICE => {
-                    AppServiceManagedIdentityCredential::new(options)
+                    AppServiceManagedIdentityCredential::new(ImdsId::SystemAssigned, options)
                         .map(SpecificAzureCredentialKind::AppService)
                         .with_context(ErrorKind::Credential, || {
                             format!(
