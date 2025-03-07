@@ -1,154 +1,26 @@
-use super::load_balancer::LoadBalancer;
-use super::partition_client::PartitionClient;
-use crate::models::ConsumerClientDetails;
-use crate::{ConsumerClient, StartPosition};
+// Copyright (c) Microsoft Corp. All Rights Reserved.
+// Licensed under the MIT License.
+
+use super::{
+    load_balancer::LoadBalancer,
+    models::{Checkpoint, Ownership, StartPositions},
+    partition_client::PartitionClient,
+};
+use crate::{
+    models::{ConsumerClientDetails, EventHubProperties},
+    ConsumerClient, EventReceiver, OpenReceiverOptions, StartLocation, StartPosition,
+};
 use async_trait::async_trait;
-use azure_core::Result;
-use std::sync::{Arc, Mutex};
+use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
+use futures::channel::mpsc::{Receiver, Sender};
+use futures::StreamExt;
+use std::collections::HashMap;
+use std::sync::{Arc, OnceLock};
 use std::thread;
 use std::time::Duration;
+use tokio::sync::Mutex;
+use tracing::info;
 
-pub mod models {
-    use std::time::SystemTime;
-
-    use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
-
-    /// Represents a checkpoint in an Event Hub.
-    ///
-    /// This structure is used to track the progress of event processing
-    /// by storing the offset and sequence number of the last processed event
-    /// for a specific partition. It helps in resuming event processing from
-    /// the correct position in case of failures or restarts.
-    #[derive(Debug, Default, Clone)]
-    pub struct Checkpoint {
-        /// The name of the consumer group.
-        pub(crate) consumer_group: String,
-        /// The name of the Event Hub.
-        pub(crate) event_hub_name: String,
-        /// The fully qualified namespace of the Event Hub.
-        pub(crate) fully_qualified_namespace: String,
-        /// The identifier of the partition.
-        pub(crate) partition_id: String,
-        /// The offset of the last processed event.
-        pub(crate) offset: Option<String>,
-        /// The sequence number of the last processed event.
-        pub(crate) sequence_number: Option<i64>,
-    }
-
-    impl Checkpoint {
-        /// Returns the prefix for the checkpoint blob name.
-        pub fn get_checkpoint_blob_prefix_name(
-            fully_qualified_namespace: &str,
-            event_hub_name: &str,
-            consumer_group: &str,
-        ) -> Result<String> {
-            if fully_qualified_namespace.is_empty()
-                || event_hub_name.is_empty()
-                || consumer_group.is_empty()
-            {
-                return Err(Error::message(
-                    AzureErrorKind::Other,
-                    "Namespace, Event Hub name, or Consumer Group is empty",
-                ));
-            }
-            Ok(fully_qualified_namespace.to_ascii_lowercase()
-                + "/"
-                + event_hub_name.to_ascii_lowercase().as_str()
-                + "/"
-                + consumer_group.to_ascii_lowercase().as_str()
-                + "/checkpoint/")
-        }
-
-        /// Returns the full name of the checkpoint blob.
-        pub fn get_checkpoint_blob_name(
-            fully_qualified_namespace: &str,
-            event_hub_name: &str,
-            consumer_group: &str,
-            partition_id: &str,
-        ) -> Result<String> {
-            if partition_id.is_empty() {
-                return Err(Error::message(
-                    AzureErrorKind::Other,
-                    "Partition ID is empty",
-                ));
-            }
-            Ok(Self::get_checkpoint_blob_prefix_name(
-                fully_qualified_namespace,
-                event_hub_name,
-                consumer_group,
-            )? + partition_id)
-        }
-    }
-
-    /// Represents the ownership information for a partition in an Event Hub.
-    ///
-    /// This structure is used to manage and track the ownership of partitions
-    /// by different consumers in a consumer group. It helps in load balancing
-    /// and ensuring that each partition is processed by only one consumer at a time.
-    #[derive(Debug, Default, Clone)]
-    pub struct Ownership {
-        /// The name of the consumer group.
-        pub(crate) consumer_group: String,
-        /// The name of the Event Hub.
-        pub(crate) event_hub_name: String,
-        /// The fully qualified namespace of the Event Hub.
-        pub(crate) fully_qualified_namespace: String,
-        /// The identifier of the partition.
-        pub(crate) partition_id: String,
-
-        /// The identifier of the owner (consumer) of the partition.
-        pub(crate) owner_id: String,
-        /// The ETag associated with the ownership.
-        pub(crate) etag: Option<String>,
-        /// The last modified time of the ownership.
-        pub(crate) last_modified_time: Option<SystemTime>,
-    }
-
-    impl Ownership {
-        /// Returns the prefix for the ownership blob name.
-        pub fn get_ownership_prefix_name(
-            fully_qualified_namespace: &str,
-            event_hub_name: &str,
-            consumer_group: &str,
-        ) -> Result<String> {
-            if fully_qualified_namespace.is_empty()
-                || event_hub_name.is_empty()
-                || consumer_group.is_empty()
-            {
-                return Err(Error::message(
-                    AzureErrorKind::Other,
-                    "Namespace, Event Hub name, or Consumer Group is empty",
-                ));
-            }
-            Ok(fully_qualified_namespace.to_ascii_lowercase()
-                + "/"
-                + event_hub_name.to_ascii_lowercase().as_str()
-                + "/"
-                + consumer_group.to_ascii_lowercase().as_str()
-                + "/ownership/")
-        }
-
-        /// Returns the full name of the ownership blob.
-        pub fn get_ownership_name(
-            fully_qualified_namespace: &str,
-            event_hub_name: &str,
-            consumer_group: &str,
-            partition_id: &str,
-        ) -> Result<String> {
-            if partition_id.is_empty() {
-                return Err(Error::message(
-                    AzureErrorKind::Other,
-                    "Partition ID is empty",
-                ));
-            }
-            Ok(Self::get_ownership_prefix_name(
-                fully_qualified_namespace,
-                event_hub_name,
-                consumer_group,
-            )? + partition_id)
-        }
-    }
-}
 #[allow(dead_code)]
 pub struct ClaimOwnershipOptions {}
 
@@ -175,9 +47,9 @@ pub trait CheckpointStore: Send + Sync {
     ///
     async fn claim_ownership(
         &self,
-        ownerships: Vec<models::Ownership>,
+        ownerships: Vec<Ownership>,
         options: Option<ClaimOwnershipOptions>,
-    ) -> azure_core::Result<Vec<models::Ownership>>;
+    ) -> azure_core::Result<Vec<Ownership>>;
 
     /// Lists the checkpoints for the specified Event Hub and consumer group.
     /// This method retrieves the checkpoints for a specific Event Hub and consumer group.
@@ -200,7 +72,7 @@ pub trait CheckpointStore: Send + Sync {
         event_hub_name: &str,
         consumer_group: &str,
         options: Option<ListCheckpointsOptions>,
-    ) -> azure_core::Result<Vec<models::Checkpoint>>;
+    ) -> azure_core::Result<Vec<Checkpoint>>;
 
     /// Lists the ownerships for the specified Event Hub and consumer group.
     /// This method retrieves the ownerships for a specific Event Hub and consumer group.
@@ -220,7 +92,7 @@ pub trait CheckpointStore: Send + Sync {
         event_hub_name: &str,
         consumer_group: &str,
         options: Option<ListOwnershipOptions>,
-    ) -> azure_core::Result<Vec<models::Ownership>>;
+    ) -> azure_core::Result<Vec<Ownership>>;
 
     /// Updates the checkpoint for the specified partition.
     /// This method updates the checkpoint information for a specific partition in an Event Hub.
@@ -232,7 +104,7 @@ pub trait CheckpointStore: Send + Sync {
     /// Returns `Ok(())` if the update is successful.
     /// Returns an error if the update fails.
     ///
-    async fn update_checkpoint(&self, checkpoint: models::Checkpoint) -> azure_core::Result<()>;
+    async fn update_checkpoint(&self, checkpoint: Checkpoint) -> azure_core::Result<()>;
 }
 
 #[derive(Clone, Debug)]
@@ -256,11 +128,12 @@ pub struct EventProcessorOptions {
     pub load_balancing_strategy: Option<ProcessorStrategy>,
     pub update_interval: Option<Duration>,
     pub partition_expiration_duration: Option<Duration>,
-    pub start_positions: Option<Vec<StartPosition>>,
-    pub prefetch: Option<i32>,
+    pub start_positions: Option<StartPositions>,
+    pub prefetch: Option<u32>,
+    pub max_partition_count: Option<usize>,
 }
 
-const DEFAULT_PREFETCH: i32 = 300;
+const DEFAULT_PREFETCH: u32 = 300;
 const DEFAULT_UPDATE_INTERVAL: Duration = Duration::from_secs(30);
 const DEFAULT_PARTITION_EXPIRATION_DURATION: Duration = Duration::from_secs(10);
 pub struct EventProcessor {
@@ -268,12 +141,15 @@ pub struct EventProcessor {
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     load_balancer: Arc<Mutex<LoadBalancer>>,
     consumer_client: Arc<ConsumerClient>,
+    next_partition_clients: Mutex<Option<Receiver<PartitionClient>>>,
+    next_partition_client_sender: OnceLock<Sender<PartitionClient>>,
     running: Arc<Mutex<bool>>,
     processing_thread: Option<thread::JoinHandle<()>>,
     client_details: ConsumerClientDetails,
-    prefetch: i32,
+    prefetch: u32,
     update_interval: Duration,
-    start_positions: Vec<StartPosition>,
+    start_positions: StartPositions,
+    max_partition_count: Option<usize>,
 }
 
 impl EventProcessor {
@@ -306,6 +182,9 @@ impl EventProcessor {
             prefetch: options.prefetch.unwrap_or(DEFAULT_PREFETCH),
             update_interval: options.update_interval.unwrap_or(DEFAULT_UPDATE_INTERVAL),
             start_positions: options.start_positions.unwrap_or_default(),
+            max_partition_count: options.max_partition_count,
+            next_partition_client_sender: OnceLock::new(),
+            next_partition_clients: Mutex::new(None),
         }
     }
 
@@ -362,21 +241,164 @@ impl EventProcessor {
     /// ```
     ///
     pub async fn run(&self) -> Result<()> {
-        todo!()
+        let mut eh_properties = self.consumer_client.get_eventhub_properties().await?;
+        if let Some(max_partition_count) = self.max_partition_count {
+            eh_properties
+                .partition_ids
+                .truncate(max_partition_count as usize);
+        }
+        let (sender, mut receiver) =
+            futures::channel::mpsc::channel(eh_properties.partition_ids.len());
+        self.next_partition_client_sender.set(sender).map_err(|_| {
+            Error::message(
+                AzureErrorKind::Other,
+                "Failed to set next partition client sender",
+            )
+        })?;
+        let mut partition_client = self.next_partition_clients.lock().await;
+        partition_client.as_mut().replace(&mut receiver);
+
+        let mut consumers: HashMap<String, PartitionClient> = HashMap::new();
+        loop {
+            self.dispatch(&eh_properties, &mut consumers).await?;
+        }
+    }
+
+    async fn dispatch(
+        &self,
+        eventhub_properties: &EventHubProperties,
+        consumers: &mut HashMap<String, PartitionClient>,
+    ) -> Result<()> {
+        let load_balancer = self.load_balancer.lock().await;
+
+        let ownerships = load_balancer
+            .load_balance(&eventhub_properties.partition_ids)
+            .await?;
+
+        let checkpoints = self.get_checkpoint_map().await?;
+
+        for ownership in ownerships {
+            self.add_partition_client(ownership, &checkpoints, consumers)
+                .await?;
+        }
+
+        Ok(())
     }
 
     pub async fn next_partition_client(&self) -> Result<PartitionClient> {
-        todo!()
+        let mut locked_partition_clients = self.next_partition_clients.lock().await;
+        // Implement the function or remove it if not needed
+        let receiver = locked_partition_clients.as_mut().ok_or_else(|| {
+            azure_core::Error::message(
+                AzureErrorKind::Other,
+                "Unable to retrieve next partition client - is the processor running?",
+            )
+        })?;
+        let next_client = receiver.next().await.ok_or_else(|| {
+            azure_core::Error::message(AzureErrorKind::Other, "No next partition client available")
+        })?;
+
+        Ok(next_client)
     }
 
     pub async fn close(&self) -> Result<()> {
-        todo!()
+        // Implement the function or remove it if not needed
+        let mut running = self.running.lock().await;
+        *running = false;
+        Ok(())
+    }
+
+    /// Retrieves the checkpoint map for the Event Hub.
+    ///
+    /// This method fetches the checkpoints for all partitions in the Event Hub
+    /// and returns them as a `HashMap` where the keys are partition IDs
+    ///
+    /// # Returns
+    /// A `Result` containing a `HashMap` of partition IDs and their corresponding `Checkpoint` objects.
+    ///
+    ///
+    pub async fn get_checkpoint_map(&self) -> Result<HashMap<String, Checkpoint>> {
+        let checkpoints = self.checkpoint_store.list_checkpoints(
+            &self.client_details.fully_qualified_namespace,
+            &self.client_details.eventhub_name,
+            &self.client_details.consumer_group,
+            None,
+        );
+        let mut checkpoint_map = HashMap::new();
+        for checkpoint in checkpoints.await? {
+            checkpoint_map.insert(checkpoint.partition_id.clone(), checkpoint);
+        }
+        Ok(checkpoint_map)
+    }
+
+    pub async fn add_partition_client(
+        &self,
+        ownership: Ownership,
+        checkpoints: &HashMap<String, Checkpoint>,
+        consumers: &mut HashMap<String, PartitionClient>,
+    ) -> Result<()> {
+        info!("Add partition client for ownership: {:?}", ownership);
+
+        let partition_client = PartitionClient::new(
+            &ownership.partition_id,
+            self.checkpoint_store.clone(),
+            &self.client_details,
+            || {
+                // Handle partition client destruction
+                consumers.remove(&ownership.partition_id);
+            },
+        );
+
+        // Ignore the ownership if the partition client already exists
+        if consumers.contains_key(&ownership.partition_id) {
+            info!(
+                "Partition client already exists for partition: {:?}",
+                ownership.partition_id
+            );
+            return Ok(());
+        }
+
+        let start_position = self.get_start_position(&ownership, checkpoints);
+        let receiver = self
+            .consumer_client
+            .open_receiver_on_partition(
+                &ownership.partition_id,
+                Some(OpenReceiverOptions {
+                    start_position: Some(start_position),
+                    receive_timeout: Some(self.update_interval),
+                    prefetch: Some(self.prefetch),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        partition_client.set_event_receiver(receiver);
+        consumers.insert(ownership.partition_id.clone(), partition_client);
+
+        Ok(())
+    }
+
+    fn get_start_position(
+        &self,
+        ownership: &Ownership,
+        checkpoints: &HashMap<String, Checkpoint>,
+    ) -> StartPosition {
+        let mut start_position = self.start_positions.default.clone();
+        if checkpoints.contains_key(&ownership.partition_id) {
+            let checkpoint = checkpoints.get(&ownership.partition_id);
+            if let Some(checkpoint) = checkpoint {
+                if let Some(offset) = &checkpoint.offset {
+                    start_position.location = StartLocation::Offset(offset.clone());
+                } else if let Some(sequence_number) = checkpoint.sequence_number {
+                    start_position.location = StartLocation::SequenceNumber(sequence_number);
+                }
+            }
+        }
+        start_position
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::event_processor;
     use crate::event_processor::in_memory_checkpoint_store::InMemoryCheckpointStore;
     use crate::{
         event_processor::processor::{EventProcessor, EventProcessorOptions, ProcessorStrategy},

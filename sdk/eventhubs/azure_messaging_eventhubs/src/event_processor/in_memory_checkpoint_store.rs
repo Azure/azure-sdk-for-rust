@@ -1,6 +1,8 @@
-use super::processor::{
+use super::{
     models::{Checkpoint, Ownership},
-    CheckpointStore, ClaimOwnershipOptions, ListCheckpointsOptions, ListOwnershipOptions,
+    processor::{
+        CheckpointStore, ClaimOwnershipOptions, ListCheckpointsOptions, ListOwnershipOptions,
+    },
 };
 //use async_trait::async_trait;
 use async_trait::async_trait;
@@ -144,10 +146,9 @@ impl CheckpointStore for InMemoryCheckpointStore {
 
 #[cfg(test)]
 mod tests {
-    use azure_core_test::{recorded, TestContext};
 
     use super::*;
-    use crate::event_processor::processor::models::{Checkpoint, Ownership};
+    use crate::event_processor::models::{Checkpoint, Ownership};
 
     #[test]
     fn test_update_ownership() {
@@ -215,7 +216,7 @@ mod tests {
     }
 
     fn get_random_name(prefix: &str) -> String {
-        format!("{}{}", prefix, azure_core::Uuid::new_v4().to_string())
+        format!("{}{}", prefix, azure_core::Uuid::new_v4())
     }
 
     #[tokio::test]

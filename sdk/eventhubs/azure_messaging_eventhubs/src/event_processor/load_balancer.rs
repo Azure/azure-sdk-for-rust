@@ -1,8 +1,10 @@
-use crate::models::ConsumerClientDetails;
-
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
-use super::processor::{models::Ownership, CheckpointStore, ProcessorStrategy};
+use super::{
+    models::Ownership,
+    processor::{CheckpointStore, ProcessorStrategy},
+};
+use crate::models::ConsumerClientDetails;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use std::{

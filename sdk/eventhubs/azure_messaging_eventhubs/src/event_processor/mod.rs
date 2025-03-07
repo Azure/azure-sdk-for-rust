@@ -3,5 +3,6 @@
 
 pub mod in_memory_checkpoint_store;
 pub mod load_balancer;
+pub mod models;
 pub mod partition_client;
 pub mod processor;
