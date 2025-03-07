@@ -194,7 +194,7 @@ try {
 
     Invoke-LoggedCommand `
       -GroupOutput `
-      -Command "cargo publish --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
+      -Command "cargo publish --locked --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
 
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
