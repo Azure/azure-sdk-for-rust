@@ -146,7 +146,7 @@ async fn ensure_test_proxy(git_dir: &Path) -> Result<PathBuf> {
         executable_file_path.set_extension("exe");
     }
 
-    // TODO: Create a lock file: https://github.com/Azure/azure-sdk-for-go/blob/5f7071b66c3745bea4b47054ba391825ea8f022e/sdk/internal/recording/server.go#L221-L248
+    // TODO: Create a lock file lock? https://github.com/Azure/azure-sdk-for-rust/issues/2299
 
     let required_version = required_proxy_version(git_dir).await?;
     if let Ok(output) = Command::new(&executable_file_path)
