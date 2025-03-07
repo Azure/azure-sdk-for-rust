@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
-
 #Requires -Version 7.0
+
 [CmdletBinding()]
 param(
   [switch]$AsDependencyTable
