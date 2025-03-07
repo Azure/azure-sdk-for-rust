@@ -21,6 +21,7 @@
     "rust-toolchain.toml"
   ],
   "words": [
+    "aarch",
     "amqp",
     "asyncoperation",
     "azsdk",

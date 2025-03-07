@@ -37,6 +37,8 @@ typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+flate2.workspace = true
+tar.workspace = true
 tokio = { workspace = true, features = [
   "io-util",
   "process",
@@ -44,6 +46,8 @@ tokio = { workspace = true, features = [
   "sync",
   "time",
 ] }
+reqwest.workspace = true
+zip.workspace = true
 
 [dev-dependencies]
 # Crate used in README.md example.
