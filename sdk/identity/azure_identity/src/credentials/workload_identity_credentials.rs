@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, federated_credentials_flow, TokenCredentialOptions};
+use crate::TokenCredentialOptions;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
@@ -15,10 +15,9 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use time::OffsetDateTime;
 
-const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
-const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
+use super::client_assertion_credentials::{ClientAssertion, ClientAssertionCredential};
+
 const AZURE_FEDERATED_TOKEN_FILE: &str = "AZURE_FEDERATED_TOKEN_FILE";
 const AZURE_FEDERATED_TOKEN: &str = "AZURE_FEDERATED_TOKEN";
 
@@ -27,14 +26,7 @@ const AZURE_FEDERATED_TOKEN: &str = "AZURE_FEDERATED_TOKEN";
 /// More information on how to configure a client secret can be found here:
 /// <https://learn.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application>
 #[derive(Debug)]
-pub struct WorkloadIdentityCredential {
-    http_client: Arc<dyn HttpClient>,
-    authority_host: Url,
-    tenant_id: String,
-    client_id: String,
-    token: Token,
-    cache: TokenCache,
-}
+pub struct WorkloadIdentityCredential(ClientAssertionCredential<Token>);
 
 impl WorkloadIdentityCredential {
     /// Create a new `WorkloadIdentityCredential`.
@@ -48,14 +40,15 @@ impl WorkloadIdentityCredential {
     where
         T: Into<Secret>,
     {
-        Ok(Arc::new(Self {
-            http_client,
-            authority_host,
-            tenant_id,
-            client_id,
-            token: Token::Value(token.into()),
-            cache: TokenCache::new(),
-        }))
+        Ok(Arc::new(Self(
+            ClientAssertionCredential::<Token>::new_exclusive(
+                http_client,
+                authority_host,
+                tenant_id,
+                client_id,
+                Token::Value(token.into()),
+            )?,
+        )))
     }
 
     /// Create a new `WorkloadIdentityCredential` from environment variables.
@@ -69,77 +62,31 @@ impl WorkloadIdentityCredential {
         options: impl Into<TokenCredentialOptions>,
     ) -> azure_core::Result<Arc<WorkloadIdentityCredential>> {
         let options = options.into();
-        let http_client = options.http_client();
-        let authority_host = options.authority_host()?;
         let env = options.env();
-        let tenant_id =
-            env.var(AZURE_TENANT_ID_ENV_KEY)
-                .with_context(ErrorKind::Credential, || {
-                    format!(
-                        "working identity credential requires {} environment variable",
-                        AZURE_TENANT_ID_ENV_KEY
-                    )
-                })?;
-        let client_id =
-            env.var(AZURE_CLIENT_ID_ENV_KEY)
-                .with_context(ErrorKind::Credential, || {
-                    format!(
-                        "working identity credential requires {} environment variable",
-                        AZURE_CLIENT_ID_ENV_KEY
-                    )
-                })?;
-
         if let Ok(token) = env
             .var(AZURE_FEDERATED_TOKEN)
             .map_kind(ErrorKind::Credential)
         {
-            return WorkloadIdentityCredential::new(
-                http_client,
-                authority_host,
-                tenant_id,
-                client_id,
-                token,
-            );
+            return Ok(Arc::new(Self(
+                ClientAssertionCredential::from_env_exclusive(options, Token::Value(token.into()))?,
+            )));
         }
 
         if let Ok(token_file) = env
             .var(AZURE_FEDERATED_TOKEN_FILE)
             .map_kind(ErrorKind::Credential)
         {
-            return Ok(Arc::new(Self {
-                http_client,
-                authority_host,
-                tenant_id,
-                client_id,
-                token: Token::with_file(token_file.as_ref())?,
-                cache: TokenCache::new(),
-            }));
+            return Ok(Arc::new(Self(
+                ClientAssertionCredential::from_env_exclusive(
+                    options,
+                    Token::with_file(token_file.as_ref())?,
+                )?,
+            )));
         }
 
         Err(Error::with_message(ErrorKind::Credential, || {
             format!("working identity credential requires {AZURE_FEDERATED_TOKEN} or {AZURE_FEDERATED_TOKEN_FILE} environment variables")
         }))
-    }
-
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        let token = self.token.secret().await?;
-        let res: AccessToken = federated_credentials_flow::authorize(
-            self.http_client.clone(),
-            &self.client_id,
-            &token,
-            scopes,
-            &self.tenant_id,
-            &self.authority_host,
-        )
-        .await
-        .map(|r| {
-            AccessToken::new(
-                r.access_token().clone(),
-                OffsetDateTime::now_utc() + Duration::from_secs(r.expires_in),
-            )
-        })
-        .context(ErrorKind::Credential, "request token error")?;
-        Ok(res)
     }
 }
 
@@ -147,11 +94,11 @@ impl WorkloadIdentityCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for WorkloadIdentityCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
+        TokenCredential::get_token(&self.0, scopes).await
     }
 
     async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.cache.clear().await
+        TokenCredential::clear_cache(&self.0).await
     }
 }
 
@@ -185,7 +132,11 @@ impl Token {
             })),
         })
     }
+}
 
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl ClientAssertion for Token {
     async fn secret(&self) -> azure_core::Result<String> {
         match self {
             Self::Value(secret) => Ok(secret.secret().into()),

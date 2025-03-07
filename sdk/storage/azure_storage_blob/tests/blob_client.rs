@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{headers::HeaderName, Bytes, RequestContent, StatusCode};
+use azure_core::{base64, headers::HeaderName, Bytes, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     clients::{BlobClient, ContainerClient},
-    models::{BlobBlock, BlobType, BlockLookupList},
+    models::{BlobType, BlockLookupList},
     BlobClientOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
@@ -328,15 +328,15 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         )
         .await?;
 
-    let latest_blocks = BlobBlock::new(vec![
-        String::from("1"),
-        String::from("2"),
-        String::from("3"),
-    ]);
+    let latest_blocks: Vec<String> = vec![
+        base64::encode("1"),
+        base64::encode("2"),
+        base64::encode("3"),
+    ];
 
     let block_lookup_list = BlockLookupList {
         committed: None,
-        latest: Some(latest_blocks.into()),
+        latest: Some(latest_blocks),
         uncommitted: None,
     };
 

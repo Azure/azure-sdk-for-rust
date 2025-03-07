@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.23.0"
+version = "0.22.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -15,16 +15,16 @@ categories = ["api-bindings"]
 
 [dependencies]
 async-trait.workspace = true
-azure_core.workspace = true
+azure_core = "0.22.0"
 futures.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 tracing.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
+typespec_client_core = { version = "0.1.0", features = ["derive"] }
 url.workspace = true
 
 [dev-dependencies]
-azure_identity.path = "../../identity/azure_identity"
+azure_identity = "0.22.0"
 azure_core_test.path = "../../core/azure_core_test"
 clap.workspace = true
 reqwest.workspace = true
@@ -36,11 +36,10 @@ tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 workspace = true
 
 [features]
+default = ["hmac_rust"]
+key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
-key_auth = [
-] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
-default = ["hmac_rust"]
 
 [package.metadata.docs.rs]
 features = ["key_auth"]
