@@ -14,7 +14,7 @@ foreach ($crateName in $CrateNames) {
   Write-Host "Publishing packae: '$crateName'"
   $manifestPath = "$PackagesPath/$crateName/Cargo.toml"
   # https://doc.rust-lang.org/cargo/reference/registry-web-api.html#publish
-  Write-Host "> cargo publish --manifest-path `"$manifestPath`""
+  Write-Host "> cargo publish --locked --manifest-path `"$manifestPath`""
   cargo publish --manifest-path $manifestPath
   if (!$?) {
     Write-Error "Failed to publish package: '$crateName'"
