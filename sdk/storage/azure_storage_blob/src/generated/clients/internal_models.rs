@@ -30,10 +30,9 @@ pub struct SetPropertiesRequest {
         default,
         deserialize_with = "CorsCorsRule::unwrap",
         rename = "Cors",
-        serialize_with = "CorsCorsRule::wrap",
-        skip_serializing_if = "Option::is_none"
+        serialize_with = "CorsCorsRule::wrap"
     )]
-    pub cors: Option<Vec<CorsRule>>,
+    pub cors: Vec<CorsRule>,
 
     /// The default service version.
     #[serde(

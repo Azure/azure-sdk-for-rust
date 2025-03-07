@@ -172,6 +172,15 @@ create_extensible_enum!(
 );
 
 create_extensible_enum!(
+    #[doc = r#"/// The lease duration."#]
+    LeaseDuration,
+    #[doc = r#"/// The lease is of fixed duration."#]
+    (Fixed, "fixed"),
+    #[doc = r#"/// The lease is of infinite duration."#]
+    (Infinite, "infinite")
+);
+
+create_extensible_enum!(
     #[doc = r#"/// The lease state."#]
     LeaseState,
     #[doc = r#"/// The lease is available."#]
@@ -193,6 +202,42 @@ create_extensible_enum!(
     (Locked, "locked"),
     #[doc = r#"/// The lease is unlocked."#]
     (Unlocked, "unlocked")
+);
+
+create_extensible_enum!(
+    #[doc = r#"/// The list blob includes parameter values."#]
+    ListBlobsIncludeItem,
+    #[doc = r#"/// The include copies."#]
+    (Copy, "copy"),
+    #[doc = r#"/// The include deleted blobs."#]
+    (Deleted, "deleted"),
+    #[doc = r#"/// The include deleted with versions."#]
+    (DeletedWithVersions, "deletedwithversions"),
+    #[doc = r#"/// The include immutable policy."#]
+    (ImmutabilityPolicy, "immutabilitypolicy"),
+    #[doc = r#"/// The include legal hold."#]
+    (LegalHold, "legalhold"),
+    #[doc = r#"/// The include metadata."#]
+    (Metadata, "metadata"),
+    #[doc = r#"/// The include snapshots."#]
+    (Snapshots, "snapshots"),
+    #[doc = r#"/// The include tags."#]
+    (Tags, "tags"),
+    #[doc = r#"/// The include uncommitted blobs."#]
+    (UncommittedBlobs, "uncommittedblobs"),
+    #[doc = r#"/// The include versions."#]
+    (Versions, "versions")
+);
+
+create_extensible_enum!(
+    #[doc = r#"/// Include this parameter to specify that the container's metadata be returned as part of the response body."#]
+    ListContainersIncludeType,
+    #[doc = r#"/// Include deleted"#]
+    (Deleted, "deleted"),
+    #[doc = r#"/// Include metadata"#]
+    (Metadata, "metadata"),
+    #[doc = r#"/// Include system"#]
+    (System, "system")
 );
 
 create_extensible_enum!(
