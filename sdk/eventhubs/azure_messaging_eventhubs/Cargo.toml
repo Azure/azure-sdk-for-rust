@@ -6,16 +6,16 @@ name = "azure_messaging_eventhubs"
 version = "0.2.0"
 description = "Rust client for Azure Eventhubs Service"
 readme = "README.md"
-authors = ["Microsoft Corp."]
-license = "MIT"
-repository = "https://github.com/azure/azure-sdk-for-rust"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_messaging_eventhubs"
 
 keywords = ["sdk", "azure", "messaging", "cloud", "eventhubs"]
 categories = ["api-bindings"]
 
-edition = "2021"
+edition.workspace = true
 
 [dependencies]
 async-stream.workspace = true
