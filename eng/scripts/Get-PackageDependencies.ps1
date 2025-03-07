@@ -8,11 +8,11 @@ $ErrorActionPreference = 'Stop'
 $packages = & (Join-Path $PSScriptRoot 'Get-PackageVersions.ps1')
 
 $packages.packageDependencies | Select-Object -Property @(
-  @{ Name = 'from'; Expression = { $_.name } },
-  @{ Name = 'to'; Expression = { $_.dependant } },
+  @{ Name = 'from'; Expression = { $_.dependant } },
+  @{ Name = 'to'; Expression = { $_.name } },
   'kind',
+  @{ Name = 'path'; Expression = { !!$_.path } },
   'req',
   @{ Name = 'local'; Expression = { $_.pathVersion } },
-  @{ Name = 'index'; Expression = { $_.indexVersion } },
-  @{ Name = 'byPath'; Expression = { !!$_.path } }
+  @{ Name = 'index'; Expression = { $_.indexVersion } }
 )
