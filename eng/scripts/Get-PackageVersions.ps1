@@ -1,9 +1,14 @@
+#!/usr/bin/env pwsh
+
+#Requires -Version 7.0
 [CmdletBinding()]
 param(
   [switch]$Dependencies
 )
 
-. $PSScriptRoot/../common/scripts/common.ps1
+$ErrorActionPreference = 'Stop'
+
+. (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
 
 $metadata = cargo metadata --format-version 1 --no-deps --all-features | ConvertFrom-Json -AsHashtable
 $packages = $metadata.packages
