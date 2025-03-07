@@ -1125,14 +1125,14 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
 
 /// Provides access to typed response headers for [`BlobClient::get_properties()`](crate::clients::BlobClient::get_properties())
 pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
-    fn accept_ranges(&self) -> Result<Option<String>>;
+    // fn accept_ranges(&self) -> Result<Option<String>>;
     fn cache_control(&self) -> Result<Option<String>>;
     fn content_disposition(&self) -> Result<Option<String>>;
     fn content_encoding(&self) -> Result<Option<String>>;
     fn content_language(&self) -> Result<Option<String>>;
     fn content_length(&self) -> Result<Option<u64>>;
     fn content_md5(&self) -> Result<Option<String>>;
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
+    // fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn e_tag(&self) -> Result<Option<String>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn tier(&self) -> Result<Option<AccessTier>>;
@@ -1143,7 +1143,7 @@ pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn is_sealed(&self) -> Result<Option<bool>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
     fn blob_type(&self) -> Result<Option<BlobType>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
+    // fn client_request_id(&self) -> Result<Option<String>>;
     fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>>;
     fn destination_snapshot(&self) -> Result<Option<String>>;
     fn copy_id(&self) -> Result<Option<String>>;
@@ -1168,7 +1168,7 @@ pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn object_replication_rules(&self) -> Result<HashMap<String, String>>;
     fn object_replication_policy_id(&self) -> Result<Option<String>>;
     fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>>;
-    fn request_id(&self) -> Result<Option<String>>;
+    // fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn tag_count(&self) -> Result<Option<i64>>;
     fn version_id(&self) -> Result<Option<String>>;
