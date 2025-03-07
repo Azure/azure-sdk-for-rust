@@ -81,6 +81,7 @@ pub fn compilation_tests() {
     // Probably save to assume cargo is on the path, but if that's not the case, tests will start failing and we'll figure it out.
     let output = std::process::Command::new(env!("CARGO"))
         .arg("build")
+        .arg("--locked")
         .arg("--message-format")
         .arg("json")
         .current_dir(test_root.clone())

@@ -24,7 +24,7 @@ if ($CheckWasm) {
   Invoke-LoggedCommand "rustup target add --toolchain $Toolchain wasm32-unknown-unknown"
 }
 
-Invoke-LoggedCommand "cargo +$Toolchain check -p azure_core --all-features --all-targets --keep-going"
+Invoke-LoggedCommand "cargo +$Toolchain check --package azure_core --all-features --all-targets --keep-going"
 
 Invoke-LoggedCommand "cargo +$Toolchain fmt --all -- --check"
 
