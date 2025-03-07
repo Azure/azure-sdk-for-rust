@@ -3,7 +3,7 @@
 #Requires -Version 7.0
 [CmdletBinding()]
 param(
-  [switch]$Dependencies
+  [switch]$AsDependencyTable
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,7 +20,14 @@ foreach ($package in $packages) {
     $package.indexVersion = $packageVersions | Sort-Object { [AzureEngSemanticVersion]::ParseVersionString($_) } | Select-Object -Last 1
   }
   catch {
+    if ($_.Exception.Response.StatusCode -eq 404) {
+      $package.indexVersion = $null
+    }
+    else {
+      throw
+    }
   }
+
   $package.publish = $null -eq $package.publish
 
   foreach ($dependency in $package.dependencies) {
@@ -46,17 +53,4 @@ foreach ($package in $packages) {
   }
 }
 
-if ($Dependencies) {
-  $packages.packageDependencies | Select-Object -Property @(
-    @{ Name = 'from'; Expression = { $_.name } },
-    @{ Name = 'to'; Expression = { $_.dependant } },
-    'kind',
-    'req',
-    @{ Name = 'version'; Expression = { $_.pathVersion } },
-    @{ Name = 'index'; Expression = { $_.indexVersion } },
-    @{ Name = 'byPath'; Expression = { !!$_.path } }
-  )
-}
-else {
-  $packages | Select-Object name, version, publish, indexVersion, packageDependencies, dependantPackages
-}
+$packages | Select-Object name, version, publish, indexVersion, packageDependencies, dependantPackages
