@@ -493,7 +493,7 @@ dependencies = [
  "async-trait",
  "azure_core 0.22.0",
  "azure_core_test",
- "azure_identity 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "azure_identity 0.22.0",
  "azure_storage_blob_test",
  "azure_storage_common",
  "serde",

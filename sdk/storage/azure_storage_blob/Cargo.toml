@@ -23,7 +23,7 @@ uuid.workspace = true
 workspace = true
 
 [dev-dependencies]
-azure_core_test.path = "../../core/azure_core_test"
-azure_identity = "0.22.0"
+azure_core_test.workspace = true
+azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
 tokio = { workspace = true, features = ["macros"] }
