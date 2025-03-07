@@ -2,7 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::clients::GeneratedBlobClient;
-use crate::models::{BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions};
+use crate::models::{
+    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+    BlobContainerClientGetPropertiesOptions, ContainerProperties,
+};
 use crate::pipeline::StorageHeadersPolicy;
 use crate::BlobClientOptions;
 use azure_core::{
@@ -79,5 +82,19 @@ impl BlobContainerClient {
             .delete(options)
             .await?;
         Ok(response)
+    }
+
+    pub async fn get_container_properties(
+        &self,
+        options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
+    ) -> Result<ContainerProperties> {
+        let response = self
+            .client
+            .get_blob_container_client(self.container_name.clone())
+            .get_properties(options)
+            .await?;
+
+        let container_properties: ContainerProperties = response.headers().get()?;
+        Ok(container_properties)
     }
 }

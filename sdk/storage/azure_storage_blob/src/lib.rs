@@ -9,9 +9,11 @@ mod generated;
 pub mod clients {
     pub mod blob_client;
     pub mod blob_container_client;
+    pub mod blob_service_client;
 
     pub use blob_client::BlobClient;
     pub use blob_container_client::BlobContainerClient as ContainerClient;
+    pub use blob_service_client::BlobServiceClient as ServiceClient;
 
     pub use crate::generated::clients::{
         BlobAppendBlobClient, BlobBlobClient, BlobBlockBlobClient,
@@ -60,6 +62,9 @@ pub mod models {
 
     mod blob_properties;
     pub use blob_properties::BlobProperties;
+
+    mod container_properties;
+    pub use container_properties::ContainerProperties;
 }
 
 pub use crate::generated::clients::{BlobClient, BlobClientOptions};
