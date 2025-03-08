@@ -188,11 +188,11 @@ impl fmt::Display for ErrorHeaders {
 
 #[cfg(test)]
 mod tests {
-    use crate::env::Env;
-
     use super::*;
+    use crate::env::Env;
     use azure_core::{Bytes, Response};
     use azure_core_test::http::MockHttpClient;
+    use futures::FutureExt as _;
 
     #[test]
     fn param_errors() {
@@ -227,13 +227,14 @@ mod tests {
             headers.insert(MSEDGE_REF, "foo");
             headers.insert(VSS_E2EID, "bar");
 
-            Box::pin(async move {
+            async move {
                 Ok(Response::from_bytes(
                     StatusCode::Forbidden,
                     headers,
                     Vec::new(),
                 ))
-            })
+            }
+            .boxed()
         });
         let options = AzurePipelinesCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
@@ -263,7 +264,7 @@ mod tests {
     #[tokio::test]
     async fn mock_request() {
         let mock_client = MockHttpClient::new(|req| {
-            Box::pin(async move {
+            async move {
                 if req.url().as_str()
                     == "http://localhost/get_token?api-version=7.1&serviceConnectionId=c"
                 {
@@ -298,7 +299,7 @@ mod tests {
                 }
 
                 panic!("not supported")
-            })
+            }.boxed()
         });
         let options = AzurePipelinesCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
