@@ -353,7 +353,7 @@ version = "0.22.0"
 path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_common]
-version = "0.1.0"
+version = "0.0.0"
 path = "sdk/storage"
 
 [workspace.dependencies]

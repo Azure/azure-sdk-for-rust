@@ -1,6 +1,7 @@
 [package]
 name = "azure_storage_common"
-version = "0.1.0"
+description = "This client library enables working with the Microsoft Azure Storage services which include the blob and file services for storing binary and text data, and the queue service for storing messages that may be accessed by a client."
+version = "0.0.1"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
