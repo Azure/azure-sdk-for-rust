@@ -5,7 +5,6 @@ use crate::{credentials::cache::TokenCache, federated_credentials_flow, TokenCre
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::{ErrorKind, ResultExt},
-    HttpClient, Url,
 };
 use std::{fmt::Debug, str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
@@ -16,12 +15,30 @@ const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
 /// Enables authentication of a Microsoft Entra service principal using a signed client assertion.
 #[derive(Debug)]
 pub struct ClientAssertionCredential<C> {
-    http_client: Arc<dyn HttpClient>,
-    authority_host: Url,
     tenant_id: String,
     client_id: String,
     assertion: C,
     cache: TokenCache,
+    options: ClientAssertionCredentialOptions,
+}
+
+/// Options for constructing a new [`ClientAssertionCredential`].
+#[derive(Debug, Default)]
+pub struct ClientAssertionCredentialOptions {
+    /// Additional tenants for which the credential may acquire tokens.
+    ///
+    /// Add the wildcard value "*" to allow the credential to acquire tokens for any tenant in which the application is registered.
+    pub additionally_allowed_tenants: Vec<String>,
+
+    /// Should be set true only by applications authenticating in disconnected clouds, or private clouds such as Azure Stack.
+    ///
+    /// It determines whether the credential requests Microsoft Entra instance metadata
+    /// from <https://login.microsoft.com> before authenticating. Setting this to true will skip this request, making
+    /// the application responsible for ensuring the configured authority is valid and trustworthy.
+    pub disable_instance_discovery: bool,
+
+    /// Options for constructing credentials.
+    pub credential_options: TokenCredentialOptions,
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -35,18 +52,13 @@ pub trait ClientAssertion: Send + Sync + Debug {
 impl<C: ClientAssertion> ClientAssertionCredential<C> {
     /// Create a new `ClientAssertionCredential`.
     pub fn new(
-        http_client: Arc<dyn HttpClient>,
-        authority_host: Url,
         tenant_id: String,
         client_id: String,
         assertion: C,
+        options: Option<ClientAssertionCredentialOptions>,
     ) -> azure_core::Result<Arc<Self>> {
         Ok(Arc::new(Self::new_exclusive(
-            http_client,
-            authority_host,
-            tenant_id,
-            client_id,
-            assertion,
+            tenant_id, client_id, assertion, options,
         )?))
     }
 
@@ -54,19 +66,17 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
     /// `Arc`. Intended for use by other credentials in the crate that will
     /// themselves be protected by an `Arc`.
     pub(crate) fn new_exclusive(
-        http_client: Arc<dyn HttpClient>,
-        authority_host: Url,
         tenant_id: String,
         client_id: String,
         assertion: C,
+        options: Option<ClientAssertionCredentialOptions>,
     ) -> azure_core::Result<Self> {
         Ok(Self {
-            http_client,
-            authority_host,
             tenant_id,
             client_id,
             assertion,
             cache: TokenCache::new(),
+            options: options.unwrap_or_default(),
         })
     }
 
@@ -77,10 +87,10 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
     /// * `AZURE_TENANT_ID`
     /// * `AZURE_CLIENT_ID`
     pub fn from_env(
-        options: impl Into<TokenCredentialOptions>,
         assertion: C,
+        options: Option<ClientAssertionCredentialOptions>,
     ) -> azure_core::Result<Arc<Self>> {
-        Ok(Arc::new(Self::from_env_exclusive(options, assertion)?))
+        Ok(Arc::new(Self::from_env_exclusive(assertion, options)?))
     }
 
     /// Create a new `ClientAssertionCredential` from environment variables,
@@ -92,13 +102,11 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
     /// * `AZURE_TENANT_ID`
     /// * `AZURE_CLIENT_ID`
     pub(crate) fn from_env_exclusive(
-        options: impl Into<TokenCredentialOptions>,
         assertion: C,
+        options: Option<ClientAssertionCredentialOptions>,
     ) -> azure_core::Result<Self> {
-        let options = options.into();
-        let http_client = options.http_client();
-        let authority_host = options.authority_host()?;
-        let env = options.env();
+        let options = options.unwrap_or_default();
+        let env = options.credential_options.env();
         let tenant_id =
             env.var(AZURE_TENANT_ID_ENV_KEY)
                 .with_context(ErrorKind::Credential, || {
@@ -116,24 +124,19 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
                     )
                 })?;
 
-        ClientAssertionCredential::new_exclusive(
-            http_client,
-            authority_host,
-            tenant_id,
-            client_id,
-            assertion,
-        )
+        ClientAssertionCredential::new_exclusive(tenant_id, client_id, assertion, Some(options))
     }
 
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         let token = self.assertion.secret().await?;
+        let credential_options = &self.options.credential_options;
         let res: AccessToken = federated_credentials_flow::authorize(
-            self.http_client.clone(),
+            credential_options.http_client().clone(),
             &self.client_id,
             &token,
             scopes,
             &self.tenant_id,
-            &self.authority_host,
+            &credential_options.authority_host()?,
         )
         .await
         .map(|r| {

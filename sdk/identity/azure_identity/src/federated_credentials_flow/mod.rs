@@ -10,7 +10,6 @@ use azure_core::{
 };
 use response::LoginResponse;
 use std::sync::Arc;
-use tracing::{debug, error};
 use url::form_urlencoded;
 
 /// Authorize the client using the federated credentials flow.
@@ -47,13 +46,10 @@ pub async fn authorize(
     req.set_body(encoded);
     let rsp: Response = http_client.execute_request(&req).await?;
     let rsp_status = rsp.status();
-    debug!("rsp_status == {:?}", rsp_status);
     if rsp_status.is_success() {
         rsp.into_json_body().await
     } else {
         let rsp_body = rsp.into_raw_body().collect().await?;
-        let text = std::str::from_utf8(&rsp_body)?;
-        error!("rsp_body == {:?}", text);
         Err(http_response_from_body(rsp_status, &rsp_body).into_error())
     }
 }
