@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::TokenCredentialOptions;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
-    Error, HttpClient, Url,
+    Error,
 };
 use futures::channel::oneshot;
 use std::{
@@ -16,7 +15,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::client_assertion_credentials::{ClientAssertion, ClientAssertionCredential};
+use super::{
+    client_assertion_credentials::{ClientAssertion, ClientAssertionCredential},
+    ClientAssertionCredentialOptions, TokenCredentialOptions,
+};
 
 const AZURE_FEDERATED_TOKEN_FILE: &str = "AZURE_FEDERATED_TOKEN_FILE";
 const AZURE_FEDERATED_TOKEN: &str = "AZURE_FEDERATED_TOKEN";
@@ -28,25 +30,31 @@ const AZURE_FEDERATED_TOKEN: &str = "AZURE_FEDERATED_TOKEN";
 #[derive(Debug)]
 pub struct WorkloadIdentityCredential(ClientAssertionCredential<Token>);
 
+/// Options for constructing a new [`WorkloadIdentityCredential`].
+#[derive(Debug, Default)]
+pub struct WorkloadIdentityCredentialOptions {
+    /// Options for the [`ClientAssertionCredential`] used by the [`WorkloadIdentityCredential`].
+    pub credential_options: ClientAssertionCredentialOptions,
+}
+
 impl WorkloadIdentityCredential {
     /// Create a new `WorkloadIdentityCredential`.
     pub fn new<T>(
-        http_client: Arc<dyn HttpClient>,
-        authority_host: Url,
         tenant_id: String,
         client_id: String,
         token: T,
+        options: Option<WorkloadIdentityCredentialOptions>,
     ) -> azure_core::Result<Arc<Self>>
     where
         T: Into<Secret>,
     {
+        let options = options.unwrap_or_default();
         Ok(Arc::new(Self(
             ClientAssertionCredential::<Token>::new_exclusive(
-                http_client,
-                authority_host,
                 tenant_id,
                 client_id,
                 Token::Value(token.into()),
+                Some(options.credential_options),
             )?,
         )))
     }
@@ -59,16 +67,19 @@ impl WorkloadIdentityCredential {
     /// * `AZURE_CLIENT_ID`
     /// * `AZURE_FEDERATED_TOKEN` or `AZURE_FEDERATED_TOKEN_FILE`
     pub fn from_env(
-        options: impl Into<TokenCredentialOptions>,
+        options: Option<WorkloadIdentityCredentialOptions>,
     ) -> azure_core::Result<Arc<WorkloadIdentityCredential>> {
-        let options = options.into();
-        let env = options.env();
+        let options = options.unwrap_or_default();
+        let env = options.credential_options.credential_options.env();
         if let Ok(token) = env
             .var(AZURE_FEDERATED_TOKEN)
             .map_kind(ErrorKind::Credential)
         {
             return Ok(Arc::new(Self(
-                ClientAssertionCredential::from_env_exclusive(options, Token::Value(token.into()))?,
+                ClientAssertionCredential::from_env_exclusive(
+                    Token::Value(token.into()),
+                    Some(options.credential_options),
+                )?,
             )));
         }
 
@@ -78,8 +89,8 @@ impl WorkloadIdentityCredential {
         {
             return Ok(Arc::new(Self(
                 ClientAssertionCredential::from_env_exclusive(
-                    options,
                     Token::with_file(token_file.as_ref())?,
+                    Some(options.credential_options),
                 )?,
             )));
         }
@@ -94,11 +105,23 @@ impl WorkloadIdentityCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for WorkloadIdentityCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        TokenCredential::get_token(&self.0, scopes).await
+        self.0.get_token(scopes).await
     }
 
     async fn clear_cache(&self) -> azure_core::Result<()> {
-        TokenCredential::clear_cache(&self.0).await
+        self.0.clear_cache().await
+    }
+}
+
+// TODO: Should probably remove this once we consolidate and unify credentials.
+impl From<TokenCredentialOptions> for WorkloadIdentityCredentialOptions {
+    fn from(value: TokenCredentialOptions) -> Self {
+        Self {
+            credential_options: ClientAssertionCredentialOptions {
+                credential_options: value,
+                ..Default::default()
+            },
+        }
     }
 }
 

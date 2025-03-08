@@ -57,4 +57,4 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 uuid.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-tokio = { workspace = true, features = ["signal"] }
+tokio = { workspace = true, features = ["rt", "signal"] }

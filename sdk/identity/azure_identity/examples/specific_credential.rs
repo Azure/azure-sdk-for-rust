@@ -136,7 +136,7 @@ impl SpecificAzureCredential {
                         )
                     })?,
                 azure_credential_kinds::WORKLOAD_IDENTITY => {
-                    WorkloadIdentityCredential::from_env(options)
+                    WorkloadIdentityCredential::from_env(Some(options.into()))
                         .map(SpecificAzureCredentialKind::WorkloadIdentity)
                         .with_context(ErrorKind::Credential, || {
                             format!(

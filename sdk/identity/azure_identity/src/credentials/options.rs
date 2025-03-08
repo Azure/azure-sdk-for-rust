@@ -15,12 +15,13 @@ const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
 /// requests to Azure Active Directory.
 #[derive(Debug, Clone)]
 pub struct TokenCredentialOptions {
-    env: Env,
-    http_client: Arc<dyn azure_core::HttpClient>,
-    authority_host: String,
+    pub(crate) env: Env,
+    pub(crate) http_client: Arc<dyn azure_core::HttpClient>,
+    pub(crate) authority_host: String,
 }
 
 /// The default token credential options.
+///
 /// The authority host is taken from the `AZURE_AUTHORITY_HOST` environment variable if set and a valid URL.
 /// If not, the default authority host is `https://login.microsoftonline.com` for the Azure public cloud.
 impl Default for TokenCredentialOptions {

@@ -1,5 +1,20 @@
 # Release History
 
+## 0.32.0 (Unreleased)
+
+### Features Added
+
+- Added `AzurePipelinesCredential`.
+
+### Breaking Changes
+
+- `ClientAssertionCredential` constructors moved some parameters to an `Option<ClientAssertionCredentialOptions>` parameter.
+- `WorkloadIdentityCredential` constructors moved some parameters to an `Option<ClientAssertionCredentialOptions>` parameter.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.22.0 (2025-02-18)
 
 ### Features Added
