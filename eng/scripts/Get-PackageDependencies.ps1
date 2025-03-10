@@ -4,8 +4,8 @@
 [CmdletBinding()]
 param(
   [switch]$Publishable,
-  [switch]$NoDev,
-  [switch]$NoReq
+  [switch]$NoDeveloperDependencies,
+  [switch]$NoVersion
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,7 +22,7 @@ if ($NoDev) {
   $dependencies = $dependencies | Where-Object { $_.kind -ne 'dev' }
 }
 
-if ($NoReq) {
+if ($NoVersion) {
   $dependencies = $dependencies | Where-Object { $_.req -eq '*' }
 }
 
