@@ -2,32 +2,16 @@
 // Licensed under the MIT License.
 
 use crate::credentials::cache::TokenCache;
+use crate::TokenCredentialOptions;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::{Error, ErrorKind},
 };
 use std::sync::Arc;
 
-/// Provides a mechanism of selectively adding credentials used for a `ChainedTokenCredential` instance
-#[derive(Default)]
-pub struct ChainedTokenCredentialBuilder {
-    sources: Vec<Arc<dyn TokenCredential>>,
-}
-
-impl ChainedTokenCredentialBuilder {
-    /// Create a new `ChainedTokenCredentialBuilder` with default options.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn add_source(&mut self, credential: Arc<dyn TokenCredential>) {
-        self.sources.push(credential);
-    }
-
-    /// Create a `ChainedTokenCredential` from this builder.
-    pub fn build(self) -> Arc<ChainedTokenCredential> {
-        ChainedTokenCredential::with_sources(self.sources)
-    }
+#[derive(Debug)]
+pub struct ChainedTokenCredentialOptions {
+    pub token_credentials: TokenCredentialOptions,
 }
 
 /// Provides a user-configurable `TokenCredential` authentication flow for applications that will be deployed to Azure.
@@ -35,22 +19,27 @@ impl ChainedTokenCredentialBuilder {
 /// The credential types are tried in the order specified by the user.
 #[derive(Debug)]
 pub struct ChainedTokenCredential {
+    #[allow(dead_code)]
+    options: ChainedTokenCredentialOptions,
     sources: Vec<Arc<dyn TokenCredential>>,
     cache: TokenCache,
 }
 
 impl ChainedTokenCredential {
-    /// Create a [`ChainedTokenCredentialBuilder`] to create a `ChainedTokenCredential` with options.
-    pub fn builder() -> ChainedTokenCredentialBuilder {
-        ChainedTokenCredentialBuilder::new()
+    /// Create a `ChainedTokenCredential` with options.
+    pub fn new(token_credential_options: impl Into<TokenCredentialOptions>) -> Self {
+        Self {
+            options: ChainedTokenCredentialOptions {
+                token_credentials: token_credential_options.into(),
+            },
+            sources: Vec::new(),
+            cache: TokenCache::new(),
+        }
     }
 
-    /// Creates a `ChainedTokenCredential` with specified sources.
-    fn with_sources(sources: Vec<Arc<dyn TokenCredential>>) -> Arc<Self> {
-        Arc::new(Self {
-            sources,
-            cache: TokenCache::new(),
-        })
+    /// Add a credential source to the chain.
+    pub fn add_source(&mut self, source: Arc<dyn TokenCredential>) {
+        self.sources.push(source);
     }
 
     /// Try to fetch a token using each of the credential sources until one succeeds
@@ -113,23 +102,16 @@ fn format_aggregate_error(errors: &[Error]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::credentials::AppServiceManagedIdentityCredential;
     use crate::credentials::AzureCliCredential;
-    use crate::TokenCredentialOptions;
 
     #[test]
-    fn test_builder_included_credential_flags() -> azure_core::Result<()> {
-        let mut builder = ChainedTokenCredentialBuilder::new();
+    fn test_adding_azure_cli() -> azure_core::Result<()> {
+        let mut credential = ChainedTokenCredential::new(TokenCredentialOptions::default());
         #[cfg(not(target_arch = "wasm32"))]
         {
-            builder.add_source(AzureCliCredential::new()?);
+            credential.add_source(AzureCliCredential::new()?);
         }
 
-        builder.add_source(AppServiceManagedIdentityCredential::new(
-            TokenCredentialOptions::default(),
-        )?);
-
-        builder.build();
         Ok(())
     }
 }

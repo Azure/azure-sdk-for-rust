@@ -4,7 +4,7 @@
 #![doc = include_str!("../README.md")]
 
 mod authorization_code_flow;
-mod chained_credentials;
+mod chained_token_credential;
 pub(crate) mod credentials;
 mod env;
 mod federated_credentials_flow;
@@ -12,5 +12,5 @@ mod oauth2_http_client;
 mod refresh_token;
 mod timeout;
 
-pub use crate::chained_credentials::*;
+pub use crate::chained_token_credential::*;
 pub use crate::credentials::*;
