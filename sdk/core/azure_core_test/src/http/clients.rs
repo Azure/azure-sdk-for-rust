@@ -3,8 +3,6 @@
 
 use async_trait::async_trait;
 use azure_core::{HttpClient, Request, Response, Result};
-#[cfg(test)]
-use futures::FutureExt as _;
 use futures::{future::BoxFuture, lock::Mutex};
 use std::fmt;
 
@@ -83,38 +81,44 @@ where
     }
 }
 
-#[tokio::test]
-async fn test_mock_http_client() {
-    use azure_core::{
-        headers::{HeaderName, Headers},
-        Method, StatusCode,
-    };
-    use std::sync::{Arc, Mutex};
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use futures::FutureExt as _;
 
-    const COUNT_HEADER: HeaderName = HeaderName::from_static("x-count");
+    #[tokio::test]
+    async fn mock_http_client() {
+        use azure_core::{
+            headers::{HeaderName, Headers},
+            Method, StatusCode,
+        };
+        use std::sync::{Arc, Mutex};
 
-    let count = Arc::new(Mutex::new(0));
-    let mock_client = Arc::new(MockHttpClient::new(|req| {
-        let count = count.clone();
-        async move {
-            assert_eq!(req.url().host_str(), Some("localhost"));
+        const COUNT_HEADER: HeaderName = HeaderName::from_static("x-count");
 
-            if req.headers().get_optional_str(&COUNT_HEADER).is_some() {
-                let mut count = count.lock().unwrap();
-                *count += 1;
+        let count = Arc::new(Mutex::new(0));
+        let mock_client = Arc::new(MockHttpClient::new(|req| {
+            let count = count.clone();
+            async move {
+                assert_eq!(req.url().host_str(), Some("localhost"));
+
+                if req.headers().get_optional_str(&COUNT_HEADER).is_some() {
+                    let mut count = count.lock().unwrap();
+                    *count += 1;
+                }
+
+                Ok(Response::from_bytes(StatusCode::Ok, Headers::new(), vec![]))
             }
+            .boxed()
+        })) as Arc<dyn HttpClient>;
 
-            Ok(Response::from_bytes(StatusCode::Ok, Headers::new(), vec![]))
-        }
-        .boxed()
-    })) as Arc<dyn HttpClient>;
+        let req = Request::new("https://localhost".parse().unwrap(), Method::Get);
+        mock_client.execute_request(&req).await.unwrap();
 
-    let req = Request::new("https://localhost".parse().unwrap(), Method::Get);
-    mock_client.execute_request(&req).await.unwrap();
+        let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
+        req.insert_header(COUNT_HEADER, "true");
+        mock_client.execute_request(&req).await.unwrap();
 
-    let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
-    req.insert_header(COUNT_HEADER, "true");
-    mock_client.execute_request(&req).await.unwrap();
-
-    assert_eq!(*count.lock().unwrap(), 1);
+        assert_eq!(*count.lock().unwrap(), 1);
+    }
 }
