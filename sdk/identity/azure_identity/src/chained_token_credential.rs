@@ -113,6 +113,9 @@ impl TokenCredential for ChainedTokenCredential {
             source.clear_cache().await?;
         }
 
+        // clear the successful credential if we are clearing the token cache
+        self.successful_credential.write().await.take();
+
         Ok(())
     }
 }
