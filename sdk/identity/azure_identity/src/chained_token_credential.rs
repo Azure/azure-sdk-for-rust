@@ -3,6 +3,7 @@
 
 use crate::credentials::cache::TokenCache;
 use crate::TokenCredentialOptions;
+use async_lock::RwLock;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::{Error, ErrorKind},
@@ -10,7 +11,9 @@ use azure_core::{
 use std::sync::Arc;
 
 #[derive(Debug, Default)]
+/// ChainedTokenCredentialOptions contains optional parameters for ChainedTokenCredential.
 pub struct ChainedTokenCredentialOptions {
+    pub retry_sources: bool,
     pub credential_options: TokenCredentialOptions,
 }
 
@@ -18,11 +21,11 @@ pub struct ChainedTokenCredentialOptions {
 impl From<TokenCredentialOptions> for ChainedTokenCredentialOptions {
     fn from(credential_options: TokenCredentialOptions) -> Self {
         Self {
-            credential_options
+            retry_sources: Default::default(),
+            credential_options,
         }
     }
 }
-
 
 /// Provides a user-configurable `TokenCredential` authentication flow for applications that will be deployed to Azure.
 ///
@@ -33,6 +36,7 @@ pub struct ChainedTokenCredential {
     options: ChainedTokenCredentialOptions,
     sources: Vec<Arc<dyn TokenCredential>>,
     cache: TokenCache,
+    successful_credential: RwLock<Option<Arc<dyn TokenCredential>>>,
 }
 
 impl ChainedTokenCredential {
@@ -42,6 +46,7 @@ impl ChainedTokenCredential {
             options: options.unwrap_or_default(),
             sources: Vec::new(),
             cache: TokenCache::new(),
+            successful_credential: RwLock::new(None),
         }
     }
 
@@ -50,14 +55,16 @@ impl ChainedTokenCredential {
         self.sources.push(source);
     }
 
-    /// Try to fetch a token using each of the credential sources until one succeeds
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token_impl(
+        &self,
+        scopes: &[&str],
+    ) -> azure_core::Result<(Arc<dyn TokenCredential>, AccessToken)> {
         let mut errors = Vec::new();
         for source in &self.sources {
             let token_res = source.get_token(scopes).await;
 
             match token_res {
-                Ok(token) => return Ok(token),
+                Ok(token) => return Ok((source.clone(), token)),
                 Err(error) => errors.push(error),
             }
         }
@@ -67,6 +74,26 @@ impl ChainedTokenCredential {
                 format_aggregate_error(&errors)
             )
         }))
+    }
+
+    /// Try to fetch a token using each of the credential sources until one succeeds
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        if !self.options.retry_sources {
+            if let Some(entry) = self.successful_credential.read().await.as_ref() {
+                return entry.get_token(scopes).await;
+            }
+            let mut lock = self.successful_credential.write().await;
+            // if after getting the write lock, we find that another thread has already found a credential, use that.
+            if let Some(entry) = lock.as_ref() {
+                return entry.get_token(scopes).await;
+            }
+            let (entry, token) = self.get_token_impl(scopes).await?;
+            *lock = Some(entry);
+            Ok(token)
+        } else {
+            // if we are retrying sources, we don't need to cache the successful credential
+            Ok(self.get_token_impl(scopes).await?.1)
+        }
     }
 }
 
