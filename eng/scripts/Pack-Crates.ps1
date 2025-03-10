@@ -7,7 +7,8 @@ param(
   [Parameter(ParameterSetName = 'Named')]
   [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
-  [string]$PackageInfoDirectory
+  [string]$PackageInfoDirectory,
+  [switch]$NoVerify
 )
 
 $ErrorActionPreference = 'Stop'
@@ -194,9 +195,14 @@ try {
     $packageName = $package.name
     $packageVersion = $package.version
 
-    Invoke-LoggedCommand `
-      -GroupOutput `
-      -Command "cargo publish --locked --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
+    $command = "cargo publish --locked --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
+
+    if ($NoVerify) {
+      $command += " --no-verify"
+    }
+
+    Invoke-LoggedCommand -Command $command -GroupOutput
+
 
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
