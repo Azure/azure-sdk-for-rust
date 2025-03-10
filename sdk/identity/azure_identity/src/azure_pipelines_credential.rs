@@ -14,7 +14,7 @@ use azure_core::{
 use serde::Deserialize;
 use std::{convert::Infallible, fmt, sync::Arc};
 
-// cspell:ignore fedauthredirect oidcrequesturi
+// cspell:ignore fedauthredirect msedge oidcrequesturi
 const OIDC_VARIABLE_NAME: &str = "SYSTEM_OIDCREQUESTURI";
 const OIDC_VERSION: &str = "7.1";
 const TFS_FEDAUTHREDIRECT_HEADER: HeaderName = HeaderName::from_static("x-tfs-fedauthredirect");
