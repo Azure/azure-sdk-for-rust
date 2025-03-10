@@ -2,6 +2,9 @@
   "azure-pipelines.1ESPipelineTemplatesSchemaFile": true,
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
+  "markdownlint.config": {
+    "MD024": false
+  },
   "rust-analyzer.cargo.features": "all",
   "rust-analyzer.check.command": "clippy",
   "yaml.format.printWidth": 240,

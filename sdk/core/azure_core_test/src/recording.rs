@@ -5,6 +5,7 @@
 
 // cspell:ignore csprng seedable tpbwhbkhckmk
 use crate::{
+    credentials::{self, MockCredential},
     proxy::{
         client::{
             Client, ClientAddSanitizerOptions, ClientRemoveSanitizersOptions,
@@ -14,7 +15,7 @@ use crate::{
         policy::RecordingPolicy,
         Proxy, RecordingId,
     },
-    Matcher, MockCredential, Sanitizer,
+    Matcher, Sanitizer,
 };
 use azure_core::{
     base64,
@@ -24,7 +25,6 @@ use azure_core::{
     test::TestMode,
     ClientOptions, Header,
 };
-use azure_identity::DefaultAzureCredential;
 use rand::{
     distributions::{Alphanumeric, DistString, Distribution, Standard},
     Rng, SeedableRng,
@@ -83,7 +83,7 @@ impl Recording {
     pub fn credential(&self) -> Arc<dyn TokenCredential> {
         match self.test_mode {
             TestMode::Playback => Arc::new(MockCredential) as Arc<dyn TokenCredential>,
-            _ => DefaultAzureCredential::new().map_or_else(
+            _ => credentials::from_env(None).map_or_else(
                 |err| panic!("failed to create DefaultAzureCredential: {err}"),
                 |cred| cred as Arc<dyn TokenCredential>,
             ),
