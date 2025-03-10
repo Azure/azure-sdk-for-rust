@@ -9,10 +9,20 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ChainedTokenCredentialOptions {
-    pub token_credentials: TokenCredentialOptions,
+    pub credential_options: TokenCredentialOptions,
 }
+
+// TODO: Should probably remove this once we consolidate and unify credentials.
+impl From<TokenCredentialOptions> for ChainedTokenCredentialOptions {
+    fn from(credential_options: TokenCredentialOptions) -> Self {
+        Self {
+            credential_options
+        }
+    }
+}
+
 
 /// Provides a user-configurable `TokenCredential` authentication flow for applications that will be deployed to Azure.
 ///
@@ -27,11 +37,9 @@ pub struct ChainedTokenCredential {
 
 impl ChainedTokenCredential {
     /// Create a `ChainedTokenCredential` with options.
-    pub fn new(token_credential_options: impl Into<TokenCredentialOptions>) -> Self {
+    pub fn new(options: Option<ChainedTokenCredentialOptions>) -> Self {
         Self {
-            options: ChainedTokenCredentialOptions {
-                token_credentials: token_credential_options.into(),
-            },
+            options: options.unwrap_or_default(),
             sources: Vec::new(),
             cache: TokenCache::new(),
         }
@@ -106,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_adding_azure_cli() -> azure_core::Result<()> {
-        let mut credential = ChainedTokenCredential::new(TokenCredentialOptions::default());
+        let mut credential = ChainedTokenCredential::new(None);
         #[cfg(not(target_arch = "wasm32"))]
         {
             credential.add_source(AzureCliCredential::new()?);
