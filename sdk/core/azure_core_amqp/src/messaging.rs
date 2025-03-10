@@ -980,6 +980,24 @@ impl From<u64> for AmqpAnnotationKey {
     }
 }
 
+impl PartialEq<String> for AmqpAnnotationKey {
+    fn eq(&self, other: &String) -> bool {
+        match self {
+            AmqpAnnotationKey::Symbol(symbol) => symbol.0 == *other,
+            AmqpAnnotationKey::Ulong(_) => false,
+        }
+    }
+}
+
+impl PartialEq<&str> for AmqpAnnotationKey {
+    fn eq(&self, other: &&str) -> bool {
+        match self {
+            AmqpAnnotationKey::Symbol(symbol) => symbol.0 == *other,
+            AmqpAnnotationKey::Ulong(_) => false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpAnnotations(pub AmqpOrderedMap<AmqpAnnotationKey, AmqpValue>);
 
