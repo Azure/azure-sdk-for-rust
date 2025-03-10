@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::clients::GeneratedBlobContainerClient;
+use crate::clients::{BlobClient, GeneratedBlobContainerClient};
 use crate::models::{
     BlobContainerClientCreateOptions, BlobContainerClientCreateResult,
     BlobContainerClientDeleteOptions, BlobContainerClientDeleteResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
 };
 use crate::pipeline::StorageHeadersPolicy;
-use crate::BlobContainerClientOptions;
+use crate::{BlobClientOptions, BlobContainerClientOptions};
 use azure_core::{
     credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result, Url,
 };
@@ -17,6 +17,7 @@ use std::sync::Arc;
 pub struct BlobContainerClient {
     endpoint: Url,
     container_name: String,
+    credential: Arc<dyn TokenCredential>, // This will be removed in future versions, but needed for now to spin up sub-clients.
     client: GeneratedBlobContainerClient,
 }
 
@@ -46,7 +47,7 @@ impl BlobContainerClient {
 
         let client = GeneratedBlobContainerClient::new(
             endpoint,
-            credential,
+            credential.clone(),
             container_name.clone(),
             Some(options),
         )?;
@@ -54,6 +55,7 @@ impl BlobContainerClient {
         Ok(Self {
             endpoint: endpoint.parse()?,
             container_name,
+            credential,
             client,
         })
     }
@@ -64,6 +66,24 @@ impl BlobContainerClient {
 
     pub fn container_name(&self) -> &str {
         &self.container_name
+    }
+
+    pub fn credential(&self) -> Arc<dyn TokenCredential> {
+        self.credential.clone()
+    }
+
+    pub fn get_blob_client(
+        &self,
+        client_options: Option<BlobClientOptions>,
+        blob_name: &str,
+    ) -> Result<BlobClient> {
+        BlobClient::new(
+            self.endpoint().as_str(),
+            self.container_name().to_string(),
+            blob_name.to_string(),
+            self.credential().clone(),
+            Some(client_options.unwrap_or_default()),
+        )
     }
 
     pub async fn create_container(
