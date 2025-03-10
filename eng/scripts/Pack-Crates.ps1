@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
 
 #Requires -Version 7.0
+[CmdletBinding(DefaultParameterSetName = "none")]
 param(
   [string]$OutputPath,
   [Parameter(ParameterSetName = 'Named')]
@@ -22,9 +23,11 @@ if ($OutputPath) {
   $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
 }
 
-function Get-OutputPackageNames($workspacePackageNames) {
-  $names = @()
+function Get-OutputPackageNames($workspacePackages) {
+  $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
+  $packablePackageNames = $packablePackages.name
 
+  $names = @()
   switch ($PsCmdlet.ParameterSetName) {
     'Named' {
       $names = $PackageNames
@@ -39,13 +42,13 @@ function Get-OutputPackageNames($workspacePackageNames) {
     }
 
     default {
-      return $workspacePackageNames
+      return $packablePackageNames
     }
   }
 
   foreach ($name in $names) {
-    if (-not $workspacePackageNames.Contains($name)) {
-      Write-Error "Package '$name' is not in the workspace"
+    if (-not $packablePackageNames.Contains($name)) {
+      Write-Error "Package '$name' is not in the workspace or does not publish"
       exit 1
     }
   }
@@ -77,7 +80,7 @@ function Get-CargoPackages() {
 
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
-  $outputPackageNames = Get-OutputPackageNames $packages.name
+  $outputPackageNames = Get-OutputPackageNames $packages
 
   # We start with output packages, then recursively add unreleased dependencies to the list of packages that need to be built
   [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
@@ -177,8 +180,6 @@ try {
   $localRegistryPath = Initialize-VendorDirectory
 
   [array]$packages = Get-PackagesToBuild
-
-  Add-PathVersions $packages
 
   Write-Host "Building packages in the following order:"
   foreach ($package in $packages) {

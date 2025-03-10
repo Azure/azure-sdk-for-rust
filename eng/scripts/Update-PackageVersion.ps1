@@ -1,3 +1,6 @@
+#!/usr/bin/env pwsh
+#Requires -Version 7.0
+
 <#
 .SYNOPSIS
 Bumps up package versions after release
