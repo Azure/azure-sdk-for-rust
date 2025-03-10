@@ -7,7 +7,8 @@ param(
   [Parameter(ParameterSetName = 'Named')]
   [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
-  [string]$PackageInfoDirectory
+  [string]$PackageInfoDirectory,
+  [switch]$NoVerify
 )
 
 $ErrorActionPreference = 'Stop'
@@ -138,7 +139,7 @@ function Add-CrateToLocalRegistry($LocalRegistryPath, $Package) {
   # create an index entry for the package
   $packagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
 
-  Write-Host "Copying package '$packageName' to '$destination'"
+  Write-Host "Copying package '$packageName' to vendor directory '$LocalRegistryPath'"
   Copy-Item -Path $packagePath -Destination $LocalRegistryPath -Recurse
 
   #write an empty checksum file
@@ -187,15 +188,21 @@ try {
     $type = if ($package.OutputPackage) { "output" } else { "dependency" }
     Write-Host "  $packageName ($type)"
   }
-  Write-Host ""
 
   foreach ($package in $packages) {
+    Write-Host ""
+
     $packageName = $package.name
     $packageVersion = $package.version
 
-    Invoke-LoggedCommand `
-      -GroupOutput `
-      -Command "cargo publish --locked --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
+    $command = "cargo publish --locked --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
+
+    if ($NoVerify) {
+      $command += " --no-verify"
+    }
+
+    Invoke-LoggedCommand -Command $command -GroupOutput
+
 
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
