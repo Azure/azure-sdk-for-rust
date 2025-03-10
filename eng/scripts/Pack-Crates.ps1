@@ -138,7 +138,7 @@ function Add-CrateToLocalRegistry($LocalRegistryPath, $Package) {
   # create an index entry for the package
   $packagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
 
-  Write-Host "Copying package '$packageName' to '$destination'"
+  Write-Host "Copying package '$packageName' to vendor directory '$LocalRegistryPath'"
   Copy-Item -Path $packagePath -Destination $LocalRegistryPath -Recurse
 
   #write an empty checksum file
@@ -187,9 +187,10 @@ try {
     $type = if ($package.OutputPackage) { "output" } else { "dependency" }
     Write-Host "  $packageName ($type)"
   }
-  Write-Host ""
 
   foreach ($package in $packages) {
+    Write-Host ""
+
     $packageName = $package.name
     $packageVersion = $package.version
 
