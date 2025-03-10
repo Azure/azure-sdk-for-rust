@@ -69,6 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
 ### Authenticate with `ClientAssertionCredential`
 
 This example demonstrates how to use the `ClientAssertionCredential` in conjunction with `VirtualMachineManagedIdentityCredential` in order to retrieve an access token as an app registration
@@ -111,11 +112,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let client_assertion_credential = ClientAssertionCredential::new(
-        azure_core::new_http_client(),
-        azure_core::Url::parse("https://login.microsoftonline.com")?,
         String::from("guid-for-aad-tenant-id"),
         String::from("guid-for-app-id-of-client-app-registration"),
         assertion,
+        None,
     )?;
 
     let fic_scope = String::from("your-service-app.com/scope");
@@ -124,7 +124,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 ```
-
 
 ## Credential classes
 
