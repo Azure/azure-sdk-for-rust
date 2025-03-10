@@ -13,10 +13,11 @@ pub use azure_core_amqp::AmqpValue;
 /// An event received from an Event Hub.
 pub use event_data::ReceivedEventData;
 
-pub use crate::event_processor::models::{Checkpoint, Ownership};
+pub use crate::event_processor::models::{Checkpoint, Ownership, StartPositions};
 
 /// Event data builders.
 pub mod builders {
+    pub use crate::event_processor::processor::builders::EventProcessorBuilder;
     pub use crate::models::event_data::builders::EventDataBuilder;
 }
 /// Event sent to an Event Hub.
@@ -233,6 +234,7 @@ impl From<MessageId> for AmqpMessageId {
 }
 
 /// Represents the details of a consumer client.
+#[derive(Debug, Clone)]
 pub struct ConsumerClientDetails {
     /// The fully qualified namespace of the Event Hub.
     pub fully_qualified_namespace: String,

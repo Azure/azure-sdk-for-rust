@@ -485,9 +485,9 @@ pub enum StartLocation {
     Latest,
 }
 
-const ENQUEUED_TIME_ANNOTATION: &str = "amqp.annotation.x-opt-enqueued-time";
-const OFFSET_ANNOTATION: &str = "amqp.annotation.x-opt-offset";
-const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number";
+pub(crate) const ENQUEUED_TIME_ANNOTATION: &str = "amqp.annotation.x-opt-enqueued-time";
+pub(crate) const OFFSET_ANNOTATION: &str = "amqp.annotation.x-opt-offset";
+pub(crate) const SEQUENCE_NUMBER_ANNOTATION: &str = "amqp.annotation.x-opt-sequence-number";
 
 /// Represents the starting position of a consumer when receiving events from an Event Hub.
 ///

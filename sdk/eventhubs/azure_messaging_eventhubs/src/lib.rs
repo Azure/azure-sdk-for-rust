@@ -23,6 +23,15 @@ pub use consumer::{
     ConsumerClient, EventReceiver, OpenReceiverOptions, StartLocation, StartPosition,
 };
 
+/// Event Hubs processor related types.
+pub mod processor {
+    pub use crate::event_processor::processor::{
+        ClaimOwnershipOptions, ListCheckpointsOptions, ListOwnershipOptions,
+    };
+}
+
+pub use event_processor::processor::{CheckpointStore, EventProcessor, ProcessorStrategy};
+
 /// Builders for producer client and consumer client.
 pub mod builders {
     pub use crate::consumer::builders::ConsumerClientBuilder;

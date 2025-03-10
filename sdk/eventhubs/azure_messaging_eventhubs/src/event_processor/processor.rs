@@ -8,28 +8,35 @@ use super::{
 };
 use crate::{
     models::{ConsumerClientDetails, EventHubProperties},
-    ConsumerClient, EventReceiver, OpenReceiverOptions, StartLocation, StartPosition,
+    ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
 use async_trait::async_trait;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::StreamExt;
-use std::collections::HashMap;
-use std::sync::{Arc, OnceLock};
-use std::thread;
-use std::time::Duration;
+use std::{
+    sync::{Arc, OnceLock},
+    time::Duration,
+    {collections::HashMap, sync::Weak},
+};
 use tokio::sync::Mutex;
 use tracing::info;
 
-#[allow(dead_code)]
+/// Options for the [CheckpointStore.claim_ownership()] method.
 pub struct ClaimOwnershipOptions {}
 
-#[allow(dead_code)]
+/// Options for the [CheckpointStore.list_checkpoints()] method.
 pub struct ListCheckpointsOptions {}
 
-#[allow(dead_code)]
+/// Options for the [CheckpointStore.list_ownerships()] method.
 pub struct ListOwnershipOptions {}
 
+/// Trait representing a checkpoint store.
+///
+/// This trait defines the methods required for managing checkpoints
+/// and ownerships in an Event Hub.
+/// It allows for claiming ownership of partitions, listing checkpoints,
+/// listing ownerships, and updating checkpoints.
 #[async_trait]
 pub trait CheckpointStore: Send + Sync {
     /// Claims ownership of the specified partitions.
@@ -119,23 +126,42 @@ pub trait CheckpointStore: Send + Sync {
 /// while the `Greedy` strategy may be more suitable for high-throughput
 /// scenarios where maximizing throughput is a priority.
 pub enum ProcessorStrategy {
+    /// Balanced strategy for load balancing.
+    ///
+    /// This strategy distributes the load evenly across all partitions,
+    /// ensuring that each consumer processes a similar amount of data.
+    /// This is the default strategy and is generally recommended for most scenarios.
+    /// It helps to avoid overloading a single consumer and ensures that
+    /// all consumers are utilized effectively.
     Balanced,
+
+    /// Greedy strategy for load balancing.
+    ///
+    /// This strategy may lead to uneven distribution of load across partitions.
+    /// It is generally not recommended for most scenarios.
+    /// Use this strategy only if you have a specific reason to do so.
+    /// For example, if you want to maximize throughput for a specific partition
+    /// or if you have a specific partitioning scheme that benefits from this approach.
+    /// Use this strategy with caution, as it may lead to uneven load distribution
+    /// and potential performance issues.
     Greedy,
 }
 
-#[derive(Default)]
-pub struct EventProcessorOptions {
-    pub load_balancing_strategy: Option<ProcessorStrategy>,
-    pub update_interval: Option<Duration>,
-    pub partition_expiration_duration: Option<Duration>,
-    pub start_positions: Option<StartPositions>,
-    pub prefetch: Option<u32>,
-    pub max_partition_count: Option<usize>,
-}
-
-const DEFAULT_PREFETCH: u32 = 300;
-const DEFAULT_UPDATE_INTERVAL: Duration = Duration::from_secs(30);
-const DEFAULT_PARTITION_EXPIRATION_DURATION: Duration = Duration::from_secs(10);
+/// Represents the event processor responsible for processing events
+/// from Event Hub partitions.
+///
+/// This struct manages the load balancing strategy, checkpoint store,
+/// and consumer client for processing events.
+/// It provides methods for starting the event processor, dispatching
+/// events, and managing partition clients.
+///
+/// The event processor uses a load balancer to distribute the load
+/// across partitions and a checkpoint store to manage checkpoints.
+///
+/// For more information on Event Processors and scenarios in which you would
+/// use an Event Processor, see the [Event Processor documentation]
+/// (https://learn.microsoft.com/azure/event-hubs/event-processor-balance-partition-load).
+///
 pub struct EventProcessor {
     //    strategy: ProcessorStrategy,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
@@ -143,8 +169,6 @@ pub struct EventProcessor {
     consumer_client: Arc<ConsumerClient>,
     next_partition_clients: Mutex<Option<Receiver<PartitionClient>>>,
     next_partition_client_sender: OnceLock<Sender<PartitionClient>>,
-    running: Arc<Mutex<bool>>,
-    processing_thread: Option<thread::JoinHandle<()>>,
     client_details: ConsumerClientDetails,
     prefetch: u32,
     update_interval: Duration,
@@ -152,36 +176,50 @@ pub struct EventProcessor {
     max_partition_count: Option<usize>,
 }
 
+struct EventProcessorOptions {
+    strategy: ProcessorStrategy,
+    partition_expiration_duration: Duration,
+    update_interval: Duration,
+    start_positions: StartPositions,
+    max_partition_count: Option<usize>,
+    prefetch: u32,
+}
+
+type ConsumersType = Mutex<HashMap<String, PartitionClient>>;
+
+unsafe impl Send for EventProcessor {}
+unsafe impl Sync for EventProcessor {}
+
 impl EventProcessor {
-    pub fn new(
+    /// Creates a new `EventProcessorBuilder` instance.
+    /// This builder allows you to configure various options for the event processor,
+    /// such as load balancing strategy, update interval, start positions, and more.
+    ///
+    /// # Returns a new [`builders::EventProcessorBuilder`] instance.
+    pub fn builder() -> builders::EventProcessorBuilder {
+        builders::EventProcessorBuilder::new()
+    }
+
+    fn new(
         consumer_client: Arc<ConsumerClient>,
         checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
-        options: Option<EventProcessorOptions>,
+        options: EventProcessorOptions,
     ) -> Self {
-        let options = options.unwrap_or_default();
-        let strategy = options
-            .load_balancing_strategy
-            .unwrap_or(ProcessorStrategy::Balanced);
         EventProcessor {
             checkpoint_store: checkpoint_store.clone(),
             consumer_client: consumer_client.clone(),
-            running: Arc::new(Mutex::new(false)),
-            //          strategy,
 
             // Default to Balanced strategy if not provided
-            processing_thread: None,
             load_balancer: Arc::new(Mutex::new(LoadBalancer::new(
                 checkpoint_store.clone(),
                 consumer_client.get_details(),
-                strategy,
-                options
-                    .partition_expiration_duration
-                    .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION),
+                options.strategy,
+                options.partition_expiration_duration,
             ))),
             client_details: consumer_client.get_details(),
-            prefetch: options.prefetch.unwrap_or(DEFAULT_PREFETCH),
-            update_interval: options.update_interval.unwrap_or(DEFAULT_UPDATE_INTERVAL),
-            start_positions: options.start_positions.unwrap_or_default(),
+            prefetch: options.prefetch,
+            update_interval: options.update_interval,
+            start_positions: options.start_positions,
             max_partition_count: options.max_partition_count,
             next_partition_client_sender: OnceLock::new(),
             next_partition_clients: Mutex::new(None),
@@ -243,9 +281,7 @@ impl EventProcessor {
     pub async fn run(&self) -> Result<()> {
         let mut eh_properties = self.consumer_client.get_eventhub_properties().await?;
         if let Some(max_partition_count) = self.max_partition_count {
-            eh_properties
-                .partition_ids
-                .truncate(max_partition_count as usize);
+            eh_properties.partition_ids.truncate(max_partition_count);
         }
         let (sender, mut receiver) =
             futures::channel::mpsc::channel(eh_properties.partition_ids.len());
@@ -257,17 +293,16 @@ impl EventProcessor {
         })?;
         let mut partition_client = self.next_partition_clients.lock().await;
         partition_client.as_mut().replace(&mut receiver);
-
-        let mut consumers: HashMap<String, PartitionClient> = HashMap::new();
+        let consumers: Arc<ConsumersType> = Arc::new(Mutex::new(HashMap::new()));
         loop {
-            self.dispatch(&eh_properties, &mut consumers).await?;
+            self.dispatch(&eh_properties, &consumers).await?;
         }
     }
 
     async fn dispatch(
         &self,
         eventhub_properties: &EventHubProperties,
-        consumers: &mut HashMap<String, PartitionClient>,
+        consumers: &Arc<ConsumersType>,
     ) -> Result<()> {
         let load_balancer = self.load_balancer.lock().await;
 
@@ -278,13 +313,16 @@ impl EventProcessor {
         let checkpoints = self.get_checkpoint_map().await?;
 
         for ownership in ownerships {
-            self.add_partition_client(ownership, &checkpoints, consumers)
+            self.add_partition_client(ownership, &checkpoints, Arc::downgrade(consumers))
                 .await?;
         }
 
         Ok(())
     }
 
+    /// Retrieves the next partition client for processing events.
+    ///
+    /// This method returns the next available partition client.
     pub async fn next_partition_client(&self) -> Result<PartitionClient> {
         let mut locked_partition_clients = self.next_partition_clients.lock().await;
         // Implement the function or remove it if not needed
@@ -301,11 +339,10 @@ impl EventProcessor {
         Ok(next_client)
     }
 
+    /// Closes the event processor.
     pub async fn close(&self) -> Result<()> {
         // Implement the function or remove it if not needed
-        let mut running = self.running.lock().await;
-        *running = false;
-        Ok(())
+        todo!()
     }
 
     /// Retrieves the checkpoint map for the Event Hub.
@@ -317,7 +354,7 @@ impl EventProcessor {
     /// A `Result` containing a `HashMap` of partition IDs and their corresponding `Checkpoint` objects.
     ///
     ///
-    pub async fn get_checkpoint_map(&self) -> Result<HashMap<String, Checkpoint>> {
+    async fn get_checkpoint_map(&self) -> Result<HashMap<String, Checkpoint>> {
         let checkpoints = self.checkpoint_store.list_checkpoints(
             &self.client_details.fully_qualified_namespace,
             &self.client_details.eventhub_name,
@@ -331,136 +368,209 @@ impl EventProcessor {
         Ok(checkpoint_map)
     }
 
-    pub async fn add_partition_client(
+    async fn add_partition_client(
         &self,
         ownership: Ownership,
         checkpoints: &HashMap<String, Checkpoint>,
-        consumers: &mut HashMap<String, PartitionClient>,
+        consumers: Weak<ConsumersType>,
     ) -> Result<()> {
         info!("Add partition client for ownership: {:?}", ownership);
 
+        let cloned_consumers = consumers.clone();
+        let partition_id = ownership.partition_id.clone();
         let partition_client = PartitionClient::new(
             &ownership.partition_id,
             self.checkpoint_store.clone(),
             &self.client_details,
-            || {
-                // Handle partition client destruction
-                consumers.remove(&ownership.partition_id);
+            move || {
+                if let Some(strong_consumers) = cloned_consumers.upgrade() {
+                    let mut strong_consumers = strong_consumers.blocking_lock();
+                    // Handle partition client destruction
+                    strong_consumers.remove(&partition_id);
+                }
             },
         );
 
-        // Ignore the ownership if the partition client already exists
-        if consumers.contains_key(&ownership.partition_id) {
-            info!(
-                "Partition client already exists for partition: {:?}",
-                ownership.partition_id
-            );
-            return Ok(());
-        }
+        if let Some(strong_consumers) = consumers.upgrade() {
+            let mut strong_consumers = strong_consumers.lock().await;
+            // Check if the partition client already exists
+            if strong_consumers.contains_key(&ownership.partition_id) {
+                info!(
+                    "Partition client already exists for partition: {:?}",
+                    ownership.partition_id
+                );
+                return Ok(());
+            }
 
-        let start_position = self.get_start_position(&ownership, checkpoints);
-        let receiver = self
-            .consumer_client
-            .open_receiver_on_partition(
-                &ownership.partition_id,
-                Some(OpenReceiverOptions {
-                    start_position: Some(start_position),
-                    receive_timeout: Some(self.update_interval),
-                    prefetch: Some(self.prefetch),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        partition_client.set_event_receiver(receiver);
-        consumers.insert(ownership.partition_id.clone(), partition_client);
+            let start_position = self.get_start_position(&ownership.partition_id, checkpoints);
+            let receiver = self
+                .consumer_client
+                .open_receiver_on_partition(
+                    &ownership.partition_id,
+                    Some(OpenReceiverOptions {
+                        start_position: Some(start_position),
+                        receive_timeout: Some(self.update_interval),
+                        prefetch: Some(self.prefetch),
+                        ..Default::default()
+                    }),
+                )
+                .await?;
+            partition_client.set_event_receiver(receiver);
+            strong_consumers.insert(ownership.partition_id.clone(), partition_client);
+        }
 
         Ok(())
     }
 
+    /// Retrieve the start position for the specified ownership.
+    ///
+    /// This method determines the starting position for event processing
+    /// based on the ownership information and the provided checkpoints.
+    /// It checks if the ownership has a corresponding checkpoint and
+    /// returns the appropriate start position.
+    ///
+    /// If no checkpoint is found for the partition in the ownership, a start
+    /// position is chosen from the configured default start positions.
+    ///
+    /// # Arguments
+    /// * `ownership` - The ownership information for the partition.
+    /// * `checkpoints` - A map of checkpoints for all partitions.
+    ///
     fn get_start_position(
         &self,
-        ownership: &Ownership,
+        partition_id: &String,
         checkpoints: &HashMap<String, Checkpoint>,
     ) -> StartPosition {
         let mut start_position = self.start_positions.default.clone();
-        if checkpoints.contains_key(&ownership.partition_id) {
-            let checkpoint = checkpoints.get(&ownership.partition_id);
-            if let Some(checkpoint) = checkpoint {
-                if let Some(offset) = &checkpoint.offset {
-                    start_position.location = StartLocation::Offset(offset.clone());
-                } else if let Some(sequence_number) = checkpoint.sequence_number {
-                    start_position.location = StartLocation::SequenceNumber(sequence_number);
-                }
+        if checkpoints.contains_key(partition_id) {
+            let checkpoint = checkpoints.get(partition_id).unwrap();
+            if let Some(offset) = &checkpoint.offset {
+                start_position.location = StartLocation::Offset(offset.clone());
+            } else if let Some(sequence_number) = checkpoint.sequence_number {
+                start_position.location = StartLocation::SequenceNumber(sequence_number);
             }
+        } else if self
+            .start_positions
+            .per_partition
+            .contains_key(partition_id)
+        {
+            start_position = self
+                .start_positions
+                .per_partition
+                .get(partition_id)
+                .unwrap()
+                .clone();
+        } else {
+            start_position = self.start_positions.default.clone();
         }
         start_position
     }
 }
 
-#[cfg(test)]
-mod test {
-    use crate::event_processor::in_memory_checkpoint_store::InMemoryCheckpointStore;
-    use crate::{
-        event_processor::processor::{EventProcessor, EventProcessorOptions, ProcessorStrategy},
-        ConsumerClient,
-    };
-    use azure_core_test::*;
+pub mod builders {
+    use super::{CheckpointStore, EventProcessor};
+    use crate::event_processor::models::StartPositions;
+    use crate::ConsumerClient;
+    use azure_core::Result;
     use std::sync::Arc;
     use std::time::Duration;
-    use tracing::event;
 
-    #[recorded::test]
-    async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
-        let recording = ctx.recording();
+    const DEFAULT_PREFETCH: u32 = 300;
+    const DEFAULT_UPDATE_INTERVAL: Duration = Duration::from_secs(30);
+    const DEFAULT_PARTITION_EXPIRATION_DURATION: Duration = Duration::from_secs(10);
 
-        let consumer_client = ConsumerClient::builder()
-            .open(
-                recording.var("EVENTHUBS_HOST", None).as_str(),
-                recording.var("EVENTHUB_NAME", None).as_str(),
-                recording.credential().clone(),
-            )
-            .await?;
-
-        let event_processor = EventProcessor::new(
-            Arc::new(consumer_client),
-            Arc::new(InMemoryCheckpointStore::new()),
-            Some(EventProcessorOptions {
-                load_balancing_strategy: Some(ProcessorStrategy::Balanced),
-                update_interval: Some(Duration::from_secs(30)),
-                partition_expiration_duration: Some(Duration::from_secs(10)),
-                prefetch: Some(300),
+    /// Builder for creating an `EventProcessor`.
+    /// This builder allows you to configure various options for the event processor,
+    /// such as load balancing strategy, update interval, start positions, and more.
+    /// It provides a fluent interface for setting these options and building the event processor.
+    /// # Examples
+    /// ```
+    /// use azure_messaging_eventhubs::event_processor::EventProcessor;
+    /// use azure_messaging_eventhubs::models::CheckpointStore;
+    /// use azure_messaging_eventhubs::models::ConsumerClient;
+    /// use std::sync::Arc;
+    #[derive(Default)]
+    pub struct EventProcessorBuilder {
+        update_interval: Option<Duration>,
+        start_positions: Option<StartPositions>,
+        max_partition_count: Option<usize>,
+        prefetch: Option<u32>,
+        load_balancing_strategy: Option<super::ProcessorStrategy>,
+        partition_expiration_duration: Option<Duration>,
+    }
+    impl EventProcessorBuilder {
+        pub(super) fn new() -> Self {
+            EventProcessorBuilder {
                 ..Default::default()
-            }),
-        );
-
-        let event_processor = Arc::new(event_processor);
-        {
-            //            let event_processor_clone = Arc::clone(&event_processor);
-            let event_processor_clone = event_processor.clone();
-            let jh = tokio::spawn(async move { event_processor_clone.run().await });
-
-            let r = jh.await;
-
-            match r {
-                Ok(_) => {
-                    event!(tracing::Level::INFO, "Event processor ran successfully");
-                }
-                Err(e) => {
-                    event!(
-                        tracing::Level::ERROR,
-                        "Failed to run event processor: {}",
-                        e
-                    );
-                }
             }
         }
 
-        event_processor.close().await?;
+        /// Sets the load balancing strategy for the event processor.
+        /// The default strategy is `Balanced`.
+        pub fn with_load_balancing_strategy(
+            mut self,
+            load_balancing_strategy: super::ProcessorStrategy,
+        ) -> Self {
+            self.load_balancing_strategy = Some(load_balancing_strategy);
+            self
+        }
 
-        // Start the event processor
-        // Wait for the event processor to finish
-        //        let partition_manager = event_processor.run().await?;
+        /// Sets the partition expiration duration for the event processor.
+        pub fn with_update_interval(mut self, update_interval: Duration) -> Self {
+            self.update_interval = Some(update_interval);
+            self
+        }
 
-        Ok(())
+        /// Sets the start positions for each partition and the default start position.
+        pub fn with_start_positions(mut self, start_positions: StartPositions) -> Self {
+            self.start_positions = Some(start_positions);
+            self
+        }
+
+        /// Sets the maximum number of partitions to process.
+        pub fn with_max_partition_count(mut self, max_partition_count: usize) -> Self {
+            self.max_partition_count = Some(max_partition_count);
+            self
+        }
+
+        /// Sets the prefetch count for the event processor.
+        pub fn with_prefetch(mut self, prefetch: u32) -> Self {
+            self.prefetch = Some(prefetch);
+            self
+        }
+
+        /// Sets the partition expiration duration for the event processor.
+        pub fn with_partition_expiration_duration(
+            mut self,
+            partition_expiration_duration: Duration,
+        ) -> Self {
+            self.partition_expiration_duration = Some(partition_expiration_duration);
+            self
+        }
+
+        /// Builds the event processor with the specified consumer client and checkpoint store.
+        /// Returns a `Result` containing the constructed `EventProcessor`.
+        pub fn build(
+            self,
+            consumer_client: Arc<ConsumerClient>,
+            checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
+        ) -> Result<Arc<EventProcessor>> {
+            Ok(Arc::new(EventProcessor::new(
+                consumer_client,
+                checkpoint_store,
+                super::EventProcessorOptions {
+                    strategy: self
+                        .load_balancing_strategy
+                        .unwrap_or(super::ProcessorStrategy::Balanced),
+                    partition_expiration_duration: self
+                        .partition_expiration_duration
+                        .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION),
+                    update_interval: self.update_interval.unwrap_or(DEFAULT_UPDATE_INTERVAL),
+                    start_positions: self.start_positions.unwrap_or_default(),
+                    max_partition_count: self.max_partition_count,
+                    prefetch: self.prefetch.unwrap_or(DEFAULT_PREFETCH),
+                },
+            )))
+        }
     }
 }
