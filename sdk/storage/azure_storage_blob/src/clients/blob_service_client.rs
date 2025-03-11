@@ -12,12 +12,20 @@ use azure_core::{
 };
 use std::sync::Arc;
 
+// A client to interact with an Azure storage account.
 pub struct BlobServiceClient {
     endpoint: Url,
     client: GeneratedBlobClient,
 }
 
 impl BlobServiceClient {
+    /// Creates a new BlobServiceClient, using Entra ID authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -48,10 +56,16 @@ impl BlobServiceClient {
         })
     }
 
+    /// Gets the endpoint of the Storage account this client is connected to.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
     }
 
+    /// Gets the properties of a Storage account's Blob service, including Azure Storage Analytics.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
     pub async fn get_service_properties(
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
