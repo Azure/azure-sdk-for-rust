@@ -21,7 +21,6 @@ futures.workspace = true
 hmac = { workspace = true, optional = true }
 once_cell.workspace = true
 openssl = { workspace = true, optional = true }
-paste.workspace = true
 pin-project.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -67,9 +67,3 @@ pub type SessionToken = String;
 /// An empty HTTP body.
 #[allow(clippy::declare_interior_mutable_const)]
 pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::new();
-
-#[doc(hidden)]
-/// Used by macros as an implementation detail
-pub mod __private {
-    pub use paste::paste;
-}
