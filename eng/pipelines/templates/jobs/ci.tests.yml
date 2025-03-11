@@ -48,6 +48,11 @@ jobs:
 
   - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
 
+  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self
+    parameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
+      PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
+
   - ${{ if eq(parameters.TestProxy, true) }}:
     - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
 
