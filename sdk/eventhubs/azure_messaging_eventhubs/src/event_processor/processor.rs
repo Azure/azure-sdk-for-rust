@@ -175,6 +175,7 @@ pub struct EventProcessor {
     update_interval: Duration,
     start_positions: StartPositions,
     max_partition_count: Option<usize>,
+    is_running: std::sync::Mutex<bool>,
 }
 
 struct EventProcessorOptions {
@@ -224,6 +225,7 @@ impl EventProcessor {
             max_partition_count: options.max_partition_count,
             next_partition_client_sender: OnceLock::new(),
             next_partition_clients: AsyncMutex::new(None),
+            is_running: std::sync::Mutex::new(false),
         }
     }
 
@@ -288,6 +290,12 @@ impl EventProcessor {
         let mut partition_client = self.next_partition_clients.lock().await;
         partition_client.as_mut().replace(&mut receiver);
         let consumers: Arc<ConsumersType> = Arc::new(std::sync::Mutex::new(HashMap::new()));
+        {
+            let mut is_running = self.is_running.lock().map_err(|_| {
+                Error::new(AzureErrorKind::Io, "Could not lock is_running on startup")
+            })?;
+            *is_running = true;
+        }
         loop {
             let result = self.dispatch(&eh_properties, &consumers).await;
             match result {
@@ -302,6 +310,40 @@ impl EventProcessor {
             debug!("Event processor sleeping for {:?}", self.update_interval);
             Timer::after(self.update_interval).await;
             debug!("Event processor waking up.");
+            if self.is_shutdown()? {
+                info!("Event processor shutting down.");
+                break Ok(());
+            }
+        }
+    }
+
+    /// Shuts down the event processor.
+    pub async fn shutdown(&self) -> Result<()> {
+        // Implement shutdown logic if needed
+
+        let mut is_running = self.is_running.lock().map_err(|_| {
+            Error::message(
+                AzureErrorKind::Other,
+                "Failed to acquire lock on is_running for shutdown",
+            )
+        })?;
+
+        *is_running = false;
+        Ok(())
+    }
+
+    fn is_shutdown(&self) -> Result<bool> {
+        // Implement shutdown logic if needed
+        let is_running = self.is_running.lock().map_err(|_| {
+            Error::message(
+                AzureErrorKind::Other,
+                "Failed to acquire lock on is_running",
+            )
+        })?;
+        if *is_running {
+            Ok(false)
+        } else {
+            Ok(true)
         }
     }
 
