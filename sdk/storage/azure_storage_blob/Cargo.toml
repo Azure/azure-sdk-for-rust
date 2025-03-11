@@ -1,29 +1,15 @@
 [package]
 name = "azure_storage_blob"
-version = "0.1.0"
+version = "0.0.1"
+description = "Microsoft Azure Blob Storage client library for Rust"
+readme = "README.md"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-rust-version.workspace = true
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-async-trait.workspace = true
-azure_storage_common.workspace = true
-azure_core = { workspace = true, features = ["xml"] }
-azure_identity = { workspace = true }
-serde.workspace = true
-time.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
-uuid.workspace = true
-url.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_storage_blob"
+categories = ["api-bindings"]
 
 [lints]
 workspace = true
-
-[dev-dependencies]
-tokio = { workspace = true, features = ["macros"] }
-azure_identity.workspace = true
-azure_core_test.path = "../../core/azure_core_test"
