@@ -42,7 +42,6 @@ jobs:
       Cloud: public
     SparseCheckoutPaths:
       - /*
-      - '!/sdk/*/**/SessionRecords/*'
     AdditionalParameters:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
