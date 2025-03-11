@@ -151,16 +151,106 @@ fn format_aggregate_error(errors: &[Error]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::credentials::AzureCliCredential;
+    use async_lock::Mutex;
+    use azure_core::credentials::{AccessToken, TokenCredential};
+    use azure_core_test::credentials::MockCredential;
 
-    #[test]
-    fn test_adding_azure_cli() -> azure_core::Result<()> {
-        let mut credential = ChainedTokenCredential::new(None);
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            credential.add_source(AzureCliCredential::new()?);
+    /// `TokenFailure` is a mock credential that always fails to get a token.
+    #[derive(Debug)]
+    struct TokenFailure {
+        counter: Mutex<u32>,
+    }
+
+    impl TokenFailure {
+        fn new() -> Self {
+            Self {
+                counter: Mutex::new(0),
+            }
         }
 
+        async fn get_counter(&self) -> u32 {
+            let count = self.counter.lock().await;
+            *count
+        }
+    }
+
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    impl TokenCredential for TokenFailure {
+        async fn get_token(&self, _scopes: &[&str]) -> azure_core::Result<AccessToken> {
+            let mut count = self.counter.lock().await;
+            *count += 1;
+            Err(Error::message(ErrorKind::Credential, "failed to get token"))
+        }
+
+        async fn clear_cache(&self) -> azure_core::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn test_basic() -> azure_core::Result<()> {
+        let providers: Vec<Arc<dyn TokenCredential>> = vec![Arc::new(MockCredential {})];
+        let credentials = ChainedTokenCredential::from(providers.as_slice());
+        let scopes = ["https://management.azure.com/.default"];
+        let token = credentials.get_token(&scopes).await?;
+        assert_eq!(
+            token.token.secret(),
+            "TEST TOKEN https://management.azure.com/.default"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_with_retry() -> azure_core::Result<()> {
+        let token_failure = Arc::new(TokenFailure::new());
+        let mut chained_credential =
+            ChainedTokenCredential::new(Some(ChainedTokenCredentialOptions {
+                retry_sources: true,
+                ..Default::default()
+            }));
+        chained_credential.add_source(token_failure.clone());
+        chained_credential.add_source(Arc::new(MockCredential {}));
+
+        let scopes = ["https://management.azure.com/.default"];
+        let token = chained_credential.get_token(&scopes).await?;
+        assert_eq!(
+            token.token.secret(),
+            "TEST TOKEN https://management.azure.com/.default"
+        );
+        let scopes = ["https://management.azure.com/.default"];
+        let token = chained_credential.get_token(&scopes).await?;
+        assert_eq!(
+            token.token.secret(),
+            "TEST TOKEN https://management.azure.com/.default"
+        );
+
+        assert_eq!(token_failure.get_counter().await, 2);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_without_retry() -> azure_core::Result<()> {
+        let token_failure = Arc::new(TokenFailure::new());
+        let mut chained_credential = ChainedTokenCredential::new(None);
+        chained_credential.add_source(token_failure.clone());
+        chained_credential.add_source(Arc::new(MockCredential {}));
+
+        let scopes = ["https://management.azure.com/.default"];
+        let token = chained_credential.get_token(&scopes).await?;
+        assert_eq!(
+            token.token.secret(),
+            "TEST TOKEN https://management.azure.com/.default"
+        );
+        let scopes = ["https://management.azure.com/.default"];
+        let token = chained_credential.get_token(&scopes).await?;
+        assert_eq!(
+            token.token.secret(),
+            "TEST TOKEN https://management.azure.com/.default"
+        );
+
+        assert_eq!(token_failure.get_counter().await, 1);
         Ok(())
     }
 }
