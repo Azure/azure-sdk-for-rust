@@ -42,7 +42,7 @@ mod tests {
         common::setup();
         let store = InMemoryCheckpointStore::new();
         let ownership = Ownership::new(
-            "namespace",
+            "",
             "event_hub",
             "consumer_group",
             "partition_id",

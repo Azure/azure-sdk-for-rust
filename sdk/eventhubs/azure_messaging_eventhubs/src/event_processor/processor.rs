@@ -10,17 +10,17 @@ use crate::{
     models::{ConsumerClientDetails, EventHubProperties},
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
+use async_io::Timer;
+use async_lock::Mutex as AsyncMutex;
 use async_trait::async_trait;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::StreamExt;
-use std::sync::Mutex;
 use std::{
     sync::{Arc, OnceLock},
     time::Duration,
     {collections::HashMap, sync::Weak},
 };
-use tokio::sync::Mutex as TokioMutex;
 use tracing::{debug, info};
 
 /// Options for the [CheckpointStore.claim_ownership()] method.
@@ -166,9 +166,9 @@ pub enum ProcessorStrategy {
 pub struct EventProcessor {
     //    strategy: ProcessorStrategy,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
-    load_balancer: Arc<TokioMutex<LoadBalancer>>,
+    load_balancer: Arc<AsyncMutex<LoadBalancer>>,
     consumer_client: Arc<ConsumerClient>,
-    next_partition_clients: TokioMutex<Option<Receiver<PartitionClient>>>,
+    next_partition_clients: AsyncMutex<Option<Receiver<PartitionClient>>>,
     next_partition_client_sender: OnceLock<Sender<PartitionClient>>,
     client_details: ConsumerClientDetails,
     prefetch: u32,
@@ -186,7 +186,7 @@ struct EventProcessorOptions {
     prefetch: u32,
 }
 
-type ConsumersType = Mutex<HashMap<String, PartitionClient>>;
+type ConsumersType = std::sync::Mutex<HashMap<String, PartitionClient>>;
 
 unsafe impl Send for EventProcessor {}
 unsafe impl Sync for EventProcessor {}
@@ -211,7 +211,7 @@ impl EventProcessor {
             consumer_client: consumer_client.clone(),
 
             // Default to Balanced strategy if not provided
-            load_balancer: Arc::new(TokioMutex::new(LoadBalancer::new(
+            load_balancer: Arc::new(AsyncMutex::new(LoadBalancer::new(
                 checkpoint_store.clone(),
                 consumer_client.get_details(),
                 options.strategy,
@@ -223,7 +223,7 @@ impl EventProcessor {
             start_positions: options.start_positions,
             max_partition_count: options.max_partition_count,
             next_partition_client_sender: OnceLock::new(),
-            next_partition_clients: TokioMutex::new(None),
+            next_partition_clients: AsyncMutex::new(None),
         }
     }
 
@@ -238,34 +238,27 @@ impl EventProcessor {
     /// Returns an error if the event processor fails to start.
     /// # Examples
     /// ```
-    /// use azure_messaging_eventhubs::event_processor::EventProcessor;
-    /// use azure_messaging_eventhubs::models::CheckpointStore;
-    /// use azure_messaging_eventhubs::models::ConsumerClient;
+    /// use azure_messaging_eventhubs::EventProcessor;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use std::sync::Arc;
     /// use std::time::Duration;
     /// use std::thread;
     /// use std::sync::Mutex;
     /// use azure_core::Result;
-    /// use azure_messaging_eventhubs::event_processor::EventProcessorOptions;
-    /// use azure_messaging_eventhubs::event_processor::ProcessorStrategy;
-    /// use azure_messaging_eventhubs::event_processor::ClaimOwnershipOptions;
-    /// use azure_messaging_eventhubs::event_processor::ListCheckpointsOptions;
-    /// use azure_messaging_eventhubs::event_processor::ListOwnershipOptions;
-    /// use azure_messaging_eventhubs::event_processor::Checkpoint;
-    /// use azure_messaging_eventhubs::event_processor::Ownership;
-    /// use azure_messaging_eventhubs::event_processor::CheckpointStore;
+    /// use azure_messaging_eventhubs::ProcessorStrategy;
+    /// use azure_messaging_eventhubs::models::Checkpoint;
+    /// use azure_messaging_eventhubs::models::Ownership;
+    /// use azure_messaging_eventhubs::CheckpointStore;
     ///
     /// // Create an instance of the EventProcessor
-    /// let event_processor = EventProcessor::new(
-    ///     Arc::new(ConsumerClient::default()),
-    ///     Arc::new(MyCheckpointStore::default()),
-    ///     Some(EventProcessorOptions {
-    ///         load_balancing_strategy: Some(ProcessorStrategy::Balanced),
-    ///         update_interval: Some(Duration::from_secs(30)),
-    ///         partition_expiration_duration: Some(Duration::from_secs(10)),
-    ///         prefetch: Some(300),
-    ///         ..Default::default()
-    ///     });
+    /// let event_processor = EventProcessor::builder()
+    ///        .with_load_balancing_strategy(ProcessorStrategy::Balanced)
+    ///       .with_update_interval(Duration::from_secs(30))
+    ///       .with_partition_expiration_duration(Duration::from_secs(10))
+    ///       .with_prefetch(300)
+    ///       .build(
+    ///           Arc::new(ConsumerClient::default()),
+    ///          Arc::new(MyCheckpointStore::default()));
     ///
     /// // Start the event processor
     /// let join_handle = tokio::spawn(async move {
@@ -275,7 +268,7 @@ impl EventProcessor {
     /// // Wait for the event processor to finish
     /// thread::sleep(Duration::from_secs(60));
     ///
-    /// join_handle.drop()
+    /// join_handle.abort();
     ///
     /// ```
     ///
@@ -294,7 +287,7 @@ impl EventProcessor {
         })?;
         let mut partition_client = self.next_partition_clients.lock().await;
         partition_client.as_mut().replace(&mut receiver);
-        let consumers: Arc<ConsumersType> = Arc::new(Mutex::new(HashMap::new()));
+        let consumers: Arc<ConsumersType> = Arc::new(std::sync::Mutex::new(HashMap::new()));
         loop {
             let result = self.dispatch(&eh_properties, &consumers).await;
             match result {
@@ -307,7 +300,7 @@ impl EventProcessor {
                 }
             }
             debug!("Event processor sleeping for {:?}", self.update_interval);
-            std::thread::sleep(self.update_interval);
+            Timer::after(self.update_interval).await;
             debug!("Event processor waking up.");
         }
     }
@@ -510,9 +503,9 @@ pub mod builders {
     /// It provides a fluent interface for setting these options and building the event processor.
     /// # Examples
     /// ```
-    /// use azure_messaging_eventhubs::event_processor::EventProcessor;
-    /// use azure_messaging_eventhubs::models::CheckpointStore;
-    /// use azure_messaging_eventhubs::models::ConsumerClient;
+    /// use azure_messaging_eventhubs::EventProcessor;
+    /// use azure_messaging_eventhubs::CheckpointStore;
+    /// use azure_messaging_eventhubs::ConsumerClient;
     /// use std::sync::Arc;
     #[derive(Default)]
     pub struct EventProcessorBuilder {

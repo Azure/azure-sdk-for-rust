@@ -11,6 +11,7 @@ use super::{
     models::{EventHubPartitionProperties, EventHubProperties},
 };
 use crate::{common::connection_manager::ConnectionManager, error::EventHubsError, models};
+use async_lock::Mutex;
 use azure_core::{credentials::TokenCredential, error::Result, RetryOptions, Url, Uuid};
 use azure_core_amqp::{
     AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap, AmqpReceiver,
@@ -25,7 +26,6 @@ use std::{
     sync::{Arc, OnceLock},
     time::Duration,
 };
-use tokio::sync::Mutex;
 use tracing::{debug, trace};
 
 /// A client that can be used to receive events from an Event Hub.

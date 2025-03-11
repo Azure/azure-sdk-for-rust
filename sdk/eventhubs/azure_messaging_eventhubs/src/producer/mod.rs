@@ -6,6 +6,7 @@ use crate::{
     error::{ErrorKind, EventHubsError},
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
 };
+use async_lock::Mutex;
 use azure_core::{error::Result, RetryOptions, Url, Uuid};
 use azure_core_amqp::{
     AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSession,
@@ -14,7 +15,6 @@ use azure_core_amqp::{
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::sync::{Arc, OnceLock};
 use std::{collections::HashMap, fmt::Debug};
-use tokio::sync::Mutex;
 use tracing::trace;
 
 /// Types used to collect messages into a "batch" before submitting them to an Event Hub.

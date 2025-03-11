@@ -142,7 +142,7 @@ dependencies = [
  "cfg-if",
  "concurrent-queue",
  "futures-io",
- "futures-lite 2.5.0",
+ "futures-lite 2.6.0",
  "parking",
  "polling",
  "rustix",
@@ -176,7 +176,7 @@ dependencies = [
  "blocking",
  "cfg-if",
  "event-listener 5.3.1",
- "futures-lite 2.5.0",
+ "futures-lite 2.6.0",
  "rustix",
  "tracing",
 ]
@@ -429,6 +429,8 @@ dependencies = [
 name = "azure_messaging_eventhubs"
 version = "0.2.0"
 dependencies = [
+ "async-io",
+ "async-lock",
  "async-stream",
  "async-trait",
  "azure_core 0.22.0",
@@ -436,6 +438,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity 0.22.0",
  "futures",
+ "futures-lite 2.6.0",
  "rand 0.8.5",
  "rustc_version",
  "time",
@@ -581,7 +584,7 @@ dependencies = [
  "async-channel 2.3.1",
  "async-task",
  "futures-io",
- "futures-lite 2.5.0",
+ "futures-lite 2.6.0",
  "piper",
 ]
 
@@ -1127,9 +1130,9 @@ dependencies = [
 
 [[package]]
 name = "futures-lite"
-version = "2.5.0"
+version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cef40d21ae2c515b51041df9ed313ed21e572df340ea58a922a0aefe7e8891a1"
+checksum = "f5edaec856126859abb19ed65f39e90fea3a9574b9707f13539acf4abf7eb532"
 dependencies = [
  "fastrand 2.2.0",
  "futures-core",

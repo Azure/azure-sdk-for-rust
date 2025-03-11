@@ -18,14 +18,16 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
+async-io.workspace = true
+async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { path = "../../core/azure_core", default-features = false }
 azure_core_amqp.workspace = true
 futures.workspace = true
+futures-lite.workspace = true
 rand.workspace = true
 time.workspace = true
-tokio.workspace = true
 tracing.workspace = true
 
 [build-dependencies]
@@ -34,5 +36,5 @@ rustc_version.workspace = true
 [dev-dependencies]
 azure_core_test.path = "../../core/azure_core_test"
 azure_identity.path = "../../identity/azure_identity"
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }

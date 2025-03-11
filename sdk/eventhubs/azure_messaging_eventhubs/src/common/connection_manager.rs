@@ -7,6 +7,7 @@ use crate::{
     error::{ErrorKind, EventHubsError},
     models::AmqpValue,
 };
+use async_lock::{Mutex, OnceCell};
 use azure_core::{credentials::AccessToken, Result, Url, Uuid};
 use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis as _, AmqpConnection,
@@ -14,7 +15,7 @@ use azure_core_amqp::{
 };
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{Mutex, OnceCell};
+//use tokio::sync::{Mutex, OnceCell};
 use tracing::{debug, trace};
 
 /// The connection manager is responsible for managing the connection to the Event Hubs service.
@@ -73,7 +74,7 @@ impl ConnectionManager {
 
     pub(crate) async fn ensure_connection(&self) -> Result<()> {
         self.connections
-            .get_or_try_init(|| async { self.create_connection().await })
+            .get_or_try_init(|| self.create_connection())
             .await?;
         Ok(())
     }

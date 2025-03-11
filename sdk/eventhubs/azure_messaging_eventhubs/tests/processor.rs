@@ -26,7 +26,7 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
 
     let event_processor = EventProcessor::builder()
         .with_load_balancing_strategy(ProcessorStrategy::Balanced)
-        .with_update_interval(Duration::from_secs(30))
+        .with_update_interval(Duration::from_secs(5))
         .with_partition_expiration_duration(Duration::from_secs(10))
         .with_prefetch(300)
         .build(
@@ -35,7 +35,7 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
         )?;
 
     {
-        const TIMEOUT: Duration = Duration::from_secs(10);
+        const TIMEOUT: Duration = Duration::from_secs(30);
         let event_processor_clone = event_processor.clone();
         let jh = tokio::spawn(async move { event_processor_clone.run().await });
         let timeout_handle = tokio::spawn(async move {
