@@ -217,6 +217,15 @@ impl Ownership {
         self.last_modified_time
     }
 
+    /// Sets the last modified time for this ownership.
+    pub fn set_last_modified_time(&mut self, last_modified_time: SystemTime) {
+        self.last_modified_time = Some(last_modified_time);
+    }
+    /// Sets the ETag for this ownership.
+    pub fn set_etag(&mut self, etag: azure_core::Etag) {
+        self.etag = Some(etag);
+    }
+
     /// Returns the prefix for the ownership blob name.
     pub fn get_ownership_prefix_name(
         fully_qualified_namespace: &str,

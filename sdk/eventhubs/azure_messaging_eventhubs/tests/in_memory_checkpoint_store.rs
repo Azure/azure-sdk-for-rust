@@ -1,13 +1,13 @@
 use async_trait::async_trait;
-use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
+use azure_core::{error::ErrorKind as AzureErrorKind, Error, Etag, Result, Uuid};
 use azure_messaging_eventhubs::{
     models::{Checkpoint, Ownership},
     processor::{ClaimOwnershipOptions, ListCheckpointsOptions, ListOwnershipOptions},
     CheckpointStore,
 };
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tracing::{debug, info, trace};
+use std::{collections::HashMap, time::SystemTime};
+use tracing::{debug, trace, warn};
 
 pub struct InMemoryCheckpointStore {
     checkpoints: Arc<Mutex<HashMap<String, Checkpoint>>>,
@@ -29,12 +29,16 @@ impl InMemoryCheckpointStore {
     }
 
     pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
-        info!("Update ownership for {}", ownership.partition_id());
+        debug!(
+            "Update ownership for partition {}",
+            ownership.partition_id()
+        );
         if ownership.partition_id().is_empty()
             || ownership.event_hub_name().is_empty()
             || ownership.fully_qualified_namespace().is_empty()
             || ownership.partition_id().is_empty()
         {
+            warn!("Ownership is not valid: {:#?}", ownership);
             return Err(Error::message(
                 AzureErrorKind::Other,
                 format!("Ownership is not valid: {:#?}", ownership),
@@ -47,7 +51,7 @@ impl InMemoryCheckpointStore {
             ownership.consumer_group(),
             ownership.partition_id(),
         )?;
-        info!("Update ownership for key {}", key);
+        trace!("Update ownership for key {}", key);
         if store.contains_key(&key) {
             if ownership.etag() != store.get(&key).unwrap().etag() {
                 debug!("ETag mismatch {}", key);
@@ -59,10 +63,12 @@ impl InMemoryCheckpointStore {
             store.insert(key.clone(), ownership.clone());
             Ok(ownership.clone())
         } else {
-            Err(Error::message(
-                AzureErrorKind::Other,
-                format!("Ownership not found for partition {}", key),
-            ))
+            debug!("Insert ownership for key {}", key);
+            let mut new_ownership = ownership.clone();
+            new_ownership.set_etag(Etag::from(Uuid::new_v4().to_string()));
+            new_ownership.set_last_modified_time(SystemTime::now());
+            store.insert(key.clone(), ownership.clone());
+            Ok(ownership.clone())
         }
     }
 }

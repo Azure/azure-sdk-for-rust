@@ -14,13 +14,14 @@ use async_trait::async_trait;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::StreamExt;
+use std::sync::Mutex;
 use std::{
     sync::{Arc, OnceLock},
     time::Duration,
     {collections::HashMap, sync::Weak},
 };
-use tokio::sync::Mutex;
-use tracing::info;
+use tokio::sync::Mutex as TokioMutex;
+use tracing::{debug, info};
 
 /// Options for the [CheckpointStore.claim_ownership()] method.
 pub struct ClaimOwnershipOptions {}
@@ -165,9 +166,9 @@ pub enum ProcessorStrategy {
 pub struct EventProcessor {
     //    strategy: ProcessorStrategy,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
-    load_balancer: Arc<Mutex<LoadBalancer>>,
+    load_balancer: Arc<TokioMutex<LoadBalancer>>,
     consumer_client: Arc<ConsumerClient>,
-    next_partition_clients: Mutex<Option<Receiver<PartitionClient>>>,
+    next_partition_clients: TokioMutex<Option<Receiver<PartitionClient>>>,
     next_partition_client_sender: OnceLock<Sender<PartitionClient>>,
     client_details: ConsumerClientDetails,
     prefetch: u32,
@@ -210,7 +211,7 @@ impl EventProcessor {
             consumer_client: consumer_client.clone(),
 
             // Default to Balanced strategy if not provided
-            load_balancer: Arc::new(Mutex::new(LoadBalancer::new(
+            load_balancer: Arc::new(TokioMutex::new(LoadBalancer::new(
                 checkpoint_store.clone(),
                 consumer_client.get_details(),
                 options.strategy,
@@ -222,7 +223,7 @@ impl EventProcessor {
             start_positions: options.start_positions,
             max_partition_count: options.max_partition_count,
             next_partition_client_sender: OnceLock::new(),
-            next_partition_clients: Mutex::new(None),
+            next_partition_clients: TokioMutex::new(None),
         }
     }
 
@@ -295,7 +296,19 @@ impl EventProcessor {
         partition_client.as_mut().replace(&mut receiver);
         let consumers: Arc<ConsumersType> = Arc::new(Mutex::new(HashMap::new()));
         loop {
-            self.dispatch(&eh_properties, &consumers).await?;
+            let result = self.dispatch(&eh_properties, &consumers).await;
+            match result {
+                Ok(_) => {
+                    debug!("Event processor dispatched successfully.");
+                }
+                Err(e) => {
+                    info!("Error dispatching event processor: {:?}", e);
+                    return Err(e);
+                }
+            }
+            debug!("Event processor sleeping for {:?}", self.update_interval);
+            std::thread::sleep(self.update_interval);
+            debug!("Event processor waking up.");
         }
     }
 
@@ -304,6 +317,7 @@ impl EventProcessor {
         eventhub_properties: &EventHubProperties,
         consumers: &Arc<ConsumersType>,
     ) -> Result<()> {
+        debug!("Dispatch partition clients to consumers.");
         let load_balancer = self.load_balancer.lock().await;
 
         let ownerships = load_balancer
@@ -340,9 +354,17 @@ impl EventProcessor {
     }
 
     /// Closes the event processor.
-    pub async fn close(&self) -> Result<()> {
-        // Implement the function or remove it if not needed
-        todo!()
+    pub async fn close(self) -> Result<()> {
+        // Close the event processor and release resources.
+        let consumer = Arc::into_inner(self.consumer_client);
+        if let Some(consumer) = consumer {
+            info!("Closing consumer client.");
+            consumer.close().await?;
+        } else {
+            info!("Consumer client externally referenced.");
+        }
+
+        Ok(())
     }
 
     /// Retrieves the checkpoint map for the Event Hub.
@@ -384,39 +406,42 @@ impl EventProcessor {
             &self.client_details,
             move || {
                 if let Some(strong_consumers) = cloned_consumers.upgrade() {
-                    let mut strong_consumers = strong_consumers.blocking_lock();
-                    // Handle partition client destruction
-                    strong_consumers.remove(&partition_id);
+                    if let Ok(mut strong_consumers) = strong_consumers.lock() {
+                        // Handle partition client destruction
+                        strong_consumers.remove(&partition_id);
+                    }
                 }
             },
         );
 
-        if let Some(strong_consumers) = consumers.upgrade() {
-            let mut strong_consumers = strong_consumers.lock().await;
-            // Check if the partition client already exists
-            if strong_consumers.contains_key(&ownership.partition_id) {
-                info!(
-                    "Partition client already exists for partition: {:?}",
-                    ownership.partition_id
-                );
-                return Ok(());
-            }
+        let start_position = self.get_start_position(&ownership.partition_id, checkpoints);
+        let receiver = self
+            .consumer_client
+            .open_receiver_on_partition(
+                &ownership.partition_id,
+                Some(OpenReceiverOptions {
+                    start_position: Some(start_position),
+                    receive_timeout: Some(self.update_interval),
+                    prefetch: Some(self.prefetch),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        partition_client.set_event_receiver(receiver)?;
 
-            let start_position = self.get_start_position(&ownership.partition_id, checkpoints);
-            let receiver = self
-                .consumer_client
-                .open_receiver_on_partition(
-                    &ownership.partition_id,
-                    Some(OpenReceiverOptions {
-                        start_position: Some(start_position),
-                        receive_timeout: Some(self.update_interval),
-                        prefetch: Some(self.prefetch),
-                        ..Default::default()
-                    }),
-                )
-                .await?;
-            partition_client.set_event_receiver(receiver);
-            strong_consumers.insert(ownership.partition_id.clone(), partition_client);
+        if let Some(strong_consumers) = consumers.upgrade() {
+            if let Ok(mut strong_consumers) = strong_consumers.lock() {
+                // Check if the partition client already exists
+                if strong_consumers.contains_key(&ownership.partition_id) {
+                    info!(
+                        "Partition client already exists for partition: {:?}",
+                        ownership.partition_id
+                    );
+                    return Ok(());
+                }
+
+                strong_consumers.insert(ownership.partition_id.clone(), partition_client);
+            }
         }
 
         Ok(())

@@ -127,4 +127,10 @@ impl EventReceiver {
             }
         }
     }
+
+    /// Closes the event receiver, detaching from the remote.
+    pub async fn close(self) -> Result<()> {
+        self.receiver.detach().await?;
+        Ok(())
+    }
 }

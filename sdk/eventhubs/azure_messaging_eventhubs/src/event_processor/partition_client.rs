@@ -10,6 +10,7 @@ use azure_core::Result;
 use azure_core_amqp::AmqpMessage;
 use futures::Stream;
 use std::sync::{Arc, OnceLock};
+use tracing::warn;
 
 use super::processor::CheckpointStore;
 
@@ -43,9 +44,10 @@ impl PartitionClient {
             on_destroy: Box::new(on_destroy),
         }
     }
-    pub fn get_partition_id(&self) -> String {
-        todo!()
+    pub fn get_partition_id(&self) -> &String {
+        &self.partition_id
     }
+
     pub fn receive_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
         try_stream! {
             // Replace `todo!()` with the actual implementation
@@ -54,7 +56,16 @@ impl PartitionClient {
         }
     }
 
-    pub async fn close(self) {}
+    pub async fn close(mut self) -> Result<()> {
+        if let Some(receiver) = self.event_receiver.take() {
+            // Close the event receiver
+            receiver.close().await?;
+        }
+
+        // Remove the partition client from the processor.
+        (self.on_destroy)();
+        Ok(())
+    }
 
     pub async fn update_checkpoint(&self, event_data: ReceivedEventData) -> Result<()> {
         let mut sequence_number: Option<i64> = None;
@@ -111,8 +122,22 @@ impl PartitionClient {
         Ok(())
     }
 
-    pub(crate) fn set_event_receiver(&self, event_receiver: EventReceiver) {
+    pub(crate) fn set_event_receiver(&self, event_receiver: EventReceiver) -> Result<()> {
         // Set the event receiver
-        todo!()
+        self.event_receiver.set(event_receiver).map_err(|_| {
+            warn!(
+                "Event receiver already set for partition {}",
+                self.partition_id
+            );
+            // If the event receiver is already set, return an error
+            azure_core::error::Error::message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "Event receiver already set for partition {}",
+                    self.partition_id
+                ),
+            )
+        })?;
+        Ok(())
     }
 }

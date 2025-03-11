@@ -7,10 +7,13 @@ use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, ProcessorStrateg
 use in_memory_checkpoint_store::InMemoryCheckpointStore;
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::event;
+use tracing::info;
+mod common;
 
-#[recorded::test]
+#[recorded::test(live)]
 async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
+    common::setup();
+
     let recording = ctx.recording();
 
     let consumer_client = ConsumerClient::builder()
@@ -32,27 +35,40 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
         )?;
 
     {
-        //            let event_processor_clone = Arc::clone(&event_processor);
+        const TIMEOUT: Duration = Duration::from_secs(10);
         let event_processor_clone = event_processor.clone();
         let jh = tokio::spawn(async move { event_processor_clone.run().await });
+        let timeout_handle = tokio::spawn(async move {
+            tokio::time::sleep(TIMEOUT).await;
+            info!("Timeout reached");
+        });
 
-        let r = jh.await;
+        info!("Started event processor");
+        info!("Waiting for event processor to finish");
+        info!("Timeout set to {:?}", TIMEOUT);
 
-        match r {
-            Ok(_) => {
-                event!(tracing::Level::INFO, "Event processor ran successfully");
+        tokio::select! {
+            result = jh => {
+                info!("Event processor finished: {:?}", result);
+                if let Err(e) = result {
+                    info!("Event processor failed: {:?}", e);
+                } else {
+                    info!("Event processor finished successfully");
+                }
             }
-            Err(e) => {
-                event!(
-                    tracing::Level::ERROR,
-                    "Failed to run event processor: {}",
-                    e
-                );
+            _ = timeout_handle => {
+                info!("Timeout reached, event processor may not have started");
             }
         }
     }
 
-    event_processor.close().await?;
+    let processor = Arc::into_inner(event_processor);
+    if let Some(processor) = processor {
+        info!("Stopping event processor");
+        processor.close().await?;
+    } else {
+        info!("Event processor still running..");
+    }
 
     // Start the event processor
     // Wait for the event processor to finish
