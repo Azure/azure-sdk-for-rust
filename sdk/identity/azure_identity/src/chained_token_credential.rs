@@ -97,6 +97,17 @@ impl ChainedTokenCredential {
     }
 }
 
+impl From<&[Arc<dyn TokenCredential>]> for ChainedTokenCredential {
+    fn from(credential_options: &[Arc<dyn TokenCredential>]) -> Self {
+        Self {
+            options: ChainedTokenCredentialOptions::default(),
+            sources: credential_options.to_vec(),
+            cache: TokenCache::new(),
+            successful_credential: RwLock::new(None),
+        }
+    }
+}
+
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ChainedTokenCredential {
