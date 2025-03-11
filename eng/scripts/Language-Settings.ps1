@@ -71,7 +71,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 
   # Invert the manifest dependency graph
   foreach ($package in $packageManifests.Values) {
-    foreach ($dependency in $package.dependencies) {
+    foreach ($dependency in $package.dependencies | Where-Object { $null -eq $_.kind }) {
       $dependencyManifest = $packageManifests[$dependency.name]
       if ($dependencyManifest) {
         $dependencyManifest.DependentPackages += $package
@@ -131,9 +131,8 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 
   [array]$additionalPackages = $affectedPackages | Where-Object { $packagesWithChanges -notcontains $_ }
 
-  # if the change affected no packages, e.g. eng/common change, we use core and template for validation
-  if ($packagesWithChanges.Length -eq 0) {
-    $additionalPackages += $allPackageProperties | Where-Object { $_.Name -eq "azure_core" -or $_.Name -eq "azure_template" }
+  foreach ($package in $additionalPackages) {
+    $package.IncludedForValidation = $true
   }
 
   return $additionalPackages

@@ -62,10 +62,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     // Clear unnecessary fields in the Crate structure
-    // 1. paths
-    // 2. external_crates
-    // 3. span in all items
-    root.paths.clear();
+    // 1. external_crates
+    // 2. span in all items
     root.external_crates.clear();
     for (_id, item) in root.index.iter_mut() {
         // Reset span to default empty value

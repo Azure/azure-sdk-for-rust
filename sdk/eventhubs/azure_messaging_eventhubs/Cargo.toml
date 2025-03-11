@@ -19,7 +19,7 @@ edition.workspace = true
 
 [dependencies]
 async-stream.workspace = true
-azure_core = { path = "../../core/azure_core", default-features = false }
+azure_core = { workspace = true, default-features = false }
 azure_core_amqp.workspace = true
 futures.workspace = true
 time.workspace = true
