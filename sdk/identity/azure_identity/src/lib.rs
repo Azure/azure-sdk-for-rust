@@ -5,6 +5,7 @@
 
 mod authorization_code_flow;
 mod azure_pipelines_credential;
+mod chained_token_credential;
 mod credentials;
 mod env;
 mod federated_credentials_flow;
@@ -14,6 +15,7 @@ mod timeout;
 
 use azure_core::{error::ErrorKind, Error, Result};
 pub use azure_pipelines_credential::*;
+pub use chained_token_credential::*;
 pub use credentials::*;
 use std::borrow::Cow;
 
