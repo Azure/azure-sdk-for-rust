@@ -119,17 +119,17 @@ pub fn to_last_state_change(date: &OffsetDateTime) -> String {
     date.format(LAST_STATE_CHANGE_FORMAT).unwrap()
 }
 
-// Create a duration from the number of minutes.
+/// Create a duration from the number of minutes.
 pub fn duration_from_minutes(minutes: u64) -> Duration {
     Duration::from_secs(minutes * 60)
 }
 
-// Create a duration from the number of hours.
+/// Create a duration from the number of hours.
 pub fn duration_from_hours(hours: u64) -> Duration {
     Duration::from_secs(hours * 3_600)
 }
 
-// Create a duration from the number of days.
+/// Create a duration from the number of days.
 pub fn duration_from_days(days: u64) -> Duration {
     Duration::from_secs(days * 86_400)
 }
