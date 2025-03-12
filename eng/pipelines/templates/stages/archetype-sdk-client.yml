@@ -8,6 +8,22 @@ parameters:
 - name: TestTimeoutInMinutes
   type: number
   default: 60
+- name: Clouds
+  type: string
+  default: 'Public'
+- name: SupportedClouds
+  type: string
+  default: 'Public'
+- name: UnsupportedClouds
+  type: string
+  default: ''
+- name: CloudConfig
+  type: object
+  default:
+    Public:
+    # Canary regions are currently not supported in TME so disabling for now
+    # Canary:
+    #   Location: 'centraluseuap'
 - name: MatrixConfigs
   type: object
   default:
@@ -28,6 +44,18 @@ parameters:
 - name: TestProxy
   type: boolean
   default: true
+- name: RunLiveTests
+  type: boolean
+  default: false
+- name: UseFederatedAuth
+  type: boolean
+  default: true
+- name: PersistOidcToken
+  type: boolean
+  default: false
+- name: EnvVars
+  type: object
+  default: {}
 
 extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
@@ -48,17 +76,66 @@ extends:
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           TestProxy: ${{ parameters.TestProxy }}
           MatrixConfigs:
-          - ${{ each config in parameters.MatrixConfigs }}:
-            - ${{ config }}
-          - ${{ each config in parameters.AdditionalMatrixConfigs }}:
-            - ${{ config }}
+          - ${{ parameters.MatrixConfigs }}
+          - ${{ parameters.AdditionalMatrixConfigs }}
           MatrixFilters: ${{ parameters.MatrixFilters }}
           MatrixReplace: ${{ parameters.MatrixReplace }}
 
-    - template: archetype-rust-release.yml
-      parameters:
-        DependsOn: "Build"
-        ServiceDirectory: ${{ parameters.ServiceDirectory }}
-        Artifacts: ${{ parameters.Artifacts }}
-        TestPipeline: ${{ eq(parameters.ServiceDirectory, 'template') }}
-        PipelineArtifactName: packages
+    # Run live tests for internal only, not public CI builds. This can be triggered manually for via an `/azp run` comment.
+    - ${{if eq(parameters.RunLiveTests, 'true'))}:
+      - ${{ each cloud in parameters.CloudConfig }}:
+        # Run all clouds by default for weekly test pipeline, except for clouds specifically unsupported by the calling pipeline
+        - ${{ if or(contains(parameters.Clouds, cloud.key), and(contains(variables['Build.DefinitionName'], 'weekly'), contains(parameters.SupportedClouds, cloud.key))) }}:
+          - ${{ if not(contains(parameters.UnsupportedClouds, cloud.key)) }}:
+            - stage: ${{ cloud.key }}
+              variables:
+              - template: /eng/pipelines/templates/variables/globals.yml
+              - template: /eng/pipelines/templates/variables/image.yml
+              - template: /eng/pipelines/templates/variables/rust.yml
+              displayName: Live Test ${{ cloud.key }}
+              dependsOn: []
+              jobs:
+              - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
+                parameters:
+                  JobTemplatePath: /eng/pipelines/templates/jobs/live.tests.yml
+                  AdditionalParameters:
+                    ServiceDirectory: ${{ parameters.ServiceDirectory }}
+                    TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+                    EnvVars: ${{ parameters.EnvVars }}
+                    PreSteps: ${{ parameters.PreSteps }}
+                    PostSteps: ${{ parameters.PostSteps }}
+                    Location: ${{ parameters.Location }}
+                    UseFederatedAuth: ${{ parameters.UseFederatedAuth }}
+                    PersistOidcToken: ${{ parameters.PersistOidcToken }}
+                  MatrixConfigs:
+                  # Enumerate platforms and additional platforms based on supported clouds (sparse platform<-->cloud matrix).
+                  - ${{ parameters.MatrixConfigs }}
+                  - ${{ parameters.AdditionalMatrixConfigs }}
+                  MatrixFilters:
+                  - ${{ cloud.value.MatrixFilters }}
+                  - ${{ parameters.MatrixFilters }}
+                  MatrixReplace:
+                  - ${{ cloud.value.MatrixReplace }}
+                  - ${{ parameters.MatrixReplace }}
+                  CloudConfig:
+                    Cloud: ${{ cloud.key }}
+                    Location: ${{ coalesce(cloud.value.Location, parameters.Location) }}
+                    ServiceConnection: ${{ coalesce(cloud.value.ServiceConnection, lower(format('azure-sdk-tests-{0}', cloud.key))) }}
+                    SubscriptionConfiguration: ${{ cloud.value.SubscriptionConfiguration }}
+                    SubscriptionConfigurations: ${{ cloud.value.SubscriptionConfigurations }}
+                    SubscriptionConfigurationFilePaths: ${{ cloud.value.SubscriptionConfigurationFilePaths }}
+
+    # The Prerelease and Release stages are conditioned on:
+    # 1. Internal trigger, not Pull Request trigger
+    # 2. Not weekly build
+    # 3. Manual trigger or force IncludeRelease
+    - ${{ if and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['System.TeamProject'], 'internal')) }}:
+      - ${{ if not(contains(variables['Build.DefinitionName'], 'weekly')) }}:
+        - ${{ if or(in(variables['Build.Reason'], 'Manual', ''), eq(parameters.IncludeRelease, true)) }}:
+          - template: archetype-rust-release.yml
+            parameters:
+              DependsOn: "Build"
+              ServiceDirectory: ${{ parameters.ServiceDirectory }}
+              Artifacts: ${{ parameters.Artifacts }}
+              TestPipeline: ${{ eq(parameters.ServiceDirectory, 'template') }}
+              PipelineArtifactName: packages
