@@ -9,7 +9,7 @@ parameters:
   default: true
 - name: RunLiveTests
   type: boolean
-  default: false
+  default: true
 # Test Parameters
 - name: TestTimeoutInMinutes
   type: number

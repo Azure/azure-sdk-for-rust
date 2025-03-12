@@ -14,7 +14,6 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: keyvault
-    RunLiveTests: true
     Artifacts:
     - name: azure_security_keyvault_secrets
       safeName: AzureSecurityKeyvaultSecrets
