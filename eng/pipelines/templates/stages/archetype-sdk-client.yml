@@ -4,10 +4,19 @@ parameters:
 - name: Artifacts
   type: object
   default: []
+- name: IncludeRelease
+  type: boolean
+  default: true
+- name: RunLiveTests
+  type: boolean
+  default: false
 # Test Parameters
 - name: TestTimeoutInMinutes
   type: number
   default: 60
+- name: TestProxy
+  type: boolean
+  default: true
 - name: Clouds
   type: string
   default: 'Public'
@@ -41,18 +50,21 @@ parameters:
 - name: MatrixReplace
   type: object
   default: []
-- name: TestProxy
-  type: boolean
-  default: true
-- name: RunLiveTests
-  type: boolean
-  default: false
 - name: UseFederatedAuth
   type: boolean
   default: true
 - name: PersistOidcToken
   type: boolean
   default: false
+- name: PreSteps
+  type: StepList
+  default: []
+- name: PostSteps
+  type: StepList
+  default: []
+- name: Location
+  type: string
+  default: ''
 - name: EnvVars
   type: object
   default: {}
