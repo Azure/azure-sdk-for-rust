@@ -1,0 +1,147 @@
+parameters:
+  - name: ServiceDirectory
+    type: string
+    default: ''
+  - name: EnvVars
+    type: object
+    default: {}
+  - name: MaxParallel
+    type: number
+    default: 0
+  - name: MaxParallel
+    type: number
+    default: 0
+  - name: TimeoutInMinutes
+    type: number
+    default: 60
+  - name: PreSteps
+    type: object
+    default: []
+  - name: PostSteps
+    type: object
+    default: []
+  - name: CloudConfig
+    type: object
+    default: {}
+  - name: Location
+    type: string
+    default: ''
+  - name: Matrix
+    type: string
+  - name: DependsOn
+    type: string
+    default: ''
+  - name: UsePlatformContainer
+    type: boolean
+    default: false
+  - name: OSName
+    type: string
+  - name: UseFederatedAuth
+    type: boolean
+    default: true
+  - name: PersistOidcToken
+    type: boolean
+    default: false
+
+jobs:
+  - job:
+    displayName: Live Test on
+    dependsOn: ${{ parameters.DependsOn }}
+    condition: and(succeededOrFailed(), ne(${{ parameters.Matrix }}, '{}'))
+    strategy:
+      maxParallel: ${{ parameters.MaxParallel }}
+      matrix: $[ ${{ parameters.Matrix }} ]
+
+    variables:
+      - template: /eng/pipelines/templates/variables/globals.yml
+      - name: ArmTemplateParameters
+        value: '@{}'
+
+    timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+
+    pool:
+      name: $(Pool)
+      # 1es pipeline templates converts `image` to demands: ImageOverride under the hood
+      # which is incompatible with image selection in the default non-1es hosted pools
+      ${{ if eq(parameters.OSName, 'macOS') }}:
+        vmImage: $(OSVmImage)
+      ${{ else }}:
+        image: $(OSVmImage)
+      os: ${{ parameters.OSName }}
+
+    ${{ if eq(parameters.UsePlatformContainer, 'true') }}:
+      container: $[ variables['Container'] ]
+
+    steps:
+      - ${{ parameters.PreSteps }}
+
+      - template: /eng/common/pipelines/templates/steps/verify-agent-os.yml
+        parameters:
+          AgentImage: $(OSVmImage)
+
+      - template: /eng/common/TestResources/build-test-resource-config.yml
+        parameters:
+          SubscriptionConfiguration: ${{ parameters.CloudConfig.SubscriptionConfiguration }}
+          SubscriptionConfigurations: ${{ parameters.CloudConfig.SubscriptionConfigurations }}
+          SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths }}
+          EnvVars:
+            Pool: $(Pool)
+            ${{ insert }}: ${{ parameters.EnvVars }}
+
+      - template: /eng/common/TestResources/deploy-test-resources.yml
+        parameters:
+          ${{ if or(parameters.Location, parameters.CloudConfig.Location) }}:
+            Location: ${{ coalesce(parameters.Location, parameters.CloudConfig.Location) }}
+          ServiceDirectory: ${{ parameters.ServiceDirectory }}
+          SubscriptionConfiguration: $(SubscriptionConfiguration)
+          ArmTemplateParameters: $(ArmTemplateParameters)
+          UseFederatedAuth: ${{ parameters.UseFederatedAuth }}
+          PersistOidcToken: ${{ parameters.PersistOidcToken }}
+          ServiceConnection: ${{ parameters.CloudConfig.ServiceConnection }}
+          SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths}}
+          EnvVars:
+            Pool: $(Pool)
+            ${{ insert }}: ${{ parameters.EnvVars }}
+
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: $(Toolchain)
+
+      - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
+
+      - template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self
+        parameters:
+          ServiceDirectory: ${{ parameters.ServiceDirectory }}
+          PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
+
+      - ${{ if eq(parameters.TestProxy, true) }}:
+        - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
+
+      - task: Powershell@2
+        displayName: "Test Packages"
+        condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+        timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+        env:
+          CIBW_BUILD_VERBOSITY: 3
+          AZURE_TEST_MODE: $(TestMode)
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          ${{ if parameters.PersistOidcToken }}:
+            ARM_OIDC_TOKEN: $(ARM_OIDC_TOKEN)
+          ${{ each var in parameters.EnvVars }}:
+            ${{ var.key }}: ${{ var.value }}
+        inputs:
+          pwsh: true
+          filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
+          arguments: >
+            -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+            -Toolchain '$(Toolchain)'
+
+      - ${{ parameters.PostSteps }}
+
+      - template: /eng/common/TestResources/remove-test-resources.yml
+        parameters:
+          ServiceDirectory: ${{ parameters.ServiceDirectory }}
+          SubscriptionConfiguration: $(SubscriptionConfiguration)
+          UseFederatedAuth: ${{ parameters.UseFederatedAuth }}
+          ServiceConnection: ${{ parameters.CloudConfig.ServiceConnection }}
+          EnvVars: ${{ parameters.EnvVars }}
