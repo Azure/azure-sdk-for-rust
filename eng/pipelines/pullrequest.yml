@@ -13,3 +13,4 @@ extends:
   parameters:
     ServiceDirectory: auto
     IncludeRelease: false
+    RunLiveTests: false
