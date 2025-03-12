@@ -3,20 +3,19 @@
 
 use azure_core::{
     headers::{
-        FromHeaders, HeaderName, Headers, BLOB_ACCESS_TIER, BLOB_TYPE, CREATION_TIME, LEASE_STATE,
-        LEASE_STATUS, SERVER_ENCRYPTED,
+        FromHeaders, HeaderName, Headers, BLOB_ACCESS_TIER, BLOB_TYPE, CREATION_TIME,
+        LAST_MODIFIED, LEASE_STATE, LEASE_STATUS, SERVER_ENCRYPTED,
     },
     Error, Etag, LeaseStatus,
 };
 use typespec_client_core::fmt::SafeDebug;
 
-use crate::models::{AccessTier, BlobType, LeaseState};
+use crate::generated::models::{AccessTier, BlobType, LeaseState};
 
 pub const CONTENT_LENGTH: HeaderName = HeaderName::from_static("content-length");
 pub const CONTENT_MD5: HeaderName = HeaderName::from_static("content-md5");
 pub const CONTENT_TYPE: HeaderName = HeaderName::from_static("content-type");
 pub const ETAG: HeaderName = HeaderName::from_static("etag");
-pub const LAST_MODIFIED: HeaderName = HeaderName::from_static("last-modified");
 pub const BLOB_ACCESS_TIER_INFERRED: HeaderName =
     HeaderName::from_static("x-ms-access-tier-inferred");
 

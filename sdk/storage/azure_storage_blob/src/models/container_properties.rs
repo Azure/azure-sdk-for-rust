@@ -10,7 +10,7 @@ use azure_core::{
 };
 use typespec_client_core::fmt::SafeDebug;
 
-use crate::models::LeaseState;
+use crate::generated::models::LeaseState;
 
 pub const LAST_MODIFIED: HeaderName = HeaderName::from_static("last-modified");
 pub const IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED: HeaderName =
