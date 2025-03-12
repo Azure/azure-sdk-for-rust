@@ -58,42 +58,73 @@ pub trait Container {
     }
 }
 
-/// A simple vector-based collection
-#[derive(Debug)]
-pub struct VecContainer<T> {
-    pub items: Vec<T>,
-}
-
-/// Implementation of Container for VecContainer
-impl<T> Container for VecContainer<T> {
-    type Item = T;
-
-    fn add(&mut self, item: Self::Item) {
-        self.items.push(item);
-    }
-
-    fn len(&self) -> usize {
-        self.items.len()
-    }
-}
-
-/// A trait demonstrating associated constants
-pub trait Bounded {
-    /// The maximum value for this type
-    const MAX: Self;
-    /// The minimum value for this type
-    const MIN: Self;
-}
-
-impl Bounded for i32 {
-    const MAX: i32 = i32::MAX;
-    const MIN: i32 = i32::MIN;
-}
-
 /// A trait that extends multiple other traits
 pub trait SuperTrait: Debug + Display + Clone {
     /// A method specific to SuperTrait
     fn super_method(&self) -> String;
+}
+
+/// An unsafe trait example - implementors must uphold safety guarantees
+/// that the Rust compiler cannot verify
+///
+/// Unsafe traits are typically used when the trait methods need to work with raw pointers,
+/// perform unsafe operations, or make guarantees about memory safety that the compiler cannot check.
+/// An unsafe trait example - implementors must uphold safety guarantees
+/// that the Rust compiler cannot verify
+///
+/// # Safety
+///
+/// Implementors must ensure that:
+/// - The pointer returned by `get_raw_ptr` is not used after the object is dropped
+/// - The pointer returned by `get_raw_ptr` is not used to modify the data in a way that violates Rust's aliasing rules
+/// - No other references to the data exist while the pointer returned by `get_raw_mut_ptr` is in use
+/// - The pointer returned by `get_raw_mut_ptr` is not used after the object is dropped
+pub unsafe trait UnsafeAccess {
+    /// Get a raw pointer to the internal data
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that:
+    /// - The pointer is not used after the object is dropped
+    /// - The pointer is not used to modify the data in a way that violates Rust's aliasing rules
+    unsafe fn get_raw_ptr(&self) -> *const u8;
+
+    /// Get a mutable raw pointer to the internal data
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that:
+    /// - No other references to the data exist while the pointer is in use
+    /// - The pointer is not used after the object is dropped
+    unsafe fn get_raw_mut_ptr(&mut self) -> *mut u8;
+}
+
+/// A struct that implements the UnsafeAccess trait
+#[derive(Debug)]
+pub struct RawBuffer {
+    data: Vec<u8>,
+}
+
+impl RawBuffer {
+    /// Create a new buffer with the given size
+    pub fn new(size: usize) -> Self {
+        RawBuffer {
+            data: vec![0; size],
+        }
+    }
+}
+
+/// Implementation of UnsafeAccess for RawBuffer
+///
+/// This is unsafe because we're exposing raw pointers that could be misused
+unsafe impl UnsafeAccess for RawBuffer {
+    unsafe fn get_raw_ptr(&self) -> *const u8 {
+        self.data.as_ptr()
+    }
+
+    unsafe fn get_raw_mut_ptr(&mut self) -> *mut u8 {
+        self.data.as_mut_ptr()
+    }
 }
 
 /// A trait with lifetime parameters
