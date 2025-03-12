@@ -1,0 +1,23 @@
+[package]
+name = "azure_storage_blob_test"
+version = "0.1.0"
+description = "Common utilities for Key Vault tests"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+keywords = ["sdk", "azure", "rest", "cloud", "test"]
+categories = ["development-tools"]
+publish = false
+
+[dependencies]
+azure_core = { workspace = true, features = ["xml"] }
+azure_core_test.workspace = true
+azure_storage_blob.path = "../azure_storage_blob"
+tokio = { workspace = true, features = ["rt"] }
+
+[lints]
+workspace = true

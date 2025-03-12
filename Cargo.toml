@@ -71,10 +71,6 @@ path = "sdk/core/azure_core_test_macros"
 # azure_identity should only ever be in dev-dependencies herein
 path = "sdk/identity/azure_identity"
 
-[workspace.dependencies.azure_storage_common]
-version = "0.1.0"
-path = "sdk/storage"
-
 [workspace.dependencies]
 async-lock = "3.0"
 async-process = "2.0"

@@ -1,32 +1,32 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{headers::HeaderName, Bytes, RequestContent, StatusCode};
+use azure_core::{base64, headers::HeaderName, Bytes, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     clients::{BlobClient, ContainerClient},
-    models::{BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions, BlobType},
+    models::{BlobType, BlockLookupList},
     BlobClientOptions,
 };
-use std::{env, error::Error};
+use azure_storage_blob_test::recorded_test_setup;
+use std::error::Error;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let mut options = BlobClientOptions::default();
-    recording.instrument(&mut options.client_options);
-
-    // Setup
-    let endpoint = format!(
-        "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
 
     // Act
     let container_client = ContainerClient::new(
         &endpoint,
-        String::from("testcontainer1"),
+        container_name.clone(),
         recording.credential(),
         Some(options.clone()),
     )?;
@@ -34,8 +34,8 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     let blob_client = BlobClient::new(
         &endpoint,
-        String::from("testcontainer1"),
-        String::from("test_blob.txt"),
+        container_name,
+        blob_name,
         recording.credential(),
         Some(options),
     )?;
@@ -48,9 +48,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
             None,
         )
         .await?;
-    let response = blob_client
-        .get_blob_properties(Some(BlobBlobClientGetPropertiesOptions::default()))
-        .await;
+    let response = blob_client.get_blob_properties(None).await;
 
     // Assert
     assert!(response.is_ok());
@@ -69,26 +67,23 @@ async fn test_get_blob_properties_invalid_container(
 ) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let mut options = BlobClientOptions::default();
-    recording.instrument(&mut options.client_options);
-
-    // Setup
-    let endpoint = format!(
-        "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
 
     // Act
     let blob_client = BlobClient::new(
         &endpoint,
-        String::from("missingcontainer"),
-        String::from("test_blob.txt"),
+        container_name,
+        blob_name,
         recording.credential(),
         Some(options),
     )?;
-    let response = blob_client
-        .get_blob_properties(Some(BlobBlobClientGetPropertiesOptions::default()))
-        .await;
+    let response = blob_client.get_blob_properties(None).await;
 
     // Assert
     assert_eq!(
@@ -103,19 +98,18 @@ async fn test_get_blob_properties_invalid_container(
 async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let mut options = BlobClientOptions::default();
-    recording.instrument(&mut options.client_options);
-
-    // Setup
-    let endpoint = format!(
-        "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
 
     // Act
     let container_client = ContainerClient::new(
         &endpoint,
-        String::from("testcontainer2"),
+        container_name.clone(),
         recording.credential(),
         Some(options.clone()),
     )?;
@@ -123,8 +117,8 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let blob_client = BlobClient::new(
         &endpoint,
-        String::from("testcontainer2"),
-        String::from("test_blob.txt"),
+        container_name,
+        blob_name,
         recording.credential(),
         Some(options),
     )?;
@@ -137,9 +131,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             None,
         )
         .await?;
-    let response = blob_client
-        .download_blob(Some(BlobBlobClientDownloadOptions::default()))
-        .await?;
+    let response = blob_client.download_blob(None).await?;
 
     // Assert
     let (status_code, headers, response_body) = response.deconstruct();
@@ -158,19 +150,18 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let mut options = BlobClientOptions::default();
-    recording.instrument(&mut options.client_options);
-
-    // Setup
-    let endpoint = format!(
-        "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
 
     // Act
     let container_client = ContainerClient::new(
         &endpoint,
-        String::from("testcontainer3"),
+        container_name.clone(),
         recording.credential(),
         Some(options.clone()),
     )?;
@@ -178,8 +169,8 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let blob_client = BlobClient::new(
         &endpoint,
-        String::from("testcontainer3"),
-        String::from("test_upload_blob.txt"),
+        container_name,
+        blob_name,
         recording.credential(),
         Some(options),
     )?;
@@ -205,19 +196,18 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_upload_blob_overwrite(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let mut options = BlobClientOptions::default();
-    recording.instrument(&mut options.client_options);
-
-    // Setup
-    let endpoint = format!(
-        "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
-    );
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
 
     // Act
     let container_client = ContainerClient::new(
         &endpoint,
-        String::from("testcontainer4"),
+        container_name.clone(),
         recording.credential(),
         Some(options.clone()),
     )?;
@@ -225,8 +215,8 @@ async fn test_upload_blob_overwrite(ctx: TestContext) -> Result<(), Box<dyn Erro
 
     let blob_client = BlobClient::new(
         &endpoint,
-        String::from("testcontainer4"),
-        String::from("test_upload_blob_overwrite.txt"),
+        container_name,
+        blob_name,
         recording.credential(),
         Some(options),
     )?;
@@ -263,9 +253,7 @@ async fn test_upload_blob_overwrite(ctx: TestContext) -> Result<(), Box<dyn Erro
             None,
         )
         .await?;
-    let response = blob_client
-        .download_blob(Some(BlobBlobClientDownloadOptions::default()))
-        .await?;
+    let response = blob_client.download_blob(None).await?;
 
     // Assert
     assert_eq!(upload_response.status(), StatusCode::Created);
@@ -276,6 +264,99 @@ async fn test_upload_blob_overwrite(ctx: TestContext) -> Result<(), Box<dyn Erro
         headers.get_str(&HeaderName::from_static("content-length"))?
     );
     assert_eq!(Bytes::from_static(new_data), response_body.collect().await?);
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
+
+    // Act
+    let container_client = ContainerClient::new(
+        &endpoint,
+        container_name.clone(),
+        recording.credential(),
+        Some(options.clone()),
+    )?;
+    container_client.create_container(None).await?;
+
+    let blob_client = BlobClient::new(
+        &endpoint,
+        container_name,
+        blob_name,
+        recording.credential(),
+        Some(options),
+    )?;
+
+    let block_1 = b"AAA";
+    let block_2 = b"BBB";
+    let block_3 = b"CCC";
+
+    blob_client
+        .stage_block(
+            "1",
+            i64::try_from(block_1.len())?,
+            RequestContent::from(block_1.to_vec()),
+            None,
+        )
+        .await?;
+
+    blob_client
+        .stage_block(
+            "2",
+            i64::try_from(block_2.len())?,
+            RequestContent::from(block_2.to_vec()),
+            None,
+        )
+        .await?;
+    blob_client
+        .stage_block(
+            "3",
+            i64::try_from(block_3.len())?,
+            RequestContent::from(block_3.to_vec()),
+            None,
+        )
+        .await?;
+
+    let latest_blocks: Vec<String> = vec![
+        base64::encode("1"),
+        base64::encode("2"),
+        base64::encode("3"),
+    ];
+
+    let block_lookup_list = BlockLookupList {
+        committed: None,
+        latest: Some(latest_blocks),
+        uncommitted: None,
+    };
+
+    let request_content = RequestContent::try_from(block_lookup_list)?;
+
+    blob_client.commit_block_list(request_content, None).await?;
+
+    let response = blob_client.download_blob(None).await?;
+
+    // Assert
+    let (status_code, headers, response_body) = response.deconstruct();
+    assert!(status_code.is_success());
+    assert_eq!(
+        "9",
+        headers.get_str(&HeaderName::from_static("content-length"))?
+    );
+    assert_eq!(
+        Bytes::from_static(b"AAABBBCCC"),
+        response_body.collect().await?
+    );
 
     container_client.delete_container(None).await?;
     Ok(())
