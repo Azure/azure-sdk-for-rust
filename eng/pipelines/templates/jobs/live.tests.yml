@@ -16,20 +16,18 @@ parameters:
 - name: TimeoutInMinutes
   type: number
 # live test parameters
-- name: UseFederatedAuth
-  type: boolean
-- name: PersistOidcToken
-  type: boolean
 - name: EnvVars
   type: object
-- name: TimeoutInMinutes
-  type: number
 - name: PreSteps
   type: object
 - name: PostSteps
   type: object
 - name: Location
   type: string
+- name: UseFederatedAuth
+  type: boolean
+- name: PersistOidcToken
+  type: boolean
 
 jobs:
 - job:
