@@ -57,10 +57,10 @@ parameters:
   type: boolean
   default: false
 - name: PreSteps
-  type: StepList
+  type: object
   default: []
 - name: PostSteps
-  type: StepList
+  type: object
   default: []
 - name: Location
   type: string
