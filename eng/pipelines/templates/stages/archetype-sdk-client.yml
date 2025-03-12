@@ -4,17 +4,34 @@ parameters:
 - name: Artifacts
   type: object
   default: []
+# Test Parameters
 - name: TestTimeoutInMinutes
   type: number
   default: 60
-- name: oneESTemplateTag
-  type: string
-  default: release
+- name: MatrixConfigs
+  type: object
+  default:
+  - Name: rust_ci_test_base
+    Path: eng/pipelines/templates/stages/platform-matrix.json
+    Selection: sparse
+    NonSparseParameters: RustToolchainName
+    GenerateVMJobs: true
+- name: AdditionalMatrixConfigs
+  type: object
+  default: []
+- name: MatrixFilters
+  type: object
+  default: []
+- name: MatrixReplace
+  type: object
+  default: []
+- name: TestProxy
+  type: boolean
+  default: true
 
 extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
   parameters:
-    oneESTemplateTag: ${{ parameters.oneESTemplateTag }}
     autoBaseline: ${{ and(eq(variables['Build.DefinitionName'], 'rust - core'), eq(variables['Build.SourceBranchName'], 'main'), eq(variables['System.TeamProject'], 'internal')) }}
     stages:
     - stage: Build
@@ -25,17 +42,23 @@ extends:
       - template: /eng/pipelines/templates/jobs/ci.yml
         parameters:
           ServiceDirectory: ${{ parameters.ServiceDirectory }}
-          Artifacts: ${{ parameters.Artifacts }}
-          ${{ if eq(parameters.ServiceDirectory, 'template') }}:
-            TestPipeline: true
-          TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           PipelineArtifactName: packages
+          Artifacts: ${{ parameters.Artifacts }}
+          TestPipeline: ${{ eq(parameters.ServiceDirectory, 'template') }}
+          TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+          TestProxy: ${{ parameters.TestProxy }}
+          MatrixConfigs:
+          - ${{ each config in parameters.MatrixConfigs }}:
+            - ${{ config }}
+          - ${{ each config in parameters.AdditionalMatrixConfigs }}:
+            - ${{ config }}
+          MatrixFilters: ${{ parameters.MatrixFilters }}
+          MatrixReplace: ${{ parameters.MatrixReplace }}
 
     - template: archetype-rust-release.yml
       parameters:
         DependsOn: "Build"
         ServiceDirectory: ${{ parameters.ServiceDirectory }}
         Artifacts: ${{ parameters.Artifacts }}
-        ${{ if eq(parameters.ServiceDirectory, 'template') }}:
-          TestPipeline: true
+        TestPipeline: ${{ eq(parameters.ServiceDirectory, 'template') }}
         PipelineArtifactName: packages
