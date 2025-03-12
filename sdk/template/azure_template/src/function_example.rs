@@ -35,6 +35,42 @@ where
     println!("{:?}", list);
 }
 
+/// A const function that can be evaluated at compile time
+pub const fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+/// An unsafe function that requires the caller to ensure safety
+/// # Safety
+///
+/// The caller must ensure that the pointer is valid and not null.
+pub unsafe fn dereference_raw_pointer(ptr: *const i32) -> i32 {
+    *ptr // Dereferencing a raw pointer is unsafe in Rust
+}
+
+/// An async function that can be awaited
+pub async fn fetch_data(url: &str) -> Result<String, String> {
+    // This is a simplified example - in a real case you'd use an HTTP client
+    // like reqwest to actually fetch data
+    Ok(format!("Data fetched from {}", url))
+}
+
+/// A function with a specific ABI (Application Binary Interface)
+/// This example uses the "C" ABI for FFI (Foreign Function Interface)
+pub extern "C" fn callable_from_c(value: i32) -> i32 {
+    value * 2
+}
+
+/// A function that combines several attributes: unsafe, extern, and const
+/// # Safety
+///
+/// The caller must ensure that the pointer is valid and not null, and that the length is correct.
+pub const unsafe extern "C" fn complex_function(ptr: *const u8, len: usize) -> usize {
+    // This is just an example - in real code, you'd have proper safety checks
+    let slice = std::slice::from_raw_parts(ptr, len);
+    slice.len()
+}
+
 /// A function returning a Result type for error handling
 pub fn parse_number(s: &str) -> Result<i32, String> {
     s.parse::<i32>()
