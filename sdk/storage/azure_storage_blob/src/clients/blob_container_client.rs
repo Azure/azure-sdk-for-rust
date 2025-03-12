@@ -15,7 +15,7 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-// A client to interact with a specified Azure storage container.
+/// A client to interact with a specified Azure storage container.
 pub struct BlobContainerClient {
     endpoint: Url,
     container_name: String,

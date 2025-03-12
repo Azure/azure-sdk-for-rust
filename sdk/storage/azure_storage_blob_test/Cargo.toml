@@ -15,7 +15,7 @@ publish = false
 
 [dependencies]
 azure_core = { workspace = true, features = ["xml"] }
-azure_core_test.path = "../../core/azure_core_test"
+azure_core_test.workspace = true
 azure_storage_blob.path = "../azure_storage_blob"
 tokio = { workspace = true, features = ["rt"] }
 

@@ -7,9 +7,9 @@
 mod generated;
 
 pub mod clients {
-    pub mod blob_client;
-    pub mod blob_container_client;
-    pub mod blob_service_client;
+    mod blob_client;
+    mod blob_container_client;
+    mod blob_service_client;
 
     pub use blob_client::BlobClient;
     pub use blob_container_client::BlobContainerClient as ContainerClient;

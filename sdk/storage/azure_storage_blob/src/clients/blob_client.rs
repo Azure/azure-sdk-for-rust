@@ -17,7 +17,7 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
+/// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
     endpoint: Url,
     container_name: String,

@@ -12,7 +12,7 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-// A client to interact with an Azure storage account.
+/// A client to interact with an Azure storage account.
 pub struct BlobServiceClient {
     endpoint: Url,
     client: GeneratedBlobClient,

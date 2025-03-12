@@ -12,7 +12,7 @@ rust-version.workspace = true
 [dependencies]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
-azure_storage_common.workspace = true
+azure_storage_common = { version = "0.1.0", path = ".." }
 serde.workspace = true
 time.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
