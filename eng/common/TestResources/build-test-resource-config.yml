@@ -24,8 +24,6 @@ steps:
       pwsh: true
       ScriptType: InlineScript
       Inline: |
-        Get-ChildItem env: | Format-Table
-
         Set-AzContext 'Azure SDK Engineering System'
         if ($env:Pool -eq 'Azure Pipelines') {
           Write-Host "Skipping pool subnet lookup when running on an Azure Pipelines hosted pool"
