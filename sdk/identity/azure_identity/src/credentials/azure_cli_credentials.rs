@@ -252,6 +252,7 @@ impl AzureCliCredential {
             .options
             .executor
             .as_ref()
+            // It's okay to call unwrap() here because new() ensures it's initialized.
             .unwrap()
             .run(OsStr::new(program), &args)
             .await;
