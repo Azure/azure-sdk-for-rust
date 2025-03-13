@@ -49,6 +49,9 @@ jobs:
       image: $(OSVmImage)
     os: ${{ parameters.OSName }}
 
+  variables:
+    ArmTemplateParameters: '@{}'
+
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
