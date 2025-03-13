@@ -70,7 +70,9 @@ jobs:
       SubscriptionConfiguration: ${{ parameters.CloudConfig.SubscriptionConfiguration }}
       SubscriptionConfigurations: ${{ parameters.CloudConfig.SubscriptionConfigurations }}
       SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths }}
-      EnvVars: ${{ parameters.EnvVars }}
+      EnvVars:
+        Pool: $(Pool)
+        ${{insert}}: ${{ parameters.EnvVars }}
 
   - template: /eng/common/TestResources/deploy-test-resources.yml
     parameters:
@@ -83,7 +85,9 @@ jobs:
       ServiceConnection: ${{ parameters.CloudConfig.ServiceConnection }}
       SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths}}
       PersistOidcToken: ${{ parameters.PersistOidcToken }}
-      EnvVars: ${{ parameters.EnvVars }}
+      EnvVars:
+        Pool: $(Pool)
+        ${{insert}}: ${{ parameters.EnvVars }}
 
   # To allow tests to run in parallel to Pack, we don't reuse the PackageInfo directory
   # from the Pack job. We just let each test leg create its own PackageInfo directory.
