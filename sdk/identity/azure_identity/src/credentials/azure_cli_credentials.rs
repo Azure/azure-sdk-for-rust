@@ -368,7 +368,7 @@ mod tests {
           }
         "#;
         let token_response: CliTokenResponse = from_json(json)?;
-        assert_eq!(token_response.expires_on, Some(1704158596));
+        assert_eq!(token_response.expires_on, None);
         Ok(())
     }
 

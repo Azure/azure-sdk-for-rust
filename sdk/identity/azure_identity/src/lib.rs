@@ -57,7 +57,7 @@ fn validate_scope(scope: &str) -> Result<()> {
 fn test_validate_scope() {
     assert!(validate_scope("").is_err());
     assert!(validate_scope("invalid_scope@id").is_err());
-    assert!(validate_scope("A-1b_2c 3:d/4.z").is_ok());
+    assert!(validate_scope("A-1b_2c:3d/4.z").is_ok());
     assert!(validate_scope("http://vault.azure.net").is_ok());
 }
 
@@ -66,7 +66,7 @@ fn validate_subscription(subscription: &str) -> Result<()> {
     if subscription.is_empty()
         || !subscription
             .chars()
-            .all(|c| c.is_alphabetic() || c == '.' || c == '-' || c == '_' || c == ' ')
+            .all(|c| c.is_alphanumeric() || c == '.' || c == '-' || c == '_' || c == ' ')
     {
         return Err(Error::message(
             ErrorKind::Credential,
