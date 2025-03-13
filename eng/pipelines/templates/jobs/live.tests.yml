@@ -115,7 +115,7 @@ jobs:
         azurePowerShellVersion: LatestVersion
         pwsh: true
         scriptType: inlineScript
-        inlineScript: |
+        inline: |
           $account = (Get-AzContext).Account;
           $env:AZURESUBSCRIPTION_CLIENT_ID = $account.Id;
           $env:AZURESUBSCRIPTION_TENANT_ID = $account.Tenants;
