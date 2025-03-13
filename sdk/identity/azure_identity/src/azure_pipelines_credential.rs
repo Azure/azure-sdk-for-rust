@@ -8,7 +8,7 @@ use crate::{
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::ErrorKind,
-    headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION},
+    headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
     HttpClient, Method, Request, StatusCode, Url,
 };
 use serde::Deserialize;
@@ -68,7 +68,13 @@ impl AzurePipelinesCredential {
 
         let options = options.unwrap_or_default();
         let env = options.credential_options.credential_options.env();
-        let endpoint = env.var(OIDC_VARIABLE_NAME).map_err(|err| azure_core::Error::full(ErrorKind::Credential, err, format!("no value for environment variable {OIDC_VARIABLE_NAME}. This should be set by Azure Pipelines")))?;
+        let endpoint = env
+            .var(OIDC_VARIABLE_NAME)
+            .map_err(|err| azure_core::Error::full(
+                ErrorKind::Credential,
+                err,
+                format!("no value for environment variable {OIDC_VARIABLE_NAME}. This should be set by Azure Pipelines"),
+            ))?;
         let mut endpoint: Url = endpoint.parse().map_err(|err| {
             azure_core::Error::full(
                 ErrorKind::Credential,
@@ -125,6 +131,7 @@ impl ClientAssertion for Client {
             String::from("Bearer ") + self.system_access_token.secret(),
         );
         req.insert_header(TFS_FEDAUTHREDIRECT_HEADER, "Suppress");
+        req.insert_header(CONTENT_LENGTH, "0");
 
         // TODO: Consider defining and using azure_identity-specific pipeline, or even from azure_core.
         let resp = self.http_client.execute_request(&req).await?;
@@ -177,12 +184,14 @@ impl FromHeaders for ErrorHeaders {
 
 impl fmt::Display for ErrorHeaders {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            r#"{{ x-msedge-ref: "{}", x-vss-e2eid: "{}" }}"#,
-            self.msedge_ref.as_ref().map_or("", AsRef::as_ref),
-            self.vss_e2eid.as_ref().map_or("", AsRef::as_ref),
-        )
+        let mut v = f.debug_struct("Headers");
+        if let Some(ref msedge_ref) = self.msedge_ref {
+            v.field(MSEDGE_REF.as_str(), msedge_ref);
+        }
+        if let Some(ref vss_e2eid) = self.vss_e2eid {
+            v.field(VSS_E2EID.as_str(), vss_e2eid);
+        }
+        v.finish()
     }
 }
 
