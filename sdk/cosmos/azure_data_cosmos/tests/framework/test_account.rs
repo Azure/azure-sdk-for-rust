@@ -171,8 +171,8 @@ impl TestAccount {
     /// Generates a unique database ID including the [`TestAccount::context_id`].
     ///
     /// This database will be automatically deleted when [`TestAccount::cleanup`] is called.
-    pub fn unique_db<'a>(&self, base_id: &'a str) -> Cow<'a, str> {
-        format!("{}_{}", base_id, self.context_id).into()
+    pub fn unique_db(&self, base_id: &str) -> String {
+        format!("{}_{}", base_id, self.context_id)
     }
 
     /// Cleans up test resources, then drops the [`TestAccount`].
