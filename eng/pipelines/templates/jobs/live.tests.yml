@@ -127,7 +127,6 @@ jobs:
       env:
         CIBW_BUILD_VERBOSITY: 3
         AZURE_TEST_MODE: 'live'
-        RUST_LOG=trace
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
         ${{ insert }}: ${{ parameters.EnvVars }}
       inputs:
