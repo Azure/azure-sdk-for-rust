@@ -105,7 +105,10 @@ jobs:
     timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
     env:
       CIBW_BUILD_VERBOSITY: 3
-      AZURE_RECORD_MODE: 'live'
+      AZURE_TEST_MODE: 'live'
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      ${{ if parameters.PersistOidcToken }}:
+        ARM_OIDC_TOKEN: $(ARM_OIDC_TOKEN)
       ${{ insert }}: ${{ parameters.EnvVars }}
     inputs:
       pwsh: true
