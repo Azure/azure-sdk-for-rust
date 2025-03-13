@@ -1,4 +1,3 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
@@ -35,8 +34,6 @@ pub struct TestAccountOptions {
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
-
-static TRACING: Once = Once::new();
 
 impl TestAccount {
     /// Creates a new [`TestAccount`] from local environment variables.
@@ -109,21 +106,11 @@ impl TestAccount {
         // We need the context_id to be constant, so that record/replay work.
         let context_id = context.name().to_string();
 
-        TRACING.call_once(|| {
-            // Enable tracing for tests, if it's not already enabled
-            _ = tracing_subscriber::fmt()
-                .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-                .try_init();
-
-            // Ignore the failure. The most likely failure is that a global default trace dispatcher has already been set.
-            // And we don't want the tracing support to bring down the tests.
-        });
-
         // Disable some sanitizers that affect our tests
         context
             .recording()
             .remove_sanitizers(&[
-                "AZSDK3430", // Sanitizes "id" properties. The tests need those unsanitized
+                "AZSDK3430", // Sanitizes "id" properties. The tests need the id to be preserved.
             ])
             .await?;
 
