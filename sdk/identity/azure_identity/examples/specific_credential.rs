@@ -127,7 +127,7 @@ impl SpecificAzureCredential {
                     )
                 }
                 #[cfg(not(target_arch = "wasm32"))]
-                azure_credential_kinds::AZURE_CLI => AzureCliCredential::new()
+                azure_credential_kinds::AZURE_CLI => AzureCliCredential::new(Some(options.into()))
                     .map(SpecificAzureCredentialKind::AzureCli)
                     .with_context(ErrorKind::Credential, || {
                         format!(

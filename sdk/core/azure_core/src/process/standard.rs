@@ -1,31 +1,29 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::ProcessRunner;
+use super::Executor;
 use async_trait::async_trait;
 use futures::channel::oneshot;
-use std::io::Error;
-use std::io::ErrorKind;
-use std::{ffi::OsStr, process::Output};
+use std::{ffi::OsStr, io, process::Output, thread};
 
-/// Implement [`ProcessRunner`] via a thread and [`std::process`]
+/// An [`Executor`] using [`tokio::process::Command`].
 #[derive(Debug)]
-pub struct ThreadRunner;
+pub struct StdExecutor;
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-impl ProcessRunner for ThreadRunner {
-    async fn run_command(&self, program: &OsStr, args: &[&OsStr]) -> Result<Output, Error> {
+impl Executor for StdExecutor {
+    async fn run(&self, program: &OsStr, args: &[&OsStr]) -> io::Result<Output> {
         let (tx, rx) = oneshot::channel();
         let mut cmd = std::process::Command::new(program);
         cmd.args(args);
-        std::thread::spawn(move || {
+        thread::spawn(move || {
             let output = cmd.output();
             tx.send(output)
         });
         let output = rx
             .await
-            .map_err(|err| Error::new(ErrorKind::Other, err))??;
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))??;
         Ok(output)
     }
 }

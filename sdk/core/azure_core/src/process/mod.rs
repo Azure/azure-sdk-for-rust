@@ -2,37 +2,35 @@
 // Licensed under the MIT License.
 
 use async_trait::async_trait;
-use std::io::Error;
-use std::{ffi::OsStr, process::Output};
+use std::{ffi::OsStr, fmt, io, process::Output, sync::Arc};
 
-#[cfg(not(feature = "tokio_process"))]
-mod thread;
-
-#[cfg(not(feature = "tokio_process"))]
-pub use thread::ThreadRunner;
-
-#[cfg(feature = "tokio_process")]
-pub use tokio::TokioRunner;
-
+mod standard;
 #[cfg(feature = "tokio_process")]
 mod tokio;
 
-/// Obtains a new process runner
-pub fn new_process_runner() -> Box<dyn ProcessRunner> {
-    #[cfg(feature = "tokio_process")]
-    {
-        Box::new(TokioRunner)
-    }
+pub use standard::StdExecutor;
+#[cfg(feature = "tokio_process")]
+pub use tokio::TokioExecutor;
+
+/// Creates a new [`Executor`].
+///
+/// This returns a [`StdExecutor`] that spawns a [`std::process::Command`] in a separate thread unless `tokio_process` was enabled,
+/// in which case an executor is returned that spawns a `tokio::process::Command`.
+pub fn new_executor() -> Arc<dyn Executor> {
     #[cfg(not(feature = "tokio_process"))]
     {
-        Box::new(ThreadRunner)
+        Arc::new(StdExecutor)
+    }
+    #[cfg(feature = "tokio_process")]
+    {
+        Arc::new(TokioExecutor)
     }
 }
 
-/// An abstraction to run processes
+/// An async command runner.
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-pub trait ProcessRunner: Send + Sync + std::fmt::Debug {
-    /// Run a command with the given arguments until it terminates, returning the output
-    async fn run_command(&self, program: &OsStr, args: &[&OsStr]) -> Result<Output, Error>;
+pub trait Executor: Send + Sync + fmt::Debug {
+    /// Run a program with the given arguments until it terminates, returning the output.
+    async fn run(&self, program: &OsStr, args: &[&OsStr]) -> io::Result<Output>;
 }

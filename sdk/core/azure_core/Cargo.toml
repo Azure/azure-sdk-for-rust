@@ -69,6 +69,7 @@ features = [
   "reqwest_gzip",
   "reqwest_rustls",
   "tokio_fs",
+  "tokio_process",
   "tokio_sleep",
   "xml",
 ]
