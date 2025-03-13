@@ -25,12 +25,10 @@ pub use consumer::{
 
 /// Event Hubs processor related types.
 pub mod processor {
-    pub use crate::event_processor::processor::{
-        ClaimOwnershipOptions, ListCheckpointsOptions, ListOwnershipOptions,
-    };
+    pub use crate::event_processor::CheckpointStore;
 }
 
-pub use event_processor::processor::{CheckpointStore, EventProcessor, ProcessorStrategy};
+pub use event_processor::{processor::EventProcessor, CheckpointStore, ProcessorStrategy};
 
 /// Builders for producer client and consumer client.
 pub mod builders {

@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 use super::{
     models::Ownership,
-    processor::{CheckpointStore, ProcessorStrategy},
+    {CheckpointStore, ProcessorStrategy},
 };
 use crate::models::ConsumerClientDetails;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
@@ -12,8 +12,9 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime},
 };
-use tracing::trace;
+use tracing::{debug, info, trace};
 
+#[derive(Debug)]
 pub struct LoadBalancerInfo {
     current_ownership: Vec<Ownership>,
     unowned_or_expired: Vec<Ownership>,
@@ -61,7 +62,6 @@ impl LoadBalancer {
                     .as_str(),
                 self.consumer_client_details.eventhub_name.as_str(),
                 self.consumer_client_details.consumer_group.as_str(),
-                None,
             )
             .await?;
 
@@ -102,7 +102,7 @@ impl LoadBalancer {
                 .push(ownership.clone());
         }
 
-        trace!("Number of expired partitions: {}", unowned_or_expired.len());
+        debug!("Number of expired partitions: {}", unowned_or_expired.len());
 
         for partition_id in partition_ids.iter() {
             if already_processed.contains(partition_id) {
@@ -124,7 +124,7 @@ impl LoadBalancer {
             trace!("Adding new ownership: {:?}", new_ownership);
             unowned_or_expired.push(new_ownership);
         }
-        trace!("Number of unowned partitions: {}", unowned_or_expired.len());
+        debug!("Number of unowned partitions: {}", unowned_or_expired.len());
 
         let mut max_allowed = partition_ids.len() / grouped_by_owner.len();
         let has_remainder = partition_ids.len() % grouped_by_owner.len() > 0;
@@ -152,7 +152,7 @@ impl LoadBalancer {
             .flatten()
             .collect();
 
-        Ok(LoadBalancerInfo {
+        let rv = LoadBalancerInfo {
             current_ownership: grouped_by_owner
                 .get(self.consumer_client_details.client_id.as_str())
                 .unwrap_or(&vec![])
@@ -162,7 +162,9 @@ impl LoadBalancer {
             extra_partition_possible: has_remainder,
             //            raw: ownerships,
             max_allowed,
-        })
+        };
+        info!("Get available partitions returns: {:?}", rv);
+        Ok(rv)
     }
 
     fn get_random_ownerships(&self, ownerships: &[Ownership], count: usize) -> Vec<Ownership> {
@@ -232,13 +234,19 @@ impl LoadBalancer {
     }
 
     pub async fn load_balance(&self, partition_ids: &[String]) -> Result<Vec<Ownership>> {
+        info!("Load balance for partitions: {}", partition_ids.join(", "));
         let load_balancer_info = self.get_available_partitions(partition_ids).await?;
+        trace!(
+            "[{}] Load balancer info: {:?}",
+            self.consumer_client_details.client_id,
+            load_balancer_info
+        );
         let mut claim_more = true;
 
         if load_balancer_info.current_ownership.len() > load_balancer_info.max_allowed {
             claim_more = false;
 
-            trace!(
+            info!(
                 "Owns {} of {} partitions. Max allowed is {}",
                 load_balancer_info.current_ownership.len(),
                 partition_ids.len(),
@@ -256,12 +264,24 @@ impl LoadBalancer {
                 claim_more
             );
         }
+
+        if claim_more {
+            debug!(
+                "[{}] Claiming more ownership",
+                self.consumer_client_details.client_id
+            );
+        } else {
+            debug!(
+                "[{}] Not claiming more ownership",
+                self.consumer_client_details.client_id
+            );
+        }
         let mut ownerships = load_balancer_info.current_ownership.clone();
         if claim_more {
             match self.processor_strategy {
                 ProcessorStrategy::Balanced => {
                     let mut ours = self.balanced_load_balancer(&load_balancer_info);
-                    trace!(
+                    debug!(
                         "[{}]Claiming ownership of {} partitions: {}",
                         self.consumer_client_details.client_id,
                         ours.len(),
@@ -271,7 +291,7 @@ impl LoadBalancer {
                 }
                 ProcessorStrategy::Greedy => {
                     let mut ours = self.greedy_load_balancer(&load_balancer_info);
-                    trace!(
+                    debug!(
                         "[{}]Claiming ownership of {} partitions: {}",
                         self.consumer_client_details.client_id,
                         ours.len(),
@@ -281,16 +301,13 @@ impl LoadBalancer {
                 }
             }
         }
-        trace!(
+        debug!(
             "[{}] Asked for {}",
             self.consumer_client_details.client_id,
             Self::partitions_for_ownership(&ownerships),
         );
-        let actual = self
-            .checkpoint_store
-            .claim_ownership(ownerships, None)
-            .await?;
-        trace!(
+        let actual = self.checkpoint_store.claim_ownership(ownerships).await?;
+        debug!(
             "[{}] Got {}",
             self.consumer_client_details.client_id,
             Self::partitions_for_ownership(&actual)

@@ -2,12 +2,11 @@ use async_trait::async_trait;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Etag, Result, Uuid};
 use azure_messaging_eventhubs::{
     models::{Checkpoint, Ownership},
-    processor::{ClaimOwnershipOptions, ListCheckpointsOptions, ListOwnershipOptions},
     CheckpointStore,
 };
 use std::sync::{Arc, Mutex};
 use std::{collections::HashMap, time::SystemTime};
-use tracing::{debug, trace, warn};
+use tracing::{trace, warn};
 
 pub struct InMemoryCheckpointStore {
     checkpoints: Arc<Mutex<HashMap<String, Checkpoint>>>,
@@ -28,8 +27,8 @@ impl InMemoryCheckpointStore {
         }
     }
 
-    pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
-        debug!(
+    pub fn update_ownership(&self, ownership: Ownership) -> Result<Ownership> {
+        trace!(
             "Update ownership for partition {}",
             ownership.partition_id()
         );
@@ -54,36 +53,34 @@ impl InMemoryCheckpointStore {
         trace!("Update ownership for key {}", key);
         if store.contains_key(&key) {
             if ownership.etag() != store.get(&key).unwrap().etag() {
-                debug!("ETag mismatch {}", key);
+                warn!("ETag mismatch {}", key);
                 return Err(Error::message(
                     AzureErrorKind::Other,
                     format!("ETag mismatch for partition {}", key),
                 ));
             }
             store.insert(key.clone(), ownership.clone());
+            trace!("Updated ownership for key {}", key);
             Ok(ownership.clone())
         } else {
-            debug!("Insert ownership for key {}", key);
+            trace!("Insert new ownership for key {}", key);
             let mut new_ownership = ownership.clone();
             new_ownership.set_etag(Etag::from(Uuid::new_v4().to_string()));
             new_ownership.set_last_modified_time(SystemTime::now());
-            store.insert(key.clone(), ownership.clone());
-            Ok(ownership.clone())
+            store.insert(key.clone(), new_ownership.clone());
+            trace!("Inserted new ownership for key {}", key);
+            Ok(new_ownership.clone())
         }
     }
 }
 
 #[async_trait]
 impl CheckpointStore for InMemoryCheckpointStore {
-    async fn claim_ownership<'a>(
-        &'a self,
-        ownerships: Vec<Ownership>,
-        #[allow(unused_variables)] _options: Option<ClaimOwnershipOptions>,
-    ) -> Result<Vec<Ownership>> {
-        debug!("Claim ownership for {} partitions", ownerships.len());
+    async fn claim_ownership(&self, ownerships: Vec<Ownership>) -> Result<Vec<Ownership>> {
+        trace!("Claim ownership for {} partitions", ownerships.len());
         let mut claimed_ownerships = Vec::new();
         for ownership in ownerships {
-            self.update_ownership(&ownership)?;
+            let ownership = self.update_ownership(ownership)?;
             if ownership.etag().is_some() {
                 claimed_ownerships.push(ownership);
             }
@@ -96,19 +93,18 @@ impl CheckpointStore for InMemoryCheckpointStore {
         namespace: &str,
         event_hub_name: &str,
         consumer_group: &str,
-        #[allow(unused_variables)] _options: Option<ListCheckpointsOptions>,
     ) -> Result<Vec<Checkpoint>> {
         let store = self.checkpoints.lock().unwrap();
         let prefix =
             Checkpoint::get_checkpoint_blob_prefix_name(namespace, event_hub_name, consumer_group)?;
-        debug!("list_checkpoints: list checkpoints for prefix {prefix}");
+        trace!("list_checkpoints: list checkpoints for prefix {prefix}");
         let mut checkpoints = Vec::new();
         for (key, value) in store.iter() {
             if key.starts_with(&prefix) {
                 checkpoints.push(value.clone());
             }
         }
-        debug!("list_checkpoints: found {} checkpoints", checkpoints.len());
+        trace!("list_checkpoints: found {} checkpoints", checkpoints.len());
         Ok(checkpoints)
     }
 
@@ -117,13 +113,12 @@ impl CheckpointStore for InMemoryCheckpointStore {
         namespace: &str,
         event_hub_name: &str,
         consumer_group: &str,
-        #[allow(unused_variables)] _options: Option<ListOwnershipOptions>,
     ) -> Result<Vec<Ownership>> {
         let store = self.ownerships.lock().unwrap();
 
         let prefix =
             Ownership::get_ownership_prefix_name(namespace, event_hub_name, consumer_group)?;
-        debug!("list_ownerships: list ownerships for prefix {prefix}");
+        trace!("list_ownerships: list ownerships for prefix {prefix}");
         let mut ownerships = Vec::new();
         ownerships.extend(
             store
@@ -131,7 +126,7 @@ impl CheckpointStore for InMemoryCheckpointStore {
                 .filter(|(key, _)| key.starts_with(&prefix))
                 .map(|(_, value)| value.clone()),
         );
-        debug!("list_ownerships: found {} ownerships", ownerships.len());
+        trace!("list_ownerships: found {} ownerships", ownerships.len());
         Ok(ownerships)
     }
 
@@ -152,7 +147,7 @@ impl CheckpointStore for InMemoryCheckpointStore {
             checkpoint.consumer_group(),
             checkpoint.partition_id(),
         )?;
-        debug!("update_checkpoint: insert {checkpoint:?} checkpoint key {key}");
+        trace!("update_checkpoint: insert {checkpoint:?} checkpoint key {key}");
         checkpoints.insert(key, checkpoint);
         Ok(())
     }

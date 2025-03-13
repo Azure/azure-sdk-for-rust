@@ -33,7 +33,8 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
         .build(
             Arc::new(consumer_client),
             Arc::new(InMemoryCheckpointStore::new()),
-        )?;
+        )
+        .await?;
 
     {
         const TIMEOUT: Duration = Duration::from_secs(30);
@@ -86,46 +87,50 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
     Ok(())
 }
 
-async fn create_processor(ctx: TestContext) -> azure_core::Result<Arc<EventProcessor>> {
+async fn create_consumer_client(ctx: TestContext) -> azure_core::Result<Arc<ConsumerClient>> {
     common::setup();
 
     let recording = ctx.recording();
 
-    let consumer_client = ConsumerClient::builder()
-        .open(
-            recording.var("EVENTHUBS_HOST", None).as_str(),
-            recording.var("EVENTHUB_NAME", None).as_str(),
-            recording.credential().clone(),
-        )
-        .await?;
+    Ok(Arc::new(
+        ConsumerClient::builder()
+            .open(
+                recording.var("EVENTHUBS_HOST", None).as_str(),
+                recording.var("EVENTHUB_NAME", None).as_str(),
+                recording.credential().clone(),
+            )
+            .await?,
+    ))
+}
 
+async fn create_processor(
+    consumer_client: Arc<ConsumerClient>,
+    update_interval: Duration,
+) -> azure_core::Result<Arc<EventProcessor>> {
     EventProcessor::builder()
         .with_load_balancing_strategy(ProcessorStrategy::Balanced)
-        .with_update_interval(Duration::from_secs(5))
-        .with_partition_expiration_duration(Duration::from_secs(30))
+        .with_update_interval(update_interval)
+        .with_partition_expiration_duration(Duration::from_secs(120))
         .with_prefetch(300)
-        .build(
-            Arc::new(consumer_client),
-            Arc::new(InMemoryCheckpointStore::new()),
-        )
+        .build(consumer_client, Arc::new(InMemoryCheckpointStore::new()))
+        .await
 }
 
 async fn start_processor_running(
     event_processor: &Arc<EventProcessor>,
 ) -> JoinHandle<azure_core::Result<()>> {
     let event_processor_clone = event_processor.clone();
-    let jh = tokio::spawn(async move { event_processor_clone.run().await });
-    // Wait 5 seconds to give the processor a chance to get running.
-    tokio::time::sleep(Duration::from_secs(5)).await;
-    jh
+    tokio::spawn(async move { event_processor_clone.run().await })
 }
 
 #[recorded::test(live)]
 async fn get_next_partition_client(ctx: TestContext) -> azure_core::Result<()> {
-    let processor = create_processor(ctx).await?;
+    let consumer_client = create_consumer_client(ctx).await?;
+    let processor = create_processor(consumer_client, Duration::from_secs(20)).await?;
 
     let running_processor = start_processor_running(&processor).await;
 
+    info!("Getting the first partition client.");
     let partition_client = processor
         .next_partition_client()
         .await
@@ -136,8 +141,97 @@ async fn get_next_partition_client(ctx: TestContext) -> azure_core::Result<()> {
     );
 
     running_processor.abort();
-    let _ = running_processor.await;
     info!("Processor task aborted");
+    let _ = running_processor.await;
+    info!("Processor task joined");
+
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
+    use std::collections::HashSet;
+
+    common::setup();
+
+    let consumer_client = create_consumer_client(ctx).await?;
+    // The processor only adds one client as needed up to the max, so we block waiting
+    // on all the clients to become available.
+    let processor = create_processor(consumer_client.clone(), Duration::from_secs(3)).await?;
+
+    let running_processor = start_processor_running(&processor).await;
+
+    let eh_properties = consumer_client.get_eventhub_properties().await?;
+
+    let mut found_clients = HashSet::new();
+    let mut partition_clients = Vec::new();
+    for partition in eh_properties.partition_ids {
+        info!("Partition ID: {}", partition);
+
+        let next_client = processor.next_partition_client().await?;
+        if found_clients.contains(next_client.get_partition_id()) {
+            panic!(
+                "Duplicate partition client found: {}",
+                next_client.get_partition_id()
+            );
+        }
+        found_clients.insert(next_client.get_partition_id().clone());
+        partition_clients.push(next_client);
+    }
+
+    info!("Received {} partition clients", partition_clients.len());
+
+    for client in partition_clients.iter() {
+        info!(
+            "Received partition client for partition {}",
+            client.get_partition_id()
+        );
+    }
+
+    {
+        info!("Retrieving one more processor client than possible.");
+        let processor_clone = processor.clone();
+        tokio::select! {
+            _ = tokio::spawn(async move {
+                tokio::time::sleep(Duration::from_secs(5)).await;
+                info!("Timeout reached");
+            }) => {
+                info!("Timeout reached - event processor has no more partitions.");
+            }
+
+            result = tokio::spawn(async move { processor_clone.next_partition_client().await}) => {
+                match result {
+                    Ok(Ok(_)) => {
+                        panic!("Event processor has more partitions. It shouldn't.");
+                    }
+                    Ok(Err(e)) => {
+                        panic!("Event processor has no more partitions: {:?}", e);
+                    }
+                    Err(e) => {
+                        panic!("Failed to get next partition client: {:?}", e);
+                    }
+                }
+            }
+        }
+    }
+    // Now drop one of the partition clients.
+    let partition_client = partition_clients.pop().unwrap();
+    info!("Dropping partition client");
+    partition_client.close().await?;
+
+    info!("Dropped partition client");
+
+    // Wait for the processor to notice the partition client is dropped.
+    let partition_client = processor.next_partition_client().await?;
+    info!(
+        "Received partition client for partition {}",
+        partition_client.get_partition_id()
+    );
+
+    running_processor.abort();
+    info!("Processor task aborted");
+    let _ = running_processor.await;
+    info!("Processor task joined");
 
     Ok(())
 }

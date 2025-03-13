@@ -35,7 +35,6 @@ pub struct ConsumerClient {
     connection_manager: ConnectionManager,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
     consumer_group: String,
-    application_id: String,
     eventhub: String,
     endpoint: Url,
     /// The instance ID to set.
@@ -112,7 +111,6 @@ impl ConsumerClient {
             eventhub: eventhub_name,
             endpoint: url,
             consumer_group,
-            application_id: options.application_id.unwrap_or_default(),
         })
     }
 
@@ -153,17 +151,17 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    pub async fn close(self) -> Result<()> {
+    pub async fn close(&self) -> Result<()> {
         self.connection_manager.close_connection().await
     }
 
-    pub(crate) fn get_details(&self) -> models::ConsumerClientDetails {
-        models::ConsumerClientDetails {
+    pub(crate) async fn get_details(&self) -> Result<models::ConsumerClientDetails> {
+        Ok(models::ConsumerClientDetails {
             eventhub_name: self.eventhub.clone(),
             consumer_group: self.consumer_group.clone(),
             fully_qualified_namespace: self.endpoint.host().unwrap().to_string(),
-            client_id: self.application_id.clone(),
-        }
+            client_id: self.connection_manager.get_connection_id().await?.clone(),
+        })
     }
 
     /// Attaches a message receiver to a specific partition of the Event Hub.
@@ -276,11 +274,13 @@ impl ConsumerClient {
             ..Default::default()
         };
 
+        debug!("Create receiver on partition {partition_id}.");
         let receiver = AmqpReceiver::new();
         receiver
             .attach(&session, message_source, Some(receiver_options))
             .await?;
 
+        debug!("Receiver attached on partition {partition_id}.");
         Ok(EventReceiver::new(receiver, options.receive_timeout))
     }
 

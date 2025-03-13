@@ -1,25 +1,25 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+use super::processor::ProcessorConsumersMap;
 use crate::{
     models::{Checkpoint, ConsumerClientDetails, ReceivedEventData},
+    processor::CheckpointStore,
     EventReceiver,
 };
 use async_stream::try_stream;
 use azure_core::Result;
 use azure_core_amqp::AmqpMessage;
 use futures::Stream;
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, OnceLock, Weak};
 use tracing::warn;
-
-use super::processor::CheckpointStore;
 
 pub struct PartitionClient {
     partition_id: String,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     client_details: ConsumerClientDetails,
     event_receiver: OnceLock<EventReceiver>,
-    on_destroy: Box<dyn FnOnce()>,
+    consumers: Weak<ProcessorConsumersMap>,
 }
 
 // It's safe to use the PartitionClient from multiple threads simultaneously.
@@ -27,21 +27,18 @@ unsafe impl Send for PartitionClient {}
 unsafe impl Sync for PartitionClient {}
 
 impl PartitionClient {
-    pub fn new<F>(
+    pub(crate) fn new(
         partition_id: &str,
         checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
         client_details: &ConsumerClientDetails,
-        on_destroy: F,
-    ) -> Self
-    where
-        F: FnOnce() + 'static,
-    {
+        consumers: Weak<ProcessorConsumersMap>,
+    ) -> Self {
         Self {
             partition_id: partition_id.to_string(),
             checkpoint_store,
             client_details: client_details.clone(),
             event_receiver: OnceLock::new(),
-            on_destroy: Box::new(on_destroy),
+            consumers,
         }
     }
     pub fn get_partition_id(&self) -> &String {
@@ -56,14 +53,14 @@ impl PartitionClient {
         }
     }
 
-    pub async fn close(mut self) -> Result<()> {
-        if let Some(receiver) = self.event_receiver.take() {
-            // Close the event receiver
-            receiver.close().await?;
-        }
-
+    pub async fn close(&self) -> Result<()> {
         // Remove the partition client from the processor.
-        (self.on_destroy)();
+        let consumers = self.consumers.upgrade();
+        if let Some(consumers) = consumers {
+            consumers.remove_partition_client(&self.partition_id)?;
+        } else {
+            warn!("Consumers have been dropped, unable to remove partition client.");
+        }
         Ok(())
     }
 

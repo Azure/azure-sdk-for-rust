@@ -33,7 +33,7 @@ mod tests {
             Some("etag".into()),
             None,
         );
-        let result = store.update_ownership(&ownership);
+        let result = store.update_ownership(ownership);
         assert!(result.is_ok());
     }
 
@@ -50,7 +50,7 @@ mod tests {
             Some("etag".into()),
             None,
         );
-        let result = store.update_ownership(&ownership);
+        let result = store.update_ownership(ownership);
         assert!(result.is_err());
         assert_eq!(*result.unwrap_err().kind(), AzureErrorKind::Other);
     }
@@ -87,7 +87,7 @@ mod tests {
         store.update_checkpoint(checkpoint).await.unwrap();
 
         let checkpoints = store
-            .list_checkpoints("namespace", "event_hub", "consumer_group", None)
+            .list_checkpoints("namespace", "event_hub", "consumer_group")
             .await
             .unwrap();
 
@@ -110,7 +110,6 @@ mod tests {
                 "fully-qualified-namespace",
                 "event-hub-name",
                 "consumer-group",
-                None,
             )
             .await
             .unwrap();
@@ -135,7 +134,6 @@ mod tests {
                 "fully-qualified-namespace",
                 "event-hub-name",
                 "consumer-group",
-                None,
             )
             .await
             .unwrap();
@@ -146,7 +144,6 @@ mod tests {
                 "ns.servicebus.windows.net",
                 "event-hub-name",
                 "consumer-group",
-                None,
             )
             .await;
         assert!(checkpoints.is_ok());

@@ -29,13 +29,19 @@ pub(crate) struct ConnectionManager {
     custom_endpoint: Option<Url>,
     connections: OnceCell<Arc<AmqpConnection>>,
     authorization_scopes: Mutex<HashMap<Url, AccessToken>>,
+    connection_name: String,
 }
 
 impl ConnectionManager {
     pub fn new(url: Url, application_id: Option<String>, custom_endpoint: Option<Url>) -> Self {
+        let connection_name = application_id
+            .clone()
+            .unwrap_or_else(|| Uuid::new_v4().to_string());
+
         Self {
             url,
             application_id,
+            connection_name,
             custom_endpoint,
             connections: OnceCell::new(),
             authorization_scopes: Mutex::new(HashMap::new()),
@@ -48,9 +54,7 @@ impl ConnectionManager {
 
         connection
             .open(
-                self.application_id
-                    .clone()
-                    .unwrap_or_else(|| Uuid::new_v4().to_string()),
+                self.connection_name.clone(),
                 self.url.clone(),
                 Some(AmqpConnectionOptions {
                     properties: Some(
@@ -85,6 +89,11 @@ impl ConnectionManager {
             .get()
             .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
         Ok(connection.clone())
+    }
+
+    pub(crate) async fn get_connection_id(&self) -> Result<&String> {
+        self.ensure_connection().await?;
+        Ok(&self.connection_name)
     }
 
     pub(crate) async fn close_connection(&self) -> Result<()> {
