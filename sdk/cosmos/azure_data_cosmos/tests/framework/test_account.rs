@@ -2,10 +2,7 @@
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
-use std::{
-    borrow::Cow,
-    sync::{Arc, Once},
-};
+use std::{borrow::Cow, sync::Arc};
 
 use azure_core::{credentials::Secret, test::TestMode, TransportOptions};
 use azure_core_test::TestContext;
