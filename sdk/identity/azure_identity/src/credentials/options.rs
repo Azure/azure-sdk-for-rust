@@ -18,6 +18,7 @@ pub struct TokenCredentialOptions {
     pub(crate) env: Env,
     pub(crate) http_client: Arc<dyn azure_core::HttpClient>,
     pub(crate) authority_host: String,
+    pub(crate) executor: Arc<dyn azure_core::process::Executor>,
 }
 
 /// The default token credential options.
@@ -34,6 +35,7 @@ impl Default for TokenCredentialOptions {
             env: Env::default(),
             http_client: azure_core::new_http_client(),
             authority_host,
+            executor: azure_core::process::new_executor(),
         }
     }
 }
@@ -44,16 +46,23 @@ impl TokenCredentialOptions {
         self.authority_host = authority_host;
     }
 
-    /// The authority host to use for authentication requests.  The default is
-    /// `https://login.microsoftonline.com`.
+    /// The authority host to use for authentication requests.
+    ///
+    /// The default is `https://login.microsoftonline.com`.
     pub fn authority_host(&self) -> Result<Url> {
         Url::parse(&self.authority_host).with_context(ErrorKind::DataConversion, || {
             format!("invalid authority host URL {}", &self.authority_host)
         })
     }
 
+    /// The [`azure_core::HttpClient`] to make requests.
     pub fn http_client(&self) -> Arc<dyn azure_core::HttpClient> {
         self.http_client.clone()
+    }
+
+    /// The [`azure_core::process::Executor`] to run commands.
+    pub fn executor(&self) -> Arc<dyn azure_core::process::Executor> {
+        self.executor.clone()
     }
 
     pub(crate) fn env(&self) -> &Env {

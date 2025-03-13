@@ -74,7 +74,9 @@ impl DefaultAzureCredentialBuilder {
             match source {
                 #[cfg(not(target_arch = "wasm32"))]
                 DefaultAzureCredentialType::AzureCli => {
-                    if let Ok(credential) = AzureCliCredential::new() {
+                    if let Ok(credential) =
+                        AzureCliCredential::new(Some(self.options.clone().into()))
+                    {
                         sources.push(DefaultAzureCredentialKind::AzureCli(credential));
                     }
                 }

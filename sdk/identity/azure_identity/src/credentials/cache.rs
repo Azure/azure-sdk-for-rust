@@ -61,6 +61,12 @@ impl TokenCache {
     }
 }
 
+impl Default for TokenCache {
+    fn default() -> Self {
+        TokenCache::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

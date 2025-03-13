@@ -19,6 +19,7 @@ mod policies;
 pub mod credentials;
 pub mod headers;
 pub mod lro;
+pub mod process;
 pub mod request_options;
 
 #[cfg(feature = "test")]

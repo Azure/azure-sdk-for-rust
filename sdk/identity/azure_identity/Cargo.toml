@@ -26,9 +26,6 @@ tracing.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-async-process.workspace = true
-
 [target.'cfg(unix)'.dependencies]
 tz-rs = { workspace = true, optional = true }
 
@@ -46,6 +43,7 @@ tracing-subscriber.workspace = true
 default = ["reqwest", "old_azure_cli"]
 reqwest = ["azure_core/reqwest"]
 reqwest_rustls = ["azure_core/reqwest_rustls"]
+tokio_process = ["azure_core/tokio_process"]
 client_certificate = ["openssl"]
 
 # If you are using and Azure CLI version older than 2.54.0 from November 2023,
@@ -56,4 +54,9 @@ client_certificate = ["openssl"]
 old_azure_cli = ["time/local-offset", "tz-rs"]
 
 [package.metadata.docs.rs]
-features = ["reqwest", "reqwest_rustls", "client_certificate"]
+features = [
+  "client_certificate",
+  "reqwest",
+  "reqwest_rustls",
+  "tokio_process",
+]

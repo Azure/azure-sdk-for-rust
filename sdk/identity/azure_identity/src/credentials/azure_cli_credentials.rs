@@ -1,15 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::credentials::cache::TokenCache;
-use async_process::Command;
+use crate::{
+    credentials::{cache::TokenCache, TokenCredentialOptions},
+    validate_scope, validate_subscription, validate_tenant_id,
+};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
     json::from_json,
+    process::{new_executor, Executor},
 };
 use serde::Deserialize;
-use std::{str, sync::Arc};
+use std::{ffi::OsStr, fmt::Debug, str, sync::Arc};
 use time::OffsetDateTime;
 use tracing::trace;
 
@@ -116,8 +119,6 @@ struct CliTokenResponse {
     /// The token's expiry time in seconds since the epoch, a unix timestamp.
     /// Available in Azure CLI 2.54.0 or newer.
     pub expires_on: Option<i64>,
-    pub subscription: String,
-    pub tenant: String,
     #[allow(unused)]
     #[serde(rename = "tokenType")]
     pub token_type: String,
@@ -151,21 +152,69 @@ impl CliTokenResponse {
 #[derive(Debug)]
 pub struct AzureCliCredential {
     cache: TokenCache,
+    options: AzureCliCredentialOptions,
+}
+
+/// Options for constructing an [`AzureCliCredential`].
+#[derive(Clone, Debug, Default)]
+pub struct AzureCliCredentialOptions {
+    /// Specifies tenants to which the credential may authenticate, in addition to [`Self::tenant_id`].
+    ///
+    /// When `tenant_id` is `None` this option has no effect and the credential will authenticate to any requested tenant.
+    /// Add the wildcard value "*" to allow the credential to authenticate to any tenant.
+    pub additionally_allowed_tenants: Vec<String>,
+
+    /// The name or ID of a subscription
+    ///
+    /// Set this to acquire tokens for an account other than the Azure CLI's current account.
+    pub subscription: Option<String>,
+
+    /// Identifies the tenant the credential should authenticate in.
+    ///
+    /// Defaults to the CLI's default tenant, which is typically the home tenant of the logged in user.
+    pub tenant_id: Option<String>,
+
+    /// An implementation of [`Executor`] to run commands asynchronously.
+    ///
+    /// If `None`, one is created using [`new_executor`]; alternatively,
+    /// you can supply your own implementation using a different asynchronous runtime.
+    pub executor: Option<Arc<dyn Executor>>,
 }
 
 impl AzureCliCredential {
     /// Create a new `AzureCliCredential`.
-    pub fn new() -> azure_core::Result<Arc<Self>> {
-        // TODO check `az version` to see if it's installed
+    pub fn new(options: Option<AzureCliCredentialOptions>) -> azure_core::Result<Arc<Self>> {
+        let mut options = options.unwrap_or_default();
+        if let Some(ref tenant_id) = options.tenant_id {
+            validate_tenant_id(tenant_id)?;
+        }
+        if let Some(ref subscription) = options.subscription {
+            validate_subscription(subscription)?;
+        }
+        if options.executor.is_none() {
+            options.executor = Some(new_executor());
+        }
+
         Ok(Arc::new(Self {
             cache: TokenCache::new(),
+            options,
         }))
     }
 
     /// Get an access token for an optional resource
-    async fn get_access_token(scopes: Option<&[&str]>) -> azure_core::Result<CliTokenResponse> {
-        // on window az is a cmd and it should be called like this
-        // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
+    async fn get_access_token(&self, scopes: &[&str]) -> azure_core::Result<CliTokenResponse> {
+        if scopes.is_empty() {
+            return Err(Error::new(
+                ErrorKind::Credential,
+                "exactly one scope required",
+            ));
+        }
+        // Pass the CLI a Microsoft Entra ID v1 resource because we don't know which CLI version is installed and older ones don't support v2 scopes.
+        let resource = scopes[0].trim_end_matches("/.default");
+        validate_scope(resource)?;
+
+        // On Windows az is a cmd and it should be called like this.
+        // See https://doc.rust-lang.org/nightly/std/process/struct.Command.html
         let program = if cfg!(target_os = "windows") {
             "cmd"
         } else {
@@ -180,12 +229,16 @@ impl AzureCliCredential {
         args.push("get-access-token");
         args.push("--output");
         args.push("json");
+        args.push("--resource");
+        args.push(resource);
 
-        let scopes = scopes.map(|x| x.join(" "));
-
-        if let Some(scopes) = &scopes {
-            args.push("--scope");
-            args.push(scopes);
+        if let Some(ref tenant_id) = self.options.tenant_id {
+            args.push("--tenant");
+            args.push(tenant_id);
+        }
+        if let Some(ref subscription) = self.options.subscription {
+            args.push("--subscription");
+            args.push(subscription);
         }
 
         trace!(
@@ -193,7 +246,17 @@ impl AzureCliCredential {
             args.join(" "),
         );
 
-        match Command::new(program).args(args).output().await {
+        let args = args.iter().map(|arg| arg.as_ref()).collect::<Vec<&OsStr>>();
+
+        let status = self
+            .options
+            .executor
+            .as_ref()
+            // It's okay to call unwrap() here because new() ensures it's initialized.
+            .unwrap()
+            .run(OsStr::new(program), &args)
+            .await;
+        match status {
             Ok(az_output) if az_output.status.success() => {
                 let output = str::from_utf8(&az_output.stdout)?;
 
@@ -217,20 +280,8 @@ impl AzureCliCredential {
         }
     }
 
-    /// Returns the current subscription ID from the Azure CLI.
-    pub async fn get_subscription() -> azure_core::Result<String> {
-        let tr = Self::get_access_token(None).await?;
-        Ok(tr.subscription)
-    }
-
-    /// Returns the current tenant ID from the Azure CLI.
-    pub async fn get_tenant() -> azure_core::Result<String> {
-        let tr = Self::get_access_token(None).await?;
-        Ok(tr.tenant)
-    }
-
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        let tr = Self::get_access_token(Some(scopes)).await?;
+        let tr = self.get_access_token(scopes).await?;
         let expires_on = tr.expires_on()?;
         Ok(AccessToken::new(tr.access_token, expires_on))
     }
@@ -246,6 +297,15 @@ impl TokenCredential for AzureCliCredential {
     /// Clear the credential's cache.
     async fn clear_cache(&self) -> azure_core::Result<()> {
         self.cache.clear().await
+    }
+}
+
+impl From<TokenCredentialOptions> for AzureCliCredentialOptions {
+    fn from(options: TokenCredentialOptions) -> Self {
+        Self {
+            executor: Some(options.executor.clone()),
+            ..Default::default()
+        }
     }
 }
 
@@ -309,10 +369,7 @@ mod tests {
           }
         "#;
         let token_response: CliTokenResponse = from_json(json)?;
-        assert_eq!(
-            token_response.tenant,
-            "065e9f5e-870d-4ed1-af2b-1b58092353f3"
-        );
+        assert_eq!(token_response.expires_on, None);
         Ok(())
     }
 
@@ -330,10 +387,6 @@ mod tests {
         }
         "#;
         let token_response: CliTokenResponse = from_json(json)?;
-        assert_eq!(
-            token_response.tenant,
-            "065e9f5e-870d-4ed1-af2b-1b58092353f3"
-        );
         assert_eq!(token_response.expires_on, Some(1704158596));
         assert_eq!(token_response.expires_on()?.unix_timestamp(), 1704158596);
         Ok(())
