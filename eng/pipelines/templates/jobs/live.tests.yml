@@ -50,10 +50,6 @@ jobs:
     os: ${{ parameters.OSName }}
 
   steps:
-  - template: /eng/pipelines/templates/steps/use-rust.yml@self
-    parameters:
-      Toolchain: $(RustToolchainName)
-
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
       paths:
@@ -62,6 +58,10 @@ jobs:
   - template: /eng/common/pipelines/templates/steps/verify-agent-os.yml
     parameters:
       AgentImage: $(OSVmImage)
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: $(RustToolchainName)
 
   - ${{ parameters.PreSteps }}
 
