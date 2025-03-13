@@ -99,7 +99,6 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
-
   - ${{ if parameters.UseFederatedAuth }}:
     - task: AzurePowerShell@5
       displayName: "Test Packages - Federated Auth"
@@ -115,11 +114,15 @@ jobs:
         azureSubscription: ${{ parameters.CloudConfig.ServiceConnection }}
         azurePowerShellVersion: LatestVersion
         pwsh: true
-        scriptType: FilePath
-        scriptPath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
-        scriptArguments: >
-          -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
-          -Toolchain '$(Toolchain)'
+        scriptType: inlineScript
+        inlineScript: |
+          $account = (Get-AzContext).Account;
+          $env:AZURESUBSCRIPTION_CLIENT_ID = $account.Id;
+          $env:AZURESUBSCRIPTION_TENANT_ID = $account.Tenants;
+
+          Write-Host "./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(Toolchain)'"
+          ./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(Toolchain)'
+        workingDirectory: $(Build.SourcesDirectory)
   - ${{ else }}:
     - task: Powershell@2
       displayName: "Test Packages"
