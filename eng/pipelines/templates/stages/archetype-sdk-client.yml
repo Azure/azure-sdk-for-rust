@@ -131,7 +131,7 @@ extends:
               - template: /eng/pipelines/templates/variables/image.yml
               - template: /eng/pipelines/templates/variables/rust.yml
               dependsOn: FileStage
-              condition: and(succeeded(), eq(stageDependencies.FileStage.outputs['FileJob.FileStep.FileExits'], 'true')
+              condition: and(succeeded(), eq(stageDependencies.FileStage.outputs['FileJob.FileStep.FileExits'], 'true'))
               jobs:
               - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
                 parameters:
