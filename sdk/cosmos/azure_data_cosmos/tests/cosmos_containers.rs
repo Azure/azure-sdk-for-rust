@@ -16,11 +16,11 @@ use azure_data_cosmos::{
 use framework::TestAccount;
 use futures::StreamExt;
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
     use azure_data_cosmos::models::PartitionKeyKind;
 
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let test_db_id = account.unique_db("DatabaseCRUD");
     cosmos_client.create_database(&test_db_id, None).await?;
@@ -159,9 +159,9 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn container_crud_autoscale(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let test_db_id = account.unique_db("DatabaseCRUD");
     cosmos_client.create_database(&test_db_id, None).await?;
@@ -212,9 +212,9 @@ pub async fn container_crud_autoscale(context: TestContext) -> Result<(), Box<dy
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn container_crud_hierarchical_pk(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let test_db_id = account.unique_db("DatabaseCRUD");
     cosmos_client.create_database(&test_db_id, None).await?;
