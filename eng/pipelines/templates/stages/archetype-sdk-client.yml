@@ -96,7 +96,8 @@ extends:
     # Run live tests for internal only, not public CI builds. This can be triggered manually for via an `/azp run` comment.
     - ${{if eq(parameters.RunLiveTests, 'true') }}:
       - stage: FileStage
-        displayName: Test Resources File
+        displayName: Check test-resources File
+        dependsOn: []
         variables:
         - template: /eng/pipelines/templates/variables/image.yml
         jobs:
