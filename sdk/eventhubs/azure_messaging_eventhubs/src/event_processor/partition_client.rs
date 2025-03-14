@@ -53,6 +53,26 @@ impl PartitionClient {
         }
     }
 
+    /// Closes the `PartitionClient` by detaching the event receiver and removing the partition client
+    /// from the processor's consumers map.
+    ///
+    /// This method performs the following steps:
+    /// 1. Detaches the event receiver if it is set, ensuring no further events are received.
+    /// 2. Attempts to remove the partition client from the processor's consumers map.
+    ///    - If the consumers map has already been dropped, a warning is logged.
+    ///
+    /// # Errors
+    /// Returns an error if detaching the event receiver fails or if removing the partition client
+    /// from the consumers map encounters an issue.
+    ///
+    /// # Example
+    /// ```
+    /// # use azure_messaging_eventhubs::event_processor::partition_client::PartitionClient;
+    /// # async fn example(partition_client: PartitionClient) -> azure_core::Result<()> {
+    /// partition_client.close().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn close(mut self) -> Result<()> {
         // Detach the event receiver
         if let Some(event_receiver) = self.event_receiver.take() {

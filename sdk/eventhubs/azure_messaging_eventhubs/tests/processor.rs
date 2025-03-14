@@ -196,25 +196,24 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
         info!("Retrieving one more processor client than possible.");
         let processor_clone = processor.clone();
         tokio::select! {
-            _ = tokio::spawn(async move {
-                tokio::time::sleep(Duration::from_secs(5)).await;
-                info!("Timeout reached");
-            }) => {
+            _ = {
+                tokio::time::sleep(Duration::from_secs(5))
+            } => {
                 info!("Timeout reached - event processor has no more partitions.");
             }
 
-            result = tokio::spawn(async move { processor_clone.next_partition_client().await}) => {
-                match result {
-                    Ok(Ok(_)) => {
-                        panic!("Event processor has more partitions. It shouldn't.");
-                    }
-                    Ok(Err(e)) => {
-                        panic!("Event processor has no more partitions: {:?}", e);
-                    }
-                    Err(e) => {
-                        panic!("Failed to get next partition client: {:?}", e);
-                    }
+            result = {processor_clone.next_partition_client()}
+            => {
+                if let Ok(partition_client) = result {
+                    info!("Received next partition client");
+                    info!(
+                        "Received partition client for partition {}",
+                        partition_client.get_partition_id()
+                    );
+                } else {
+                    info!("No partition clients available");
                 }
+                panic!("Received next partition client, this should not happen.");
             }
         }
     }
@@ -233,7 +232,10 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
         panic!("Partition client not dropped: Arc has multiple strong references (this should not happen).");
     }
 
-    info!("Partition client dropped, getting another partition client.");
+    info!(
+        "{:?}Partition client dropped, getting another partition client.",
+        std::thread::current().id()
+    );
 
     // Wait for the processor to notice the partition client is dropped.
     let partition_client = tokio::select! {
@@ -249,6 +251,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
             ));
         }
     };
+
     info!(
         "Received partition client for partition {}",
         partition_client.get_partition_id()

@@ -11,13 +11,15 @@ use crate::{
     models::{ConsumerClientDetails, EventHubProperties},
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
+use async_channel::{bounded, Receiver, Sender};
 use async_io::Timer;
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
-use futures::channel::mpsc::{Receiver, Sender};
-use futures::StreamExt;
 use std::{
-    sync::Arc,
+    sync::{
+        //        mpsc::{sync_channel, Receiver, SyncSender},
+        Arc,
+    },
     time::Duration,
     {collections::HashMap, sync::Weak},
 };
@@ -43,8 +45,8 @@ pub struct EventProcessor {
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     load_balancer: Arc<AsyncMutex<LoadBalancer>>,
     consumer_client: Arc<ConsumerClient>,
-    next_partition_clients: AsyncMutex<Receiver<Arc<PartitionClient>>>,
-    next_partition_client_sender: AsyncMutex<Sender<Arc<PartitionClient>>>,
+    next_partition_clients: Receiver<Arc<PartitionClient>>,
+    next_partition_client_sender: Sender<Arc<PartitionClient>>,
     client_details: ConsumerClientDetails,
     prefetch: u32,
     update_interval: Duration,
@@ -141,7 +143,7 @@ impl EventProcessor {
             eh_properties.partition_ids.truncate(max_partition_count);
         }
 
-        let (sender, receiver) = futures::channel::mpsc::channel(eh_properties.partition_ids.len());
+        let (sender, receiver) = bounded(eh_properties.partition_ids.len());
 
         let client_details = consumer_client.get_details().await?;
 
@@ -160,8 +162,8 @@ impl EventProcessor {
             prefetch: options.prefetch,
             update_interval: options.update_interval,
             start_positions: options.start_positions,
-            next_partition_client_sender: AsyncMutex::new(sender),
-            next_partition_clients: AsyncMutex::new(receiver),
+            next_partition_client_sender: sender,
+            next_partition_clients: receiver,
             is_running: std::sync::Mutex::new(false),
             eventhub_properties: eh_properties,
         })
@@ -322,7 +324,7 @@ impl EventProcessor {
         checkpoints: &HashMap<String, Checkpoint>,
         consumers: Weak<ProcessorConsumersMap>,
     ) -> Result<()> {
-        info!("Add partition client for ownership: {:?}", partition_id);
+        info!("Add partition client for partition ID: {:?}", partition_id);
 
         let partition_client = Arc::new(PartitionClient::new(
             partition_id,
@@ -373,9 +375,21 @@ impl EventProcessor {
         partition_client.set_event_receiver(receiver)?;
 
         info!("Adding partition client to queue.");
+        if self.next_partition_client_sender.is_full() {
+            error!("Partition client queue is full. This should not happen.");
+        }
+
         // Send the partition client to the next partition client receiver
-        let mut sender = self.next_partition_client_sender.lock().await;
-        let r = sender.try_send(partition_client);
+        let r = self
+            .next_partition_client_sender
+            .send(partition_client)
+            .await
+            .map_err(|e| {
+                azure_core::Error::message(
+                    AzureErrorKind::Other,
+                    format!("Failed to send partition client: {:?}", e),
+                )
+            });
         if let Err(e) = r {
             info!("Failed to send partition client: {:?}", e);
             return Err(Error::message(
@@ -383,7 +397,10 @@ impl EventProcessor {
                 "Failed to send partition client",
             ));
         }
-        info!("Partition client added for partition: {:?}", partition_id);
+        info!(
+            "add_partition_client: Partition client added for partition: {:?}",
+            partition_id
+        );
 
         Ok(())
     }
@@ -392,16 +409,21 @@ impl EventProcessor {
     ///
     /// This method returns the next available partition client.
     pub async fn next_partition_client(&self) -> Result<Arc<PartitionClient>> {
-        info!("Locking next partition clients");
-        let mut receiver = self.next_partition_clients.lock().await;
         // Implement the function or remove it if not needed
-        info!("Waiting to receive the next partition client.");
-        let next_client = receiver.next().await.ok_or_else(|| {
-            azure_core::Error::message(AzureErrorKind::Other, "No next partition client available")
+        info!(
+            "{:?}:next_partition_client: Waiting to receive the next partition client.",
+            std::thread::current().id()
+        );
+        let next_client = self.next_partition_clients.recv().await.map_err(|e| {
+            azure_core::Error::message(
+                AzureErrorKind::Other,
+                format!("No next partition client available: {}", e),
+            )
         })?;
 
         info!(
-            "Returning partition client for partition {:?}.",
+            "{:?}:next_partition_client: Returning partition client for partition {:?}.",
+            std::thread::current().id(),
             next_client.get_partition_id()
         );
         Ok(next_client)

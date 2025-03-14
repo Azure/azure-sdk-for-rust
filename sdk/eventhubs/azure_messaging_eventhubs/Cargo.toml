@@ -18,6 +18,7 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
+async-channel.workspace = true
 async-io.workspace = true
 async-lock.workspace = true
 async-stream.workspace = true
