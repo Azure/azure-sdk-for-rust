@@ -136,7 +136,10 @@ pub trait Parser<'a, T> {
 /// A struct implementing the Parser trait
 pub struct NumberParser;
 
-impl<'a> Parser<'a, i32> for NumberParser {
+impl<'a> Parser<'a, i32> for NumberParser
+where
+    i32: 'a,
+{
     fn parse(&self, input: &'a str) -> Result<i32, &'static str> {
         input.parse::<i32>().map_err(|_| "Failed to parse number")
     }
