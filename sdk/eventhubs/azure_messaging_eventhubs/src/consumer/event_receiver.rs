@@ -52,12 +52,26 @@ use tracing::trace;
 /// ```
 pub struct EventReceiver {
     receiver: AmqpReceiver,
+    partition_id: String,
     timeout: Option<std::time::Duration>,
 }
 
 impl EventReceiver {
-    pub(crate) fn new(receiver: AmqpReceiver, timeout: Option<std::time::Duration>) -> Self {
-        Self { receiver, timeout }
+    pub(crate) fn new(
+        receiver: AmqpReceiver,
+        partition_id: &str,
+        timeout: Option<std::time::Duration>,
+    ) -> Self {
+        Self {
+            receiver,
+            partition_id: partition_id.to_string(),
+            timeout,
+        }
+    }
+
+    /// Returns the partition ID of the receiver.
+    pub fn partition_id(&self) -> &String {
+        &self.partition_id
     }
 
     /// Receives messages from the Event Hub partition.

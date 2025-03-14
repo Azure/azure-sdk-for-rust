@@ -236,7 +236,7 @@ impl ConsumerClient {
             self.endpoint
         );
 
-        let source_url = format!("{}/Partitions/{}", self.endpoint, partition_id);
+        let source_url = format!("{}/Partitions/{}", self.endpoint, &partition_id);
         let source_url = Url::parse(&source_url)?;
 
         let connection = self.connection_manager.get_connection()?;
@@ -281,7 +281,11 @@ impl ConsumerClient {
             .await?;
 
         debug!("Receiver attached on partition {partition_id}.");
-        Ok(EventReceiver::new(receiver, options.receive_timeout))
+        Ok(EventReceiver::new(
+            receiver,
+            partition_id,
+            options.receive_timeout,
+        ))
     }
 
     /// Retrieves the properties of the Event Hub.

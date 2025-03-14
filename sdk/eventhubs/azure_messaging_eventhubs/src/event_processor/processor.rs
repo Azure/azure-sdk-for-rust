@@ -63,49 +63,56 @@ struct EventProcessorOptions {
 }
 
 pub(crate) struct ProcessorConsumersMap {
-    consumers: std::sync::Mutex<HashMap<String, Arc<PartitionClient>>>,
+    consumers: AsyncMutex<HashMap<String, Weak<PartitionClient>>>,
 }
 
 impl ProcessorConsumersMap {
     fn new() -> Self {
         ProcessorConsumersMap {
-            consumers: std::sync::Mutex::new(HashMap::new()),
+            consumers: AsyncMutex::new(HashMap::new()),
         }
     }
 
-    pub fn add_partition_client(
+    /// Adds a partition client to the consumers map.
+    /// If a partition client already exists for the given partition ID,
+    /// it will not be added again.
+    /// Returns `true` if the partition client was added successfully,
+    /// or `false` if it already exists.
+    ///
+    /// # Arguments
+    /// * `partition_id` - The ID of the partition for which the client is being added.
+    /// * `partition_client` - The partition client to be added.
+    ///
+    /// # Returns
+    /// A `Result` indicating the success or failure of the operation.
+    /// If successful, returns `true` if the partition client was added,
+    /// or `false` if it already exists.
+    ///
+    pub async fn add_partition_client(
         &self,
         partition_id: &str,
         partition_client: Arc<PartitionClient>,
-    ) -> Result<()> {
+    ) -> Result<bool> {
         info!("Adding partition client for partition: {}", partition_id);
-        let mut consumers = self
-            .consumers
-            .lock()
-            .map_err(|_| Error::message(AzureErrorKind::Io, "Failed to lock consumers map"))?;
-        consumers.insert(partition_id.to_string(), partition_client);
+        let mut consumers = self.consumers.lock().await;
+        if consumers.contains_key(partition_id) {
+            info!(
+                "Partition client already exists for partition: {}",
+                partition_id
+            );
+            return Ok(false);
+        }
+        consumers.insert(partition_id.to_string(), Arc::downgrade(&partition_client));
         info!("Consumers for partition: {:?}", consumers.keys());
-        Ok(())
+        Ok(true)
     }
 
     pub fn remove_partition_client(&self, partition_id: &str) -> Result<()> {
         info!("Removing partition client for partition: {}", partition_id);
-        let mut consumers = self
-            .consumers
-            .lock()
-            .map_err(|_| Error::message(AzureErrorKind::Io, "Failed to lock consumers map"))?;
+        let mut consumers = self.consumers.lock_blocking();
         consumers.remove(partition_id);
         info!("Consumers for partition now: {:?}", consumers.keys());
         Ok(())
-    }
-
-    pub fn contains_key(&self, partition_id: &str) -> bool {
-        let consumers = self
-            .consumers
-            .lock()
-            .map_err(|_| Error::message(AzureErrorKind::Io, "Failed to lock consumers map"))
-            .unwrap();
-        consumers.contains_key(partition_id)
     }
 }
 
@@ -324,6 +331,26 @@ impl EventProcessor {
             consumers.clone(),
         ));
 
+        if let Some(strong_consumers) = consumers.upgrade() {
+            if !strong_consumers
+                .add_partition_client(partition_id.as_str(), partition_client.clone())
+                .await?
+            {
+                debug!(
+                    "Partition client already exists for partition: {}, ignoring.",
+                    partition_id
+                );
+                return Ok(());
+            }
+        } else {
+            error!("Consumers map is no longer valid.");
+            return Err(Error::message(
+                AzureErrorKind::Other,
+                "Consumers map is no longer valid.",
+            ));
+        }
+
+        // Since we can only have a single EventReceiver on a partition, we don't actually attempt to create the receiver until
         let start_position = self.get_start_position(partition_id, checkpoints);
         let receiver = self
             .consumer_client
@@ -341,26 +368,9 @@ impl EventProcessor {
             error!("Error opening receiver for partition client: {:?}", e);
             return Err(e);
         }
+        info!("Receiver opened for partition client: {:?}", partition_id);
         let receiver = receiver.unwrap();
         partition_client.set_event_receiver(receiver)?;
-
-        if let Some(strong_consumers) = consumers.upgrade() {
-            if strong_consumers.contains_key(partition_id.as_str()) {
-                debug!(
-                    "Partition client already exists for partition: {}, ignoring.",
-                    partition_id
-                );
-                return Ok(());
-            }
-            strong_consumers
-                .add_partition_client(partition_id.as_str(), partition_client.clone())?;
-        } else {
-            error!("Consumers map is no longer valid.");
-            return Err(Error::message(
-                AzureErrorKind::Other,
-                "Consumers map is no longer valid.",
-            ));
-        }
 
         info!("Adding partition client to queue.");
         // Send the partition client to the next partition client receiver
@@ -391,7 +401,7 @@ impl EventProcessor {
         })?;
 
         info!(
-            "Received next partition client: {:?}",
+            "Returning partition client for partition {:?}.",
             next_client.get_partition_id()
         );
         Ok(next_client)

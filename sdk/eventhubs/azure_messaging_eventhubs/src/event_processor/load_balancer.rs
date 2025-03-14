@@ -163,7 +163,7 @@ impl LoadBalancer {
             //            raw: ownerships,
             max_allowed,
         };
-        info!("Get available partitions returns: {:?}", rv);
+        debug!("Get available partitions returns: {:?}", rv);
         Ok(rv)
     }
 
@@ -234,7 +234,7 @@ impl LoadBalancer {
     }
 
     pub async fn load_balance(&self, partition_ids: &[String]) -> Result<Vec<Ownership>> {
-        info!("Load balance for partitions: {}", partition_ids.join(", "));
+        debug!("Load balance for partitions: {}", partition_ids.join(", "));
         let load_balancer_info = self.get_available_partitions(partition_ids).await?;
         trace!(
             "[{}] Load balancer info: {:?}",

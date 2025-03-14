@@ -53,7 +53,11 @@ impl PartitionClient {
         }
     }
 
-    pub async fn close(&self) -> Result<()> {
+    pub async fn close(mut self) -> Result<()> {
+        // Detach the event receiver
+        if let Some(event_receiver) = self.event_receiver.take() {
+            event_receiver.close().await?;
+        }
         // Remove the partition client from the processor.
         let consumers = self.consumers.upgrade();
         if let Some(consumers) = consumers {

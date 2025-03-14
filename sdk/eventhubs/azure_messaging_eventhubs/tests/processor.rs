@@ -165,7 +165,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
 
     let mut found_clients = HashSet::new();
     let mut partition_clients = Vec::new();
-    for partition in eh_properties.partition_ids {
+    for partition in 0..eh_properties.partition_ids.len() {
         info!("Partition ID: {}", partition);
 
         let next_client = processor.next_partition_client().await?;
@@ -175,6 +175,10 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
                 next_client.get_partition_id()
             );
         }
+        info!(
+            "Received partition client for partition {}",
+            next_client.get_partition_id()
+        );
         found_clients.insert(next_client.get_partition_id().clone());
         partition_clients.push(next_client);
     }
@@ -216,13 +220,35 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
     }
     // Now drop one of the partition clients.
     let partition_client = partition_clients.pop().unwrap();
-    info!("Dropping partition client");
-    partition_client.close().await?;
+    info!(
+        "Dropping partition client for partition {}",
+        partition_client.get_partition_id()
+    );
 
-    info!("Dropped partition client");
+    if let Some(partition_client) = Arc::into_inner(partition_client) {
+        info!("All references to partition client dropped");
+        partition_client.close().await?;
+        info!("Partition client closed");
+    } else {
+        panic!("Partition client not dropped: Arc has multiple strong references (this should not happen).");
+    }
+
+    info!("Partition client dropped, getting another partition client.");
 
     // Wait for the processor to notice the partition client is dropped.
-    let partition_client = processor.next_partition_client().await?;
+    let partition_client = tokio::select! {
+        result = processor.next_partition_client() => {
+            info!("Received next partition client");
+            result?
+        }
+        _ = tokio::time::sleep(Duration::from_secs(15)) => {
+            info!("Timeout reached - event processor has no more partitions.");
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "Timeout waiting for next partition client"
+            ));
+        }
+    };
     info!(
         "Received partition client for partition {}",
         partition_client.get_partition_id()
