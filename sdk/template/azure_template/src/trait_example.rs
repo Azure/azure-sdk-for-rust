@@ -44,17 +44,24 @@ impl Shape for Rectangle {
 /// A trait demonstrating associated types
 pub trait Container {
     /// The type of items this container holds
-    type Item;
+    type Item<T> where T: Debug;
 
     /// Add an item to the container
-    fn add(&mut self, item: Self::Item);
+    fn add<T: Debug + 'static>(&mut self, item: Self::Item<T>);
+}
 
-    /// Get the number of items in the container
-    fn len(&self) -> usize;
+/// Example Box container implementing the Container trait
+pub struct BoxContainer {
+    items: Vec<Box<dyn std::any::Any>>,
+}
 
-    /// Check if the container is empty
-    fn is_empty(&self) -> bool {
-        self.len() == 0
+/// Implementation of Container for BoxContainer
+impl Container for BoxContainer {
+    // Using "=" syntax for associated type with generics
+    type Item<T: Debug> = Box<T> where T: Debug;
+
+    fn add<T: Debug + 'static>(&mut self, item: Self::Item<T>) {
+        self.items.push(item);
     }
 }
 
