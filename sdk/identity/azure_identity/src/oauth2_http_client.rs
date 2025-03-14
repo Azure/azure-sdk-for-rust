@@ -60,10 +60,7 @@ fn try_from_method(method: &oauth2::http::Method) -> azure_core::Result<azure_co
         oauth2::http::Method::PUT => Ok(azure_core::Method::Put),
         oauth2::http::Method::DELETE => Ok(azure_core::Method::Delete),
         oauth2::http::Method::HEAD => Ok(azure_core::Method::Head),
-        oauth2::http::Method::OPTIONS => Ok(azure_core::Method::Options),
-        oauth2::http::Method::CONNECT => Ok(azure_core::Method::Connect),
         oauth2::http::Method::PATCH => Ok(azure_core::Method::Patch),
-        oauth2::http::Method::TRACE => Ok(azure_core::Method::Trace),
         _ => Err(Error::with_message(ErrorKind::DataConversion, || {
             format!("unsupported oauth2::http::Method {method}")
         })),

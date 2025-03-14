@@ -777,8 +777,8 @@ mod test {
 
     #[test]
     fn status_code_from() {
-        assert_eq!(StatusCode::from(204), 204u16);
-        assert_eq!(StatusCode::from(700), 700u16);
+        assert_eq!(StatusCode::from(204), 204);
+        assert_eq!(StatusCode::from(700), 700);
     }
 
     #[test]
