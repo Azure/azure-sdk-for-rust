@@ -14,8 +14,7 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: storage
-    RunLiveTests: false
-    TestTimeoutInMinutes: 120
+        TestTimeoutInMinutes: 120
     Artifacts:
     - name: azure_storage_common
       safeName: AzureStorageCommon

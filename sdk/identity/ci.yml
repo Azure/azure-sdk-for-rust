@@ -14,7 +14,6 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: identity
-    RunLiveTests: false
-    Artifacts:
+        Artifacts:
     - name: azure_identity
       safeName: AzureIdentity

@@ -14,7 +14,6 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: eventhubs
-    RunLiveTests: false
-    Artifacts:
+        Artifacts:
     - name: azure_messaging_eventhubs
       safeName: AzureMessagingEventhubs
