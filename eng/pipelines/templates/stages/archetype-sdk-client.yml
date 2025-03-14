@@ -105,7 +105,7 @@ extends:
               - template: /eng/pipelines/templates/variables/globals.yml
               - template: /eng/pipelines/templates/variables/image.yml
               - template: /eng/pipelines/templates/variables/rust.yml
-              dependsOn: FileStage
+              dependsOn: []
               jobs:
               - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
                 parameters:
