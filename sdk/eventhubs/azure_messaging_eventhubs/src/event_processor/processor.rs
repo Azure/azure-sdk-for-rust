@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corp. All Rights Reserved.
 // Licensed under the MIT License.
 
+//use async_channel::{bounded, Receiver, Sender};
 use super::{
     load_balancer::LoadBalancer,
     models::{Checkpoint, StartPositions},
@@ -11,10 +12,13 @@ use crate::{
     models::{ConsumerClientDetails, EventHubProperties},
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
-use async_channel::{bounded, Receiver, Sender};
 use async_io::Timer;
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
+use futures::{
+    channel::mpsc::{channel, Receiver, Sender},
+    SinkExt, StreamExt,
+};
 use std::{
     sync::{
         //        mpsc::{sync_channel, Receiver, SyncSender},
@@ -45,7 +49,7 @@ pub struct EventProcessor {
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     load_balancer: Arc<AsyncMutex<LoadBalancer>>,
     consumer_client: Arc<ConsumerClient>,
-    next_partition_clients: Receiver<Arc<PartitionClient>>,
+    next_partition_clients: AsyncMutex<Receiver<Arc<PartitionClient>>>,
     next_partition_client_sender: Sender<Arc<PartitionClient>>,
     client_details: ConsumerClientDetails,
     prefetch: u32,
@@ -143,7 +147,7 @@ impl EventProcessor {
             eh_properties.partition_ids.truncate(max_partition_count);
         }
 
-        let (sender, receiver) = bounded(eh_properties.partition_ids.len());
+        let (sender, receiver) = channel(eh_properties.partition_ids.len());
 
         let client_details = consumer_client.get_details().await?;
 
@@ -163,7 +167,7 @@ impl EventProcessor {
             update_interval: options.update_interval,
             start_positions: options.start_positions,
             next_partition_client_sender: sender,
-            next_partition_clients: receiver,
+            next_partition_clients: AsyncMutex::new(receiver),
             is_running: std::sync::Mutex::new(false),
             eventhub_properties: eh_properties,
         })
@@ -185,33 +189,38 @@ impl EventProcessor {
     /// use std::sync::Arc;
     /// use std::time::Duration;
     /// use std::thread;
-    /// use std::sync::Mutex;
     /// use azure_core::Result;
     /// use azure_messaging_eventhubs::ProcessorStrategy;
     /// use azure_messaging_eventhubs::models::Checkpoint;
     /// use azure_messaging_eventhubs::models::Ownership;
     /// use azure_messaging_eventhubs::CheckpointStore;
     ///
-    /// // Create an instance of the EventProcessor
-    /// let event_processor = EventProcessor::builder()
+    /// async fn run_processor(consumer_client: ConsumerClient, checkpoint_store: impl CheckpointStore+Send+Sync+'static) -> Result<()> {
+    ///   // Create an instance of the EventProcessor
+    ///   let event_processor = EventProcessor::builder()
     ///        .with_load_balancing_strategy(ProcessorStrategy::Balanced)
     ///       .with_update_interval(Duration::from_secs(30))
     ///       .with_partition_expiration_duration(Duration::from_secs(10))
     ///       .with_prefetch(300)
     ///       .build(
-    ///           Arc::new(ConsumerClient::default()),
-    ///          Arc::new(MyCheckpointStore::default()));
+    ///          Arc::new(consumer_client),
+    ///          Arc::new(checkpoint_store)).await?;
     ///
-    /// // Start the event processor
-    /// let join_handle = tokio::spawn(async move {
-    ///     event_processor.run().await?;
-    ///     Ok(())
-    /// });
-    /// // Wait for the event processor to finish
-    /// thread::sleep(Duration::from_secs(60));
-    ///
-    /// join_handle.abort();
-    ///
+    ///   // Start the event processor
+    ///   {
+    ///     tokio::select!{
+    ///          result = event_processor.run() => {
+    ///              if let Err(e) = result {
+    ///                  println!("Event processor failed: {:?}", e);
+    ///              } else {
+    ///                  println!("Event processor finished successfully");
+    ///              }
+    ///          }
+    ///          _ = tokio::time::sleep(Duration::from_secs(60)) => {}
+    ///     }
+    ///   }
+    ///   Ok(())
+    /// }
     /// ```
     ///
     pub async fn run(&self) -> Result<()> {
@@ -235,7 +244,6 @@ impl EventProcessor {
             }
             debug!("Event processor sleeping for {:?}", self.update_interval);
             Timer::after(self.update_interval).await;
-            debug!("Event processor waking up.");
             if self.is_shutdown()? {
                 info!("Event processor shutting down.");
                 break Ok(());
@@ -354,6 +362,10 @@ impl EventProcessor {
 
         // Since we can only have a single EventReceiver on a partition, we don't actually attempt to create the receiver until
         let start_position = self.get_start_position(partition_id, checkpoints);
+        debug!(
+            "Start position for partition {}: {:?}",
+            partition_id, start_position
+        );
         let receiver = self
             .consumer_client
             .open_receiver_on_partition(
@@ -375,27 +387,23 @@ impl EventProcessor {
         partition_client.set_event_receiver(receiver)?;
 
         info!("Adding partition client to queue.");
-        if self.next_partition_client_sender.is_full() {
-            error!("Partition client queue is full. This should not happen.");
-        }
 
         // Send the partition client to the next partition client receiver
-        let r = self
-            .next_partition_client_sender
-            .send(partition_client)
-            .await
-            .map_err(|e| {
+        {
+            let mut sender = self.next_partition_client_sender.clone();
+            let r = sender.send(partition_client).await.map_err(|e| {
                 azure_core::Error::message(
                     AzureErrorKind::Other,
                     format!("Failed to send partition client: {:?}", e),
                 )
             });
-        if let Err(e) = r {
-            info!("Failed to send partition client: {:?}", e);
-            return Err(Error::message(
-                AzureErrorKind::Other,
-                "Failed to send partition client",
-            ));
+            if let Err(e) = r {
+                info!("Failed to send partition client: {:?}", e);
+                return Err(Error::message(
+                    AzureErrorKind::Other,
+                    "Failed to send partition client",
+                ));
+            }
         }
         info!(
             "add_partition_client: Partition client added for partition: {:?}",
@@ -410,23 +418,24 @@ impl EventProcessor {
     /// This method returns the next available partition client.
     pub async fn next_partition_client(&self) -> Result<Arc<PartitionClient>> {
         // Implement the function or remove it if not needed
-        info!(
-            "{:?}:next_partition_client: Waiting to receive the next partition client.",
-            std::thread::current().id()
-        );
-        let next_client = self.next_partition_clients.recv().await.map_err(|e| {
-            azure_core::Error::message(
-                AzureErrorKind::Other,
-                format!("No next partition client available: {}", e),
-            )
-        })?;
+        info!("next_partition_client: Waiting to receive the next partition client.",);
 
-        info!(
-            "{:?}:next_partition_client: Returning partition client for partition {:?}.",
-            std::thread::current().id(),
-            next_client.get_partition_id()
-        );
-        Ok(next_client)
+        {
+            // Wait for the next partition client to be available
+            let mut clients = self.next_partition_clients.lock().await;
+            let next_client = clients.next().await.ok_or_else(|| {
+                azure_core::Error::message(
+                    AzureErrorKind::Other,
+                    "No next partition client available: ",
+                )
+            })?;
+
+            info!(
+                "next_partition_client: Returning partition client for partition {:?}.",
+                next_client.get_partition_id()
+            );
+            Ok(next_client)
+        }
     }
 
     /// Closes the event processor.

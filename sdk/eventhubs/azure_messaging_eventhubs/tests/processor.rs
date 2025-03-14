@@ -3,6 +3,7 @@
 
 mod in_memory_checkpoint_store;
 use azure_core_test::{recorded, TestContext};
+use azure_messaging_eventhubs::models::StartPositions;
 use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, ProcessorStrategy};
 use in_memory_checkpoint_store::InMemoryCheckpointStore;
 use std::sync::Arc;
@@ -38,19 +39,13 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
 
     {
         const TIMEOUT: Duration = Duration::from_secs(30);
-        let event_processor_clone = event_processor.clone();
-        let jh = tokio::spawn(async move { event_processor_clone.run().await });
-        let timeout_handle = tokio::spawn(async move {
-            tokio::time::sleep(TIMEOUT).await;
-            info!("Timeout reached");
-        });
 
         info!("Started event processor");
         info!("Waiting for event processor to finish");
         info!("Timeout set to {:?}", TIMEOUT);
 
         tokio::select! {
-            result = jh => {
+            result = event_processor.run() => {
                 info!("Event processor finished: {:?}", result);
                 if let Err(e) = result {
                     info!("Event processor failed: {:?}", e);
@@ -58,8 +53,8 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
                     info!("Event processor finished successfully");
                 }
             }
-            _ = timeout_handle => {
-                info!("Timeout reached, event processor may not have started");
+            _ = tokio::time::sleep(TIMEOUT) => {
+                info!("Timeout reached.");
             }
         }
     }
@@ -106,12 +101,17 @@ async fn create_consumer_client(ctx: TestContext) -> azure_core::Result<Arc<Cons
 async fn create_processor(
     consumer_client: Arc<ConsumerClient>,
     update_interval: Duration,
+    start_positions: Option<StartPositions>,
 ) -> azure_core::Result<Arc<EventProcessor>> {
-    EventProcessor::builder()
+    let mut builder = EventProcessor::builder()
         .with_load_balancing_strategy(ProcessorStrategy::Balanced)
         .with_update_interval(update_interval)
         .with_partition_expiration_duration(Duration::from_secs(120))
-        .with_prefetch(300)
+        .with_prefetch(300);
+    if let Some(start_positions) = start_positions {
+        builder = builder.with_start_positions(start_positions);
+    }
+    builder
         .build(consumer_client, Arc::new(InMemoryCheckpointStore::new()))
         .await
 }
@@ -119,14 +119,14 @@ async fn create_processor(
 async fn start_processor_running(
     event_processor: &Arc<EventProcessor>,
 ) -> JoinHandle<azure_core::Result<()>> {
-    let event_processor_clone = event_processor.clone();
-    tokio::spawn(async move { event_processor_clone.run().await })
+    let event_processor = Arc::clone(event_processor);
+    tokio::spawn(async move { event_processor.run().await })
 }
 
 #[recorded::test(live)]
 async fn get_next_partition_client(ctx: TestContext) -> azure_core::Result<()> {
     let consumer_client = create_consumer_client(ctx).await?;
-    let processor = create_processor(consumer_client, Duration::from_secs(20)).await?;
+    let processor = create_processor(consumer_client, Duration::from_secs(20), None).await?;
 
     let running_processor = start_processor_running(&processor).await;
 
@@ -157,7 +157,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
     let consumer_client = create_consumer_client(ctx).await?;
     // The processor only adds one client as needed up to the max, so we block waiting
     // on all the clients to become available.
-    let processor = create_processor(consumer_client.clone(), Duration::from_secs(3)).await?;
+    let processor = create_processor(consumer_client.clone(), Duration::from_secs(3), None).await?;
 
     let running_processor = start_processor_running(&processor).await;
 
@@ -194,27 +194,12 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
 
     {
         info!("Retrieving one more processor client than possible.");
-        let processor_clone = processor.clone();
         tokio::select! {
-            _ = {
-                tokio::time::sleep(Duration::from_secs(5))
-            } => {
-                info!("Timeout reached - event processor has no more partitions.");
-            }
+            _ = tokio::time::sleep(Duration::from_secs(5)) =>
+                info!("Timeout reached - event processor has no more partitions."),
 
-            result = {processor_clone.next_partition_client()}
-            => {
-                if let Ok(partition_client) = result {
-                    info!("Received next partition client");
-                    info!(
-                        "Received partition client for partition {}",
-                        partition_client.get_partition_id()
-                    );
-                } else {
-                    info!("No partition clients available");
-                }
-                panic!("Received next partition client, this should not happen.");
-            }
+            _ = processor.next_partition_client() =>
+                 panic!("Received next partition client, this should not happen."),
         }
     }
     // Now drop one of the partition clients.
@@ -256,6 +241,65 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
         "Received partition client for partition {}",
         partition_client.get_partition_id()
     );
+
+    running_processor.abort();
+    info!("Processor task aborted");
+    let _ = running_processor.await;
+    info!("Processor task joined");
+
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<()> {
+    use azure_messaging_eventhubs::{StartLocation, StartPosition};
+    use futures::StreamExt;
+
+    common::setup();
+
+    let consumer_client = create_consumer_client(ctx).await?;
+    let processor = create_processor(
+        consumer_client,
+        Duration::from_secs(20),
+        Some(StartPositions {
+            default: StartPosition {
+                location: StartLocation::Earliest,
+                inclusive: true,
+            },
+            ..Default::default()
+        }),
+    )
+    .await?;
+
+    let running_processor = start_processor_running(&processor).await;
+
+    info!("Getting the first partition client.");
+    let partition_client = processor
+        .next_partition_client()
+        .await
+        .expect("Failed to get next partition client");
+    info!(
+        "Received partition client for partition {}",
+        partition_client.get_partition_id()
+    );
+
+    // Receive events from the partition client.
+    let mut event_stream = partition_client.receive_events();
+    while let Some(event) = event_stream.next().await {
+        match event {
+            Ok(event_data) => {
+                info!("Received event: {:?}", event_data);
+                partition_client
+                    .update_checkpoint(&event_data)
+                    .await
+                    .expect("Failed to update checkpoint");
+                info!("Checkpoint updated for event: {:?}", event_data);
+            }
+            Err(e) => {
+                panic!("Error receiving event: {:?}", e);
+            }
+        }
+    }
 
     running_processor.abort();
     info!("Processor task aborted");

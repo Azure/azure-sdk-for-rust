@@ -25,6 +25,7 @@ pub use consumer::{
 
 /// Event Hubs processor related types.
 pub mod processor {
+    pub use crate::event_processor::partition_client::PartitionClient;
     pub use crate::event_processor::CheckpointStore;
 }
 

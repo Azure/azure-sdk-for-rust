@@ -7,13 +7,16 @@ use crate::{
     processor::CheckpointStore,
     EventReceiver,
 };
-use async_stream::try_stream;
 use azure_core::Result;
-use azure_core_amqp::AmqpMessage;
 use futures::Stream;
+use std::pin::Pin;
 use std::sync::{Arc, OnceLock, Weak};
 use tracing::warn;
 
+/// Represents a client for interacting with a specific partition in Event Hubs.
+///
+/// The `PartitionClient` provides methods for receiving events, updating checkpoints,
+/// and managing the lifecycle of the client for a specific partition.
 pub struct PartitionClient {
     partition_id: String,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
@@ -41,15 +44,35 @@ impl PartitionClient {
             consumers,
         }
     }
+
+    /// Returns the partition ID of the `PartitionClient`.
+    ///
+    /// # Returns
+    /// A reference to the partition ID as a `String`.
     pub fn get_partition_id(&self) -> &String {
         &self.partition_id
     }
 
+    /// Receives events from the partition.
+    ///
+    /// This method returns a stream of `ReceivedEventData` wrapped in a `Result`.
+    /// The stream yields events as they are received from the partition.
+    ///
+    /// # Returns
+    /// A stream of `Result<ReceivedEventData>` representing the received events.
     pub fn receive_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
-        try_stream! {
-            // Replace `todo!()` with the actual implementation
-            yield ReceivedEventData::from(AmqpMessage::builder().build());
-            todo!();
+        let event_receiver = self.event_receiver.get();
+        if let Some(event_receiver) = event_receiver {
+            Box::pin(event_receiver.stream_events())
+                as Pin<Box<dyn futures::Stream<Item = azure_core::Result<ReceivedEventData>> + '_>>
+        } else {
+            // Return a stream with a single error indicating that the event receiver is not available.
+            Box::pin(futures::stream::once(async {
+                Err(azure_core::error::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Event receiver is not set for this partition.",
+                ))
+            }))
         }
     }
 
@@ -67,7 +90,7 @@ impl PartitionClient {
     ///
     /// # Example
     /// ```
-    /// # use azure_messaging_eventhubs::event_processor::partition_client::PartitionClient;
+    /// # use azure_messaging_eventhubs::processor::PartitionClient;
     /// # async fn example(partition_client: PartitionClient) -> azure_core::Result<()> {
     /// partition_client.close().await?;
     /// # Ok(())
@@ -88,7 +111,17 @@ impl PartitionClient {
         Ok(())
     }
 
-    pub async fn update_checkpoint(&self, event_data: ReceivedEventData) -> Result<()> {
+    /// Updates the checkpoint for the current partition.
+    ///
+    /// This method extracts the sequence number and offset from the provided `ReceivedEventData`
+    /// and updates the checkpoint in the `CheckpointStore`.
+    ///
+    /// # Arguments
+    /// * `event_data` - The event data containing the sequence number and offset to update the checkpoint.
+    ///
+    /// # Errors
+    /// Returns an error if the sequence number or offset is invalid, or if updating the checkpoint fails.
+    pub async fn update_checkpoint(&self, event_data: &ReceivedEventData) -> Result<()> {
         let mut sequence_number: Option<i64> = None;
         let mut offset: Option<String> = None;
 
