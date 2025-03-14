@@ -95,32 +95,6 @@ extends:
 
     # Run live tests for internal only, not public CI builds. This can be triggered manually for via an `/azp run` comment.
     - ${{if eq(parameters.RunLiveTests, 'true') }}:
-      - stage: FileStage
-        displayName: Check test-resources File
-        dependsOn: []
-        variables:
-        - template: /eng/pipelines/templates/variables/image.yml
-        jobs:
-        - job: FileJob
-          displayName: Verify Test Resources File
-          pool:
-            name: $(LINUXPOOL)
-            image: $(LINUXVMIMAGE)
-            os: linux
-          steps:
-          - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-            parameters:
-              paths:
-              - "sdk/${{parameters.ServiceDirectory}}/test-resources.*"
-          - pwsh: |
-              # Verify the test resources file for this service directory exists
-              $serviceDirectory = "$(System.DefaultWorkingDirectory)/sdk/${{parameters.ServiceDirectory}}"
-              $fileExists = Test-Path "$serviceDirectory/test-resources.*" -Include '*.json', '*.bicep'
-              Write-Host "Setting FileExits to $fileExists"
-              Write-Host "##vso[task.setvariable variable=FileExits; isOutput=true]$($fileExists ? 'true' : 'false')"
-            name: FileStep
-            displayName: Verify Test Resources File
-
       - ${{ each cloud in parameters.CloudConfig }}:
         # Run all clouds by default for weekly test pipeline, except for clouds specifically unsupported by the calling pipeline
         - ${{ if or(contains(parameters.Clouds, cloud.key), and(contains(variables['Build.DefinitionName'], 'weekly'), contains(parameters.SupportedClouds, cloud.key))) }}:
@@ -132,7 +106,6 @@ extends:
               - template: /eng/pipelines/templates/variables/image.yml
               - template: /eng/pipelines/templates/variables/rust.yml
               dependsOn: FileStage
-              condition: and(succeeded(), eq(stageDependencies.FileStage.outputs['FileJob.FileStep.FileExits'], 'true'))
               jobs:
               - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
                 parameters:
