@@ -93,7 +93,7 @@ fn try_from_headers(
 }
 
 fn try_from_status(status: azure_core::StatusCode) -> azure_core::Result<oauth2::http::StatusCode> {
-    oauth2::http::StatusCode::from_u16(status as u16).map_kind(ErrorKind::DataConversion)
+    oauth2::http::StatusCode::from_u16(*status).map_kind(ErrorKind::DataConversion)
 }
 
 fn to_headers(map: &oauth2::http::header::HeaderMap) -> azure_core::headers::Headers {

@@ -24,8 +24,17 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+//
+// Modifications:
+//
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-use std::fmt::{self, Display};
+use std::{
+    borrow::Cow,
+    fmt::{self, Display},
+    ops::Deref,
+};
 
 /// HTTP response status codes.
 ///
@@ -33,6 +42,7 @@ use std::fmt::{self, Display};
 /// [Read more](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[non_exhaustive]
 pub enum StatusCode {
     /// 100 Continue
     ///
@@ -444,6 +454,9 @@ pub enum StatusCode {
     /// The 511 status code indicates that the client needs to authenticate to
     /// gain network access.
     NetworkAuthenticationRequired = 511,
+
+    /// A status code not defined by `StatusCode`.
+    UnknownValue(u16),
 }
 
 impl StatusCode {
@@ -493,67 +506,80 @@ impl StatusCode {
     }
 
     /// The canonical reason for a given status code
-    pub fn canonical_reason(&self) -> &'static str {
+    pub fn canonical_reason(&self) -> Cow<'static, str> {
         match self {
-            StatusCode::Continue => "Continue",
-            StatusCode::SwitchingProtocols => "Switching Protocols",
-            StatusCode::EarlyHints => "Early Hints",
-            StatusCode::Ok => "OK",
-            StatusCode::Created => "Created",
-            StatusCode::Accepted => "Accepted",
-            StatusCode::NonAuthoritativeInformation => "Non Authoritative Information",
-            StatusCode::NoContent => "No Content",
-            StatusCode::ResetContent => "Reset Content",
-            StatusCode::PartialContent => "Partial Content",
-            StatusCode::MultiStatus => "Multi-Status",
-            StatusCode::ImUsed => "Im Used",
-            StatusCode::MultipleChoice => "Multiple Choice",
-            StatusCode::MovedPermanently => "Moved Permanently",
-            StatusCode::Found => "Found",
-            StatusCode::SeeOther => "See Other",
-            StatusCode::NotModified => "Modified",
-            StatusCode::TemporaryRedirect => "Temporary Redirect",
-            StatusCode::PermanentRedirect => "Permanent Redirect",
-            StatusCode::BadRequest => "Bad Request",
-            StatusCode::Unauthorized => "Unauthorized",
-            StatusCode::PaymentRequired => "Payment Required",
-            StatusCode::Forbidden => "Forbidden",
-            StatusCode::NotFound => "Not Found",
-            StatusCode::MethodNotAllowed => "Method Not Allowed",
-            StatusCode::NotAcceptable => "Not Acceptable",
-            StatusCode::ProxyAuthenticationRequired => "Proxy Authentication Required",
-            StatusCode::RequestTimeout => "Request Timeout",
-            StatusCode::Conflict => "Conflict",
-            StatusCode::Gone => "Gone",
-            StatusCode::LengthRequired => "Length Required",
-            StatusCode::PreconditionFailed => "Precondition Failed",
-            StatusCode::PayloadTooLarge => "Payload Too Large",
-            StatusCode::UriTooLong => "URI Too Long",
-            StatusCode::UnsupportedMediaType => "Unsupported Media Type",
-            StatusCode::RequestedRangeNotSatisfiable => "Requested Range Not Satisfiable",
-            StatusCode::ExpectationFailed => "Expectation Failed",
-            StatusCode::ImATeapot => "I'm a teapot",
-            StatusCode::MisdirectedRequest => "Misdirected Request",
-            StatusCode::UnprocessableEntity => "Unprocessable Entity",
-            StatusCode::Locked => "Locked",
-            StatusCode::FailedDependency => "Failed Dependency",
-            StatusCode::TooEarly => "Too Early",
-            StatusCode::UpgradeRequired => "Upgrade Required",
-            StatusCode::PreconditionRequired => "Precondition Required",
-            StatusCode::TooManyRequests => "Too Many Requests",
-            StatusCode::RequestHeaderFieldsTooLarge => "Request Header Fields Too Large",
-            StatusCode::UnavailableForLegalReasons => "Unavailable For Legal Reasons",
-            StatusCode::InternalServerError => "Internal Server Error",
-            StatusCode::NotImplemented => "Not Implemented",
-            StatusCode::BadGateway => "Bad Gateway",
-            StatusCode::ServiceUnavailable => "Service Unavailable",
-            StatusCode::GatewayTimeout => "Gateway Timeout",
-            StatusCode::HttpVersionNotSupported => "HTTP Version Not Supported",
-            StatusCode::VariantAlsoNegotiates => "Variant Also Negotiates",
-            StatusCode::InsufficientStorage => "Insufficient Storage",
-            StatusCode::LoopDetected => "Loop Detected",
-            StatusCode::NotExtended => "Not Extended",
-            StatusCode::NetworkAuthenticationRequired => "Network Authentication Required",
+            StatusCode::Continue => Cow::Borrowed("Continue"),
+            StatusCode::SwitchingProtocols => Cow::Borrowed("Switching Protocols"),
+            StatusCode::EarlyHints => Cow::Borrowed("Early Hints"),
+            StatusCode::Ok => Cow::Borrowed("OK"),
+            StatusCode::Created => Cow::Borrowed("Created"),
+            StatusCode::Accepted => Cow::Borrowed("Accepted"),
+            StatusCode::NonAuthoritativeInformation => {
+                Cow::Borrowed("Non Authoritative Information")
+            }
+            StatusCode::NoContent => Cow::Borrowed("No Content"),
+            StatusCode::ResetContent => Cow::Borrowed("Reset Content"),
+            StatusCode::PartialContent => Cow::Borrowed("Partial Content"),
+            StatusCode::MultiStatus => Cow::Borrowed("Multi-Status"),
+            StatusCode::ImUsed => Cow::Borrowed("Im Used"),
+            StatusCode::MultipleChoice => Cow::Borrowed("Multiple Choice"),
+            StatusCode::MovedPermanently => Cow::Borrowed("Moved Permanently"),
+            StatusCode::Found => Cow::Borrowed("Found"),
+            StatusCode::SeeOther => Cow::Borrowed("See Other"),
+            StatusCode::NotModified => Cow::Borrowed("Modified"),
+            StatusCode::TemporaryRedirect => Cow::Borrowed("Temporary Redirect"),
+            StatusCode::PermanentRedirect => Cow::Borrowed("Permanent Redirect"),
+            StatusCode::BadRequest => Cow::Borrowed("Bad Request"),
+            StatusCode::Unauthorized => Cow::Borrowed("Unauthorized"),
+            StatusCode::PaymentRequired => Cow::Borrowed("Payment Required"),
+            StatusCode::Forbidden => Cow::Borrowed("Forbidden"),
+            StatusCode::NotFound => Cow::Borrowed("Not Found"),
+            StatusCode::MethodNotAllowed => Cow::Borrowed("Method Not Allowed"),
+            StatusCode::NotAcceptable => Cow::Borrowed("Not Acceptable"),
+            StatusCode::ProxyAuthenticationRequired => {
+                Cow::Borrowed("Proxy Authentication Required")
+            }
+            StatusCode::RequestTimeout => Cow::Borrowed("Request Timeout"),
+            StatusCode::Conflict => Cow::Borrowed("Conflict"),
+            StatusCode::Gone => Cow::Borrowed("Gone"),
+            StatusCode::LengthRequired => Cow::Borrowed("Length Required"),
+            StatusCode::PreconditionFailed => Cow::Borrowed("Precondition Failed"),
+            StatusCode::PayloadTooLarge => Cow::Borrowed("Payload Too Large"),
+            StatusCode::UriTooLong => Cow::Borrowed("URI Too Long"),
+            StatusCode::UnsupportedMediaType => Cow::Borrowed("Unsupported Media Type"),
+            StatusCode::RequestedRangeNotSatisfiable => {
+                Cow::Borrowed("Requested Range Not Satisfiable")
+            }
+            StatusCode::ExpectationFailed => Cow::Borrowed("Expectation Failed"),
+            StatusCode::ImATeapot => Cow::Borrowed("I'm a teapot"),
+            StatusCode::MisdirectedRequest => Cow::Borrowed("Misdirected Request"),
+            StatusCode::UnprocessableEntity => Cow::Borrowed("Unprocessable Entity"),
+            StatusCode::Locked => Cow::Borrowed("Locked"),
+            StatusCode::FailedDependency => Cow::Borrowed("Failed Dependency"),
+            StatusCode::TooEarly => Cow::Borrowed("Too Early"),
+            StatusCode::UpgradeRequired => Cow::Borrowed("Upgrade Required"),
+            StatusCode::PreconditionRequired => Cow::Borrowed("Precondition Required"),
+            StatusCode::TooManyRequests => Cow::Borrowed("Too Many Requests"),
+            StatusCode::RequestHeaderFieldsTooLarge => {
+                Cow::Borrowed("Request Header Fields Too Large")
+            }
+            StatusCode::UnavailableForLegalReasons => {
+                Cow::Borrowed("Unavailable For Legal Reasons")
+            }
+            StatusCode::InternalServerError => Cow::Borrowed("Internal Server Error"),
+            StatusCode::NotImplemented => Cow::Borrowed("Not Implemented"),
+            StatusCode::BadGateway => Cow::Borrowed("Bad Gateway"),
+            StatusCode::ServiceUnavailable => Cow::Borrowed("Service Unavailable"),
+            StatusCode::GatewayTimeout => Cow::Borrowed("Gateway Timeout"),
+            StatusCode::HttpVersionNotSupported => Cow::Borrowed("HTTP Version Not Supported"),
+            StatusCode::VariantAlsoNegotiates => Cow::Borrowed("Variant Also Negotiates"),
+            StatusCode::InsufficientStorage => Cow::Borrowed("Insufficient Storage"),
+            StatusCode::LoopDetected => Cow::Borrowed("Loop Detected"),
+            StatusCode::NotExtended => Cow::Borrowed("Not Extended"),
+            StatusCode::NetworkAuthenticationRequired => {
+                Cow::Borrowed("Network Authentication Required")
+            }
+            StatusCode::UnknownValue(code) => Cow::Owned(format!("HTTP {code}")),
         }
     }
 }
@@ -562,7 +588,7 @@ impl StatusCode {
 mod serde {
     use super::StatusCode;
     use ::serde::{
-        de::{Error as DeError, Unexpected, Visitor},
+        de::{Error as DeError, Visitor},
         Deserialize, Deserializer, Serialize, Serializer,
     };
     use std::fmt;
@@ -572,7 +598,7 @@ mod serde {
         where
             S: Serializer,
         {
-            let value: u16 = *self as u16;
+            let value: u16 = **self;
             serializer.serialize_u16(value)
         }
     }
@@ -611,14 +637,7 @@ mod serde {
         where
             E: DeError,
         {
-            use std::convert::TryFrom;
-            match StatusCode::try_from(v) {
-                Ok(status_code) => Ok(status_code),
-                Err(_) => Err(DeError::invalid_value(
-                    Unexpected::Unsigned(v as u64),
-                    &self,
-                )),
-            }
+            Ok(StatusCode::from(v))
         }
 
         fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
@@ -646,105 +665,133 @@ mod serde {
     }
 }
 
-impl From<StatusCode> for u16 {
-    fn from(code: StatusCode) -> u16 {
-        code as u16
+impl Deref for StatusCode {
+    type Target = u16;
+
+    fn deref(&self) -> &Self::Target {
+        if let Self::UnknownValue(code) = self {
+            return code;
+        }
+
+        unsafe { std::mem::transmute_copy(&self) }
     }
 }
 
-impl std::convert::TryFrom<u16> for StatusCode {
-    type Error = crate::Error;
+impl From<StatusCode> for u16 {
+    fn from(code: StatusCode) -> u16 {
+        match code {
+            StatusCode::UnknownValue(code) => code,
+            _ => *code,
+        }
+    }
+}
 
-    fn try_from(num: u16) -> Result<Self, Self::Error> {
+impl From<u16> for StatusCode {
+    fn from(num: u16) -> Self {
         match num {
-            100 => Ok(StatusCode::Continue),
-            101 => Ok(StatusCode::SwitchingProtocols),
-            103 => Ok(StatusCode::EarlyHints),
-            200 => Ok(StatusCode::Ok),
-            201 => Ok(StatusCode::Created),
-            202 => Ok(StatusCode::Accepted),
-            203 => Ok(StatusCode::NonAuthoritativeInformation),
-            204 => Ok(StatusCode::NoContent),
-            205 => Ok(StatusCode::ResetContent),
-            206 => Ok(StatusCode::PartialContent),
-            207 => Ok(StatusCode::MultiStatus),
-            226 => Ok(StatusCode::ImUsed),
-            300 => Ok(StatusCode::MultipleChoice),
-            301 => Ok(StatusCode::MovedPermanently),
-            302 => Ok(StatusCode::Found),
-            303 => Ok(StatusCode::SeeOther),
-            304 => Ok(StatusCode::NotModified),
-            307 => Ok(StatusCode::TemporaryRedirect),
-            308 => Ok(StatusCode::PermanentRedirect),
-            400 => Ok(StatusCode::BadRequest),
-            401 => Ok(StatusCode::Unauthorized),
-            402 => Ok(StatusCode::PaymentRequired),
-            403 => Ok(StatusCode::Forbidden),
-            404 => Ok(StatusCode::NotFound),
-            405 => Ok(StatusCode::MethodNotAllowed),
-            406 => Ok(StatusCode::NotAcceptable),
-            407 => Ok(StatusCode::ProxyAuthenticationRequired),
-            408 => Ok(StatusCode::RequestTimeout),
-            409 => Ok(StatusCode::Conflict),
-            410 => Ok(StatusCode::Gone),
-            411 => Ok(StatusCode::LengthRequired),
-            412 => Ok(StatusCode::PreconditionFailed),
-            413 => Ok(StatusCode::PayloadTooLarge),
-            414 => Ok(StatusCode::UriTooLong),
-            415 => Ok(StatusCode::UnsupportedMediaType),
-            416 => Ok(StatusCode::RequestedRangeNotSatisfiable),
-            417 => Ok(StatusCode::ExpectationFailed),
-            418 => Ok(StatusCode::ImATeapot),
-            421 => Ok(StatusCode::MisdirectedRequest),
-            422 => Ok(StatusCode::UnprocessableEntity),
-            423 => Ok(StatusCode::Locked),
-            424 => Ok(StatusCode::FailedDependency),
-            425 => Ok(StatusCode::TooEarly),
-            426 => Ok(StatusCode::UpgradeRequired),
-            428 => Ok(StatusCode::PreconditionRequired),
-            429 => Ok(StatusCode::TooManyRequests),
-            431 => Ok(StatusCode::RequestHeaderFieldsTooLarge),
-            451 => Ok(StatusCode::UnavailableForLegalReasons),
-            500 => Ok(StatusCode::InternalServerError),
-            501 => Ok(StatusCode::NotImplemented),
-            502 => Ok(StatusCode::BadGateway),
-            503 => Ok(StatusCode::ServiceUnavailable),
-            504 => Ok(StatusCode::GatewayTimeout),
-            505 => Ok(StatusCode::HttpVersionNotSupported),
-            506 => Ok(StatusCode::VariantAlsoNegotiates),
-            507 => Ok(StatusCode::InsufficientStorage),
-            508 => Ok(StatusCode::LoopDetected),
-            510 => Ok(StatusCode::NotExtended),
-            511 => Ok(StatusCode::NetworkAuthenticationRequired),
-            _ => Err(crate::error::Error::new(
-                crate::error::ErrorKind::Other,
-                "Invalid status code",
-            )),
+            100 => StatusCode::Continue,
+            101 => StatusCode::SwitchingProtocols,
+            103 => StatusCode::EarlyHints,
+            200 => StatusCode::Ok,
+            201 => StatusCode::Created,
+            202 => StatusCode::Accepted,
+            203 => StatusCode::NonAuthoritativeInformation,
+            204 => StatusCode::NoContent,
+            205 => StatusCode::ResetContent,
+            206 => StatusCode::PartialContent,
+            207 => StatusCode::MultiStatus,
+            226 => StatusCode::ImUsed,
+            300 => StatusCode::MultipleChoice,
+            301 => StatusCode::MovedPermanently,
+            302 => StatusCode::Found,
+            303 => StatusCode::SeeOther,
+            304 => StatusCode::NotModified,
+            307 => StatusCode::TemporaryRedirect,
+            308 => StatusCode::PermanentRedirect,
+            400 => StatusCode::BadRequest,
+            401 => StatusCode::Unauthorized,
+            402 => StatusCode::PaymentRequired,
+            403 => StatusCode::Forbidden,
+            404 => StatusCode::NotFound,
+            405 => StatusCode::MethodNotAllowed,
+            406 => StatusCode::NotAcceptable,
+            407 => StatusCode::ProxyAuthenticationRequired,
+            408 => StatusCode::RequestTimeout,
+            409 => StatusCode::Conflict,
+            410 => StatusCode::Gone,
+            411 => StatusCode::LengthRequired,
+            412 => StatusCode::PreconditionFailed,
+            413 => StatusCode::PayloadTooLarge,
+            414 => StatusCode::UriTooLong,
+            415 => StatusCode::UnsupportedMediaType,
+            416 => StatusCode::RequestedRangeNotSatisfiable,
+            417 => StatusCode::ExpectationFailed,
+            418 => StatusCode::ImATeapot,
+            421 => StatusCode::MisdirectedRequest,
+            422 => StatusCode::UnprocessableEntity,
+            423 => StatusCode::Locked,
+            424 => StatusCode::FailedDependency,
+            425 => StatusCode::TooEarly,
+            426 => StatusCode::UpgradeRequired,
+            428 => StatusCode::PreconditionRequired,
+            429 => StatusCode::TooManyRequests,
+            431 => StatusCode::RequestHeaderFieldsTooLarge,
+            451 => StatusCode::UnavailableForLegalReasons,
+            500 => StatusCode::InternalServerError,
+            501 => StatusCode::NotImplemented,
+            502 => StatusCode::BadGateway,
+            503 => StatusCode::ServiceUnavailable,
+            504 => StatusCode::GatewayTimeout,
+            505 => StatusCode::HttpVersionNotSupported,
+            506 => StatusCode::VariantAlsoNegotiates,
+            507 => StatusCode::InsufficientStorage,
+            508 => StatusCode::LoopDetected,
+            510 => StatusCode::NotExtended,
+            511 => StatusCode::NetworkAuthenticationRequired,
+            _ => StatusCode::UnknownValue(num),
         }
     }
 }
 
 impl PartialEq<StatusCode> for u16 {
     fn eq(&self, other: &StatusCode) -> bool {
-        *self == *other as u16
+        self == other as &u16
     }
 }
 
 impl PartialEq<u16> for StatusCode {
     fn eq(&self, other: &u16) -> bool {
-        *self as u16 == *other
+        self as &u16 == other
     }
 }
 
 impl Display for StatusCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", *self as u16)
+        write!(f, "{}", *(self as &u16))
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::StatusCode;
+
+    #[test]
+    fn status_code_from() {
+        assert_eq!(StatusCode::from(204), 204u16);
+        assert_eq!(StatusCode::from(700), 700u16);
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(StatusCode::from(204).to_string(), "204");
+        assert_eq!(StatusCode::from(700).to_string(), "700");
+    }
+
+    #[test]
+    fn canonical_reason() {
+        assert_eq!(StatusCode::from(204).canonical_reason(), "No Content");
+        assert_eq!(StatusCode::from(700).canonical_reason(), "HTTP 700");
+    }
 
     #[cfg(feature = "json")]
     #[test]
