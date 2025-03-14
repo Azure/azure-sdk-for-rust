@@ -63,8 +63,6 @@ pub extern "C" fn callable_from_c(value: i32) -> i32 {
 
 /// A function that combines several attributes: unsafe, extern, and const
 /// # Safety
-///
-/// The caller must ensure that the pointer is valid and not null, and that the length is correct.
 pub const unsafe extern "C" fn complex_function(ptr: *const u8, len: usize) -> usize {
     // This is just an example - in real code, you'd have proper safety checks
     let slice = std::slice::from_raw_parts(ptr, len);

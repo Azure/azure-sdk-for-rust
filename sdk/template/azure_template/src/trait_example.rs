@@ -44,7 +44,9 @@ impl Shape for Rectangle {
 /// A trait demonstrating associated types
 pub trait Container {
     /// The type of items this container holds
-    type Item<T> where T: Debug;
+    type Item<T>
+    where
+        T: Debug;
 
     /// Add an item to the container
     fn add<T: Debug + 'static>(&mut self, item: Self::Item<T>);
@@ -74,35 +76,16 @@ pub trait SuperTrait: Debug + Display + Clone {
 /// An unsafe trait example - implementors must uphold safety guarantees
 /// that the Rust compiler cannot verify
 ///
-/// Unsafe traits are typically used when the trait methods need to work with raw pointers,
-/// perform unsafe operations, or make guarantees about memory safety that the compiler cannot check.
-/// An unsafe trait example - implementors must uphold safety guarantees
-/// that the Rust compiler cannot verify
-///
 /// # Safety
-///
-/// Implementors must ensure that:
-/// - The pointer returned by `get_raw_ptr` is not used after the object is dropped
-/// - The pointer returned by `get_raw_ptr` is not used to modify the data in a way that violates Rust's aliasing rules
-/// - No other references to the data exist while the pointer returned by `get_raw_mut_ptr` is in use
-/// - The pointer returned by `get_raw_mut_ptr` is not used after the object is dropped
 pub unsafe trait UnsafeAccess {
     /// Get a raw pointer to the internal data
     ///
     /// # Safety
-    ///
-    /// The caller must ensure that:
-    /// - The pointer is not used after the object is dropped
-    /// - The pointer is not used to modify the data in a way that violates Rust's aliasing rules
     unsafe fn get_raw_ptr(&self) -> *const u8;
 
     /// Get a mutable raw pointer to the internal data
     ///
     /// # Safety
-    ///
-    /// The caller must ensure that:
-    /// - No other references to the data exist while the pointer is in use
-    /// - The pointer is not used after the object is dropped
     unsafe fn get_raw_mut_ptr(&mut self) -> *mut u8;
 }
 
