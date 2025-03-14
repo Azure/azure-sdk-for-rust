@@ -4,6 +4,7 @@
 param(
   [string]$PackageInfoDirectory,
   [switch]$CheckWasm = $true,
+  [switch]$Deny,
   [switch]$SkipPackageAnalysis
 )
 
@@ -22,6 +23,10 @@ if ($CheckWasm) {
   Invoke-LoggedCommand "rustup target add wasm32-unknown-unknown"
 }
 
+if ($Deny) {
+  Invoke-LoggedCommand "cargo install cargo-deny --locked"
+}
+
 Invoke-LoggedCommand "cargo check --package azure_core --all-features --all-targets --keep-going"
 
 Invoke-LoggedCommand "cargo fmt --all -- --check"
@@ -30,6 +35,10 @@ Invoke-LoggedCommand "cargo clippy --workspace --all-features --all-targets --ke
 
 if ($CheckWasm) {
   Invoke-LoggedCommand "cargo clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
+}
+
+if ($Deny) {
+  Invoke-LoggedCommand "cargo deny check"
 }
 
 Invoke-LoggedCommand "cargo doc --workspace --no-deps --all-features"
