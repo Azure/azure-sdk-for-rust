@@ -16,7 +16,6 @@ base64.workspace = true
 bytes.workspace = true
 dyn-clone.workspace = true
 futures.workspace = true
-http-types = { workspace = true, optional = true }
 pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
 rand.workspace = true
@@ -48,7 +47,7 @@ typespec_macros.path = "../typespec_macros"
 [features]
 default = ["http", "json", "reqwest", "reqwest_deflate", "reqwest_gzip"]
 derive = ["dep:typespec_macros"]
-http = ["dep:http-types", "typespec/http"]
+http = ["typespec/http"]
 json = ["typespec/json"]
 reqwest = ["reqwest/native-tls"]
 reqwest_deflate = ["reqwest/deflate"]

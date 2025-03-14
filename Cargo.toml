@@ -89,7 +89,6 @@ flate2 = "1.1.0"
 futures = "0.3"
 getrandom = { version = "0.2", features = ["js"] }
 hmac = { version = "0.12" }
-http-types = { version = "2.12", default-features = false }
 litemap = "0.7.4"
 log = "0.4"
 oauth2 = { version = "5.0.0", default-features = false }

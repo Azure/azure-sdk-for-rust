@@ -137,12 +137,7 @@ impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpError {
 
             fe2o3_amqp_management::error::Error::Status(s) => {
                 Ok(AmqpError::from(AmqpErrorKind::ManagementStatusCode(
-                    azure_core::StatusCode::try_from(s.code.0.get()).map_err(|_| {
-                        azure_core::Error::message(
-                            azure_core::error::ErrorKind::DataConversion,
-                            format!("invalid status code {s}"),
-                        )
-                    })?,
+                    azure_core::StatusCode::from(s.code.0.get()),
                     s.description.clone(),
                 )))
             }

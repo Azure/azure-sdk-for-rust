@@ -5,10 +5,9 @@ use crate::http::{
     headers::{HeaderValue, CONTENT_LENGTH},
     options::TransportOptions,
     policies::{Policy, PolicyResult},
-    Context, Header, Request,
+    Context, Header, Method, Request,
 };
 use async_trait::async_trait;
-use http_types::Method;
 use std::sync::Arc;
 use tracing::debug;
 
@@ -67,8 +66,7 @@ impl Header for EmptyContentLength {
 #[cfg(all(test, not(target_family = "wasm")))]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, Response};
-    use http_types::StatusCode;
+    use crate::http::{headers::Headers, Response, StatusCode};
 
     #[derive(Debug)]
     struct MockTransport;
