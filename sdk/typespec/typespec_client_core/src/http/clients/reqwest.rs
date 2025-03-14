@@ -5,7 +5,7 @@ use crate::http::{
     headers::{HeaderName, HeaderValue, Headers},
     request::{Body, Request},
     response::PinnedStream,
-    HttpClient, Method, Response, StatusCode,
+    HttpClient, Method, Response,
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;
@@ -42,7 +42,7 @@ impl HttpClient for ::reqwest::Client {
     async fn execute_request(&self, request: &Request) -> Result<Response> {
         let url = request.url().clone();
         let method = request.method();
-        let mut req = self.request(try_from_method(*method)?, url.clone());
+        let mut req = self.request(try_from_method(method)?, url.clone());
         for (name, value) in request.headers().iter() {
             req = req.header(name.as_str(), value.as_str());
         }
@@ -77,7 +77,7 @@ impl HttpClient for ::reqwest::Client {
             )
         }));
 
-        Ok(Response::new(try_from_status(status)?, headers, body))
+        Ok(Response::new(status.as_u16().into(), headers, body))
     }
 }
 
@@ -100,7 +100,7 @@ fn to_headers(map: &::reqwest::header::HeaderMap) -> Headers {
     Headers::from(map)
 }
 
-fn try_from_method(method: Method) -> Result<::reqwest::Method> {
+fn try_from_method(method: &Method) -> Result<::reqwest::Method> {
     match method {
         Method::Connect => Ok(::reqwest::Method::CONNECT),
         Method::Delete => Ok(::reqwest::Method::DELETE),
@@ -113,13 +113,4 @@ fn try_from_method(method: Method) -> Result<::reqwest::Method> {
         Method::Trace => Ok(::reqwest::Method::TRACE),
         _ => ::reqwest::Method::from_str(method.as_ref()).map_kind(ErrorKind::DataConversion),
     }
-}
-
-fn try_from_status(status: ::reqwest::StatusCode) -> Result<StatusCode> {
-    let status = u16::from(status);
-    StatusCode::try_from(status).map_err(|_| {
-        Error::with_message(ErrorKind::DataConversion, || {
-            format!("invalid status code {status}")
-        })
-    })
 }

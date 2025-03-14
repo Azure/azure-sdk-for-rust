@@ -24,10 +24,15 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+//
+// Modifications:
+//
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
 #[cfg(any(feature = "json", feature = "xml"))]
 use std::fmt::{self, Display};
-use std::str::FromStr;
+use std::{borrow::Cow, str::FromStr};
 
 /// HTTP request methods.
 ///
@@ -37,7 +42,8 @@ use std::str::FromStr;
 /// [Mozilla docs]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
 /// [RFC7231, Section 4]: https://tools.ietf.org/html/rfc7231#section-4
 /// [HTTP Method Registry]: https://www.iana.org/assignments/http-methods/http-methods.xhtml
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[non_exhaustive]
 pub enum Method {
     /// The ACL method modifies the access control list (which can be read via the DAV:acl
     /// property) of a resource.
@@ -362,6 +368,9 @@ pub enum Method {
     ///
     /// [RFC3253, Section 3.5]: https://tools.ietf.org/html/rfc3253#section-3.5
     VersionControl,
+
+    /// An HTTP method not defined.
+    Other(Cow<'static, str>),
 }
 
 impl Method {
@@ -481,10 +490,7 @@ impl FromStr for Method {
             "UPDATE" => Ok(Self::Update),
             "UPDATEREDIRECTREF" => Ok(Self::UpdateRedirectRef),
             "VERSION-CONTROL" => Ok(Self::VersionControl),
-            _ => Err(crate::error::Error::new(
-                crate::error::ErrorKind::Other,
-                "Invalid HTTP method",
-            )),
+            _ => Ok(Self::Other(Cow::Owned(s.into()))),
         }
     }
 }
@@ -539,6 +545,7 @@ impl AsRef<str> for Method {
             Self::Update => "UPDATE",
             Self::UpdateRedirectRef => "UPDATEREDIRECTREF",
             Self::VersionControl => "VERSION-CONTROL",
+            Self::Other(other) => other.as_ref(),
         }
     }
 }
