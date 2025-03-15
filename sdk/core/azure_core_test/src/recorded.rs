@@ -14,6 +14,9 @@ use std::sync::Arc;
 use tokio::sync::OnceCell;
 
 #[cfg(not(target_arch = "wasm32"))]
+static ONLY_TRACE: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+
+#[cfg(not(target_arch = "wasm32"))]
 static TEST_PROXY: OnceCell<Result<Arc<Proxy>>> = OnceCell::const_new();
 
 /// Starts playback or recording of live recordings.
@@ -36,19 +39,14 @@ pub async fn start(
     #[cfg(not(target_arch = "wasm32"))]
     let proxy = {
         match mode {
-            TestMode::Live => None,
+            TestMode::Live => {
+                ONLY_TRACE.get_or_init(init_tracing);
+                None
+            }
             _ => Some(
                 TEST_PROXY
                     .get_or_init(|| async move {
-                        #[cfg(feature = "tracing")]
-                        {
-                            use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
-                            tracing_subscriber::fmt()
-                                .with_env_filter(EnvFilter::from_default_env())
-                                .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
-                                .init();
-                        }
-
+                        init_tracing();
                         crate::proxy::start(Some(mode), crate_dir, options)
                             .await
                             .map(Arc::new)
@@ -81,4 +79,17 @@ pub async fn start(
 
     ctx.recording = Some(recording);
     Ok(ctx)
+}
+
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+fn init_tracing() {
+    #[cfg(feature = "tracing")]
+    {
+        use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
+        tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::from_default_env())
+            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+            .with_writer(std::io::stderr)
+            .init();
+    }
 }
