@@ -42,6 +42,7 @@ jobs:
         -Toolchain '$(Toolchain)'
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
         -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
+        -Deny
 
   - template: /eng/common/pipelines/templates/steps/check-spelling.yml
     parameters:
