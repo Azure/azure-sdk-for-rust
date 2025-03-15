@@ -81,6 +81,7 @@ pub async fn start(
     Ok(ctx)
 }
 
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 fn init_tracing() {
     #[cfg(feature = "tracing")]
     {
