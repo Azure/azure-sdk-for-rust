@@ -17,6 +17,7 @@
     ".vscode/settings.json",
     ".vscode/tasks.json",
     "NOTICE.txt",
+    "deny.toml",
     "eng/",
     "**/.dict.txt",
     "rust-toolchain.toml"
