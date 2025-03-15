@@ -1,4 +1,5 @@
 parameters:
+# required matrix parameters
 - name: UsePlatformContainer
   type: boolean
 - name: OSName
@@ -9,12 +10,14 @@ parameters:
   type: string
 - name: CloudConfig
   type: object
+# custom parameters
 - name: ServiceDirectory
   type: string
 - name: TimeoutInMinutes
   type: number
 - name: TestProxy
   type: boolean
+
 
 jobs:
 - job:
@@ -68,3 +71,10 @@ jobs:
       arguments: >
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
         -Toolchain '$(Toolchain)'
+
+  - ${{ if eq(parameters.TestProxy, true) }}:
+    - pwsh: |
+        # $(Build.SourcesDirectory)/test-proxy.log is the hardcoded output log location for the test-proxy-tool.yml
+        cat $(Build.SourcesDirectory)/test-proxy.log
+      displayName: 'Dump Test Proxy logs'
+      condition: and(succeededOrFailed(), eq(variables['System.Debug'], 'true'))

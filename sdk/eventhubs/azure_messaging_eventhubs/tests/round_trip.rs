@@ -2,8 +2,7 @@
 // Licensed under the MIT license.
 
 use azure_core_amqp::{AmqpList, AmqpMessageProperties};
-use azure_core_test::recorded;
-use azure_identity::DefaultAzureCredential;
+use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{
     models::{AmqpMessage, AmqpValue, EventData, MessageId},
     {
@@ -16,16 +15,14 @@ use futures::stream::StreamExt;
 use std::{env, error::Error};
 use tracing::info;
 
-mod common;
-
 #[recorded::test(live)]
-async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
+async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     const EVENTHUB_PARTITION: &str = "1";
     const TEST_NAME: &str = "test_round_trip_batch";
-    common::setup();
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
     let producer = ProducerClient::builder()
         .with_application_id(TEST_NAME)
         .open(host.as_str(), eventhub.as_str(), credential.clone())
@@ -99,7 +96,7 @@ async fn test_round_trip_batch() -> Result<(), Box<dyn Error>> {
 
     assert!(producer.send_batch(&batch, None).await.is_ok());
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
     let consumer = ConsumerClient::builder()
         .with_application_id(TEST_NAME)
         .open(host.as_str(), eventhub.as_str(), credential)

@@ -3,20 +3,17 @@
 
 use azure_core::StatusCode;
 use azure_core_amqp::{AmqpError, AmqpList, AmqpMessageProperties};
-use azure_core_test::recorded;
-use azure_identity::DefaultAzureCredential;
+use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
 use std::{env, error::Error};
 use tracing::{info, trace};
 
-mod common;
-
 #[recorded::test(live)]
-async fn test_new() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn test_new(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
     let _client = ProducerClient::builder()
         .with_application_id("test_new")
         .open(host.as_str(), eventhub.as_str(), credential.clone())
@@ -26,16 +23,12 @@ async fn test_new() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_new_with_error() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn test_new_with_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let eventhub = env::var("EVENTHUB_NAME")?;
     let result = ProducerClient::builder()
         .with_application_id("test_new_with_error")
-        .open(
-            "invalid_host",
-            eventhub.as_str(),
-            azure_identity::DefaultAzureCredential::new()?,
-        )
+        .open("invalid_host", eventhub.as_str(), recording.credential())
         .await;
     assert!(result.is_err());
     info!("Error: {:?}", result.err());
@@ -44,11 +37,11 @@ async fn test_new_with_error() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn open() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn open(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
     let _client = ProducerClient::builder()
         .with_application_id("test_open")
         .open(host.as_str(), eventhub.as_str(), credential.clone())
@@ -57,11 +50,11 @@ async fn open() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 #[recorded::test(live)]
-async fn close() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn close(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
     let client = ProducerClient::builder()
         .with_application_id("test_close")
         .open(host.as_str(), eventhub.as_str(), credential.clone())
@@ -72,12 +65,12 @@ async fn close() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn get_properties() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn get_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     let client = ProducerClient::builder()
         .with_application_id("test_get_properties")
@@ -91,14 +84,14 @@ async fn get_properties() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn get_partition_properties() -> Result<(), Box<dyn Error>> {
+async fn get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     use azure_core_amqp::error::AmqpErrorKind;
 
-    common::setup();
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     let client = ProducerClient::builder()
         .with_application_id("test_get_partition_properties")
@@ -148,7 +141,6 @@ async fn get_partition_properties() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn create_eventdata() -> Result<(), Box<dyn Error>> {
-    common::setup();
     let data = b"hello world";
     let ed1 = azure_messaging_eventhubs::models::EventData::builder()
         .with_body(data.to_vec())
@@ -173,12 +165,12 @@ fn create_eventdata() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn send_eventdata() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn send_eventdata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     let client = ProducerClient::builder()
         .with_application_id("send_eventdata")
@@ -214,13 +206,13 @@ async fn send_eventdata() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn send_message() -> Result<(), Box<dyn Error>> {
+async fn send_message(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     use azure_messaging_eventhubs::models::{AmqpMessage, AmqpValue};
-    common::setup();
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     let client = ProducerClient::builder()
         .with_application_id("send_eventdata")
@@ -259,12 +251,12 @@ async fn send_message() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_create_batch() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn test_create_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     let client = ProducerClient::builder()
         .with_application_id("test_create_batch")
@@ -279,12 +271,12 @@ async fn test_create_batch() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn test_create_and_send_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     let client = ProducerClient::builder()
         .with_application_id("test_create_and_send_batch")
@@ -327,14 +319,16 @@ async fn test_create_and_send_batch() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_add_amqp_messages_to_batch(
+    ctx: TestContext,
+) -> Result<(), Box<dyn std::error::Error>> {
     use azure_messaging_eventhubs::models::{AmqpMessage, AmqpValue};
 
-    common::setup();
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     let client = ProducerClient::builder()
         .with_application_id("test_add_amqp_messages_to_batch")
@@ -396,13 +390,13 @@ async fn test_add_amqp_messages_to_batch() -> Result<(), Box<dyn std::error::Err
 }
 
 #[recorded::test(live)]
-async fn test_overload_batch() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn test_overload_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
 
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     info!("Create producer client...");
 
