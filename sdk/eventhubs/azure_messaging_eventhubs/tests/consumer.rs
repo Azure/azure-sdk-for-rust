@@ -4,44 +4,34 @@
 // cspell::ignore Uncategorized
 
 use azure_core_test::recorded;
-use azure_identity::DefaultAzureCredential;
+use azure_core_test::TestContext;
 use azure_messaging_eventhubs::{ConsumerClient, OpenReceiverOptions, StartPosition};
 use futures::{pin_mut, StreamExt};
 use std::{env, error::Error, time::Duration};
 use tokio::time::timeout;
 use tracing::{info, trace};
 
-mod common;
-
 #[recorded::test(live)]
-async fn consumer_new() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn consumer_new(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let _client = ConsumerClient::builder()
         .with_application_id("test_new")
-        .open(
-            host.as_str(),
-            eventhub.as_str(),
-            DefaultAzureCredential::new()?,
-        )
+        .open(host.as_str(), eventhub.as_str(), recording.credential())
         .await?;
 
     Ok(())
 }
 
 #[recorded::test(live)]
-async fn consumer_new_with_error() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn consumer_new_with_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     trace!("test_new_with_error");
     let eventhub = env::var("EVENTHUB_NAME")?;
     let result = ConsumerClient::builder()
         .with_application_id("test_new")
-        .open(
-            "invalid_host",
-            eventhub.as_str(),
-            DefaultAzureCredential::new()?,
-        )
+        .open("invalid_host", eventhub.as_str(), recording.credential())
         .await;
     assert!(result.is_err());
     match result {
@@ -70,33 +60,25 @@ async fn consumer_new_with_error() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn consumer_open() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn consumer_open(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let _client = ConsumerClient::builder()
         .with_application_id("test_open")
-        .open(
-            host.as_str(),
-            eventhub.as_str(),
-            azure_identity::DefaultAzureCredential::new()?,
-        )
+        .open(host.as_str(), eventhub.as_str(), recording.credential())
         .await?;
 
     Ok(())
 }
 #[recorded::test(live)]
-async fn consumer_close() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn consumer_close(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let client = ConsumerClient::builder()
         .with_application_id("test_open")
-        .open(
-            host.as_str(),
-            eventhub.as_str(),
-            azure_identity::DefaultAzureCredential::new()?,
-        )
+        .open(host.as_str(), eventhub.as_str(), recording.credential())
         .await?;
     client.close().await?;
 
@@ -104,12 +86,12 @@ async fn consumer_close() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn consumer_get_properties() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn consumer_get_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     let client = ConsumerClient::builder()
         .with_application_id("test_open")
@@ -123,12 +105,12 @@ async fn consumer_get_properties() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn consumer_get_partition_properties() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn consumer_get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     let client = ConsumerClient::builder()
         .with_application_id("test_open")
@@ -148,15 +130,15 @@ async fn consumer_get_partition_properties() -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test(live)]
-async fn receive_lots_of_events() -> Result<(), Box<dyn Error>> {
-    common::setup();
+async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
 
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
     info!("Establishing credentials.");
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = recording.credential();
 
     info!("Creating client.");
     let client = ConsumerClient::builder()
