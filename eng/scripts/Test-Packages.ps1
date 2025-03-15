@@ -17,6 +17,7 @@ Testing packages with
     PackageInfoDirectory: '$PackageInfoDirectory'
     RUSTFLAGS: '$env:RUSTFLAGS'
     RUSTDOCFLAGS: '$env:RUSTDOCFLAGS'
+    RUST_LOG: '$env:RUST_LOG'
     AZURE_TEST_MODE: '$env:AZURE_TEST_MODE'
     SYSTEM_ACCESSTOKEN: $($env:SYSTEM_ACCESSTOKEN ? 'present' : 'not present')
     ARM_OIDC_TOKEN: $($env:ARM_OIDC_TOKEN ? 'present' : 'not present')
