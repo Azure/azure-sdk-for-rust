@@ -9,4 +9,5 @@ repr
 rustc
 rustflags
 rustls
+rustsec
 turbofish
