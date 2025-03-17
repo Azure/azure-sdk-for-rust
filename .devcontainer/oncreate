@@ -5,4 +5,7 @@ set -euo pipefail
 echo "Running Azure SDK for Rust devcontainer post create script..."
 
 echo "Updating toolchains..."
-rustup show
+rustup install
+
+echo "Installing test-proxy..."
+dotnet tool update azure.sdk.tools.testproxy --global --prerelease --add-source https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-net/nuget/v3/index.json --ignore-failed-sources

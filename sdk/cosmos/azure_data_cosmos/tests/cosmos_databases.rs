@@ -9,9 +9,9 @@ use azure_data_cosmos::{models::ThroughputProperties, CreateDatabaseOptions, Que
 use framework::TestAccount;
 use futures::StreamExt;
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
 
     let test_db_id = account.unique_db("DatabaseCRUD");
@@ -62,10 +62,10 @@ pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 #[cfg(feature = "key_auth")]
 pub async fn database_with_offer_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
 
     let test_db_id = account.unique_db("DatabaseWithOfferCRUD");
