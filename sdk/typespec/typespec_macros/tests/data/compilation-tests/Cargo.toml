@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 litemap = "0.7.4"
+openssl = "0.10.70"
 serde = { version = "1.0", features = ["derive"] }
 typespec_client_core = { path = "../../../../typespec_client_core", features = [
   "derive",
