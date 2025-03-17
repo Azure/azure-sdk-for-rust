@@ -74,15 +74,15 @@ function ReplacePathDependencyVersions() {
     $content = Get-Content -Path $cargoTomlFile.FullName -Raw
     $updated = $content
 
-    if ($content -match "(?m)^\s*\[(.+[\.-])?dependencies\.$PackageName\][^\[]+") {
+    if ($content -match "\n\s*\[(.+[\.-])?dependencies\.$PackageName\][^\[]+") {
       # if there is a dependency block containing a path and version for the package, update the version
       $dependencyBlock = $matches[0]
-      if ($dependencyBlock -match '^(?m)^\s*path\s*=') {
-        $replacement = $dependencyBlock -replace '^(?m)^(\s*version\s*=\s*)".*"', "`$1`"$packageSemVer`""
+      if ($dependencyBlock -match '\n\s*path\s*=') {
+        $replacement = $dependencyBlock -replace '(\n\s*version\s*=\s*)".*"', "`$1`"$packageSemVer`""
         $updated = $updated.Replace($dependencyBlock, $replacement)
       }
     }
-    elseif ($content -match "(?m)^\s*$PackageName\s*=\s*\{.*") {
+    elseif ($content -match "\n\s*$PackageName\s*=\s*\{.*") {
       # if there is a depedency line containing a path and version for the package, update the version
       $dependencyLine = $matches[0]
       # if there's a 'path' key
