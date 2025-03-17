@@ -112,7 +112,6 @@ name = "compilation_tests"
 version = "0.1.0"
 dependencies = [
  "litemap",
- "openssl",
  "serde",
  "typespec_client_core",
  "zerofrom",
