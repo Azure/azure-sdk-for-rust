@@ -262,6 +262,16 @@ impl<T> TryFrom<Vec<u8>> for RequestContent<T> {
     }
 }
 
+impl TryFrom<serde_json::Value> for RequestContent<serde_json::Value> {
+    type Error = crate::Error;
+    fn try_from(body: serde_json::Value) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(serde_json::to_vec(&body)?).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
 impl<T> TryFrom<&'static str> for RequestContent<T> {
     type Error = crate::Error;
     fn try_from(body: &'static str) -> Result<Self, Self::Error> {
