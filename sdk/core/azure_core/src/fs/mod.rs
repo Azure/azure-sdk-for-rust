@@ -4,7 +4,4 @@
 //! Asynchronous file system utilities.
 
 #[cfg(feature = "tokio")]
-mod tokio;
-
-#[cfg(feature = "tokio")]
-pub use tokio::*;
+pub use typespec_client_core::fs::*;

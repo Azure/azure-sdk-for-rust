@@ -13,7 +13,7 @@ use crate::{
     ThroughputOptions,
 };
 
-use azure_core::{Method, Pager, Request, Response};
+use azure_core::http::{request::Request, response::Response, Method, Pager};
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::LeaseId;
-use crate::{headers, Header};
+use crate::http::{headers, Header};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ProposedLeaseId(LeaseId);

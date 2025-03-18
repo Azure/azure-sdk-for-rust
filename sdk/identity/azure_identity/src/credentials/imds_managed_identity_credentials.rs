@@ -5,9 +5,8 @@ use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind},
-    headers::HeaderName,
+    http::{headers::HeaderName, request::Request, HttpClient, Method, StatusCode, Url},
     json::from_json,
-    HttpClient, Method, Request, StatusCode, Url,
 };
 use serde::{
     de::{self, Deserializer},

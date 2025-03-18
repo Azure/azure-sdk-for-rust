@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use azure_core::StatusCode;
+use azure_core::http::StatusCode;
 use azure_core_amqp::{AmqpError, AmqpList, AmqpMessageProperties};
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
@@ -49,6 +49,7 @@ async fn open(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
 #[recorded::test(live)]
 async fn close(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();

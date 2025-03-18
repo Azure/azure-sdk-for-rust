@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use super::ProducerClient;
 
 use crate::models::EventData;
-use azure_core::{error::Result, Error, Url, Uuid};
+use azure_core::{error::Result, http::Url, Error, Uuid};
 use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
 use tracing::debug;
 

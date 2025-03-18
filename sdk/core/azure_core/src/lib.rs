@@ -3,59 +3,39 @@
 
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations, nonstandard_style)]
-// #![warn(missing_docs, future_incompatible, unreachable_pub)]
 #![doc = include_str!("../README.md")]
 
 #[macro_use]
 mod macros;
 
 mod constants;
-pub mod hmac;
-mod models;
-mod options;
-mod pipeline;
-mod policies;
-
 pub mod credentials;
-pub mod headers;
-pub mod lro;
+pub mod fs;
+pub mod hmac;
+pub mod http;
 pub mod process;
-pub mod request_options;
-
 #[cfg(feature = "test")]
 pub mod test;
 
-pub mod tokio;
-
 pub use constants::*;
-#[doc(inline)]
-pub use models::*;
-pub use options::*;
-pub use pipeline::*;
-pub use policies::*;
 
 // Re-export typespec types that are not specific to Azure.
 pub use typespec::{Error, Result};
+
+/// Client-specific error functions.
 pub mod error {
     pub use typespec::error::*;
     pub use typespec_client_core::error::*;
 }
-#[cfg(feature = "xml")]
-pub use typespec_client_core::xml;
+pub use typespec_client_core::fmt;
 pub use typespec_client_core::{
-    base64, date,
-    http::{
-        headers::Header,
-        new_http_client,
-        response::{Model, PinnedStream, Response, ResponseBody},
-        AppendToUrlQuery, Body, Context, HttpClient, Method, Pager, Request, RequestContent,
-        StatusCode, Url,
-    },
-    json, parsing,
-    sleep::{self, sleep},
-    stream::{BytesStream, SeekableStream},
+    base64, date, json, parsing, sleep,
+    stream::{BytesStream, SeekableStream, DEFAULT_BUFFER_SIZE},
     Bytes, Uuid,
 };
+
+#[cfg(feature = "xml")]
+pub use typespec_client_core::xml;
 
 /// A unique identifier for a request.
 // NOTE: Only used for Storage?

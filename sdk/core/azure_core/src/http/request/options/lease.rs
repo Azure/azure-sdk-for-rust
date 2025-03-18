@@ -1,20 +1,26 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::headers::{self, Header};
+use crate::http::headers::{self, Header};
 use std::str::FromStr;
 use typespec_client_core::Uuid;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SourceLeaseId(Uuid);
+pub struct LeaseId(Uuid);
 
-impl std::fmt::Display for SourceLeaseId {
+impl std::fmt::Display for LeaseId {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         self.0.fmt(fmt)
     }
 }
 
-impl std::str::FromStr for SourceLeaseId {
+impl From<Uuid> for LeaseId {
+    fn from(value: Uuid) -> Self {
+        Self(value)
+    }
+}
+
+impl std::str::FromStr for LeaseId {
     type Err = <Uuid as FromStr>::Err;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -22,12 +28,12 @@ impl std::str::FromStr for SourceLeaseId {
     }
 }
 
-impl Header for SourceLeaseId {
+impl Header for LeaseId {
     fn name(&self) -> headers::HeaderName {
-        headers::SOURCE_LEASE_ID
+        headers::LEASE_ID
     }
 
     fn value(&self) -> headers::HeaderValue {
-        self.0.to_string().into()
+        format!("{}", self.0).into()
     }
 }

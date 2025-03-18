@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! HTTP requests.
+
 pub mod options;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -287,7 +289,7 @@ impl<T> FromStr for RequestContent<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use once_cell::sync::Lazy;
+    use std::sync::LazyLock;
 
     #[derive(Debug, Serialize)]
     struct Expected {
@@ -303,7 +305,7 @@ mod tests {
         }
     }
 
-    static EXPECTED: Lazy<RequestContent<Expected>> = Lazy::new(|| RequestContent {
+    static EXPECTED: LazyLock<RequestContent<Expected>> = LazyLock::new(|| RequestContent {
         body: Bytes::from(r#"{"str":"test","num":1,"b":true}"#.to_string()).into(),
         phantom: PhantomData,
     });

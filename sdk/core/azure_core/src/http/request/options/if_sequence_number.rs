@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{headers, Header};
+use crate::http::headers::{self, Header};
 
 /// Conditional request header based on the value of the object's sequence number
 ///

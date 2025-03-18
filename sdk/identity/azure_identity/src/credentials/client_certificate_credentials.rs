@@ -3,10 +3,15 @@
 
 use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
-    base64, content_type,
+    base64,
     credentials::{AccessToken, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind, ResultExt},
-    headers, HttpClient, Method, Request, Url, Uuid,
+    http::{
+        headers::{self, content_type},
+        request::Request,
+        HttpClient, Method, Url,
+    },
+    Uuid,
 };
 
 // cspell:ignore pkey

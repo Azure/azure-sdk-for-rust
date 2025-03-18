@@ -2,7 +2,10 @@
 // Licensed under the MIT License.
 
 use async_trait::async_trait;
-use azure_core::{HttpClient, Request, Response, Result};
+use azure_core::{
+    http::{request::Request, response::Response, HttpClient},
+    Result,
+};
 use futures::{future::BoxFuture, lock::Mutex};
 use std::fmt;
 

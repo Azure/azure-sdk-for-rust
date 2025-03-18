@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 mod telemetry;
-pub use telemetry::*;
 
+pub use telemetry::*;
 pub use typespec_client_core::http::{
     ClientMethodOptions, ClientOptions, ExponentialRetryOptions, FixedRetryOptions, RetryOptions,
     TransportOptions,

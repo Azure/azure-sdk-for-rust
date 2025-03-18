@@ -11,6 +11,7 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use tracing::debug;
 
+/// The final pipeline policy that defines the HTTP transport.
 #[derive(Debug, Clone)]
 pub struct TransportPolicy {
     pub(crate) transport_options: TransportOptions,

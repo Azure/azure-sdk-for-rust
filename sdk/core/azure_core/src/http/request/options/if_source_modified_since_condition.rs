@@ -3,7 +3,7 @@
 
 use crate::{
     date,
-    headers::{self, Header, HeaderName},
+    http::headers::{self, Header, HeaderName},
 };
 use typespec_client_core::date::OffsetDateTime;
 

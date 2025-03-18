@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::headers;
-use crate::headers::Headers;
-use crate::Header;
+use crate::http::headers::{self, Header, Headers};
 use bytes::Bytes;
 use std::collections::HashMap;
 

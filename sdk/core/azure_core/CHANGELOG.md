@@ -5,7 +5,7 @@
 ### Features Added
 
 - Added `azure_core::process::Executor` to run commands asynchronously.
-  The `tokio_process` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
+  The `tokio` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
 
 ### Breaking Changes
 

@@ -43,7 +43,7 @@ tracing-subscriber.workspace = true
 default = ["reqwest", "old_azure_cli"]
 reqwest = ["azure_core/reqwest"]
 reqwest_rustls = ["azure_core/reqwest_rustls"]
-tokio_process = ["azure_core/tokio_process"]
+tokio = ["azure_core/tokio"]
 client_certificate = ["openssl"]
 
 # If you are using and Azure CLI version older than 2.54.0 from November 2023,
@@ -58,5 +58,5 @@ features = [
   "client_certificate",
   "reqwest",
   "reqwest_rustls",
-  "tokio_process",
+  "tokio",
 ]

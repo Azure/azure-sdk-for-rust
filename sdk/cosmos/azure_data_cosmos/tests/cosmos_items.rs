@@ -123,7 +123,10 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     match result {
         Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
         Err(err) => {
-            assert_eq!(Some(azure_core::StatusCode::NotFound), err.http_status());
+            assert_eq!(
+                Some(azure_core::http::StatusCode::NotFound),
+                err.http_status()
+            );
         }
     }
 
@@ -383,7 +386,10 @@ pub async fn item_null_partition_key(context: TestContext) -> Result<(), Box<dyn
     match result {
         Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
         Err(err) => {
-            assert_eq!(Some(azure_core::StatusCode::NotFound), err.http_status());
+            assert_eq!(
+                Some(azure_core::http::StatusCode::NotFound),
+                err.http_status()
+            );
         }
     }
 

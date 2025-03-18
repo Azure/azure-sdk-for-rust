@@ -1,19 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::headers::{HeaderValue, USER_AGENT};
-use crate::options::TelemetryOptions;
-use crate::{Context, Request};
+use crate::http::{
+    headers::{HeaderValue, USER_AGENT},
+    options::TelemetryOptions,
+};
 use std::env::consts::{ARCH, OS};
 use std::sync::Arc;
 use typespec_client_core::http::policies::{Policy, PolicyResult};
+use typespec_client_core::http::{Context, Request};
 
+/// Sets the User-Agent header with useful information in a typical format for Azure SDKs.
 #[derive(Clone, Debug)]
 pub struct TelemetryPolicy {
     header: String,
 }
 
-/// Sets the User-Agent header with useful information in a typical format for Azure SDKs.
 impl<'a> TelemetryPolicy {
     pub fn new(
         crate_name: Option<&'a str>,

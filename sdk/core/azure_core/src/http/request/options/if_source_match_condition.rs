@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::headers::{self, Header};
+use crate::http::headers::{self, Header};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IfSourceMatchCondition {

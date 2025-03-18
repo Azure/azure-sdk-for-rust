@@ -4,15 +4,18 @@
 use crate::{
     credentials::{AccessToken, TokenCredential},
     error::{Error, ErrorKind},
-    headers::AUTHORIZATION,
-    policies::{Policy, PolicyResult},
-    Context, Request,
+    http::{
+        headers::AUTHORIZATION,
+        policies::{Policy, PolicyResult},
+    },
 };
 use async_lock::RwLock;
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::time::Duration;
+use typespec_client_core::http::{Context, Request};
 
+/// Authentication policy for a bearer token.
 #[derive(Debug, Clone)]
 pub struct BearerTokenCredentialPolicy {
     credential: Arc<dyn TokenCredential>,
