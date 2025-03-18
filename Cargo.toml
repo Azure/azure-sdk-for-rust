@@ -1,33 +1,169 @@
 [workspace]
-resolver = "2"
+exclude = ["eng/scripts"]
 members = [
-  "sdk/typespec",
-  "sdk/typespec/typespec_client_core",
-  "sdk/typespec/typespec_macros",
-  "sdk/core/azure_core",
-  "sdk/core/azure_core_amqp",
-  "sdk/core/azure_core_test",
-  "sdk/core/azure_core_test_macros",
-  "sdk/cosmos/azure_data_cosmos",
-  "sdk/identity/azure_identity",
-  "sdk/eventhubs/azure_messaging_eventhubs",
-  "sdk/keyvault/azure_security_keyvault_keys",
-  "sdk/keyvault/azure_security_keyvault_secrets",
-  "sdk/storage",
-  "sdk/storage/azure_storage_blob",
-  "sdk/template/azure_template_core",
-  "sdk/template/azure_template",
+    "sdk/typespec",
+    "sdk/typespec/typespec_client_core",
+    "sdk/typespec/typespec_macros",
+    "sdk/core/azure_core",
+    "sdk/core/azure_core_amqp",
+    "sdk/core/azure_core_test",
+    "sdk/core/azure_core_test_macros",
+    "sdk/cosmos/azure_data_cosmos",
+    "sdk/identity/azure_identity",
+    "sdk/eventhubs/azure_messaging_eventhubs",
+    "sdk/keyvault/azure_security_keyvault_keys",
+    "sdk/keyvault/azure_security_keyvault_secrets",
+    "sdk/storage",
+    "sdk/storage/azure_storage_blob",
+    "sdk/template/azure_template_core",
+    "sdk/template/azure_template",
 ]
-exclude = [
-  "eng/scripts",
-]
+resolver = "2"
 
-[workspace.package]
-authors = ["Microsoft"]
-edition = "2021"
-license = "MIT"
-repository = "https://github.com/azure/azure-sdk-for-rust"
-rust-version = "1.80"
+[workspace.dependencies]
+async-lock = "3.0"
+async-trait = "0.1"
+base64 = "0.22"
+bytes = "1.0"
+cargo_metadata = "0.18.1"
+dyn-clone = "1.0"
+flate2 = "1.1.0"
+futures = "0.3"
+litemap = "0.7.4"
+log = "0.4"
+once_cell = "1.18"
+pin-project = "1.0"
+proc-macro2 = "1.0.86"
+quote = "1.0.37"
+rand = "0.8"
+rand_chacha = "0.3"
+rustc_version = "0.4"
+serde_json = "1.0"
+serde_test = "1"
+serial_test = "3.0"
+thiserror = "1.0"
+tracing = "0.1.40"
+tracing-subscriber = "0.3"
+url = "2.2"
+zerofrom = "0.1.5"
+
+[workspace.dependencies.async-stream]
+version = "0.3.5"
+
+[workspace.dependencies.azure_core]
+default-features = false
+features = [
+    "reqwest",
+    "reqwest_deflate",
+    "reqwest_gzip",
+]
+path = "sdk/core/azure_core"
+version = "0.23.0"
+
+[workspace.dependencies.azure_core_amqp]
+path = "sdk/core/azure_core_amqp"
+version = "0.2.0"
+
+[workspace.dependencies.azure_core_test]
+path = "sdk/core/azure_core_test"
+
+[workspace.dependencies.azure_core_test_macros]
+path = "sdk/core/azure_core_test_macros"
+
+[workspace.dependencies.azure_identity]
+path = "sdk/identity/azure_identity"
+
+[workspace.dependencies.clap]
+features = ["derive"]
+version = "4.4.16"
+
+[workspace.dependencies.fe2o3-amqp]
+features = [
+    "native-tls",
+    "tracing",
+    "uuid",
+]
+version = "0.12"
+
+[workspace.dependencies.fe2o3-amqp-cbs]
+version = "0.12"
+
+[workspace.dependencies.fe2o3-amqp-ext]
+version = "0.12"
+
+[workspace.dependencies.fe2o3-amqp-management]
+features = ["tracing"]
+version = "0.12"
+
+[workspace.dependencies.fe2o3-amqp-types]
+version = "0.12"
+
+[workspace.dependencies.getrandom]
+features = ["js"]
+version = "0.2"
+
+[workspace.dependencies.hmac]
+version = "0.12"
+
+[workspace.dependencies.oauth2]
+default-features = false
+version = "5.0.0"
+
+[workspace.dependencies.openssl]
+version = "0.10.70"
+
+[workspace.dependencies.quick-xml]
+features = [
+    "serialize",
+    "serde-types",
+]
+version = "0.31"
+
+[workspace.dependencies.reqwest]
+default-features = false
+features = [
+    "json",
+    "stream",
+]
+version = "0.12"
+
+[workspace.dependencies.serde]
+features = ["derive"]
+version = "1.0"
+
+[workspace.dependencies.serde_amqp]
+features = ["uuid"]
+version = "0.12"
+
+[workspace.dependencies.serde_bytes]
+version = "0.11"
+
+[workspace.dependencies.sha2]
+version = "0.10"
+
+[workspace.dependencies.syn]
+features = ["full"]
+version = "2.0.87"
+
+[workspace.dependencies.tar]
+default-features = false
+version = "0.4.44"
+
+[workspace.dependencies.time]
+features = [
+    "serde-well-known",
+    "macros",
+    "wasm-bindgen",
+]
+version = "0.3.10"
+
+[workspace.dependencies.tokio]
+default-features = false
+features = [
+    "macros",
+    "time",
+]
+version = "1.0"
 
 [workspace.dependencies.typespec]
 default-features = false
@@ -40,97 +176,28 @@ path = "sdk/typespec/typespec_client_core"
 version = "0.2.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.2.0"
 path = "sdk/typespec/typespec_macros"
-
-[workspace.dependencies.azure_core]
-version = "0.23.0"
-path = "sdk/core/azure_core"
-default-features = false
-# Keep these in sync with azure_core. This allows
-# azure_core_amqp and dependents to ignore default features.
-features = [
-  "reqwest",
-  "reqwest_deflate",
-  "reqwest_gzip",
-]
-
-[workspace.dependencies.azure_core_amqp]
 version = "0.2.0"
-path = "sdk/core/azure_core_amqp"
 
-[workspace.dependencies.azure_core_test]
-# azure_core_test is not published and only ever a dev-dependency
-path = "sdk/core/azure_core_test"
+[workspace.dependencies.tz-rs]
+version = "0.6"
 
-[workspace.dependencies.azure_core_test_macros]
-# azure_core_test_macros is not published and only ever a dev-dependency
-path = "sdk/core/azure_core_test_macros"
+[workspace.dependencies.uuid]
+features = ["v4"]
+version = "1.0"
 
-[workspace.dependencies.azure_identity]
-# azure_identity should only ever be in dev-dependencies herein
-path = "sdk/identity/azure_identity"
-
-[workspace.dependencies]
-async-lock = "3.0"
-async-stream = { version = "0.3.5" }
-async-trait = "0.1"
-base64 = "0.22"
-bytes = "1.0"
-cargo_metadata = "0.18.1"
-clap = { version = "4.4.16", features = ["derive"] }
-dyn-clone = "1.0"
-fe2o3-amqp = { version = "0.12", features = ["native-tls", "tracing", "uuid"] }
-fe2o3-amqp-ext = { version = "0.12" }
-fe2o3-amqp-management = { version = "0.12", features = ["tracing"] }
-fe2o3-amqp-cbs = { version = "0.12" }
-fe2o3-amqp-types = { version = "0.12" }
-flate2 = "1.1.0"
-futures = "0.3"
-getrandom = { version = "0.2", features = ["js"] }
-hmac = { version = "0.12" }
-litemap = "0.7.4"
-log = "0.4"
-oauth2 = { version = "5.0.0", default-features = false }
-once_cell = "1.18"
-openssl = { version = "0.10.70" }
-pin-project = "1.0"
-proc-macro2 = "1.0.86"
-quick-xml = { version = "0.31", features = ["serialize", "serde-types"] }
-quote = "1.0.37"
-rand = "0.8"
-rand_chacha = "0.3"
-reqwest = { version = "0.12", features = [
-  "json",
-  "stream",
-], default-features = false }
-rustc_version = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_amqp = { version = "0.12", features = ["uuid"] }
-serde_bytes = { version = "0.11" }
-serde_json = "1.0"
-serde_test = "1"
-serial_test = "3.0"
-sha2 = { version = "0.10" }
-syn = { version = "2.0.87", features = ["full"] }
-tar = { version = "0.4.44", default-features = false }
-thiserror = "1.0"
-time = { version = "0.3.10", features = [
-  "serde-well-known",
-  "macros",
-  "wasm-bindgen",
-] }
-tokio = { version = "1.0", default-features = false, features = [
-  "macros",
-  "time",
-] }
-tracing = "0.1.40"
-tracing-subscriber = "0.3"
-tz-rs = { version = "0.6" }
-url = "2.2"
-uuid = { version = "1.0", features = ["v4"] }
-zerofrom = "0.1.5"
-zip = { version = "2.2.3", default-features = false, features = ["deflate"] }
+[workspace.dependencies.zip]
+default-features = false
+features = ["deflate"]
+version = "2.2.3"
 
 [workspace.lints.clippy]
 large_futures = "deny"
+
+[workspace.package]
+authors = ["Microsoft"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+rust-version = "1.80"
+
