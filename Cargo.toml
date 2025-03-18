@@ -44,7 +44,7 @@ version = "0.2.0"
 path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]
-version = "0.99.0"
+version = "0.23.0"
 path = "sdk/core/azure_core"
 default-features = false
 # Keep these in sync with azure_core. This allows

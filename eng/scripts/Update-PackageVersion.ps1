@@ -66,40 +66,6 @@ if ($packageSemVer.HasValidPrereleaseLabel() -ne $true) {
   exit 1
 }
 
-function ReplacePathDependencyVersions() {
-  $cargoTomlFiles = Get-ChildItem -Path . -Recurse -Filter Cargo.toml
-  | Where-Object FullName -NotMatch "$RepoRoot/(target|eng)/*"
-
-  foreach ($cargoTomlFile in $cargoTomlFiles) {
-    $content = Get-Content -Path $cargoTomlFile.FullName -Raw
-    $updated = $content
-
-    if ($content -match "\n\s*\[(.+[\.-])?dependencies\.$PackageName\][^\[]+") {
-      # if there is a dependency block containing a path and version for the package, update the version
-      $dependencyBlock = $matches[0]
-      if ($dependencyBlock -match '\n\s*path\s*=') {
-        $replacement = $dependencyBlock -replace '(\n\s*version\s*=\s*)".*"', "`$1`"$packageSemVer`""
-        $updated = $updated.Replace($dependencyBlock, $replacement)
-      }
-    }
-    elseif ($content -match "\n\s*$PackageName\s*=\s*\{.*") {
-      # if there is a depedency line containing a path and version for the package, update the version
-      $dependencyLine = $matches[0]
-      # if there's a 'path' key
-      if ($dependencyLine -match '[\{\s,]path\s*=') {
-        # replace the quoted string after the 'version' key
-        $replacement = $dependencyLine -replace '([\{\s,]version\s*=\s*)".*"', "`$1`"$packageSemVer`""
-        $updated = $updated.Replace($dependencyLine, $replacement)
-      }
-    }
-
-    if ($content -ne $updated) {
-      Write-Host "Updating version for $PackageName in $($cargoTomlFile.FullName)"
-      $updated | Set-Content -Path $cargoTomlFile.FullName  -Encoding utf8 -NoNewLine
-    }
-  }
-}
-
 if ($pkgProperties.ChangeLogPath) {
   Write-Host "Updating changelog for $PackageName in $ServiceDirectory."
   & "$EngCommonScriptsDir/Update-ChangeLog.ps1" -Version $packageSemVer.ToString() `
@@ -115,7 +81,7 @@ if ($content -ne $updated) {
   $updated | Set-Content -Path $tomlPath  -Encoding utf8 -NoNewLine
   Write-Host "Updated version in $tomlPath from $($pkgProperties.Version) to $packageSemVer."
 
-  ReplacePathDependencyVersions $PackageName $packageSemVer.ToString()
+  cargo +nightly -Zscript "$RepoRoot/eng/scripts/update-pathversions.rs"
 
   cargo metadata --format-version 1 | Out-Null
   Write-Host "Updated Cargo.lock using 'cargo metadata'."
