@@ -25,9 +25,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         panic!("Invalid mode. Use 'add' or 'update'.")
     }
 
-    //let script_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
-    //let repo_root = script_root.join("../../..").canonicalize()?;
-    let repo_root = PathBuf::from("/home/pahallis/repos/azure-sdk-for-rust").canonicalize()?;
+    let script_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
+    let repo_root = script_root.join("../../..").canonicalize()?;
 
     // find all Cargo.toml files in the repo_root directory
     let exclude_dirs = vec![
