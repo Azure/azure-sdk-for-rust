@@ -62,17 +62,14 @@ path = "sdk/core/azure_core_amqp"
 [workspace.dependencies.azure_core_test]
 # azure_core_test is not published and only ever a dev-dependency
 path = "sdk/core/azure_core_test"
-version = "0.1.0"
 
 [workspace.dependencies.azure_core_test_macros]
 # azure_core_test_macros is not published and only ever a dev-dependency
 path = "sdk/core/azure_core_test_macros"
-version = "0.1.0"
 
 [workspace.dependencies.azure_identity]
 # azure_identity should only ever be in dev-dependencies herein
 path = "sdk/identity/azure_identity"
-version = "0.23.0"
 
 [workspace.dependencies]
 async-lock = "3.0"
