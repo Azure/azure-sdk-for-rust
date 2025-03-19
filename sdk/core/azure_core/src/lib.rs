@@ -19,32 +19,12 @@ pub mod test;
 
 pub use constants::*;
 
-// Re-export typespec types that are not specific to Azure.
-pub use typespec::{Error, Result};
-
-/// Client-specific error functions.
-pub mod error {
-    pub use typespec::error::*;
-    pub use typespec_client_core::error::*;
-}
-pub use typespec_client_core::fmt;
+// Re-export modules in typespec_client_core such that azure_core-based crates don't need to reference it directly.
 pub use typespec_client_core::{
-    base64, date, json, parsing, sleep,
-    stream::{BytesStream, SeekableStream, DEFAULT_BUFFER_SIZE},
-    Bytes, Uuid,
+    base64, date,
+    error::{self, Error, Result},
+    fmt, json, parsing, sleep, stream, Bytes, Uuid,
 };
 
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
-
-/// A unique identifier for a request.
-// NOTE: Only used for Storage?
-pub type RequestId = Uuid;
-
-/// A unique session token.
-// NOTE: Only used for Cosmos?
-pub type SessionToken = String;
-
-/// An empty HTTP body.
-#[allow(clippy::declare_interior_mutable_const)]
-pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::new();

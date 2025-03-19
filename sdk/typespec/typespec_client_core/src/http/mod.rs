@@ -16,7 +16,6 @@ pub mod response;
 
 pub use clients::*;
 pub use context::*;
-pub use headers::Header;
 pub use method::Method;
 pub use models::*;
 pub use options::*;

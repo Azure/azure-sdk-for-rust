@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-/// Defines a static [`azure_core::http::Url`].
+/// Defines a static `Url`.
 #[macro_export]
 macro_rules! static_url {
     ( $(#[$outer:meta])* $name:ident, $value:expr) => {

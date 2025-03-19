@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::http::{
-    headers::{HeaderValue, CONTENT_LENGTH},
+    headers::{Header, HeaderValue, CONTENT_LENGTH},
     options::TransportOptions,
     policies::{Policy, PolicyResult},
-    Context, Header, Method, Request,
+    Context, Method, Request,
 };
 use async_trait::async_trait;
 use std::sync::Arc;

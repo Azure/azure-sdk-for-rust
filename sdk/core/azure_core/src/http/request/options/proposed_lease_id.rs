@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::LeaseId;
-use crate::http::{headers, Header};
+use crate::http::headers;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ProposedLeaseId(LeaseId);
@@ -13,7 +13,7 @@ impl From<LeaseId> for ProposedLeaseId {
     }
 }
 
-impl Header for ProposedLeaseId {
+impl headers::Header for ProposedLeaseId {
     fn name(&self) -> headers::HeaderName {
         headers::PROPOSED_LEASE_ID
     }

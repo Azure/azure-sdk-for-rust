@@ -12,11 +12,12 @@ mod pipeline;
 pub mod policies;
 pub mod request;
 
-pub use headers::Header;
 pub use models::*;
 pub use options::*;
 pub use pager::*;
 pub use pipeline::*;
+pub use request::{Body, Request, RequestContent};
+pub use response::{Model, Response};
 
 pub use typespec_client_core::http::response;
 pub use typespec_client_core::http::{
