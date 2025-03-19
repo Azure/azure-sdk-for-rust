@@ -149,6 +149,8 @@ stages:
               CommitMsg: "Increment package version after release of ${{ artifact.name }}"
               PRTitle: "Increment versions for ${{parameters.ServiceDirectory}} releases"
               CloseAfterOpenForTesting: '${{parameters.TestPipeline}}'
+              ${{ if startsWith(variables['Build.SourceBranch'], 'refs/pull/') }}:
+                BaseBranchName: main
 
         - ${{ if eq(parameters.TestPipeline, true) }}:
           - job: YankCrates
