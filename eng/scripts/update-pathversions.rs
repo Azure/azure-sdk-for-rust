@@ -6,10 +6,8 @@ description = "In all Cargo.toml files in the repo, for all dependencies that ha
 
 [dependencies]
 regex = "1.5"
-toml_edit = "^0.22"
+toml_edit = "0.22"
 ---
-
-
 
 use regex::Regex;
 use std::io::Write;
@@ -17,13 +15,13 @@ use std::{env, error::Error, fs, path::PathBuf};
 use toml_edit::{value, DocumentMut, Item, Table};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mode = env::args().nth(1).unwrap_or("update".to_string());
-
-    // in update mode, ignore any depdendencies that don't already have a version
-    // add mode will not add versions to packages that are `publish = false` or to dev-dependencies
-    if mode != "add" && mode != "update" {
-        panic!("Invalid mode. Use 'add' or 'update'.")
-    }
+    let add_mode = env::args().nth(1)
+        .map(|arg| match arg.as_str() {
+            "add" => true,
+            "update" => false,
+            _ => panic!("Invalid mode. Use 'add' or 'update'.")
+        })
+        .expect("requires 'add' or 'update' mode argument");
 
     let script_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
     let repo_root = script_root.join("../../..").canonicalize()?;
@@ -38,35 +36,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let package_versions = get_package_versions(&toml_files);
 
-    for (path, mut document) in toml_files {
-        let is_publishable_package = document
-            .get("package")
-            .and_then(Item::as_table)
-            .and_then(|table| table.get("publish").and_then(Item::as_bool))
-            .unwrap_or(true);
+    for mut toml_file in toml_files {
+        let should_add = add_mode && !toml_file.is_publish_disabled;
 
-        let should_add = is_publishable_package && mode == "add";
+        update_package_versions(toml_file.document.as_table_mut(), &package_versions, should_add);
 
-        update_package_versions(document.as_table_mut(), &package_versions, should_add);
         // if the toml file has a workspace table, update the workspace table
-        if let Some(workspace) = document.get_mut("workspace") {
+        if let Some(workspace) = toml_file.document.get_mut("workspace") {
             if let Some(table) = workspace.as_table_mut() {
                 update_package_versions(table, &package_versions, should_add);
             }
         }
 
         // write the updated document back to the file
-        let mut file = fs::File::create(&path)?;
-        fs::File::write_all(&mut file, document.to_string().as_bytes())?;
+        let mut file = fs::File::create(toml_file.path)?;
+        fs::File::write_all(&mut file, toml_file.document.to_string().as_bytes())?;
     }
 
     Ok(())
 }
 
-fn load_cargo_toml_files(
-    repo_root: &PathBuf,
-    exclude_dirs: &Vec<PathBuf>,
-) -> Result<Vec<(PathBuf, DocumentMut)>, Box<dyn Error>> {
+fn load_cargo_toml_files(repo_root: &PathBuf, exclude_dirs: &Vec<PathBuf>) -> Result<Vec<TomlInfo>, Box<dyn Error>> {
     let mut toml_paths = Vec::new();
     find_cargo_toml_files(repo_root, exclude_dirs, &mut toml_paths)?;
 
@@ -74,17 +64,21 @@ fn load_cargo_toml_files(
     for path in toml_paths {
         let content = fs::read_to_string(&path)?;
         let doc = content.parse::<DocumentMut>()?;
-        toml_files.push((path, doc));
+        let package_table = doc.get("package").and_then(Item::as_table);
+        let publish_property = package_table.and_then(|table| table.get("publish")).and_then(Item::as_bool);
+
+        toml_files.push(TomlInfo {
+            path,
+            is_package: package_table.is_some(),
+            is_publish_disabled: publish_property == Some(false),
+            document: doc
+        });
     }
 
     Ok(toml_files)
 }
 
-fn find_cargo_toml_files(
-    dir: &PathBuf,
-    exclude_dirs: &Vec<PathBuf>,
-    toml_paths: &mut Vec<PathBuf>,
-) -> Result<(), Box<dyn Error>> {
+fn find_cargo_toml_files(dir: &PathBuf, exclude_dirs: &Vec<PathBuf>, toml_paths: &mut Vec<PathBuf>) -> Result<(), Box<dyn Error>> {
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
@@ -94,18 +88,23 @@ fn find_cargo_toml_files(
             toml_paths.push(path);
         }
     }
+
     Ok(())
 }
 
-fn get_package_versions(toml_files: &Vec<(PathBuf, DocumentMut)>) -> Vec<(String, String)> {
+fn get_package_versions(toml_files: &Vec<TomlInfo>) -> Vec<(String, String)> {
     let mut package_versions = Vec::new();
 
-    for (_, doc) in toml_files {
-        if let Some(table) = doc.get("package").and_then(Item::as_table) {
-            if let Some(name) = table.get("name").and_then(Item::as_str) {
-                if let Some(version) = table.get("version").and_then(Item::as_str) {
-                    package_versions.push((name.to_string(), version.to_string()));
-                }
+    for toml_file in toml_files {
+        if !toml_file.is_package || toml_file.is_publish_disabled {
+            continue;
+        }
+
+        let document = &toml_file.document;
+        let package = document["package"].as_table().unwrap();
+        if let Some(name) = package.get("name").and_then(Item::as_str) {
+            if let Some(version) = package.get("version").and_then(Item::as_str) {
+                package_versions.push((name.to_string(), version.to_string()));
             }
         }
     }
@@ -145,4 +144,11 @@ fn get_dependency_tables(toml: &mut Table) -> Vec<(String, &mut Table)> {
     }
 
     tables
+}
+
+struct TomlInfo {
+    path: PathBuf,
+    is_package: bool,
+    is_publish_disabled: bool,
+    document: DocumentMut,
 }
