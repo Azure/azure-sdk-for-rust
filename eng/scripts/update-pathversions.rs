@@ -123,7 +123,8 @@ fn update_package_versions(toml: &mut Table, package_versions: &Vec<(String, Str
     for (table_name, table) in dependency_tables {
         for (package, version, is_publish_disabled) in package_versions {
             if let Some(dependency) = table.get_mut(package) {
-                let should_add = add && table_name != "dev-dependencies" && !is_publish_disabled;
+                // azure_idenentity will only be a transitive dev-dependency
+                let should_add = add && table_name != "dev-dependencies" && !is_publish_disabled && package != "azure_identity";
 
                 let has_path_property = dependency.get("path").is_some();
                 let has_version_property = dependency.get("version").is_some();
