@@ -81,10 +81,11 @@ if ($content -ne $updated) {
   $updated | Set-Content -Path $tomlPath  -Encoding utf8 -NoNewLine
   Write-Host "Updated version in $tomlPath from $($pkgProperties.Version) to $packageSemVer."
 
-  cargo +nightly -Zscript "$RepoRoot/eng/scripts/update-pathversions.rs"
+  Write-Host "Updaging dependencies in Cargo.toml files."
+  Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" -GroupOutput
 
-  cargo metadata --format-version 1 | Out-Null
-  Write-Host "Updated Cargo.lock using 'cargo metadata'."
+  Write-Host "Updating Cargo.lock using 'cargo metadata'."
+  Invoke-LoggedCommand "cargo metadata --no-deps --format-version 1" -GroupOutput
 }
 else {
   Write-Host "$tomlPath already contains version $packageSemVer"
