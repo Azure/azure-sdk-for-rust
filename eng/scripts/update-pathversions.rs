@@ -66,10 +66,13 @@ fn load_cargo_toml_files(repo_root: &PathBuf, exclude_dirs: &Vec<PathBuf>) -> Re
         let doc = content.parse::<DocumentMut>()?;
         let package_table = doc.get("package").and_then(Item::as_table);
         let publish_property = package_table.and_then(|table| table.get("publish")).and_then(Item::as_bool);
+        let package_name = package_table.and_then(|table| table.get("name")).and_then(Item::as_str);
+        let package_version = package_table.and_then(|table| table.get("version")).and_then(Item::as_str);
 
         toml_files.push(TomlInfo {
             path,
-            is_package: package_table.is_some(),
+            package_name: package_name.map(|s| s.to_string()),
+            package_version: package_version.map(|s| s.to_string()),
             is_publish_disabled: publish_property == Some(false),
             document: doc
         });
@@ -92,40 +95,42 @@ fn find_cargo_toml_files(dir: &PathBuf, exclude_dirs: &Vec<PathBuf>, toml_paths:
     Ok(())
 }
 
-fn get_package_versions(toml_files: &Vec<TomlInfo>) -> Vec<(String, String)> {
+fn get_package_versions(toml_files: &Vec<TomlInfo>) -> Vec<(String, String, bool)> {
     let mut package_versions = Vec::new();
 
     for toml_file in toml_files {
-        if !toml_file.is_package || toml_file.is_publish_disabled {
+        if toml_file.package_name.is_none() || toml_file.package_version.is_none() {
             continue;
         }
 
-        let document = &toml_file.document;
-        let package = document["package"].as_table().unwrap();
-        if let Some(name) = package.get("name").and_then(Item::as_str) {
-            if let Some(version) = package.get("version").and_then(Item::as_str) {
-                package_versions.push((name.to_string(), version.to_string()));
-            }
-        }
+        package_versions.push((toml_file.package_name.clone().unwrap(), toml_file.package_version.clone().unwrap(), toml_file.is_publish_disabled));
     }
 
     package_versions
 }
 
-fn update_package_versions(toml: &mut Table, package_versions: &Vec<(String, String)>, add: bool) {
-    let dependency_tables = get_dependency_tables(toml);
+fn update_package_versions(toml: &mut Table, package_versions: &Vec<(String, String, bool)>, add: bool) {
     // for each dependency table, for each package in package_versions
-    // if the package is in the dependency table and the dependency has both path and version properties
-    // update the version property to the version in package_versions
-    for (table_name, table) in dependency_tables {
-        for (package, version) in package_versions {
-            if let Some(dependency) = table.get_mut(package) {
-                let should_add = add && table_name != "dev-dependencies";
+    // if the package is in the dependency table
+    //   if the dependency has both path and version properties, update the version property
+    //   if the dependency has has path, but not version, add the version property only if
+    //     1. the table name is not "dev-dependencies"
+    //     2. the package is not publish disabled
+    //     3. the add flag is true
 
-                if dependency.get("path").is_some() && (dependency.get("version").is_some() || should_add) {
+    let dependency_tables = get_dependency_tables(toml);
+
+    for (table_name, table) in dependency_tables {
+        for (package, version, is_publish_disabled) in package_versions {
+            if let Some(dependency) = table.get_mut(package) {
+                let should_add = add && table_name != "dev-dependencies" && !is_publish_disabled;
+
+                let has_path_property = dependency.get("path").is_some();
+                let has_version_property = dependency.get("version").is_some();
+
+                if has_path_property && (has_version_property || should_add) {
                     dependency["version"] = value(version);
                 }
-
             }
         }
     }
@@ -148,7 +153,8 @@ fn get_dependency_tables(toml: &mut Table) -> Vec<(String, &mut Table)> {
 
 struct TomlInfo {
     path: PathBuf,
-    is_package: bool,
+    package_name: Option<String>,
+    package_version: Option<String>,
     is_publish_disabled: bool,
     document: DocumentMut,
 }
