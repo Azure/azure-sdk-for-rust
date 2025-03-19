@@ -8,7 +8,7 @@ param(
   [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
-  [switch]$NoVerify
+  [switch]$Verify
 )
 
 $ErrorActionPreference = 'Stop'
@@ -80,8 +80,8 @@ function Get-CargoPackages() {
 }
 
 function Get-PackagesToBuild() {
-  $packages = Get-CargoPackages
-  $outputPackageNames = Get-OutputPackageNames $packages
+  [array]$packages = Get-CargoPackages
+  [array]$outputPackageNames = Get-OutputPackageNames $packages
 
   # We start with output packages, then recursively add unreleased dependencies to the list of packages that need to be built
   [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
@@ -126,105 +126,50 @@ function Get-PackagesToBuild() {
   return $buildOrder
 }
 
-function Initialize-VendorDirectory() {
-  $path = "$RepoRoot/target/vendor"
-  Invoke-LoggedCommand "cargo vendor $path" -GroupOutput | Out-Host
-  return $path
-}
-
-function Add-CrateToLocalRegistry($LocalRegistryPath, $Package) {
-  $packageName = $Package.name
-  $packageVersion = $Package.version
-
-  # create an index entry for the package
-  $packagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
-
-  Write-Host "Copying package '$packageName' to vendor directory '$LocalRegistryPath'"
-  Copy-Item -Path $packagePath -Destination $LocalRegistryPath -Recurse
-
-  #write an empty checksum file
-  '{"files":{}}' | Out-File -FilePath "$LocalRegistryPath/$packageName-$packageVersion/.cargo-checksum.json" -Encoding utf8
-}
-
-# For all dependencies with paths, but no versions, add the version from the path
-function Add-PathVersions($packages) {
-  # Install PSToml if it's not already installed
-  if (-not (PowerShellGet\Get-InstalledModule -Name PSToml -ErrorAction SilentlyContinue)) {
-    PowerShellGet\Install-Module -Name PSToml -Scope CurrentUser -Force
-  }
-
-  foreach ($package in $packages) {
-    $dirty = $false
-    $toml = Get-Content -Path $Package.manifest_path -Raw | ConvertFrom-Toml
-
-    foreach ($name in $toml.dependencies.Keys) {
-      # we want to look at the dependency as it was resolved by `cargo metadata`
-      # this will resolve workspace depdencies, but retain their path/no-version state
-      $dependency = $package.dependencies | Where-Object -Property name -EQ -Value $name | Select-Object -First 1
-      # If the dependency is a path dependency, set the version to the version of the package in the workspace
-      if ($dependency.path -and !$dependency.version) {
-        $tomlDependency = $toml.dependencies.$name
-        $dependencyVersion = $packages | Where-Object -Property name -EQ -Value $name | Select-Object -ExpandProperty version -First 1
-
-        $tomlDependency.version = $dependencyVersion
-        $dirty = $true
-      }
-    }
-    if ($dirty) {
-      $toml | ConvertTo-Toml -Depth 10 | Set-Content -Path $Package.manifest_path -Encoding utf8
-    }
-  }
-}
-
 Push-Location $RepoRoot
 try {
-  $localRegistryPath = Initialize-VendorDirectory
-
   [array]$packages = Get-PackagesToBuild
 
-  Write-Host "Building packages in the following order:"
+  $command = "cargo +nightly -Zpackage-workspace package --locked --allow-dirty"
+
+  Write-Host "Building packages:"
   foreach ($package in $packages) {
     $packageName = $package.name
     $type = if ($package.OutputPackage) { "output" } else { "dependency" }
     Write-Host "  $packageName ($type)"
+    $command += " --package $packageName"
   }
 
-  foreach ($package in $packages) {
-    Write-Host ""
+  if (!$Verify) {
+    $command += " --no-verify"
+  }
 
+  Invoke-LoggedCommand -Command $command -GroupOutput
+
+  foreach ($package in $packages) {
     $packageName = $package.name
     $packageVersion = $package.version
 
-    $command = "cargo publish --locked --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
-
-    if ($NoVerify) {
-      $command += " --no-verify"
-    }
-
-    Invoke-LoggedCommand -Command $command -GroupOutput
-
-
-    # copy the package to the local registry
-    Add-CrateToLocalRegistry `
-      -LocalRegistryPath $localRegistryPath `
-      -Package $package
-
     if ($OutputPath -and $package.OutputPackage) {
-      $packageOutputPath = "$OutputPath/$packageName"
-      $targetPackagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
+      $crateFilePath = "$RepoRoot/target/package/$packageName-$packageVersion.crate"
+      $targetDirectory = "$OutputPath/$packageName"
 
-      if (Test-Path -Path $packageOutputPath) {
-        Remove-Item -Path $packageOutputPath -Recurse -Force
+      if (Test-Path $targetDirectory) {
+        Write-Host "Removing existing directory '$targetDirectory'"
+        Remove-Item -Path $targetDirectory -Recurse -Force
       }
 
-      Write-Host "Copying package '$packageName' to '$packageOutputPath'"
-      New-Item -ItemType Directory -Path $packageOutputPath -Force | Out-Null
-      Copy-Item -Path $targetPackagePath/* -Destination $packageOutputPath -Recurse -Exclude "Cargo.toml.orig"
+      Write-Host "Copying crate '$crateFilePath' to '$OutputPath'"
+      Copy-Item -Path $crateFilePath -Destination $OutputPath -Force
+
+      Write-Host "Exctracting crate '$crateFilePath' to '$targetDirectory'"
+      New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+      tar -xf $crateFilePath --directory $targetDirectory --strip-components=1
+
+      # Remove Cargo.toml.orig from the extracted directory
+      Remove-Item -Path "$targetDirectory/Cargo.toml.orig" -Force -ErrorAction SilentlyContinue
     }
   }
-
-  Write-Host "Removing local registry"
-  Remove-Item -Path $localRegistryPath -Recurse -Force | Out-Null
 }
 finally {
   Pop-Location
