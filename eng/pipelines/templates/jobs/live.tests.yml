@@ -102,6 +102,7 @@ jobs:
   - ${{ if parameters.UseFederatedAuth }}:
     - task: AzurePowerShell@5
       displayName: "Test Packages - Federated Auth"
+      condition: and(succeeded(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true')))
       timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
       env:
         CIBW_BUILD_VERBOSITY: 3
@@ -126,6 +127,7 @@ jobs:
   - ${{ else }}:
     - task: Powershell@2
       displayName: "Test Packages"
+      condition: and(succeeded(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true')))
       timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
       env:
         CIBW_BUILD_VERBOSITY: 3
