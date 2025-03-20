@@ -130,7 +130,7 @@ Push-Location $RepoRoot
 try {
   [array]$packages = Get-PackagesToBuild
 
-  $command = "cargo +nightly -Zpackage-workspace package --locked --allow-dirty"
+  $command = "cargo +nightly -Zpackage-workspace package --allow-dirty"
 
   Write-Host "Building packages:"
   foreach ($package in $packages) {
@@ -144,7 +144,19 @@ try {
     $command += " --no-verify"
   }
 
+  if ($env:SYSTEM_DEBUG -eq 'true') {
+    Write-Host "##[group] $RepoRoot/Cargo.toml.lock"
+    Get-Content "$RepoRoot/Cargo.toml.lock"
+    Write-Host "##[endgroup]"
+  }
+
   Invoke-LoggedCommand -Command $command -GroupOutput
+
+  if ($env:SYSTEM_DEBUG -eq 'true') {
+    Write-Host "##[group] $RepoRoot/Cargo.toml.lock"
+    Get-Content "$RepoRoot/Cargo.toml.lock"
+    Write-Host "##[endgroup]"
+  }
 
   foreach ($package in $packages) {
     $packageName = $package.name
