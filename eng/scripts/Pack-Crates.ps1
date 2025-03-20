@@ -145,16 +145,16 @@ try {
   }
 
   if ($env:SYSTEM_DEBUG -eq 'true') {
-    Write-Host "##[group] $RepoRoot/Cargo.toml.lock"
-    Get-Content "$RepoRoot/Cargo.toml.lock"
+    Write-Host "##[group] $RepoRoot/Cargo.lock"
+    Get-Content "$RepoRoot/Cargo.lock"
     Write-Host "##[endgroup]"
   }
 
   Invoke-LoggedCommand -Command $command -GroupOutput
 
   if ($env:SYSTEM_DEBUG -eq 'true') {
-    Write-Host "##[group] $RepoRoot/Cargo.toml.lock"
-    Get-Content "$RepoRoot/Cargo.toml.lock"
+    Write-Host "##[group] $RepoRoot/Cargo.lock"
+    Get-Content "$RepoRoot/Cargo.lock"
     Write-Host "##[endgroup]"
   }
 
