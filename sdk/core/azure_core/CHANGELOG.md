@@ -9,6 +9,7 @@
 - Added `http` module containing all functions, modules, and types from `typespec_client_core::http`.
 - Moved `Pager` from `typespec_client_core::http` to `azure_core::http` module since it is Azure-specific.
 - Re-exported `Body`, `Request`, and `RequestContent` from `http::request` module.
+- Re-exported `create_enum`, `create_extensible_enum` macros from `typespec_client_core`.
 - Re-exported `Model` and `Response` from `http::response` module.
 
 ### Breaking Changes
