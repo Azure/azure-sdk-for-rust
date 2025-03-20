@@ -130,7 +130,7 @@ Push-Location $RepoRoot
 try {
   [array]$packages = Get-PackagesToBuild
 
-  $command = "cargo +nightly -Zpackage-workspace package --allow-dirty"
+  $command = "cargo +nightly -Zpackage-workspace package --allow-dirty --locked"
 
   Write-Host "Building packages:"
   foreach ($package in $packages) {
