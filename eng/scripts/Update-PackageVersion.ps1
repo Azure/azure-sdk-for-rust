@@ -84,8 +84,20 @@ if ($content -ne $updated) {
   Write-Host "Updaging dependencies in Cargo.toml files."
   Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
 
+  if ($env:SYSTEM_DEBUG -eq 'true') {
+    Write-Host "##[group] $RepoRoot/Cargo.lock"
+    Get-Content "$RepoRoot/Cargo.lock"
+    Write-Host "##[endgroup]"
+  }
+
   Write-Host "Updating Cargo.lock using 'cargo metadata'."
   Invoke-LoggedCommand "cargo metadata --no-deps --format-version 1" | Out-Null
+
+  if ($env:SYSTEM_DEBUG -eq 'true') {
+    Write-Host "##[group] $RepoRoot/Cargo.lock"
+    Get-Content "$RepoRoot/Cargo.lock"
+    Write-Host "##[endgroup]"
+  }
 }
 else {
   Write-Host "$tomlPath already contains version $packageSemVer"
