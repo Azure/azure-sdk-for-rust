@@ -84,25 +84,37 @@ stages:
             runOnce:
               deploy:
                 steps:
-                - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-                  parameters:
-                    skipCheckoutNone: true
-
                 - template: /eng/pipelines/templates/steps/use-rust.yml@self
                   parameters:
                     Toolchain: stable
 
-                - task: PowerShell@2
+                - pwsh: |
+                    $additionalOwners = @('heaths', 'hallipr')
+                    $crateName = '${{artifact.name}}'
+
+                    Write-Host "Publishing packae: '$crateName'"
+                    $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/Cargo.toml"
+
+                    $command = "cargo publish --locked --manifest-path '$manifestPath' --no-verify"
+
+                    Write-Host "> $command"
+                    Invoke-Expression $command
+
+                    if (!$?) {
+                      Write-Error "Failed to publish package: '$crateName'"
+                      exit 1
+                    }
+
+                    $existingOwners = (cargo owner --list $crateName) -replace " \(.*", ""
+                    $missingOwners = $additionalOwners | Where-Object { $existingOwners -notcontains $_ }
+
+                    foreach ($owner in $missingOwners) {
+                      Write-Host "> cargo owner --add $owner $crateName"
+                      cargo owner --add $owner $crateName
+                    }
                   displayName: Publish Crate
                   env:
                     CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
-                  inputs:
-                    targetType: filePath
-                    filePath: $(Build.SourcesDirectory)/eng/scripts/Publish-Crates.ps1
-                    arguments: >
-                      -PackagesPath '$(Pipeline.Workspace)/drop'
-                      -CrateNames '${{artifact.name}}'
-                      -AdditionalOwners 'heaths','hallipr'
 
         # - job: CreateApiReview
         #   displayName: "Api Review"
