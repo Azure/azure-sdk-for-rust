@@ -14,14 +14,20 @@ foreach ($crateName in $crateNames) {
   $crate = Get-Content "$PackageInfoDirectory/$crateName.json" -Raw | ConvertFrom-Json
   $crateVersion = $crate.Version
 
-  Write-Host "Yanking crate: '$crateName@$crateVersion'"
+  Write-Host "> cargo yank $crateName --version $crateVersion"
+  cargo yank $crateName --version $crateVersion 2>&1 | Tee-Object -Variable output
 
-  Write-Host "cargo yank $crateName --version $crateVersion"
-  cargo yank $crateName --version $crateVersion
-
-  if (!$?) {
-    Write-Host "Failed to yank crate: '$crateName@$crateVersion'"
-    $hasErrors = $true
+  if ($LASTEXITCODE -ne 0) {
+    if ($output -match 'status 404 Not Found') {
+      Write-Host "Crate '$crateName@$crateVersion' not found. Skipping yank."
+    }
+    else {
+      Write-Host "Error yanking crate: '$crateName@$crateVersion'"
+      $hasErrors = $true
+    }
+  }
+  else {
+    Write-Host "Successfully yanked crate: '$crateName@$crateVersion'"
   }
 }
 

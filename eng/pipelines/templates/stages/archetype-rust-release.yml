@@ -153,9 +153,24 @@ stages:
                 BaseBranchName: main
 
         - ${{ if eq(parameters.TestPipeline, true) }}:
+          - job: ManualApproval
+            displayName: "Manual approval"
+            dependsOn: PublishPackage
+            condition: ne(variables['Skip.PublishPackage'], 'true')
+            pool: server
+            timeoutInMinutes: 120 # 2 hours
+            steps:
+            - task: ManualValidation@1
+              timeoutInMinutes: 60 # 1 hour
+              inputs:
+                notifyUsers: '' # Required, but empty string allowed
+                allowApproversToApproveTheirOwnRuns: true
+                instructions: "Approve yank of ${{ artifact.name }}"
+                onTimeout: 'resume'
+
           - job: YankCrates
             displayName: "Yank Crates"
-            dependsOn: PublishPackage
+            dependsOn: ManualApproval
             condition: and(succeeded(), ne(variables['Skip.PublishPackage'], 'true'))
             steps:
             - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
