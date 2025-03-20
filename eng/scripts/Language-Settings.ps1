@@ -45,7 +45,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 
     # when a package is marked `publish = false` in the Cargo.toml, `cargo metadata` returns an empty array for
     # `publish`, otherwise it returns null. We only want to include packages where `publish` is null.
-    $packages = cargo metadata --format-version 1
+    $packages = Invoke-LoggedCommand "cargo metadata --format-version 1 --no-deps" -GroupOutput
     | ConvertFrom-Json -AsHashtable
     | Select-Object -ExpandProperty packages
     | Where-Object { $_.manifest_path.StartsWith($searchPath) -and $null -eq $_.publish }
