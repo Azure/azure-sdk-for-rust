@@ -44,56 +44,77 @@ impl Shape for Rectangle {
 /// A trait demonstrating associated types
 pub trait Container {
     /// The type of items this container holds
-    type Item;
+    type Item<T>
+    where
+        T: Debug;
 
     /// Add an item to the container
-    fn add(&mut self, item: Self::Item);
-
-    /// Get the number of items in the container
-    fn len(&self) -> usize;
-
-    /// Check if the container is empty
-    fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
+    fn add<T: Debug + 'static>(&mut self, item: Self::Item<T>);
 }
 
-/// A simple vector-based collection
-#[derive(Debug)]
-pub struct VecContainer<T> {
-    pub items: Vec<T>,
+/// Example Box container implementing the Container trait
+pub struct BoxContainer {
+    items: Vec<Box<dyn std::any::Any>>,
 }
 
-/// Implementation of Container for VecContainer
-impl<T> Container for VecContainer<T> {
-    type Item = T;
+/// Implementation of Container for BoxContainer
+impl Container for BoxContainer {
+    // Using "=" syntax for associated type with generics
+    type Item<T: Debug> = Box<T> where T: Debug;
 
-    fn add(&mut self, item: Self::Item) {
+    fn add<T: Debug + 'static>(&mut self, item: Self::Item<T>) {
         self.items.push(item);
     }
-
-    fn len(&self) -> usize {
-        self.items.len()
-    }
-}
-
-/// A trait demonstrating associated constants
-pub trait Bounded {
-    /// The maximum value for this type
-    const MAX: Self;
-    /// The minimum value for this type
-    const MIN: Self;
-}
-
-impl Bounded for i32 {
-    const MAX: i32 = i32::MAX;
-    const MIN: i32 = i32::MIN;
 }
 
 /// A trait that extends multiple other traits
 pub trait SuperTrait: Debug + Display + Clone {
     /// A method specific to SuperTrait
     fn super_method(&self) -> String;
+}
+
+/// An unsafe trait example - implementors must uphold safety guarantees
+/// that the Rust compiler cannot verify
+///
+/// # Safety
+pub unsafe trait UnsafeAccess {
+    /// Get a raw pointer to the internal data
+    ///
+    /// # Safety
+    unsafe fn get_raw_ptr(&self) -> *const u8;
+
+    /// Get a mutable raw pointer to the internal data
+    ///
+    /// # Safety
+    unsafe fn get_raw_mut_ptr(&mut self) -> *mut u8;
+}
+
+/// A struct that implements the UnsafeAccess trait
+#[derive(Debug)]
+pub struct RawBuffer {
+    data: Vec<u8>,
+}
+
+impl RawBuffer {
+    /// Create a new buffer with the given size
+    pub fn new(size: usize) -> Self {
+        RawBuffer {
+            data: vec![0; size],
+        }
+    }
+}
+
+/// Implementation of UnsafeAccess for RawBuffer
+///
+/// This is unsafe because we're exposing raw pointers that could be misused
+unsafe impl UnsafeAccess for RawBuffer {
+    unsafe fn get_raw_ptr(&self) -> *const u8 {
+        self.data.as_ptr()
+    }
+
+    unsafe fn get_raw_mut_ptr(&mut self) -> *mut u8 {
+        self.data.as_mut_ptr()
+    }
 }
 
 /// A trait with lifetime parameters
@@ -105,7 +126,10 @@ pub trait Parser<'a, T> {
 /// A struct implementing the Parser trait
 pub struct NumberParser;
 
-impl<'a> Parser<'a, i32> for NumberParser {
+impl<'a> Parser<'a, i32> for NumberParser
+where
+    i32: 'a,
+{
     fn parse(&self, input: &'a str) -> Result<i32, &'static str> {
         input.parse::<i32>().map_err(|_| "Failed to parse number")
     }
