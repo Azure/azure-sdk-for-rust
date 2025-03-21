@@ -6,6 +6,12 @@ use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
 
+// We pin to a specific nightly version to ensure compatibility with:
+// 1. The rust-api-parser tool (version 1.0.0) that consumes the rustdoc JSON output with FORMAT_VERSION (currently 37)
+// 2. The rustdoc_types crate version used in this tool (0.33.0)
+// When updating this version, ensure rustdoc_types dependency and the rust-api-parser tool are also updated.
+const NIGHTLY_TOOLCHAIN: &str = "+nightly-2025-01-12";
+
 fn main() -> Result<(), Box<dyn Error>> {
     // Get the package name from command-line arguments
     let args: Vec<String> = env::args().collect();
@@ -19,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Call cargo +nightly rustdoc to generate the JSON file
     let output = Command::new("cargo")
-        .arg("+nightly")
+        .arg(NIGHTLY_TOOLCHAIN)
         .arg("rustdoc")
         .arg("-Z")
         .arg("unstable-options")
