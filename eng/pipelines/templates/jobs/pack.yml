@@ -34,10 +34,6 @@ jobs:
     parameters:
       Toolchain: nightly
 
-  - template: /eng/pipelines/templates/steps/use-rust.yml@self
-    parameters:
-      Toolchain: stable
-
   - ${{ if eq(parameters.TestPipeline, 'true') }}:
     - template: /eng/common/pipelines/templates/steps/set-test-pipeline-version.yml
       parameters:
