@@ -47,5 +47,8 @@ fe2o3_amqp = [
   "serde_bytes",
 ]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 features = ["fe2o3_amqp"]

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 mod fe2o3;

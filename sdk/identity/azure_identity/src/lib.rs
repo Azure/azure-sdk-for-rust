@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 mod authorization_code_flow;
 mod azure_pipelines_credential;
