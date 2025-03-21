@@ -94,7 +94,7 @@ extends:
           MatrixReplace: ${{ parameters.MatrixReplace }}
 
     # Run live tests for internal only, not public CI builds. This can be triggered manually via an `/azp run` comment.
-    - ${{if and(eq(variables['System.TeamProject'], 'internal')), eq(parameters.RunLiveTests, 'true')) }}:
+    - ${{ if and(eq(variables['System.TeamProject'], 'internal'), eq(parameters.RunLiveTests, 'true')) }}:
       - ${{ each cloud in parameters.CloudConfig }}:
         # Run all clouds by default for weekly test pipeline, except for clouds specifically unsupported by the calling pipeline
         - ${{ if or(contains(parameters.Clouds, cloud.key), and(contains(variables['Build.DefinitionName'], 'weekly'), contains(parameters.SupportedClouds, cloud.key))) }}:
