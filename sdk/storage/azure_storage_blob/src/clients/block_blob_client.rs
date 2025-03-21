@@ -2,20 +2,18 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::{GeneratedBlobClient, GeneratedBlockBlobClient},
+    clients::GeneratedBlockBlobClient,
     models::{
-        BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientGetPropertiesOptions,
-        BlobClientGetPropertiesResult, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockOptions,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
-        BlockLookupList,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
+        BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlockBlobClientOptions,
 };
 use azure_core::{
-    base64, credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy,
-    RequestContent, Response, Result, Url,
+    credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy, RequestContent,
+    Response, Result, Url,
 };
 use std::sync::Arc;
 

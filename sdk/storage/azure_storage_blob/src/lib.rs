@@ -64,9 +64,6 @@ pub mod models {
     pub use crate::generated::enums::*;
     pub use crate::generated::header_traits::*;
     pub use crate::generated::models::*;
-
-    mod blob_block;
-    pub use blob_block::BlobBlock;
 }
 
 pub use crate::generated::clients::{

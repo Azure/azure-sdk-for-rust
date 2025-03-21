@@ -21,8 +21,6 @@ use std::sync::Arc;
 
 pub struct BlobClient {
     endpoint: Url,
-    container_name: String,
-    blob_name: String,
     credential: Arc<dyn TokenCredential>, // This will be removed in future versions, but needed for now to spin up sub-clients.
     options: BlobClientOptions, // This will be removed in future versions, but needed for now to spin up sub-clients.
     client: GeneratedBlobClient,
@@ -63,8 +61,6 @@ impl BlobClient {
         )?;
         Ok(Self {
             endpoint: endpoint.parse()?,
-            container_name,
-            blob_name,
             credential,
             options,
             client,
@@ -76,11 +72,11 @@ impl BlobClient {
     }
 
     pub fn container_name(&self) -> &str {
-        &self.container_name
+        &self.client.container_name
     }
 
     pub fn blob_name(&self) -> &str {
-        &self.blob_name
+        &self.client.blob
     }
 
     pub fn credential(&self) -> Arc<dyn TokenCredential> {
