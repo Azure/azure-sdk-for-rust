@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{AppendToUrlQuery, Url};
+use crate::http::{AppendToUrlQuery, Url};
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy)]

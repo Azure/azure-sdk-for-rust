@@ -11,7 +11,12 @@ use super::{
     models::{EventHubPartitionProperties, EventHubProperties},
 };
 use crate::{common::connection_manager::ConnectionManager, error::EventHubsError};
-use azure_core::{credentials::TokenCredential, error::Result, RetryOptions, Url, Uuid};
+use azure_core::{
+    credentials::TokenCredential,
+    error::Result,
+    http::{RetryOptions, Url},
+    Uuid,
+};
 use azure_core_amqp::{
     AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap, AmqpReceiver,
     AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSessionApis, AmqpSource,

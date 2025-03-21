@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! HMAC encoding and decoding functions.
+
 use crate::credentials::Secret;
 #[cfg(any(feature = "hmac_rust", feature = "hmac_openssl"))]
 use crate::{
@@ -16,6 +18,7 @@ use crate::{
 /// If both `hmac_rust` and `hmac_openssl` are enabled, use `hmac_openssl`.
 ///
 /// # Errors
+///
 /// - If the `key` is not a valid base64 encoded string.
 /// - If it fails to create the HMAC from the `key`.
 #[cfg(all(feature = "hmac_rust", not(feature = "hmac_openssl")))]
@@ -32,9 +35,20 @@ pub fn hmac_sha256(data: &str, key: &Secret) -> crate::Result<String> {
     Ok(base64::encode(signature))
 }
 
-// cspell:ignore pkey
+/// Tries to create an HMAC SHA256 signature from the given `data` and `key`.
+///
+/// The `key` is expected to be a base64 encoded string and will be decoded
+/// before using it for signing. The returned signature is also base64 encoded.
+///
+/// If both `hmac_rust` and `hmac_openssl` are enabled, use `hmac_openssl`.
+///
+/// # Errors
+///
+/// - If the `key` is not a valid base64 encoded string.
+/// - If it fails to create the HMAC from the `key`.
 #[cfg(feature = "hmac_openssl")]
 pub fn hmac_sha256(data: &str, key: &Secret) -> crate::Result<String> {
+    // cspell:ignore pkey
     use openssl::{error::ErrorStack, hash::MessageDigest, pkey::PKey, sign::Signer};
 
     let decoded = base64::decode(key.secret())?;
@@ -50,9 +64,14 @@ pub fn hmac_sha256(data: &str, key: &Secret) -> crate::Result<String> {
     Ok(base64::encode(signature))
 }
 
+/// Tries to create an HMAC SHA256 signature from the given `data` and `key`.
+///
+/// # Errors
+///
+/// This implementation always returns an error. Enable `hmac_rust` and/or `hmac_openssl`.
 #[cfg(not(any(feature = "hmac_rust", feature = "hmac_openssl")))]
 pub fn hmac_sha256(_data: &str, _key: &Secret) -> crate::Result<String> {
-    unimplemented!("An HMAC signing request was called without an hmac implementation.  Make sure to enable either the `hmac_rust` or `hmac_openssl` feature");
+    unimplemented!("An HMAC signing request was called without an hmac implementation. Make sure to enable either the `hmac_rust` or `hmac_openssl` feature");
 }
 
 #[cfg(test)]

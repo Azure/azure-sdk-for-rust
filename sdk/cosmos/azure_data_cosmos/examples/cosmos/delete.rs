@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use azure_core::StatusCode;
+use azure_core::http::StatusCode;
 use azure_data_cosmos::CosmosClient;
 use clap::{Args, Subcommand};
 

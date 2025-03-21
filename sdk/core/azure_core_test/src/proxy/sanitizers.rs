@@ -3,7 +3,7 @@
 
 //! Sanitize request and response headers, query string parameters, and body properties.
 use super::join;
-use azure_core::headers::{AsHeaders, HeaderName, HeaderValue};
+use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use serde::Serialize;
 #[cfg(test)]
 use std::collections::HashMap;

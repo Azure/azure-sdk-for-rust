@@ -3,7 +3,7 @@
 
 use std::borrow::Cow;
 
-use azure_core::headers::{AsHeaders, HeaderName, HeaderValue};
+use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::constants;
 

@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{future::Future, pin::Pin};
-
+use crate::http::{headers::HeaderName, response::Response};
 use futures::{stream::unfold, Stream};
+use std::{future::Future, pin::Pin};
 use typespec::Error;
 
-use crate::http::{headers::HeaderName, Response};
-
 /// The result of fetching a single page from a [`Pager`], whether the `Pager` should continue or is complete.
+#[derive(Debug)]
 pub enum PagerResult<T, C> {
     /// The [`Pager`] may fetch additional pages with the included `continuation` token.
     Continue {

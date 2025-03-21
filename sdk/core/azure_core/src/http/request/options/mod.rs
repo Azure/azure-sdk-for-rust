@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Options sent with requests to the service.
+
 mod content_range;
 mod if_sequence_number;
 mod if_source_match_condition;
@@ -18,7 +20,7 @@ mod sequence_number;
 mod source_lease_id;
 mod timeout;
 
-use crate::headers::{
+use crate::http::headers::{
     ACTIVITY_ID, APP, CLIENT_REQUEST_ID, CLIENT_VERSION, CONTENT_DISPOSITION, CONTINUATION,
     IF_TAGS, USER, VERSION,
 };

@@ -3,7 +3,7 @@
 
 #![allow(dead_code)]
 
-use azure_core::{credentials::Secret, Model};
+use azure_core::{credentials::Secret, http::response::Model};
 use serde::{Deserialize, Deserializer};
 use time::OffsetDateTime;
 

@@ -8,8 +8,11 @@ use crate::{
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::ErrorKind,
-    headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
-    HttpClient, Method, Request, StatusCode, Url,
+    http::{
+        headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
+        request::Request,
+        HttpClient, Method, StatusCode, Url,
+    },
 };
 use serde::Deserialize;
 use std::{convert::Infallible, fmt, sync::Arc};

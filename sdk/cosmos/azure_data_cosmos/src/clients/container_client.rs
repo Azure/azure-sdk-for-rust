@@ -11,7 +11,7 @@ use crate::{
     ReplaceContainerOptions, ThroughputOptions,
 };
 
-use azure_core::{Method, Pager, Request, Response};
+use azure_core::http::{headers, request::Request, response::Response, Method, Pager};
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -257,7 +257,7 @@ impl ContainerClient {
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
         if !options.enable_content_response_on_write {
-            req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
+            req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
@@ -348,7 +348,7 @@ impl ContainerClient {
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Put);
         if !options.enable_content_response_on_write {
-            req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
+            req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_headers(&partition_key.into())?;
         req.set_json(&item)?;
@@ -436,7 +436,7 @@ impl ContainerClient {
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
         if !options.enable_content_response_on_write {
-            req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
+            req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_header(constants::IS_UPSERT, "true");
         req.insert_headers(&partition_key.into())?;
@@ -603,7 +603,7 @@ impl ContainerClient {
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Patch);
         if !options.enable_content_response_on_write {
-            req.insert_header(azure_core::headers::PREFER, constants::PREFER_MINIMAL);
+            req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_headers(&partition_key.into())?;
         req.set_json(&patch)?;

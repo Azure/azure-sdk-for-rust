@@ -4,7 +4,7 @@
 use crate::env::Env;
 use azure_core::{
     error::{ErrorKind, Result, ResultExt},
-    Url,
+    http::{new_http_client, HttpClient, Url},
 };
 use std::sync::Arc;
 
@@ -16,7 +16,7 @@ const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
 #[derive(Debug, Clone)]
 pub struct TokenCredentialOptions {
     pub(crate) env: Env,
-    pub(crate) http_client: Arc<dyn azure_core::HttpClient>,
+    pub(crate) http_client: Arc<dyn HttpClient>,
     pub(crate) authority_host: String,
     pub(crate) executor: Arc<dyn azure_core::process::Executor>,
 }
@@ -33,7 +33,7 @@ impl Default for TokenCredentialOptions {
             .unwrap_or_else(|_| AZURE_PUBLIC_CLOUD.to_owned());
         Self {
             env: Env::default(),
-            http_client: azure_core::new_http_client(),
+            http_client: new_http_client(),
             authority_host,
             executor: azure_core::process::new_executor(),
         }
@@ -56,7 +56,7 @@ impl TokenCredentialOptions {
     }
 
     /// The [`azure_core::HttpClient`] to make requests.
-    pub fn http_client(&self) -> Arc<dyn azure_core::HttpClient> {
+    pub fn http_client(&self) -> Arc<dyn HttpClient> {
         self.http_client.clone()
     }
 
@@ -70,8 +70,8 @@ impl TokenCredentialOptions {
     }
 }
 
-impl From<Arc<dyn azure_core::HttpClient>> for TokenCredentialOptions {
-    fn from(http_client: Arc<dyn azure_core::HttpClient>) -> Self {
+impl From<Arc<dyn HttpClient>> for TokenCredentialOptions {
+    fn from(http_client: Arc<dyn HttpClient>) -> Self {
         Self {
             http_client,
             ..Default::default()

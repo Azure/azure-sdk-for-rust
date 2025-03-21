@@ -8,9 +8,13 @@ use crate::{
 use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
-    headers::{AsHeaders, HeaderName, HeaderValue},
+    http::{
+        headers::{AsHeaders, HeaderName, HeaderValue},
+        policies::{Policy, PolicyResult},
+        request::Request,
+        Context, Url,
+    },
     test::TestMode,
-    Context, Policy, PolicyResult, Request, Url,
 };
 use std::{
     convert::Infallible,

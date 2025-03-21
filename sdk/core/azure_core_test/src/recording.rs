@@ -21,9 +21,11 @@ use azure_core::{
     base64,
     credentials::TokenCredential,
     error::ErrorKind,
-    headers::{AsHeaders, HeaderName, HeaderValue},
+    http::{
+        headers::{AsHeaders, Header, HeaderName, HeaderValue},
+        ClientOptions,
+    },
     test::TestMode,
-    ClientOptions, Header,
 };
 use rand::{
     distributions::{Alphanumeric, DistString, Distribution, Standard},

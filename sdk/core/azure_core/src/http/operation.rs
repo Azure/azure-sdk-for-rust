@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::headers::Headers;
+//! Types and methods for Long-Running Operations (LROs).
+
+use crate::http::headers::Headers;
 use std::time::Duration;
 use typespec_client_core::date::OffsetDateTime;
 
@@ -11,11 +13,9 @@ use typespec_client_core::date::OffsetDateTime;
 /// Ref: <https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-mgmt-core/azure/mgmt/core/polling/arm_polling.py#L191>
 const DEFAULT_RETRY_TIME: Duration = Duration::from_secs(30);
 
-/// Long Running Operation (LRO) status
-///
-/// Ref: <https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations#provisioningstate-values>
+/// Long-Running Operation (LRO) status.
 #[derive(Debug)]
-pub enum LroStatus {
+pub enum OperationStatus {
     InProgress,
     Succeeded,
     Failed,
@@ -23,42 +23,54 @@ pub enum LroStatus {
     Other(String),
 }
 
-impl From<&str> for LroStatus {
+impl From<&str> for OperationStatus {
     fn from(s: &str) -> Self {
         match s {
-            "InProgress" => LroStatus::InProgress,
-            "Succeeded" => LroStatus::Succeeded,
-            "Failed" => LroStatus::Failed,
+            "InProgress" => OperationStatus::InProgress,
+            "Succeeded" => OperationStatus::Succeeded,
+            "Failed" => OperationStatus::Failed,
             // While the specification indicates we should use `Canceled`, in
             // practice numerous services use `Cancelled`.  As such, we support
             // both.
             //
             // Ref: <https://github.com/Azure/azure-resource-manager-rpc/issues/144>
-            "Canceled" | "Cancelled" => LroStatus::Canceled,
-            _ => LroStatus::Other(s.to_owned()),
+            "Canceled" | "Cancelled" => OperationStatus::Canceled,
+            _ => OperationStatus::Other(s.to_owned()),
         }
     }
 }
 
+/// Get the retry duration from the operation response.
 pub fn get_retry_after(headers: &Headers) -> Duration {
-    crate::get_retry_after(headers, OffsetDateTime::now_utc).unwrap_or(DEFAULT_RETRY_TIME)
+    crate::http::policies::get_retry_after(headers, OffsetDateTime::now_utc)
+        .unwrap_or(DEFAULT_RETRY_TIME)
 }
 
+/// Types and methods for getting Long-Running Operation (LRO) resource locations.
 pub mod location {
     use crate::{
-        headers::{Headers, AZURE_ASYNCOPERATION, LOCATION, OPERATION_LOCATION},
+        http::{
+            headers::{Headers, AZURE_ASYNCOPERATION, LOCATION, OPERATION_LOCATION},
+            operation::OperationStatus,
+            Url,
+        },
         json::from_json,
-        lro::LroStatus,
-        Url,
     };
 
+    /// How to find the final resource URL.
     #[derive(Debug, Clone, Copy)]
     pub enum FinalState {
+        /// The final resource URL is found in the `azure-asyncoperation` header.
         AzureAsyncOperation,
+
+        /// The final resource URL is found in the `location` header.
         Location,
+
+        /// The final resource URL is found in the `operation-location` header.
         OperationLocation,
     }
 
+    /// Get the location from the `headers` based on the `final_state` location.
     pub fn get_location(headers: &Headers, final_state: FinalState) -> crate::Result<Option<Url>> {
         match final_state {
             FinalState::AzureAsyncOperation => headers.get_optional_as(&AZURE_ASYNCOPERATION),
@@ -67,37 +79,40 @@ pub mod location {
         }
     }
 
-    pub fn get_provisioning_state(body: &[u8]) -> Option<LroStatus> {
+    /// Get the [`OperationStatus`] from the response body.
+    pub fn get_operation_state(body: &[u8]) -> Option<OperationStatus> {
         #[derive(serde::Deserialize)]
         struct Body {
             status: String,
         }
         let body: Body = from_json(body).ok()?;
-        Some(LroStatus::from(body.status.as_str()))
+        Some(OperationStatus::from(body.status.as_str()))
     }
 }
 
+/// Types and methods for getting operation status from the body.
 pub mod body_content {
+    use crate::http::{operation::OperationStatus, StatusCode};
     use crate::json::{from_json, to_json};
-    use crate::{lro::LroStatus, StatusCode};
     use serde::{Deserialize, Serialize};
 
-    /// Extract the provisioning state based on the status code and response body
-    ///
-    /// Ref: <https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-core/azure/core/polling/base_polling.py>
-    pub fn get_provisioning_state<S>(status_code: StatusCode, body: &S) -> crate::Result<LroStatus>
+    /// Extract the Long-Running Operation (LRO) state based on the status code and response body.
+    pub fn get_operation_state<S>(
+        status_code: StatusCode,
+        body: &S,
+    ) -> crate::Result<OperationStatus>
     where
         S: Serialize,
     {
         match status_code {
-            StatusCode::Accepted => Ok(LroStatus::InProgress),
+            StatusCode::Accepted => Ok(OperationStatus::InProgress),
             StatusCode::Created => {
-                Ok(get_provisioning_state_from_body(body).unwrap_or(LroStatus::InProgress))
+                Ok(get_provisioning_state_from_body(body).unwrap_or(OperationStatus::InProgress))
             }
             StatusCode::Ok => {
-                Ok(get_provisioning_state_from_body(body).unwrap_or(LroStatus::Succeeded))
+                Ok(get_provisioning_state_from_body(body).unwrap_or(OperationStatus::Succeeded))
             }
-            StatusCode::NoContent => Ok(LroStatus::Succeeded),
+            StatusCode::NoContent => Ok(OperationStatus::Succeeded),
             _ => Err(crate::error::Error::from(
                 crate::error::ErrorKind::HttpResponse {
                     status: status_code,
@@ -118,11 +133,13 @@ pub mod body_content {
         properties: Properties,
     }
 
-    fn get_provisioning_state_from_body<S>(body: &S) -> Option<LroStatus>
+    fn get_provisioning_state_from_body<S>(body: &S) -> Option<OperationStatus>
     where
         S: Serialize,
     {
         let body: Body = from_json(to_json(&body).ok()?).ok()?;
-        Some(LroStatus::from(body.properties.provisioning_state.as_str()))
+        Some(OperationStatus::from(
+            body.properties.provisioning_state.as_str(),
+        ))
     }
 }

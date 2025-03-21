@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! HTTP headers.
+
 // Re-export headers to flatten out this module with typespec_client_core.
 pub use typespec_client_core::http::headers::*;
 
@@ -83,3 +85,28 @@ pub const SOURCE_RANGE: HeaderName = HeaderName::from_static("x-ms-source-range"
 pub const TAGS: HeaderName = HeaderName::from_static("x-ms-tags");
 pub const USER: HeaderName = HeaderName::from_static("x-ms-user");
 pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
+
+/// Constants related to the Content-Type header
+///
+/// <https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Type>
+pub mod content_type {
+    use crate::http::headers::HeaderValue;
+
+    // Form content types
+    // https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4
+
+    pub const MULTIPART_FORM_DATA: HeaderValue = HeaderValue::from_static("multipart/form-data");
+    pub const APPLICATION_X_WWW_FORM_URLENCODED: HeaderValue =
+        HeaderValue::from_static("application/x-www-form-urlencoded");
+
+    pub const APPLICATION_XML: HeaderValue = HeaderValue::from_static("application/xml");
+    pub const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
+    pub const APPLICATION_OCTET_STREAM: HeaderValue =
+        HeaderValue::from_static("application/octet-stream");
+    pub const TEXT_PLAIN: HeaderValue = HeaderValue::from_static("text/plain");
+}
+
+/// Constants related to query parameters
+pub mod query_param {
+    pub const API_VERSION: &str = "api-version";
+}

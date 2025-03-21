@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::error::{Error, ErrorKind, ResultExt};
-use crate::headers::{self, AsHeaders, HeaderName, HeaderValue};
+use crate::http::headers::{self, AsHeaders, HeaderName, HeaderValue};
 use std::fmt;
 use std::ops::{Range as StdRange, RangeFrom};
 use std::str::FromStr;

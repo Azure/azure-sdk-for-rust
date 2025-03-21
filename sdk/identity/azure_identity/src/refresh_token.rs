@@ -4,12 +4,14 @@
 //! Refresh tokens.
 
 use azure_core::{
-    content_type,
     credentials::Secret,
     error::{http_response_from_body, Error, ErrorKind, ResultExt},
-    headers,
+    http::{
+        headers::{self, content_type},
+        request::Request,
+        HttpClient, Method, Url,
+    },
     json::from_json,
-    HttpClient, Method, Request, Url,
 };
 use serde::Deserialize;
 use std::fmt;

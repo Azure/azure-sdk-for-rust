@@ -2,15 +2,16 @@
 // Licensed under the MIT License.
 
 use crate::http::{
-    headers::{HeaderValue, CONTENT_LENGTH},
+    headers::{Header, HeaderValue, CONTENT_LENGTH},
     options::TransportOptions,
     policies::{Policy, PolicyResult},
-    Context, Header, Method, Request,
+    Context, Method, Request,
 };
 use async_trait::async_trait;
 use std::sync::Arc;
 use tracing::debug;
 
+/// The final pipeline policy that defines the HTTP transport.
 #[derive(Debug, Clone)]
 pub struct TransportPolicy {
     pub(crate) transport_options: TransportOptions,

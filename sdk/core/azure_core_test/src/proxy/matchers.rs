@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::join;
-use azure_core::headers::{AsHeaders, HeaderName, HeaderValue};
+use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use serde::Serialize;
 use std::{convert::Infallible, iter};
 

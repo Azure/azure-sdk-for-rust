@@ -7,10 +7,12 @@ mod signature_target;
 use std::sync::Arc;
 
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::{ClientOptions, Context, Method, Model, Pager, Request, Response};
+use azure_core::http::{
+    request::Request, response::Model, response::Response, ClientOptions, Context, Method, Pager,
+    PagerResult,
+};
 use futures::StreamExt;
 use serde::{de::DeserializeOwned, Deserialize};
-use typespec_client_core::http::PagerResult;
 use url::Url;
 
 use crate::{
@@ -24,7 +26,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct CosmosPipeline {
     pub endpoint: Url,
-    pipeline: azure_core::Pipeline,
+    pipeline: azure_core::http::Pipeline,
 }
 
 impl CosmosPipeline {
@@ -35,7 +37,7 @@ impl CosmosPipeline {
     ) -> Self {
         CosmosPipeline {
             endpoint,
-            pipeline: azure_core::Pipeline::new(
+            pipeline: azure_core::http::Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
                 client_options,

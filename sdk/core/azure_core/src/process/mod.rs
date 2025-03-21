@@ -1,27 +1,29 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Asynchronous process execution utilities.
+
 use async_trait::async_trait;
 use std::{ffi::OsStr, fmt, io, process::Output, sync::Arc};
 
 mod standard;
-#[cfg(feature = "tokio_process")]
+#[cfg(feature = "tokio")]
 mod tokio;
 
 pub use standard::StdExecutor;
-#[cfg(feature = "tokio_process")]
+#[cfg(feature = "tokio")]
 pub use tokio::TokioExecutor;
 
 /// Creates a new [`Executor`].
 ///
-/// This returns a [`StdExecutor`] that spawns a [`std::process::Command`] in a separate thread unless `tokio_process` was enabled,
+/// This returns a [`StdExecutor`] that spawns a [`std::process::Command`] in a separate thread unless `tokio` was enabled,
 /// in which case an executor is returned that spawns a `tokio::process::Command`.
 pub fn new_executor() -> Arc<dyn Executor> {
-    #[cfg(not(feature = "tokio_process"))]
+    #[cfg(not(feature = "tokio"))]
     {
         Arc::new(StdExecutor)
     }
-    #[cfg(feature = "tokio_process")]
+    #[cfg(feature = "tokio")]
     {
         Arc::new(TokioExecutor)
     }

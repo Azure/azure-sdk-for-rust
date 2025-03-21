@@ -137,7 +137,7 @@ impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpError {
 
             fe2o3_amqp_management::error::Error::Status(s) => {
                 Ok(AmqpError::from(AmqpErrorKind::ManagementStatusCode(
-                    azure_core::StatusCode::from(s.code.0.get()),
+                    azure_core::http::StatusCode::from(s.code.0.get()),
                     s.description.clone(),
                 )))
             }

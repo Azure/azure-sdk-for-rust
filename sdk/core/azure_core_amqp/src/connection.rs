@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
-use azure_core::{error::Result, Url};
+use azure_core::{error::Result, http::Url};
 use std::fmt::Debug;
 use time::Duration;
 

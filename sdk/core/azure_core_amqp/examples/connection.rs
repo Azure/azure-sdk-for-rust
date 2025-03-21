@@ -12,7 +12,7 @@
 // 4. Run the tests (from the root of the azure-sdk-for-rust repository):
 //      cargo run --example connection --package azure_core_amqp
 
-use azure_core::Url;
+use azure_core::http::Url;
 use azure_core_amqp::{AmqpConnection, AmqpConnectionApis, AmqpSymbol};
 
 async fn amqp_connection_open() {

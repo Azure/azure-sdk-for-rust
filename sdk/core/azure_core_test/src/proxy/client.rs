@@ -11,9 +11,12 @@ use super::{
     RecordingId, RECORDING_ID,
 };
 use azure_core::{
-    headers::{AsHeaders, ACCEPT, CONTENT_TYPE},
-    ClientMethodOptions, ClientOptions, Context, Method, Pipeline, Request, RequestContent, Result,
-    Url,
+    http::{
+        headers::{AsHeaders, ACCEPT, CONTENT_TYPE},
+        request::{Request, RequestContent},
+        ClientMethodOptions, ClientOptions, Context, Method, Pipeline, Url,
+    },
+    Result,
 };
 use tracing::Span;
 

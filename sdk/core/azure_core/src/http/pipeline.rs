@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{TelemetryOptions, TelemetryPolicy};
+use crate::http::{options::TelemetryOptions, policies::TelemetryPolicy};
 use std::{ops::Deref, sync::Arc};
 use typespec_client_core::http::{self, policies::Policy};
 
