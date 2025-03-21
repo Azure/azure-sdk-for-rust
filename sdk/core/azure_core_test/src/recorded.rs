@@ -9,7 +9,7 @@ use crate::{
 };
 use azure_core::{test::TestMode, Result};
 pub use azure_core_test_macros::test;
-use std::sync::Arc;
+use std::{env, sync::Arc};
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::sync::OnceCell;
 
@@ -89,6 +89,7 @@ fn init_tracing() {
         tracing_subscriber::fmt()
             .with_env_filter(EnvFilter::from_default_env())
             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+            .with_ansi(env::var("NO_COLOR").map_or(true, |v| v.is_empty()))
             .with_writer(std::io::stderr)
             .init();
     }
