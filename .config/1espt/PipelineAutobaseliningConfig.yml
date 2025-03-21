@@ -11,8 +11,6 @@ pipelines:
           lastModifiedDate: 2025-03-11
         armory:
           lastModifiedDate: 2025-03-11
-  7470:
-    retail:
       binary:
         credscan:
           lastModifiedDate: 2025-03-21
