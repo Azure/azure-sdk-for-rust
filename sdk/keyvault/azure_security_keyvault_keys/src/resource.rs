@@ -94,10 +94,10 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
     let vault_url = format!("{}://{}", url.scheme(), url.authority(),);
     let mut segments = url
         .path_segments()
-        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "invalid url"))?;
+        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "invalid url"))?
+        .filter(|s| !s.is_empty());
     segments
         .next()
-        .and_then(none_if_empty)
         .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing collection"))
         .and_then(|col| {
             if col != "keys" {
@@ -110,10 +110,9 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
         })?;
     let name = segments
         .next()
-        .and_then(none_if_empty)
         .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing name"))
         .map(String::from)?;
-    let version = segments.next().and_then(none_if_empty).map(String::from);
+    let version = segments.next().map(String::from);
 
     Ok(ResourceId {
         source_id: url.as_str().into(),
@@ -121,14 +120,6 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
         name,
         version,
     })
-}
-
-fn none_if_empty(s: &str) -> Option<&str> {
-    if s.is_empty() {
-        return None;
-    }
-
-    Some(s)
 }
 
 mod private {
@@ -278,6 +269,21 @@ mod tests {
             key.resource_id().unwrap(),
             ResourceId {
                 source_id: url.to_string(),
+                vault_url: "https://vault.azure.net".into(),
+                name: "name".into(),
+                version: Some("version".into()),
+            }
+        );
+    }
+
+    #[test]
+    fn canonicalizes() {
+        assert_eq!(
+            "https://vault.azure.net//keys/name/version"
+                .parse::<ResourceId>()
+                .unwrap(),
+            ResourceId {
+                source_id: "https://vault.azure.net//keys/name/version".to_string(),
                 vault_url: "https://vault.azure.net".into(),
                 name: "name".into(),
                 version: Some("version".into()),
