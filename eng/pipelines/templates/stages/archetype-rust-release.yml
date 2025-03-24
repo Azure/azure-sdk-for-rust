@@ -91,19 +91,28 @@ stages:
                 - pwsh: |
                     $additionalOwners = @('heaths', 'hallipr')
                     $crateName = '${{artifact.name}}'
+                    $token = $env:CARGO_REGISTRY_TOKEN
 
-                    Write-Host "Publishing packae: '$crateName'"
-                    $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/Cargo.toml"
+                    Write-Host "Dry-run verifying '$crateName'"
 
-                    $command = "cargo publish --manifest-path '$manifestPath'"
-
+                    $command = "cargo publish --manifest-path '$(Pipeline.Workspace)/drop/$crateName/Cargo.toml' --dry-run"
                     Write-Host "> $command"
                     Invoke-Expression $command
 
                     if (!$?) {
-                      Write-Error "Failed to publish package: '$crateName'"
+                      Write-Error "Dry-run failed for '$crateName'"
                       exit 1
                     }
+
+                    Write-Host "Publishing package '$crateName'"
+
+                    $cargoBin = '$(Pipeline.Workspace)/drop/$crateName.bin'
+
+                    # https://doc.rust-lang.org/cargo/reference/registry-web-api.html#publish
+                    Invoke-WebRequest -Method Put -Uri 'https://crates.io/api/v1/crates/new' `
+                      -Headers @{ Accept = 'application/json'; Authorization = $token } `
+                      -ContentType 'application/json' `
+                      -InFile $cargoBin
 
                     $existingOwners = (cargo owner --list $crateName) -replace " \(.*", ""
                     $missingOwners = $additionalOwners | Where-Object { $existingOwners -notcontains $_ }

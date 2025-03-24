@@ -126,6 +126,64 @@ function Get-PackagesToBuild() {
   return $buildOrder
 }
 
+# https://doc.rust-lang.org/cargo/reference/registry-web-api.html#publish
+# https://github.com/rust-lang/cargo/blob/5c87c14f9a162daf10d4133fdaab35c72d67b018/crates/crates-io/lib.rs#L42
+function Get-ApiMetadata($package) {
+  $packagePath = Split-Path -Path $package.manifest_path -Parent
+  $readmePath = $package.readme ? (Join-Path -Path $packagePath -ChildPath $package.readme) : $null
+
+  $jsonBody = [ordered]@{
+    'name'          = $package.name
+    'vers'          = $package.version
+    'deps'          = @()
+    'features'      = $package.features
+    'authors'       = $package.authors
+    'description'   = $package.description
+    'documentation' = $package.documentation
+    'homepage'      = $package.homepage
+    'readme'        = if ($readmePath -and (Test-Path -Path $readmePath)) {
+      Get-Content -Path $readmePath -Raw
+    }
+    else {
+      $null
+    }
+    'readme_file'   = $package.readme
+    'keywords'      = $package.keywords
+    'categories'    = $package.categories
+    'license'       = $package.license
+    'license_file'  = $package.license_file
+    'repository'    = $package.repository
+    'links'         = $package.links
+    'rust_version'  = $package.rust_version
+  }
+
+  foreach ($dependency in $package.dependencies) {
+    $jsonBody.deps += @{
+      'name'                  = $dependency.name
+      'version_req'           = $dependency.req
+      'features'              = $dependency.features
+      'optional'              = $dependency.optional
+      'default_features'      = $dependency.default_features
+      'target'                = $dependency.target
+      'kind'                  = $dependency.kind
+      'explicit_name_in_toml' = $dependency.rename
+    }
+  }
+
+  return $jsonBody
+}
+
+function New-ApiPutFile($crateMetadata, $crateFilePath) {
+  $metadataBytes = [Text.Encoding]::Utf8.GetBytes($crateMetadata)
+  $metadataLengthBytes = [BitConverter]::GetBytes([UInt32]$metadataBytes.Length)
+  $crateBytes = [IO.File]::ReadAllBytes($crateFilePath)
+  $crateLengthBytes = [BitConverter]::GetBytes([UInt32]$crateBytes.Length)
+
+  $bytes += $metadataLengthBytes + $metadataBytes + $crateLengthBytes + $crateBytes
+
+  return $bytes
+}
+
 Push-Location $RepoRoot
 try {
   [array]$packages = Get-PackagesToBuild
@@ -159,27 +217,38 @@ try {
   }
 
   foreach ($package in $packages) {
+    Write-Host "`nProcessing package '$($package.name)'"
     $packageName = $package.name
     $packageVersion = $package.version
 
     if ($OutputPath -and $package.OutputPackage) {
-      $crateFilePath = "$RepoRoot/target/package/$packageName-$packageVersion.crate"
+      $sourceCrateFile = "$RepoRoot/target/package/$packageName-$packageVersion.crate"
+
       $targetDirectory = "$OutputPath/$packageName"
+      $targetCrateFile = "$OutputPath/$packageName-$packageVersion.crate"
+      $targetJsonFile = "$OutputPath/$packageName-$packageVersion.json"
+      $targetBinFile = "$OutputPath/$packageName.bin"
 
       if (Test-Path $targetDirectory) {
         Write-Host "Removing existing directory '$targetDirectory'"
         Remove-Item -Path $targetDirectory -Recurse -Force
       }
-
-      Write-Host "Copying crate '$crateFilePath' to '$OutputPath'"
-      Copy-Item -Path $crateFilePath -Destination $OutputPath -Force
-
-      Write-Host "Exctracting crate '$crateFilePath' to '$targetDirectory'"
       New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
-      tar -xf $crateFilePath --directory $targetDirectory --strip-components=1
 
-      # Remove Cargo.toml.orig from the extracted directory
-      Remove-Item -Path "$targetDirectory/Cargo.toml.orig" -Force -ErrorAction SilentlyContinue
+      Write-Host "Copying crate file to '$targetCrateFile'"
+      Copy-Item -Path $sourceCrateFile -Destination $targetCrateFile -Force
+
+      $crateMetadata = Get-ApiMetadata $package | ConvertTo-Json -Depth 10
+
+      Write-Host "Writing crates.io request metadata to '$targetJsonFile'"
+      $crateMetadata | Out-File -FilePath "$targetJsonFile" -Encoding utf8
+
+      $uploadBytes = New-ApiPutFile $crateMetadata $sourceCrateFile
+      Write-Host "Writing crates.io request bundle to '$targetBinFile'"
+      [IO.File]::WriteAllBytes($targetBinFile, $uploadBytes)
+
+      Write-Host "Exctracting crate file to '$targetDirectory'"
+      tar -xf $sourceCrateFile --directory $targetDirectory --strip-components=1
     }
   }
 }
