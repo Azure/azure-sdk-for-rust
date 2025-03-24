@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Call cargo +nightly rustdoc to generate the JSON file
     let output = Command::new("cargo")
-        .arg("+nightly")
+        .arg("+nightly-2025-01-12")
         .arg("rustdoc")
         .arg("-Z")
         .arg("unstable-options")

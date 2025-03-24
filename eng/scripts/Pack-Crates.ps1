@@ -184,6 +184,15 @@ function New-ApiPutFile($crateMetadata, $crateFilePath) {
   return $bytes
 }
 
+function Create-ApiReview($package) {
+  $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $($package.name)"
+  Invoke-LoggedCommand $command -GroupOutput | Out-Host
+
+  $packagePath = Split-Path -Path $package.manifest_path -Parent
+
+  "$packagePath/review/$($package.name).rust.json"
+}
+
 Push-Location $RepoRoot
 try {
   [array]$packages = Get-PackagesToBuild
@@ -217,17 +226,21 @@ try {
   }
 
   foreach ($package in $packages) {
-    Write-Host "`nProcessing package '$($package.name)'"
     $packageName = $package.name
     $packageVersion = $package.version
 
     if ($OutputPath -and $package.OutputPackage) {
+      Write-Host "`nProcessing package '$($package.name)'"
+      # Create API view file
+      $apiReviewFile = Create-ApiReview $package
+
       $sourceCrateFile = "$RepoRoot/target/package/$packageName-$packageVersion.crate"
 
-      $targetDirectory = "$OutputPath/$packageName"
-      $targetCrateFile = "$OutputPath/$packageName-$packageVersion.crate"
-      $targetJsonFile = "$OutputPath/$packageName-$packageVersion.json"
-      $targetBinFile = "$OutputPath/$packageName.bin"
+      $targetDirectory = "$OutputPath/Packages/$packageName"
+      $targetCrateFile = "$OutputPath/Packages/$packageName-$packageVersion.crate"
+      $targetJsonFile = "$OutputPath/Packages/$packageName-$packageVersion.json"
+      $targetBinFile = "$OutputPath/Packages/$packageName.bin"
+      $targetApiReviewFile = "$OutputPath/Packages/$packageName.rust.json"
 
       if (Test-Path $targetDirectory) {
         Write-Host "Removing existing directory '$targetDirectory'"
@@ -249,6 +262,9 @@ try {
 
       Write-Host "Exctracting crate file to '$targetDirectory'"
       tar -xf $sourceCrateFile --directory $targetDirectory --strip-components=1
+
+      Write-Host "Copying API review file to '$targetApiReviewFile'"
+      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
     }
   }
 }
