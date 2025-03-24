@@ -56,7 +56,7 @@ stages:
 
           - template: /eng/common/pipelines/templates/steps/create-tags-and-git-release.yml
             parameters:
-              ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/${{artifact.name}}
+              ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/Packages/${{artifact.name}}
               PackageRepository: Crates.io
               ReleaseSha: $(Build.SourceVersion)
               WorkingDirectory: $(Pipeline.Workspace)/_work
@@ -94,6 +94,9 @@ stages:
                     $token = $env:CARGO_REGISTRY_TOKEN
 
                     Write-Host "Dry-run verifying '$crateName'"
+
+                    # remove Cargo.toml.orig before calling dry-run as it causes a reserved file name error
+                    Remove-Item -Path "$(Pipeline.Workspace)/drop/Packages/$crateName/Cargo.toml.orig" -Force -ErrorAction Ignore
 
                     $command = "cargo publish --manifest-path '$(Pipeline.Workspace)/drop/Packages/$crateName/Cargo.toml' --dry-run"
                     Write-Host "> $command"
