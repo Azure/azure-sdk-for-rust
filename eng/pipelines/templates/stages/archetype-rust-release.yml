@@ -106,7 +106,7 @@ stages:
 
                     Write-Host "Publishing package '$crateName'"
 
-                    $cargoBin = '$(Pipeline.Workspace)/drop/Packages/$crateName.bin'
+                    $cargoBin = "$(Pipeline.Workspace)/drop/Packages/$crateName.bin"
 
                     # https://doc.rust-lang.org/cargo/reference/registry-web-api.html#publish
                     Invoke-WebRequest -Method Put -Uri 'https://crates.io/api/v1/crates/new' `
