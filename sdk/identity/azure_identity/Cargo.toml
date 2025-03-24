@@ -53,6 +53,9 @@ client_certificate = ["openssl"]
 # https://github.com/Azure/azure-cli/issues/19700
 old_azure_cli = ["time/local-offset", "tz-rs"]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 features = [
   "client_certificate",

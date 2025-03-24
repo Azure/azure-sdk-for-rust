@@ -134,3 +134,6 @@ zip = { version = "2.2.3", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
 large_futures = "deny"
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs)'] }

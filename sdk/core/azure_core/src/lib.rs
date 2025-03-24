@@ -3,8 +3,8 @@
 
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations, nonstandard_style)]
-// #![warn(missing_docs, future_incompatible, unreachable_pub)]
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[macro_use]
 mod macros;

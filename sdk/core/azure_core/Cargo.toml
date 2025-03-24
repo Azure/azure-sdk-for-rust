@@ -60,6 +60,9 @@ tokio_process = ["dep:tokio", "tokio/process"]
 tokio_sleep = ["typespec_client_core/tokio_sleep"]
 xml = ["typespec_client_core/xml"]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 features = [
   "hmac_openssl",
