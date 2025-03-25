@@ -1,31 +1,16 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use rustdoc_types::Crate;
 use std::env;
 use std::error::Error;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
 
-// We pin to a specific nightly version to ensure compatibility with:
-// 1. The rust-api-parser tool (version 1.0.0) that consumes the rustdoc JSON output with FORMAT_VERSION (currently 37)
-// 2. The rustdoc_types crate version used in this tool (0.33.0)
-// When updating this version, ensure rustdoc_types dependency and the rust-api-parser tool are also updated.
-fn get_nightly_toolchain() -> Result<String, Box<dyn Error>> {
-    // Read the rust.yml file and extract the toolchain version
-    let yml_content = std::fs::read_to_string("eng/pipelines/templates/variables/rust.yml")?;
-
-    // Extract the value from the NIGHTLY_TOOLCHAIN_FOR_APIVIEW line
-    yml_content
-        .lines()
-        .find(|l| l.contains("NIGHTLY_TOOLCHAIN_FOR_APIVIEW"))
-        .and_then(|line| line.split('"').nth(1))
-        .map(|version| format!("+{}", version))
-        .ok_or_else(|| "Could not find NIGHTLY_TOOLCHAIN_FOR_APIVIEW in rust.yml".into())
-}
-
 fn main() -> Result<(), Box<dyn Error>> {
-    let nightly_toolchain = get_nightly_toolchain()?;
-
     // Get the package name from command-line arguments
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 || args[1] != "--package" {
@@ -37,8 +22,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let path = Path::new(&path_str);
 
     // Call cargo +nightly rustdoc to generate the JSON file
-    let output = Command::new("cargo")
-        .arg(&nightly_toolchain)
+    let channel = env!("TOOLCHAIN_CHANNEL");
+    let mut command = Command::new("cargo");
+    command
+        .arg(format!("+{channel}"))
         .arg("rustdoc")
         .arg("-Z")
         .arg("unstable-options")
@@ -46,8 +33,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         .arg("json")
         .arg("--package")
         .arg(package_name)
-        .arg("--all-features")
-        .output()?;
+        .arg("--all-features");
+    println!(
+        "Running: {} {}",
+        command.get_program().to_string_lossy(),
+        command
+            .get_args()
+            .collect::<Vec<&OsStr>>()
+            .join(OsStr::new(" "))
+            .to_string_lossy(),
+    );
+    let output = command.output()?;
 
     if !output.status.success() {
         eprintln!(
