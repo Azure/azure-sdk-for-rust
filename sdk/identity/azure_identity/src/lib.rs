@@ -5,6 +5,7 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 mod authorization_code_flow;
+mod azure_developer_cli_credential;
 mod azure_pipelines_credential;
 mod chained_token_credential;
 mod client_secret_credential;
@@ -20,6 +21,7 @@ use azure_core::{
     http::Response,
     Error, Result,
 };
+pub use azure_developer_cli_credential::*;
 pub use azure_pipelines_credential::*;
 pub use client_secret_credential::*;
 pub use credentials::*;
@@ -150,18 +152,91 @@ fn test_validate_tenant_id() {
 
 #[cfg(test)]
 mod tests {
+    use async_trait::async_trait;
     use azure_core::{
         error::ErrorKind,
         http::{Request, Response},
+        process::Executor,
         Error, Result,
     };
-    use std::sync::{Arc, Mutex};
+    use std::{
+        ffi::OsStr,
+        process::Output,
+        sync::{Arc, Mutex},
+    };
 
     pub const FAKE_CLIENT_ID: &str = "fake-client";
     pub const FAKE_TENANT_ID: &str = "fake-tenant";
     pub const FAKE_TOKEN: &str = "***";
     pub const LIVE_TEST_RESOURCE: &str = "https://management.azure.com";
     pub const LIVE_TEST_SCOPES: &[&str] = &["https://management.azure.com/.default"];
+
+    pub type RunCallback = Arc<dyn Fn(&OsStr, &[&OsStr]) + Send + Sync>;
+
+    #[derive(Default)]
+    pub struct MockExecutor {
+        error: Option<std::io::Error>,
+        on_run: Option<RunCallback>,
+        output: Mutex<Option<Output>>,
+    }
+
+    impl std::fmt::Debug for MockExecutor {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("MockExecutor").finish()
+        }
+    }
+
+    impl MockExecutor {
+        pub fn with_error(err: std::io::Error) -> Arc<Self> {
+            Arc::new(Self {
+                error: Some(err),
+                ..Default::default()
+            })
+        }
+
+        pub fn with_output(
+            exit_code: i32,
+            stdout: &str,
+            stderr: &str,
+            on_run: Option<RunCallback>,
+        ) -> Arc<Self> {
+            let output = Output {
+                status: {
+                    #[cfg(windows)]
+                    {
+                        std::os::windows::process::ExitStatusExt::from_raw(
+                            exit_code.try_into().unwrap(),
+                        )
+                    }
+                    #[cfg(unix)]
+                    {
+                        std::os::unix::process::ExitStatusExt::from_raw(exit_code)
+                    }
+                },
+                stdout: stdout.as_bytes().to_vec(),
+                stderr: stderr.as_bytes().to_vec(),
+            };
+            Arc::new(Self {
+                on_run,
+                output: Mutex::new(Some(output)),
+                ..Default::default()
+            })
+        }
+    }
+
+    #[async_trait]
+    impl Executor for MockExecutor {
+        async fn run(&self, program: &OsStr, args: &[&OsStr]) -> std::io::Result<Output> {
+            if let Some(on_run) = &self.on_run {
+                on_run(program, args);
+            }
+            if let Some(err) = &self.error {
+                return Err(std::io::Error::new(err.kind(), err.to_string()));
+            }
+            let mut output = self.output.lock().unwrap();
+            Ok(output.take().expect("MockExecutor output already consumed"))
+        }
+    }
 
     pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
 
