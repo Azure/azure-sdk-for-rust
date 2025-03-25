@@ -65,3 +65,9 @@ jobs:
       ArtifactPath: $(Build.ArtifactStagingDirectory)
       ArtifactName: ${{ parameters.PipelineArtifactName }}
       CustomCondition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))
+
+  - template: /eng/common/pipelines/templates/steps/create-apireview.yml
+    parameters:
+      Artifacts: ${{ parameters.Artifacts }}
+      
+  - template: /eng/common/pipelines/templates/steps/detect-api-changes.yml

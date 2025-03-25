@@ -90,15 +90,16 @@ stages:
 
                 - pwsh: |
                     $additionalOwners = @('heaths', 'hallipr')
-                    $crateName = '${{artifact.name}}'
                     $token = $env:CARGO_REGISTRY_TOKEN
+                    $crateName = '${{artifact.name}}'
+                    $artifactPath = "$(Pipeline.Workspace)/drop/$crateName"
 
                     Write-Host "Dry-run verifying '$crateName'"
 
                     # remove Cargo.toml.orig before calling dry-run as it causes a reserved file name error
-                    Remove-Item -Path "$(Pipeline.Workspace)/drop/Packages/$crateName/Cargo.toml.orig" -Force -ErrorAction Ignore
+                    Remove-Item -Path "$artifactPath/contents/Cargo.toml.orig" -Force -ErrorAction Ignore
 
-                    $command = "cargo publish --manifest-path '$(Pipeline.Workspace)/drop/Packages/$crateName/Cargo.toml' --dry-run"
+                    $command = "cargo publish --manifest-path '$artifactPath/contents/Cargo.toml' --dry-run"
                     Write-Host "> $command"
                     Invoke-Expression $command
 
@@ -109,13 +110,11 @@ stages:
 
                     Write-Host "Publishing package '$crateName'"
 
-                    $cargoBin = "$(Pipeline.Workspace)/drop/Packages/$crateName.bin"
-
                     # https://doc.rust-lang.org/cargo/reference/registry-web-api.html#publish
                     Invoke-WebRequest -Method Put -Uri 'https://crates.io/api/v1/crates/new' `
                       -Headers @{ Accept = 'application/json'; Authorization = $token } `
                       -ContentType 'application/json' `
-                      -InFile $cargoBin
+                      -InFile "$artifactPath/$crateName.bin"
 
                     $existingOwners = (cargo owner --list $crateName) -replace " \(.*", ""
                     $missingOwners = $additionalOwners | Where-Object { $existingOwners -notcontains $_ }

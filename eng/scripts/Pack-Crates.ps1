@@ -231,22 +231,16 @@ try {
 
     if ($OutputPath -and $package.OutputPackage) {
       Write-Host "`nProcessing package '$($package.name)'"
-      # Create API view file
-      $apiReviewFile = Create-ApiReview $package
 
       $sourceCrateFile = "$RepoRoot/target/package/$packageName-$packageVersion.crate"
 
-      $targetDirectory = "$OutputPath/Packages/$packageName"
-      $targetCrateFile = "$OutputPath/Packages/$packageName-$packageVersion.crate"
-      $targetJsonFile = "$OutputPath/Packages/$packageName-$packageVersion.json"
-      $targetBinFile = "$OutputPath/Packages/$packageName.bin"
-      $targetApiReviewFile = "$OutputPath/Packages/$packageName.rust.json"
+      New-Item -ItemType Directory -Path "$OutputPath/$packageName" -Force | Out-Null
 
-      if (Test-Path $targetDirectory) {
-        Write-Host "Removing existing directory '$targetDirectory'"
-        Remove-Item -Path $targetDirectory -Recurse -Force
-      }
-      New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+      $targetExpandedDirectory = "$OutputPath/$packageName/contents"
+      $targetCrateFile = "$OutputPath/$packageName/$packageName-$packageVersion.crate"
+      $targetJsonFile = "$OutputPath/$packageName/$packageName-$packageVersion.json"
+      $targetBinFile = "$OutputPath/$packageName/$packageName.bin"
+      $targetApiReviewFile = "$OutputPath/$packageName/$packageName`_rust.json"
 
       Write-Host "Copying crate file to '$targetCrateFile'"
       Copy-Item -Path $sourceCrateFile -Destination $targetCrateFile -Force
@@ -260,9 +254,19 @@ try {
       Write-Host "Writing crates.io request bundle to '$targetBinFile'"
       [IO.File]::WriteAllBytes($targetBinFile, $uploadBytes)
 
-      Write-Host "Exctracting crate file to '$targetDirectory'"
-      tar -xf $sourceCrateFile --directory $targetDirectory --strip-components=1
+      if (Test-Path $targetExpandedDirectory) {
+        Write-Host "Removing existing directory '$targetExpandedDirectory'"
+        Remove-Item -Path $targetExpandedDirectory -Recurse -Force
+      }
 
+      Write-Host "Exctracting crate file to '$targetExpandedDirectory'"
+      New-Item -ItemType Directory -Path $targetExpandedDirectory -Force | Out-Null
+      tar -xf $sourceCrateFile --directory $targetExpandedDirectory --strip-components=1
+
+      
+      Write-Host "Creating API review file"
+      $apiReviewFile = Create-ApiReview $package
+      
       Write-Host "Copying API review file to '$targetApiReviewFile'"
       Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
     }
