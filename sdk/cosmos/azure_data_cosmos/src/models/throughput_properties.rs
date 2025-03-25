@@ -3,9 +3,9 @@
 
 use std::borrow::Cow;
 
-use azure_core::{
+use azure_core::http::{
     headers::{AsHeaders, HeaderName, HeaderValue},
-    Model,
+    response::Model,
 };
 use serde::{Deserialize, Serialize};
 

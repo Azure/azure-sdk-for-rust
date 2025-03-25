@@ -4,8 +4,7 @@
 use crate::{ImdsId, ImdsManagedIdentityCredential, TokenCredentialOptions};
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
-    headers::HeaderName,
-    Url,
+    http::{headers::HeaderName, Url},
 };
 use std::sync::Arc;
 

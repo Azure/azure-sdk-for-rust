@@ -8,7 +8,10 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
 };
-use azure_core::{credentials::TokenCredential, Method, Request, Response, Url};
+use azure_core::{
+    credentials::TokenCredential,
+    http::{request::Request, response::Response, Method, Pager, Url},
+};
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -129,10 +132,10 @@ impl CosmosClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryDatabasesOptions<'_>>,
-    ) -> azure_core::Result<azure_core::Pager<DatabaseQueryResults>> {
+    ) -> azure_core::Result<Pager<DatabaseQueryResults>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.databases_link);
-        let base_request = Request::new(url, azure_core::Method::Post);
+        let base_request = Request::new(url, Method::Post);
 
         self.pipeline.send_query_request(
             options.method_options.context,

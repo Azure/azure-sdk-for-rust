@@ -211,10 +211,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Update a secret using the secret client.
     let secret_update_parameters = SecretUpdateParameters {
         content_type: Some("text/plain".into()),
-        tags: Some(HashMap::from_iter(vec![(
+        tags: HashMap::from_iter(vec![(
             "tag-name".into(),
             "tag-value".into(),
-        )])),
+        )]),
         ..Default::default()
     };
 
@@ -276,12 +276,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    let mut pager = client.get_secrets(None)?.into_stream();
+    let mut pager = client.list_secrets(None)?.into_stream();
     while let Some(secrets) = pager.try_next().await? {
-        let Some(secrets) = secrets.into_body().await?.value else {
-            continue;
-        };
-
+        let secrets = secrets.into_body().await?.value;
         for secret in secrets {
             // Get the secret name from the ID.
             let name = secret.resource_id()?.name;

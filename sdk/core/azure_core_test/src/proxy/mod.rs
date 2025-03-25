@@ -14,8 +14,10 @@ pub(crate) mod sanitizers;
 use azure_core::Result;
 use azure_core::{
     error::ErrorKind,
-    headers::{HeaderName, HeaderValue},
-    Header, Url,
+    http::{
+        headers::{Header, HeaderName, HeaderValue},
+        Url,
+    },
 };
 #[cfg(not(target_arch = "wasm32"))]
 use bootstrap::*;

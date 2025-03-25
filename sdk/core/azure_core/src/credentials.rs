@@ -7,8 +7,12 @@ use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug, time::Duration};
 use typespec_client_core::date::OffsetDateTime;
 
+/// Default Azure authorization scope.
 pub static DEFAULT_SCOPE_SUFFIX: &str = "/.default";
 
+/// Represents a secret.
+///
+/// The [`Debug`] implementation will not print the secret.
 #[derive(Clone, Deserialize, Serialize, Eq)]
 pub struct Secret(Cow<'static, str>);
 

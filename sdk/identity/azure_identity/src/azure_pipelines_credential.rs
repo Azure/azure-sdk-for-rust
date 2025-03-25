@@ -8,8 +8,11 @@ use crate::{
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::ErrorKind,
-    headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
-    HttpClient, Method, Request, StatusCode, Url,
+    http::{
+        headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
+        request::Request,
+        HttpClient, Method, StatusCode, Url,
+    },
 };
 use serde::Deserialize;
 use std::{convert::Infallible, fmt, sync::Arc};
@@ -195,7 +198,7 @@ impl fmt::Display for ErrorHeaders {
 mod tests {
     use super::*;
     use crate::env::Env;
-    use azure_core::{Bytes, Response};
+    use azure_core::{http::Response, Bytes};
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt as _;
 

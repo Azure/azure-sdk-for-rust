@@ -3,7 +3,13 @@
 
 //! Model types sent to and received from the Azure Cosmos DB API.
 
-use azure_core::{date::OffsetDateTime, Model};
+use azure_core::{
+    date::OffsetDateTime,
+    http::{
+        response::{Model, ResponseBody},
+        Etag,
+    },
+};
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 
 mod container_properties;
@@ -45,10 +51,8 @@ pub struct QueryResults<T> {
     pub items: Vec<T>,
 }
 
-impl<T: DeserializeOwned> azure_core::Model for QueryResults<T> {
-    async fn from_response_body(
-        body: azure_core::ResponseBody,
-    ) -> typespec_client_core::Result<Self> {
+impl<T: DeserializeOwned> Model for QueryResults<T> {
+    async fn from_response_body(body: ResponseBody) -> typespec_client_core::Result<Self> {
         body.json().await
     }
 }
@@ -77,7 +81,7 @@ pub struct SystemProperties {
     #[serde(default)]
     #[serde(skip_serializing)]
     #[serde(rename = "_etag")]
-    pub etag: Option<azure_core::Etag>,
+    pub etag: Option<Etag>,
 
     /// The self-link associated with the resource.
     #[serde(default)]

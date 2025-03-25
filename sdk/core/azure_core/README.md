@@ -57,7 +57,7 @@ Various service specific options are usually added to its subclasses, but a set 
 available directly on `ClientOptions`.
 
 ```rust no_run
-use azure_core::ClientOptions;
+use azure_core::http::ClientOptions;
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 
@@ -87,7 +87,7 @@ _Service methods_ return a shared `azure_core` type `Response<T>` where `T` is e
 This type provides access to both the deserialized result of the service call, and to the details of the HTTP response returned from the server.
 
 ```rust no_run
-use azure_core::Response;
+use azure_core::http::Response;
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::{models::SecretBundle, SecretClient};
 
@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 When a service call fails, the returned `Result` will contain an `Error`. The `Error` type provides a status property with an HTTP status code and an error_code property with a service-specific error code.
 
 ```rust no_run
-use azure_core::{error::{ErrorKind, HttpError}, Response, StatusCode};
+use azure_core::{error::{ErrorKind, HttpError}, http::{Response, StatusCode}};
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::SecretClient;
 
@@ -184,14 +184,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // get a stream
-    let mut pager = client.get_secrets(None)?.into_stream();
+    let mut pager = client.list_secrets(None)?.into_stream();
 
     // poll the pager until there are no more SecretListResults
     while let Some(secrets) = pager.try_next().await? {
-        let Some(secrets) = secrets.into_body().await?.value else {
-            continue;
-        };
-
+        let secrets = secrets.into_body().await?.value;
         // loop through secrets in SecretsListResults
         for secret in secrets {
             // get the secret name from the ID
