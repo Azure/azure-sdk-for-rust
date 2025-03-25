@@ -4,12 +4,14 @@
 //! Refresh tokens.
 
 use azure_core::{
-    content_type,
     credentials::Secret,
     error::{http_response_from_body, Error, ErrorKind, ResultExt},
-    headers,
+    http::{
+        headers::{self, content_type},
+        request::Request,
+        HttpClient, Method, Url,
+    },
     json::from_json,
-    HttpClient, Method, Request, Url,
 };
 use serde::Deserialize;
 use std::fmt;
@@ -151,7 +153,7 @@ mod tests {
     #[test]
     fn ensure_that_exchange_is_send() {
         require_send(exchange(
-            azure_core::new_http_client(),
+            azure_core::http::new_http_client(),
             "UNUSED",
             "UNUSED",
             None,

@@ -19,7 +19,6 @@ async-trait.workspace = true
 bytes.workspace = true
 futures.workspace = true
 hmac = { workspace = true, optional = true }
-once_cell.workspace = true
 openssl = { workspace = true, optional = true }
 pin-project.workspace = true
 serde.workspace = true
@@ -55,9 +54,7 @@ reqwest_deflate = ["typespec_client_core/reqwest_deflate"]
 reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
-tokio_fs = ["typespec_client_core/tokio_fs"]
-tokio_process = ["dep:tokio", "tokio/process"]
-tokio_sleep = ["typespec_client_core/tokio_sleep"]
+tokio = ["dep:tokio", "tokio/process", "typespec_client_core/tokio"]
 xml = ["typespec_client_core/xml"]
 
 [lints]
@@ -71,8 +68,6 @@ features = [
   "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_rustls",
-  "tokio_fs",
-  "tokio_process",
-  "tokio_sleep",
+  "tokio",
   "xml",
 ]

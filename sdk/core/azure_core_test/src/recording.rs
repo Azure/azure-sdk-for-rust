@@ -21,9 +21,11 @@ use azure_core::{
     base64,
     credentials::TokenCredential,
     error::ErrorKind,
-    headers::{AsHeaders, HeaderName, HeaderValue},
+    http::{
+        headers::{AsHeaders, Header, HeaderName, HeaderValue},
+        ClientOptions,
+    },
     test::TestMode,
-    ClientOptions, Header,
 };
 use rand::{
     distributions::{Alphanumeric, DistString, Distribution, Standard},
@@ -99,7 +101,7 @@ impl Recording {
     ///
     /// # struct MyClient;
     /// # #[derive(Default)]
-    /// # struct MyClientOptions { client_options: azure_core::ClientOptions };
+    /// # struct MyClientOptions { client_options: azure_core::http::ClientOptions };
     /// # impl MyClient {
     /// #   fn new(endpoint: impl AsRef<str>, options: Option<MyClientOptions>) -> Self { todo!() }
     /// #   async fn invoke(&self) -> azure_core::Result<()> { todo!() }

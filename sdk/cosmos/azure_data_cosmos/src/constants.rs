@@ -6,9 +6,9 @@
 
 //! Constants defining HTTP headers and other values relevant to Azure Cosmos DB APIs.
 
-use azure_core::{
+use azure_core::http::{
     headers::{HeaderName, HeaderValue},
-    request_options::ContentType,
+    request::options::ContentType,
 };
 
 pub const QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");

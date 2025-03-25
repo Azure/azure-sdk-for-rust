@@ -3,7 +3,7 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::{Result, StatusCode};
+use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_keys::{
     models::{
@@ -92,10 +92,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
     // Update key properties.
     let properties = KeyUpdateParameters {
         key_attributes: key.attributes,
-        tags: Some(HashMap::from_iter(vec![(
-            "test-name".into(),
-            "update_key_properties".into(),
-        )])),
+        tags: HashMap::from_iter(vec![("test-name".into(), "update_key_properties".into())]),
         ..Default::default()
     };
     let key = client
@@ -104,7 +101,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
         .into_body()
         .await?;
     assert_eq!(
-        key.tags.as_ref().and_then(|tags| tags.get("test-name")),
+        key.tags.get("test-name"),
         Some(&String::from("update_key_properties"))
     );
 
@@ -150,12 +147,9 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
     assert!(matches!(secret2.key, Some(ref jwk) if jwk.x.is_some()));
 
     // List keys.
-    let mut pager = client.get_keys(None)?.into_stream();
+    let mut pager = client.list_keys(None)?.into_stream();
     while let Some(keys) = pager.try_next().await? {
-        let Some(keys) = keys.into_body().await?.value else {
-            continue;
-        };
-
+        let keys = keys.into_body().await?.value;
         for key in keys {
             // Get the key name from the ID.
             let name = key.resource_id()?.name;

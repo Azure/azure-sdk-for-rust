@@ -6,7 +6,12 @@
 
 use azure_core::{
     error::{Error, ErrorKind, ResultExt},
-    Body, Bytes, HttpClient, Request, Url,
+    http::{
+        headers,
+        request::{Body, Request},
+        HttpClient, Method, StatusCode, Url,
+    },
+    Bytes,
 };
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 use tracing::warn;
@@ -53,23 +58,21 @@ impl Oauth2HttpClient {
     }
 }
 
-fn try_from_method(method: &oauth2::http::Method) -> azure_core::Result<azure_core::Method> {
+fn try_from_method(method: &oauth2::http::Method) -> azure_core::Result<Method> {
     match *method {
-        oauth2::http::Method::GET => Ok(azure_core::Method::Get),
-        oauth2::http::Method::POST => Ok(azure_core::Method::Post),
-        oauth2::http::Method::PUT => Ok(azure_core::Method::Put),
-        oauth2::http::Method::DELETE => Ok(azure_core::Method::Delete),
-        oauth2::http::Method::HEAD => Ok(azure_core::Method::Head),
-        oauth2::http::Method::PATCH => Ok(azure_core::Method::Patch),
+        oauth2::http::Method::GET => Ok(Method::Get),
+        oauth2::http::Method::POST => Ok(Method::Post),
+        oauth2::http::Method::PUT => Ok(Method::Put),
+        oauth2::http::Method::DELETE => Ok(Method::Delete),
+        oauth2::http::Method::HEAD => Ok(Method::Head),
+        oauth2::http::Method::PATCH => Ok(Method::Patch),
         _ => Err(Error::with_message(ErrorKind::DataConversion, || {
             format!("unsupported oauth2::http::Method {method}")
         })),
     }
 }
 
-fn try_from_headers(
-    headers: &azure_core::headers::Headers,
-) -> azure_core::Result<oauth2::http::HeaderMap> {
+fn try_from_headers(headers: &headers::Headers) -> azure_core::Result<oauth2::http::HeaderMap> {
     let mut header_map = oauth2::http::HeaderMap::new();
     for (name, value) in headers.iter() {
         let name = name.as_str();
@@ -89,19 +92,19 @@ fn try_from_headers(
     Ok(header_map)
 }
 
-fn try_from_status(status: azure_core::StatusCode) -> azure_core::Result<oauth2::http::StatusCode> {
+fn try_from_status(status: StatusCode) -> azure_core::Result<oauth2::http::StatusCode> {
     oauth2::http::StatusCode::from_u16(*status).map_kind(ErrorKind::DataConversion)
 }
 
-fn to_headers(map: &oauth2::http::header::HeaderMap) -> azure_core::headers::Headers {
+fn to_headers(map: &oauth2::http::header::HeaderMap) -> headers::Headers {
     let map = map
         .iter()
         .filter_map(|(k, v)| {
             let key = k.as_str();
             if let Ok(value) = v.to_str() {
                 Some((
-                    azure_core::headers::HeaderName::from(key.to_owned()),
-                    azure_core::headers::HeaderValue::from(value.to_owned()),
+                    headers::HeaderName::from(key.to_owned()),
+                    headers::HeaderValue::from(value.to_owned()),
                 ))
             } else {
                 warn!("header value for `{key}` is not utf8");
@@ -109,5 +112,5 @@ fn to_headers(map: &oauth2::http::header::HeaderMap) -> azure_core::headers::Hea
             }
         })
         .collect::<HashMap<_, _>>();
-    azure_core::headers::Headers::from(map)
+    headers::Headers::from(map)
 }

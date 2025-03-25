@@ -4,9 +4,13 @@
 mod response;
 
 use azure_core::{
-    content_type,
     error::{http_response_from_body, ErrorKind, ResultExt},
-    headers, HttpClient, Method, Request, Response, Url,
+    http::{
+        headers::{self, content_type},
+        request::Request,
+        response::Response,
+        HttpClient, Method, Url,
+    },
 };
 use response::LoginResponse;
 use std::sync::Arc;

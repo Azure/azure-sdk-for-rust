@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! HTTP responses.
+
 use crate::http::{headers::Headers, StatusCode};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};

@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(feature = "tokio_fs")]
+//! Asynchronous file system utilities.
+
+#[cfg(feature = "tokio")]
 mod tokio;
 
-#[cfg(feature = "tokio_fs")]
+#[cfg(feature = "tokio")]
 pub use tokio::*;
