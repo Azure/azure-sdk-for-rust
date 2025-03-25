@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
+    generated::clients::{BlobClient as GeneratedBlobClient, BlobClientOptions},
     models::{
         BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlockBlobClientCommitBlockListOptions,
@@ -10,7 +11,6 @@ use crate::{
         BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
-    BlobClientOptions, GeneratedBlobClient,
 };
 use azure_core::{
     credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy, RequestContent,

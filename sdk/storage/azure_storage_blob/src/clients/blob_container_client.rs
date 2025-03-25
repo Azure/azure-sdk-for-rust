@@ -2,13 +2,15 @@
 // Licensed under the MIT License.
 
 use crate::{
+    generated::clients::{
+        BlobContainerClient as GeneratedBlobContainerClient, BlobContainerClientOptions,
+    },
     models::{
         BlobContainerClientCreateOptions, BlobContainerClientCreateResult,
         BlobContainerClientDeleteOptions, BlobContainerClientDeleteResult,
         BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
     },
     pipeline::StorageHeadersPolicy,
-    BlobContainerClientOptions, GeneratedBlobContainerClient,
 };
 use azure_core::{
     credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result, Url,
