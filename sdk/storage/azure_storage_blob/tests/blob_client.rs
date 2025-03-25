@@ -11,7 +11,7 @@ use azure_storage_blob::{
 use azure_storage_blob_test::recorded_test_setup;
 use std::error::Error;
 
-#[recorded::test]
+#[recorded::test(live)]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
@@ -59,8 +59,6 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         .await?;
 
     let response = blob_client.get_blob_properties(None).await?;
-    let client_request_id = response.client_request_id()?.unwrap();
-    println!("Client request ID:{}", client_request_id);
 
     // Assert
 

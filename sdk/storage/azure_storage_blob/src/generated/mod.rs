@@ -5,3 +5,11 @@
 
 pub mod clients;
 pub mod models;
+
+// TODO: This is coming straight out of the generator currently but we would like to omit this to hide the generated
+// clients from being exported
+// pub use clients::{
+//     AppendBlobClient, AppendBlobClientOptions, BlobClient, BlobClientOptions, BlobContainerClient,
+//     BlobContainerClientOptions, BlobServiceClient, BlobServiceClientOptions, BlockBlobClient,
+//     BlockBlobClientOptions, PageBlobClient, PageBlobClientOptions,
+// };
