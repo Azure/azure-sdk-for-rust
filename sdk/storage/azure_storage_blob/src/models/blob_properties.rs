@@ -1,16 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::generated::models::{AccessTier, BlobType, LeaseState};
 use azure_core::{
-    headers::{
-        FromHeaders, HeaderName, Headers, BLOB_ACCESS_TIER, BLOB_TYPE, CREATION_TIME, LEASE_STATE,
-        LEASE_STATUS, SERVER_ENCRYPTED,
+    http::{
+        headers::{
+            FromHeaders, HeaderName, Headers, BLOB_ACCESS_TIER, BLOB_TYPE, CREATION_TIME,
+            LEASE_STATE, LEASE_STATUS, SERVER_ENCRYPTED,
+        },
+        Etag, LeaseStatus,
     },
-    Error, Etag, LeaseStatus,
+    Error,
 };
 use typespec_client_core::fmt::SafeDebug;
-
-use crate::models::{AccessTier, BlobType, LeaseState};
 
 pub const CONTENT_LENGTH: HeaderName = HeaderName::from_static("content-length");
 pub const CONTENT_MD5: HeaderName = HeaderName::from_static("content-md5");

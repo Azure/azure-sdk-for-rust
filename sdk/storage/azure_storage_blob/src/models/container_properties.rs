@@ -1,16 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::generated::models::LeaseState;
 use azure_core::{
-    headers::{
-        FromHeaders, HeaderName, Headers, ETAG, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD,
-        LEASE_STATE, LEASE_STATUS,
+    http::{
+        headers::{
+            FromHeaders, HeaderName, Headers, ETAG, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD,
+            LEASE_STATE, LEASE_STATUS,
+        },
+        Etag, LeaseStatus,
     },
-    Error, Etag, LeaseStatus,
+    Error,
 };
 use typespec_client_core::fmt::SafeDebug;
-
-use crate::models::LeaseState;
 
 pub const LAST_MODIFIED: HeaderName = HeaderName::from_static("last-modified");
 pub const IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED: HeaderName =
