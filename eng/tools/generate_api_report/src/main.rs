@@ -11,6 +11,13 @@ use std::path::Path;
 use std::process::Command;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // Verify we're running from the repository root
+    if !Path::new("eng/tools/generate_api_report").exists() {
+        return Err(
+            "This tool must be run from the root of the azure-sdk-for-rust repository. Use: cargo run --manifest-path eng/tools/generate_api_report/Cargo.toml -- --package {package_name}".into(),
+        );
+    }
+
     // Get the package name from command-line arguments
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 || args[1] != "--package" {
@@ -56,6 +63,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut file = File::open(path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
+
+    println!("Processing rustdoc output for package: {}", package_name);
 
     let mut root: Crate = serde_json::from_str(&contents)?;
 
