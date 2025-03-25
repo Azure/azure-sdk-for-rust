@@ -7,7 +7,6 @@
 
 mod common;
 mod in_memory_checkpoint_store;
-
 use azure_core::error::ErrorKind as AzureErrorKind;
 use azure_messaging_eventhubs::CheckpointStore;
 use in_memory_checkpoint_store::InMemoryCheckpointStore;

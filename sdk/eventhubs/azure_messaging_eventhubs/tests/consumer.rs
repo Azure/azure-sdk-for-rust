@@ -130,92 +130,14 @@ async fn consumer_get_partition_properties(ctx: TestContext) -> Result<(), Box<d
 }
 
 #[recorded::test(live)]
-async fn receive_events_on_all_partitions() -> Result<(), Box<dyn Error>> {
-    common::setup();
-
+async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
 
     info!("Establishing credentials.");
 
+    let recording = ctx.recording();
     let credential = recording.credential();
-
-    info!("Creating client.");
-    let client = ConsumerClient::builder()
-        .with_application_id("test_open")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
-        .await?;
-
-    let eh_properties = client.get_eventhub_properties().await?;
-    info!("EventHub properties: {:?}", eh_properties);
-
-    let mut receivers = Vec::new();
-    for partition_id in eh_properties.partition_ids {
-        info!("Creating receiver for partition: {partition_id}");
-        let receiver = client
-            .open_receiver_on_partition(
-                partition_id.as_str(),
-                Some(OpenReceiverOptions {
-                    start_position: Some(StartPosition {
-                        location: azure_messaging_eventhubs::StartLocation::Earliest,
-                        ..Default::default()
-                    }),
-                    // Timeout for individual receive operations.
-                    receive_timeout: Some(Duration::from_secs(5)),
-                    ..Default::default()
-                }),
-            )
-            .await?;
-
-        receivers.push(receiver);
-    }
-    info!("Created {} receivers.", receivers.len());
-
-    for receiver in receivers {
-        info!(
-            "Creating event receive stream on receiver for: {:?}",
-            receiver.partition_id()
-        );
-        let event_stream = receiver.stream_events();
-
-        pin_mut!(event_stream); // Needed for iteration.
-
-        let mut count = 0;
-
-        const TEST_DURATION: std::time::Duration = Duration::from_secs(10);
-        info!("Receiving events for {:?}.", TEST_DURATION);
-
-        // Read events from the stream for a bit of time.
-
-        let result = timeout(TEST_DURATION, async {
-            while let Some(event) = event_stream.next().await {
-                match event {
-                    Ok(_event) => {
-                        //                    info!("Received the following message:: {:?}", event);
-                        count += 1;
-                    }
-                    Err(err) => {
-                        info!("Error while receiving message: {:?}", err);
-                    }
-                }
-            }
-        })
-        .await;
-
-        info!("Received {count} messages in {TEST_DURATION:?}. Timeout: {result:?}");
-    }
-
-    Ok(())
-}
-
-#[recorded::test(live)]
-async fn receive_events_on_all_partitions() -> Result<(), Box<dyn Error>> {
-    let host = env::var("EVENTHUBS_HOST")?;
-    let eventhub = env::var("EVENTHUB_NAME")?;
-
-    info!("Establishing credentials.");
-
-    let credential = DefaultAzureCredential::new()?;
 
     info!("Creating client.");
     let client = ConsumerClient::builder()

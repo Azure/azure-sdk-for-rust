@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use azure_core::{error::ErrorKind as AzureErrorKind, Error, Etag, Result, Uuid};
+use azure_core::{error::ErrorKind as AzureErrorKind, http::Etag, Error, Result, Uuid};
 use azure_messaging_eventhubs::{
     models::{Checkpoint, Ownership},
     CheckpointStore,

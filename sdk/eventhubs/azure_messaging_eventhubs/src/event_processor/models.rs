@@ -3,7 +3,7 @@
 
 use std::{collections::HashMap, time::SystemTime};
 
-use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
+use azure_core::{error::ErrorKind as AzureErrorKind, http::Etag, Error, Result};
 
 use crate::StartPosition;
 
@@ -147,7 +147,7 @@ pub struct Ownership {
     /// The identifier of the owner (consumer) of the partition.
     pub(crate) owner_id: String,
     /// The ETag associated with the ownership.
-    pub(crate) etag: Option<azure_core::Etag>,
+    pub(crate) etag: Option<Etag>,
     /// The last modified time of the ownership.
     pub(crate) last_modified_time: Option<SystemTime>,
 }
@@ -171,7 +171,7 @@ impl Ownership {
         fully_qualified_namespace: &str,
         partition_id: &str,
         owner_id: &str,
-        etag: Option<azure_core::Etag>,
+        etag: Option<Etag>,
         last_modified_time: Option<SystemTime>,
     ) -> Self {
         Ownership {
@@ -209,7 +209,7 @@ impl Ownership {
         &self.owner_id
     }
     /// Returns the ETag associated with this ownership.
-    pub fn etag(&self) -> Option<&azure_core::Etag> {
+    pub fn etag(&self) -> Option<&Etag> {
         self.etag.as_ref()
     }
     /// Returns the last modified time associated with this ownership.
@@ -222,7 +222,7 @@ impl Ownership {
         self.last_modified_time = Some(last_modified_time);
     }
     /// Sets the ETag for this ownership.
-    pub fn set_etag(&mut self, etag: azure_core::Etag) {
+    pub fn set_etag(&mut self, etag: Etag) {
         self.etag = Some(etag);
     }
 
