@@ -11,6 +11,7 @@
 mod app_service_managed_identity_credential;
 #[cfg(not(target_arch = "wasm32"))]
 mod azure_cli_credentials;
+pub(crate) mod cache;
 mod client_assertion_credentials;
 #[cfg(feature = "client_certificate")]
 mod client_certificate_credentials;

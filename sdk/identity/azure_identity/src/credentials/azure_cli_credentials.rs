@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    credentials::TokenCredentialOptions, validate_scope, validate_subscription, validate_tenant_id,
+    credentials::{cache::TokenCache, TokenCredentialOptions},
+    validate_scope, validate_subscription, validate_tenant_id,
 };
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
@@ -150,6 +151,7 @@ impl CliTokenResponse {
 /// Enables authentication to Azure Active Directory using Azure CLI to obtain an access token.
 #[derive(Debug)]
 pub struct AzureCliCredential {
+    cache: TokenCache,
     options: AzureCliCredentialOptions,
 }
 
@@ -193,7 +195,10 @@ impl AzureCliCredential {
             options.executor = Some(new_executor());
         }
 
-        Ok(Arc::new(Self { options }))
+        Ok(Arc::new(Self {
+            cache: TokenCache::new(),
+            options,
+        }))
     }
 
     /// Get an access token for an optional resource
@@ -286,7 +291,7 @@ impl AzureCliCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AzureCliCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.get_token(scopes).await
+        self.cache.get_token(scopes, self.get_token(scopes)).await
     }
 }
 

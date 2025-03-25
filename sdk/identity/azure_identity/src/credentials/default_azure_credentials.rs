@@ -3,7 +3,7 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::AzureCliCredential;
-use crate::TokenCredentialOptions;
+use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::error::ResultExt;
 use azure_core::{
@@ -155,6 +155,7 @@ impl TokenCredential for DefaultAzureCredentialKind {
 #[derive(Debug)]
 pub struct DefaultAzureCredential {
     sources: Vec<DefaultAzureCredentialKind>,
+    cache: TokenCache,
 }
 
 impl DefaultAzureCredential {
@@ -179,7 +180,10 @@ impl DefaultAzureCredential {
 
     /// Creates a `DefaultAzureCredential` with specified sources.
     fn with_sources(sources: Vec<DefaultAzureCredentialKind>) -> azure_core::Result<Arc<Self>> {
-        Ok(Arc::new(DefaultAzureCredential { sources }))
+        Ok(Arc::new(DefaultAzureCredential {
+            sources,
+            cache: TokenCache::new(),
+        }))
     }
 
     /// Try to fetch a token using each of the credential sources until one succeeds
@@ -206,7 +210,7 @@ impl DefaultAzureCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.get_token(scopes).await
+        self.cache.get_token(scopes, self.get_token(scopes)).await
     }
 }
 
