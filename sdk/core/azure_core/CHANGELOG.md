@@ -9,6 +9,8 @@
 
 ### Breaking Changes
 
+- Removed `azure_core::credentials::TokenCredential::clear_cache()`
+
 ### Bugs Fixed
 
 ### Other Changes
