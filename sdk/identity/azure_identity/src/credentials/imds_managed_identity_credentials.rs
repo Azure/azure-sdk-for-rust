@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
+use crate::TokenCredentialOptions;
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind},
@@ -45,7 +45,6 @@ pub(crate) struct ImdsManagedIdentityCredential {
     secret_header: HeaderName,
     secret_env: String,
     id: ImdsId,
-    cache: TokenCache,
 }
 
 impl ImdsManagedIdentityCredential {
@@ -65,7 +64,6 @@ impl ImdsManagedIdentityCredential {
             secret_header: secret_header.to_owned(),
             secret_env: secret_env.to_owned(),
             id,
-            cache: TokenCache::new(),
         }
     }
 
@@ -133,11 +131,7 @@ impl ImdsManagedIdentityCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ImdsManagedIdentityCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
-    }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.cache.clear().await
+        self.get_token(scopes).await
     }
 }
 

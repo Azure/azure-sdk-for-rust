@@ -44,8 +44,4 @@ impl TokenCredential for VirtualMachineManagedIdentityCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.credential.get_token(scopes).await
     }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.credential.clear_cache().await
-    }
 }

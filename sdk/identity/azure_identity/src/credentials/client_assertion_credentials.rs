@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, federated_credentials_flow, TokenCredentialOptions};
+use crate::{federated_credentials_flow, TokenCredentialOptions};
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::{ErrorKind, ResultExt},
@@ -18,7 +18,6 @@ pub struct ClientAssertionCredential<C> {
     tenant_id: String,
     client_id: String,
     assertion: C,
-    cache: TokenCache,
     options: ClientAssertionCredentialOptions,
 }
 
@@ -75,7 +74,6 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
             tenant_id,
             client_id,
             assertion,
-            cache: TokenCache::new(),
             options: options.unwrap_or_default(),
         })
     }
@@ -154,10 +152,6 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
-    }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.cache.clear().await
+        self.get_token(scopes).await
     }
 }

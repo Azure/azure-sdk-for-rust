@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
+use crate::TokenCredentialOptions;
 use azure_core::{
     base64, content_type,
     credentials::{AccessToken, Secret, TokenCredential},
@@ -98,7 +98,6 @@ pub struct ClientCertificateCredential {
     http_client: Arc<dyn HttpClient>,
     authority_host: Url,
     send_certificate_chain: bool,
-    cache: TokenCache,
 }
 
 impl ClientCertificateCredential {
@@ -123,7 +122,6 @@ impl ClientCertificateCredential {
             http_client: options.options().http_client().clone(),
             authority_host: options.options().authority_host()?.clone(),
             send_certificate_chain: options.send_certificate_chain(),
-            cache: TokenCache::new(),
         }))
     }
 
@@ -350,10 +348,6 @@ fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ClientCertificateCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
-    }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.cache.clear().await
+        self.get_token(scopes).await
     }
 }

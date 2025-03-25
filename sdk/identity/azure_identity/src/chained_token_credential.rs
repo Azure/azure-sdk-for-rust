@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::credentials::cache::TokenCache;
 use crate::TokenCredentialOptions;
 use async_lock::RwLock;
 use azure_core::{
@@ -35,7 +34,6 @@ pub struct ChainedTokenCredential {
     #[allow(dead_code)]
     options: ChainedTokenCredentialOptions,
     sources: Vec<Arc<dyn TokenCredential>>,
-    cache: TokenCache,
     successful_credential: RwLock<Option<Arc<dyn TokenCredential>>>,
 }
 
@@ -45,7 +43,6 @@ impl ChainedTokenCredential {
         Self {
             options: options.unwrap_or_default(),
             sources: Vec::new(),
-            cache: TokenCache::new(),
             successful_credential: RwLock::new(None),
         }
     }
@@ -102,7 +99,6 @@ impl From<&[Arc<dyn TokenCredential>]> for ChainedTokenCredential {
         Self {
             options: ChainedTokenCredentialOptions::default(),
             sources: credential_options.to_vec(),
-            cache: TokenCache::new(),
             successful_credential: RwLock::new(None),
         }
     }
@@ -112,22 +108,7 @@ impl From<&[Arc<dyn TokenCredential>]> for ChainedTokenCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ChainedTokenCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
-    }
-
-    /// Clear the credential's cache.
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        // clear the internal cache as well as each of the underlying providers
-        self.cache.clear().await?;
-
-        for source in &self.sources {
-            source.clear_cache().await?;
-        }
-
-        // clear the successful credential if we are clearing the token cache
-        self.successful_credential.write().await.take();
-
-        Ok(())
+        self.get_token(scopes).await
     }
 }
 
@@ -181,10 +162,6 @@ mod tests {
             let mut count = self.counter.lock().await;
             *count += 1;
             Err(Error::message(ErrorKind::Credential, "failed to get token"))
-        }
-
-        async fn clear_cache(&self) -> azure_core::Result<()> {
-            Ok(())
         }
     }
 

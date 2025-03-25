@@ -3,7 +3,7 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::AzureCliCredential;
-use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
+use crate::TokenCredentialOptions;
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::error::ResultExt;
 use azure_core::{
@@ -142,20 +142,6 @@ impl TokenCredential for DefaultAzureCredentialKind {
             }
         }
     }
-
-    /// Clear the credential's cache.
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        match self {
-            #[cfg(not(target_arch = "wasm32"))]
-            DefaultAzureCredentialKind::AzureCli(credential) => credential.clear_cache().await,
-            #[cfg(target_arch = "wasm32")]
-            _ => {
-                return Err(Error::with_message(ErrorKind::Credential, || {
-                    "No credential providers available"
-                }));
-            }
-        }
-    }
 }
 
 /// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.
@@ -169,7 +155,6 @@ impl TokenCredential for DefaultAzureCredentialKind {
 #[derive(Debug)]
 pub struct DefaultAzureCredential {
     sources: Vec<DefaultAzureCredentialKind>,
-    cache: TokenCache,
 }
 
 impl DefaultAzureCredential {
@@ -194,10 +179,7 @@ impl DefaultAzureCredential {
 
     /// Creates a `DefaultAzureCredential` with specified sources.
     fn with_sources(sources: Vec<DefaultAzureCredentialKind>) -> azure_core::Result<Arc<Self>> {
-        Ok(Arc::new(DefaultAzureCredential {
-            sources,
-            cache: TokenCache::new(),
-        }))
+        Ok(Arc::new(DefaultAzureCredential { sources }))
     }
 
     /// Try to fetch a token using each of the credential sources until one succeeds
@@ -224,19 +206,7 @@ impl DefaultAzureCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
-    }
-
-    /// Clear the credential's cache.
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        // clear the internal cache as well as each of the underlying providers
-        self.cache.clear().await?;
-
-        for source in &self.sources {
-            source.clear_cache().await?;
-        }
-
-        Ok(())
+        self.get_token(scopes).await
     }
 }
 

@@ -108,10 +108,6 @@ impl TokenCredential for AzurePipelinesCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.0.get_token(scopes).await
     }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.0.clear_cache().await
-    }
 }
 
 #[derive(Debug)]
