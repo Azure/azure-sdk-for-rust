@@ -6,9 +6,9 @@
 mod clients;
 mod context;
 pub mod headers;
+mod method;
 mod models;
 mod options;
-mod pager;
 mod pipeline;
 pub mod policies;
 pub mod request;
@@ -16,16 +16,15 @@ pub mod response;
 
 pub use clients::*;
 pub use context::*;
-pub use headers::Header;
+pub use method::Method;
 pub use models::*;
 pub use options::*;
-pub use pager::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
 pub use response::{Model, Response};
 
 // Re-export important types.
-pub use http_types::{Method, StatusCode};
+pub use typespec::http::StatusCode;
 pub use url::Url;
 
 /// Add a new query pair into the target [`Url`]'s query string.

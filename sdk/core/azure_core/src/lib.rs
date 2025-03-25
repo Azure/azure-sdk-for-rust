@@ -3,73 +3,29 @@
 
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations, nonstandard_style)]
-// #![warn(missing_docs, future_incompatible, unreachable_pub)]
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[macro_use]
 mod macros;
 
 mod constants;
-pub mod hmac;
-mod models;
-mod options;
-mod pipeline;
-mod policies;
-
 pub mod credentials;
-pub mod headers;
-pub mod lro;
-pub mod request_options;
-
+pub mod fs;
+pub mod hmac;
+pub mod http;
+pub mod process;
 #[cfg(feature = "test")]
 pub mod test;
 
-pub mod tokio;
-
 pub use constants::*;
-#[doc(inline)]
-pub use models::*;
-pub use options::*;
-pub use pipeline::*;
-pub use policies::*;
 
-// Re-export typespec types that are not specific to Azure.
-pub use typespec::{Error, Result};
-pub mod error {
-    pub use typespec::error::*;
-    pub use typespec_client_core::error::*;
-}
-#[cfg(feature = "xml")]
-pub use typespec_client_core::xml;
+// Re-export modules in typespec_client_core such that azure_core-based crates don't need to reference it directly.
 pub use typespec_client_core::{
-    base64, date,
-    http::{
-        headers::Header,
-        new_http_client,
-        response::{Model, PinnedStream, Response, ResponseBody},
-        AppendToUrlQuery, Body, Context, HttpClient, Method, Pager, Request, RequestContent,
-        StatusCode, Url,
-    },
-    json, parsing,
-    sleep::{self, sleep},
-    stream::{BytesStream, SeekableStream},
-    Bytes, Uuid,
+    base64, create_enum, create_extensible_enum, date,
+    error::{self, Error, Result},
+    fmt, json, parsing, sleep, stream, Bytes, Uuid,
 };
 
-/// A unique identifier for a request.
-// NOTE: Only used for Storage?
-pub type RequestId = Uuid;
-
-/// A unique session token.
-// NOTE: Only used for Cosmos?
-pub type SessionToken = String;
-
-/// An empty HTTP body.
-#[allow(clippy::declare_interior_mutable_const)]
-pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::new();
-
-#[doc(hidden)]
-/// Used by macros as an implementation detail
-pub mod __private {
-    pub use paste::paste;
-}
+#[cfg(feature = "xml")]
+pub use typespec_client_core::xml;

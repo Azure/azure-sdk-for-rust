@@ -45,7 +45,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 
     # when a package is marked `publish = false` in the Cargo.toml, `cargo metadata` returns an empty array for
     # `publish`, otherwise it returns null. We only want to include packages where `publish` is null.
-    $packages = cargo metadata --format-version 1
+    $packages = Invoke-LoggedCommand "cargo metadata --format-version 1 --no-deps" -GroupOutput
     | ConvertFrom-Json -AsHashtable
     | Select-Object -ExpandProperty packages
     | Where-Object { $_.manifest_path.StartsWith($searchPath) -and $null -eq $_.publish }
@@ -71,7 +71,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 
   # Invert the manifest dependency graph
   foreach ($package in $packageManifests.Values) {
-    foreach ($dependency in $package.dependencies) {
+    foreach ($dependency in $package.dependencies | Where-Object { $null -eq $_.kind }) {
       $dependencyManifest = $packageManifests[$dependency.name]
       if ($dependencyManifest) {
         $dependencyManifest.DependentPackages += $package
@@ -131,9 +131,8 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 
   [array]$additionalPackages = $affectedPackages | Where-Object { $packagesWithChanges -notcontains $_ }
 
-  # if the change affected no packages, e.g. eng/common change, we use core and template for validation
-  if ($packagesWithChanges.Length -eq 0) {
-    $additionalPackages += $allPackageProperties | Where-Object { $_.Name -eq "azure_core" -or $_.Name -eq "azure_template" }
+  foreach ($package in $additionalPackages) {
+    $package.IncludedForValidation = $true
   }
 
   return $additionalPackages

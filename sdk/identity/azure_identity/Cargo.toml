@@ -1,6 +1,6 @@
 [package]
 name = "azure_identity"
-version = "0.22.0"
+version = "0.23.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure identity helper crate"
 readme = "README.md"
 authors.workspace = true
@@ -13,38 +13,37 @@ categories = ["api-bindings"]
 edition.workspace = true
 
 [dependencies]
-azure_core.workspace = true
 async-lock.workspace = true
-oauth2.workspace = true
-url.workspace = true
+async-trait.workspace = true
+azure_core.workspace = true
 futures.workspace = true
+oauth2.workspace = true
+openssl = { workspace = true, optional = true }
+pin-project.workspace = true
 serde.workspace = true
 time.workspace = true
 tracing.workspace = true
-async-trait.workspace = true
-openssl = { workspace = true, optional = true }
-pin-project.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-async-process.workspace = true
+url.workspace = true
 
 [target.'cfg(unix)'.dependencies]
 tz-rs = { workspace = true, optional = true }
 
 [dev-dependencies]
+azure_core_test.workspace = true
 azure_security_keyvault_secrets = { path = "../../keyvault/azure_security_keyvault_secrets" }
+clap.workspace = true
 reqwest.workspace = true
-tokio.workspace = true
-tracing-subscriber.workspace = true
 serde_test.workspace = true
 serial_test.workspace = true
-clap.workspace = true
+tokio.workspace = true
+tracing-subscriber.workspace = true
 
 [features]
 default = ["reqwest", "old_azure_cli"]
 reqwest = ["azure_core/reqwest"]
 reqwest_rustls = ["azure_core/reqwest_rustls"]
+tokio = ["azure_core/tokio"]
 client_certificate = ["openssl"]
 
 # If you are using and Azure CLI version older than 2.54.0 from November 2023,
@@ -54,5 +53,13 @@ client_certificate = ["openssl"]
 # https://github.com/Azure/azure-cli/issues/19700
 old_azure_cli = ["time/local-offset", "tz-rs"]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
-features = ["reqwest", "reqwest_rustls", "client_certificate"]
+features = [
+  "client_certificate",
+  "reqwest",
+  "reqwest_rustls",
+  "tokio",
+]

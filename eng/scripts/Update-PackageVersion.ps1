@@ -1,3 +1,6 @@
+#!/usr/bin/env pwsh
+#Requires -Version 7.0
+
 <#
 .SYNOPSIS
 Bumps up package versions after release
@@ -72,14 +75,17 @@ if ($pkgProperties.ChangeLogPath) {
 
 $tomlPath = Join-Path $pkgProperties.DirectoryPath "Cargo.toml"
 $content = Get-Content -Path $tomlPath -Raw
-$updated = $content -replace '([package](.|\n)+?version\s*=\s*)"(.+?)"', "`$1`"$packageSemVer`""
+$updated = $content -replace '(\[package\](.|\n)+?version\s*=\s*)"(.+?)"', "`$1`"$packageSemVer`""
 
 if ($content -ne $updated) {
   $updated | Set-Content -Path $tomlPath  -Encoding utf8 -NoNewLine
   Write-Host "Updated version in $tomlPath from $($pkgProperties.Version) to $packageSemVer."
 
-  cargo metadata --format-version 1 | Out-Null
-  Write-Host "Updated Cargo.lock using 'cargo metadata'."
+  Write-Host "Updaging dependencies in Cargo.toml files."
+  Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
+
+  Write-Host "Updating Cargo.lock using 'cargo metadata'."
+  Invoke-LoggedCommand "cargo metadata --no-deps --format-version 1" | Out-Null
 }
 else {
   Write-Host "$tomlPath already contains version $packageSemVer"

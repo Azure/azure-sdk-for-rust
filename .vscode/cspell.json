@@ -5,6 +5,7 @@
   "ignorePaths": [
     "**/test-resources.bicep",
     "**/test-resources.json",
+    "**/assets.json",
     ".config",
     ".devcontainer/devcontainer.json",
     ".devcontainer/Dockerfile",
@@ -21,6 +22,7 @@
     "rust-toolchain.toml"
   ],
   "words": [
+    "aarch",
     "amqp",
     "asyncoperation",
     "azsdk",

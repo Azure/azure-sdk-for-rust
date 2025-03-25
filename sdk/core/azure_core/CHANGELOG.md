@@ -1,5 +1,59 @@
 # Release History
 
+## 0.23.0 (Unreleased)
+
+### Features Added
+
+- Added `azure_core::process::Executor` to run commands asynchronously.
+  The `tokio` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
+- Added `http` module containing all functions, modules, and types from `typespec_client_core::http`.
+- Moved `Pager` from `typespec_client_core::http` to `azure_core::http` module since it is Azure-specific.
+- Re-exported `Body`, `Request`, and `RequestContent` from `http::request` module.
+- Re-exported `create_enum`, `create_extensible_enum` macros from `typespec_client_core`.
+- Re-exported `Model` and `Response` from `http::response` module.
+
+### Breaking Changes
+
+- Consolidated all the `tokio` features into a single feature named `tokio`. Traits remain separate but `tokio` support is enabled with a single feature.
+- Moved `AppendToUrlQuery` type under `http` module.
+- Moved `ByteStream` and `SeekableStream` types under `stream` module.
+- Moved `ClientMethodOptions` type under `http` module.
+- Moved `ClientOptions` type under `http` module.
+- Moved `Context` type under `http` module.
+- Moved `Etag` type under `http` module.
+- Moved `ExponentialRetryOptions` type under `http` module.
+- Moved `FixedRetryOptions` type under `http` module.
+- Moved `headers` module under `http` module.
+- Moved `HttpClient` type under `http` module.
+- Moved `LeaseAction` type under `http` module.
+- Moved `LeaseDuration` type under `http` module.
+- Moved `LeaseState` type under `http` module.
+- Moved `LeaseStatus` type under `http` module.
+- Moved `Method` type under `http` module.
+- Moved `new_http_client` function under `http` module.
+- Moved `Pipeline` type under `http` module.
+- Moved `policies` module under `http` module.
+- Moved `request` module under `http` module.
+- Moved `response` module under `http` module.
+- Moved `RetryOptions` type under `http` module.
+- Moved `StatusCode` type under `http` module.
+- Moved `TelemetryOptions` type under `http` module.
+- Moved `TransportOptions` type under `http` module.
+- Moved `Url` type under `http` module.
+- Removed `content_type` module.
+- Removed `EMPTY_BODY` constant from root.
+- Removed `future!()` macro.
+- Removed `Header` re-export from `http` module. It is still defined in the `http::headers` module.
+- Removed `query_param` module.
+- Removed `RequestId` type alias from root.
+- Removed `SessionToken` type alias from root.
+- Renamed `lro` module to `http::operation` module.
+- Renamed `tokio` module to `fs` since it contained only the `typespec_client_core::fs` module members.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.22.0 (2025-02-18)
 
 ### Features Added

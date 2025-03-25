@@ -11,19 +11,19 @@ rust-version.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-azure_storage_common.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
-azure_identity = { workspace = true }
+azure_storage_common = { version = "0.1.0", path = ".." }
 serde.workspace = true
 time.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
-uuid.workspace = true
 url.workspace = true
+uuid.workspace = true
 
 [lints]
 workspace = true
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["macros"] }
+azure_core_test.workspace = true
 azure_identity.workspace = true
-azure_core_test.path = "../../core/azure_core_test"
+azure_storage_blob_test.path = "../azure_storage_blob_test"
+tokio = { workspace = true, features = ["macros"] }

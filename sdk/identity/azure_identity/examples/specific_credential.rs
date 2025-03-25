@@ -127,7 +127,7 @@ impl SpecificAzureCredential {
                     )
                 }
                 #[cfg(not(target_arch = "wasm32"))]
-                azure_credential_kinds::AZURE_CLI => AzureCliCredential::new()
+                azure_credential_kinds::AZURE_CLI => AzureCliCredential::new(Some(options.into()))
                     .map(SpecificAzureCredentialKind::AzureCli)
                     .with_context(ErrorKind::Credential, || {
                         format!(
@@ -136,7 +136,7 @@ impl SpecificAzureCredential {
                         )
                     })?,
                 azure_credential_kinds::WORKLOAD_IDENTITY => {
-                    WorkloadIdentityCredential::from_env(options)
+                    WorkloadIdentityCredential::from_env(Some(options.into()))
                         .map(SpecificAzureCredentialKind::WorkloadIdentity)
                         .with_context(ErrorKind::Credential, || {
                             format!(

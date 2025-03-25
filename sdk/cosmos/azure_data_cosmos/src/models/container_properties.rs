@@ -3,7 +3,7 @@
 
 use std::{borrow::Cow, time::Duration};
 
-use azure_core::Model;
+use azure_core::http::response::Model;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::models::{IndexingPolicy, PartitionKeyDefinition, SystemProperties};

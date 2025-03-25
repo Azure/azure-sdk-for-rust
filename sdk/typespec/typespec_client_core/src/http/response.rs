@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! HTTP responses.
+
 use crate::http::{headers::Headers, StatusCode};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
@@ -123,7 +125,7 @@ impl<T> Response<T> {
     /// # Example
     /// ```rust
     /// # pub struct GetSecretResponse { }
-    /// use typespec_client_core::http::{Model, Response};
+    /// use typespec_client_core::http::{Model, Response, StatusCode};
     /// # #[cfg(not(feature = "derive"))]
     /// # use typespec_macros::Model;
     /// use serde::Deserialize;
@@ -143,7 +145,7 @@ impl<T> Response<T> {
     /// # #[tokio::main]
     /// # async fn main() {
     /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
-    /// #      http_types::StatusCode::Ok,
+    /// #      StatusCode::Ok,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
     /// #    );
@@ -165,7 +167,7 @@ impl<T> Response<T> {
     /// # Example
     /// ```rust
     /// # pub struct GetSecretResponse { }
-    /// use typespec_client_core::http::{Model, Response};
+    /// use typespec_client_core::http::{Model, Response, StatusCode};
     /// # #[cfg(not(feature = "derive"))]
     /// # use typespec_macros::Model;
     /// use serde::Deserialize;
@@ -185,7 +187,7 @@ impl<T> Response<T> {
     /// # #[tokio::main]
     /// # async fn main() {
     /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
-    /// #      http_types::StatusCode::Ok,
+    /// #      StatusCode::Ok,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "<Response><name>database_password</name><value>hunter2</value></Response>",
     /// #    );
@@ -221,7 +223,7 @@ impl<T: Model> Response<T> {
     /// # Example
     /// ```rust
     /// # use serde::Deserialize;
-    /// # use typespec_client_core::http::Model;
+    /// # use typespec_client_core::http::{Model, StatusCode};
     /// # #[cfg(not(feature = "derive"))]
     /// # use typespec_macros::Model;
     /// # #[derive(Model, Deserialize)]
@@ -233,7 +235,7 @@ impl<T: Model> Response<T> {
     /// # impl SecretClient {
     /// #   pub async fn get_secret(&self) -> typespec_client_core::http::Response<GetSecretResponse> {
     /// #    typespec_client_core::http::Response::from_bytes(
-    /// #      http_types::StatusCode::Ok,
+    /// #      StatusCode::Ok,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
     /// #    )
@@ -247,7 +249,7 @@ impl<T: Model> Response<T> {
     /// # async fn main() {
     /// let secret_client = create_secret_client();
     /// let response = secret_client.get_secret().await;
-    /// assert_eq!(response.status(), http_types::StatusCode::Ok);
+    /// assert_eq!(response.status(), StatusCode::Ok);
     /// let model = response.into_body().await.unwrap();
     /// assert_eq!(model.name, "database_password");
     /// assert_eq!(model.value, "hunter2");
@@ -347,8 +349,7 @@ impl fmt::Debug for ResponseBody {
 #[cfg(test)]
 mod tests {
     use crate::http::headers::Headers;
-    use crate::http::{response::ResponseBody, Model, Response};
-    use http_types::StatusCode;
+    use crate::http::{response::ResponseBody, Model, Response, StatusCode};
 
     #[tokio::test]
     pub async fn can_extract_raw_body_regardless_of_t() -> Result<(), Box<dyn std::error::Error>> {
@@ -380,7 +381,7 @@ mod tests {
     mod json {
         use crate::http::headers::Headers;
         use crate::http::Response;
-        use http_types::StatusCode;
+        use crate::http::StatusCode;
         use serde::Deserialize;
         use typespec_macros::Model;
 
@@ -470,7 +471,7 @@ mod tests {
     mod xml {
         use crate::http::headers::Headers;
         use crate::http::Response;
-        use http_types::StatusCode;
+        use crate::http::StatusCode;
         use serde::Deserialize;
         use typespec_macros::Model;
 

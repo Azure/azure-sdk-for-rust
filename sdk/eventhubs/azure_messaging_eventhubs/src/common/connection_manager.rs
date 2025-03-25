@@ -8,7 +8,7 @@ use crate::{
     models::AmqpValue,
 };
 use async_lock::{Mutex, OnceCell};
-use azure_core::{credentials::AccessToken, Result, Url, Uuid};
+use azure_core::{credentials::AccessToken, http::Url, Result, Uuid};
 use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis as _, AmqpConnection,
     AmqpConnectionApis as _, AmqpConnectionOptions, AmqpSession, AmqpSessionApis as _, AmqpSymbol,

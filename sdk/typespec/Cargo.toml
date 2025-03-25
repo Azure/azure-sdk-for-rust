@@ -1,6 +1,6 @@
 [package]
 name = "typespec"
-version = "0.2.0"
+version = "0.3.0"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -13,7 +13,7 @@ keywords = ["typespec"]
 
 [dependencies]
 base64.workspace = true
-http-types = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 url.workspace = true
 
@@ -22,6 +22,9 @@ thiserror.workspace = true
 
 [features]
 default = ["http", "json"]
-http = ["dep:http-types"]
-json = ["dep:serde_json"]
+http = []
+json = ["dep:serde", "dep:serde_json"]
 amqp = []
+
+[lints]
+workspace = true

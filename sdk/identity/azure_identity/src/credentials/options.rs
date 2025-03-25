@@ -4,7 +4,8 @@
 use crate::env::Env;
 use azure_core::{
     error::{ErrorKind, Result, ResultExt},
-    Url,
+    http::{new_http_client, HttpClient, Url},
+    process::Executor,
 };
 use std::sync::Arc;
 
@@ -15,12 +16,14 @@ const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
 /// requests to Azure Active Directory.
 #[derive(Debug, Clone)]
 pub struct TokenCredentialOptions {
-    env: Env,
-    http_client: Arc<dyn azure_core::HttpClient>,
-    authority_host: String,
+    pub(crate) env: Env,
+    pub(crate) http_client: Arc<dyn HttpClient>,
+    pub(crate) authority_host: String,
+    pub(crate) executor: Arc<dyn Executor>,
 }
 
 /// The default token credential options.
+///
 /// The authority host is taken from the `AZURE_AUTHORITY_HOST` environment variable if set and a valid URL.
 /// If not, the default authority host is `https://login.microsoftonline.com` for the Azure public cloud.
 impl Default for TokenCredentialOptions {
@@ -31,8 +34,9 @@ impl Default for TokenCredentialOptions {
             .unwrap_or_else(|_| AZURE_PUBLIC_CLOUD.to_owned());
         Self {
             env: Env::default(),
-            http_client: azure_core::new_http_client(),
+            http_client: new_http_client(),
             authority_host,
+            executor: azure_core::process::new_executor(),
         }
     }
 }
@@ -43,16 +47,23 @@ impl TokenCredentialOptions {
         self.authority_host = authority_host;
     }
 
-    /// The authority host to use for authentication requests.  The default is
-    /// `https://login.microsoftonline.com`.
+    /// The authority host to use for authentication requests.
+    ///
+    /// The default is `https://login.microsoftonline.com`.
     pub fn authority_host(&self) -> Result<Url> {
         Url::parse(&self.authority_host).with_context(ErrorKind::DataConversion, || {
             format!("invalid authority host URL {}", &self.authority_host)
         })
     }
 
-    pub fn http_client(&self) -> Arc<dyn azure_core::HttpClient> {
+    /// The [`HttpClient`] to make requests.
+    pub fn http_client(&self) -> Arc<dyn HttpClient> {
         self.http_client.clone()
+    }
+
+    /// The [`Executor`] to run commands.
+    pub fn executor(&self) -> Arc<dyn Executor> {
+        self.executor.clone()
     }
 
     pub(crate) fn env(&self) -> &Env {
@@ -60,8 +71,8 @@ impl TokenCredentialOptions {
     }
 }
 
-impl From<Arc<dyn azure_core::HttpClient>> for TokenCredentialOptions {
-    fn from(http_client: Arc<dyn azure_core::HttpClient>) -> Self {
+impl From<Arc<dyn HttpClient>> for TokenCredentialOptions {
+    fn from(http_client: Arc<dyn HttpClient>) -> Self {
         Self {
             http_client,
             ..Default::default()

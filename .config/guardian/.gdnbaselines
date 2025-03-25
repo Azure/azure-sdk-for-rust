@@ -6,8 +6,8 @@
   "baselines": {
     "default": {
       "name": "default",
-      "createdDate": "2025-02-13 01:27:03Z",
-      "lastUpdatedDate": "2025-02-13 01:27:03Z"
+      "createdDate": "2025-03-10 23:09:03Z",
+      "lastUpdatedDate": "2025-03-10 23:09:03Z"
     }
   },
   "results": {
@@ -21,37 +21,9 @@
       ],
       "tool": "credscan",
       "ruleId": "CSCAN-GENERAL0060",
-      "createdDate": "2025-02-19 01:40:30Z",
-      "expirationDate": "2025-08-08 02:29:29Z",
-      "justification": "This error is baselined with an expiration date of 180 days from 2025-02-19 02:29:29Z"
-    },
-    "5daf403c163908218b44ba4e6c8e767b58ffcc942d9f824bb0aab289df6bf62f": {
-      "signature": "5daf403c163908218b44ba4e6c8e767b58ffcc942d9f824bb0aab289df6bf62f",
-      "alternativeSignatures": [],
-      "target": "azure_security_keyvault_secrets/azure_security_keyvault_secrets-0.1.0/README.md",
-      "line": 88,
-      "memberOf": [
-        "default"
-      ],
-      "tool": "credscan",
-      "ruleId": "CSCAN-GENERAL0060",
-      "createdDate": "2025-02-13 20:39:39Z",
-      "expirationDate": "2025-08-02 20:56:16Z",
-      "justification": "This error is baselined with an expiration date of 180 days from 2025-02-13 20:56:16Z"
-    },
-    "28f3fdcd262626355217631cc50784715e653b749cbc77da61ebfa2ff0e8f247": {
-      "signature": "28f3fdcd262626355217631cc50784715e653b749cbc77da61ebfa2ff0e8f247",
-      "alternativeSignatures": [],
-      "target": "azure_security_keyvault_secrets/README.md",
-      "line": 88,
-      "memberOf": [
-        "default"
-      ],
-      "tool": "credscan",
-      "ruleId": "CSCAN-GENERAL0060",
-      "createdDate": "2025-02-19 01:44:17Z",
-      "expirationDate": "2025-08-08 02:29:29Z",
-      "justification": "This error is baselined with an expiration date of 180 days from 2025-02-19 02:29:29Z"
+      "createdDate": "2025-03-21 02:33:58Z",
+      "expirationDate": "2025-09-07 02:42:46Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2025-03-21 02:42:46Z"
     }
   }
 }

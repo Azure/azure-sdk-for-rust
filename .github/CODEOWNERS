@@ -19,10 +19,10 @@
 
 # Catch all for loose files in the root, which are mostly global configuration and
 # should not be changed without team discussion.
-/*                       @heaths @RickWinter @ronniegeraghty
+/*                       @heaths @RickWinter @ronniegeraghty @LarryOsterman
 
 # Catch all for non-code project files and unowned files | folders
-/**                      @heaths @RickWinter @ronniegeraghty
+/**                      @heaths @RickWinter @ronniegeraghty @LarryOsterman
 
 ##################
 # Automation
@@ -70,6 +70,7 @@
 /.github/workflows/      @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @RickWinter @ronniegeraghty @Azure/azure-sdk-eng
 /.config/1espt/          @benbp @weshaggard
+/sdk/template/			 @hallipr
 
 # Add owners for notifications for specific pipelines
 /eng/common/pipelines/codeowners-linter.yml       @rickwinter

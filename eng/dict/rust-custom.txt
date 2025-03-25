@@ -1,6 +1,7 @@
 bindgen
 cfg
 cfgs
+consts
 impls
 newtype
 oneshot

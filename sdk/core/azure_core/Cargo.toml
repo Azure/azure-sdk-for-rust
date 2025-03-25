@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.22.0"
+version = "0.23.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors.workspace = true
@@ -19,9 +19,7 @@ async-trait.workspace = true
 bytes.workspace = true
 futures.workspace = true
 hmac = { workspace = true, optional = true }
-once_cell.workspace = true
 openssl = { workspace = true, optional = true }
-paste.workspace = true
 pin-project.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -35,7 +33,7 @@ typespec_client_core = { workspace = true, features = ["http", "json"] }
 rustc_version.workspace = true
 
 [dev-dependencies]
-azure_identity.path = "../../identity/azure_identity"
+azure_identity.workspace = true
 azure_security_keyvault_secrets.path = "../../keyvault/azure_security_keyvault_secrets"
 thiserror.workspace = true
 time.workspace = true
@@ -56,9 +54,11 @@ reqwest_deflate = ["typespec_client_core/reqwest_deflate"]
 reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
-tokio_fs = ["typespec_client_core/tokio_fs"]
-tokio_sleep = ["typespec_client_core/tokio_sleep"]
+tokio = ["dep:tokio", "tokio/process", "typespec_client_core/tokio"]
 xml = ["typespec_client_core/xml"]
+
+[lints]
+workspace = true
 
 [package.metadata.docs.rs]
 features = [
@@ -68,7 +68,6 @@ features = [
   "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_rustls",
-  "tokio_fs",
-  "tokio_sleep",
+  "tokio",
   "xml",
 ]

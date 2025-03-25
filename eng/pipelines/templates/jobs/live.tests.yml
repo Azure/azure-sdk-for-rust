@@ -1,0 +1,152 @@
+parameters:
+# required matrix parameters
+- name: UsePlatformContainer
+  type: boolean
+- name: OSName
+  type: string
+- name: Matrix
+  type: object
+- name: DependsOn
+  type: string
+- name: CloudConfig
+  type: object
+# custom parameters
+- name: ServiceDirectory
+  type: string
+- name: TimeoutInMinutes
+  type: number
+# live test parameters
+- name: EnvVars
+  type: object
+- name: PreSteps
+  type: object
+- name: PostSteps
+  type: object
+- name: Location
+  type: string
+- name: UseFederatedAuth
+  type: boolean
+- name: PersistOidcToken
+  type: boolean
+
+jobs:
+- job:
+  displayName: "Test"
+  condition: and(succeeded(), ne(variables['Skip.Tests'],'true'), ne(${{ parameters.Matrix }}, '{}'))
+  timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+  dependsOn: ${{ parameters.DependsOn }}
+
+  strategy:
+    matrix: $[ ${{ parameters.Matrix }} ]
+
+  pool:
+    name: $(Pool)
+    # 1es pipeline templates converts `image` to demands: ImageOverride under the hood
+    # which is incompatible with image selection in the default non-1es hosted pools
+    ${{ if eq(parameters.OSName, 'macOS') }}:
+      vmImage: $(OSVmImage)
+    ${{ else }}:
+      image: $(OSVmImage)
+    os: ${{ parameters.OSName }}
+
+  variables:
+    ArmTemplateParameters: '@{}'
+
+  steps:
+  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+    parameters:
+      paths:
+      - "/*"
+
+  - template: /eng/common/pipelines/templates/steps/verify-agent-os.yml
+    parameters:
+      AgentImage: $(OSVmImage)
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: $(RustToolchainName)
+
+  - ${{ parameters.PreSteps }}
+
+  - template: /eng/common/TestResources/build-test-resource-config.yml
+    parameters:
+      SubscriptionConfiguration: ${{ parameters.CloudConfig.SubscriptionConfiguration }}
+      SubscriptionConfigurations: ${{ parameters.CloudConfig.SubscriptionConfigurations }}
+      SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths }}
+      EnvVars:
+        Pool: $(Pool)
+        ${{insert}}: ${{ parameters.EnvVars }}
+
+  - template: /eng/common/TestResources/deploy-test-resources.yml
+    parameters:
+      ${{ if or(parameters.Location, parameters.CloudConfig.Location) }}:
+        Location: ${{ coalesce(parameters.Location, parameters.CloudConfig.Location) }}
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
+      SubscriptionConfiguration: $(SubscriptionConfiguration)
+      ArmTemplateParameters: $(ArmTemplateParameters)
+      UseFederatedAuth: ${{ parameters.UseFederatedAuth }}
+      ServiceConnection: ${{ parameters.CloudConfig.ServiceConnection }}
+      SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths}}
+      PersistOidcToken: ${{ parameters.PersistOidcToken }}
+      EnvVars:
+        Pool: $(Pool)
+        ${{insert}}: ${{ parameters.EnvVars }}
+
+  # To allow tests to run in parallel to Pack, we don't reuse the PackageInfo directory
+  # from the Pack job. We just let each test leg create its own PackageInfo directory.
+  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self
+    parameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
+      PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
+
+  - ${{ if parameters.UseFederatedAuth }}:
+    - task: AzurePowerShell@5
+      displayName: "Test Packages - Federated Auth"
+      condition: and(succeeded(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
+      timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+      env:
+        CIBW_BUILD_VERBOSITY: 3
+        AZURE_TEST_MODE: 'live'
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+        ${{ if parameters.PersistOidcToken }}:
+          ARM_OIDC_TOKEN: $(ARM_OIDC_TOKEN)
+        ${{ insert }}: ${{ parameters.EnvVars }}
+      inputs:
+        azureSubscription: ${{ parameters.CloudConfig.ServiceConnection }}
+        azurePowerShellVersion: LatestVersion
+        pwsh: true
+        scriptType: inlineScript
+        inline: |
+          $account = (Get-AzContext).Account;
+          $env:AZURESUBSCRIPTION_CLIENT_ID = $account.Id;
+          $env:AZURESUBSCRIPTION_TENANT_ID = $account.Tenants;
+
+          Write-Host "./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(Toolchain)'"
+          ./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(Toolchain)'
+        workingDirectory: $(Build.SourcesDirectory)
+  - ${{ else }}:
+    - task: Powershell@2
+      displayName: "Test Packages"
+      condition: and(succeeded(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
+      timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+      env:
+        CIBW_BUILD_VERBOSITY: 3
+        AZURE_TEST_MODE: 'live'
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+        ${{ insert }}: ${{ parameters.EnvVars }}
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
+        arguments: >
+          -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+          -Toolchain '$(Toolchain)'
+
+  - ${{ parameters.PostSteps }}
+
+  - template: /eng/common/TestResources/remove-test-resources.yml
+    parameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
+      SubscriptionConfiguration: $(SubscriptionConfiguration)
+      UseFederatedAuth: ${{ parameters.UseFederatedAuth }}
+      ServiceConnection: ${{ parameters.CloudConfig.ServiceConnection }}
+      EnvVars: ${{ parameters.EnvVars }}

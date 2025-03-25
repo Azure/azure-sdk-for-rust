@@ -1,40 +1,22 @@
 parameters:
 - name: ServiceDirectory
   type: string
-  default: auto
 - name: Artifacts
   type: object
-  default: []
 - name: PipelineArtifactName
   type: string
-  default: packages
-- name: TestTimeoutInMinutes
-  type: number
-  default: 60
 - name: TestPipeline
   type: boolean
-  default: false
-- name: BuildMatrix
+- name: TestProxy
+  type: boolean
+- name: TestTimeoutInMinutes
+  type: number
+- name: MatrixConfigs
   type: object
-  default:
-  - pool:
-      os: linux
-      name: $(LINUXPOOL)
-      image: $(LINUXVMIMAGE)
-    Toolchains: [stable, msrv, nightly]
-  - pool:
-      os: windows
-      name: $(WINDOWSPOOL)
-      image: $(WINDOWSVMIMAGE)
-    Toolchains: [stable, msrv, nightly]
-  - pool:
-      os: macOS
-      name: $(MACPOOL)
-      vmImage: $(MACVMIMAGE)
-    Toolchains: [stable, msrv, nightly]
-- name: AnalyzeToolchain
-  type: string
-  default: stable
+- name: MatrixFilters
+  type: object
+- name: MatrixReplace
+  type: object
 
 jobs:
 - template: /eng/pipelines/templates/jobs/pack.yml
@@ -44,17 +26,23 @@ jobs:
     TestPipeline: ${{ parameters.TestPipeline }}
     PipelineArtifactName: ${{ parameters.PipelineArtifactName }}
 
-- ${{ each matrix in parameters.BuildMatrix }}:
-  - ${{ each toolchain in matrix.Toolchains }}:
-    - template: /eng/pipelines/templates/jobs/test.yml
-      parameters:
-        ServiceDirectory: ${{ parameters.ServiceDirectory }}
-        Toolchain: ${{ toolchain }}
-        Matrix: ${{ matrix }}
-        TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
-
 - template: /eng/pipelines/templates/jobs/analyze.yml
   parameters:
     ServiceDirectory: ${{ parameters.ServiceDirectory }}
-    Toolchain: ${{ parameters.AnalyzeToolchain }}
+    Toolchain: stable
     TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+
+- template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
+  parameters:
+    JobTemplatePath: /eng/pipelines/templates/jobs/ci.tests.yml
+    MatrixConfigs: ${{ parameters.MatrixConfigs }}
+    MatrixFilters: ${{ parameters.MatrixFilters }}
+    MatrixReplace: ${{ parameters.MatrixReplace }}
+    CloudConfig:
+      Cloud: public
+    SparseCheckoutPaths:
+      - /*
+    AdditionalParameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
+      TimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
+      TestProxy: ${{ parameters.TestProxy }}

@@ -3,7 +3,6 @@
 
 //! Options and builders for clients, client methods, and policies.
 
-pub mod builders;
 mod retry;
 mod transport;
 

@@ -1,12 +1,14 @@
 #!/usr/bin/env pwsh
 
 #Requires -Version 7.0
+[CmdletBinding(DefaultParameterSetName = "none")]
 param(
   [string]$OutputPath,
   [Parameter(ParameterSetName = 'Named')]
   [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
-  [string]$PackageInfoDirectory
+  [string]$PackageInfoDirectory,
+  [switch]$NoVerify
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,9 +24,11 @@ if ($OutputPath) {
   $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
 }
 
-function Get-OutputPackageNames($workspacePackageNames) {
-  $names = @()
+function Get-OutputPackageNames($workspacePackages) {
+  $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
+  $packablePackageNames = $packablePackages.name
 
+  $names = @()
   switch ($PsCmdlet.ParameterSetName) {
     'Named' {
       $names = $PackageNames
@@ -39,13 +43,13 @@ function Get-OutputPackageNames($workspacePackageNames) {
     }
 
     default {
-      return $workspacePackageNames
+      return $packablePackageNames
     }
   }
 
   foreach ($name in $names) {
-    if (-not $workspacePackageNames.Contains($name)) {
-      Write-Error "Package '$name' is not in the workspace"
+    if (-not $packablePackageNames.Contains($name)) {
+      Write-Error "Package '$name' is not in the workspace or does not publish"
       exit 1
     }
   }
@@ -77,7 +81,7 @@ function Get-CargoPackages() {
 
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
-  $outputPackageNames = Get-OutputPackageNames $packages.name
+  $outputPackageNames = Get-OutputPackageNames $packages
 
   # We start with output packages, then recursively add unreleased dependencies to the list of packages that need to be built
   [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
@@ -135,7 +139,7 @@ function Add-CrateToLocalRegistry($LocalRegistryPath, $Package) {
   # create an index entry for the package
   $packagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
 
-  Write-Host "Copying package '$packageName' to '$destination'"
+  Write-Host "Copying package '$packageName' to vendor directory '$LocalRegistryPath'"
   Copy-Item -Path $packagePath -Destination $LocalRegistryPath -Recurse
 
   #write an empty checksum file
@@ -178,23 +182,27 @@ try {
 
   [array]$packages = Get-PackagesToBuild
 
-  Add-PathVersions $packages
-
   Write-Host "Building packages in the following order:"
   foreach ($package in $packages) {
     $packageName = $package.name
     $type = if ($package.OutputPackage) { "output" } else { "dependency" }
     Write-Host "  $packageName ($type)"
   }
-  Write-Host ""
 
   foreach ($package in $packages) {
+    Write-Host ""
+
     $packageName = $package.name
     $packageVersion = $package.version
 
-    Invoke-LoggedCommand `
-      -GroupOutput `
-      -Command "cargo publish --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
+    $command = "cargo publish --locked --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
+
+    if ($NoVerify) {
+      $command += " --no-verify"
+    }
+
+    Invoke-LoggedCommand -Command $command -GroupOutput
+
 
     # copy the package to the local registry
     Add-CrateToLocalRegistry `

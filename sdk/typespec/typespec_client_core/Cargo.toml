@@ -1,6 +1,6 @@
 [package]
 name = "typespec_client_core"
-version = "0.1.0"
+version = "0.2.0"
 authors.workspace = true
 edition.workspace = true
 description = "Client runtime for TypeSpec-generated libraries."
@@ -16,7 +16,6 @@ base64.workspace = true
 bytes.workspace = true
 dyn-clone.workspace = true
 futures.workspace = true
-http-types = { workspace = true, optional = true }
 pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
 rand.workspace = true
@@ -39,7 +38,6 @@ getrandom.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
 
 [dev-dependencies]
-once_cell.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
@@ -48,20 +46,19 @@ typespec_macros.path = "../typespec_macros"
 [features]
 default = ["http", "json", "reqwest", "reqwest_deflate", "reqwest_gzip"]
 derive = ["dep:typespec_macros"]
-http = ["dep:http-types", "typespec/http"]
+http = ["typespec/http"]
 json = ["typespec/json"]
 reqwest = ["reqwest/native-tls"]
 reqwest_deflate = ["reqwest/deflate"]
 reqwest_gzip = ["reqwest/gzip"]
 reqwest_rustls = ["reqwest/rustls-tls-native-roots"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
-tokio_fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
-tokio_sleep = ["tokio/time"]
+tokio = ["tokio/fs", "tokio/sync", "tokio/time", "tokio/io-util"]
 xml = ["dep:quick-xml"]
 
 [[example]]
 name = "binary_data_request"
-required-features = ["tokio_fs", "tokio_sleep"]
+required-features = ["tokio"]
 
 [[example]]
 name = "stream_response"
@@ -76,7 +73,9 @@ features = [
   "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_rustls",
-  "tokio_fs",
-  "tokio_sleep",
+  "tokio",
   "xml",
 ]
+
+[lints]
+workspace = true

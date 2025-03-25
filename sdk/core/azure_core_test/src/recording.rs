@@ -5,6 +5,7 @@
 
 // cspell:ignore csprng seedable tpbwhbkhckmk
 use crate::{
+    credentials::{self, MockCredential},
     proxy::{
         client::{
             Client, ClientAddSanitizerOptions, ClientRemoveSanitizersOptions,
@@ -14,17 +15,18 @@ use crate::{
         policy::RecordingPolicy,
         Proxy, RecordingId,
     },
-    Matcher, MockCredential, Sanitizer,
+    Matcher, Sanitizer,
 };
 use azure_core::{
     base64,
     credentials::TokenCredential,
     error::ErrorKind,
-    headers::{AsHeaders, HeaderName, HeaderValue},
+    http::{
+        headers::{AsHeaders, Header, HeaderName, HeaderValue},
+        ClientOptions,
+    },
     test::TestMode,
-    ClientOptions, Header,
 };
-use azure_identity::DefaultAzureCredential;
 use rand::{
     distributions::{Alphanumeric, DistString, Distribution, Standard},
     Rng, SeedableRng,
@@ -83,7 +85,7 @@ impl Recording {
     pub fn credential(&self) -> Arc<dyn TokenCredential> {
         match self.test_mode {
             TestMode::Playback => Arc::new(MockCredential) as Arc<dyn TokenCredential>,
-            _ => DefaultAzureCredential::new().map_or_else(
+            _ => credentials::from_env(None).map_or_else(
                 |err| panic!("failed to create DefaultAzureCredential: {err}"),
                 |cred| cred as Arc<dyn TokenCredential>,
             ),
@@ -99,7 +101,7 @@ impl Recording {
     ///
     /// # struct MyClient;
     /// # #[derive(Default)]
-    /// # struct MyClientOptions { client_options: azure_core::ClientOptions };
+    /// # struct MyClientOptions { client_options: azure_core::http::ClientOptions };
     /// # impl MyClient {
     /// #   fn new(endpoint: impl AsRef<str>, options: Option<MyClientOptions>) -> Self { todo!() }
     /// #   async fn invoke(&self) -> azure_core::Result<()> { todo!() }

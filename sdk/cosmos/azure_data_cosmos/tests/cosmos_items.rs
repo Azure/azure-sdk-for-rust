@@ -50,9 +50,9 @@ async fn create_container(
     Ok(container_client)
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 
@@ -123,7 +123,10 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     match result {
         Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
         Err(err) => {
-            assert_eq!(Some(azure_core::StatusCode::NotFound), err.http_status());
+            assert_eq!(
+                Some(azure_core::http::StatusCode::NotFound),
+                err.http_status()
+            );
         }
     }
 
@@ -131,13 +134,13 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn item_create_content_response_on_write(
     context: TestContext,
 ) -> Result<(), Box<dyn Error>> {
     use azure_data_cosmos::ItemOptions;
 
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 
@@ -170,9 +173,9 @@ pub async fn item_create_content_response_on_write(
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn item_read_system_properties(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 
@@ -208,9 +211,9 @@ pub async fn item_read_system_properties(context: TestContext) -> Result<(), Box
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn item_upsert_new(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 
@@ -238,9 +241,9 @@ pub async fn item_upsert_new(context: TestContext) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn item_upsert_existing(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 
@@ -278,9 +281,9 @@ pub async fn item_upsert_existing(context: TestContext) -> Result<(), Box<dyn Er
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn item_patch(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 
@@ -332,9 +335,9 @@ pub async fn item_patch(context: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn item_null_partition_key(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 
@@ -383,7 +386,10 @@ pub async fn item_null_partition_key(context: TestContext) -> Result<(), Box<dyn
     match result {
         Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
         Err(err) => {
-            assert_eq!(Some(azure_core::StatusCode::NotFound), err.http_status());
+            assert_eq!(
+                Some(azure_core::http::StatusCode::NotFound),
+                err.http_status()
+            );
         }
     }
 

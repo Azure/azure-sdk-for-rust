@@ -3,22 +3,22 @@
 # AMQP Stack for consumption by packages in the Azure SDK.
 [package]
 name = "azure_core_amqp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Rust client library for the AMQP protocol"
 readme = "README.md"
-authors = ["Microsoft Corp."]
-license = "MIT"
-repository = "https://github.com/azure/azure-sdk-for-rust"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust/sdk/core/azure_core_amqp"
 documentation = "https://docs.rs/azure_core_amqp"
 
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
 
-edition = "2021"
+edition.workspace = true
 
 [dependencies]
-azure_core = { path = "../azure_core", default-features = false }
+azure_core = { workspace = true, default-features = false }
 fe2o3-amqp = { workspace = true, optional = true }
 fe2o3-amqp-cbs = { workspace = true, optional = true }
 fe2o3-amqp-ext = { workspace = true, optional = true }
@@ -46,6 +46,9 @@ fe2o3_amqp = [
   "serde_amqp",
   "serde_bytes",
 ]
+
+[lints]
+workspace = true
 
 [package.metadata.docs.rs]
 features = ["fe2o3_amqp"]

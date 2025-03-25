@@ -1,5 +1,26 @@
 # Release History
 
+## 0.32.0 (Unreleased)
+
+### Features Added
+
+- Added `AzurePipelinesCredential`.
+- `AzureCliCredentialOptions` (new) accepts a `azure_core::process::Executor` to run the Azure CLI asynchronously.
+  The `tokio` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
+  Callers can also implement the trait themselves to use a different asynchronous runtime.
+
+### Breaking Changes
+
+- Added `Option<AzureCliCredentialOptions>` to `AzureCliCredential::new`.
+- `AzureCliCredential` authenticates only against the first scope passed as a resource to support both v1 and v2 CLI versions.
+- `ClientAssertionCredential` constructors moved some parameters to an `Option<ClientAssertionCredentialOptions>` parameter.
+- Removed `get_subscription()` and `get_tenant()` from `AzureCliCredential`.
+- `WorkloadIdentityCredential` constructors moved some parameters to an `Option<ClientAssertionCredentialOptions>` parameter.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.22.0 (2025-02-18)
 
 ### Features Added

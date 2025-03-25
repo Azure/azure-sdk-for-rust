@@ -7,7 +7,11 @@ use crate::{
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
 };
 use async_lock::Mutex;
-use azure_core::{error::Result, RetryOptions, Url, Uuid};
+use azure_core::{
+    error::Result,
+    http::{RetryOptions, Url},
+    Uuid,
+};
 use azure_core_amqp::{
     AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSession,
     AmqpSessionApis, AmqpSessionOptions, AmqpSymbol,
@@ -503,9 +507,9 @@ impl ProducerClient {
 
 pub mod builders {
     use super::ProducerClient;
+    use azure_core::http::RetryOptions;
+    use azure_core::http::Url;
     use azure_core::Error;
-    use azure_core::RetryOptions;
-    use azure_core::Url;
     use std::sync::Arc;
 
     /// A builder for creating a [`ProducerClient`].

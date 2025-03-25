@@ -71,9 +71,9 @@ async fn create_container(
     Ok(container_client)
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn single_partition_query(context: TestContext) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 
@@ -88,11 +88,11 @@ pub async fn single_partition_query(context: TestContext) -> Result<(), Box<dyn 
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn single_partition_query_with_parameters(
     context: TestContext,
 ) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 
@@ -109,11 +109,11 @@ pub async fn single_partition_query_with_parameters(
     Ok(())
 }
 
-#[recorded::test(live)]
+#[recorded::test]
 pub async fn single_partition_query_with_projection(
     context: TestContext,
 ) -> Result<(), Box<dyn Error>> {
-    let account = TestAccount::from_env(context, None)?;
+    let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
 

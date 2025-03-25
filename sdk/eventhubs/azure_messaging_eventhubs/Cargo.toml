@@ -6,23 +6,23 @@ name = "azure_messaging_eventhubs"
 version = "0.2.0"
 description = "Rust client for Azure Eventhubs Service"
 readme = "README.md"
-authors = ["Microsoft Corp."]
-license = "MIT"
-repository = "https://github.com/azure/azure-sdk-for-rust"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_messaging_eventhubs"
 
 keywords = ["sdk", "azure", "messaging", "cloud", "eventhubs"]
 categories = ["api-bindings"]
 
-edition = "2021"
+edition.workspace = true
 
 [dependencies]
 async-io.workspace = true
 async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", default-features = false }
+azure_core = { workspace = true, default-features = false }
 azure_core_amqp.workspace = true
 futures.workspace = true
 futures-lite.workspace = true
@@ -34,7 +34,10 @@ tracing.workspace = true
 rustc_version.workspace = true
 
 [dev-dependencies]
-azure_core_test.path = "../../core/azure_core_test"
-azure_identity.path = "../../identity/azure_identity"
+azure_core_test.workspace = true
+azure_identity.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+
+[lints]
+workspace = true

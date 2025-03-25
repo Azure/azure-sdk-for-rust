@@ -4,6 +4,7 @@
 use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
 
+/// Represents an ETag for versioned resources.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Etag(String);
 

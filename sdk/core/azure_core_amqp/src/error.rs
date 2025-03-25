@@ -25,7 +25,7 @@ pub enum AmqpErrorKind {
     TransferLimitExceeded(Box<dyn std::error::Error + Send + Sync>),
 
     /// Management Status code
-    ManagementStatusCode(azure_core::StatusCode, Option<String>),
+    ManagementStatusCode(azure_core::http::StatusCode, Option<String>),
 
     DetachError(Box<dyn std::error::Error + Send + Sync>),
     SenderError(AmqpSenderError),

@@ -24,10 +24,15 @@ jobs:
       paths:
       - "/*"
 
-  - ${{ if and(eq(variables['System.TeamProject'], 'internal'), ne(variables['Build.Reason'], '')) }}:
-    - script: |
-        echo "##vso[build.addbuildtag]$(Build.Reason)"
-      displayName: Tag build reason
+  - pwsh: |
+      Write-Host "Attaching build reason string to the build for additional tag generation."
+      @('$(Build.Reason)') | ConvertTo-Json -AsArray | Out-File -FilePath $(System.DefaultWorkingDirectory)/build-reason.json -Encoding utf8
+      Write-Host '##vso[task.addattachment type=AdditionalTags;name=AdditionalTags;]$(System.DefaultWorkingDirectory)/build-reason.json'
+    displayName: Tag build reason
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: nightly
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:

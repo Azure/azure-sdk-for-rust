@@ -1,0 +1,80 @@
+parameters:
+# required matrix parameters
+- name: UsePlatformContainer
+  type: boolean
+- name: OSName
+  type: string
+- name: Matrix
+  type: object
+- name: DependsOn
+  type: string
+- name: CloudConfig
+  type: object
+# custom parameters
+- name: ServiceDirectory
+  type: string
+- name: TimeoutInMinutes
+  type: number
+- name: TestProxy
+  type: boolean
+
+
+jobs:
+- job:
+  displayName: "Test"
+  condition: and(succeeded(), ne(variables['Skip.Tests'],'true'), ne(${{ parameters.Matrix }}, '{}'))
+  timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+  dependsOn: ${{ parameters.DependsOn }}
+
+  strategy:
+    matrix: $[ ${{ parameters.Matrix }} ]
+
+  pool:
+    name: $(Pool)
+    # 1es pipeline templates converts `image` to demands: ImageOverride under the hood
+    # which is incompatible with image selection in the default non-1es hosted pools
+    ${{ if eq(parameters.OSName, 'macOS') }}:
+      vmImage: $(OSVmImage)
+    ${{ else }}:
+      image: $(OSVmImage)
+    os: ${{ parameters.OSName }}
+
+  steps:
+  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+    parameters:
+      paths:
+      - "/*"
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: $(RustToolchainName)
+
+  - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
+
+  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self
+    parameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
+      PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
+
+  - ${{ if eq(parameters.TestProxy, true) }}:
+    - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
+
+  - task: Powershell@2
+    displayName: "Test Packages"
+    condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+    timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+    env:
+      CIBW_BUILD_VERBOSITY: 3
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
+      arguments: >
+        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -Toolchain '$(Toolchain)'
+
+  - ${{ if eq(parameters.TestProxy, true) }}:
+    - pwsh: |
+        # $(Build.SourcesDirectory)/test-proxy.log is the hardcoded output log location for the test-proxy-tool.yml
+        cat $(Build.SourcesDirectory)/test-proxy.log
+      displayName: 'Dump Test Proxy logs'
+      condition: and(succeededOrFailed(), eq(variables['System.Debug'], 'true'))
