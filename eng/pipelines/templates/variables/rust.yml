@@ -2,4 +2,4 @@ variables:
   RUSTFLAGS: "-Dwarnings"
   RUSTDOCFLAGS: "-Dwarnings"
   RUST_LOG: $[iif(eq(variables['System.Debug'], 'true'), 'debug', '')]
-  NIGHTLY_TOOLCHAIN_FOR_APIVIEW: "nightly-2025-01-12"
+  
