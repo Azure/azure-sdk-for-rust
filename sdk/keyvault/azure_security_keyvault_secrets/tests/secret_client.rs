@@ -3,7 +3,7 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::{Result, StatusCode};
+use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_secrets::{
     models::{SecretSetParameters, SecretUpdateParameters},
@@ -87,10 +87,10 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
     let properties = SecretUpdateParameters {
         content_type: Some("text/plain".into()),
         secret_attributes: secret.attributes,
-        tags: Some(HashMap::from_iter(vec![(
+        tags: HashMap::from_iter(vec![(
             "test-name".into(),
             "update_secret_properties".into(),
-        )])),
+        )]),
     };
     let secret = client
         .update_secret("update-secret", "", properties.try_into()?, None)
@@ -99,7 +99,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         .await?;
     assert_eq!(secret.content_type, Some("text/plain".into()));
     assert_eq!(
-        secret.tags.as_ref().and_then(|tags| tags.get("test-name")),
+        secret.tags.get("test-name"),
         Some(&String::from("update_secret_properties"))
     );
 
@@ -137,12 +137,9 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     assert_eq!(secret2.value, Some("secret-value-2".into()));
 
     // List secrets.
-    let mut pager = client.get_secrets(None)?.into_stream();
+    let mut pager = client.list_secrets(None)?.into_stream();
     while let Some(secrets) = pager.try_next().await? {
-        let Some(secrets) = secrets.into_body().await?.value else {
-            continue;
-        };
-
+        let secrets = secrets.into_body().await?.value;
         for secret in secrets {
             // Get the secret name from the ID.
             let name = secret.resource_id()?.name;

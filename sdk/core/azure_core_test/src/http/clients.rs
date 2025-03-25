@@ -15,9 +15,8 @@ use std::fmt;
 ///
 /// ```
 /// use azure_core::{
-///     Bytes, ClientOptions,
-///     headers::Headers,
-///     Response, StatusCode, TransportOptions,
+///     http::{headers::Headers, ClientOptions, Response, StatusCode, TransportOptions},
+///     Bytes,
 /// };
 /// use azure_core_test::http::MockHttpClient;
 /// use azure_identity::DefaultAzureCredential;
@@ -91,7 +90,7 @@ mod tests {
 
     #[tokio::test]
     async fn mock_http_client() {
-        use azure_core::{
+        use azure_core::http::{
             headers::{HeaderName, Headers},
             Method, StatusCode,
         };

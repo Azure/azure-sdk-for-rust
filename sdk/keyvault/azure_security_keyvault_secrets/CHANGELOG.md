@@ -6,6 +6,10 @@
 
 ### Breaking Changes
 
+- Changed model fields defined as an `Option<HashMap<K, V>>` to just a `HashMap<K, V>`.
+- Changed model fields defined as an `Option<Vec<T>>` to just a `Vec<T>`.
+- Renamed `SecretClient::get_secrets` to `list_secrets`.
+
 ### Bugs Fixed
 
 ### Other Changes

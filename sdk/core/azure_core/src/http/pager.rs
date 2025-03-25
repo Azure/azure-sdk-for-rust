@@ -62,7 +62,7 @@ impl<T> Pager<T> {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// # use typespec_client_core::http::{Context, Pager, PagerResult, Pipeline, Request, Response, Method, headers::HeaderName};
+    /// # use azure_core::http::{Context, Pager, PagerResult, Pipeline, Request, Response, Method, headers::HeaderName};
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// # struct MyModel;
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
@@ -149,9 +149,9 @@ enum State<T> {
 mod tests {
     use std::collections::HashMap;
 
+    use crate::http::Model;
     use futures::StreamExt;
     use serde::Deserialize;
-    use typespec_macros::Model;
 
     use crate::http::{
         headers::{HeaderName, HeaderValue},

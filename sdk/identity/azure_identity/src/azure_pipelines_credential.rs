@@ -202,7 +202,7 @@ impl fmt::Display for ErrorHeaders {
 mod tests {
     use super::*;
     use crate::env::Env;
-    use azure_core::{Bytes, Response};
+    use azure_core::{http::Response, Bytes};
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt as _;
 

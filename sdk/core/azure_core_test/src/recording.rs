@@ -101,7 +101,7 @@ impl Recording {
     ///
     /// # struct MyClient;
     /// # #[derive(Default)]
-    /// # struct MyClientOptions { client_options: azure_core::ClientOptions };
+    /// # struct MyClientOptions { client_options: azure_core::http::ClientOptions };
     /// # impl MyClient {
     /// #   fn new(endpoint: impl AsRef<str>, options: Option<MyClientOptions>) -> Self { todo!() }
     /// #   async fn invoke(&self) -> azure_core::Result<()> { todo!() }

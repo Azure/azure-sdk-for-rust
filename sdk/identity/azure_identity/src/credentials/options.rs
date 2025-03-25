@@ -5,6 +5,7 @@ use crate::env::Env;
 use azure_core::{
     error::{ErrorKind, Result, ResultExt},
     http::{new_http_client, HttpClient, Url},
+    process::Executor,
 };
 use std::sync::Arc;
 
@@ -18,7 +19,7 @@ pub struct TokenCredentialOptions {
     pub(crate) env: Env,
     pub(crate) http_client: Arc<dyn HttpClient>,
     pub(crate) authority_host: String,
-    pub(crate) executor: Arc<dyn azure_core::process::Executor>,
+    pub(crate) executor: Arc<dyn Executor>,
 }
 
 /// The default token credential options.
@@ -55,13 +56,13 @@ impl TokenCredentialOptions {
         })
     }
 
-    /// The [`azure_core::HttpClient`] to make requests.
+    /// The [`HttpClient`] to make requests.
     pub fn http_client(&self) -> Arc<dyn HttpClient> {
         self.http_client.clone()
     }
 
-    /// The [`azure_core::process::Executor`] to run commands.
-    pub fn executor(&self) -> Arc<dyn azure_core::process::Executor> {
+    /// The [`Executor`] to run commands.
+    pub fn executor(&self) -> Arc<dyn Executor> {
         self.executor.clone()
     }
 

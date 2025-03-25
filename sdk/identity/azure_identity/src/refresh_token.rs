@@ -153,7 +153,7 @@ mod tests {
     #[test]
     fn ensure_that_exchange_is_send() {
         require_send(exchange(
-            azure_core::new_http_client(),
+            azure_core::http::new_http_client(),
             "UNUSED",
             "UNUSED",
             None,

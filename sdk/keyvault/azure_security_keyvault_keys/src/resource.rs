@@ -3,7 +3,7 @@
 
 #[cfg(doc)]
 use crate::{models::KeyBundle, KeyClient};
-use azure_core::{error::ErrorKind, Result, Url};
+use azure_core::{error::ErrorKind, http::Url, Result};
 use std::str::FromStr;
 
 /// Information about the resource.

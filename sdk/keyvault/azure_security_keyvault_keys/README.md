@@ -196,10 +196,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Update a key using the key client.
     let key_update_parameters = KeyUpdateParameters {
-        tags: Some(HashMap::from_iter(vec![(
+        tags: HashMap::from_iter(vec![(
             "tag-name".into(),
             "tag-value".into(),
-        )])),
+        )]),
         ..Default::default()
     };
 
@@ -261,12 +261,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    let mut pager = client.get_keys(None)?.into_stream();
+    let mut pager = client.list_keys(None)?.into_stream();
     while let Some(keys) = pager.try_next().await? {
-        let Some(keys) = keys.into_body().await?.value else {
-            continue;
-        };
-
+        let keys = keys.into_body().await?.value;
         for key in keys {
             // Get the key name from the ID.
             let name = key.resource_id()?.name;
