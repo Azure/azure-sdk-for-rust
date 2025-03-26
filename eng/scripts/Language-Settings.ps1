@@ -167,3 +167,21 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
     ReadmeContent  = $readmeContent
   }
 }
+
+function Find-rust-Artifacts-For-Apireview([string]$ArtifactPath, [string]$packageName) {
+  [array]$files = Get-ChildItem -Path $ArtifactPath -Recurse -Filter "$packageName`_rust.json"
+
+  if (!$files) {
+    Write-Host "$($packageName) does not have api review json"
+    return $null
+  }
+  elseif ($files.Count -ne 1) {
+    Write-Host "$($artifactPath) should contain only one api review for $($packageName)"
+    Write-Host "No of files $($files.Count)"
+    return $null
+  }
+  $packages = @{
+    $files[0].Name = $files[0].FullName
+  }
+  return $packages
+}

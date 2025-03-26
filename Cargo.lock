@@ -357,7 +357,7 @@ dependencies = [
 
 [[package]]
 name = "azure_template"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "azure_template_core",
  "serde",
@@ -365,7 +365,7 @@ dependencies = [
 
 [[package]]
 name = "azure_template_core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "azure_template",
 ]
