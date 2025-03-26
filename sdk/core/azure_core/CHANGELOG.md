@@ -45,6 +45,7 @@
 - Removed `EMPTY_BODY` constant from root.
 - Removed `future!()` macro.
 - Removed `Header` re-export from `http` module. It is still defined in the `http::headers` module.
+- Removed `parsing` module.
 - Removed `query_param` module.
 - Removed `RequestId` type alias from root.
 - Removed `SessionToken` type alias from root.
