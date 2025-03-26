@@ -4,7 +4,8 @@
 use crate::{
     clients::ContainerClient,
     models::{
-        ContainerProperties, ContainerQueryResults, DatabaseProperties, ThroughputProperties,
+        ContainerProperties, ContainerQueryResults, DatabaseProperties, FeedPager,
+        ThroughputProperties,
     },
     options::ReadDatabaseOptions,
     pipeline::CosmosPipeline,
@@ -109,7 +110,7 @@ impl DatabaseClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryContainersOptions<'_>>,
-    ) -> azure_core::Result<Pager<ContainerQueryResults>> {
+    ) -> azure_core::Result<FeedPager<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
         let base_request = Request::new(url, Method::Post);

@@ -10,15 +10,12 @@ use typespec::Error;
 #[derive(Debug)]
 pub enum PagerResult<T, C> {
     /// The [`Pager`] may fetch additional pages with the included `continuation` token.
-    Continue {
-        response: Response<T>,
-        continuation: C,
-    },
+    Continue { value: T, continuation: C },
     /// The [`Pager`] is complete and there are no additional pages to fetch.
-    Complete { response: Response<T> },
+    Complete { value: T },
 }
 
-impl<T> PagerResult<T, String> {
+impl<T> PagerResult<Response<T>, String> {
     /// Creates a [`PagerResult<T, C>`] from the provided response, extracting the continuation value from the provided header.
     ///
     /// If the provided response has a header with the matching name, this returns [`PagerResult::Continue`], using the value from the header as the continuation.
@@ -26,37 +23,41 @@ impl<T> PagerResult<T, String> {
     pub fn from_response_header(response: Response<T>, header_name: &HeaderName) -> Self {
         match response.headers().get_optional_string(header_name) {
             Some(continuation) => PagerResult::Continue {
-                response,
+                value: response,
                 continuation,
             },
-            None => PagerResult::Complete { response },
+            None => PagerResult::Complete { value: response },
         }
     }
 }
 
-/// Represents a paginated result across multiple requests.
+/// Represents a paginated stream of results generated through HTTP requests to a service.
+///
+/// Specifically, this is a [`PageStream`] that yields [`Response<T>`] values.
+pub type Pager<T> = PageStream<Response<T>>;
+
+/// Represents a paginated stream of results from a service.
 #[pin_project::pin_project]
-pub struct Pager<T> {
+pub struct PageStream<T> {
     #[pin]
     #[cfg(not(target_arch = "wasm32"))]
-    stream: Pin<Box<dyn Stream<Item = Result<Response<T>, Error>> + Send>>,
+    stream: Pin<Box<dyn Stream<Item = Result<T, Error>> + Send>>,
 
     #[pin]
     #[cfg(target_arch = "wasm32")]
-    stream: Pin<Box<dyn Stream<Item = Result<Response<T>, Error>>>>,
+    stream: Pin<Box<dyn Stream<Item = Result<T, Error>>>>,
 }
 
-impl<T> Pager<T> {
+impl<T> PageStream<T> {
     /// Creates a [`Pager<T>`] from a callback that will be called repeatedly to request each page.
     ///
-    /// This method expect a callback that accepts a single `Option<C>` parameter, and returns a `(Response<T>, Option<C>)` tuple, asynchronously.
-    /// The `C` type parameter is the type of the continuation. It may be any [`Send`]able type.
-    /// The result will be an asynchronous stream of [`Result<Response<T>>`](typespec::Result<Response<T>>) values.
+    /// This method expect a callback that accepts a single `Option<C>` parameter, and returns a [`PagerResult<T, C>`] value, asynchronously.
+    /// The `C` type parameter is the type of the continuation/state. It may be any [`Send`]able type.
+    /// The result will be an asynchronous stream of [`Result<T>`](typespec::Result<T>) values.
     ///
     /// The first time your callback is called, it will be called with [`Option::None`], indicating no continuation value is present.
     /// Your callback must return one of:
-    /// * `Ok((response, Some(continuation)))` - The request succeeded, and return a response `response` and a continuation value `continuation`. The response will be yielded to the stream and the callback will be called again immediately with `Some(continuation)`.
-    /// * `Ok((response, None))` - The request succeeded, and there are no more pages. The response will be yielded to the stream, the stream will end, and the callback will not be called again.
+    /// * `Ok(result)` - The request succeeded, and the provided [`PagerResult`] indicates the value to return and if there are more pages.
     /// * `Err(..)` - The request failed. The error will be yielded to the stream, the stream will end, and the callback will not be called again.
     ///
     /// ## Examples
@@ -102,17 +103,17 @@ impl<T> Pager<T> {
                     State::Continuation(c) => make_request(Some(c)).await,
                     State::Done => return None,
                 };
-                let (response, next_state) = match result {
+                let (item, next_state) = match result {
                     Err(e) => return Some((Err(e), (State::Done, make_request))),
                     Ok(PagerResult::Continue {
-                        response,
+                        value: response,
                         continuation,
                     }) => (Ok(response), State::Continuation(continuation)),
-                    Ok(PagerResult::Complete { response }) => (Ok(response), State::Done),
+                    Ok(PagerResult::Complete { value: response }) => (Ok(response), State::Done),
                 };
 
                 // Flow 'make_request' through to avoid cloning
-                Some((response, (next_state, make_request)))
+                Some((item, (next_state, make_request)))
             },
         );
         Self {
@@ -121,8 +122,8 @@ impl<T> Pager<T> {
     }
 }
 
-impl<T> futures::Stream for Pager<T> {
-    type Item = Result<Response<T>, Error>;
+impl<T> futures::Stream for PageStream<T> {
+    type Item = Result<T, Error>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -132,7 +133,7 @@ impl<T> futures::Stream for Pager<T> {
     }
 }
 
-impl<T> std::fmt::Debug for Pager<T> {
+impl<T> std::fmt::Debug for PageStream<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Pager").finish_non_exhaustive()
     }
@@ -169,7 +170,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 None => Ok(PagerResult::Continue {
-                    response: Response::from_bytes(
+                    value: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -181,7 +182,7 @@ mod tests {
                     continuation: "1",
                 }),
                 Some("1") => Ok(PagerResult::Continue {
-                    response: Response::from_bytes(
+                    value: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -193,7 +194,7 @@ mod tests {
                     continuation: "2",
                 }),
                 Some("2") => Ok(PagerResult::Complete {
-                    response: Response::from_bytes(
+                    value: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -241,7 +242,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 None => Ok(PagerResult::Continue {
-                    response: Response::from_bytes(
+                    value: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),

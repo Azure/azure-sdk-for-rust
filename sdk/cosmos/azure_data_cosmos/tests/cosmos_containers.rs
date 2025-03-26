@@ -19,6 +19,7 @@ use futures::StreamExt;
 #[recorded::test]
 pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
     use azure_data_cosmos::models::PartitionKeyKind;
+    use futures::TryStreamExt;
 
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
@@ -86,9 +87,8 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
         None,
     )?;
     let mut ids = vec![];
-    while let Some(response) = query_pager.next().await.transpose()? {
-        let results = response.into_body().await?;
-        for db in results.containers {
+    while let Some(page) = query_pager.try_next().await? {
+        for db in page.into_items() {
             ids.push(db.id);
         }
     }
@@ -146,9 +146,8 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
         None,
     )?;
     let mut ids = vec![];
-    while let Some(response) = query_pager.next().await.transpose()? {
-        let results = response.into_body().await?;
-        for db in results.containers {
+    while let Some(page) = query_pager.try_next().await? {
+        for db in page.into_items() {
             ids.push(db.id);
         }
     }

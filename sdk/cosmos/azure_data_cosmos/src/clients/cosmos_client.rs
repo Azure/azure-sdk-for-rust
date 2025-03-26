@@ -3,7 +3,7 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::{DatabaseProperties, DatabaseQueryResults},
+    models::{DatabaseProperties, DatabaseQueryResults, FeedPager},
     pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
@@ -132,7 +132,7 @@ impl CosmosClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryDatabasesOptions<'_>>,
-    ) -> azure_core::Result<Pager<DatabaseQueryResults>> {
+    ) -> azure_core::Result<FeedPager<DatabaseProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.databases_link);
         let base_request = Request::new(url, Method::Post);
