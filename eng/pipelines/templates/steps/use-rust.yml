@@ -5,6 +5,9 @@ parameters:
   - name: MaxAttempts
     type: number
     default: 3
+  - name: WorkingDirectory
+    type: string
+    default: $(System.DefaultWorkingDirectory)
 
 steps:
   - pwsh: |
@@ -12,6 +15,9 @@ steps:
       if ($toolchain -eq 'msrv') {
           Write-Host "Reading MSRV from azure_core"
           $toolchain = cargo read-manifest --manifest-path ./sdk/core/azure_core/Cargo.toml | ConvertFrom-Json | Select-Object -ExpandProperty rust_version
+      } elseif ($toolchain -eq 'active') {
+          Write-Host "Reading active toolchain using 'rustup show active-toolchain'"
+          $toolchain = rustup show active-toolchain -v | Select-Object -First 1
       }
 
       Write-Host "Setting Toolchain variable to $toolchain"
@@ -40,3 +46,4 @@ steps:
       }
 
     displayName: "Use Rust ${{ parameters.Toolchain }}"
+    workingDirectory: ${{ parameters.WorkingDirectory }}

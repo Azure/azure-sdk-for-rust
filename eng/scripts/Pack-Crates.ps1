@@ -189,6 +189,15 @@ try {
     Write-Host "  $packageName ($type)"
   }
 
+  function Create-ApiViewFile($package) {
+    $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $($package.name)"
+    Invoke-LoggedCommand $command -GroupOutput | Out-Host
+  
+    $packagePath = Split-Path -Path $package.manifest_path -Parent
+  
+    "$packagePath/review/$($package.name)_rust.json"
+  }
+
   foreach ($package in $packages) {
     Write-Host ""
 
@@ -210,16 +219,24 @@ try {
       -Package $package
 
     if ($OutputPath -and $package.OutputPackage) {
-      $packageOutputPath = "$OutputPath/$packageName"
-      $targetPackagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
+      $sourcePath = "$RepoRoot/target/package/$packageName-$packageVersion"
+      $targetPath = "$OutputPath/$packageName"
+      $targetContentsPath = "$targetPath/contents"
+      $targetApiReviewFile = "$targetPath/$packageName`_rust.json"
 
-      if (Test-Path -Path $packageOutputPath) {
-        Remove-Item -Path $packageOutputPath -Recurse -Force
+      if (Test-Path -Path $targetContentsPath) {
+        Remove-Item -Path $targetContentsPath -Recurse -Force
       }
 
-      Write-Host "Copying package '$packageName' to '$packageOutputPath'"
-      New-Item -ItemType Directory -Path $packageOutputPath -Force | Out-Null
-      Copy-Item -Path $targetPackagePath/* -Destination $packageOutputPath -Recurse -Exclude "Cargo.toml.orig"
+      Write-Host "Copying package '$packageName' to '$targetContentsPath'"
+      New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
+      Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse -Exclude "Cargo.toml.orig"
+
+      Write-Host "Creating API review file"
+      $apiReviewFile = Create-ApiViewFile $package
+      
+      Write-Host "Copying API review file to '$targetApiReviewFile'"
+      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
     }
   }
 

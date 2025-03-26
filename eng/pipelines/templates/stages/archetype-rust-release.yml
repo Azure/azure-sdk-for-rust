@@ -93,7 +93,7 @@ stages:
                     $token = $env:CARGO_REGISTRY_TOKEN
                     $crateName = '${{artifact.name}}'
 
-                    $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/Cargo.toml"
+                    $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/contents/Cargo.toml"
                     Write-Host "> cargo publish --manifest-path `"$manifestPath`""
                     cargo publish --manifest-path $manifestPath
                     if (!$?) {
