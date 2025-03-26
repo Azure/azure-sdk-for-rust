@@ -10,9 +10,9 @@ use typespec::Error;
 #[derive(Debug)]
 pub enum PagerResult<T, C> {
     /// The [`Pager`] may fetch additional pages with the included `continuation` token.
-    Continue { value: T, continuation: C },
+    Continue { response: T, continuation: C },
     /// The [`Pager`] is complete and there are no additional pages to fetch.
-    Complete { value: T },
+    Complete { response: T },
 }
 
 impl<T> PagerResult<Response<T>, String> {
@@ -23,10 +23,10 @@ impl<T> PagerResult<Response<T>, String> {
     pub fn from_response_header(response: Response<T>, header_name: &HeaderName) -> Self {
         match response.headers().get_optional_string(header_name) {
             Some(continuation) => PagerResult::Continue {
-                value: response,
+                response,
                 continuation,
             },
-            None => PagerResult::Complete { value: response },
+            None => PagerResult::Complete { response },
         }
     }
 }
@@ -106,10 +106,10 @@ impl<T> PageStream<T> {
                 let (item, next_state) = match result {
                     Err(e) => return Some((Err(e), (State::Done, make_request))),
                     Ok(PagerResult::Continue {
-                        value: response,
+                        response,
                         continuation,
                     }) => (Ok(response), State::Continuation(continuation)),
-                    Ok(PagerResult::Complete { value: response }) => (Ok(response), State::Done),
+                    Ok(PagerResult::Complete { response }) => (Ok(response), State::Done),
                 };
 
                 // Flow 'make_request' through to avoid cloning
@@ -170,7 +170,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 None => Ok(PagerResult::Continue {
-                    value: Response::from_bytes(
+                    response: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -182,7 +182,7 @@ mod tests {
                     continuation: "1",
                 }),
                 Some("1") => Ok(PagerResult::Continue {
-                    value: Response::from_bytes(
+                    response: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -194,7 +194,7 @@ mod tests {
                     continuation: "2",
                 }),
                 Some("2") => Ok(PagerResult::Complete {
-                    value: Response::from_bytes(
+                    response: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -242,7 +242,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 None => Ok(PagerResult::Continue {
-                    value: Response::from_bytes(
+                    response: Response::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),

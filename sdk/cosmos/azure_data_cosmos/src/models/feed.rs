@@ -57,10 +57,10 @@ impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>, String> {
         let continuation = value.continuation.clone();
         match continuation {
             Some(continuation) => PagerResult::Continue {
-                value,
+                response: value,
                 continuation,
             },
-            None => PagerResult::Complete { value },
+            None => PagerResult::Complete { response: value },
         }
     }
 }
