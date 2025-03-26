@@ -19,6 +19,8 @@
 
 ### Bugs Fixed
 
+- Handle MSI token servers which respond with `expires_on: i64` instead of `expires_on: String`
+
 ### Other Changes
 
 ## 0.22.0 (2025-02-18)
