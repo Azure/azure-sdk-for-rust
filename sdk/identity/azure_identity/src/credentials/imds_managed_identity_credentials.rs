@@ -148,7 +148,7 @@ where
 {
     struct ExpiresOnVisitor;
 
-    impl<'de> de::Visitor<'de> for ExpiresOnVisitor {
+    impl de::Visitor<'_> for ExpiresOnVisitor {
         type Value = OffsetDateTime;
 
         fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
