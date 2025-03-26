@@ -82,10 +82,21 @@ if ($content -ne $updated) {
   Write-Host "Updated version in $tomlPath from $($pkgProperties.Version) to $packageSemVer."
 
   Write-Host "Updaging dependencies in Cargo.toml files."
-  Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
+  Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update"
 
-  Write-Host "Updating Cargo.lock using 'cargo metadata'."
-  Invoke-LoggedCommand "cargo metadata --no-deps --format-version 1" | Out-Null
+  if ($env:SYSTEM_DEBUG -eq 'true') {
+    New-Item -ItemType Directory -Path "$RepoRoot/target" -Force | Out-Null
+    Get-Content "$RepoRoot/Cargo.lock" | Out-File -FilePath "$RepoRoot/target/Cargo.lock.before" -Encoding utf8
+  }
+
+  Write-Host "Updating Cargo.lock."
+  Invoke-LoggedCommand "cargo update --workspace"
+
+  if ($env:SYSTEM_DEBUG -eq 'true') {
+    Get-Content "$RepoRoot/Cargo.lock" | Out-File -FilePath "$RepoRoot/target/Cargo.lock.after" -Encoding utf8
+    Invoke-LoggedCommand "git diff --no-index -- $RepoRoot/target/Cargo.lock.before $RepoRoot/target/Cargo.lock.after" -AllowedExitCodes 0, 1
+    $LASTEXITCODE = 0
+  }
 }
 else {
   Write-Host "$tomlPath already contains version $packageSemVer"
