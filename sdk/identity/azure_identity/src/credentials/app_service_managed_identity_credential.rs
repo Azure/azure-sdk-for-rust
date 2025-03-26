@@ -19,7 +19,10 @@ pub struct AppServiceManagedIdentityCredential {
 }
 
 impl AppServiceManagedIdentityCredential {
-    pub fn new(options: impl Into<TokenCredentialOptions>) -> azure_core::Result<Arc<Self>> {
+    pub fn new(
+        id: ImdsId,
+        options: impl Into<TokenCredentialOptions>,
+    ) -> azure_core::Result<Arc<Self>> {
         let options = options.into();
         let env = options.env();
         let endpoint = &env
@@ -43,7 +46,7 @@ impl AppServiceManagedIdentityCredential {
                 API_VERSION,
                 SECRET_HEADER,
                 SECRET_ENV,
-                ImdsId::SystemAssigned,
+                id,
             ),
         }))
     }
