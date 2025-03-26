@@ -13,14 +13,12 @@ use azure_core::{
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 
 mod container_properties;
-mod feed;
 mod indexing_policy;
 mod partition_key_definition;
 mod patch_operations;
 mod throughput_properties;
 
 pub use container_properties::*;
-pub use feed::*;
 pub use indexing_policy::*;
 pub use partition_key_definition::*;
 pub use patch_operations::*;

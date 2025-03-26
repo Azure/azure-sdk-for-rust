@@ -3,14 +3,14 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::{DatabaseProperties, DatabaseQueryResults, FeedPager},
+    models::DatabaseProperties,
     pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
+    CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{request::Request, response::Response, Method, Pager, Url},
+    http::{request::Request, response::Response, Method, Url},
 };
 use serde::Serialize;
 use std::sync::Arc;

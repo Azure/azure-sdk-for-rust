@@ -12,6 +12,7 @@
 
 pub mod clients;
 pub mod constants;
+mod feed;
 mod options;
 mod partition_key;
 pub(crate) mod pipeline;
@@ -27,3 +28,5 @@ pub use clients::CosmosClient;
 pub use options::*;
 pub use partition_key::*;
 pub use query::*;
+
+pub use feed::{FeedPage, FeedPager};

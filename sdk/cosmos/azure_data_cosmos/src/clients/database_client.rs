@@ -3,18 +3,15 @@
 
 use crate::{
     clients::ContainerClient,
-    models::{
-        ContainerProperties, ContainerQueryResults, DatabaseProperties, FeedPager,
-        ThroughputProperties,
-    },
+    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
-    CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
+    CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
     ThroughputOptions,
 };
 
-use azure_core::http::{request::Request, response::Response, Method, Pager};
+use azure_core::http::{request::Request, response::Response, Method};
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///

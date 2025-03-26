@@ -3,11 +3,11 @@
 
 use crate::{
     constants,
-    models::{ContainerProperties, FeedPager, PatchDocument, ThroughputProperties},
+    models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
-    DeleteContainerOptions, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
+    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
     ReplaceContainerOptions, ThroughputOptions,
 };
 

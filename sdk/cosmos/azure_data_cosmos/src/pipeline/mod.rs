@@ -7,19 +7,16 @@ mod signature_target;
 use std::sync::Arc;
 
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::http::{
-    request::Request, response::Model, response::Response, ClientOptions, Context, Method, Pager,
-    PagerResult,
-};
-use futures::StreamExt;
-use serde::{de::DeserializeOwned, Deserialize};
+use azure_core::http::{request::Request, response::Response, ClientOptions, Context, Method};
+use futures::TryStreamExt;
+use serde::de::DeserializeOwned;
 use url::Url;
 
 use crate::{
     constants,
-    models::{FeedPage, FeedPager, ThroughputProperties},
+    models::ThroughputProperties,
     resource_context::{ResourceLink, ResourceType},
-    Query,
+    FeedPage, FeedPager, Query,
 };
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
@@ -128,9 +125,9 @@ impl CosmosPipeline {
         )?;
 
         let page = results
-            .next()
-            .await
-            .expect("the first pager result should always be Some, even when there's an error")?;
+            .try_next()
+            .await?
+            .expect("the first pager result should always be Some, even when there's an error");
         let offers: &[ThroughputProperties] = page.items();
 
         if offers.is_empty() {
