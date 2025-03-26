@@ -142,20 +142,6 @@ impl TokenCredential for DefaultAzureCredentialKind {
             }
         }
     }
-
-    /// Clear the credential's cache.
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        match self {
-            #[cfg(not(target_arch = "wasm32"))]
-            DefaultAzureCredentialKind::AzureCli(credential) => credential.clear_cache().await,
-            #[cfg(target_arch = "wasm32")]
-            _ => {
-                return Err(Error::with_message(ErrorKind::Credential, || {
-                    "No credential providers available"
-                }));
-            }
-        }
-    }
 }
 
 /// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.
@@ -225,18 +211,6 @@ impl DefaultAzureCredential {
 impl TokenCredential for DefaultAzureCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.cache.get_token(scopes, self.get_token(scopes)).await
-    }
-
-    /// Clear the credential's cache.
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        // clear the internal cache as well as each of the underlying providers
-        self.cache.clear().await?;
-
-        for source in &self.sources {
-            source.clear_cache().await?;
-        }
-
-        Ok(())
     }
 }
 

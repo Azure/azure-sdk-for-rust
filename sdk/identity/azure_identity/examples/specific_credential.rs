@@ -81,20 +81,6 @@ impl TokenCredential for SpecificAzureCredentialKind {
             }
         }
     }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        match self {
-            #[cfg(not(target_arch = "wasm32"))]
-            SpecificAzureCredentialKind::AzureCli(credential) => credential.clear_cache().await,
-            SpecificAzureCredentialKind::VirtualMachine(credential) => {
-                credential.clear_cache().await
-            }
-            SpecificAzureCredentialKind::AppService(credential) => credential.clear_cache().await,
-            SpecificAzureCredentialKind::WorkloadIdentity(credential) => {
-                credential.clear_cache().await
-            }
-        }
-    }
 }
 
 /// Define a credential that uses an environment variable named `AZURE_CREDENTIAL_KIND`
@@ -160,9 +146,5 @@ impl SpecificAzureCredential {
 impl TokenCredential for SpecificAzureCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.source.get_token(scopes).await
-    }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.source.clear_cache().await
     }
 }

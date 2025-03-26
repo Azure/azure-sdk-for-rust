@@ -14,6 +14,7 @@
 
 ### Breaking Changes
 
+- Removed `azure_core::credentials::TokenCredential::clear_cache()`
 - Consolidated all the `tokio` features into a single feature named `tokio`. Traits remain separate but `tokio` support is enabled with a single feature.
 - Moved `AppendToUrlQuery` type under `http` module.
 - Moved `ByteStream` and `SeekableStream` types under `stream` module.
