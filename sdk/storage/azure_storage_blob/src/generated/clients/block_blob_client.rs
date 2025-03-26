@@ -500,10 +500,6 @@ impl BlockBlobClient {
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "block");
-        // url.query_pairs_mut()
-        //     .append_pair("blockid", &base64::encode_url_safe(block_id));
-
-        // GENERATED CODE CHANGE: Regular encode() instead of encode_url_safe()
         url.query_pairs_mut()
             .append_pair("blockid", &base64::encode(block_id));
         if let Some(timeout) = options.timeout {
@@ -584,7 +580,7 @@ impl BlockBlobClient {
             .append_pair("comp", "block")
             .append_key_only("fromURL");
         url.query_pairs_mut()
-            .append_pair("blockid", &base64::encode_url_safe(block_id));
+            .append_pair("blockid", &base64::encode(block_id));
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());

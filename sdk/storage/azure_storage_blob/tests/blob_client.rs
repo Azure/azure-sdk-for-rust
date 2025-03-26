@@ -14,7 +14,6 @@ use std::error::Error;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    println!("Start tests");
     // Recording Setup
     let recording = ctx.recording();
     let (options, endpoint) = recorded_test_setup(recording).await;
