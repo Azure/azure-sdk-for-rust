@@ -7,8 +7,12 @@ use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug, time::Duration};
 use typespec_client_core::date::OffsetDateTime;
 
+/// Default Azure authorization scope.
 pub static DEFAULT_SCOPE_SUFFIX: &str = "/.default";
 
+/// Represents a secret.
+///
+/// The [`Debug`] implementation will not print the secret.
 #[derive(Clone, Deserialize, Serialize, Eq)]
 pub struct Secret(Cow<'static, str>);
 
@@ -96,7 +100,4 @@ impl AccessToken {
 pub trait TokenCredential: Send + Sync + Debug {
     /// Gets a `AccessToken` for the specified resource
     async fn get_token(&self, scopes: &[&str]) -> crate::Result<AccessToken>;
-
-    /// Clear the credential's cache.
-    async fn clear_cache(&self) -> crate::Result<()>;
 }

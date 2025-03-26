@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{json::to_json, RequestContent, StatusCode};
+use azure_core::{
+    http::{request::RequestContent, StatusCode},
+    json::to_json,
+};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt};
 

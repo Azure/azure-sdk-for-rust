@@ -49,7 +49,7 @@ impl AmqpConnectionApis for NoopAmqpConnection {
     async fn open(
         &self,
         name: String,
-        url: azure_core::Url,
+        url: azure_core::http::Url,
         options: Option<AmqpConnectionOptions>,
     ) -> Result<()> {
         unimplemented!()

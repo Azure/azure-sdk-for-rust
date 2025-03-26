@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use futures::channel::oneshot;
 use std::{ffi::OsStr, io, process::Output, thread};
 
-/// An [`Executor`] using [`tokio::process::Command`].
+/// An [`Executor`] using [`std::process::Command`] from [`std::thread::spawn()`].
 #[derive(Debug)]
 pub struct StdExecutor;
 

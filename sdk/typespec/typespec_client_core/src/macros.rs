@@ -101,12 +101,6 @@ macro_rules! create_enum {
                 return s.serialize_str(&self.to_string())
             }
         }
-
-        impl $crate::parsing::FromStringOptional<$name> for $name {
-            fn from_str_optional(s : &str) -> $crate::error::Result<$name> {
-                s.parse::<$name>().map_err(::core::convert::Into::into)
-            }
-        }
     );
 }
 

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Asynchronous streams.
+
 mod bytes_stream;
 
 use bytes::Bytes;

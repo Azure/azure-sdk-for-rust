@@ -26,10 +26,6 @@ impl TokenCredential for MockCredential {
         );
         Ok(AccessToken { token, expires_on })
     }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        Ok(())
-    }
 }
 
 /// Gets a `TokenCredential` appropriate for the current environment.

@@ -1,12 +1,23 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use rustdoc_types::Crate;
 use std::env;
 use std::error::Error;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // Verify we're running from the repository root
+    if !Path::new("eng/tools/generate_api_report").exists() {
+        return Err(
+            "This tool must be run from the root of the azure-sdk-for-rust repository. Use: cargo run --manifest-path eng/tools/generate_api_report/Cargo.toml -- --package {package_name}".into(),
+        );
+    }
+
     // Get the package name from command-line arguments
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 || args[1] != "--package" {
@@ -18,8 +29,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let path = Path::new(&path_str);
 
     // Call cargo +nightly rustdoc to generate the JSON file
-    let output = Command::new("cargo")
-        .arg("+nightly")
+    let channel = env!("TOOLCHAIN_CHANNEL");
+    let mut command = Command::new("cargo");
+    command
+        .arg(format!("+{channel}"))
         .arg("rustdoc")
         .arg("-Z")
         .arg("unstable-options")
@@ -27,8 +40,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         .arg("json")
         .arg("--package")
         .arg(package_name)
-        .arg("--all-features")
-        .output()?;
+        .arg("--all-features");
+    println!(
+        "Running: {} {}",
+        command.get_program().to_string_lossy(),
+        command
+            .get_args()
+            .collect::<Vec<&OsStr>>()
+            .join(OsStr::new(" "))
+            .to_string_lossy(),
+    );
+    let output = command.output()?;
 
     if !output.status.success() {
         eprintln!(
@@ -41,6 +63,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut file = File::open(path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
+
+    println!("Processing rustdoc output for package: {}", package_name);
 
     let mut root: Crate = serde_json::from_str(&contents)?;
 

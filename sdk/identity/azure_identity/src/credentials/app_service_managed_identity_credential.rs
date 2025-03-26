@@ -4,8 +4,8 @@
 use crate::{ImdsId, ImdsManagedIdentityCredential, TokenCredentialOptions};
 use azure_core::credentials::{AccessToken, TokenCredential};
 use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::headers::HeaderName;
-use azure_core::Url;
+use azure_core::http::headers::HeaderName;
+use azure_core::http::Url;
 use std::sync::Arc;
 
 const ENDPOINT_ENV: &str = "IDENTITY_ENDPOINT";
@@ -54,9 +54,5 @@ impl AppServiceManagedIdentityCredential {
 impl TokenCredential for AppServiceManagedIdentityCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.credential.get_token(scopes).await
-    }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.credential.clear_cache().await
     }
 }

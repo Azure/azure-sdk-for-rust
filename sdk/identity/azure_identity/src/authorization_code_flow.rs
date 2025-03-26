@@ -10,7 +10,7 @@
 use crate::oauth2_http_client::Oauth2HttpClient;
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    HttpClient, Url,
+    http::{HttpClient, Url},
 };
 use oauth2::{basic::BasicClient, EndpointNotSet, EndpointSet, HttpRequest, Scope};
 use oauth2::{ClientId, ClientSecret};

@@ -114,21 +114,6 @@ impl TokenCredential for ChainedTokenCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.cache.get_token(scopes, self.get_token(scopes)).await
     }
-
-    /// Clear the credential's cache.
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        // clear the internal cache as well as each of the underlying providers
-        self.cache.clear().await?;
-
-        for source in &self.sources {
-            source.clear_cache().await?;
-        }
-
-        // clear the successful credential if we are clearing the token cache
-        self.successful_credential.write().await.take();
-
-        Ok(())
-    }
 }
 
 fn format_aggregate_error(errors: &[Error]) -> String {
@@ -181,10 +166,6 @@ mod tests {
             let mut count = self.counter.lock().await;
             *count += 1;
             Err(Error::message(ErrorKind::Credential, "failed to get token"))
-        }
-
-        async fn clear_cache(&self) -> azure_core::Result<()> {
-            Ok(())
         }
     }
 

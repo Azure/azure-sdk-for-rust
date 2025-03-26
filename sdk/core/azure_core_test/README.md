@@ -125,6 +125,12 @@ For example, if you wanted to see debug information from all sources by default 
 RUST_LOG=debug,test-proxy=trace cargo test
 ```
 
+ANSI colors are written to the terminal even if redirected to a file. To disable writing ANSI color sequences, pass `NO_COLOR=1`:
+
+```bash
+NO_COLOR=1 RUST_LOG=debug,test-proxy=trace cargo test
+```
+
 [PowerShell]: https://learn.microsoft.com/powershell/scripting/install/installing-powershell
 [Test Proxy]: https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md
 [Test Resources]: https://github.com/Azure/azure-sdk-tools/blob/main/eng/common/TestResources/README.md

@@ -38,7 +38,6 @@ getrandom.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
 
 [dev-dependencies]
-once_cell.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
@@ -54,13 +53,12 @@ reqwest_deflate = ["reqwest/deflate"]
 reqwest_gzip = ["reqwest/gzip"]
 reqwest_rustls = ["reqwest/rustls-tls-native-roots"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
-tokio_fs = ["tokio/fs", "tokio/sync", "tokio/io-util"]
-tokio_sleep = ["tokio/time"]
+tokio = ["tokio/fs", "tokio/sync", "tokio/time", "tokio/io-util"]
 xml = ["dep:quick-xml"]
 
 [[example]]
 name = "binary_data_request"
-required-features = ["tokio_fs", "tokio_sleep"]
+required-features = ["tokio"]
 
 [[example]]
 name = "stream_response"
@@ -75,7 +73,9 @@ features = [
   "reqwest_deflate",
   "reqwest_gzip",
   "reqwest_rustls",
-  "tokio_fs",
-  "tokio_sleep",
+  "tokio",
   "xml",
 ]
+
+[lints]
+workspace = true

@@ -3,10 +3,15 @@
 
 use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
-    base64, content_type,
+    base64,
     credentials::{AccessToken, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind, ResultExt},
-    headers, HttpClient, Method, Request, Url, Uuid,
+    http::{
+        headers::{self, content_type},
+        request::Request,
+        HttpClient, Method, Url,
+    },
+    Uuid,
 };
 
 // cspell:ignore pkey
@@ -351,9 +356,5 @@ fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
 impl TokenCredential for ClientCertificateCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.cache.get_token(scopes, self.get_token(scopes)).await
-    }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.cache.clear().await
     }
 }

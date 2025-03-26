@@ -6,7 +6,7 @@
 
 - Added `AzurePipelinesCredential`.
 - `AzureCliCredentialOptions` (new) accepts a `azure_core::process::Executor` to run the Azure CLI asynchronously.
-  The `tokio_process` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
+  The `tokio` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
   Callers can also implement the trait themselves to use a different asynchronous runtime.
 
 ### Breaking Changes
@@ -16,6 +16,7 @@
 - `ClientAssertionCredential` constructors moved some parameters to an `Option<ClientAssertionCredentialOptions>` parameter.
 - Removed `get_subscription()` and `get_tenant()` from `AzureCliCredential`.
 - `WorkloadIdentityCredential` constructors moved some parameters to an `Option<ClientAssertionCredentialOptions>` parameter.
+- Removed `clear_cache()` from all credential types
 
 ### Bugs Fixed
 

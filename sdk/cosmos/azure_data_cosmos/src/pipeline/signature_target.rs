@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 
 #[cfg_attr(not(feature = "key_auth"), allow(unused_imports))]
-use azure_core::{credentials::Secret, hmac::hmac_sha256, Method};
+use azure_core::{credentials::Secret, hmac::hmac_sha256, http::Method};
 
 use crate::resource_context::ResourceLink;
 
 #[cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 pub struct SignatureTarget<'a> {
-    http_method: azure_core::Method,
+    http_method: Method,
     link: &'a ResourceLink,
     date_string: &'a str,
 }
@@ -49,12 +49,12 @@ impl<'a> SignatureTarget<'a> {
             "{}\n{}\n{}\n{}\n\n",
             // Cosmos' signature algorithm requires lower-case methods, so we use our own match instead of the impl of AsRef<str>, which is uppercase.
             match self.http_method {
-                azure_core::Method::Get => "get",
-                azure_core::Method::Put => "put",
-                azure_core::Method::Post => "post",
-                azure_core::Method::Delete => "delete",
-                azure_core::Method::Head => "head",
-                azure_core::Method::Patch => "patch",
+                Method::Get => "get",
+                Method::Put => "put",
+                Method::Post => "post",
+                Method::Delete => "delete",
+                Method::Head => "head",
+                Method::Patch => "patch",
                 _ => "extension",
             },
             self.link.resource_type().path_segment(),
@@ -67,7 +67,7 @@ impl<'a> SignatureTarget<'a> {
 #[cfg(test)]
 #[cfg(feature = "key_auth")]
 mod tests {
-    use azure_core::date;
+    use azure_core::{date, http::Method};
 
     use crate::{
         pipeline::signature_target::SignatureTarget,
@@ -82,7 +82,7 @@ mod tests {
         let date_string = date::to_rfc7231(&time_nonce).to_lowercase();
 
         let ret = SignatureTarget::new(
-            azure_core::Method::Get,
+            Method::Get,
             &ResourceLink::root(ResourceType::Databases)
                 .item("MyDatabase")
                 .feed(ResourceType::Containers)

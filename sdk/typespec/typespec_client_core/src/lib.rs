@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[macro_use]
 mod macros;
@@ -14,7 +15,6 @@ pub mod fs;
 pub mod http;
 #[cfg(feature = "json")]
 pub mod json;
-pub mod parsing;
 pub mod sleep;
 pub mod stream;
 #[cfg(feature = "xml")]

@@ -11,8 +11,12 @@
 use azure_core::{
     credentials::{Secret, TokenCredential},
     date::{self, OffsetDateTime},
-    headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION},
-    Context, Policy, PolicyResult, Request, Url,
+    http::{
+        headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION},
+        policies::{Policy, PolicyResult},
+        request::Request,
+        Context, Url,
+    },
 };
 use std::sync::Arc;
 use tracing::trace;
@@ -144,6 +148,7 @@ mod tests {
     use azure_core::{
         credentials::{AccessToken, TokenCredential},
         date,
+        http::Method,
     };
     use time::OffsetDateTime;
     use url::Url;
@@ -170,10 +175,6 @@ mod tests {
                 OffsetDateTime::now_utc().saturating_add(time::Duration::minutes(5)),
             ))
         }
-
-        async fn clear_cache(&self) -> azure_core::Result<()> {
-            Ok(())
-        }
     }
 
     #[tokio::test]
@@ -190,7 +191,7 @@ mod tests {
             &auth_token,
             &url,
             SignatureTarget::new(
-                azure_core::Method::Get,
+                Method::Get,
                 &ResourceLink::root(ResourceType::Databases).item("ToDoList"),
                 &date_string,
             ),
@@ -222,7 +223,7 @@ mod tests {
             &auth_token,
             &url,
             SignatureTarget::new(
-                azure_core::Method::Get,
+                Method::Get,
                 &ResourceLink::root(ResourceType::Databases)
                     .item("MyDatabase")
                     .feed(ResourceType::Containers)
@@ -256,7 +257,7 @@ mod tests {
             &auth_token,
             &url,
             SignatureTarget::new(
-                azure_core::Method::Get,
+                Method::Get,
                 &ResourceLink::root(ResourceType::Databases).item("ToDoList"),
                 &date_string,
             ),

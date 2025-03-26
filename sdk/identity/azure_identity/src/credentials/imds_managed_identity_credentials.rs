@@ -5,9 +5,8 @@ use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind},
-    headers::HeaderName,
+    http::{headers::HeaderName, request::Request, HttpClient, Method, StatusCode, Url},
     json::from_json,
-    HttpClient, Method, Request, StatusCode, Url,
 };
 use serde::{
     de::{self, Deserializer},
@@ -134,10 +133,6 @@ impl ImdsManagedIdentityCredential {
 impl TokenCredential for ImdsManagedIdentityCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.cache.get_token(scopes, self.get_token(scopes)).await
-    }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.cache.clear().await
     }
 }
 
