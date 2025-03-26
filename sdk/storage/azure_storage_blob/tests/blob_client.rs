@@ -14,6 +14,7 @@ use std::error::Error;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    println!("Start tests");
     // Recording Setup
     let recording = ctx.recording();
     let (options, endpoint) = recorded_test_setup(recording).await;
@@ -413,8 +414,6 @@ async fn test_get_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     assert_eq!(0, block_list.committed_blocks.len());
     assert_eq!(3, block_list.uncommitted_blocks.len());
-    // println!("Comm: {:?}", block_list.committed_blocks.len());
-    // println!("Uncomm: {:?}", block_list.uncommitted_blocks);
 
     let latest_blocks: Vec<Vec<u8>> = vec![block_1_id, block_2_id, block_3_id];
 
