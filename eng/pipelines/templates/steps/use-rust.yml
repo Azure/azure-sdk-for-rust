@@ -69,7 +69,7 @@ steps:
     while ($true) {
         $attempts++
 
-        Invoke-LoggedCommand "rustup install $toolchainArg --no-self-update"
+        Invoke-LoggedCommand "rustup install --no-self-update $toolchainArg"
 
         if ($?) { break }
 
