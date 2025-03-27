@@ -7,7 +7,6 @@ use std::error::Error;
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{models::ThroughputProperties, CreateDatabaseOptions, Query};
 use framework::TestAccount;
-use futures::StreamExt;
 
 #[recorded::test]
 pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {

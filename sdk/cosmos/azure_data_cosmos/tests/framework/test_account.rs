@@ -7,7 +7,6 @@ use std::{borrow::Cow, sync::Arc};
 use azure_core::{credentials::Secret, http::TransportOptions, test::TestMode};
 use azure_core_test::TestContext;
 use azure_data_cosmos::{CosmosClientOptions, Query};
-use futures::StreamExt;
 use reqwest::ClientBuilder;
 
 /// Represents a Cosmos DB account for testing purposes.

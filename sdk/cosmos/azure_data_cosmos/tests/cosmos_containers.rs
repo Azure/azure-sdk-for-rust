@@ -14,7 +14,6 @@ use azure_data_cosmos::{
 };
 
 use framework::TestAccount;
-use futures::StreamExt;
 
 #[recorded::test]
 pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> {

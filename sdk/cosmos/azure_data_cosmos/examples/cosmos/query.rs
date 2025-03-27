@@ -2,7 +2,7 @@ use std::error::Error;
 
 use azure_data_cosmos::{CosmosClient, PartitionKey};
 use clap::{Args, Subcommand};
-use futures::{StreamExt, TryStreamExt};
+use futures::TryStreamExt;
 
 /// Run a single-partition query against a container.
 #[derive(Clone, Args)]
