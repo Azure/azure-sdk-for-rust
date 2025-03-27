@@ -22,6 +22,10 @@ steps:
         Write-Host "##[group]> $command"
         Invoke-Expression $command
         Write-Host "##[endgroup]"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Command failed: $command"
+            exit $LASTEXITCODE
+        }
     }
 
     if ($Toolchain -eq 'msrv') {
@@ -36,7 +40,7 @@ steps:
 
         if ($rustupVersion -match 'rustup (\d+).(\d+).\d+') {
             $major = $matches[1]
-            $minor = $matches[2]            
+            $minor = $matches[2]
             if ($major -lt 1 -or $minor -lt 28) {
                 Invoke-LoggedCommand "rustup self update"
             }
