@@ -2,6 +2,10 @@ parameters:
   - name: Toolchain
     type: string
     default: active
+    # Expexted values: 'stable', 'nightly', 'msrv', 'active' or a specific toolchain version
+    # 'msrv' will read the MSRV from azure_core
+    # 'active' will use the active toolchain for the working directory, which will be from rust-toolchain.toml, from a
+    #   folder override or the rustup default toolchain
   - name: MaxAttempts
     type: number
     default: 3
@@ -30,14 +34,21 @@ steps:
 
     if ($Toolchain -eq 'msrv') {
         Write-Host "Reading MSRV from azure_core"
-        $toolchainArg = cargo read-manifest --manifest-path "$RepoRoot/sdk/core/azure_core/Cargo.toml" | ConvertFrom-Json | Select-Object -ExpandProperty rust_version
+        $toolchainArg = cargo read-manifest --manifest-path "$(System.DefaultWorkingDirectory)/sdk/core/azure_core/Cargo.toml"
+          | ConvertFrom-Json
+          | Select-Object -ExpandProperty rust_version
     }
     elseif ($Toolchain -eq 'active') {
         # You can't call 'rustup install' without a toolchain before rustup 1.28.0. If know we'll be doing that, make sure
         # we have the latest rustup installed
+        
+        # Depending on the version of rustup currently installed, simply calling `rustup --version` will install the
+        # active toolchain per rust-toolchain.toml if it's not already installed. We should check the rust version
+        # outside of our repo's context to avoid any rustup-toolchain file influence.
 
+        Push-Location '$(Pipeline.Workspace)'
         Invoke-LoggedCommand "rustup --version" | Tee-Object -Variable rustupVersion
-
+        
         if ($rustupVersion -match 'rustup (\d+).(\d+).\d+') {
             $major = $matches[1]
             $minor = $matches[2]
@@ -45,6 +56,7 @@ steps:
                 Invoke-LoggedCommand "rustup self update"
             }
         }
+        Pop-Location
 
         $toolchainArg = ''
     }
