@@ -34,9 +34,10 @@ steps:
 
         Invoke-LoggedCommand "rustup --version" | Tee-Object -Variable rustupVersion
 
-        if ($rustupVersion -match 'rustup (\S+)') {
-            $rustupVersion = [AzureEngSemanticVersion]::new($matches[1])
-            if ($rustupVersion -lt [AzureEngSemanticVersion]::new('1.28.0')) {
+        if ($rustupVersion -match 'rustup (\d+).(\d+).\d+') {
+            $major = $matches[1]
+            $minor = $matches[2]            
+            if ($major -lt 1 -or $minor -lt 28) {
                 Invoke-LoggedCommand "rustup self update"
             }
         }
