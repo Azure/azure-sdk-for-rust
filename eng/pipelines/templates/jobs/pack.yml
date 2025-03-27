@@ -32,8 +32,8 @@ jobs:
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      Toolchain: default
       WorkingDirectory: $(System.DefaultWorkingDirectory)/eng/tools/generate_api_report
+      SetDefault: false
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
