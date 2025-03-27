@@ -112,20 +112,20 @@ stages:
                   env:
                     CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
 
-        # - job: CreateApiReview
-        #   displayName: "Api Review"
-        #   condition: and(succeeded(), ne(variables['Skip.CreateApiReview'], 'true'))
-        #   dependsOn: PublishPackage
-        #   steps:
-        #   - template: /eng/common/pipelines/templates/steps/create-apireview.yml
-        #     parameters:
-        #       ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
-        #       Artifacts: ${{parameters.Artifacts}}
-        #       ConfigFileDir: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo
-        #       MarkPackageAsShipped: true
-        #       ArtifactName: ${{parameters.PipelineArtifactName}}
-        #       SourceRootPath: $(Pipeline.Workspace)/azure-sdk-for-rust
-        #       PackageName: ${{artifact.name}}
+        - job: CreateApiReview
+          displayName: "Api Review"
+          condition: and(succeeded(), ne(variables['Skip.CreateApiReview'], 'true'))
+          dependsOn: PublishPackage
+          steps:
+          - template: /eng/common/pipelines/templates/steps/create-apireview.yml
+            parameters:
+              ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
+              Artifacts: ${{parameters.Artifacts}}
+              ConfigFileDir: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo
+              MarkPackageAsShipped: true
+              ArtifactName: ${{parameters.PipelineArtifactName}}
+              SourceRootPath: $(System.DefaultWorkingDirectory)
+              PackageName: ${{artifact.name}}
 
         - job: UpdatePackageVersion
           displayName: "Update Package Versions"
