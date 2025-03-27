@@ -91,7 +91,6 @@ steps:
             $toolchainArg = rustup show active-toolchain -v | Select-Object -First 1
         }
 
-        Write-Host "Setting default toolchain to $toolchainArg`n"
         Invoke-LoggedCommand "rustup default $toolchainArg"
     }
 
