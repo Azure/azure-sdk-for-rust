@@ -7,8 +7,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
-
-. "$PSScriptRoot\..\common\scripts\common.ps1"
+. "$PSScriptRoot/../common/scripts/common.ps1"
 
 Write-Host @"
 Testing packages with

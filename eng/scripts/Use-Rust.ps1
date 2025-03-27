@@ -4,12 +4,15 @@
 [CmdletBinding(DefaultParameterSetName = "none")]
 param(
     [string]$Toolchain,
-    [int]$MaxAttempts = 3
+    [int]$MaxAttempts = 3,
+    [switch]$SetDefault
 )
 
 $ErrorActionPreference = 'Stop'
+Set-StrictMode -Version 2.0
+. "$PSScriptRoot/../common/scripts/common.ps1"
 
-. (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
+Write-Host $RepoRoot
 
 $rustupVersion = Invoke-LoggedCommand "rustup --version"
 if ($rustupVersion -match 'rustup (\S+)') {
@@ -21,7 +24,7 @@ if ($rustupVersion -match 'rustup (\S+)') {
 
 if ($Toolchain -eq 'msrv') {
     Write-Host "Reading MSRV from azure_core"
-    $toolchainArg = cargo read-manifest --manifest-path '$RepoRoot/sdk/core/azure_core/Cargo.toml' | ConvertFrom-Json | Select-Object -ExpandProperty rust_version
+    $toolchainArg = cargo read-manifest --manifest-path "$RepoRoot/sdk/core/azure_core/Cargo.toml" | ConvertFrom-Json | Select-Object -ExpandProperty rust_version
 }
 elseif ($Toolchain -eq 'default') {
     # 'rustup default' will install and set the default toolchain, but unlike `rustup install`, it doesn't work
@@ -37,7 +40,7 @@ $attempts = 0
 while ($true) {
     $attempts++
 
-    Invoke-LoggedCommand "rustup install $toolchainArg"
+    Invoke-LoggedCommand "rustup install $toolchainArg --no-self-update"
 
     if ($?) { break }
 
@@ -54,9 +57,13 @@ while ($true) {
     Start-Sleep -Seconds 3
 }
 
-if ($Toolchain -eq 'default') {
-    $toolchainArg = rustup show active-toolchain -v | Select-Object -First 1
+if ($SetDefault) {
+    if ($Toolchain -eq 'default') {
+        $toolchainArg = rustup show active-toolchain -v | Select-Object -First 1
+    }
+
+    Write-Host "Setting default toolchain to $toolchainArg`n"
+    Invoke-LoggedCommand "rustup default $toolchainArg"
 }
 
-Invoke-LoggedCommand "rustup default $toolchainArg"
 Invoke-LoggedCommand "rustup show"
