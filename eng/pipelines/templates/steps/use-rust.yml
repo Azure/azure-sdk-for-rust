@@ -19,7 +19,7 @@ steps:
     $SetDefault = $${{ parameters.SetDefault }}
 
     function Invoke-LoggedCommand($command) {
-        Write-Host "##[group]> $command"
+        Write-Host "##[group]$command"
         Invoke-Expression $command
         Write-Host "##[endgroup]"
         if ($LASTEXITCODE -ne 0) {
