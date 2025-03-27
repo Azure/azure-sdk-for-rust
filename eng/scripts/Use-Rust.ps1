@@ -12,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
 
 Invoke-LoggedCommand "rustup --version"
+Invoke-LoggedCommand "rustup self update"
 
 if ($Toolchain -eq 'msrv') {
     Write-Host "Reading MSRV from azure_core"
