@@ -5,12 +5,12 @@
 
 use super::xml_helpers::CorsCorsRule;
 use super::{CorsRule, Logging, Metrics, RetentionPolicy, StaticWebsite};
-use azure_core::{RequestContent, Result};
+use azure_core::fmt::SafeDebug;
+use azure_core::http::RequestContent;
+use azure_core::{xml::to_xml, Result};
 use serde::{Deserialize, Serialize};
-use typespec_client_core::fmt::SafeDebug;
-use typespec_client_core::xml::to_xml;
 
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub(crate) struct GetUserDelegationKeyRequest {
     /// The date-time the key expires.
@@ -22,7 +22,7 @@ pub(crate) struct GetUserDelegationKeyRequest {
     pub(crate) start: String,
 }
 
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub(crate) struct SetPropertiesRequest {
     /// The CORS properties.

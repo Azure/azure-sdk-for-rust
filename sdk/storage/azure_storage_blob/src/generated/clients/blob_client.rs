@@ -24,12 +24,13 @@ use crate::generated::models::{
     BlobExpiryOptions, BlobTags,
 };
 use azure_core::credentials::TokenCredential;
-use azure_core::{
-    base64, date, BearerTokenCredentialPolicy, ClientOptions, Context, Method, Pipeline, Policy,
-    Request, RequestContent, Response, Result, Url,
+use azure_core::fmt::SafeDebug;
+use azure_core::http::policies::{BearerTokenCredentialPolicy, Policy};
+use azure_core::http::{
+    ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
 };
+use azure_core::{base64, date, Result};
 use std::sync::Arc;
-use typespec_client_core::fmt::SafeDebug;
 
 pub struct BlobClient {
     pub(crate) blob_name: String,
@@ -39,7 +40,7 @@ pub struct BlobClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a [`BlobClient`](crate::BlobClient)
+/// Options used when creating a [`BlobClient`](BlobClient)
 #[derive(Clone, SafeDebug)]
 pub struct BlobClientOptions {
     pub client_options: ClientOptions,

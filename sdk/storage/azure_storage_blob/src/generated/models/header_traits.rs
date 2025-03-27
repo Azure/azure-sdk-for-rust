@@ -35,7 +35,8 @@ use super::{
     PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
     SignedIdentifier, SkuName, StorageServiceProperties, StorageServiceStats, UserDelegationKey,
 };
-use azure_core::{base64, date, headers::HeaderName, headers::Headers, Response, Result};
+use azure_core::http::{headers::HeaderName, headers::Headers, Response};
+use azure_core::{base64, date, Result};
 use std::collections::HashMap;
 use time::OffsetDateTime;
 
@@ -115,7 +116,7 @@ const STRUCTURED_CONTENT_LENGTH: HeaderName =
 const TAG_COUNT: HeaderName = HeaderName::from_static("x-ms-tag-count");
 const VERSION_ID: HeaderName = HeaderName::from_static("x-ms-version-id");
 
-/// Provides access to typed response headers for [`AppendBlobClient::append_block_from_url()`](crate::clients::AppendBlobClient::append_block_from_url())
+/// Provides access to typed response headers for [`AppendBlobClient::append_block_from_url()`](crate::generated::clients::AppendBlobClient::append_block_from_url())
 pub trait AppendBlobClientAppendBlockFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -203,7 +204,7 @@ impl AppendBlobClientAppendBlockFromUrlResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`AppendBlobClient::append_block()`](crate::clients::AppendBlobClient::append_block())
+/// Provides access to typed response headers for [`AppendBlobClient::append_block()`](crate::generated::clients::AppendBlobClient::append_block())
 pub trait AppendBlobClientAppendBlockResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -295,7 +296,7 @@ impl AppendBlobClientAppendBlockResultHeaders for Response<AppendBlobClientAppen
     }
 }
 
-/// Provides access to typed response headers for [`AppendBlobClient::create()`](crate::clients::AppendBlobClient::create())
+/// Provides access to typed response headers for [`AppendBlobClient::create()`](crate::generated::clients::AppendBlobClient::create())
 pub trait AppendBlobClientCreateResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -369,7 +370,7 @@ impl AppendBlobClientCreateResultHeaders for Response<AppendBlobClientCreateResu
     }
 }
 
-/// Provides access to typed response headers for [`AppendBlobClient::seal()`](crate::clients::AppendBlobClient::seal())
+/// Provides access to typed response headers for [`AppendBlobClient::seal()`](crate::generated::clients::AppendBlobClient::seal())
 pub trait AppendBlobClientSealResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -413,7 +414,7 @@ impl AppendBlobClientSealResultHeaders for Response<AppendBlobClientSealResult> 
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::abort_copy_from_url()`](crate::clients::BlobClient::abort_copy_from_url())
+/// Provides access to typed response headers for [`BlobClient::abort_copy_from_url()`](crate::generated::clients::BlobClient::abort_copy_from_url())
 pub trait BlobClientAbortCopyFromUrlResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -437,7 +438,7 @@ impl BlobClientAbortCopyFromUrlResultHeaders for Response<BlobClientAbortCopyFro
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::acquire_lease()`](crate::clients::BlobClient::acquire_lease())
+/// Provides access to typed response headers for [`BlobClient::acquire_lease()`](crate::generated::clients::BlobClient::acquire_lease())
 pub trait BlobClientAcquireLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -481,7 +482,7 @@ impl BlobClientAcquireLeaseResultHeaders for Response<BlobClientAcquireLeaseResu
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::break_lease()`](crate::clients::BlobClient::break_lease())
+/// Provides access to typed response headers for [`BlobClient::break_lease()`](crate::generated::clients::BlobClient::break_lease())
 pub trait BlobClientBreakLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -525,7 +526,7 @@ impl BlobClientBreakLeaseResultHeaders for Response<BlobClientBreakLeaseResult> 
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::change_lease()`](crate::clients::BlobClient::change_lease())
+/// Provides access to typed response headers for [`BlobClient::change_lease()`](crate::generated::clients::BlobClient::change_lease())
 pub trait BlobClientChangeLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -569,7 +570,7 @@ impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::copy_from_url()`](crate::clients::BlobClient::copy_from_url())
+/// Provides access to typed response headers for [`BlobClient::copy_from_url()`](crate::generated::clients::BlobClient::copy_from_url())
 pub trait BlobClientCopyFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -648,7 +649,7 @@ impl BlobClientCopyFromUrlResultHeaders for Response<BlobClientCopyFromUrlResult
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::create_snapshot()`](crate::clients::BlobClient::create_snapshot())
+/// Provides access to typed response headers for [`BlobClient::create_snapshot()`](crate::generated::clients::BlobClient::create_snapshot())
 pub trait BlobClientCreateSnapshotResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -707,7 +708,7 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::delete_immutability_policy()`](crate::clients::BlobClient::delete_immutability_policy())
+/// Provides access to typed response headers for [`BlobClient::delete_immutability_policy()`](crate::generated::clients::BlobClient::delete_immutability_policy())
 pub trait BlobClientDeleteImmutabilityPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -733,7 +734,7 @@ impl BlobClientDeleteImmutabilityPolicyResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::delete()`](crate::clients::BlobClient::delete())
+/// Provides access to typed response headers for [`BlobClient::delete()`](crate::generated::clients::BlobClient::delete())
 pub trait BlobClientDeleteResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -757,7 +758,7 @@ impl BlobClientDeleteResultHeaders for Response<BlobClientDeleteResult> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::download()`](crate::clients::BlobClient::download())
+/// Provides access to typed response headers for [`BlobClient::download()`](crate::generated::clients::BlobClient::download())
 pub trait BlobClientDownloadResultHeaders: private::Sealed {
     fn accept_ranges(&self) -> Result<Option<String>>;
     fn cache_control(&self) -> Result<Option<String>>;
@@ -1081,7 +1082,7 @@ impl BlobClientDownloadResultHeaders for Response<BlobClientDownloadResult> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::get_account_info()`](crate::clients::BlobClient::get_account_info())
+/// Provides access to typed response headers for [`BlobClient::get_account_info()`](crate::generated::clients::BlobClient::get_account_info())
 pub trait BlobClientGetAccountInfoResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn account_kind(&self) -> Result<Option<AccountKind>>;
@@ -1123,7 +1124,7 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::get_properties()`](crate::clients::BlobClient::get_properties())
+/// Provides access to typed response headers for [`BlobClient::get_properties()`](crate::generated::clients::BlobClient::get_properties())
 pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn accept_ranges(&self) -> Result<Option<String>>;
     fn cache_control(&self) -> Result<Option<String>>;
@@ -1468,7 +1469,7 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::release_lease()`](crate::clients::BlobClient::release_lease())
+/// Provides access to typed response headers for [`BlobClient::release_lease()`](crate::generated::clients::BlobClient::release_lease())
 pub trait BlobClientReleaseLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1506,7 +1507,7 @@ impl BlobClientReleaseLeaseResultHeaders for Response<BlobClientReleaseLeaseResu
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::renew_lease()`](crate::clients::BlobClient::renew_lease())
+/// Provides access to typed response headers for [`BlobClient::renew_lease()`](crate::generated::clients::BlobClient::renew_lease())
 pub trait BlobClientRenewLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1550,7 +1551,7 @@ impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult> 
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::set_expiry()`](crate::clients::BlobClient::set_expiry())
+/// Provides access to typed response headers for [`BlobClient::set_expiry()`](crate::generated::clients::BlobClient::set_expiry())
 pub trait BlobClientSetExpiryResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1588,7 +1589,7 @@ impl BlobClientSetExpiryResultHeaders for Response<BlobClientSetExpiryResult> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::set_http_headers()`](crate::clients::BlobClient::set_http_headers())
+/// Provides access to typed response headers for [`BlobClient::set_http_headers()`](crate::generated::clients::BlobClient::set_http_headers())
 pub trait BlobClientSetHttpHeadersResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1632,7 +1633,7 @@ impl BlobClientSetHttpHeadersResultHeaders for Response<BlobClientSetHttpHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::set_immutability_policy()`](crate::clients::BlobClient::set_immutability_policy())
+/// Provides access to typed response headers for [`BlobClient::set_immutability_policy()`](crate::generated::clients::BlobClient::set_immutability_policy())
 pub trait BlobClientSetImmutabilityPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -1672,7 +1673,7 @@ impl BlobClientSetImmutabilityPolicyResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::set_legal_hold()`](crate::clients::BlobClient::set_legal_hold())
+/// Provides access to typed response headers for [`BlobClient::set_legal_hold()`](crate::generated::clients::BlobClient::set_legal_hold())
 pub trait BlobClientSetLegalHoldResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -1702,7 +1703,7 @@ impl BlobClientSetLegalHoldResultHeaders for Response<BlobClientSetLegalHoldResu
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::set_metadata()`](crate::clients::BlobClient::set_metadata())
+/// Provides access to typed response headers for [`BlobClient::set_metadata()`](crate::generated::clients::BlobClient::set_metadata())
 pub trait BlobClientSetMetadataResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1769,7 +1770,7 @@ impl BlobClientSetMetadataResultHeaders for Response<BlobClientSetMetadataResult
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::set_tags()`](crate::clients::BlobClient::set_tags())
+/// Provides access to typed response headers for [`BlobClient::set_tags()`](crate::generated::clients::BlobClient::set_tags())
 pub trait BlobClientSetTagsResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -1793,7 +1794,7 @@ impl BlobClientSetTagsResultHeaders for Response<BlobClientSetTagsResult> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::set_tier()`](crate::clients::BlobClient::set_tier())
+/// Provides access to typed response headers for [`BlobClient::set_tier()`](crate::generated::clients::BlobClient::set_tier())
 pub trait BlobClientSetTierResultHeaders: private::Sealed {
     fn client_request_id(&self) -> Result<Option<String>>;
     fn request_id(&self) -> Result<Option<String>>;
@@ -1811,7 +1812,7 @@ impl BlobClientSetTierResultHeaders for Response<BlobClientSetTierResult> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::start_copy_from_url()`](crate::clients::BlobClient::start_copy_from_url())
+/// Provides access to typed response headers for [`BlobClient::start_copy_from_url()`](crate::generated::clients::BlobClient::start_copy_from_url())
 pub trait BlobClientStartCopyFromUrlResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1869,7 +1870,7 @@ impl BlobClientStartCopyFromUrlResultHeaders for Response<BlobClientStartCopyFro
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::undelete()`](crate::clients::BlobClient::undelete())
+/// Provides access to typed response headers for [`BlobClient::undelete()`](crate::generated::clients::BlobClient::undelete())
 pub trait BlobClientUndeleteResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -1893,7 +1894,7 @@ impl BlobClientUndeleteResultHeaders for Response<BlobClientUndeleteResult> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::acquire_lease()`](crate::clients::BlobContainerClient::acquire_lease())
+/// Provides access to typed response headers for [`BlobContainerClient::acquire_lease()`](crate::generated::clients::BlobContainerClient::acquire_lease())
 pub trait BlobContainerClientAcquireLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1939,7 +1940,7 @@ impl BlobContainerClientAcquireLeaseResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::break_lease()`](crate::clients::BlobContainerClient::break_lease())
+/// Provides access to typed response headers for [`BlobContainerClient::break_lease()`](crate::generated::clients::BlobContainerClient::break_lease())
 pub trait BlobContainerClientBreakLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1989,7 +1990,7 @@ impl BlobContainerClientBreakLeaseResultHeaders for Response<BlobContainerClient
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::change_lease()`](crate::clients::BlobContainerClient::change_lease())
+/// Provides access to typed response headers for [`BlobContainerClient::change_lease()`](crate::generated::clients::BlobContainerClient::change_lease())
 pub trait BlobContainerClientChangeLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2035,7 +2036,7 @@ impl BlobContainerClientChangeLeaseResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::create()`](crate::clients::BlobContainerClient::create())
+/// Provides access to typed response headers for [`BlobContainerClient::create()`](crate::generated::clients::BlobContainerClient::create())
 pub trait BlobContainerClientCreateResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2073,7 +2074,7 @@ impl BlobContainerClientCreateResultHeaders for Response<BlobContainerClientCrea
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::delete()`](crate::clients::BlobContainerClient::delete())
+/// Provides access to typed response headers for [`BlobContainerClient::delete()`](crate::generated::clients::BlobContainerClient::delete())
 pub trait BlobContainerClientDeleteResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -2097,7 +2098,7 @@ impl BlobContainerClientDeleteResultHeaders for Response<BlobContainerClientDele
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::get_account_info()`](crate::clients::BlobContainerClient::get_account_info())
+/// Provides access to typed response headers for [`BlobContainerClient::get_account_info()`](crate::generated::clients::BlobContainerClient::get_account_info())
 pub trait BlobContainerClientGetAccountInfoResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn account_kind(&self) -> Result<Option<AccountKind>>;
@@ -2141,7 +2142,7 @@ impl BlobContainerClientGetAccountInfoResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::get_properties()`](crate::clients::BlobContainerClient::get_properties())
+/// Provides access to typed response headers for [`BlobContainerClient::get_properties()`](crate::generated::clients::BlobContainerClient::get_properties())
 pub trait BlobContainerClientGetPropertiesResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2250,7 +2251,7 @@ impl BlobContainerClientGetPropertiesResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::release_lease()`](crate::clients::BlobContainerClient::release_lease())
+/// Provides access to typed response headers for [`BlobContainerClient::release_lease()`](crate::generated::clients::BlobContainerClient::release_lease())
 pub trait BlobContainerClientReleaseLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2290,7 +2291,7 @@ impl BlobContainerClientReleaseLeaseResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::rename()`](crate::clients::BlobContainerClient::rename())
+/// Provides access to typed response headers for [`BlobContainerClient::rename()`](crate::generated::clients::BlobContainerClient::rename())
 pub trait BlobContainerClientRenameResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -2314,7 +2315,7 @@ impl BlobContainerClientRenameResultHeaders for Response<BlobContainerClientRena
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::renew_lease()`](crate::clients::BlobContainerClient::renew_lease())
+/// Provides access to typed response headers for [`BlobContainerClient::renew_lease()`](crate::generated::clients::BlobContainerClient::renew_lease())
 pub trait BlobContainerClientRenewLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2358,7 +2359,7 @@ impl BlobContainerClientRenewLeaseResultHeaders for Response<BlobContainerClient
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::restore()`](crate::clients::BlobContainerClient::restore())
+/// Provides access to typed response headers for [`BlobContainerClient::restore()`](crate::generated::clients::BlobContainerClient::restore())
 pub trait BlobContainerClientRestoreResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -2382,7 +2383,7 @@ impl BlobContainerClientRestoreResultHeaders for Response<BlobContainerClientRes
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::set_access_policy()`](crate::clients::BlobContainerClient::set_access_policy())
+/// Provides access to typed response headers for [`BlobContainerClient::set_access_policy()`](crate::generated::clients::BlobContainerClient::set_access_policy())
 pub trait BlobContainerClientSetAccessPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2422,7 +2423,7 @@ impl BlobContainerClientSetAccessPolicyResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::set_metadata()`](crate::clients::BlobContainerClient::set_metadata())
+/// Provides access to typed response headers for [`BlobContainerClient::set_metadata()`](crate::generated::clients::BlobContainerClient::set_metadata())
 pub trait BlobContainerClientSetMetadataResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2462,7 +2463,7 @@ impl BlobContainerClientSetMetadataResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::submit_batch()`](crate::clients::BlobContainerClient::submit_batch())
+/// Provides access to typed response headers for [`BlobContainerClient::submit_batch()`](crate::generated::clients::BlobContainerClient::submit_batch())
 pub trait BlobContainerClientSubmitBatchResultHeaders: private::Sealed {
     fn request_id(&self) -> Result<Option<String>>;
 }
@@ -2476,7 +2477,7 @@ impl BlobContainerClientSubmitBatchResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobServiceClient::get_account_info()`](crate::clients::BlobServiceClient::get_account_info())
+/// Provides access to typed response headers for [`BlobServiceClient::get_account_info()`](crate::generated::clients::BlobServiceClient::get_account_info())
 pub trait BlobServiceClientGetAccountInfoResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn account_kind(&self) -> Result<Option<AccountKind>>;
@@ -2520,7 +2521,7 @@ impl BlobServiceClientGetAccountInfoResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobServiceClient::set_properties()`](crate::clients::BlobServiceClient::set_properties())
+/// Provides access to typed response headers for [`BlobServiceClient::set_properties()`](crate::generated::clients::BlobServiceClient::set_properties())
 pub trait BlobServiceClientSetPropertiesResultHeaders: private::Sealed {
     fn client_request_id(&self) -> Result<Option<String>>;
     fn request_id(&self) -> Result<Option<String>>;
@@ -2540,7 +2541,7 @@ impl BlobServiceClientSetPropertiesResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlobServiceClient::submit_batch()`](crate::clients::BlobServiceClient::submit_batch())
+/// Provides access to typed response headers for [`BlobServiceClient::submit_batch()`](crate::generated::clients::BlobServiceClient::submit_batch())
 pub trait BlobServiceClientSubmitBatchResultHeaders: private::Sealed {
     fn client_request_id(&self) -> Result<Option<String>>;
     fn request_id(&self) -> Result<Option<String>>;
@@ -2558,7 +2559,7 @@ impl BlobServiceClientSubmitBatchResultHeaders for Response<BlobServiceClientSub
     }
 }
 
-/// Provides access to typed response headers for [`BlobClient::get_tags()`](crate::clients::BlobClient::get_tags())
+/// Provides access to typed response headers for [`BlobClient::get_tags()`](crate::generated::clients::BlobClient::get_tags())
 pub trait BlobTagsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -2582,7 +2583,7 @@ impl BlobTagsHeaders for Response<BlobTags> {
     }
 }
 
-/// Provides access to typed response headers for [`BlockBlobClient::commit_block_list()`](crate::clients::BlockBlobClient::commit_block_list())
+/// Provides access to typed response headers for [`BlockBlobClient::commit_block_list()`](crate::generated::clients::BlockBlobClient::commit_block_list())
 pub trait BlockBlobClientCommitBlockListResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -2664,7 +2665,7 @@ impl BlockBlobClientCommitBlockListResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlockBlobClient::put_blob_from_url()`](crate::clients::BlockBlobClient::put_blob_from_url())
+/// Provides access to typed response headers for [`BlockBlobClient::put_blob_from_url()`](crate::generated::clients::BlockBlobClient::put_blob_from_url())
 pub trait BlockBlobClientPutBlobFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -2738,7 +2739,7 @@ impl BlockBlobClientPutBlobFromUrlResultHeaders for Response<BlockBlobClientPutB
     }
 }
 
-/// Provides access to typed response headers for [`BlockBlobClient::query()`](crate::clients::BlockBlobClient::query())
+/// Provides access to typed response headers for [`BlockBlobClient::query()`](crate::generated::clients::BlockBlobClient::query())
 pub trait BlockBlobClientQueryResultHeaders: private::Sealed {
     fn accept_ranges(&self) -> Result<Option<String>>;
     fn cache_control(&self) -> Result<Option<String>>;
@@ -2967,7 +2968,7 @@ impl BlockBlobClientQueryResultHeaders for Response<BlockBlobClientQueryResult> 
     }
 }
 
-/// Provides access to typed response headers for [`BlockBlobClient::stage_block_from_url()`](crate::clients::BlockBlobClient::stage_block_from_url())
+/// Provides access to typed response headers for [`BlockBlobClient::stage_block_from_url()`](crate::generated::clients::BlockBlobClient::stage_block_from_url())
 pub trait BlockBlobClientStageBlockFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -3028,7 +3029,7 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`BlockBlobClient::stage_block()`](crate::clients::BlockBlobClient::stage_block())
+/// Provides access to typed response headers for [`BlockBlobClient::stage_block()`](crate::generated::clients::BlockBlobClient::stage_block())
 pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -3093,7 +3094,7 @@ impl BlockBlobClientStageBlockResultHeaders for Response<BlockBlobClientStageBlo
     }
 }
 
-/// Provides access to typed response headers for [`BlockBlobClient::upload()`](crate::clients::BlockBlobClient::upload())
+/// Provides access to typed response headers for [`BlockBlobClient::upload()`](crate::generated::clients::BlockBlobClient::upload())
 pub trait BlockBlobClientUploadResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -3173,7 +3174,7 @@ impl BlockBlobClientUploadResultHeaders for Response<BlockBlobClientUploadResult
     }
 }
 
-/// Provides access to typed response headers for [`BlockBlobClient::get_block_list()`](crate::clients::BlockBlobClient::get_block_list())
+/// Provides access to typed response headers for [`BlockBlobClient::get_block_list()`](crate::generated::clients::BlockBlobClient::get_block_list())
 pub trait BlockListHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -3218,7 +3219,7 @@ impl BlockListHeaders for Response<BlockList> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::filter_blobs()`](crate::clients::BlobContainerClient::filter_blobs())
+/// Provides access to typed response headers for [`BlobContainerClient::filter_blobs()`](crate::generated::clients::BlobContainerClient::filter_blobs())
 pub trait FilterBlobSegmentHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -3242,7 +3243,7 @@ impl FilterBlobSegmentHeaders for Response<FilterBlobSegment> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::list_blob_flat_segment()`](crate::clients::BlobContainerClient::list_blob_flat_segment())
+/// Provides access to typed response headers for [`BlobContainerClient::list_blob_flat_segment()`](crate::generated::clients::BlobContainerClient::list_blob_flat_segment())
 pub trait ListBlobsFlatSegmentResponseHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -3266,7 +3267,7 @@ impl ListBlobsFlatSegmentResponseHeaders for Response<ListBlobsFlatSegmentRespon
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::list_blob_hierarchy_segment()`](crate::clients::BlobContainerClient::list_blob_hierarchy_segment())
+/// Provides access to typed response headers for [`BlobContainerClient::list_blob_hierarchy_segment()`](crate::generated::clients::BlobContainerClient::list_blob_hierarchy_segment())
 pub trait ListBlobsHierarchySegmentResponseHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -3290,7 +3291,7 @@ impl ListBlobsHierarchySegmentResponseHeaders for Response<ListBlobsHierarchySeg
     }
 }
 
-/// Provides access to typed response headers for [`BlobServiceClient::list_containers_segment()`](crate::clients::BlobServiceClient::list_containers_segment())
+/// Provides access to typed response headers for [`BlobServiceClient::list_containers_segment()`](crate::generated::clients::BlobServiceClient::list_containers_segment())
 pub trait ListContainersSegmentResponseHeaders: private::Sealed {
     fn client_request_id(&self) -> Result<Option<String>>;
     fn request_id(&self) -> Result<Option<String>>;
@@ -3308,7 +3309,7 @@ impl ListContainersSegmentResponseHeaders for Response<ListContainersSegmentResp
     }
 }
 
-/// Provides access to typed response headers for [`PageBlobClient::clear_pages()`](crate::clients::PageBlobClient::clear_pages())
+/// Provides access to typed response headers for [`PageBlobClient::clear_pages()`](crate::generated::clients::PageBlobClient::clear_pages())
 pub trait PageBlobClientClearPagesResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -3365,7 +3366,7 @@ impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPages
     }
 }
 
-/// Provides access to typed response headers for [`PageBlobClient::copy_incremental()`](crate::clients::PageBlobClient::copy_incremental())
+/// Provides access to typed response headers for [`PageBlobClient::copy_incremental()`](crate::generated::clients::PageBlobClient::copy_incremental())
 pub trait PageBlobClientCopyIncrementalResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -3416,7 +3417,7 @@ impl PageBlobClientCopyIncrementalResultHeaders for Response<PageBlobClientCopyI
     }
 }
 
-/// Provides access to typed response headers for [`PageBlobClient::create()`](crate::clients::PageBlobClient::create())
+/// Provides access to typed response headers for [`PageBlobClient::create()`](crate::generated::clients::PageBlobClient::create())
 pub trait PageBlobClientCreateResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -3490,7 +3491,7 @@ impl PageBlobClientCreateResultHeaders for Response<PageBlobClientCreateResult> 
     }
 }
 
-/// Provides access to typed response headers for [`PageBlobClient::resize()`](crate::clients::PageBlobClient::resize())
+/// Provides access to typed response headers for [`PageBlobClient::resize()`](crate::generated::clients::PageBlobClient::resize())
 pub trait PageBlobClientResizeResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -3534,7 +3535,7 @@ impl PageBlobClientResizeResultHeaders for Response<PageBlobClientResizeResult> 
     }
 }
 
-/// Provides access to typed response headers for [`PageBlobClient::update_sequence_number()`](crate::clients::PageBlobClient::update_sequence_number())
+/// Provides access to typed response headers for [`PageBlobClient::update_sequence_number()`](crate::generated::clients::PageBlobClient::update_sequence_number())
 pub trait PageBlobClientUpdateSequenceNumberResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -3580,7 +3581,7 @@ impl PageBlobClientUpdateSequenceNumberResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`PageBlobClient::upload_pages_from_url()`](crate::clients::PageBlobClient::upload_pages_from_url())
+/// Provides access to typed response headers for [`PageBlobClient::upload_pages_from_url()`](crate::generated::clients::PageBlobClient::upload_pages_from_url())
 pub trait PageBlobClientUploadPagesFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -3661,7 +3662,7 @@ impl PageBlobClientUploadPagesFromUrlResultHeaders
     }
 }
 
-/// Provides access to typed response headers for [`PageBlobClient::upload_pages()`](crate::clients::PageBlobClient::upload_pages())
+/// Provides access to typed response headers for [`PageBlobClient::upload_pages()`](crate::generated::clients::PageBlobClient::upload_pages())
 pub trait PageBlobClientUploadPagesResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<String>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -3746,7 +3747,7 @@ impl PageBlobClientUploadPagesResultHeaders for Response<PageBlobClientUploadPag
     }
 }
 
-/// Provides access to typed response headers for [`PageBlobClient::get_page_ranges()`](crate::clients::PageBlobClient::get_page_ranges())
+/// Provides access to typed response headers for [`PageBlobClient::get_page_ranges()`](crate::generated::clients::PageBlobClient::get_page_ranges())
 pub trait PageListHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -3791,7 +3792,7 @@ impl PageListHeaders for Response<PageList> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobServiceClient::get_properties()`](crate::clients::BlobServiceClient::get_properties())
+/// Provides access to typed response headers for [`BlobServiceClient::get_properties()`](crate::generated::clients::BlobServiceClient::get_properties())
 pub trait StorageServicePropertiesHeaders: private::Sealed {
     fn client_request_id(&self) -> Result<Option<String>>;
     fn request_id(&self) -> Result<Option<String>>;
@@ -3809,7 +3810,7 @@ impl StorageServicePropertiesHeaders for Response<StorageServiceProperties> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobServiceClient::get_statistics()`](crate::clients::BlobServiceClient::get_statistics())
+/// Provides access to typed response headers for [`BlobServiceClient::get_statistics()`](crate::generated::clients::BlobServiceClient::get_statistics())
 pub trait StorageServiceStatsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -3833,7 +3834,7 @@ impl StorageServiceStatsHeaders for Response<StorageServiceStats> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobServiceClient::get_user_delegation_key()`](crate::clients::BlobServiceClient::get_user_delegation_key())
+/// Provides access to typed response headers for [`BlobServiceClient::get_user_delegation_key()`](crate::generated::clients::BlobServiceClient::get_user_delegation_key())
 pub trait UserDelegationKeyHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn client_request_id(&self) -> Result<Option<String>>;
@@ -3857,7 +3858,7 @@ impl UserDelegationKeyHeaders for Response<UserDelegationKey> {
     }
 }
 
-/// Provides access to typed response headers for [`BlobContainerClient::get_access_policy()`](crate::clients::BlobContainerClient::get_access_policy())
+/// Provides access to typed response headers for [`BlobContainerClient::get_access_policy()`](crate::generated::clients::BlobContainerClient::get_access_policy())
 pub trait VecSignedIdentifierHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -3932,7 +3933,7 @@ mod private {
         PageBlobClientUploadPagesResult, PageList, SignedIdentifier, StorageServiceProperties,
         StorageServiceStats, UserDelegationKey,
     };
-    use azure_core::Response;
+    use azure_core::http::Response;
 
     pub trait Sealed {}
 

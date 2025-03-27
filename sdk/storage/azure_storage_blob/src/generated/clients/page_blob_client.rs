@@ -15,12 +15,13 @@ use crate::generated::models::{
     SequenceNumberActionType,
 };
 use azure_core::credentials::TokenCredential;
-use azure_core::{
-    base64, date, BearerTokenCredentialPolicy, Bytes, ClientOptions, Context, Method, Pipeline,
-    Policy, Request, RequestContent, Response, Result, Url,
+use azure_core::fmt::SafeDebug;
+use azure_core::http::policies::{BearerTokenCredentialPolicy, Policy};
+use azure_core::http::{
+    ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
 };
+use azure_core::{base64, date, Bytes, Result};
 use std::sync::Arc;
-use typespec_client_core::fmt::SafeDebug;
 
 pub struct PageBlobClient {
     pub(crate) blob_name: String,
@@ -30,7 +31,7 @@ pub struct PageBlobClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a [`PageBlobClient`](crate::PageBlobClient)
+/// Options used when creating a [`PageBlobClient`](PageBlobClient)
 #[derive(Clone, SafeDebug)]
 pub struct PageBlobClientOptions {
     pub client_options: ClientOptions,

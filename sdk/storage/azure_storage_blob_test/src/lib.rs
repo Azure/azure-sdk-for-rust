@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::ClientOptions;
+use azure_core::http::ClientOptions;
 use azure_core_test::Recording;
 
 pub async fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {

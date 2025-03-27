@@ -14,13 +14,13 @@ use super::{
     QueryRequestType, QueryType, RehydratePriority,
 };
 use azure_core::base64;
+use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use time::OffsetDateTime;
-use typespec_client_core::fmt::SafeDebug;
 
 /// Represents an access policy.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct AccessPolicy {
     /// The date-time the policy expires.
@@ -46,24 +46,24 @@ pub struct AccessPolicy {
     pub start: Option<OffsetDateTime>,
 }
 
-/// Contains results for [`AppendBlobClient::append_block_from_url()`](crate::AppendBlobClient::append_block_from_url())
+/// Contains results for [`AppendBlobClient::append_block_from_url()`](crate::generated::clients::AppendBlobClient::append_block_from_url())
 #[derive(SafeDebug)]
 pub struct AppendBlobClientAppendBlockFromUrlResult;
 
-/// Contains results for [`AppendBlobClient::append_block()`](crate::AppendBlobClient::append_block())
+/// Contains results for [`AppendBlobClient::append_block()`](crate::generated::clients::AppendBlobClient::append_block())
 #[derive(SafeDebug)]
 pub struct AppendBlobClientAppendBlockResult;
 
-/// Contains results for [`AppendBlobClient::create()`](crate::AppendBlobClient::create())
+/// Contains results for [`AppendBlobClient::create()`](crate::generated::clients::AppendBlobClient::create())
 #[derive(SafeDebug)]
 pub struct AppendBlobClientCreateResult;
 
-/// Contains results for [`AppendBlobClient::seal()`](crate::AppendBlobClient::seal())
+/// Contains results for [`AppendBlobClient::seal()`](crate::generated::clients::AppendBlobClient::seal())
 #[derive(SafeDebug)]
 pub struct AppendBlobClientSealResult;
 
 /// Represents the Apache Arrow configuration.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct ArrowConfiguration {
     /// The Apache Arrow schema
@@ -77,7 +77,7 @@ pub struct ArrowConfiguration {
 }
 
 /// Represents an Apache Arrow field.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[serde(rename = "Field")]
 #[typespec(format = "xml")]
 pub struct ArrowField {
@@ -98,152 +98,152 @@ pub struct ArrowField {
     pub type_prop: Option<String>,
 }
 
-/// Contains results for [`BlobClient::abort_copy_from_url()`](crate::BlobClient::abort_copy_from_url())
+/// Contains results for [`BlobClient::abort_copy_from_url()`](crate::generated::clients::BlobClient::abort_copy_from_url())
 #[derive(SafeDebug)]
 pub struct BlobClientAbortCopyFromUrlResult;
 
-/// Contains results for [`BlobClient::acquire_lease()`](crate::BlobClient::acquire_lease())
+/// Contains results for [`BlobClient::acquire_lease()`](crate::generated::clients::BlobClient::acquire_lease())
 #[derive(SafeDebug)]
 pub struct BlobClientAcquireLeaseResult;
 
-/// Contains results for [`BlobClient::break_lease()`](crate::BlobClient::break_lease())
+/// Contains results for [`BlobClient::break_lease()`](crate::generated::clients::BlobClient::break_lease())
 #[derive(SafeDebug)]
 pub struct BlobClientBreakLeaseResult;
 
-/// Contains results for [`BlobClient::change_lease()`](crate::BlobClient::change_lease())
+/// Contains results for [`BlobClient::change_lease()`](crate::generated::clients::BlobClient::change_lease())
 #[derive(SafeDebug)]
 pub struct BlobClientChangeLeaseResult;
 
-/// Contains results for [`BlobClient::copy_from_url()`](crate::BlobClient::copy_from_url())
+/// Contains results for [`BlobClient::copy_from_url()`](crate::generated::clients::BlobClient::copy_from_url())
 #[derive(SafeDebug)]
 pub struct BlobClientCopyFromUrlResult;
 
-/// Contains results for [`BlobClient::create_snapshot()`](crate::BlobClient::create_snapshot())
+/// Contains results for [`BlobClient::create_snapshot()`](crate::generated::clients::BlobClient::create_snapshot())
 #[derive(SafeDebug)]
 pub struct BlobClientCreateSnapshotResult;
 
-/// Contains results for [`BlobClient::delete_immutability_policy()`](crate::BlobClient::delete_immutability_policy())
+/// Contains results for [`BlobClient::delete_immutability_policy()`](crate::generated::clients::BlobClient::delete_immutability_policy())
 #[derive(SafeDebug)]
 pub struct BlobClientDeleteImmutabilityPolicyResult;
 
-/// Contains results for [`BlobClient::delete()`](crate::BlobClient::delete())
+/// Contains results for [`BlobClient::delete()`](crate::generated::clients::BlobClient::delete())
 #[derive(SafeDebug)]
 pub struct BlobClientDeleteResult;
 
-/// Contains results for [`BlobClient::download()`](crate::BlobClient::download())
+/// Contains results for [`BlobClient::download()`](crate::generated::clients::BlobClient::download())
 #[derive(SafeDebug)]
 pub struct BlobClientDownloadResult;
 
-/// Contains results for [`BlobClient::get_account_info()`](crate::BlobClient::get_account_info())
+/// Contains results for [`BlobClient::get_account_info()`](crate::generated::clients::BlobClient::get_account_info())
 #[derive(SafeDebug)]
 pub struct BlobClientGetAccountInfoResult;
 
-/// Contains results for [`BlobClient::get_properties()`](crate::BlobClient::get_properties())
+/// Contains results for [`BlobClient::get_properties()`](crate::generated::clients::BlobClient::get_properties())
 #[derive(SafeDebug)]
 pub struct BlobClientGetPropertiesResult;
 
-/// Contains results for [`BlobClient::release_lease()`](crate::BlobClient::release_lease())
+/// Contains results for [`BlobClient::release_lease()`](crate::generated::clients::BlobClient::release_lease())
 #[derive(SafeDebug)]
 pub struct BlobClientReleaseLeaseResult;
 
-/// Contains results for [`BlobClient::renew_lease()`](crate::BlobClient::renew_lease())
+/// Contains results for [`BlobClient::renew_lease()`](crate::generated::clients::BlobClient::renew_lease())
 #[derive(SafeDebug)]
 pub struct BlobClientRenewLeaseResult;
 
-/// Contains results for [`BlobClient::set_expiry()`](crate::BlobClient::set_expiry())
+/// Contains results for [`BlobClient::set_expiry()`](crate::generated::clients::BlobClient::set_expiry())
 #[derive(SafeDebug)]
 pub struct BlobClientSetExpiryResult;
 
-/// Contains results for [`BlobClient::set_http_headers()`](crate::BlobClient::set_http_headers())
+/// Contains results for [`BlobClient::set_http_headers()`](crate::generated::clients::BlobClient::set_http_headers())
 #[derive(SafeDebug)]
 pub struct BlobClientSetHttpHeadersResult;
 
-/// Contains results for [`BlobClient::set_immutability_policy()`](crate::BlobClient::set_immutability_policy())
+/// Contains results for [`BlobClient::set_immutability_policy()`](crate::generated::clients::BlobClient::set_immutability_policy())
 #[derive(SafeDebug)]
 pub struct BlobClientSetImmutabilityPolicyResult;
 
-/// Contains results for [`BlobClient::set_legal_hold()`](crate::BlobClient::set_legal_hold())
+/// Contains results for [`BlobClient::set_legal_hold()`](crate::generated::clients::BlobClient::set_legal_hold())
 #[derive(SafeDebug)]
 pub struct BlobClientSetLegalHoldResult;
 
-/// Contains results for [`BlobClient::set_metadata()`](crate::BlobClient::set_metadata())
+/// Contains results for [`BlobClient::set_metadata()`](crate::generated::clients::BlobClient::set_metadata())
 #[derive(SafeDebug)]
 pub struct BlobClientSetMetadataResult;
 
-/// Contains results for [`BlobClient::set_tags()`](crate::BlobClient::set_tags())
+/// Contains results for [`BlobClient::set_tags()`](crate::generated::clients::BlobClient::set_tags())
 #[derive(SafeDebug)]
 pub struct BlobClientSetTagsResult;
 
-/// Contains results for [`BlobClient::set_tier()`](crate::BlobClient::set_tier())
+/// Contains results for [`BlobClient::set_tier()`](crate::generated::clients::BlobClient::set_tier())
 #[derive(SafeDebug)]
 pub struct BlobClientSetTierResult;
 
-/// Contains results for [`BlobClient::start_copy_from_url()`](crate::BlobClient::start_copy_from_url())
+/// Contains results for [`BlobClient::start_copy_from_url()`](crate::generated::clients::BlobClient::start_copy_from_url())
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
 
-/// Contains results for [`BlobClient::undelete()`](crate::BlobClient::undelete())
+/// Contains results for [`BlobClient::undelete()`](crate::generated::clients::BlobClient::undelete())
 #[derive(SafeDebug)]
 pub struct BlobClientUndeleteResult;
 
-/// Contains results for [`BlobContainerClient::acquire_lease()`](crate::BlobContainerClient::acquire_lease())
+/// Contains results for [`BlobContainerClient::acquire_lease()`](crate::generated::clients::BlobContainerClient::acquire_lease())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientAcquireLeaseResult;
 
-/// Contains results for [`BlobContainerClient::break_lease()`](crate::BlobContainerClient::break_lease())
+/// Contains results for [`BlobContainerClient::break_lease()`](crate::generated::clients::BlobContainerClient::break_lease())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientBreakLeaseResult;
 
-/// Contains results for [`BlobContainerClient::change_lease()`](crate::BlobContainerClient::change_lease())
+/// Contains results for [`BlobContainerClient::change_lease()`](crate::generated::clients::BlobContainerClient::change_lease())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientChangeLeaseResult;
 
-/// Contains results for [`BlobContainerClient::create()`](crate::BlobContainerClient::create())
+/// Contains results for [`BlobContainerClient::create()`](crate::generated::clients::BlobContainerClient::create())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientCreateResult;
 
-/// Contains results for [`BlobContainerClient::delete()`](crate::BlobContainerClient::delete())
+/// Contains results for [`BlobContainerClient::delete()`](crate::generated::clients::BlobContainerClient::delete())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientDeleteResult;
 
-/// Contains results for [`BlobContainerClient::get_account_info()`](crate::BlobContainerClient::get_account_info())
+/// Contains results for [`BlobContainerClient::get_account_info()`](crate::generated::clients::BlobContainerClient::get_account_info())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientGetAccountInfoResult;
 
-/// Contains results for [`BlobContainerClient::get_properties()`](crate::BlobContainerClient::get_properties())
+/// Contains results for [`BlobContainerClient::get_properties()`](crate::generated::clients::BlobContainerClient::get_properties())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientGetPropertiesResult;
 
-/// Contains results for [`BlobContainerClient::release_lease()`](crate::BlobContainerClient::release_lease())
+/// Contains results for [`BlobContainerClient::release_lease()`](crate::generated::clients::BlobContainerClient::release_lease())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientReleaseLeaseResult;
 
-/// Contains results for [`BlobContainerClient::rename()`](crate::BlobContainerClient::rename())
+/// Contains results for [`BlobContainerClient::rename()`](crate::generated::clients::BlobContainerClient::rename())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRenameResult;
 
-/// Contains results for [`BlobContainerClient::renew_lease()`](crate::BlobContainerClient::renew_lease())
+/// Contains results for [`BlobContainerClient::renew_lease()`](crate::generated::clients::BlobContainerClient::renew_lease())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRenewLeaseResult;
 
-/// Contains results for [`BlobContainerClient::restore()`](crate::BlobContainerClient::restore())
+/// Contains results for [`BlobContainerClient::restore()`](crate::generated::clients::BlobContainerClient::restore())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRestoreResult;
 
-/// Contains results for [`BlobContainerClient::set_access_policy()`](crate::BlobContainerClient::set_access_policy())
+/// Contains results for [`BlobContainerClient::set_access_policy()`](crate::generated::clients::BlobContainerClient::set_access_policy())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientSetAccessPolicyResult;
 
-/// Contains results for [`BlobContainerClient::set_metadata()`](crate::BlobContainerClient::set_metadata())
+/// Contains results for [`BlobContainerClient::set_metadata()`](crate::generated::clients::BlobContainerClient::set_metadata())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientSetMetadataResult;
 
-/// Contains results for [`BlobContainerClient::submit_batch()`](crate::BlobContainerClient::submit_batch())
+/// Contains results for [`BlobContainerClient::submit_batch()`](crate::generated::clients::BlobContainerClient::submit_batch())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientSubmitBatchResult;
 
 /// The blob flat list segment.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "Blobs")]
 #[typespec(format = "xml")]
@@ -259,7 +259,7 @@ pub struct BlobFlatListSegment {
 }
 
 /// Represents an array of blobs.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "Blobs")]
 #[typespec(format = "xml")]
@@ -284,7 +284,7 @@ pub struct BlobHierarchyListSegment {
 }
 
 /// An Azure Storage Blob
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "Blob")]
 #[typespec(format = "xml")]
@@ -334,7 +334,7 @@ pub struct BlobItemInternal {
 }
 
 /// The blob metadata.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct BlobMetadata {
@@ -344,7 +344,7 @@ pub struct BlobMetadata {
 }
 
 /// Represents a blob name.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct BlobName {
@@ -358,7 +358,7 @@ pub struct BlobName {
 }
 
 /// Represents a blob prefix.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct BlobPrefix {
@@ -368,7 +368,7 @@ pub struct BlobPrefix {
 }
 
 /// The properties of a blob.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "Properties")]
 #[typespec(format = "xml")]
@@ -601,20 +601,20 @@ pub struct BlobPropertiesInternal {
     pub tag_count: Option<i32>,
 }
 
-/// Contains results for [`BlobServiceClient::get_account_info()`](crate::BlobServiceClient::get_account_info())
+/// Contains results for [`BlobServiceClient::get_account_info()`](crate::generated::clients::BlobServiceClient::get_account_info())
 #[derive(SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoResult;
 
-/// Contains results for [`BlobServiceClient::set_properties()`](crate::BlobServiceClient::set_properties())
+/// Contains results for [`BlobServiceClient::set_properties()`](crate::generated::clients::BlobServiceClient::set_properties())
 #[derive(SafeDebug)]
 pub struct BlobServiceClientSetPropertiesResult;
 
-/// Contains results for [`BlobServiceClient::submit_batch()`](crate::BlobServiceClient::submit_batch())
+/// Contains results for [`BlobServiceClient::submit_batch()`](crate::generated::clients::BlobServiceClient::submit_batch())
 #[derive(SafeDebug)]
 pub struct BlobServiceClientSubmitBatchResult;
 
 /// The blob tags.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[serde(rename = "Tag")]
 #[typespec(format = "xml")]
 pub struct BlobTag {
@@ -628,7 +628,7 @@ pub struct BlobTag {
 }
 
 /// Represents blob tags.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[serde(rename = "Tags")]
 #[typespec(format = "xml")]
 pub struct BlobTags {
@@ -643,7 +643,7 @@ pub struct BlobTags {
 }
 
 /// Represents a single block in a block blob. It describes the block's ID and size.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct Block {
@@ -662,32 +662,32 @@ pub struct Block {
     pub size: Option<i64>,
 }
 
-/// Contains results for [`BlockBlobClient::commit_block_list()`](crate::BlockBlobClient::commit_block_list())
+/// Contains results for [`BlockBlobClient::commit_block_list()`](crate::generated::clients::BlockBlobClient::commit_block_list())
 #[derive(SafeDebug)]
 pub struct BlockBlobClientCommitBlockListResult;
 
-/// Contains results for [`BlockBlobClient::put_blob_from_url()`](crate::BlockBlobClient::put_blob_from_url())
+/// Contains results for [`BlockBlobClient::put_blob_from_url()`](crate::generated::clients::BlockBlobClient::put_blob_from_url())
 #[derive(SafeDebug)]
 pub struct BlockBlobClientPutBlobFromUrlResult;
 
-/// Contains results for [`BlockBlobClient::query()`](crate::BlockBlobClient::query())
+/// Contains results for [`BlockBlobClient::query()`](crate::generated::clients::BlockBlobClient::query())
 #[derive(SafeDebug)]
 pub struct BlockBlobClientQueryResult;
 
-/// Contains results for [`BlockBlobClient::stage_block_from_url()`](crate::BlockBlobClient::stage_block_from_url())
+/// Contains results for [`BlockBlobClient::stage_block_from_url()`](crate::generated::clients::BlockBlobClient::stage_block_from_url())
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockFromUrlResult;
 
-/// Contains results for [`BlockBlobClient::stage_block()`](crate::BlockBlobClient::stage_block())
+/// Contains results for [`BlockBlobClient::stage_block()`](crate::generated::clients::BlockBlobClient::stage_block())
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockResult;
 
-/// Contains results for [`BlockBlobClient::upload()`](crate::BlockBlobClient::upload())
+/// Contains results for [`BlockBlobClient::upload()`](crate::generated::clients::BlockBlobClient::upload())
 #[derive(SafeDebug)]
 pub struct BlockBlobClientUploadResult;
 
 /// Contains the committed and uncommitted blocks in a block blob.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct BlockList {
@@ -711,7 +711,7 @@ pub struct BlockList {
 }
 
 /// The Block lookup list.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[serde(rename = "BlockList")]
 #[typespec(format = "xml")]
 pub struct BlockLookupList {
@@ -744,7 +744,7 @@ pub struct BlockLookupList {
 }
 
 /// The clear range.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct ClearRange {
@@ -758,7 +758,7 @@ pub struct ClearRange {
 }
 
 /// An Azure Storage container.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "Container")]
 #[typespec(format = "xml")]
@@ -789,7 +789,7 @@ pub struct ContainerItem {
 }
 
 /// The properties of a container.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct ContainerProperties {
@@ -874,7 +874,7 @@ pub struct ContainerProperties {
 /// CORS is an HTTP feature that enables a web application running under one domain to access resources in another domain.
 /// Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in
 /// a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct CorsRule {
     /// The allowed headers.
@@ -899,7 +899,7 @@ pub struct CorsRule {
 }
 
 /// Represents the delimited text configuration.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct DelimitedTextConfiguration {
     /// The string used to separate columns.
@@ -924,7 +924,7 @@ pub struct DelimitedTextConfiguration {
 }
 
 /// The filter blob item.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "Blob")]
 #[typespec(format = "xml")]
@@ -951,7 +951,7 @@ pub struct FilterBlobItem {
 }
 
 /// The result of a Filter Blobs API call
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
 #[typespec(format = "xml")]
@@ -979,7 +979,7 @@ pub struct FilterBlobSegment {
 }
 
 /// Geo-Replication information for the Secondary Storage Service
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct GeoReplication {
@@ -999,7 +999,7 @@ pub struct GeoReplication {
 }
 
 /// Represents the JSON text configuration.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct JsonTextConfiguration {
     /// The string used to separate records.
@@ -1008,7 +1008,7 @@ pub struct JsonTextConfiguration {
 }
 
 /// An enumeration of blobs.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
 #[typespec(format = "xml")]
@@ -1043,7 +1043,7 @@ pub struct ListBlobsFlatSegmentResponse {
 }
 
 /// An enumeration of blobs
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
 #[typespec(format = "xml")]
@@ -1082,7 +1082,7 @@ pub struct ListBlobsHierarchySegmentResponse {
 }
 
 /// The list container segment response
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
 #[typespec(format = "xml")]
@@ -1118,7 +1118,7 @@ pub struct ListContainersSegmentResponse {
 }
 
 /// Azure Analytics Logging settings.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct Logging {
     /// Whether delete operation is logged.
@@ -1143,7 +1143,7 @@ pub struct Logging {
 }
 
 /// The metrics properties.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct Metrics {
     /// Whether it is enabled.
@@ -1164,42 +1164,42 @@ pub struct Metrics {
 }
 
 /// The object replication metadata.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[serde(rename = "OrMetadata")]
 #[typespec(format = "xml")]
 pub struct ObjectReplicationMetadata {}
 
-/// Contains results for [`PageBlobClient::clear_pages()`](crate::PageBlobClient::clear_pages())
+/// Contains results for [`PageBlobClient::clear_pages()`](crate::generated::clients::PageBlobClient::clear_pages())
 #[derive(SafeDebug)]
 pub struct PageBlobClientClearPagesResult;
 
-/// Contains results for [`PageBlobClient::copy_incremental()`](crate::PageBlobClient::copy_incremental())
+/// Contains results for [`PageBlobClient::copy_incremental()`](crate::generated::clients::PageBlobClient::copy_incremental())
 #[derive(SafeDebug)]
 pub struct PageBlobClientCopyIncrementalResult;
 
-/// Contains results for [`PageBlobClient::create()`](crate::PageBlobClient::create())
+/// Contains results for [`PageBlobClient::create()`](crate::generated::clients::PageBlobClient::create())
 #[derive(SafeDebug)]
 pub struct PageBlobClientCreateResult;
 
-/// Contains results for [`PageBlobClient::resize()`](crate::PageBlobClient::resize())
+/// Contains results for [`PageBlobClient::resize()`](crate::generated::clients::PageBlobClient::resize())
 #[derive(SafeDebug)]
 pub struct PageBlobClientResizeResult;
 
-/// Contains results for [`PageBlobClient::update_sequence_number()`](crate::PageBlobClient::update_sequence_number())
+/// Contains results for [`PageBlobClient::update_sequence_number()`](crate::generated::clients::PageBlobClient::update_sequence_number())
 #[derive(SafeDebug)]
 pub struct PageBlobClientUpdateSequenceNumberResult;
 
-/// Contains results for [`PageBlobClient::upload_pages_from_url()`](crate::PageBlobClient::upload_pages_from_url())
+/// Contains results for [`PageBlobClient::upload_pages_from_url()`](crate::generated::clients::PageBlobClient::upload_pages_from_url())
 #[derive(SafeDebug)]
 pub struct PageBlobClientUploadPagesFromUrlResult;
 
-/// Contains results for [`PageBlobClient::upload_pages()`](crate::PageBlobClient::upload_pages())
+/// Contains results for [`PageBlobClient::upload_pages()`](crate::generated::clients::PageBlobClient::upload_pages())
 #[derive(SafeDebug)]
 pub struct PageBlobClientUploadPagesResult;
 
 /// Represents a page list.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct PageList {
@@ -1227,7 +1227,7 @@ pub struct PageList {
 }
 
 /// The page range.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct PageRange {
@@ -1241,12 +1241,12 @@ pub struct PageRange {
 }
 
 /// Represents the Parquet configuration.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct ParquetConfiguration {}
 
 /// The query format settings.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct QueryFormat {
     /// The Apache Arrow configuration.
@@ -1280,7 +1280,7 @@ pub struct QueryFormat {
 }
 
 /// Groups the set of query request settings.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct QueryRequest {
     /// The query expression in SQL. The maximum size of the query expression is 256KiB.
@@ -1304,7 +1304,7 @@ pub struct QueryRequest {
 }
 
 /// The query serialization settings.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct QuerySerialization {
     /// The query format.
@@ -1313,7 +1313,7 @@ pub struct QuerySerialization {
 }
 
 /// The retention policy.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct RetentionPolicy {
     /// Whether to allow permanent delete.
@@ -1333,7 +1333,7 @@ pub struct RetentionPolicy {
 }
 
 /// The signed identifier.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[serde(rename = "SignedIdentifier")]
 #[typespec(format = "xml")]
 pub struct SignedIdentifier {
@@ -1347,7 +1347,7 @@ pub struct SignedIdentifier {
 }
 
 /// The properties that enable an account to host a static website
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[typespec(format = "xml")]
 pub struct StaticWebsite {
     /// Absolute path of the default index page
@@ -1374,7 +1374,7 @@ pub struct StaticWebsite {
 }
 
 /// The service properties.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct StorageServiceProperties {
@@ -1419,7 +1419,7 @@ pub struct StorageServiceProperties {
 }
 
 /// Stats for the storage service.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct StorageServiceStats {
@@ -1429,7 +1429,7 @@ pub struct StorageServiceStats {
 }
 
 /// A user delegation key.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct UserDelegationKey {

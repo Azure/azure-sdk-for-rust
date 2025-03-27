@@ -9,7 +9,12 @@ use crate::{
     pipeline::StorageHeadersPolicy,
 };
 use azure_core::{
-    credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result, Url,
+    credentials::TokenCredential,
+    http::{
+        policies::{BearerTokenCredentialPolicy, Policy},
+        Response, Url,
+    },
+    Result,
 };
 use std::sync::Arc;
 

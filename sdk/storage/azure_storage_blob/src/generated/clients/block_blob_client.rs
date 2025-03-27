@@ -13,12 +13,13 @@ use crate::generated::models::{
     BlockLookupList, QueryRequest,
 };
 use azure_core::credentials::TokenCredential;
-use azure_core::{
-    base64, date, BearerTokenCredentialPolicy, Bytes, ClientOptions, Context, Method, Pipeline,
-    Policy, Request, RequestContent, Response, Result, Url,
+use azure_core::fmt::SafeDebug;
+use azure_core::http::policies::{BearerTokenCredentialPolicy, Policy};
+use azure_core::http::{
+    ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
 };
+use azure_core::{base64, date, Bytes, Result};
 use std::sync::Arc;
-use typespec_client_core::fmt::SafeDebug;
 
 pub struct BlockBlobClient {
     pub(crate) blob_name: String,
@@ -28,7 +29,7 @@ pub struct BlockBlobClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a [`BlockBlobClient`](crate::BlockBlobClient)
+/// Options used when creating a [`BlockBlobClient`](BlockBlobClient)
 #[derive(Clone, SafeDebug)]
 pub struct BlockBlobClientOptions {
     pub client_options: ClientOptions,

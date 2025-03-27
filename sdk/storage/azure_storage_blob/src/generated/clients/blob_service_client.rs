@@ -15,12 +15,13 @@ use crate::generated::models::{
     StorageServiceProperties, StorageServiceStats, UserDelegationKey,
 };
 use azure_core::credentials::TokenCredential;
-use azure_core::{
-    BearerTokenCredentialPolicy, Bytes, ClientOptions, Context, Method, Pipeline, Policy, Request,
-    RequestContent, Response, Result, Url,
+use azure_core::fmt::SafeDebug;
+use azure_core::http::policies::{BearerTokenCredentialPolicy, Policy};
+use azure_core::http::{
+    ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
 };
+use azure_core::{Bytes, Result};
 use std::sync::Arc;
-use typespec_client_core::fmt::SafeDebug;
 
 pub struct BlobServiceClient {
     pub(crate) endpoint: Url,
@@ -28,7 +29,7 @@ pub struct BlobServiceClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a [`BlobServiceClient`](crate::BlobServiceClient)
+/// Options used when creating a [`BlobServiceClient`](BlobServiceClient)
 #[derive(Clone, SafeDebug)]
 pub struct BlobServiceClientOptions {
     pub client_options: ClientOptions,

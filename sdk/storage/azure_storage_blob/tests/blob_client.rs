@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{Bytes, RequestContent, StatusCode};
+use azure_core::{
+    http::{RequestContent, StatusCode},
+    Bytes,
+};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::BlobClientDownloadResultHeaders;
 use azure_storage_blob::{
