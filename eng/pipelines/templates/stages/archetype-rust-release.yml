@@ -112,8 +112,8 @@ stages:
                   env:
                     CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
 
-        - job: CreateApiReview
-          displayName: "API Review"
+        - job: SubmitApiReview
+          displayName: "Submit API Review"
           condition: and(succeeded(), ne(variables['Skip.CreateApiReview'], 'true'))
           dependsOn: PublishPackage
           steps:
