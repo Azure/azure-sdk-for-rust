@@ -22,17 +22,17 @@ if ($CheckWasm) {
   Invoke-LoggedCommand "rustup target add wasm32-unknown-unknown"
 }
 
-Invoke-LoggedCommand "cargo +$Toolchain check --package azure_core --all-features --all-targets --keep-going"
+Invoke-LoggedCommand "cargo check --package azure_core --all-features --all-targets --keep-going"
 
-Invoke-LoggedCommand "cargo +$Toolchain fmt --all -- --check"
+Invoke-LoggedCommand "cargo fmt --all -- --check"
 
-Invoke-LoggedCommand "cargo +$Toolchain clippy --workspace --all-features --all-targets --keep-going --no-deps"
+Invoke-LoggedCommand "cargo clippy --workspace --all-features --all-targets --keep-going --no-deps"
 
 if ($CheckWasm) {
-  Invoke-LoggedCommand "cargo +$Toolchain clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
+  Invoke-LoggedCommand "cargo clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
 }
 
-Invoke-LoggedCommand "cargo +$Toolchain doc --workspace --no-deps --all-features"
+Invoke-LoggedCommand "cargo doc --workspace --no-deps --all-features"
 
 # Verify package dependencies
 

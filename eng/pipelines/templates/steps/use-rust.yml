@@ -10,39 +10,12 @@ parameters:
     default: $(System.DefaultWorkingDirectory)
 
 steps:
-  - pwsh: |
-      $toolchain = '${{ parameters.Toolchain }}'
-
-      if ($toolchain -eq 'msrv') {
-        Write-Host "Reading MSRV from azure_core"
-        $toolchain = cargo read-manifest --manifest-path ./sdk/core/azure_core/Cargo.toml | ConvertFrom-Json | Select-Object -ExpandProperty rust_version
-      } elseif ($toolchain -eq 'default') {
-        # if the toolchain is set to default, calling `rustup default` without a toolchain argument will have it
-        # use the appropriate toolchain as defined in the rust-toolchain file affecting the current directory
-        $toolchain = ''
-      }
-
-      $attempts = 0
-      $maxAttempts = ${{ parameters.MaxAttempts }}
-
-      while ($true) {
-        $attempts++
-
-        Write-Host "> rustup default $toolchain"
-        rustup default $toolchain
-
-        if ($?) { exit 0 }
-
-        if ($attempts -lt $maxAttempts) {
-          Write-Host "Install failed, attempt $attempts, retrying..."
-        } else {
-          Write-Host "Install failed after $attempts attempts."
-          exit 1
-        }
-
-        # Failures to update are usually caused by file locks in Windows.
-        # Sleep for a few seconds to give the blocking process a chance to release the lock.
-        Start-Sleep -Seconds 3
-      }
-    displayName: "Use Rust ${{ parameters.Toolchain }}"
+- task: PowerShell@2
+  displayName: "Use Rust ${{ parameters.Toolchain }}"
+  inputs:
+    pwsh: true
+    filePath: $(System.DefaultWorkingDirectory)/eng/scripts/Use-Rust.ps1
+    arguments: >
+      -Toolchain ${{ parameters.Toolchain }}
+      -MaxAttempts ${{ parameters.MaxAttempts }}
     workingDirectory: ${{ parameters.WorkingDirectory }}
