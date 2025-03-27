@@ -192,7 +192,6 @@ impl ConsumerClient {
     /// use azure_messaging_eventhubs::ConsumerClient;
     /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
     /// use futures::stream::StreamExt;
-    /// use futures::pin_mut;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -205,7 +204,6 @@ impl ConsumerClient {
     ///
     ///     let event_stream = receiver.stream_events();
     ///
-    ///     pin_mut!(event_stream);
     ///     while let Some(event_result) = event_stream.next().await {
     ///         match event_result {
     ///             Ok(event) => {

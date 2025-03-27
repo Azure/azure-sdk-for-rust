@@ -60,11 +60,11 @@ impl PartitionClient {
     ///
     /// # Returns
     /// A stream of `Result<ReceivedEventData>` representing the received events.
-    pub fn receive_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
+    pub fn stream_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
         let event_receiver = self.event_receiver.get();
         if let Some(event_receiver) = event_receiver {
             Box::pin(event_receiver.stream_events())
-                as Pin<Box<dyn futures::Stream<Item = azure_core::Result<ReceivedEventData>> + '_>>
+                as Pin<Box<dyn Stream<Item = Result<ReceivedEventData>> + '_>>
         } else {
             // Return a stream with a single error indicating that the event receiver is not available.
             Box::pin(futures::stream::once(async {

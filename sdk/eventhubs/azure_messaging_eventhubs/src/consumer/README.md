@@ -101,8 +101,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let event_stream = message_receiver.stream_events();
 
-    pin_mut!(event_stream);
-
     while let Some(event_result) = event_stream.next().await {
         match event_result {
             Ok(event) => {

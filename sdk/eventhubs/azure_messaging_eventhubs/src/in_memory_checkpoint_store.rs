@@ -1,13 +1,18 @@
-use async_trait::async_trait;
-use azure_core::{error::ErrorKind as AzureErrorKind, http::Etag, Error, Result, Uuid};
-use azure_messaging_eventhubs::{
+use crate::{
     models::{Checkpoint, Ownership},
     CheckpointStore,
 };
+use async_trait::async_trait;
+use azure_core::{error::ErrorKind as AzureErrorKind, http::Etag, Error, Result, Uuid};
 use std::sync::{Arc, Mutex};
 use std::{collections::HashMap, time::SystemTime};
 use tracing::{trace, warn};
 
+/// An in-memory checkpoint store for Event Hubs.
+/// This store is used to manage checkpoints and ownerships in memory.
+/// It is primarily used for testing and development purposes.
+/// It implements the `CheckpointStore` trait, allowing it to be used as a checkpoint store.
+/// The store is thread-safe and can be used in a multi-threaded environment.
 pub struct InMemoryCheckpointStore {
     checkpoints: Arc<Mutex<HashMap<String, Checkpoint>>>,
     ownerships: Arc<Mutex<HashMap<String, Ownership>>>,
@@ -20,6 +25,7 @@ impl Default for InMemoryCheckpointStore {
 }
 
 impl InMemoryCheckpointStore {
+    /// Creates a new instance of `InMemoryCheckpointStore`.
     pub fn new() -> Self {
         InMemoryCheckpointStore {
             checkpoints: Arc::new(Mutex::new(HashMap::new())),
@@ -27,6 +33,7 @@ impl InMemoryCheckpointStore {
         }
     }
 
+    /// Updates the ownership for a specific partition.
     pub fn update_ownership(&self, ownership: Ownership) -> Result<Ownership> {
         trace!(
             "Update ownership for partition {}",

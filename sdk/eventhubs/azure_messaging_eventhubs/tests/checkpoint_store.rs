@@ -6,17 +6,18 @@
 //!
 
 mod common;
-mod in_memory_checkpoint_store;
 use azure_core::error::ErrorKind as AzureErrorKind;
 use azure_messaging_eventhubs::CheckpointStore;
-use in_memory_checkpoint_store::InMemoryCheckpointStore;
 use std::sync::Arc;
 
 #[cfg(test)]
 mod tests {
 
     use super::*;
-    use azure_messaging_eventhubs::models::{Checkpoint, Ownership};
+    use azure_messaging_eventhubs::{
+        models::{Checkpoint, Ownership},
+        InMemoryCheckpointStore,
+    };
     use tracing::info;
 
     #[test]
@@ -41,7 +42,7 @@ mod tests {
         common::setup();
         let store = InMemoryCheckpointStore::new();
         let ownership = Ownership::new(
-            "",
+            "fqdn.servicebus.windows.net",
             "event_hub",
             "consumer_group",
             "partition_id",

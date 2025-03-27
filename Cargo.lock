@@ -325,6 +325,7 @@ dependencies = [
  "azure_core_amqp",
  "azure_core_test",
  "azure_identity",
+ "azure_messaging_eventhubs",
  "futures",
  "futures-lite",
  "rand",

@@ -614,7 +614,7 @@ pub mod builders {
                     super::EventProcessorOptions {
                         strategy: self
                             .load_balancing_strategy
-                            .unwrap_or(super::ProcessorStrategy::Balanced),
+                            .unwrap_or(super::ProcessorStrategy::Greedy),
                         partition_expiration_duration: self
                             .partition_expiration_duration
                             .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION),

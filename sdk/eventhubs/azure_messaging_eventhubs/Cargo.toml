@@ -36,8 +36,15 @@ rustc_version.workspace = true
 [dev-dependencies]
 azure_core_test.workspace = true
 azure_identity.workspace = true
+azure_messaging_eventhubs = { path = ".", features = [
+  "test_checkpoint_store",
+] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+
+[features]
+test_checkpoint_store = []
+blob_checkpoint_store = []
 
 [lints]
 workspace = true

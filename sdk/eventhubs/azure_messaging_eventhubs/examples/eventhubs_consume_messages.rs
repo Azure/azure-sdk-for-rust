@@ -4,7 +4,7 @@ use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
-use futures::{pin_mut, StreamExt};
+use futures::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -45,12 +45,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Created receiver");
 
     // Create a stream of events from the receiver
-    let receive_stream = receiver.stream_events();
+    let mut receive_stream = receiver.stream_events();
 
     println!("Created receive stream");
-
-    // Pin the receive stream on the stack so that it can be polled
-    pin_mut!(receive_stream);
 
     // Receive events until the receive_timeout has been reached.
     while let Some(event) = receive_stream.next().await {

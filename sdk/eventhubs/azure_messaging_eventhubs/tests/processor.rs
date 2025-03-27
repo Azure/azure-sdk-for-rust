@@ -1,11 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-mod in_memory_checkpoint_store;
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::models::StartPositions;
-use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, ProcessorStrategy};
-use in_memory_checkpoint_store::InMemoryCheckpointStore;
+use azure_messaging_eventhubs::{
+    ConsumerClient, EventProcessor, ProcessorStrategy, StartLocation, StartPosition,
+    InMemoryCheckpointStore,
+};
+use futures::StreamExt;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinHandle;
@@ -14,8 +16,6 @@ mod common;
 
 #[recorded::test(live)]
 async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
-    common::setup();
-
     let recording = ctx.recording();
 
     let consumer_client = ConsumerClient::builder()
@@ -83,8 +83,6 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
 }
 
 async fn create_consumer_client(ctx: TestContext) -> azure_core::Result<Arc<ConsumerClient>> {
-    common::setup();
-
     let recording = ctx.recording();
 
     Ok(Arc::new(
@@ -252,11 +250,6 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
 
 #[recorded::test(live)]
 async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<()> {
-    use azure_messaging_eventhubs::{StartLocation, StartPosition};
-    use futures::StreamExt;
-
-    common::setup();
-
     let consumer_client = create_consumer_client(ctx).await?;
     let processor = create_processor(
         consumer_client,
@@ -284,7 +277,7 @@ async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<(
     );
 
     // Receive events from the partition client.
-    let mut event_stream = partition_client.receive_events();
+    let mut event_stream = partition_client.stream_events();
     while let Some(event) = event_stream.next().await {
         match event {
             Ok(event_data) => {

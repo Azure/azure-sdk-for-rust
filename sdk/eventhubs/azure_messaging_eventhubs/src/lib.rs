@@ -6,6 +6,9 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
+#[cfg(feature = "test_checkpoint_store")]
+pub(crate) mod in_memory_checkpoint_store;
+
 pub(crate) mod common;
 pub(crate) mod consumer;
 pub(crate) mod error;
@@ -39,3 +42,6 @@ pub mod builders {
 }
 
 pub use crate::error::{ErrorKind, EventHubsError};
+
+#[cfg(feature = "test_checkpoint_store")]
+pub use in_memory_checkpoint_store::InMemoryCheckpointStore;

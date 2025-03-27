@@ -10,7 +10,6 @@ use azure_messaging_eventhubs::{
         StartPosition,
     },
 };
-use futures::pin_mut;
 use futures::stream::StreamExt;
 use std::{env, error::Error};
 use tracing::info;
@@ -115,8 +114,6 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
 
     let receive_stream = receiver.stream_events();
-
-    pin_mut!(receive_stream);
 
     let mut message_index = 1;
     let received_messages = receive_stream.take(4);

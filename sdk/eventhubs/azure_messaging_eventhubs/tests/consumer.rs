@@ -3,10 +3,9 @@
 
 // cspell::ignore Uncategorized
 
-use azure_core_test::recorded;
-use azure_core_test::TestContext;
+use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{ConsumerClient, OpenReceiverOptions, StartPosition};
-use futures::{pin_mut, StreamExt};
+use futures::StreamExt;
 use std::{env, error::Error, time::Duration};
 use tokio::time::timeout;
 use tracing::{info, trace};
@@ -175,9 +174,7 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
             "Creating event receive stream on receiver for: {:?}",
             receiver.partition_id()
         );
-        let event_stream = receiver.stream_events();
-
-        pin_mut!(event_stream); // Needed for iteration.
+        let mut event_stream = receiver.stream_events();
 
         let mut count = 0;
 
@@ -241,9 +238,7 @@ async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> 
         .await?;
 
     info!("Creating event receive stream.");
-    let event_stream = receiver.stream_events();
-
-    pin_mut!(event_stream); // Needed for iteration.
+    let mut event_stream = receiver.stream_events();
 
     let mut count = 0;
 
@@ -251,7 +246,6 @@ async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     info!("Receiving events for {:?}.", TEST_DURATION);
 
     // Read events from the stream for a bit of time.
-
     let result = timeout(TEST_DURATION, async {
         while let Some(event) = event_stream.next().await {
             match event {

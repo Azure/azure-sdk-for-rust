@@ -166,18 +166,18 @@ impl Ownership {
     /// * `last_modified_time` - The last modified time of the ownership (optional).
     ///
     pub fn new(
-        consumer_group: &str,
-        event_hub_name: &str,
         fully_qualified_namespace: &str,
+        event_hub_name: &str,
+        consumer_group: &str,
         partition_id: &str,
         owner_id: &str,
         etag: Option<Etag>,
         last_modified_time: Option<SystemTime>,
     ) -> Self {
         Ownership {
-            consumer_group: consumer_group.to_string(),
-            event_hub_name: event_hub_name.to_string(),
             fully_qualified_namespace: fully_qualified_namespace.to_string(),
+            event_hub_name: event_hub_name.to_string(),
+            consumer_group: consumer_group.to_string(),
             partition_id: partition_id.to_string(),
             owner_id: owner_id.to_string(),
             etag,
