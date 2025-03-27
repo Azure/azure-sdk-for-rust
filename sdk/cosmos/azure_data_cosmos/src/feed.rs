@@ -10,7 +10,7 @@ use crate::constants;
 ///
 /// Cosmos DB queries can be executed using non-HTTP transports, depending on the circumstances.
 /// They may also produce results that don't directly correlate to specific HTTP responses (as in the case of cross-partition queries).
-/// Because of this, Cosmos DB query responses use `FeedPage` to represent the results, rather than a more generic type like [`Response`](azure_core::Response).
+/// Because of this, Cosmos DB query responses use `FeedPage` to represent the results, rather than a more generic type like [`Response`](azure_core::http::Response).
 pub struct FeedPage<T> {
     /// The items in the response.
     items: Vec<T>,
