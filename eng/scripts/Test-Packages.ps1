@@ -2,7 +2,6 @@
 
 #Requires -Version 7.0
 param(
-  [string]$Toolchain = 'stable',
   [string]$PackageInfoDirectory
 )
 
@@ -13,7 +12,6 @@ Set-StrictMode -Version 2.0
 
 Write-Host @"
 Testing packages with
-    Toolchain: '$Toolchain'
     PackageInfoDirectory: '$PackageInfoDirectory'
     RUSTFLAGS: '$env:RUSTFLAGS'
     RUSTDOCFLAGS: '$env:RUSTDOCFLAGS'
@@ -59,13 +57,13 @@ foreach ($package in $packagesToTest) {
 
     Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
-    Invoke-LoggedCommand "cargo +$Toolchain build --keep-going" -GroupOutput
+    Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
     Write-Host "`n`n"
 
-    Invoke-LoggedCommand "cargo +$Toolchain test --doc --no-fail-fast" -GroupOutput
+    Invoke-LoggedCommand "cargo test --doc --no-fail-fast" -GroupOutput
     Write-Host "`n`n"
 
-    Invoke-LoggedCommand "cargo +$Toolchain test --all-targets --no-fail-fast" -GroupOutput
+    Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast" -GroupOutput
     Write-Host "`n`n"
 
     $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"

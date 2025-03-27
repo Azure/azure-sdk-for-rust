@@ -32,7 +32,7 @@ jobs:
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      Toolchain: active
+      Toolchain: default
       WorkingDirectory: $(System.DefaultWorkingDirectory)/eng/tools/generate_api_report
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self

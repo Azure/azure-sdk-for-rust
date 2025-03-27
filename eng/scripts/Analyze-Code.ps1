@@ -2,7 +2,6 @@
 
 #Requires -Version 7.0
 param(
-  [string]$Toolchain = 'stable',
   [string]$PackageInfoDirectory,
   [switch]$CheckWasm = $true,
   [switch]$SkipPackageAnalysis
@@ -15,13 +14,12 @@ Set-StrictMode -Version 2.0
 
 Write-Host @"
 Analyzing code with
-    Toolchain: '$Toolchain'
     RUSTFLAGS: '${env:RUSTFLAGS}'
     RUSTDOCFLAGS: '${env:RUSTDOCFLAGS}'
 "@
 
 if ($CheckWasm) {
-  Invoke-LoggedCommand "rustup target add --toolchain $Toolchain wasm32-unknown-unknown"
+  Invoke-LoggedCommand "rustup target add wasm32-unknown-unknown"
 }
 
 Invoke-LoggedCommand "cargo +$Toolchain check --package azure_core --all-features --all-targets --keep-going"
