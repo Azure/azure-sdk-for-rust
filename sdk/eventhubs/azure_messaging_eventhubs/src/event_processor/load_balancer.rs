@@ -15,7 +15,7 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
     time::{Duration, SystemTime},
 };
-use tracing::{debug, info, trace};
+use tracing::{debug, trace};
 
 /// LoadBalancerInfo contains information about the current ownership of partitions
 /// and the partitions that are unowned or expired.
@@ -62,10 +62,7 @@ impl LoadBalancer {
             processor_strategy,
             duration,
             consumer_client_details,
-            rng: Mutex::new(rng.unwrap_or_else(|| {
-                info!("Using standard RNG");
-                Box::new(StdRng::from_entropy())
-            })),
+            rng: Mutex::new(rng.unwrap_or_else(|| Box::new(StdRng::from_entropy()))),
         }
     }
 
@@ -170,6 +167,7 @@ impl LoadBalancer {
                 above_maximum.append(ownerships.clone().as_mut());
             }
         }
+
         // Sort the above_maximum partitions by partition ID to ensure that we are consistent in the order.
         // Note that we only need to do this when testing to ensure that the order of the partitions is consistent.
         #[cfg(test)]
@@ -245,7 +243,6 @@ impl LoadBalancer {
                 .rng()?
                 .as_mut()
                 .gen_range(0..load_balancer_info.unowned_or_expired.len());
-            info!("Grabbing unowned {index} from other processor");
             let mut ownership = load_balancer_info.unowned_or_expired[index].clone();
             self.reset_ownership(&mut ownership);
             return Ok(Some(ownership));
@@ -256,7 +253,6 @@ impl LoadBalancer {
                 .rng()?
                 .as_mut()
                 .gen_range(0..load_balancer_info.above_max.len());
-            info!("Stealing {index} from other processor");
             let mut ownership = load_balancer_info.above_max[index].clone();
             self.reset_ownership(&mut ownership);
             return Ok(Some(ownership));
@@ -1106,12 +1102,12 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    #[tokio::test]
     async fn unit_test_load_balancer_unbalanced() -> Result<()> {
         test_setup();
         info!("Unit test for load balancer (unbalanced)");
 
-        //cspell: ignore aaaabb aaabbbcccd aaabbbccde
+        //cspell: ignore aaaabb aaabbbcccd aaabbbccde aaaabbc
 
         {
             info!("A new owner enters the field.");
