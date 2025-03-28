@@ -11,10 +11,10 @@ use super::{
     models::{EventHubPartitionProperties, EventHubProperties},
 };
 use crate::{common::connection_manager::ConnectionManager, error::EventHubsError, models};
-use async_lock::Mutex;
+use async_lock::Mutex as AsyncMutex;
 use azure_core::{
     credentials::TokenCredential,
-    error::Result,
+    error::{Error, ErrorKind as AzureErrorKind, Result},
     http::{RetryOptions, Url},
     Uuid,
 };
@@ -35,8 +35,8 @@ use tracing::{debug, trace};
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
-    session_instances: Mutex<HashMap<String, Arc<AmqpSession>>>,
-    mgmt_client: Mutex<OnceLock<ManagementInstance>>,
+    session_instances: AsyncMutex<HashMap<String, Arc<AmqpSession>>>,
+    mgmt_client: AsyncMutex<OnceLock<ManagementInstance>>,
     connection_manager: ConnectionManager,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
     consumer_group: String,
@@ -105,8 +105,8 @@ impl ConsumerClient {
         Ok(Self {
             instance_id: options.instance_id,
             retry_options: options.retry_options,
-            session_instances: Mutex::new(HashMap::new()),
-            mgmt_client: Mutex::new(OnceLock::new()),
+            session_instances: AsyncMutex::new(HashMap::new()),
+            mgmt_client: AsyncMutex::new(OnceLock::new()),
             connection_manager: ConnectionManager::new(
                 url.clone(),
                 options.application_id.clone(),
@@ -160,11 +160,23 @@ impl ConsumerClient {
         self.connection_manager.close_connection().await
     }
 
+    /// Retrieves the details of the consumer client.
+    ///
+    /// This function retrieves the details of the consumer client associated with the [`ConsumerClient`].
     pub(crate) async fn get_details(&self) -> Result<models::ConsumerClientDetails> {
         Ok(models::ConsumerClientDetails {
             eventhub_name: self.eventhub.clone(),
             consumer_group: self.consumer_group.clone(),
-            fully_qualified_namespace: self.endpoint.host().unwrap().to_string(),
+            fully_qualified_namespace: self
+                .endpoint
+                .host()
+                .ok_or_else(|| {
+                    Error::message(
+                        AzureErrorKind::Other,
+                        "Could not find host in consumer client",
+                    )
+                })?
+                .to_string(),
             client_id: self.connection_manager.get_connection_id().await?.clone(),
         })
     }
@@ -202,7 +214,7 @@ impl ConsumerClient {
     ///
     ///     let receiver  = consumer.open_receiver_on_partition(partition_id, None).await?;
     ///
-    ///     let event_stream = receiver.stream_events();
+    ///     let mut event_stream = receiver.stream_events();
     ///
     ///     while let Some(event_result) = event_stream.next().await {
     ///         match event_result {

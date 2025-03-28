@@ -20,11 +20,11 @@ cargo add azure_messaging_eventhubs
 
 ### Prerequisites
 
--   A Rust Compiler. See [here](https://www.rust-lang.org/tools/install) for installation instructions.
--   An [Azure subscription]
--   The [Azure CLI]
--   An [Event Hub namespace](https://learn.microsoft.com/azure/event-hubs/).
--   An Event Hub instance. You can create an Event Hub instance in your Event Hubs Namespace using the [Azure Portal](https://learn.microsoft.com/azure/event-hubs/event-hubs-create), or the [Azure CLI](https://learn.microsoft.com/azure/event-hubs/event-hubs-quickstart-cli).
+- A Rust Compiler. See [here](https://www.rust-lang.org/tools/install) for installation instructions.
+- An [Azure subscription]
+- The [Azure CLI]
+- An [Event Hub namespace](https://learn.microsoft.com/azure/event-hubs/).
+- An Event Hub instance. You can create an Event Hub instance in your Event Hubs Namespace using the [Azure Portal](https://learn.microsoft.com/azure/event-hubs/event-hubs-create), or the [Azure CLI](https://learn.microsoft.com/azure/event-hubs/event-hubs-quickstart-cli).
 
 If you use the Azure CLI, replace `<your-resource-group-name>`, `<your-eventhubs-namespace-name>`, and `<your-eventhub-name>` with your own, unique names:
 
@@ -114,12 +114,12 @@ Additional examples for various scenarios can be found on in the examples direct
 
 <!-- no toc -->
 
--   [Open an Event Hubs message producer on an Event Hub instance](#open-an-event-hubs-message-producer-on-an-event-hub-instance)
--   [Send events](#send-events)
-    -   [Send events directly to the Event Hub](#send-events-directly-to-the-event-hub)
-    -   [Send events using a batch operation](#send-events-using-a-batch-operation)
--   [Open an Event Hubs message consumer on an Event Hubs instance](#open-an-event-hubs-message-consumer-on-an-event-hub-instance)
--   [Receive events](#receive-events)
+- [Open an Event Hubs message producer on an Event Hub instance](#open-an-event-hubs-message-producer-on-an-event-hub-instance)
+- [Send events](#send-events)
+  - [Send events directly to the Event Hub](#send-events-directly-to-the-event-hub)
+  - [Send events using a batch operation](#send-events-using-a-batch-operation)
+- [Open an Event Hubs message consumer on an Event Hubs instance](#open-an-event-hubs-message-consumer-on-an-event-hub-instance)
+- [Receive events](#receive-events)
 
 ## Open an Event Hubs message producer on an Event Hub instance
 
@@ -233,7 +233,7 @@ async fn receive_events(client: &ConsumerClient) -> Result<(), Error> {
         )
         .await?;
 
-    let event_stream = message_receiver.stream_events();
+    let mut event_stream = message_receiver.stream_events();
 
     while let Some(event_result) = event_stream.next().await {
         match event_result {

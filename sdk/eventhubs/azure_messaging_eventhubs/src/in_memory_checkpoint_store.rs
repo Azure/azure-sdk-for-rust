@@ -34,7 +34,7 @@ impl InMemoryCheckpointStore {
     }
 
     /// Updates the ownership for a specific partition.
-    pub fn update_ownership(&self, ownership: Ownership) -> Result<Ownership> {
+    pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
         trace!(
             "Update ownership for partition {}",
             ownership.partition_id()
@@ -83,7 +83,7 @@ impl InMemoryCheckpointStore {
 
 #[async_trait]
 impl CheckpointStore for InMemoryCheckpointStore {
-    async fn claim_ownership(&self, ownerships: Vec<Ownership>) -> Result<Vec<Ownership>> {
+    async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>> {
         trace!("Claim ownership for {} partitions", ownerships.len());
         let mut claimed_ownerships = Vec::new();
         for ownership in ownerships {
@@ -101,7 +101,7 @@ impl CheckpointStore for InMemoryCheckpointStore {
             "update_ownership: update ownership for partition {}",
             ownership.partition_id()
         );
-        let ownership = self.update_ownership(ownership)?;
+        let ownership = self.update_ownership(&ownership)?;
         trace!(
             "update_ownership: updated ownership for partition {}",
             ownership.partition_id()

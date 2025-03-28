@@ -15,7 +15,6 @@ use azure_core_amqp::{
 };
 use std::collections::HashMap;
 use std::sync::Arc;
-//use tokio::sync::{Mutex, OnceCell};
 use tracing::{debug, trace};
 
 /// The connection manager is responsible for managing the connection to the Event Hubs service.

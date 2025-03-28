@@ -33,7 +33,7 @@ mod tests {
             Some("etag".into()),
             None,
         );
-        let result = store.update_ownership(ownership);
+        let result = store.update_ownership(&ownership);
         assert!(result.is_ok());
     }
 
@@ -43,14 +43,14 @@ mod tests {
         let store = InMemoryCheckpointStore::new();
         let ownership = Ownership::new(
             "fqdn.servicebus.windows.net",
-            "event_hub",
-            "consumer_group",
+            "",
+            "",
             "partition_id",
             "owner_id",
             Some("etag".into()),
             None,
         );
-        let result = store.update_ownership(ownership);
+        let result = store.update_ownership(&ownership);
         assert!(result.is_err());
         assert_eq!(*result.unwrap_err().kind(), AzureErrorKind::Other);
     }

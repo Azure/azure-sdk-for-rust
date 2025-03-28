@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .open_receiver_on_partition(partition_id, None)
         .await?;
 
-    let event_stream = message_receiver.stream_events();
+    let mut event_stream = message_receiver.stream_events();
 
     while let Some(event_result) = event_stream.next().await {
         match event_result {

@@ -80,7 +80,7 @@ pub trait CheckpointStore: Send + Sync {
     /// # Errors
     /// Returns an error if the ownership claim fails.
     ///
-    async fn claim_ownership(&self, ownerships: Vec<Ownership>) -> Result<Vec<Ownership>>;
+    async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>>;
 
     /// Lists the checkpoints for the specified Event Hub and consumer group.
     /// This method retrieves the checkpoints for a specific Event Hub and consumer group.

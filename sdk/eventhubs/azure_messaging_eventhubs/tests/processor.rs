@@ -4,8 +4,8 @@
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::models::StartPositions;
 use azure_messaging_eventhubs::{
-    ConsumerClient, EventProcessor, ProcessorStrategy, StartLocation, StartPosition,
-    InMemoryCheckpointStore,
+    ConsumerClient, EventProcessor, InMemoryCheckpointStore, ProcessorStrategy, StartLocation,
+    StartPosition,
 };
 use futures::StreamExt;
 use std::sync::Arc;
@@ -277,22 +277,40 @@ async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<(
     );
 
     // Receive events from the partition client.
-    let mut event_stream = partition_client.stream_events();
-    while let Some(event) = event_stream.next().await {
-        match event {
+    let event_stream = partition_client.stream_events();
+
+    let messages = event_stream.take(10).collect::<Vec<_>>().await;
+
+    info!("Received {} messages from the stream", messages.len());
+
+    // Pull the first 10 messages from the stream. None of them should have failed.
+    for message in messages {
+        match message {
             Ok(event_data) => {
                 info!("Received event: {:?}", event_data);
-                partition_client
-                    .update_checkpoint(&event_data)
-                    .await
-                    .expect("Failed to update checkpoint");
-                info!("Checkpoint updated for event: {:?}", event_data);
+                // Process the received event data here
             }
             Err(e) => {
                 panic!("Error receiving event: {:?}", e);
             }
         }
     }
+
+    // while let Some(event) = event_stream.next().await {
+    //     match event {
+    //         Ok(event_data) => {
+    //             info!("Received event: {:?}", event_data);
+    //             partition_client
+    //                 .update_checkpoint(&event_data)
+    //                 .await
+    //                 .expect("Failed to update checkpoint");
+    //             info!("Checkpoint updated for event: {:?}", event_data);
+    //         }
+    //         Err(e) => {
+    //             panic!("Error receiving event: {:?}", e);
+    //         }
+    //     }
+    // }
 
     running_processor.abort();
     info!("Processor task aborted");

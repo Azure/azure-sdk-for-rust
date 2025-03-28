@@ -1,12 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use std::pin::Pin;
-
 use crate::models::ReceivedEventData;
 use async_stream::try_stream;
 use azure_core::error::{ErrorKind as AzureErrorKind, Result};
-use azure_core_amqp::{AmqpDeliveryApis, AmqpReceiver, AmqpReceiverApis};
+use azure_core_amqp::{AmqpDeliveryApis as _, AmqpReceiver, AmqpReceiverApis as _};
 use futures::Stream;
 use futures_lite::future::FutureExt;
 use tracing::trace;
@@ -31,7 +29,7 @@ use tracing::trace;
 ///
 ///     let receiver  = consumer.open_receiver_on_partition(partition_id, None).await?;
 ///
-///     let event_stream = receiver.stream_events();
+///     let mut event_stream = receiver.stream_events();
 ///
 ///     while let Some(event_result) = event_stream.next().await {
 ///         match event_result {
@@ -90,7 +88,7 @@ impl EventReceiver {
     /// use futures::stream::StreamExt;
     ///
     /// async fn receive_events(receiver: &EventReceiver) {
-    ///     let event_stream = receiver.stream_events();
+    ///     let mut event_stream = receiver.stream_events();
     ///
     ///     while let Some(event_result) = event_stream.next().await {
     ///         match event_result {
@@ -110,33 +108,25 @@ impl EventReceiver {
     ///
     pub fn stream_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
         // Use async_stream to create a stream that yields messages from the receiver.
-        // The stream will continue to yield messages as long as the receiver is not closed.
-        // The stream will yield an error if there is an issue receiving messages from the Event Hub.
-        // The stream will yield a timeout error if the receive operation times out.
-        // The stream will yield a message if the receive operation is successful.
-
-        let r = try_stream! {
+        let stream = try_stream! {
             loop {
-                if let Some(delivery_timeout) = self.timeout {
-                    let delivery = self.receiver.receive_delivery().or(async {
+                 let delivery = if let Some(delivery_timeout) = self.timeout {
+                     self.receiver.receive_delivery().or(async {
                         async_io::Timer::after(delivery_timeout).await;
                         Err(azure_core::Error::new(AzureErrorKind::Io, Box::new(std::io::Error::from(std::io::ErrorKind::TimedOut))))
-                    }).await?;
-                    let message = delivery.into_message();
-                    let message = ReceivedEventData::from(message);
-                    trace!("Received message: {:?}", message);
-                    yield message;
-                } else {
-                    let delivery = self.receiver.receive_delivery().await?;
-                    let message = delivery.into_message();
-                    let message = ReceivedEventData::from(message);
-                    trace!("Received message: {:?}", message);
-                    yield message;
-                }
+                     }).await?
+                 } else {
+                     self.receiver.receive_delivery().await?
+                 };
+                 // Now that we have a delivery, we can process it.
+                 let message = delivery.into_message();
+                 let message = ReceivedEventData::from(message);
+                 trace!("Received message: {:?}", message);
+                 yield message;
             }
         };
 
-        Box::pin(r) as Pin<Box<dyn Stream<Item = azure_core::Result<ReceivedEventData>> + '_>>
+        Box::pin(stream)
     }
 
     /// Closes the event receiver, detaching from the remote.

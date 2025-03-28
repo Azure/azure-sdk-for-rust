@@ -367,7 +367,7 @@ impl LoadBalancer {
             }
         }
 
-        let actual = self.checkpoint_store.claim_ownership(ownerships).await?;
+        let actual = self.checkpoint_store.claim_ownership(&ownerships).await?;
         Ok(actual)
     }
 }
@@ -382,15 +382,7 @@ mod tests {
     use azure_core::Result;
     use tracing::info;
 
-    static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
-
-    pub fn test_setup() {
-        INIT_LOGGING.call_once(|| {
-            println!("Setting up test logger...");
-
-            tracing_subscriber::fmt::init();
-        });
-    }
+    pub fn test_setup() {}
 
     fn map_to_strings<T, U>(source: &[T], mapper: U) -> Vec<String>
     where
@@ -476,7 +468,7 @@ mod tests {
 
         let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
         checkpoint_store
-            .claim_ownership(vec![
+            .claim_ownership(&[
                 new_test_ownership("0", "some-other-client"),
                 new_test_ownership("3", "some-other-client"),
             ])
@@ -517,7 +509,7 @@ mod tests {
 
         let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
         checkpoint_store
-            .claim_ownership(vec![
+            .claim_ownership(&[
                 new_test_ownership("0", "some-other-client"),
                 new_test_ownership("3", "some-other-client"),
             ])
@@ -587,7 +579,7 @@ mod tests {
         let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
 
         checkpoint_store
-            .claim_ownership(vec![
+            .claim_ownership(&[
                 new_test_ownership("0", some_other_client_id),
                 new_test_ownership("1", some_other_client_id),
                 new_test_ownership("2", some_other_client_id),
@@ -715,7 +707,7 @@ mod tests {
 
             let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
             checkpoint_store
-                .claim_ownership(vec![
+                .claim_ownership(&[
                     new_test_ownership("0", CLIENT_A),
                     new_test_ownership("1", CLIENT_A),
                     middle_ownership.clone(),
@@ -759,7 +751,7 @@ mod tests {
 
             let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
             checkpoint_store
-                .claim_ownership(vec![
+                .claim_ownership(&[
                     new_test_ownership("0", CLIENT_A),
                     new_test_ownership("1", CLIENT_A),
                     new_test_ownership("2", CLIENT_A),
@@ -832,7 +824,7 @@ mod tests {
 
             let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
             checkpoint_store
-                .claim_ownership(vec![
+                .claim_ownership(&[
                     new_test_ownership("0", CLIENT_A),
                     new_test_ownership("1", CLIENT_A),
                     new_test_ownership("2", CLIENT_B),
@@ -900,7 +892,7 @@ mod tests {
 
             let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
             checkpoint_store
-                .claim_ownership(vec![
+                .claim_ownership(&[
                     new_test_ownership("0", CLIENT_A),
                     new_test_ownership("1", CLIENT_A),
                     // Nobody owns 2.
@@ -947,7 +939,7 @@ mod tests {
             let all_partition_ids = vec!["0", "1", "2", "3"];
 
             checkpoint_store
-                .claim_ownership(vec![
+                .claim_ownership(&[
                     new_test_ownership(all_partition_ids[0], LOTS_CLIENT_ID),
                     new_test_ownership(all_partition_ids[1], LOTS_CLIENT_ID),
                     new_test_ownership(all_partition_ids[2], LOTS_CLIENT_ID),
@@ -1020,7 +1012,7 @@ mod tests {
 
             let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
             checkpoint_store
-                .claim_ownership(vec![
+                .claim_ownership(&[
                     new_test_ownership("0", CLIENT_A),
                     new_test_ownership("1", CLIENT_A),
                     middle_ownership.clone(),
@@ -1253,7 +1245,7 @@ mod tests {
         }
 
         let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
-        let claimed = checkpoint_store.claim_ownership(ownerships).await?;
+        let claimed = checkpoint_store.claim_ownership(&ownerships).await?;
         assert_eq!(claimed.len(), partition_ids.len());
 
         let load_balancer = LoadBalancer::new(
