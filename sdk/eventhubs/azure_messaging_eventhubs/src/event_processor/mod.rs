@@ -132,9 +132,13 @@ pub trait CheckpointStore: Send + Sync {
     /// Returns an error if the update fails.
     ///
     async fn update_checkpoint(&self, checkpoint: Checkpoint) -> Result<()>;
+
+    /// Updates the ownership for the specified partition.
+    #[cfg(feature = "test_checkpoint_store")]
+    async fn update_ownership(&self, ownership: Ownership) -> Result<()>;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 /// Represents the strategy for load balancing event processing.
 ///
 /// This enum defines two strategies: `Balanced` and `Greedy`.

@@ -161,6 +161,7 @@ impl EventProcessor {
                 client_details.clone(),
                 options.strategy,
                 options.partition_expiration_duration,
+                None,
             ))),
             client_details,
             prefetch: options.prefetch,
@@ -290,7 +291,13 @@ impl EventProcessor {
         let load_balancer = self.load_balancer.lock().await;
 
         let ownerships = load_balancer
-            .load_balance(&eventhub_properties.partition_ids)
+            .load_balance(
+                &eventhub_properties
+                    .partition_ids
+                    .iter()
+                    .map(String::as_str)
+                    .collect::<Vec<&str>>(),
+            )
             .await;
         if let Err(e) = ownerships {
             error!("Error in load balancing: {:?}", e);

@@ -63,7 +63,7 @@ impl InMemoryCheckpointStore {
                 warn!("ETag mismatch {}", key);
                 return Err(Error::message(
                     AzureErrorKind::Other,
-                    format!("ETag mismatch for partition {}", key),
+                    format!("ETag mismatch for partition {key}"),
                 ));
             }
             store.insert(key.clone(), ownership.clone());
@@ -95,6 +95,24 @@ impl CheckpointStore for InMemoryCheckpointStore {
         Ok(claimed_ownerships)
     }
 
+    #[cfg(feature = "test_checkpoint_store")]
+    async fn update_ownership(&self, ownership: Ownership) -> Result<()> {
+        trace!(
+            "update_ownership: update ownership for partition {}",
+            ownership.partition_id()
+        );
+        let ownership = self.update_ownership(ownership)?;
+        trace!(
+            "update_ownership: updated ownership for partition {}",
+            ownership.partition_id()
+        );
+        trace!(
+            "Update ownership for partition {}",
+            ownership.partition_id()
+        );
+        Ok(())
+    }
+
     async fn list_checkpoints(
         &self,
         namespace: &str,
@@ -111,6 +129,7 @@ impl CheckpointStore for InMemoryCheckpointStore {
                 checkpoints.push(value.clone());
             }
         }
+        checkpoints.sort_by(|a, b| a.partition_id().cmp(b.partition_id()));
         trace!("list_checkpoints: found {} checkpoints", checkpoints.len());
         Ok(checkpoints)
     }
@@ -133,6 +152,7 @@ impl CheckpointStore for InMemoryCheckpointStore {
                 .filter(|(key, _)| key.starts_with(&prefix))
                 .map(|(_, value)| value.clone()),
         );
+        ownerships.sort_by(|a, b| a.partition_id().cmp(b.partition_id()));
         trace!("list_ownerships: found {} ownerships", ownerships.len());
         Ok(ownerships)
     }
