@@ -48,6 +48,16 @@ impl ManagedIdentityCredential {
                     .user_assigned_id
                     .map(|id| id.into())
                     .unwrap_or(ImdsId::SystemAssigned);
+                // App Service does accept resource IDs, however this crate's current implementation sends
+                // them in the wrong query parameter: https://github.com/Azure/azure-sdk-for-rust/issues/2407
+                if let ImdsId::MsiResId(_) = id {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Credential,
+                        || {
+                            "User-assigned resource IDs aren't supported for App Service. Use a client or object ID instead.".to_string()
+                        },
+                    ));
+                }
                 AppServiceManagedIdentityCredential::new(id, options.credential_options)?
             }
             ManagedIdentitySource::Imds => {
@@ -326,6 +336,29 @@ mod tests {
             ..Default::default()
         }))
         .await;
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn app_service_resource_id() {
+        let _guard = EnvVarGuard::new(&HashMap::from([
+            (
+                IDENTITY_ENDPOINT,
+                "http://localhost/metadata/identity/oauth2/token",
+            ),
+            (IDENTITY_HEADER, "x-id-header"),
+        ]));
+        let result = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+            user_assigned_id: Some(UserAssignedId::ResourceId(
+                "expected resource ID".to_string(),
+            )),
+            ..Default::default()
+        }));
+        assert!(
+            matches!(result, Err(ref e) if *e.kind() == azure_core::error::ErrorKind::Credential),
+            "Expected constructor error, got: {:?}",
+            result
+        );
     }
 
     #[test]
