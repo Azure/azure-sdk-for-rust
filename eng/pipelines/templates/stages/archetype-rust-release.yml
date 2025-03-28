@@ -117,6 +117,13 @@ stages:
           condition: and(succeeded(), ne(variables['Skip.CreateApiReview'], 'true'))
           dependsOn: PublishPackage
           steps:
+          - checkout: self
+            fetchDepth: 1
+            
+          - download: current
+            displayName: Download ${{parameters.PipelineArtifactName}} artifact
+            artifact: ${{parameters.PipelineArtifactName}}
+
           - template: /eng/common/pipelines/templates/steps/create-apireview.yml
             parameters:
               ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
