@@ -6,10 +6,11 @@ use crate::{
     VirtualMachineManagedIdentityCredential,
 };
 use azure_core::credentials::{AccessToken, TokenCredential};
-use std::{env, sync::Arc};
+use std::{env, fmt::Display, fmt::Formatter, sync::Arc};
+use tracing::trace;
 
 /// Identifies a specific user-assigned identity for [`ManagedIdentityCredential`] to authenticate.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum UserAssignedId {
     /// The client ID of a user-assigned identity
     ClientId(String),
@@ -17,6 +18,16 @@ pub enum UserAssignedId {
     ObjectId(String),
     /// The Azure resource ID of a user-assigned identity
     ResourceId(String),
+}
+
+impl Display for UserAssignedId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UserAssignedId::ClientId(id) => write!(f, r#"client ID "{}""#, id),
+            UserAssignedId::ObjectId(id) => write!(f, r#"object ID "{}""#, id),
+            UserAssignedId::ResourceId(id) => write!(f, r#"resource ID "{}""#, id),
+        }
+    }
 }
 
 /// Authenticates a managed identity from Azure App Service or an Azure Virtual Machine.
@@ -39,15 +50,15 @@ pub struct ManagedIdentityCredentialOptions {
 impl ManagedIdentityCredential {
     pub fn new(options: Option<ManagedIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>> {
         let options = options.unwrap_or_default();
-
         let source = get_source();
+        let id = options
+            .user_assigned_id
+            .clone()
+            .map(|id| id.into())
+            .unwrap_or(ImdsId::SystemAssigned);
 
         let credential: Arc<dyn TokenCredential> = match source {
             ManagedIdentitySource::AppService => {
-                let id = options
-                    .user_assigned_id
-                    .map(|id| id.into())
-                    .unwrap_or(ImdsId::SystemAssigned);
                 // App Service does accept resource IDs, however this crate's current implementation sends
                 // them in the wrong query parameter: https://github.com/Azure/azure-sdk-for-rust/issues/2407
                 if let ImdsId::MsiResId(_) = id {
@@ -61,10 +72,6 @@ impl ManagedIdentityCredential {
                 AppServiceManagedIdentityCredential::new(id, options.credential_options)?
             }
             ManagedIdentitySource::Imds => {
-                let id = options
-                    .user_assigned_id
-                    .map(|id| id.into())
-                    .unwrap_or(ImdsId::SystemAssigned);
                 VirtualMachineManagedIdentityCredential::new(id, options.credential_options)?
             }
             _ => {
@@ -75,7 +82,15 @@ impl ManagedIdentityCredential {
             }
         };
 
-        // Return the constructed ManagedIdentityCredential
+        let mut message = format!(
+            "ManagedIdentityCredential will use {} managed identity",
+            source.as_str()
+        );
+        if let Some(user_assigned_id) = options.user_assigned_id {
+            message.push_str(&format!(" with {}", user_assigned_id));
+        }
+        trace!(message);
+
         Ok(Arc::new(Self { credential }))
     }
 }
