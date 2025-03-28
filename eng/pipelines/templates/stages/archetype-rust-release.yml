@@ -112,14 +112,20 @@ stages:
                   env:
                     CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
 
-        - job: SubmitApiReview
-          displayName: "Submit API Review"
-          condition: and(succeeded(), ne(variables['Skip.CreateApiReview'], 'true'))
+        - job: UpdatePackageVersion
+          displayName: "API Review and Package Version Update"
+          condition: and(succeeded(), ne(variables['Skip.UpdatePackageVersion'], 'true'))
           dependsOn: PublishPackage
           steps:
-          - checkout: self
-            fetchDepth: 1
-            
+          - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+            parameters:
+              paths:
+              - "/*"
+
+          - template: /eng/pipelines/templates/steps/use-rust.yml@self
+            parameters:
+              Toolchain: nightly
+
           - download: current
             displayName: Download ${{parameters.PipelineArtifactName}} artifact
             artifact: ${{parameters.PipelineArtifactName}}
@@ -133,20 +139,6 @@ stages:
               ArtifactName: ${{parameters.PipelineArtifactName}}
               SourceRootPath: $(System.DefaultWorkingDirectory)
               PackageName: ${{artifact.name}}
-
-        - job: UpdatePackageVersion
-          displayName: "Update Package Versions"
-          condition: and(succeeded(), ne(variables['Skip.UpdatePackageVersion'], 'true'))
-          dependsOn: PublishPackage
-          steps:
-          - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
-            parameters:
-              paths:
-              - "/*"
-
-          - template: /eng/pipelines/templates/steps/use-rust.yml@self
-            parameters:
-              Toolchain: nightly
 
           # Apply the version increment to each library, which updates the Cargo.toml and changelog files.
           - task: PowerShell@2
