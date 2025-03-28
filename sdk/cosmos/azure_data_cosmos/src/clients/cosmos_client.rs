@@ -3,14 +3,14 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::{DatabaseProperties, DatabaseQueryResults},
+    models::DatabaseProperties,
     pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
-    CosmosClientOptions, CreateDatabaseOptions, Query, QueryDatabasesOptions,
+    CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{request::Request, response::Response, Method, Pager, Url},
+    http::{request::Request, response::Response, Method, Url},
 };
 use serde::Serialize;
 use std::sync::Arc;
@@ -132,7 +132,7 @@ impl CosmosClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryDatabasesOptions<'_>>,
-    ) -> azure_core::Result<Pager<DatabaseQueryResults>> {
+    ) -> azure_core::Result<FeedPager<DatabaseProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.databases_link);
         let base_request = Request::new(url, Method::Post);
