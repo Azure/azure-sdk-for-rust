@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::GeneratedBlobClient,
+    generated::clients::BlobClient as GeneratedBlobClient,
     models::{
         BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
         BlobContainerClientGetPropertiesOptions, ContainerProperties,
