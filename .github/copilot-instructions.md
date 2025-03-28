@@ -32,6 +32,8 @@ Use these instructions for test generation as well.
 ## Test Generation
 
 * Tests should be generated in a `tests` module defined within the module file being tested.
+* The `tests` module should be defined at the bottom after all the existing code to test.
+* If the `tests` module already exists, only add test functions and merge imports as needed.
 * The `tests` module should be conditioned on `#[cfg(test)]`.
 * The `tests` module should always import APIs from `super`.
 * Do not begin test function names with "test" unless necessary to disambiguate from the function being tested.
