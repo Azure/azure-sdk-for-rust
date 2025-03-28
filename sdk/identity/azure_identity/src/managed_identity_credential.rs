@@ -241,7 +241,7 @@ mod tests {
                         assert_eq!(actual.headers().get_str(k).unwrap(), v.as_str())
                     });
 
-                    return Ok(Response::from_bytes(
+                    Ok(Response::from_bytes(
                         StatusCode::Ok,
                         Headers::default(),
                         Bytes::from(response_format.replacen(
@@ -249,7 +249,7 @@ mod tests {
                             &expires_on.to_string(),
                             1,
                         )),
-                    ));
+                    ))
                 }
             }
             .boxed()

@@ -3,6 +3,9 @@ appservice
 azureauth
 clientcertificate
 clientsecret
+cloudshell
 imds
+managedidentity
 msal
+replacen
 workloadidentity
