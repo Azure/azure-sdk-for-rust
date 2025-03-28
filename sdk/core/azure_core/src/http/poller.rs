@@ -15,7 +15,7 @@ const DEFAULT_RETRY_TIME: Duration = Duration::from_secs(30);
 
 /// Long-Running Operation (LRO) status.
 #[derive(Debug)]
-pub enum OperationStatus {
+pub enum PollerStatus {
     InProgress,
     Succeeded,
     Failed,
@@ -23,19 +23,19 @@ pub enum OperationStatus {
     Other(String),
 }
 
-impl From<&str> for OperationStatus {
+impl From<&str> for PollerStatus {
     fn from(s: &str) -> Self {
         match s {
-            "InProgress" => OperationStatus::InProgress,
-            "Succeeded" => OperationStatus::Succeeded,
-            "Failed" => OperationStatus::Failed,
+            "InProgress" => PollerStatus::InProgress,
+            "Succeeded" => PollerStatus::Succeeded,
+            "Failed" => PollerStatus::Failed,
             // While the specification indicates we should use `Canceled`, in
             // practice numerous services use `Cancelled`.  As such, we support
             // both.
             //
             // Ref: <https://github.com/Azure/azure-resource-manager-rpc/issues/144>
-            "Canceled" | "Cancelled" => OperationStatus::Canceled,
-            _ => OperationStatus::Other(s.to_owned()),
+            "Canceled" | "Cancelled" => PollerStatus::Canceled,
+            _ => PollerStatus::Other(s.to_owned()),
         }
     }
 }
@@ -51,7 +51,7 @@ pub mod location {
     use crate::{
         http::{
             headers::{Headers, AZURE_ASYNCOPERATION, LOCATION, OPERATION_LOCATION},
-            operation::OperationStatus,
+            poller::PollerStatus,
             Url,
         },
         json::from_json,
@@ -79,40 +79,37 @@ pub mod location {
         }
     }
 
-    /// Get the [`OperationStatus`] from the response body.
-    pub fn get_operation_state(body: &[u8]) -> Option<OperationStatus> {
+    /// Get the [`PollerStatus`] from the response body.
+    pub fn get_operation_state(body: &[u8]) -> Option<PollerStatus> {
         #[derive(serde::Deserialize)]
         struct Body {
             status: String,
         }
         let body: Body = from_json(body).ok()?;
-        Some(OperationStatus::from(body.status.as_str()))
+        Some(PollerStatus::from(body.status.as_str()))
     }
 }
 
 /// Types and methods for getting operation status from the body.
 pub mod body_content {
-    use crate::http::{operation::OperationStatus, StatusCode};
+    use crate::http::{poller::PollerStatus, StatusCode};
     use crate::json::{from_json, to_json};
     use serde::{Deserialize, Serialize};
 
     /// Extract the Long-Running Operation (LRO) state based on the status code and response body.
-    pub fn get_operation_state<S>(
-        status_code: StatusCode,
-        body: &S,
-    ) -> crate::Result<OperationStatus>
+    pub fn get_operation_state<S>(status_code: StatusCode, body: &S) -> crate::Result<PollerStatus>
     where
         S: Serialize,
     {
         match status_code {
-            StatusCode::Accepted => Ok(OperationStatus::InProgress),
+            StatusCode::Accepted => Ok(PollerStatus::InProgress),
             StatusCode::Created => {
-                Ok(get_provisioning_state_from_body(body).unwrap_or(OperationStatus::InProgress))
+                Ok(get_provisioning_state_from_body(body).unwrap_or(PollerStatus::InProgress))
             }
             StatusCode::Ok => {
-                Ok(get_provisioning_state_from_body(body).unwrap_or(OperationStatus::Succeeded))
+                Ok(get_provisioning_state_from_body(body).unwrap_or(PollerStatus::Succeeded))
             }
-            StatusCode::NoContent => Ok(OperationStatus::Succeeded),
+            StatusCode::NoContent => Ok(PollerStatus::Succeeded),
             _ => Err(crate::error::Error::from(
                 crate::error::ErrorKind::HttpResponse {
                     status: status_code,
@@ -133,12 +130,12 @@ pub mod body_content {
         properties: Properties,
     }
 
-    fn get_provisioning_state_from_body<S>(body: &S) -> Option<OperationStatus>
+    fn get_provisioning_state_from_body<S>(body: &S) -> Option<PollerStatus>
     where
         S: Serialize,
     {
         let body: Body = from_json(to_json(&body).ok()?).ok()?;
-        Some(OperationStatus::from(
+        Some(PollerStatus::from(
             body.properties.provisioning_state.as_str(),
         ))
     }

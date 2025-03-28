@@ -49,7 +49,8 @@
 - Removed `query_param` module.
 - Removed `RequestId` type alias from root.
 - Removed `SessionToken` type alias from root.
-- Renamed `lro` module to `http::operation` module.
+- Renamed `lro` module to `http::poller` module.
+- Renamed `lro` module types with prefix "Lro" to prefix "Poller".
 - Renamed `tokio` module to `fs` since it contained only the `typespec_client_core::fs` module members.
 
 ### Bugs Fixed
