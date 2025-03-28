@@ -10,6 +10,7 @@ mod chained_token_credential;
 mod credentials;
 mod env;
 mod federated_credentials_flow;
+mod managed_identity_credential;
 mod oauth2_http_client;
 mod refresh_token;
 mod timeout;
@@ -18,7 +19,13 @@ use azure_core::{error::ErrorKind, Error, Result};
 pub use azure_pipelines_credential::*;
 pub use chained_token_credential::*;
 pub use credentials::*;
+pub use managed_identity_credential::*;
 use std::borrow::Cow;
+
+#[cfg(test)]
+pub(crate) const LIVE_TEST_RESOURCE: &str = "https://management.azure.com";
+#[cfg(test)]
+pub(crate) const LIVE_TEST_SCOPES: &[&str] = &["https://management.azure.com/.default"];
 
 fn validate_not_empty<C>(value: &str, message: C) -> Result<()>
 where

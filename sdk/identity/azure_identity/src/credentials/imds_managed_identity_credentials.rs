@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
+use crate::{credentials::cache::TokenCache, TokenCredentialOptions, UserAssignedId};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind},
@@ -29,6 +29,16 @@ pub enum ImdsId {
     ObjectId(String),
     /// The Azure resource ID of the user-assigned identity to be used.
     MsiResId(String),
+}
+
+impl From<UserAssignedId> for ImdsId {
+    fn from(user_assigned_id: UserAssignedId) -> Self {
+        match user_assigned_id {
+            UserAssignedId::ClientId(client_id) => ImdsId::ClientId(client_id),
+            UserAssignedId::ObjectId(object_id) => ImdsId::ObjectId(object_id),
+            UserAssignedId::ResourceId(resource_id) => ImdsId::MsiResId(resource_id),
+        }
+    }
 }
 
 /// Attempts authentication using a managed identity that has been assigned to the deployment environment.

@@ -9,8 +9,7 @@ use azure_core::{
 #[cfg(not(target_arch = "wasm32"))]
 use azure_identity::AzureCliCredential;
 use azure_identity::{
-    AppServiceManagedIdentityCredential, ImdsId, TokenCredentialOptions,
-    VirtualMachineManagedIdentityCredential, WorkloadIdentityCredential,
+    ManagedIdentityCredential, TokenCredentialOptions, WorkloadIdentityCredential,
 };
 use std::sync::Arc;
 
@@ -49,8 +48,7 @@ const AZURE_CREDENTIAL_KIND: &str = "AZURE_CREDENTIAL_KIND";
 mod azure_credential_kinds {
     #[cfg(not(target_arch = "wasm32"))]
     pub const AZURE_CLI: &str = "azurecli";
-    pub const VIRTUAL_MACHINE: &str = "virtualmachine";
-    pub const APP_SERVICE: &str = "appservice";
+    pub const MANAGED_IDENTITY: &str = "managedidentity";
     pub const WORKLOAD_IDENTITY: &str = "workloadidentity";
 }
 
@@ -58,8 +56,7 @@ mod azure_credential_kinds {
 enum SpecificAzureCredentialKind {
     #[cfg(not(target_arch = "wasm32"))]
     AzureCli(Arc<AzureCliCredential>),
-    VirtualMachine(Arc<VirtualMachineManagedIdentityCredential>),
-    AppService(Arc<AppServiceManagedIdentityCredential>),
+    ManagedIdentity(Arc<ManagedIdentityCredential>),
     WorkloadIdentity(Arc<WorkloadIdentityCredential>),
 }
 
@@ -70,10 +67,7 @@ impl TokenCredential for SpecificAzureCredentialKind {
         match self {
             #[cfg(not(target_arch = "wasm32"))]
             SpecificAzureCredentialKind::AzureCli(credential) => credential.get_token(scopes).await,
-            SpecificAzureCredentialKind::VirtualMachine(credential) => {
-                credential.get_token(scopes).await
-            }
-            SpecificAzureCredentialKind::AppService(credential) => {
+            SpecificAzureCredentialKind::ManagedIdentity(credential) => {
                 credential.get_token(scopes).await
             }
             SpecificAzureCredentialKind::WorkloadIdentity(credential) => {
@@ -97,20 +91,15 @@ impl SpecificAzureCredential {
         let source: SpecificAzureCredentialKind =
             // case insensitive and allow spaces
             match credential_type.replace(' ', "").to_lowercase().as_str() {
-                azure_credential_kinds::APP_SERVICE => {
-                    AppServiceManagedIdentityCredential::new(options)
-                        .map(SpecificAzureCredentialKind::AppService)
+                azure_credential_kinds::MANAGED_IDENTITY => {
+                    ManagedIdentityCredential::new(None)
+                        .map(SpecificAzureCredentialKind::ManagedIdentity)
                         .with_context(ErrorKind::Credential, || {
                             format!(
                                 "unable to create AZURE_CREDENTIAL_KIND of {}",
-                                azure_credential_kinds::APP_SERVICE
+                                azure_credential_kinds::MANAGED_IDENTITY
                             )
                         })?
-                }
-                azure_credential_kinds::VIRTUAL_MACHINE => {
-                    SpecificAzureCredentialKind::VirtualMachine(
-                        VirtualMachineManagedIdentityCredential::new(ImdsId::SystemAssigned, options)?,
-                    )
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 azure_credential_kinds::AZURE_CLI => AzureCliCredential::new(Some(options.into()))
