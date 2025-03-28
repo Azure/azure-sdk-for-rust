@@ -77,7 +77,8 @@ pub async fn start(
     let mut proxy = Proxy::default();
     let max_seconds = Duration::from_secs(env::var(SYSTEM_TEAMPROJECTID).map_or(5, |_| 20));
     tokio::select! {
-        _ = proxy.start(git_dir, &executable_file_path, args.into_iter()) => {
+        result = proxy.start(git_dir, &executable_file_path, args.into_iter()) => {
+            result?;
             proxy.endpoint()
         }
         _ = tokio::time::sleep(max_seconds) => {
@@ -143,7 +144,8 @@ async fn ensure_test_proxy(git_dir: &Path) -> Result<PathBuf> {
     let output_dir = git_dir.join(".proxy");
     let mut executable_file_path = output_dir.join("Azure.Sdk.Tools.TestProxy");
     if cfg!(windows) {
-        executable_file_path.set_extension("exe");
+        let path = executable_file_path.as_mut_os_string();
+        path.push(".exe");
     }
 
     // TODO: Create a lock file lock? https://github.com/Azure/azure-sdk-for-rust/issues/2299

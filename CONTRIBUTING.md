@@ -139,6 +139,77 @@ Similarly, if running on the command line pass `PROXY_MANUAL_START=true`.
 To log tracing information to the terminal, you can add the `RUST_LOG` environment variable as shown above using the [same format supported by `env_logger`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging).
 The targets are the crate names if you want to trace more or less for specific targets e.g., `RUST_LOG=info,azure_core=trace` to trace information messages by default but detailed traces for the `azure_core` crate.
 
+#### Debugging in Windows
+
+Using the recommended [CodeLLDB] Visual Studio Code extension on Windows will stop at breakpoints but may not pretty print variables e.g.,
+for a `String` or `str` slice you may only see the length of UTF-8 bytes. See <https://github.com/vadimcn/codelldb/wiki/Windows> for suggestions.
+
+Alternatively, you can install the [C/C++] extension and update configuration as described below.
+`String`, `str` slices, enums and more should pretty print as expected, but some types e.g., `PathBuf` may not; however,
+you can click the memory button next to a variable to see the contents in memory.
+
+##### Debugging from within the Editor
+
+To support debugging tests from within the editor, you can change your Visual Studio Code user settings as shown below:
+
+```json
+{
+  "rust-analyzer.debug.engine": "ms-vscode.cpptools",
+}
+```
+
+##### Run and Debug
+
+For debugging examples from the **Run and Debug** view in Visual Studio Code, add a target to your `.vscode/launch.json` file like so:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "cppvsdbg",
+      "request": "launch",
+      "name": "Launch test_proxy",
+      "program": "${workspaceRoot}/target/debug/examples/test_proxy.exe",
+      "args": [
+        "--auto"
+      ],
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "RUST_LOG",
+          "value": "debug,test-proxy=trace"
+        }
+      ],
+      "preLaunchTask": "Build test_proxy"
+    }
+  ]
+}
+```
+
+And update `.vscode/tasks.json` to add the `preLaunchTask` if desired:
+
+```json
+{
+  "tasks": [
+    {
+      "label": "Build test_proxy",
+      "command": "cargo",
+      "args": [
+        "build",
+        "--package",
+        "azure_core_test",
+        "--example",
+        "test_proxy"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
+    }
+  ]
+}
+```
+
 ## Code Review Process
 
 Before a pull request will be considered by the Azure SDK team, the following requirements must be met:
@@ -213,6 +284,8 @@ Samples may take the following categories of dependencies:
 
 In general, we prefer taking dependencies on licensed components in the order of the listed categories. In cases where the category may not be well known, we'll document the category so that readers understand the choice that they're making by using that dependency.
 
+[C/C++]: https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools
+[CodeLLDB]: https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb
 [Rust Guidelines]: https://azure.github.io/azure-sdk/rust_introduction.html
 [Test Proxy]: https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md
 [TypeSpec]: https://aka.ms/typespec
