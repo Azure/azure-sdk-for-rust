@@ -146,34 +146,14 @@ function Add-CrateToLocalRegistry($LocalRegistryPath, $Package) {
   '{"files":{}}' | Out-File -FilePath "$LocalRegistryPath/$packageName-$packageVersion/.cargo-checksum.json" -Encoding utf8
 }
 
-# For all dependencies with paths, but no versions, add the version from the path
-function Add-PathVersions($packages) {
-  # Install PSToml if it's not already installed
-  if (-not (PowerShellGet\Get-InstalledModule -Name PSToml -ErrorAction SilentlyContinue)) {
-    PowerShellGet\Install-Module -Name PSToml -Scope CurrentUser -Force
-  }
+function Create-ApiViewFile($package) {
+  $packageName = $package.name
+  $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $packageName"
+  Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
-  foreach ($package in $packages) {
-    $dirty = $false
-    $toml = Get-Content -Path $Package.manifest_path -Raw | ConvertFrom-Toml
+  $packagePath = Split-Path -Path $package.manifest_path -Parent
 
-    foreach ($name in $toml.dependencies.Keys) {
-      # we want to look at the dependency as it was resolved by `cargo metadata`
-      # this will resolve workspace depdencies, but retain their path/no-version state
-      $dependency = $package.dependencies | Where-Object -Property name -EQ -Value $name | Select-Object -First 1
-      # If the dependency is a path dependency, set the version to the version of the package in the workspace
-      if ($dependency.path -and !$dependency.version) {
-        $tomlDependency = $toml.dependencies.$name
-        $dependencyVersion = $packages | Where-Object -Property name -EQ -Value $name | Select-Object -ExpandProperty version -First 1
-
-        $tomlDependency.version = $dependencyVersion
-        $dirty = $true
-      }
-    }
-    if ($dirty) {
-      $toml | ConvertTo-Toml -Depth 10 | Set-Content -Path $Package.manifest_path -Encoding utf8
-    }
-  }
+  "$packagePath/review/$packageName.rust.json"
 }
 
 Push-Location $RepoRoot
@@ -210,16 +190,24 @@ try {
       -Package $package
 
     if ($OutputPath -and $package.OutputPackage) {
-      $packageOutputPath = "$OutputPath/$packageName"
-      $targetPackagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
+      $sourcePath = "$RepoRoot/target/package/$packageName-$packageVersion"
+      $targetPath = "$OutputPath/$packageName"
+      $targetContentsPath = "$targetPath/contents"
+      $targetApiReviewFile = "$targetPath/$packageName.rust.json"
 
-      if (Test-Path -Path $packageOutputPath) {
-        Remove-Item -Path $packageOutputPath -Recurse -Force
+      if (Test-Path -Path $targetContentsPath) {
+        Remove-Item -Path $targetContentsPath -Recurse -Force
       }
 
-      Write-Host "Copying package '$packageName' to '$packageOutputPath'"
-      New-Item -ItemType Directory -Path $packageOutputPath -Force | Out-Null
-      Copy-Item -Path $targetPackagePath/* -Destination $packageOutputPath -Recurse -Exclude "Cargo.toml.orig"
+      Write-Host "Copying package '$packageName' to '$targetContentsPath'"
+      New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
+      Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse -Exclude "Cargo.toml.orig"
+
+      Write-Host "Creating API review file"
+      $apiReviewFile = Create-ApiViewFile $package
+      
+      Write-Host "Copying API review file to '$targetApiReviewFile'"
+      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
     }
   }
 

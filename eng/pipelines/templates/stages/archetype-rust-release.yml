@@ -93,7 +93,7 @@ stages:
                     $token = $env:CARGO_REGISTRY_TOKEN
                     $crateName = '${{artifact.name}}'
 
-                    $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/Cargo.toml"
+                    $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/contents/Cargo.toml"
                     Write-Host "> cargo publish --manifest-path `"$manifestPath`""
                     cargo publish --manifest-path $manifestPath
                     if (!$?) {
@@ -112,23 +112,8 @@ stages:
                   env:
                     CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
 
-        # - job: CreateApiReview
-        #   displayName: "Api Review"
-        #   condition: and(succeeded(), ne(variables['Skip.CreateApiReview'], 'true'))
-        #   dependsOn: PublishPackage
-        #   steps:
-        #   - template: /eng/common/pipelines/templates/steps/create-apireview.yml
-        #     parameters:
-        #       ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
-        #       Artifacts: ${{parameters.Artifacts}}
-        #       ConfigFileDir: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo
-        #       MarkPackageAsShipped: true
-        #       ArtifactName: ${{parameters.PipelineArtifactName}}
-        #       SourceRootPath: $(Pipeline.Workspace)/azure-sdk-for-rust
-        #       PackageName: ${{artifact.name}}
-
         - job: UpdatePackageVersion
-          displayName: "Update Package Versions"
+          displayName: "API Review and Package Version Update"
           condition: and(succeeded(), ne(variables['Skip.UpdatePackageVersion'], 'true'))
           dependsOn: PublishPackage
           steps:
@@ -140,6 +125,20 @@ stages:
           - template: /eng/pipelines/templates/steps/use-rust.yml@self
             parameters:
               Toolchain: nightly
+
+          - download: current
+            displayName: Download ${{parameters.PipelineArtifactName}} artifact
+            artifact: ${{parameters.PipelineArtifactName}}
+
+          - template: /eng/common/pipelines/templates/steps/create-apireview.yml
+            parameters:
+              ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
+              Artifacts: ${{parameters.Artifacts}}
+              ConfigFileDir: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo
+              MarkPackageAsShipped: true
+              ArtifactName: ${{parameters.PipelineArtifactName}}
+              SourceRootPath: $(System.DefaultWorkingDirectory)
+              PackageName: ${{artifact.name}}
 
           # Apply the version increment to each library, which updates the Cargo.toml and changelog files.
           - task: PowerShell@2

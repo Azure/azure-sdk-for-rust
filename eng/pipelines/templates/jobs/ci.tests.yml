@@ -70,7 +70,6 @@ jobs:
       filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
       arguments: >
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
-        -Toolchain '$(Toolchain)'
 
   - ${{ if eq(parameters.TestProxy, true) }}:
     - pwsh: |
