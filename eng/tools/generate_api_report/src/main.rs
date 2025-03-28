@@ -121,7 +121,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Create the package_name.rust.json in the review/ folder
-    let output_path_str = review_folder_path.join(format!("{}_rust.json", package_name));
+    let output_path_str = review_folder_path.join(format!("{}.rust.json", package_name));
     let output_path = Path::new(&output_path_str);
     let mut output_file = File::create(output_path)?;
     serde_json::to_writer(&mut output_file, &root)?;
