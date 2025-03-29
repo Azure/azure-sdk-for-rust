@@ -8,12 +8,11 @@ use crate::{
     credentials::{self, MockCredential},
     proxy::{
         client::{
-            Client, ClientAddSanitizerOptions, ClientRemoveSanitizersOptions,
-            ClientSetMatcherOptions,
+            ClientAddSanitizerOptions, ClientRemoveSanitizersOptions, ClientSetMatcherOptions,
         },
         models::{SanitizerList, StartPayload, VariablePayload},
         policy::RecordingPolicy,
-        Proxy, RecordingId,
+        Proxy, ProxyExt, RecordingId,
     },
     Matcher, Sanitizer,
 };
@@ -48,8 +47,7 @@ pub struct Recording {
     // Keep the span open for our lifetime.
     #[allow(dead_code)]
     span: EnteredSpan,
-    _proxy: Option<Arc<Proxy>>,
-    client: Option<Client>,
+    proxy: Option<Arc<Proxy>>,
     policy: OnceCell<Arc<RecordingPolicy>>,
     service_directory: String,
     recording_file: String,
@@ -66,7 +64,7 @@ impl Recording {
         S: Sanitizer,
         azure_core::Error: From<<S as AsHeaders>::Error>,
     {
-        let Some(client) = &self.client else {
+        let Some(client) = self.proxy.client() else {
             return Ok(());
         };
 
@@ -118,16 +116,16 @@ impl Recording {
     /// }
     /// ```
     pub fn instrument(&self, options: &mut ClientOptions) {
-        if self.client.is_none() {
+        let Some(client) = self.proxy.client() else {
             return;
-        }
+        };
 
         let policy = self
             .policy
             .get_or_init(|| {
                 Arc::new(RecordingPolicy {
                     test_mode: self.test_mode,
-                    host: self.client.as_ref().map(|c| c.endpoint().clone()),
+                    host: Some(client.endpoint().clone()),
                     recording_id: self.id.clone(),
                     ..Default::default()
                 })
@@ -245,7 +243,7 @@ impl Recording {
     ///
     /// You can find a list of default sanitizers in [source code](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/Common/SanitizerDictionary.cs).
     pub async fn remove_sanitizers(&self, sanitizers: &[&str]) -> azure_core::Result<()> {
-        let Some(client) = &self.client else {
+        let Some(client) = self.proxy.client() else {
             return Ok(());
         };
 
@@ -265,7 +263,7 @@ impl Recording {
 
     /// Sets a [`Matcher`] to compare requests and/or responses.
     pub async fn set_matcher(&self, matcher: Matcher) -> azure_core::Result<()> {
-        let Some(client) = &self.client else {
+        let Some(client) = self.proxy.client() else {
             return Ok(());
         };
 
@@ -329,7 +327,6 @@ impl Recording {
         test_mode: TestMode,
         span: EnteredSpan,
         proxy: Option<Arc<Proxy>>,
-        client: Option<Client>,
         service_directory: &'static str,
         recording_file: String,
         recording_assets_file: Option<String>,
@@ -337,8 +334,7 @@ impl Recording {
         Self {
             test_mode,
             span,
-            _proxy: proxy,
-            client,
+            proxy,
             policy: OnceCell::new(),
             service_directory: service_directory.into(),
             recording_file,
@@ -356,8 +352,7 @@ impl Recording {
         Self {
             test_mode: TestMode::Playback,
             span: span.entered(),
-            _proxy: None,
-            client: None,
+            proxy: None,
             policy: OnceCell::new(),
             service_directory: String::from("sdk/core"),
             recording_file: String::from("none"),
@@ -440,7 +435,7 @@ impl Recording {
     ///
     /// If playing back a recording, environment variable that were recorded will be reloaded.
     pub(crate) async fn start(&mut self) -> azure_core::Result<()> {
-        let Some(client) = self.client.as_ref() else {
+        let Some(client) = self.proxy.client() else {
             // Assumes running live test.
             return Ok(());
         };
@@ -476,7 +471,7 @@ impl Recording {
     ///
     /// If recording, environment variables that were retrieved will be recorded.
     pub(crate) async fn stop(&self) -> azure_core::Result<()> {
-        let Some(client) = self.client.as_ref() else {
+        let Some(client) = self.proxy.client() else {
             // Assumes running live test.
             return Ok(());
         };
@@ -576,7 +571,7 @@ impl Default for VarOptions {
     fn default() -> Self {
         Self {
             sanitize: false,
-            sanitize_value: Cow::Borrowed(crate::SANITIZED_VALUE),
+            sanitize_value: Cow::Borrowed(crate::DEFAULT_SANITIZED_VALUE),
         }
     }
 }

@@ -21,10 +21,11 @@ use azure_core::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 use bootstrap::*;
+use client::Client;
 use serde::Serializer;
-#[cfg(not(target_arch = "wasm32"))]
-use std::process::ExitStatus;
 use std::{fmt, str::FromStr};
+#[cfg(not(target_arch = "wasm32"))]
+use std::{process::ExitStatus, sync::Arc};
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::process::Child;
 
@@ -43,6 +44,8 @@ pub struct Proxy {
     #[cfg(not(target_arch = "wasm32"))]
     command: Option<Child>,
     endpoint: Option<Url>,
+    #[cfg(not(target_arch = "wasm32"))]
+    client: Option<Client>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -103,7 +106,16 @@ impl Proxy {
             }
         });
 
+        if let Some(endpoint) = &self.endpoint {
+            self.client = Some(Client::new(endpoint.clone())?);
+        }
+
         Ok(())
+    }
+
+    /// Gets the [`Client`] for this proxy.
+    pub fn client(&self) -> Option<&Client> {
+        self.client.as_ref()
     }
 
     /// Attempts to stop the service.
@@ -173,6 +185,8 @@ impl Proxy {
             #[cfg(not(target_arch = "wasm32"))]
             command: None,
             endpoint: Some("http://localhost:5000".parse().unwrap()),
+            #[cfg(not(target_arch = "wasm32"))]
+            client: None,
         }
     }
 
@@ -194,6 +208,16 @@ impl Drop for Proxy {
         if let Some(command) = &mut self.command {
             let _ = command.start_kill();
         }
+    }
+}
+
+pub(crate) trait ProxyExt<'a> {
+    fn client(&'a self) -> Option<&'a Client>;
+}
+
+impl<'a> ProxyExt<'a> for Option<Arc<Proxy>> {
+    fn client(&'a self) -> Option<&'a Client> {
+        self.as_ref().and_then(|proxy| proxy.client.as_ref())
     }
 }
 

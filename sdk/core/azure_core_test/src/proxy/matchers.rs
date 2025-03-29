@@ -2,18 +2,33 @@
 // Licensed under the MIT License.
 
 use super::join;
-use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
+use azure_core::{
+    http::headers::{AsHeaders, HeaderName, HeaderValue},
+    Bytes,
+};
 use serde::Serialize;
 use std::{convert::Infallible, iter};
 
 // cspell:ignore headerless
 
+/// The headers ignored by default for [`CustomDefaultMatcherBody`];
+pub const DEFAULT_IGNORED_HEADERS: &[&str; 6] = &[
+    "date",
+    "request-id",
+    // cspell:disable-next-line
+    "traceparent",
+    "user-agent",
+    "x-ms-client-request-id",
+    "x-ms-date",
+];
+
 /// Matchers to use for a recording or playback.
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum Matcher {
     BodilessMatcher,
-    CustomDefaultMatcher(CustomDefaultMatcherBody),
     HeaderlessMatcher,
+    #[serde(untagged)]
+    CustomDefaultMatcher(CustomDefaultMatcher),
 }
 
 impl AsHeaders for Matcher {
@@ -33,10 +48,18 @@ impl AsHeaders for Matcher {
     }
 }
 
+impl TryFrom<Matcher> for Bytes {
+    type Error = serde_json::Error;
+    fn try_from(matcher: Matcher) -> std::result::Result<Self, Self::Error> {
+        let v = serde_json::to_vec(&matcher)?;
+        Ok(Bytes::from(v))
+    }
+}
+
 /// A custom matcher.
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CustomDefaultMatcherBody {
+pub struct CustomDefaultMatcher {
     /// Whether to compare bodies during playback.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub compare_bodies: Option<bool>,
@@ -46,6 +69,8 @@ pub struct CustomDefaultMatcherBody {
     pub excluded_headers: Vec<&'static str>,
 
     /// Headers to ignore during playback.
+    ///
+    /// The default is [`DEFAULT_IGNORED_HEADERS`].
     #[serde(serialize_with = "join", skip_serializing_if = "Vec::is_empty")]
     pub ignored_headers: Vec<&'static str>,
 
@@ -58,15 +83,35 @@ pub struct CustomDefaultMatcherBody {
     pub ignored_query_parameters: Vec<&'static str>,
 }
 
+impl Default for CustomDefaultMatcher {
+    fn default() -> Self {
+        CustomDefaultMatcher {
+            compare_bodies: None,
+            // TODO: Remove once all recordings are updated (https://github.com/Azure/azure-sdk-for-rust/issues/2411).
+            excluded_headers: vec!["x-ms-client-request-id"],
+            ignored_headers: DEFAULT_IGNORED_HEADERS.to_vec(),
+            ignore_query_ordering: None,
+            ignored_query_parameters: Vec::new(),
+        }
+    }
+}
+
+impl From<CustomDefaultMatcher> for Matcher {
+    fn from(matcher: CustomDefaultMatcher) -> Self {
+        Matcher::CustomDefaultMatcher(matcher)
+    }
+}
+
 #[test]
 fn serialize_custom_default_matcher() {
-    let v = CustomDefaultMatcherBody {
+    let v: Matcher = CustomDefaultMatcher {
         compare_bodies: Some(false),
         ignored_headers: vec!["foo", "bar"],
         ..Default::default()
-    };
+    }
+    .into();
     assert_eq!(
         serde_json::to_string(&v).unwrap(),
-        r#"{"compareBodies":false,"ignoredHeaders":"foo,bar"}"#
+        r#"{"compareBodies":false,"excludedHeaders":"x-ms-client-request-id","ignoredHeaders":"foo,bar"}"#
     )
 }

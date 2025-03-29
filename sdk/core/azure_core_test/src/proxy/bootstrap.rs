@@ -3,6 +3,8 @@
 
 //! Bootstrap acquisition and startup of the test-proxy.
 
+use crate::{proxy::models::SanitizerList, CustomDefaultMatcher, DEFAULT_SANITIZERS_TO_REMOVE};
+
 pub use super::*;
 pub use azure_core::{test::TestMode, Result};
 pub use serde_json::json;
@@ -86,6 +88,22 @@ pub async fn start(
             return Err(azure_core::Error::message(ErrorKind::Other, "timed out waiting for test-proxy to start"));
         },
     };
+
+    // Set default matcher and remove some sanitizers by default.
+    if let Some(client) = proxy.client() {
+        client
+            .set_matcher(CustomDefaultMatcher::default().into(), None)
+            .await?;
+
+        let body = SanitizerList {
+            sanitizers: Vec::from_iter(
+                DEFAULT_SANITIZERS_TO_REMOVE
+                    .iter()
+                    .map(|s| String::from(*s)),
+            ),
+        };
+        client.remove_sanitizers(body.try_into()?, None).await?;
+    }
 
     Ok(proxy)
 }
