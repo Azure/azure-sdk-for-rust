@@ -17,16 +17,9 @@ use azure_security_keyvault_test::Retry;
 use futures::TryStreamExt;
 use std::collections::HashMap;
 
-#[cfg(not(target_arch = "wasm32"))]
-const REMOVE_SANITIZERS: &[&str] = &[
-    // BodyKeySanitizer("$..id"): the resource ID contains the required name and version.
-    "AZSDK3430",
-];
-
 #[recorded::test]
 async fn key_roundtrip(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -65,7 +58,6 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn update_key_properties(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -111,7 +103,6 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn list_keys(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -166,7 +157,6 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn purge_key(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -225,7 +215,6 @@ async fn purge_key(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -283,7 +272,6 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
     use sha2::{Digest as _, Sha256};
 
     let recording = ctx.recording();
-    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -345,7 +333,6 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    recording.remove_sanitizers(REMOVE_SANITIZERS).await?;
 
     let mut options = KeyClientOptions::default();
     recording.instrument(&mut options.client_options);

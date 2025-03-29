@@ -13,8 +13,15 @@ use std::{
     iter::{once, Once},
 };
 
+/// Default sanitizers to remove.
+// See <https://github.com/Azure/azure-sdk-for-net/blob/eedbc408d565fbc5cbca96222807c737ae53605e/sdk/core/Azure.Core.TestFramework/src/RecordedTestBase.cs#L123>.
+pub const DEFAULT_SANITIZERS_TO_REMOVE: &[&str; 2] = &[
+    "AZSDK3430", // $..id
+    "AZSDK3490", // $..etag
+];
+
 /// Default sanitization replacement value, "Sanitized";
-pub const SANITIZED_VALUE: &str = "Sanitized";
+pub const DEFAULT_SANITIZED_VALUE: &str = "Sanitized";
 
 /// Represents a sanitizer.
 pub trait Sanitizer: AsHeaders + fmt::Debug + Serialize {}

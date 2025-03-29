@@ -16,7 +16,7 @@ use azure_core::{
         request::{Request, RequestContent},
         ClientMethodOptions, ClientOptions, Context, Method, Pipeline, Url,
     },
-    Result,
+    Bytes, Result,
 };
 use tracing::Span;
 
@@ -157,6 +157,8 @@ impl Client {
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_headers(&matcher)?;
         request.add_optional_header(&options.recording_id);
+        let body: Bytes = matcher.try_into()?;
+        request.set_body(body);
         self.pipeline.send::<()>(&ctx, &mut request).await?;
         Ok(())
     }
