@@ -7,6 +7,7 @@
 - Added `azure_core::process::Executor` to run commands asynchronously.
   The `tokio` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
 - Added `http` module containing all functions, modules, and types from `typespec_client_core::http`.
+- Added `azure_core::http::policies::ClientRequestIdPolicy` to every pipeline. Client libraries can add with custom header name instead.
 - Moved `Pager` from `typespec_client_core::http` to `azure_core::http` module since it is Azure-specific.
 - Re-exported `Body`, `Request`, and `RequestContent` from `http::request` module.
 - Re-exported `create_enum`, `create_extensible_enum` macros from `typespec_client_core`.
