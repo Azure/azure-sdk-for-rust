@@ -29,14 +29,3 @@ pub use typespec_client_core::{
 
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
-
-#[doc(hidden)]
-mod private {
-    use crate::http::{ClientMethodOptions, ClientOptions};
-
-    #[allow(dead_code)]
-    pub trait Sealed {}
-
-    impl Sealed for ClientOptions {}
-    impl Sealed for ClientMethodOptions<'_> {}
-}

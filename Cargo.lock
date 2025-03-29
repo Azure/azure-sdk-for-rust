@@ -168,6 +168,7 @@ version = "0.23.0"
 dependencies = [
  "async-lock",
  "async-trait",
+ "azure_core_test",
  "azure_identity",
  "azure_security_keyvault_secrets",
  "bytes",
