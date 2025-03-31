@@ -11,7 +11,7 @@ use std::{convert::Infallible, iter};
 
 // cspell:ignore headerless
 
-/// The headers ignored by default for [`CustomDefaultMatcherBody`];
+/// The headers ignored by default for [`CustomDefaultMatcher`];
 pub const DEFAULT_IGNORED_HEADERS: &[&str; 6] = &[
     "date",
     "request-id",

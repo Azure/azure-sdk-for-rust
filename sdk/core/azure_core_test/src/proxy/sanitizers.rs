@@ -64,7 +64,7 @@ pub struct BodyKeySanitizer {
     /// The JSONPath that will be checked for replacements.
     pub json_path: String,
 
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 
@@ -106,7 +106,7 @@ fn test_body_key_sanitizer_as_headers() {
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BodyRegexSanitizer {
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 
@@ -155,7 +155,7 @@ impl_sanitizer!(GeneralRegexSanitizer, GeneralStringSanitizer);
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneralRegexSanitizer {
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 
@@ -195,7 +195,7 @@ impl_sanitizer!(HeaderRegexSanitizer, HeaderStringSanitizer);
 pub struct HeaderRegexSanitizer {
     pub key: String,
 
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 
@@ -268,7 +268,7 @@ impl_sanitizer!(
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UriRegexSanitizer {
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 

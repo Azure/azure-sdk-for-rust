@@ -46,7 +46,7 @@ pub async fn start(
         tracing::warn!(
             "environment variable {PROXY_MANUAL_START} is 'true'; not starting test-proxy"
         );
-        return Ok(Proxy::existing());
+        return Proxy::existing();
     }
 
     // Find root of git repo or work tree: a ".git" directory or file will exist either way.

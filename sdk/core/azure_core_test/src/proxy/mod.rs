@@ -113,7 +113,7 @@ impl Proxy {
     }
 
     /// Gets the [`Client`] for this proxy.
-    pub fn client(&self) -> Option<&Client> {
+    pub(crate) fn client(&self) -> Option<&Client> {
         self.client.as_ref()
     }
 
@@ -179,13 +179,14 @@ impl Proxy {
 
 impl Proxy {
     /// Gets a proxy representing an existing test-proxy process.
-    pub fn existing() -> Self {
-        Self {
+    pub fn existing() -> Result<Self> {
+        let endpoint: Url = "http://localhost:5000".parse()?;
+        Ok(Self {
             #[cfg(not(target_arch = "wasm32"))]
             command: None,
-            endpoint: Some("http://localhost:5000".parse().unwrap()),
-            client: None,
-        }
+            endpoint: Some(endpoint.clone()),
+            client: Some(Client::new(endpoint)?),
+        })
     }
 
     /// Gets the [`Url`] to which the test-proxy is listening.
