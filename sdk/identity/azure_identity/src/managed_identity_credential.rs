@@ -156,7 +156,7 @@ fn get_source() -> ManagedIdentitySource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
+    use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
     use azure_core::http::headers::Headers;
     use azure_core::http::{Method, Request, Response, StatusCode};
     use azure_core::Bytes;

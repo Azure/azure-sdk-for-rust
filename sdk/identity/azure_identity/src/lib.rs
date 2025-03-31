@@ -22,11 +22,6 @@ pub use credentials::*;
 pub use managed_identity_credential::*;
 use std::borrow::Cow;
 
-#[cfg(test)]
-pub(crate) const LIVE_TEST_RESOURCE: &str = "https://management.azure.com";
-#[cfg(test)]
-pub(crate) const LIVE_TEST_SCOPES: &[&str] = &["https://management.azure.com/.default"];
-
 fn validate_not_empty<C>(value: &str, message: C) -> Result<()>
 where
     C: Into<Cow<'static, str>>,
@@ -114,4 +109,10 @@ fn test_validate_tenant_id() {
     assert!(validate_tenant_id("invalid_tenant@id").is_err());
     assert!(validate_tenant_id("A-1.z").is_ok());
     assert!(validate_tenant_id("7b795fb9-09d3-42f4-a494-38864f99ba3c").is_ok());
+}
+
+#[cfg(test)]
+mod tests {
+    pub const LIVE_TEST_RESOURCE: &str = "https://management.azure.com";
+    pub const LIVE_TEST_SCOPES: &[&str] = &["https://management.azure.com/.default"];
 }
