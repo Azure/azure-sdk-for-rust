@@ -13,7 +13,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinHandle;
 use tracing::info;
-mod common;
 
 #[recorded::test(live)]
 async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
@@ -165,8 +164,6 @@ async fn get_next_partition_client(ctx: TestContext) -> azure_core::Result<()> {
 async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
     use std::collections::HashSet;
 
-    common::setup();
-
     let consumer_client = create_consumer_client(&ctx).await?;
     // The processor only adds one client as needed up to the max, so we block waiting
     // on all the clients to become available.
@@ -230,10 +227,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
         panic!("Partition client not dropped: Arc has multiple strong references (this should not happen).");
     }
 
-    info!(
-        "{:?}Partition client dropped, getting another partition client.",
-        std::thread::current().id()
-    );
+    info!("Partition client dropped, getting another partition client.");
 
     // Wait for the processor to notice the partition client is dropped.
     let partition_client = tokio::select! {
