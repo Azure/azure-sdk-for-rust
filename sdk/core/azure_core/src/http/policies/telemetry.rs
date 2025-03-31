@@ -73,11 +73,11 @@ impl Policy for TelemetryPolicy {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
-    fn test_without_application_id() {
+    fn without_application_id() {
         let policy = TelemetryPolicy::new_with_rustc_version(
             Some("azure_test"), // Tests that "azure_" is removed.
             Some("1.2.3"),
@@ -91,7 +91,7 @@ mod test {
     }
 
     #[test]
-    fn test_with_application_id() {
+    fn with_application_id() {
         let options = TelemetryOptions {
             application_id: Some("my_app".to_string()),
         };
@@ -108,7 +108,7 @@ mod test {
     }
 
     #[test]
-    fn test_missing_env() {
+    fn missing_env() {
         // Would simulate if option_env!("CARGO_PKG_NAME"), for example, returned None.
         let policy =
             TelemetryPolicy::new_with_rustc_version(None, None, None, &TelemetryOptions::default());

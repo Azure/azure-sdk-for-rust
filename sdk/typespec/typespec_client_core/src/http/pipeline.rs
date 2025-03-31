@@ -14,15 +14,15 @@ use std::sync::Arc;
 /// 1. Client library-specified per-call policies are executed. Per-call policies can fail and bail out of the pipeline
 ///    immediately.
 /// 2. User-specified per-call policies are executed.
-/// 3. Telemetry policy.
-/// 4. Retry policy. It allows to re-execute the following policies.
+/// 3. Built-in per-call policies are executed.
+/// 4. The retry policy is executed. It allows to re-execute the following policies.
 /// 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are re-executed
 ///    in case of retries.
 /// 6. User-specified per-retry policies are executed.
-/// 7. Authorization policy. Authorization can depend on the HTTP headers and/or the request body so it
+/// 7. The authorization policy is executed. Authorization can depend on the HTTP headers and/or the request body so it
 ///    must be executed right before sending the request to the transport. Also, the authorization
 ///    can depend on the current time so it must be executed at every retry.
-/// 8. Transport policy. Transport policy is always the last policy and is the policy that
+/// 8. The transport policy is executed. Transport policy is always the last policy and is the policy that
 ///    actually constructs the `Response` to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
