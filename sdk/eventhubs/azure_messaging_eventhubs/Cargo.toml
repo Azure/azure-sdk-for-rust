@@ -18,7 +18,7 @@ categories = ["api-bindings"]
 edition.workspace = true
 
 [dependencies]
-async-io.workspace = true
+#async-io.workspace = true
 async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true

@@ -1051,7 +1051,7 @@ mod tests {
         test_setup();
         info!("Unit test for load balancer");
 
-        //cspell: ignore abbcc aaaabbb
+        //cspell: ignore abbc abbcc aaaabbb
         for state in ["abc", "abbc", "abbcc"] {
             for owner in ["a", "b", "c"] {
                 info!("Layout {state} with owner {owner}");

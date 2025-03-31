@@ -12,7 +12,7 @@ use crate::{
     models::{ConsumerClientDetails, EventHubProperties},
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
-use async_io::Timer;
+//use async_io::Timer;
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
 use futures::{
@@ -21,8 +21,8 @@ use futures::{
 };
 use std::{
     sync::{
-        //        mpsc::{sync_channel, Receiver, SyncSender},
         Arc,
+        Mutex as SyncMutex, // Mutex for blocking operations
     },
     time::Duration,
     {collections::HashMap, sync::Weak},
@@ -67,13 +67,13 @@ struct EventProcessorOptions {
 }
 
 pub(crate) struct ProcessorConsumersMap {
-    consumers: AsyncMutex<HashMap<String, Weak<PartitionClient>>>,
+    consumers: SyncMutex<HashMap<String, Weak<PartitionClient>>>,
 }
 
 impl ProcessorConsumersMap {
     fn new() -> Self {
         ProcessorConsumersMap {
-            consumers: AsyncMutex::new(HashMap::new()),
+            consumers: SyncMutex::new(HashMap::new()),
         }
     }
 
@@ -98,7 +98,9 @@ impl ProcessorConsumersMap {
         partition_client: Arc<PartitionClient>,
     ) -> Result<bool> {
         info!("Adding partition client for partition: {}", partition_id);
-        let mut consumers = self.consumers.lock().await;
+        let mut consumers = self.consumers.lock().map_err(|_| {
+            azure_core::Error::message(AzureErrorKind::Other, "Could not lock consumers mutex.")
+        })?;
         if consumers.contains_key(partition_id) {
             info!(
                 "Partition client already exists for partition: {}",
@@ -113,7 +115,9 @@ impl ProcessorConsumersMap {
 
     pub fn remove_partition_client(&self, partition_id: &str) -> Result<()> {
         info!("Removing partition client for partition: {}", partition_id);
-        let mut consumers = self.consumers.lock_blocking();
+        let mut consumers = self.consumers.lock().map_err(|_| {
+            azure_core::Error::message(AzureErrorKind::Other, "Could not lock consumers mutex.")
+        })?;
         consumers.remove(partition_id);
         info!("Consumers for partition now: {:?}", consumers.keys());
         Ok(())
@@ -239,7 +243,7 @@ impl EventProcessor {
                 }
             }
             debug!("Event processor sleeping for {:?}", self.update_interval);
-            Timer::after(self.update_interval).await;
+            azure_core::sleep::sleep(self.update_interval).await;
             if self.is_shutdown()? {
                 info!("Event processor shutting down.");
                 break Ok(());

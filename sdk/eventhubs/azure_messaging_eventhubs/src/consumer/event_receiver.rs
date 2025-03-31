@@ -112,7 +112,7 @@ impl EventReceiver {
             loop {
                  let delivery = if let Some(delivery_timeout) = self.timeout {
                      self.receiver.receive_delivery().or(async {
-                        async_io::Timer::after(delivery_timeout).await;
+                        azure_core::sleep::sleep(delivery_timeout).await;
                         Err(azure_core::Error::new(AzureErrorKind::Io, Box::new(std::io::Error::from(std::io::ErrorKind::TimedOut))))
                      }).await?
                  } else {
