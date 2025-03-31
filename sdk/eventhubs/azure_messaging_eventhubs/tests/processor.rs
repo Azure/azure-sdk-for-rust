@@ -4,10 +4,11 @@
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::models::StartPositions;
 use azure_messaging_eventhubs::{
-    ConsumerClient, EventProcessor, InMemoryCheckpointStore, ProcessorStrategy, StartLocation,
-    StartPosition,
+    ConsumerClient, EventProcessor, InMemoryCheckpointStore, ProcessorStrategy, ProducerClient,
+    SendEventOptions, StartLocation, StartPosition,
 };
 use futures::StreamExt;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinHandle;
@@ -82,11 +83,25 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
     Ok(())
 }
 
-async fn create_consumer_client(ctx: TestContext) -> azure_core::Result<Arc<ConsumerClient>> {
+async fn create_consumer_client(ctx: &TestContext) -> azure_core::Result<Arc<ConsumerClient>> {
     let recording = ctx.recording();
 
     Ok(Arc::new(
         ConsumerClient::builder()
+            .open(
+                recording.var("EVENTHUBS_HOST", None).as_str(),
+                recording.var("EVENTHUB_NAME", None).as_str(),
+                recording.credential().clone(),
+            )
+            .await?,
+    ))
+}
+
+async fn create_producer_client(ctx: &TestContext) -> azure_core::Result<Arc<ProducerClient>> {
+    let recording = ctx.recording();
+
+    Ok(Arc::new(
+        ProducerClient::builder()
             .open(
                 recording.var("EVENTHUBS_HOST", None).as_str(),
                 recording.var("EVENTHUB_NAME", None).as_str(),
@@ -123,7 +138,7 @@ async fn start_processor_running(
 
 #[recorded::test(live)]
 async fn get_next_partition_client(ctx: TestContext) -> azure_core::Result<()> {
-    let consumer_client = create_consumer_client(ctx).await?;
+    let consumer_client = create_consumer_client(&ctx).await?;
     let processor = create_processor(consumer_client, Duration::from_secs(20), None).await?;
 
     let running_processor = start_processor_running(&processor).await;
@@ -152,7 +167,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
 
     common::setup();
 
-    let consumer_client = create_consumer_client(ctx).await?;
+    let consumer_client = create_consumer_client(&ctx).await?;
     // The processor only adds one client as needed up to the max, so we block waiting
     // on all the clients to become available.
     let processor = create_processor(consumer_client.clone(), Duration::from_secs(3), None).await?;
@@ -250,15 +265,41 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
 
 #[recorded::test(live)]
 async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<()> {
-    let consumer_client = create_consumer_client(ctx).await?;
+    let consumer_client = create_consumer_client(&ctx).await?;
+
+    let eh_info = consumer_client.get_eventhub_properties().await?;
+
+    // Determine the current start position for each partition, and configure
+    // the processor to start from that position.
+    //
+    // This is useful for testing the processor with existing partitions.
+    let mut start_positions = HashMap::new();
+    for partition_id in eh_info.partition_ids.into_iter() {
+        info!("Partition ID: {}", partition_id);
+        let partition_info = consumer_client
+            .get_partition_properties(&partition_id)
+            .await?;
+
+        info!(
+            "[{partition_id}]: Last enqueued sequence number: {}",
+            partition_info.last_enqueued_sequence_number
+        );
+        start_positions.insert(
+            partition_id,
+            StartPosition {
+                location: StartLocation::SequenceNumber(
+                    partition_info.last_enqueued_sequence_number,
+                ),
+                inclusive: false,
+            },
+        );
+    }
+
     let processor = create_processor(
         consumer_client,
         Duration::from_secs(20),
         Some(StartPositions {
-            default: StartPosition {
-                location: StartLocation::Earliest,
-                inclusive: true,
-            },
+            per_partition: start_positions,
             ..Default::default()
         }),
     )
@@ -276,6 +317,30 @@ async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<(
         partition_client.get_partition_id()
     );
 
+    // Ensure there are some events in the partition to receive.
+    {
+        info!("Creating producer client");
+        let producer_client = create_producer_client(&ctx).await?;
+
+        info!(
+            "Sending events to partition {}",
+            partition_client.get_partition_id()
+        );
+
+        for i in 0..10 {
+            let event_data = format!("Hello world {}", i);
+            let send_event_options = SendEventOptions {
+                partition_id: Some(partition_client.get_partition_id().clone()),
+            };
+            producer_client
+                .send_event(event_data, Some(send_event_options))
+                .await
+                .expect("Failed to send event data");
+        }
+
+        info!("Producer client closed");
+    }
+
     // Receive events from the partition client.
     let event_stream = partition_client.stream_events();
 
@@ -289,28 +354,28 @@ async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<(
             Ok(event_data) => {
                 info!("Received event: {:?}", event_data);
                 // Process the received event data here
+                partition_client
+                    .update_checkpoint(&event_data)
+                    .await
+                    .expect("Failed to update checkpoint");
+                info!("Checkpoint updated for event.");
+                info!(
+                    "Received event data body as text: {}",
+                    String::from_utf8(
+                        event_data
+                            .event_data()
+                            .body()
+                            .unwrap_or_else(|| panic!("Event body is not present."))
+                            .to_vec()
+                    )
+                    .unwrap_or_else(|_| panic!("Failed to convert event data to string"))
+                );
             }
             Err(e) => {
                 panic!("Error receiving event: {:?}", e);
             }
         }
     }
-
-    // while let Some(event) = event_stream.next().await {
-    //     match event {
-    //         Ok(event_data) => {
-    //             info!("Received event: {:?}", event_data);
-    //             partition_client
-    //                 .update_checkpoint(&event_data)
-    //                 .await
-    //                 .expect("Failed to update checkpoint");
-    //             info!("Checkpoint updated for event: {:?}", event_data);
-    //         }
-    //         Err(e) => {
-    //             panic!("Error receiving event: {:?}", e);
-    //         }
-    //     }
-    // }
 
     running_processor.abort();
     info!("Processor task aborted");

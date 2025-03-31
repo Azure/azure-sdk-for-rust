@@ -14,7 +14,7 @@ use azure_core::{
 };
 use azure_core_amqp::{
     AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSession,
-    AmqpSessionApis, AmqpSessionOptions, AmqpSymbol,
+    AmqpSessionApis, AmqpSessionOptions,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::sync::{Arc, OnceLock};
@@ -76,20 +76,33 @@ pub struct ProducerClient {
     retry_options: Option<RetryOptions>,
 }
 
-/// Options used when sending a message to an Event Hub.
+/// Options used when sending an event to an Event Hub.
 ///
-/// The `SendMessageOptions` can be used to specify the partition to which the message should be sent.
+/// The `SendEventOptions` can be used to specify the partition to which the message should be sent.
 /// If the partition is not specified, the Event Hub will automatically select a partition.
 ///
 #[derive(Default, Debug)]
 pub struct SendEventOptions {
-    /// The id of the partition to which the message should be sent.
+    /// The id of the partition to which the event should be sent.
     pub partition_id: Option<String>,
 }
 
 /// Options used when sending an AMQP message to an Event Hub.
+/// The `SendMessageOptions` can be used to specify the partition to which the message should be sent.
+/// If the partition is not specified, the Event Hub will automatically select a partition.
 #[derive(Default, Debug)]
-pub struct SendMessageOptions {}
+pub struct SendMessageOptions {
+    /// The id of the partition to which the message should be sent.
+    pub partition_id: Option<String>,
+}
+
+impl From<SendEventOptions> for SendMessageOptions {
+    fn from(options: SendEventOptions) -> Self {
+        Self {
+            partition_id: options.partition_id,
+        }
+    }
+}
 
 impl ProducerClient {
     pub(crate) fn new(
@@ -165,16 +178,9 @@ impl ProducerClient {
         if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
             message.set_message_id(Uuid::new_v4());
         }
-        if let Some(options) = options {
-            if let Some(partition_id) = options.partition_id {
-                message.add_message_annotation(
-                    AmqpSymbol::from("x-opt-partition-id"),
-                    partition_id.clone(),
-                );
-            }
-        }
 
-        self.send_message(message, None).await
+        self.send_message(message, options.map(SendMessageOptions::from))
+            .await
     }
 
     /// Sends an AMQP message to the Event Hub.
@@ -194,7 +200,13 @@ impl ProducerClient {
         message: impl Into<AmqpMessage> + Debug,
         #[allow(unused_variables)] options: Option<SendMessageOptions>,
     ) -> Result<()> {
-        let sender = self.ensure_sender(&self.endpoint).await.unwrap();
+        let options = options.unwrap_or_default();
+        let mut target = self.endpoint.clone();
+        if let Some(partition_id) = options.partition_id {
+            let target_url = format!("{}/Partitions/{}", self.base_url(), partition_id);
+            target = Url::parse(&target_url).map_err(azure_core::Error::from)?;
+        }
+        let sender = self.ensure_sender(&target).await.unwrap();
 
         let outcome = sender
             .lock()
