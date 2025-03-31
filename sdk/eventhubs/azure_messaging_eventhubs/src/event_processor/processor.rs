@@ -44,7 +44,6 @@ use tracing::{debug, error, info};
 /// use an Event Processor, see the [Event Processor documentation](https://learn.microsoft.com/azure/event-hubs/event-processor-balance-partition-load).
 ///
 pub struct EventProcessor {
-    //    strategy: ProcessorStrategy,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     load_balancer: Arc<AsyncMutex<LoadBalancer>>,
     consumer_client: Arc<ConsumerClient>,
@@ -188,17 +187,14 @@ impl EventProcessor {
     /// use azure_messaging_eventhubs::ConsumerClient;
     /// use std::sync::Arc;
     /// use std::time::Duration;
-    /// use std::thread;
-    /// use azure_core::Result;
     /// use azure_messaging_eventhubs::ProcessorStrategy;
-    /// use azure_messaging_eventhubs::models::Checkpoint;
-    /// use azure_messaging_eventhubs::models::Ownership;
     /// use azure_messaging_eventhubs::CheckpointStore;
+    /// use azure_core::Result;
     ///
     /// async fn run_processor(consumer_client: ConsumerClient, checkpoint_store: impl CheckpointStore+Send+Sync+'static) -> Result<()> {
     ///   // Create an instance of the EventProcessor
     ///   let event_processor = EventProcessor::builder()
-    ///        .with_load_balancing_strategy(ProcessorStrategy::Balanced)
+    ///       .with_load_balancing_strategy(ProcessorStrategy::Balanced)
     ///       .with_update_interval(Duration::from_secs(30))
     ///       .with_partition_expiration_duration(Duration::from_secs(10))
     ///       .with_prefetch(300)
