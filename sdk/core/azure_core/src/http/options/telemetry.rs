@@ -4,6 +4,6 @@
 /// Telemetry options.
 #[derive(Clone, Debug, Default)]
 pub struct TelemetryOptions {
-    /// Optional application ID to telemetry.
+    /// Set the application ID in the `User-Agent` header that can be telemetered
     pub application_id: Option<String>,
 }
