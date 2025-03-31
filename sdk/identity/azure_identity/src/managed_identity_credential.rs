@@ -114,7 +114,7 @@ enum ManagedIdentitySource {
 }
 
 impl ManagedIdentitySource {
-    pub fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             ManagedIdentitySource::AzureArc => "Azure Arc",
             ManagedIdentitySource::AzureML => "Azure ML",
@@ -271,12 +271,7 @@ mod tests {
     ) {
         let _guard = EnvVarGuard::new(&env_vars);
         let actual_source = get_source();
-        assert!(
-            std::mem::discriminant(&actual_source) == std::mem::discriminant(&expected_source),
-            "Expected {:?}, got {:?}",
-            expected_source,
-            actual_source
-        );
+        assert_eq!(std::mem::discriminant(&actual_source), std::mem::discriminant(&expected_source));
         let result = ManagedIdentityCredential::new(None);
         assert!(
             matches!(result, Err(ref e) if *e.kind() == azure_core::error::ErrorKind::Credential),
