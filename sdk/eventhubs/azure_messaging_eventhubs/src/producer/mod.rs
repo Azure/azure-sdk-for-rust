@@ -206,7 +206,7 @@ impl ProducerClient {
             let target_url = format!("{}/Partitions/{}", self.base_url(), partition_id);
             target = Url::parse(&target_url).map_err(azure_core::Error::from)?;
         }
-        let sender = self.ensure_sender(&target).await.unwrap();
+        let sender = self.ensure_sender(&target).await?;
 
         let outcome = sender
             .lock()
