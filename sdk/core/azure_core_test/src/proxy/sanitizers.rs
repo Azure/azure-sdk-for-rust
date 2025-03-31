@@ -13,8 +13,15 @@ use std::{
     iter::{once, Once},
 };
 
+/// Default sanitizers to remove.
+// See <https://github.com/Azure/azure-sdk-for-net/blob/eedbc408d565fbc5cbca96222807c737ae53605e/sdk/core/Azure.Core.TestFramework/src/RecordedTestBase.cs#L123>.
+pub const DEFAULT_SANITIZERS_TO_REMOVE: &[&str; 2] = &[
+    "AZSDK3430", // $..id
+    "AZSDK3490", // $..etag
+];
+
 /// Default sanitization replacement value, "Sanitized";
-pub const SANITIZED_VALUE: &str = "Sanitized";
+pub const DEFAULT_SANITIZED_VALUE: &str = "Sanitized";
 
 /// Represents a sanitizer.
 pub trait Sanitizer: AsHeaders + fmt::Debug + Serialize {}
@@ -57,7 +64,7 @@ pub struct BodyKeySanitizer {
     /// The JSONPath that will be checked for replacements.
     pub json_path: String,
 
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 
@@ -99,7 +106,7 @@ fn test_body_key_sanitizer_as_headers() {
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BodyRegexSanitizer {
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 
@@ -148,7 +155,7 @@ impl_sanitizer!(GeneralRegexSanitizer, GeneralStringSanitizer);
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneralRegexSanitizer {
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 
@@ -188,7 +195,7 @@ impl_sanitizer!(HeaderRegexSanitizer, HeaderStringSanitizer);
 pub struct HeaderRegexSanitizer {
     pub key: String,
 
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 
@@ -261,7 +268,7 @@ impl_sanitizer!(
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UriRegexSanitizer {
-    /// The substitution value. The default is [`SANITIZED_VALUE`].
+    /// The substitution value. The default is [`DEFAULT_SANITIZED_VALUE`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 

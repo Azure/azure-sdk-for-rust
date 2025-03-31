@@ -44,7 +44,12 @@ pub async fn start(
         tracing::warn!(
             "environment variable {PROXY_MANUAL_START} is 'true'; not starting test-proxy"
         );
-        return Ok(Proxy::existing());
+        let proxy = Proxy::existing()?;
+
+        // Set up default matchers and sanitizers.
+        proxy.initialize().await?;
+
+        return Ok(proxy);
     }
 
     // Find root of git repo or work tree: a ".git" directory or file will exist either way.
@@ -86,6 +91,9 @@ pub async fn start(
             return Err(azure_core::Error::message(ErrorKind::Other, "timed out waiting for test-proxy to start"));
         },
     };
+
+    // Set up default matchers and sanitizers.
+    proxy.initialize().await?;
 
     Ok(proxy)
 }

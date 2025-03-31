@@ -3,7 +3,7 @@
 
 //! Live recording and playing back of client library tests.
 use crate::{
-    proxy::{client::Client, Proxy, ProxyOptions},
+    proxy::{Proxy, ProxyOptions},
     recording::Recording,
     TestContext,
 };
@@ -59,18 +59,11 @@ pub async fn start(
         }
     };
 
-    // TODO: Could we cache the client? Hypothetically, this function should only run once per `tests/*` file so it should be practical.
-    let mut client = None;
-    if let Some(proxy) = proxy.as_ref() {
-        client = Some(Client::new(proxy.endpoint().clone())?);
-    }
-
     let span = tracing::debug_span!("recording", ?mode, name);
     let mut recording = Recording::new(
         mode,
         span.entered(),
         proxy.clone(),
-        client,
         ctx.service_dir(),
         ctx.test_recording_file(),
         ctx.test_recording_assets_file(mode),
