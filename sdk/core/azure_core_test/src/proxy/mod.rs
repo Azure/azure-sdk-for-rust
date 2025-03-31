@@ -23,9 +23,9 @@ use azure_core::{
 use bootstrap::*;
 use client::Client;
 use serde::Serializer;
-use std::{fmt, str::FromStr};
 #[cfg(not(target_arch = "wasm32"))]
-use std::{process::ExitStatus, sync::Arc};
+use std::process::ExitStatus;
+use std::{fmt, str::FromStr, sync::Arc};
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::process::Child;
 
@@ -44,7 +44,6 @@ pub struct Proxy {
     #[cfg(not(target_arch = "wasm32"))]
     command: Option<Child>,
     endpoint: Option<Url>,
-    #[cfg(not(target_arch = "wasm32"))]
     client: Option<Client>,
 }
 
@@ -185,7 +184,6 @@ impl Proxy {
             #[cfg(not(target_arch = "wasm32"))]
             command: None,
             endpoint: Some("http://localhost:5000".parse().unwrap()),
-            #[cfg(not(target_arch = "wasm32"))]
             client: None,
         }
     }
