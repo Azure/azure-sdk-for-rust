@@ -10,18 +10,17 @@ use crate::generated::models::{
     BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
     BlobClientCopyFromUrlOptions, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotOptions,
     BlobClientCreateSnapshotResult, BlobClientDeleteImmutabilityPolicyOptions,
-    BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions, BlobClientDeleteResult,
-    BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientGetAccountInfoOptions,
-    BlobClientGetAccountInfoResult, BlobClientGetPropertiesOptions, BlobClientGetPropertiesResult,
-    BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions, BlobClientReleaseLeaseResult,
-    BlobClientRenewLeaseOptions, BlobClientRenewLeaseResult, BlobClientSetExpiryOptions,
-    BlobClientSetExpiryResult, BlobClientSetHttpHeadersOptions, BlobClientSetHttpHeadersResult,
+    BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions, BlobClientDownloadOptions,
+    BlobClientDownloadResult, BlobClientGetAccountInfoOptions, BlobClientGetAccountInfoResult,
+    BlobClientGetPropertiesOptions, BlobClientGetPropertiesResult, BlobClientGetTagsOptions,
+    BlobClientReleaseLeaseOptions, BlobClientReleaseLeaseResult, BlobClientRenewLeaseOptions,
+    BlobClientRenewLeaseResult, BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
+    BlobClientSetHttpHeadersOptions, BlobClientSetHttpHeadersResult,
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
     BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
     BlobClientSetMetadataResult, BlobClientSetTagsOptions, BlobClientSetTagsResult,
-    BlobClientSetTierOptions, BlobClientSetTierResult, BlobClientStartCopyFromUrlOptions,
-    BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
-    BlobExpiryOptions, BlobTags,
+    BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult,
+    BlobClientUndeleteOptions, BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
 };
 use azure_core::credentials::TokenCredential;
 use azure_core::fmt::SafeDebug;
@@ -513,7 +512,7 @@ impl BlobClient {
     pub async fn delete(
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
-    ) -> Result<Response<BlobClientDeleteResult>> {
+    ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -686,9 +685,6 @@ impl BlobClient {
                 "x-ms-range-get-content-md5",
                 range_get_content_md5.to_string(),
             );
-        }
-        if let Some(structured_body_type) = options.structured_body_type {
-            request.insert_header("x-ms-structured-body", structured_body_type);
         }
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await
@@ -1323,7 +1319,7 @@ impl BlobClient {
         &self,
         tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<BlobClientSetTierResult>> {
+    ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
