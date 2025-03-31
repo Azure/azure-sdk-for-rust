@@ -11,16 +11,18 @@ pub(crate) mod policy;
 pub(crate) mod sanitizers;
 
 #[cfg(not(target_arch = "wasm32"))]
-use azure_core::Result;
+use self::{
+    bootstrap::*, matchers::CustomDefaultMatcher, models::SanitizerList,
+    sanitizers::DEFAULT_SANITIZERS_TO_REMOVE,
+};
 use azure_core::{
     error::ErrorKind,
     http::{
         headers::{Header, HeaderName, HeaderValue},
         Url,
     },
+    Result,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use bootstrap::*;
 use client::Client;
 use serde::Serializer;
 #[cfg(not(target_arch = "wasm32"))]
@@ -112,9 +114,24 @@ impl Proxy {
         Ok(())
     }
 
-    /// Gets the [`Client`] for this proxy.
-    pub(crate) fn client(&self) -> Option<&Client> {
-        self.client.as_ref()
+    pub(crate) async fn initialize(&self) -> Result<()> {
+        // Set default matcher and remove some sanitizers by default.
+        if let Some(client) = &self.client {
+            client
+                .set_matcher(CustomDefaultMatcher::default().into(), None)
+                .await?;
+
+            let body = SanitizerList {
+                sanitizers: Vec::from_iter(
+                    DEFAULT_SANITIZERS_TO_REMOVE
+                        .iter()
+                        .map(|s| String::from(*s)),
+                ),
+            };
+            client.remove_sanitizers(body.try_into()?, None).await?;
+        }
+
+        Ok(())
     }
 
     /// Attempts to stop the service.

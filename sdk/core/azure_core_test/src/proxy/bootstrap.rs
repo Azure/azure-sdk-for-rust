@@ -3,8 +3,6 @@
 
 //! Bootstrap acquisition and startup of the test-proxy.
 
-use crate::{proxy::models::SanitizerList, CustomDefaultMatcher, DEFAULT_SANITIZERS_TO_REMOVE};
-
 pub use super::*;
 pub use azure_core::{test::TestMode, Result};
 pub use serde_json::json;
@@ -46,7 +44,12 @@ pub async fn start(
         tracing::warn!(
             "environment variable {PROXY_MANUAL_START} is 'true'; not starting test-proxy"
         );
-        return Proxy::existing();
+        let proxy = Proxy::existing()?;
+
+        // Set up default matchers and sanitizers.
+        proxy.initialize().await?;
+
+        return Ok(proxy);
     }
 
     // Find root of git repo or work tree: a ".git" directory or file will exist either way.
@@ -89,21 +92,8 @@ pub async fn start(
         },
     };
 
-    // Set default matcher and remove some sanitizers by default.
-    if let Some(client) = proxy.client() {
-        client
-            .set_matcher(CustomDefaultMatcher::default().into(), None)
-            .await?;
-
-        let body = SanitizerList {
-            sanitizers: Vec::from_iter(
-                DEFAULT_SANITIZERS_TO_REMOVE
-                    .iter()
-                    .map(|s| String::from(*s)),
-            ),
-        };
-        client.remove_sanitizers(body.try_into()?, None).await?;
-    }
+    // Set up default matchers and sanitizers.
+    proxy.initialize().await?;
 
     Ok(proxy)
 }
