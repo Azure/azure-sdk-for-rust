@@ -378,7 +378,6 @@ impl EventProcessor {
                 partition_id,
                 Some(OpenReceiverOptions {
                     start_position: Some(start_position),
-                    receive_timeout: Some(self.update_interval),
                     prefetch: Some(self.prefetch),
                     ..Default::default()
                 }),

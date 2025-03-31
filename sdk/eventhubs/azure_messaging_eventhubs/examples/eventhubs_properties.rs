@@ -4,7 +4,6 @@
 use azure_core::error::Result;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ProducerClient;
-
 use std::env;
 
 #[tokio::main]

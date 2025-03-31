@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 /// This sample demonstrates how to consume events from an Event Hub partition using the `ConsumerClient`.
 ///
 use azure_identity::DefaultAzureCredential;

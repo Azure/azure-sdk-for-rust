@@ -1,8 +1,10 @@
-use core::f32;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
-use azure_core::Uuid;
 /// This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
 ///
+use core::f32;
+use azure_core::Uuid;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{models::EventData, ProducerClient, SendEventOptions};
 

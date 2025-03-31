@@ -1,7 +1,10 @@
-use azure_core::Uuid;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 /// This sample demonstrates how to send events to all partitions using a batch sender.
 ///
 use azure_identity::DefaultAzureCredential;
+use azure_core::Uuid;
 use azure_messaging_eventhubs::{models::EventData, EventDataBatchOptions, ProducerClient};
 
 #[tokio::main]

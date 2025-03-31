@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 /// This sample demonstrates how to send AMQP messages to an Event Hub partition using the `ProducerClient`.
 ///
 use azure_identity::DefaultAzureCredential;
