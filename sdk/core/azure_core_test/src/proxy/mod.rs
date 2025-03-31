@@ -64,7 +64,13 @@ impl Proxy {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|err| azure_core::Error::full(ErrorKind::Io, err, "test-proxy not found"))?;
+            .map_err(|err| {
+                azure_core::Error::full(
+                    ErrorKind::Io,
+                    err,
+                    format!("{} failed to start", executable_file_path.display()),
+                )
+            })?;
 
         let mut stdout = command
             .stdout

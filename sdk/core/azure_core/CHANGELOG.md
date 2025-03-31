@@ -14,6 +14,7 @@
 
 ### Breaking Changes
 
+- Removed `azure_core::credentials::TokenCredential::clear_cache()`
 - Consolidated all the `tokio` features into a single feature named `tokio`. Traits remain separate but `tokio` support is enabled with a single feature.
 - Moved `AppendToUrlQuery` type under `http` module.
 - Moved `ByteStream` and `SeekableStream` types under `stream` module.
@@ -44,10 +45,12 @@
 - Removed `EMPTY_BODY` constant from root.
 - Removed `future!()` macro.
 - Removed `Header` re-export from `http` module. It is still defined in the `http::headers` module.
+- Removed `parsing` module.
 - Removed `query_param` module.
 - Removed `RequestId` type alias from root.
 - Removed `SessionToken` type alias from root.
-- Renamed `lro` module to `http::operation` module.
+- Renamed `lro` module to `http::poller` module.
+- Renamed `lro` module types with prefix "Lro" to prefix "Poller".
 - Renamed `tokio` module to `fs` since it contained only the `typespec_client_core::fs` module members.
 
 ### Bugs Fixed

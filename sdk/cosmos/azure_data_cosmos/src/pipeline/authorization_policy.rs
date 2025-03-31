@@ -175,10 +175,6 @@ mod tests {
                 OffsetDateTime::now_utc().saturating_add(time::Duration::minutes(5)),
             ))
         }
-
-        async fn clear_cache(&self) -> azure_core::Result<()> {
-            Ok(())
-        }
     }
 
     #[tokio::test]

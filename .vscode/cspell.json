@@ -31,6 +31,8 @@
     "clippy",
     "contoso",
     "cplusplus",
+    "cpptools",
+    "cppvsdbg",
     "datalake",
     "datetime",
     "devicecode",

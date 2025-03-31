@@ -9,6 +9,7 @@
 - Consolidated all the `tokio` features into a single feature named `tokio`. Traits remain separate but `tokio` support is enabled with a single feature.
 - Removed `Header` re-export from `http` module. It is still defined in the `http::headers` module.
 - Removed `Pager`.
+- Removed `parsing` module.
 
 ### Bugs Fixed
 

@@ -5,11 +5,11 @@
 
 pub mod headers;
 mod models;
-pub mod operation;
 mod options;
 mod pager;
 mod pipeline;
 pub mod policies;
+pub mod poller;
 pub mod request;
 
 pub use models::*;

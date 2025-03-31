@@ -156,8 +156,4 @@ impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.cache.get_token(scopes, self.get_token(scopes)).await
     }
-
-    async fn clear_cache(&self) -> azure_core::Result<()> {
-        self.cache.clear().await
-    }
 }
