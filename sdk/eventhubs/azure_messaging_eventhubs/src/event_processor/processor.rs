@@ -41,8 +41,7 @@ use tracing::{debug, error, info};
 /// across partitions and a checkpoint store to manage checkpoints.
 ///
 /// For more information on Event Processors and scenarios in which you would
-/// use an Event Processor, see the [Event Processor documentation]
-/// (https://learn.microsoft.com/azure/event-hubs/event-processor-balance-partition-load).
+/// use an Event Processor, see the [Event Processor documentation](https://learn.microsoft.com/azure/event-hubs/event-processor-balance-partition-load).
 ///
 pub struct EventProcessor {
     //    strategy: ProcessorStrategy,
