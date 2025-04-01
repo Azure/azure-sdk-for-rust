@@ -45,7 +45,7 @@ impl ManagedIdentityCredential {
         let id = options
             .user_assigned_id
             .clone()
-            .map(|id| id.into())
+            .map(Into::into)
             .unwrap_or(ImdsId::SystemAssigned);
 
         let credential: Arc<dyn TokenCredential> = match source {
