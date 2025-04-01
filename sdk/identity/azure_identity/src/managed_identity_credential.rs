@@ -7,7 +7,7 @@ use crate::{
 };
 use azure_core::credentials::{AccessToken, TokenCredential};
 use std::sync::Arc;
-use tracing::trace;
+use tracing::info;
 
 /// Identifies a specific user-assigned identity for [`ManagedIdentityCredential`] to authenticate.
 #[derive(Debug, Clone)]
@@ -73,14 +73,7 @@ impl ManagedIdentityCredential {
             }
         };
 
-        let mut message = format!(
-            "ManagedIdentityCredential will use {} managed identity",
-            source.as_str()
-        );
-        if let Some(user_assigned_id) = options.user_assigned_id {
-            message.push_str(&format!(" with {:?}", user_assigned_id));
-        }
-        trace!(message);
+        info!(user_assigned_id = ?options.user_assigned_id, "ManagedIdentityCredential will use {} managed identity", source.as_str());
 
         Ok(Arc::new(Self { credential }))
     }
