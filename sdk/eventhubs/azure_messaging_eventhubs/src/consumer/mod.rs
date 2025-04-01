@@ -163,7 +163,7 @@ impl ConsumerClient {
     /// Retrieves the details of the consumer client.
     ///
     /// This function retrieves the details of the consumer client associated with the [`ConsumerClient`].
-    pub(crate) async fn get_details(&self) -> Result<models::ConsumerClientDetails> {
+    pub(crate) fn get_details(&self) -> Result<models::ConsumerClientDetails> {
         Ok(models::ConsumerClientDetails {
             eventhub_name: self.eventhub.clone(),
             consumer_group: self.consumer_group.clone(),
@@ -177,7 +177,7 @@ impl ConsumerClient {
                     )
                 })?
                 .to_string(),
-            client_id: self.connection_manager.get_connection_id().await?.clone(),
+            client_id: self.connection_manager.get_connection_id().clone(),
         })
     }
 

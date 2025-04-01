@@ -90,9 +90,8 @@ impl ConnectionManager {
         Ok(connection.clone())
     }
 
-    pub(crate) async fn get_connection_id(&self) -> Result<&String> {
-        self.ensure_connection().await?;
-        Ok(&self.connection_name)
+    pub(crate) fn get_connection_id(&self) -> &String {
+        &self.connection_name
     }
 
     pub(crate) async fn close_connection(&self) -> Result<()> {

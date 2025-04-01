@@ -9,8 +9,8 @@ use super::{
     CheckpointStore, ProcessorStrategy,
 };
 use crate::{
-    models::{ConsumerClientDetails, EventHubProperties},
-    ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
+    models::ConsumerClientDetails, ConsumerClient, OpenReceiverOptions, StartLocation,
+    StartPosition,
 };
 //use async_io::Timer;
 use async_lock::Mutex as AsyncMutex;
@@ -54,7 +54,7 @@ pub struct EventProcessor {
     update_interval: Duration,
     start_positions: StartPositions,
     is_running: std::sync::Mutex<bool>,
-    eventhub_properties: EventHubProperties,
+    partition_ids: Vec<String>,
 }
 
 struct EventProcessorOptions {
@@ -62,8 +62,8 @@ struct EventProcessorOptions {
     partition_expiration_duration: Duration,
     update_interval: Duration,
     start_positions: StartPositions,
-    max_partition_count: Option<usize>,
     prefetch: u32,
+    partition_ids: Vec<String>,
 }
 
 pub(crate) struct ProcessorConsumersMap {
@@ -139,21 +139,16 @@ impl EventProcessor {
         builders::EventProcessorBuilder::new()
     }
 
-    async fn new(
+    fn new(
         consumer_client: Arc<ConsumerClient>,
         checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
         options: EventProcessorOptions,
-    ) -> Result<Self> {
-        let mut eh_properties = consumer_client.get_eventhub_properties().await?;
-        if let Some(max_partition_count) = options.max_partition_count {
-            eh_properties.partition_ids.truncate(max_partition_count);
-        }
+    ) -> Result<Arc<Self>> {
+        let (sender, receiver) = channel(options.partition_ids.len());
 
-        let (sender, receiver) = channel(eh_properties.partition_ids.len());
+        let client_details = consumer_client.get_details()?;
 
-        let client_details = consumer_client.get_details().await?;
-
-        Ok(EventProcessor {
+        Ok(Arc::new(EventProcessor {
             checkpoint_store: checkpoint_store.clone(),
             consumer_client: consumer_client.clone(),
 
@@ -172,8 +167,8 @@ impl EventProcessor {
             next_partition_client_sender: sender,
             next_partition_clients: AsyncMutex::new(receiver),
             is_running: std::sync::Mutex::new(false),
-            eventhub_properties: eh_properties,
-        })
+            partition_ids: options.partition_ids,
+        }))
     }
 
     /// Starts the event processor.
@@ -231,8 +226,15 @@ impl EventProcessor {
             })?;
             *is_running = true;
         }
+
+        let partition_ids = &self
+            .partition_ids
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<&str>>();
+
         loop {
-            let result = self.dispatch(&self.eventhub_properties, &consumers).await;
+            let result = self.dispatch(partition_ids, &consumers).await;
             match result {
                 Ok(_) => {
                     debug!("Event processor dispatched successfully.");
@@ -283,21 +285,13 @@ impl EventProcessor {
 
     async fn dispatch(
         &self,
-        eventhub_properties: &EventHubProperties,
+        partition_ids: &[&str],
         consumers: &Arc<ProcessorConsumersMap>,
     ) -> Result<()> {
         debug!("Dispatch partition clients to consumers.");
         let load_balancer = self.load_balancer.lock().await;
 
-        let ownerships = load_balancer
-            .load_balance(
-                &eventhub_properties
-                    .partition_ids
-                    .iter()
-                    .map(String::as_str)
-                    .collect::<Vec<&str>>(),
-            )
-            .await;
+        let ownerships = load_balancer.load_balance(partition_ids).await;
         if let Err(e) = ownerships {
             error!("Error in load balancing: {:?}", e);
             return Err(e);
@@ -612,25 +606,29 @@ pub mod builders {
             consumer_client: Arc<ConsumerClient>,
             checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
         ) -> Result<Arc<EventProcessor>> {
-            Ok(Arc::new(
-                EventProcessor::new(
-                    consumer_client,
-                    checkpoint_store,
-                    super::EventProcessorOptions {
-                        strategy: self
-                            .load_balancing_strategy
-                            .unwrap_or(super::ProcessorStrategy::Greedy),
-                        partition_expiration_duration: self
-                            .partition_expiration_duration
-                            .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION),
-                        update_interval: self.update_interval.unwrap_or(DEFAULT_UPDATE_INTERVAL),
-                        start_positions: self.start_positions.unwrap_or_default(),
-                        max_partition_count: self.max_partition_count,
-                        prefetch: self.prefetch.unwrap_or(DEFAULT_PREFETCH),
-                    },
-                )
-                .await?,
-            ))
+            // Retrieve the set of partitions from the consumer client
+            // and limit the number of partitions to the specified max_partition_count.
+            let mut eh_properties = consumer_client.get_eventhub_properties().await?;
+            if let Some(max_partition_count) = self.max_partition_count {
+                eh_properties.partition_ids.truncate(max_partition_count);
+            }
+
+            EventProcessor::new(
+                consumer_client,
+                checkpoint_store,
+                super::EventProcessorOptions {
+                    strategy: self
+                        .load_balancing_strategy
+                        .unwrap_or(super::ProcessorStrategy::Greedy),
+                    partition_expiration_duration: self
+                        .partition_expiration_duration
+                        .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION),
+                    update_interval: self.update_interval.unwrap_or(DEFAULT_UPDATE_INTERVAL),
+                    start_positions: self.start_positions.unwrap_or_default(),
+                    prefetch: self.prefetch.unwrap_or(DEFAULT_PREFETCH),
+                    partition_ids: eh_properties.partition_ids,
+                },
+            )
         }
     }
 }
