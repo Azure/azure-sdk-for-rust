@@ -119,6 +119,7 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
 function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChanges, $diff, $allPackageProperties) {
   # if the change was in a service directory, but not in a package directory, test all the packages in the service directory
   [array]$serviceFiles = ($diff.ChangedFiles + $diff.DeletedFiles) | ForEach-Object { $_ -replace '\\', '/' } | Where-Object { $_ -match "^sdk/.+/" }
+  
   # remove files that target any specific package
   foreach ($package in $allPackageProperties) {
     $packagePathPattern = "^$( [Regex]::Escape($package.DirectoryPath.Replace('\', '/')) )/"
@@ -127,15 +128,14 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 
   $affectedServiceDirectories = $serviceFiles | ForEach-Object { $_ -replace '^sdk/(.+?)/.*', '$1' } | Sort-Object -Unique
 
-  $affectedPackages = $allPackageProperties | Where-Object { $affectedServiceDirectories -contains $_.ServiceDirectory }
-
-  [array]$additionalPackages = $affectedPackages | Where-Object { $packagesWithChanges -notcontains $_ }
+  $affectedPackages = @($allPackageProperties | Where-Object { $affectedServiceDirectories -contains $_.ServiceDirectory })
+  $additionalPackages = @($affectedPackages | Where-Object { $packagesWithChanges -notcontains $_ })
 
   foreach ($package in $additionalPackages) {
     $package.IncludedForValidation = $true
   }
 
-  return $additionalPackages
+  return $additionalPackages ?? @()
 }
 
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
@@ -166,4 +166,22 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
     ReleaseNotes   = $releaseNotes
     ReadmeContent  = $readmeContent
   }
+}
+
+function Find-rust-Artifacts-For-Apireview([string]$ArtifactPath, [string]$packageName) {
+  [array]$files = Get-ChildItem -Path $ArtifactPath -Recurse -Filter "$packageName.rust.json"
+
+  if (!$files) {
+    Write-Host "$($packageName) does not have api review json"
+    return $null
+  }
+  elseif ($files.Count -ne 1) {
+    Write-Host "$($artifactPath) should contain only one api review for $($packageName)"
+    Write-Host "Number of files $($files.Count)"
+    return $null
+  }
+  $packages = @{
+    $files[0].Name = $files[0].FullName
+  }
+  return $packages
 }
