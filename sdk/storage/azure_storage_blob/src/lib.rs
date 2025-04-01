@@ -5,10 +5,22 @@
 
 pub mod clients;
 mod generated;
-pub use generated::*;
 mod pipeline;
 
 pub use crate::clients::{BlobClient, BlobContainerClient, BlobServiceClient};
 pub use crate::generated::clients::{
     BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions,
+};
+pub use crate::generated::models::{
+    BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientDownloadResultHeaders,
+    BlobClientGetPropertiesOptions, BlobClientGetPropertiesResult,
+    BlobClientGetPropertiesResultHeaders, BlobContainerClientCreateOptions,
+    BlobContainerClientCreateResult, BlobContainerClientDeleteOptions,
+    BlobContainerClientDeleteResult, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
+    BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
+    BlockBlobClientCommitBlockListResult, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResult,
+    BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockList, BlockListType,
+    BlockLookupList, LeaseState, StorageServiceProperties,
 };

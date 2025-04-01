@@ -6,13 +6,10 @@ use azure_core::{
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::clients::BlobClient;
 use azure_storage_blob::{
-    models::{
-        BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlockListType,
-        BlockLookupList, LeaseState,
-    },
-    BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
+    BlobClient, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
+    BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, BlockListType,
+    BlockLookupList, LeaseState,
 };
 use azure_storage_blob_test::recorded_test_setup;
 use std::error::Error;
