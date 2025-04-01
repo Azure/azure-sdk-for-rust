@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::{
-    AppServiceManagedIdentityCredential, ImdsId, TokenCredentialOptions,
+    env::Env, AppServiceManagedIdentityCredential, ImdsId, TokenCredentialOptions,
     VirtualMachineManagedIdentityCredential,
 };
 use azure_core::credentials::{AccessToken, TokenCredential};
-use std::{env, fmt::Display, fmt::Formatter, sync::Arc};
+use std::{fmt::Display, fmt::Formatter, sync::Arc};
 use tracing::trace;
 
 /// Identifies a specific user-assigned identity for [`ManagedIdentityCredential`] to authenticate.
@@ -50,7 +50,8 @@ pub struct ManagedIdentityCredentialOptions {
 impl ManagedIdentityCredential {
     pub fn new(options: Option<ManagedIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>> {
         let options = options.unwrap_or_default();
-        let source = get_source();
+        let env = options.credential_options.env();
+        let source = get_source(env);
         let id = options
             .user_assigned_id
             .clone()
@@ -133,19 +134,19 @@ const IMDS_ENDPOINT: &str = "IMDS_ENDPOINT";
 const MSI_ENDPOINT: &str = "MSI_ENDPOINT";
 const MSI_SECRET: &str = "MSI_SECRET";
 
-fn get_source() -> ManagedIdentitySource {
+fn get_source(env: &Env) -> ManagedIdentitySource {
     use ManagedIdentitySource::*;
-    if env::var(IDENTITY_ENDPOINT).is_ok() {
-        if env::var(IDENTITY_HEADER).is_ok() {
-            if env::var(IDENTITY_SERVER_THUMBPRINT).is_ok() {
+    if env.var(IDENTITY_ENDPOINT).is_ok() {
+        if env.var(IDENTITY_HEADER).is_ok() {
+            if env.var(IDENTITY_SERVER_THUMBPRINT).is_ok() {
                 return ServiceFabric;
             }
             return AppService;
-        } else if env::var(IMDS_ENDPOINT).is_ok() {
+        } else if env.var(IMDS_ENDPOINT).is_ok() {
             return AzureArc;
         }
-    } else if env::var(MSI_ENDPOINT).is_ok() {
-        if env::var(MSI_SECRET).is_ok() {
+    } else if env.var(MSI_ENDPOINT).is_ok() {
+        if env.var(MSI_SECRET).is_ok() {
             return AzureML;
         }
         return CloudShell;
@@ -156,53 +157,25 @@ fn get_source() -> ManagedIdentitySource {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::env::Env;
     use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
     use azure_core::http::headers::Headers;
     use azure_core::http::{Method, Request, Response, StatusCode};
     use azure_core::Bytes;
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
-    use serial_test::serial;
-    use std::collections::HashMap;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
 
-    struct EnvVarGuard {
-        original_vars: HashMap<String, Option<String>>,
-    }
-
-    impl EnvVarGuard {
-        fn new(vars: &HashMap<&str, &str>) -> Self {
-            let mut original_vars = HashMap::new();
-            for (key, value) in vars {
-                original_vars.insert(key.to_string(), env::var(key).ok());
-                env::set_var(key, value);
-            }
-            Self { original_vars }
-        }
-    }
-
-    impl Drop for EnvVarGuard {
-        fn drop(&mut self) {
-            for (key, value) in &self.original_vars {
-                match value {
-                    Some(original_value) => env::set_var(key, original_value),
-                    None => env::remove_var(key),
-                }
-            }
-        }
-    }
-
     async fn run_supported_source_test(
-        env_vars: HashMap<&str, &str>,
+        env: Env,
         options: Option<ManagedIdentityCredentialOptions>,
         expected_source: ManagedIdentitySource,
         model_request: Request,
         response_format: String,
     ) {
-        let _guard = EnvVarGuard::new(&env_vars);
-        let actual_source = get_source();
+        let actual_source = get_source(&env);
         assert_eq!(
             std::mem::discriminant(&actual_source),
             std::mem::discriminant(&expected_source)
@@ -254,6 +227,7 @@ mod tests {
         });
         let mut options = options.unwrap_or_default();
         options.credential_options = TokenCredentialOptions {
+            env,
             http_client: Arc::new(mock_client),
             ..Default::default()
         };
@@ -263,17 +237,19 @@ mod tests {
         assert_eq!(token.token.secret(), "*");
     }
 
-    fn run_unsupported_source_test(
-        env_vars: HashMap<&str, &str>,
-        expected_source: ManagedIdentitySource,
-    ) {
-        let _guard = EnvVarGuard::new(&env_vars);
-        let actual_source = get_source();
+    fn run_unsupported_source_test(env: Env, expected_source: ManagedIdentitySource) {
+        let actual_source = get_source(&env);
         assert_eq!(
             std::mem::discriminant(&actual_source),
             std::mem::discriminant(&expected_source)
         );
-        let result = ManagedIdentityCredential::new(None);
+        let result = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+            credential_options: TokenCredentialOptions {
+                env,
+                ..Default::default()
+            },
+            ..Default::default()
+        }));
         assert!(
             matches!(result, Err(ref e) if *e.kind() == azure_core::error::ErrorKind::Credential),
             "Expected constructor error"
@@ -306,10 +282,12 @@ mod tests {
         }
         model.url_mut().query_pairs_mut().extend_pairs(params);
         run_supported_source_test(
-            HashMap::from([
-                (IDENTITY_ENDPOINT, endpoint),
-                (IDENTITY_HEADER, x_id_header),
-            ]),
+            Env::from(
+                &[
+                    (IDENTITY_ENDPOINT, endpoint),
+                    (IDENTITY_HEADER, x_id_header),
+                ][..],
+            ),
             options,
             ManagedIdentitySource::AppService,
             model,
@@ -323,13 +301,11 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn app_service() {
         run_app_service_test(None).await;
     }
 
     #[tokio::test]
-    #[serial]
     async fn app_service_client_id() {
         run_app_service_test(Some(ManagedIdentityCredentialOptions {
             user_assigned_id: Some(UserAssignedId::ClientId("expected client ID".to_string())),
@@ -339,7 +315,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn app_service_object_id() {
         run_app_service_test(Some(ManagedIdentityCredentialOptions {
             user_assigned_id: Some(UserAssignedId::ObjectId("expected object ID".to_string())),
@@ -349,20 +324,15 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn app_service_resource_id() {
-        let _guard = EnvVarGuard::new(&HashMap::from([
-            (
-                IDENTITY_ENDPOINT,
-                "http://localhost/metadata/identity/oauth2/token",
-            ),
-            (IDENTITY_HEADER, "x-id-header"),
-        ]));
         let result = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+            credential_options: TokenCredentialOptions {
+                env: Env::from(&[(IDENTITY_ENDPOINT, "..."), (IDENTITY_HEADER, "x-id-header")][..]),
+                ..Default::default()
+            },
             user_assigned_id: Some(UserAssignedId::ResourceId(
                 "expected resource ID".to_string(),
             )),
-            ..Default::default()
         }));
         assert!(
             matches!(result, Err(ref e) if *e.kind() == azure_core::error::ErrorKind::Credential),
@@ -371,31 +341,30 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn arc() {
         run_unsupported_source_test(
-            HashMap::from([
-                (IDENTITY_ENDPOINT, "http://localhost"),
-                (IMDS_ENDPOINT, "..."),
-            ]),
+            Env::from(
+                &[
+                    (IDENTITY_ENDPOINT, "http://localhost"),
+                    (IMDS_ENDPOINT, "..."),
+                ][..],
+            ),
             ManagedIdentitySource::AzureArc,
         );
     }
 
     #[test]
-    #[serial]
     fn azure_ml() {
         run_unsupported_source_test(
-            HashMap::from([(MSI_ENDPOINT, "..."), (MSI_SECRET, "...")]),
+            Env::from(&[(MSI_ENDPOINT, "..."), (MSI_SECRET, "...")][..]),
             ManagedIdentitySource::AzureML,
         );
     }
 
     #[test]
-    #[serial]
     fn cloudshell() {
         run_unsupported_source_test(
-            HashMap::from([(MSI_ENDPOINT, "http://localhost")]),
+            Env::from(&[(MSI_ENDPOINT, "http://localhost")][..]),
             ManagedIdentitySource::CloudShell,
         );
     }
@@ -431,7 +400,7 @@ mod tests {
         model.url_mut().query_pairs_mut().extend_pairs(params);
 
         run_supported_source_test(
-            HashMap::new(),
+            Env::from(&[][..]),
             options,
             ManagedIdentitySource::Imds,
             model,
@@ -440,13 +409,11 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn imds() {
         run_imds_test(None).await;
     }
 
     #[tokio::test]
-    #[serial]
     async fn imds_client_id() {
         run_imds_test(Some(ManagedIdentityCredentialOptions {
             user_assigned_id: Some(UserAssignedId::ClientId("expected client ID".to_string())),
@@ -456,7 +423,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn imds_object_id() {
         run_imds_test(Some(ManagedIdentityCredentialOptions {
             user_assigned_id: Some(UserAssignedId::ObjectId("expected object ID".to_string())),
@@ -466,7 +432,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn imds_resource_id() {
         run_imds_test(Some(ManagedIdentityCredentialOptions {
             user_assigned_id: Some(UserAssignedId::ResourceId(
@@ -478,14 +443,15 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn service_fabric() {
         run_unsupported_source_test(
-            HashMap::from([
-                (IDENTITY_ENDPOINT, "http://localhost"),
-                (IDENTITY_HEADER, "..."),
-                (IDENTITY_SERVER_THUMBPRINT, "..."),
-            ]),
+            Env::from(
+                &[
+                    (IDENTITY_ENDPOINT, "http://localhost"),
+                    (IDENTITY_HEADER, "..."),
+                    (IDENTITY_SERVER_THUMBPRINT, "..."),
+                ][..],
+            ),
             ManagedIdentitySource::ServiceFabric,
         );
     }

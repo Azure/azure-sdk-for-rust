@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, TokenCredentialOptions, UserAssignedId};
+use crate::{credentials::cache::TokenCache, env::Env, TokenCredentialOptions, UserAssignedId};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind},
@@ -55,6 +55,7 @@ pub(crate) struct ImdsManagedIdentityCredential {
     secret_env: String,
     id: ImdsId,
     cache: TokenCache,
+    env: Env,
 }
 
 impl ImdsManagedIdentityCredential {
@@ -75,6 +76,7 @@ impl ImdsManagedIdentityCredential {
             secret_env: secret_env.to_owned(),
             id,
             cache: TokenCache::new(),
+            env: options.env().clone(),
         }
     }
 
@@ -100,7 +102,7 @@ impl ImdsManagedIdentityCredential {
 
         req.insert_header("metadata", "true");
 
-        let msi_secret = std::env::var(&self.secret_env);
+        let msi_secret = self.env.var(&self.secret_env);
         if let Ok(val) = msi_secret {
             req.insert_header(self.secret_header.clone(), val);
         };
