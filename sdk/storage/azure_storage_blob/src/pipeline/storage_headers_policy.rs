@@ -2,7 +2,11 @@
 // Licensed under the MIT License.
 
 use async_trait::async_trait;
-use azure_core::{headers::CLIENT_REQUEST_ID, Context, Policy, PolicyResult, Request};
+use azure_core::http::{
+    headers::CLIENT_REQUEST_ID,
+    policies::{Policy, PolicyResult},
+    Context, Request,
+};
 use std::sync::Arc;
 use uuid::Uuid;
 

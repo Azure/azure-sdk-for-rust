@@ -4,16 +4,21 @@
 use crate::{
     clients::GeneratedBlobClient,
     models::{
-        BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
-        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientStageBlockOptions,
-        BlobBlockBlobClientUploadOptions, BlobProperties, BlockLookupList,
+        BlobClientDownloadOptions, BlobClientGetPropertiesOptions, BlobProperties,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientUploadOptions, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions,
 };
 use azure_core::{
-    base64, credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy,
-    RequestContent, Response, Result, Url,
+    base64,
+    credentials::TokenCredential,
+    http::{
+        policies::{BearerTokenCredentialPolicy, Policy},
+        RequestContent, Response, Url,
+    },
+    Bytes, Result,
 };
 use std::sync::Arc;
 
@@ -59,7 +64,13 @@ impl BlobClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
+        let client = GeneratedBlobClient::new(
+            endpoint,
+            credential,
+            container_name.clone(),
+            blob_name.clone(),
+            Some(options),
+        )?;
         Ok(Self {
             endpoint: endpoint.parse()?,
             container_name,
@@ -91,13 +102,9 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_blob_properties(
         &self,
-        options: Option<BlobBlobClientGetPropertiesOptions<'_>>,
+        options: Option<BlobClientGetPropertiesOptions<'_>>,
     ) -> Result<BlobProperties> {
-        let response = self
-            .client
-            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .get_properties(options)
-            .await?;
+        let response = self.client.get_properties(options).await?;
 
         let blob_properties: BlobProperties = response.headers().get()?;
         Ok(blob_properties)
@@ -110,14 +117,9 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn download_blob(
         &self,
-        options: Option<BlobBlobClientDownloadOptions<'_>>,
+        options: Option<BlobClientDownloadOptions<'_>>,
     ) -> Result<Response> {
-        let response = self
-            .client
-            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .download(options)
-            .await?;
-        Ok(response)
+        self.client.download(options)
     }
 
     /// Creates a new blob from a data source.
@@ -144,7 +146,7 @@ impl BlobClient {
 
         let response = self
             .client
-            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
+            .get_block_blob_client(self.container_name.clone(), self.blob_name.clone())
             .upload(data, content_length, Some(options))
             .await?;
         Ok(response)
