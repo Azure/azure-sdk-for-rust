@@ -177,7 +177,7 @@ function Find-rust-Artifacts-For-Apireview([string]$ArtifactPath, [string]$packa
   }
   elseif ($files.Count -ne 1) {
     Write-Host "$($artifactPath) should contain only one api review for $($packageName)"
-    Write-Host "No of files $($files.Count)"
+    Write-Host "Number of files $($files.Count)"
     return $null
   }
   $packages = @{
