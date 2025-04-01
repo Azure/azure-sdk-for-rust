@@ -4,7 +4,7 @@
 
 ### Features Added
 
-* Decoupled query responses from HTTP, to allow for handling non-HTTP transports for queries. ([#2393](https://github.com/Azure/azure-sdk-for-rust/pull/2393))
+* Decoupled query responses from HTTP to allow for handling non-HTTP transports for queries. ([#2393](https://github.com/Azure/azure-sdk-for-rust/pull/2393))
 
 ### Breaking Changes
 
