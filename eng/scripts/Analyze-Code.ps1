@@ -5,6 +5,7 @@ param(
   [string]$Toolchain = 'stable',
   [string]$PackageInfoDirectory,
   [switch]$CheckWasm = $true,
+  [switch]$Deny,
   [switch]$SkipPackageAnalysis
 )
 
@@ -24,6 +25,10 @@ if ($CheckWasm) {
   Invoke-LoggedCommand "rustup target add --toolchain $Toolchain wasm32-unknown-unknown"
 }
 
+if ($Deny) {
+  Invoke-LoggedCommand "cargo +$Toolchain install cargo-deny --locked"
+}
+
 Invoke-LoggedCommand "cargo +$Toolchain check --package azure_core --all-features --all-targets --keep-going"
 
 Invoke-LoggedCommand "cargo +$Toolchain fmt --all -- --check"
@@ -32,6 +37,10 @@ Invoke-LoggedCommand "cargo +$Toolchain clippy --workspace --all-features --all-
 
 if ($CheckWasm) {
   Invoke-LoggedCommand "cargo +$Toolchain clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
+}
+
+if ($Deny) {
+  Invoke-LoggedCommand "cargo +$Toolchain deny check"
 }
 
 Invoke-LoggedCommand "cargo +$Toolchain doc --workspace --no-deps --all-features"
