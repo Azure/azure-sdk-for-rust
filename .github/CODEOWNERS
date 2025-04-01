@@ -45,7 +45,7 @@
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Identity
 # PRLabel: %Azure.Identity
-/sdk/identity/           @heaths @RickWinter @JeffreyRichter @LarryOsterman
+/sdk/identity/           @heaths @RickWinter @JeffreyRichter @LarryOsterman @chlowell
 
 ###########
 # Client SDKs
