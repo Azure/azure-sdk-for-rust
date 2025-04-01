@@ -37,7 +37,7 @@ pub struct ManagedIdentityCredential {
 }
 
 /// Options for constructing a new [`ManagedIdentityCredential`].
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ManagedIdentityCredentialOptions {
     /// The [`TokenCredentialOptions`] to use for the credential.
     pub credential_options: TokenCredentialOptions,
