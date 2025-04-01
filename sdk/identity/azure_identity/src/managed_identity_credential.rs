@@ -6,7 +6,7 @@ use crate::{
     VirtualMachineManagedIdentityCredential,
 };
 use azure_core::credentials::{AccessToken, TokenCredential};
-use std::{fmt::Display, fmt::Formatter, sync::Arc};
+use std::sync::Arc;
 use tracing::trace;
 
 /// Identifies a specific user-assigned identity for [`ManagedIdentityCredential`] to authenticate.
@@ -18,16 +18,6 @@ pub enum UserAssignedId {
     ObjectId(String),
     /// The Azure resource ID of a user-assigned identity
     ResourceId(String),
-}
-
-impl Display for UserAssignedId {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            UserAssignedId::ClientId(id) => write!(f, r#"client ID "{}""#, id),
-            UserAssignedId::ObjectId(id) => write!(f, r#"object ID "{}""#, id),
-            UserAssignedId::ResourceId(id) => write!(f, r#"resource ID "{}""#, id),
-        }
-    }
 }
 
 /// Authenticates a managed identity from Azure App Service or an Azure Virtual Machine.
@@ -88,7 +78,7 @@ impl ManagedIdentityCredential {
             source.as_str()
         );
         if let Some(user_assigned_id) = options.user_assigned_id {
-            message.push_str(&format!(" with {}", user_assigned_id));
+            message.push_str(&format!(" with {:?}", user_assigned_id));
         }
         trace!(message);
 
