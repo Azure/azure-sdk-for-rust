@@ -3,10 +3,8 @@
 
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
-    {
-        pipeline::StorageHeadersPolicy, BlobServiceClientGetPropertiesOptions,
-        BlobServiceClientOptions, StorageServiceProperties,
-    },
+    models::StorageServiceProperties, pipeline::StorageHeadersPolicy,
+    BlobServiceClientGetPropertiesOptions, BlobServiceClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,

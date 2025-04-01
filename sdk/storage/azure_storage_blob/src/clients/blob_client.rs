@@ -2,13 +2,17 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::BlobClient as GeneratedBlobClient, pipeline::StorageHeadersPolicy,
-    BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientGetPropertiesOptions,
-    BlobClientGetPropertiesResult, BlobClientOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientCommitBlockListResult, BlockBlobClientGetBlockListOptions,
-    BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResult,
-    BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockList, BlockListType,
-    BlockLookupList,
+    generated::clients::BlobClient as GeneratedBlobClient,
+    generated::models::{
+        BlobClientDownloadResult, BlobClientGetPropertiesResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadResult,
+    },
+    models::{BlockList, BlockListType, BlockLookupList},
+    pipeline::StorageHeadersPolicy,
+    BlobClientDownloadOptions, BlobClientGetPropertiesOptions, BlobClientOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
