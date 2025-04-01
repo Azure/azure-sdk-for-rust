@@ -5,8 +5,3 @@
 
 pub mod clients;
 pub mod models;
-pub use clients::{
-    AppendBlobClient, AppendBlobClientOptions, BlobClient, BlobClientOptions, BlobContainerClient,
-    BlobContainerClientOptions, BlobServiceClient, BlobServiceClientOptions, BlockBlobClient,
-    BlockBlobClientOptions, PageBlobClient, PageBlobClientOptions,
-};

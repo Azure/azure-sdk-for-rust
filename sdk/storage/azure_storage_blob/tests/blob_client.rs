@@ -8,9 +8,8 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::BlobClientDownloadResultHeaders;
 use azure_storage_blob::{
-    clients::{BlobClient, BlobContainerClient},
     models::{BlobClientGetPropertiesResultHeaders, BlockListType, BlockLookupList, LeaseState},
-    BlobClientOptions, BlobContainerClientOptions,
+    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
 use std::error::Error;

@@ -8,7 +8,7 @@ mod generated;
 pub use generated::*;
 mod pipeline;
 
-// Moved from src/generated/mod.rs to surface these specific Options bags to the crate root
-// pub use crate::generated::clients::{
-//     BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions,
-// };
+pub use crate::clients::{BlobClient, BlobContainerClient, BlobServiceClient};
+pub use crate::generated::clients::{
+    BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions,
+};
