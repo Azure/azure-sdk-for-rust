@@ -4,9 +4,8 @@
 use azure_core::http::StatusCode;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
-    clients::BlobContainerClient,
     models::{BlobContainerClientGetPropertiesResultHeaders, LeaseState},
-    BlobContainerClientOptions,
+    BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
 use std::error::Error;

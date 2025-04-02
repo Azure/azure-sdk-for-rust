@@ -2,11 +2,9 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::{
-        BlobServiceClient as GeneratedBlobServiceClient, BlobServiceClientOptions,
-    },
-    models::{BlobServiceClientGetPropertiesOptions, StorageServiceProperties},
-    pipeline::StorageHeadersPolicy,
+    generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
+    models::StorageServiceProperties, pipeline::StorageHeadersPolicy,
+    BlobServiceClientGetPropertiesOptions, BlobServiceClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,

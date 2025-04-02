@@ -3,8 +3,7 @@
 
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
-    clients::BlobServiceClient, models::BlobServiceClientGetPropertiesOptions,
-    BlobServiceClientOptions,
+    BlobServiceClient, BlobServiceClientGetPropertiesOptions, BlobServiceClientOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
 use std::error::Error;
