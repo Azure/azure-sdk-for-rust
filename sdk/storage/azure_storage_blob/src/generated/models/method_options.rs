@@ -655,10 +655,6 @@ pub struct BlobClientDownloadOptions<'a> {
     /// information on working with blob snapshots, see [Creating a Snapshot of a Blob.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob)
     pub snapshot: Option<String>,
 
-    /// Specifies the response content should be returned as a structured message and specifies the message schema version and
-    /// properties.
-    pub structured_body_type: Option<String>,
-
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
 
@@ -1981,13 +1977,6 @@ pub struct BlockBlobClientStageBlockOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
-    /// Required if the request body is a structured message. Specifies the message schema version and properties.
-    pub structured_body_type: Option<String>,
-
-    /// Required if the request body is a structured message. Specifies the length of the blob/file content inside the message
-    /// body. Will always be smaller than Content-Length.
-    pub structured_content_length: Option<u64>,
-
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
 
@@ -2137,13 +2126,6 @@ pub struct BlockBlobClientUploadOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
-
-    /// Required if the request body is a structured message. Specifies the message schema version and properties.
-    pub structured_body_type: Option<String>,
-
-    /// Required if the request body is a structured message. Specifies the length of the blob/file content inside the message
-    /// body. Will always be smaller than Content-Length.
-    pub structured_content_length: Option<u64>,
 
     /// The tier to be set on the blob.
     pub tier: Option<AccessTier>,
