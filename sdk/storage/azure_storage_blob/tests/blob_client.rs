@@ -77,7 +77,14 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     // Assert
     let lease_state = response.lease_state()?;
+    let content_length = response.content_length()?;
+    let etag = response.etag()?;
+    let creation_time = response.creation_time()?;
+
     assert_eq!(LeaseState::Available, lease_state.unwrap());
+    assert_eq!(17, content_length.unwrap());
+    assert!(etag.is_some());
+    assert!(creation_time.is_some());
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -144,7 +151,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let new_data = b"hello overwritten rusty world";
 
     // Error Case (overwrite=false/none)
-    let error_response = blob_client
+    let response = blob_client
         .upload_blob(
             RequestContent::from(new_data.to_vec()),
             false,
@@ -154,7 +161,11 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await;
 
     // Assert
-    assert!(error_response.is_err());
+    assert!(response.is_err());
+    assert_eq!(
+        "HttpResponse(Conflict, \"BlobAlreadyExists\")",
+        response.unwrap_err().kind().to_string()
+    );
 
     // Working Case (overwrite=true)
     let overwrite_response = blob_client

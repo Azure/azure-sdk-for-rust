@@ -6,6 +6,7 @@ use crate::{
     generated::models::{
         BlobContainerClientCreateResult, BlobContainerClientDeleteResult,
         BlobContainerClientGetPropertiesResult,
+
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
@@ -92,7 +93,7 @@ impl BlobContainerClient {
     pub async fn create_container(
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientCreateResult>> {
+    ) -> Result<Response<()>> {
         let response = self.client.create(options).await?;
         Ok(response)
     }
@@ -105,7 +106,7 @@ impl BlobContainerClient {
     pub async fn delete_container(
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientDeleteResult>> {
+    ) -> Result<Response<()>> {
         let response = self.client.delete(options).await?;
         Ok(response)
     }

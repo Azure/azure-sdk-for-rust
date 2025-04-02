@@ -69,7 +69,7 @@ impl BlobClient {
             credential.clone(),
             container_name.clone(),
             blob_name.clone(),
-            Some(options.clone()),
+            Some(options),
         )?;
         Ok(Self {
             endpoint: endpoint.parse()?,

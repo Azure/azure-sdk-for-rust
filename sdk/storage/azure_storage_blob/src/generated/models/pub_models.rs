@@ -126,10 +126,6 @@ pub struct BlobClientCreateSnapshotResult;
 #[derive(SafeDebug)]
 pub struct BlobClientDeleteImmutabilityPolicyResult;
 
-/// Contains results for [`BlobClient::delete()`](crate::generated::clients::BlobClient::delete())
-#[derive(SafeDebug)]
-pub struct BlobClientDeleteResult;
-
 /// Contains results for [`BlobClient::download()`](crate::generated::clients::BlobClient::download())
 #[derive(SafeDebug)]
 pub struct BlobClientDownloadResult;
@@ -174,10 +170,6 @@ pub struct BlobClientSetMetadataResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetTagsResult;
 
-/// Contains results for [`BlobClient::set_tier()`](crate::generated::clients::BlobClient::set_tier())
-#[derive(SafeDebug)]
-pub struct BlobClientSetTierResult;
-
 /// Contains results for [`BlobClient::start_copy_from_url()`](crate::generated::clients::BlobClient::start_copy_from_url())
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
@@ -197,14 +189,6 @@ pub struct BlobContainerClientBreakLeaseResult;
 /// Contains results for [`BlobContainerClient::change_lease()`](crate::generated::clients::BlobContainerClient::change_lease())
 #[derive(SafeDebug)]
 pub struct BlobContainerClientChangeLeaseResult;
-
-/// Contains results for [`BlobContainerClient::create()`](crate::generated::clients::BlobContainerClient::create())
-#[derive(SafeDebug)]
-pub struct BlobContainerClientCreateResult;
-
-/// Contains results for [`BlobContainerClient::delete()`](crate::generated::clients::BlobContainerClient::delete())
-#[derive(SafeDebug)]
-pub struct BlobContainerClientDeleteResult;
 
 /// Contains results for [`BlobContainerClient::get_account_info()`](crate::generated::clients::BlobContainerClient::get_account_info())
 #[derive(SafeDebug)]
@@ -604,10 +588,6 @@ pub struct BlobPropertiesInternal {
 /// Contains results for [`BlobServiceClient::get_account_info()`](crate::generated::clients::BlobServiceClient::get_account_info())
 #[derive(SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoResult;
-
-/// Contains results for [`BlobServiceClient::set_properties()`](crate::generated::clients::BlobServiceClient::set_properties())
-#[derive(SafeDebug)]
-pub struct BlobServiceClientSetPropertiesResult;
 
 /// Contains results for [`BlobServiceClient::submit_batch()`](crate::generated::clients::BlobServiceClient::submit_batch())
 #[derive(SafeDebug)]
