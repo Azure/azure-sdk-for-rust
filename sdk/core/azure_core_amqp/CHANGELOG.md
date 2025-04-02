@@ -8,6 +8,9 @@
 
 ### Breaking Changes
 
+- APIs which used to return `Option<String>`, and `Option<Vec<T>>` now return `Option<&str>`, and `Option<&[T]>`.
+- APIs which take ownership of string parameters now take a `String` parameter instead of a `&str` parameter.
+
 ### Bugs Fixed
 
 ### Other Changes

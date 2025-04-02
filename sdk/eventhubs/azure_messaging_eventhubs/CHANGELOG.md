@@ -13,10 +13,13 @@
 - Removed the requirement that streaming messages from the `stream_events` method on the `EventReceiver` use `pin_mut!()` on the provided stream.
 - Removed direct dependencies on `tokio` package.
 - Added `partition_id` option to `SendMessageOptions`.
+- Significant modifications to API surface to improve Azure RUST guidelines - APIs which take ownership of a string consume `String` parameter instead of borrowing a `&str` parameter.
 
 ### Breaking Changes
 
 - The stream returned by the `stream_events` API needs to be declared as mutable.
+- APIs which used to return `Option<String>`, and `Option<Vec<T>>` now return `Option<&str>`, and `Option<&[T]>`.
+- APIs which take ownership of string parameters now take a `String` parameter instead of a `&str` parameter.
 
 ### Bugs Fixed
 
