@@ -79,6 +79,9 @@
         "name": "Standard",
         "tier": "Standard",
         "capacity": 5
+      },
+      "properties": {
+        "disableLocalAuth": true
       }
     },
     {

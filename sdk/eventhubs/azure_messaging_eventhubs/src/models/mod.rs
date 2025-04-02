@@ -17,7 +17,6 @@ pub use crate::event_processor::models::{Checkpoint, Ownership, StartPositions};
 
 /// Event data builders.
 pub mod builders {
-    pub use crate::event_processor::processor::builders::EventProcessorBuilder;
     pub use crate::models::event_data::builders::EventDataBuilder;
 }
 /// Event sent to an Event Hub.
@@ -26,6 +25,7 @@ pub use event_data::EventData;
 use azure_core::Uuid;
 use azure_core_amqp::AmqpMessageId;
 use std::fmt::Debug;
+use std::time::SystemTime;
 
 /// Represents the properties of an Event Hubs instance.
 ///
@@ -47,7 +47,7 @@ use std::fmt::Debug;
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DefaultAzureCredential::new()?;
 /// let consumer_client = azure_messaging_eventhubs::ConsumerClient::builder()
-///    .open("fully_qualified_domain", "eventhub_name", my_credentials.clone()).await?;
+///    .open("fully_qualified_domain".to_string(), "eventhub_name".to_string(), my_credentials.clone()).await?;
 ///
 /// let eventhub_properties = consumer_client.get_eventhub_properties().await?;
 ///
@@ -63,7 +63,7 @@ pub struct EventHubProperties {
     pub name: String,
 
     /// The time when the Event Hubs instance was created.
-    pub created_on: Option<std::time::SystemTime>,
+    pub created_on: Option<SystemTime>,
 
     /// The unique identifiers of the partitions in the Event Hub.
     pub partition_ids: Vec<String>,
@@ -93,7 +93,7 @@ pub struct EventHubProperties {
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DefaultAzureCredential::new()?;
 /// let consumer_client = azure_messaging_eventhubs::ConsumerClient::builder()
-///   .open("fully_qualified_domain", "eventhub_name", my_credentials.clone()).await?;
+///   .open("fully_qualified_domain".to_string(), "eventhub_name".to_string(), my_credentials.clone()).await?;
 ///
 /// let partition_properties = consumer_client.get_partition_properties("0").await?;
 /// # Ok(()) }
@@ -118,7 +118,7 @@ pub struct EventHubPartitionProperties {
 
     /// The UTC time when the last event was enqueued in this partition.
     /// This will be `None` if the partition is empty.
-    pub last_enqueued_time_utc: Option<std::time::SystemTime>,
+    pub last_enqueued_time_utc: Option<SystemTime>,
 
     /// Indicates whether the partition is empty.
     pub is_empty: bool,
@@ -235,7 +235,7 @@ impl From<MessageId> for AmqpMessageId {
 
 /// Represents the details of a consumer client.
 #[derive(Debug, Clone)]
-pub struct ConsumerClientDetails {
+pub(crate) struct ConsumerClientDetails {
     /// The fully qualified namespace of the Event Hub.
     pub fully_qualified_namespace: String,
 

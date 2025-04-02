@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+use std::time::Duration;
+
 /// This sample demonstrates how to consume events from an Event Hub partition using the `ConsumerClient`.
 ///
 use azure_identity::DefaultAzureCredential;
@@ -17,11 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
 
     let consumer = ConsumerClient::builder()
-        .open(
-            eventhub_namespace.as_str(),
-            eventhub_name.as_str(),
-            credential.clone(),
-        )
+        .open(eventhub_namespace, eventhub_name, credential.clone())
         .await?;
 
     println!("Opened consumer client");
@@ -33,13 +31,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The default is to receive messages from the end of the partition, so specify a start position at the start of the partition.
     let receiver = consumer
         .open_receiver_on_partition(
-            properties.partition_ids[0].as_str(),
+            properties.partition_ids[0].clone(),
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::Earliest,
                     ..Default::default()
                 }),
-                receive_timeout: Some(std::time::Duration::from_secs(5)),
+                receive_timeout: Some(Duration::from_secs(5)),
                 ..Default::default()
             }),
         )

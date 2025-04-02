@@ -29,7 +29,7 @@ use std::{
     default::Default,
     fmt::Debug,
     sync::{Arc, OnceLock},
-    time::Duration,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tracing::{debug, trace};
 
@@ -79,7 +79,7 @@ impl ConsumerClient {
     ///
     ///     let my_credential = DefaultAzureCredential::new()?;
     /// let consumer = ConsumerClient::builder()
-    ///    .open("my_namespace", "my_eventhub", my_credential.clone()).await?;
+    ///    .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential.clone()).await?;
     /// # Ok(())}
     /// ```
     ///
@@ -140,7 +140,7 @@ impl ConsumerClient {
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::builder()
-    ///         .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
+    ///         .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await.unwrap();
     ///
     ///     let result = consumer.close().await;
     ///
@@ -156,7 +156,7 @@ impl ConsumerClient {
     ///     }
     /// }
     /// ```
-    pub async fn close(&self) -> Result<()> {
+    pub async fn close(self) -> Result<()> {
         self.connection_manager.close_connection().await
     }
 
@@ -177,7 +177,7 @@ impl ConsumerClient {
                     )
                 })?
                 .to_string(),
-            client_id: self.connection_manager.get_connection_id().clone(),
+            client_id: self.connection_manager.get_connection_id().to_string(),
         })
     }
 
@@ -209,8 +209,8 @@ impl ConsumerClient {
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let my_credential = DefaultAzureCredential::new()?;
     ///     let consumer = ConsumerClient::builder()
-    ///        .open("my_namespace", "my_eventhub", my_credential).await?;
-    ///     let partition_id = "0";
+    ///        .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await?;
+    ///     let partition_id = "0".to_string();
     ///
     ///     let receiver  = consumer.open_receiver_on_partition(partition_id, None).await?;
     ///
@@ -233,7 +233,7 @@ impl ConsumerClient {
     /// ```
     pub async fn open_receiver_on_partition(
         &self,
-        partition_id: &str,
+        partition_id: String,
         options: Option<OpenReceiverOptions>,
     ) -> Result<EventReceiver> {
         let options = options.unwrap_or_default();
@@ -251,7 +251,7 @@ impl ConsumerClient {
             self.endpoint
         );
 
-        let source_url = format!("{}/Partitions/{}", self.endpoint, &partition_id);
+        let source_url = format!("{}/Partitions/{}", &self.endpoint, &partition_id);
         let source_url = Url::parse(&source_url)?;
 
         let connection = self.connection_manager.get_connection()?;
@@ -260,7 +260,7 @@ impl ConsumerClient {
             .authorize_path(&connection, &source_url, self.credential.clone())
             .await?;
 
-        let session = self.get_session(partition_id).await?;
+        let session = self.get_session(&partition_id).await?;
         let message_source = AmqpSource::builder()
             .with_address(source_url.to_string())
             .add_to_filter(
@@ -322,7 +322,7 @@ impl ConsumerClient {
     /// async fn main(){
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::builder()
-    ///         .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
+    ///         .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await.unwrap();
     ///
     ///     let eventhub_properties = consumer.get_eventhub_properties().await;
     ///
@@ -346,7 +346,7 @@ impl ConsumerClient {
             .await
             .get()
             .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
-            .get_eventhub_properties(self.eventhub.as_str())
+            .get_eventhub_properties(&self.eventhub)
             .await
     }
 
@@ -373,7 +373,7 @@ impl ConsumerClient {
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::builder()
-    ///         .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
+    ///         .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await.unwrap();
     ///     let partition_id = "0";
     ///
     ///     let partition_properties = consumer.get_partition_properties(partition_id).await;
@@ -401,7 +401,7 @@ impl ConsumerClient {
             .await
             .get()
             .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
-            .get_eventhub_partition_properties(self.eventhub.as_str(), partition_id)
+            .get_eventhub_partition_properties(&self.eventhub, partition_id)
             .await
     }
 
@@ -496,7 +496,7 @@ pub enum StartLocation {
     /// The starting position is specified by a sequence number.
     SequenceNumber(i64),
     /// The starting position is specified by an enqueued time.
-    EnqueuedTime(std::time::SystemTime),
+    EnqueuedTime(SystemTime),
     /// The starting position is the earliest event in the partition.
     Earliest,
     #[default]
@@ -597,7 +597,7 @@ impl StartPosition {
                 }
                 StartLocation::EnqueuedTime(enqueued_time) => {
                     let enqueued_time = enqueued_time
-                        .duration_since(std::time::UNIX_EPOCH)
+                        .duration_since(UNIX_EPOCH)
                         .expect("Time went backwards")
                         .as_millis();
                     format!(
@@ -633,7 +633,7 @@ pub mod builders {
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///    let my_credential = DefaultAzureCredential::new().unwrap();
     ///   let consumer = ConsumerClient::builder()
-    ///      .open("my_namespace", "my_eventhub", my_credential).await?;
+    ///      .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await?;
     ///   Ok(())
     /// }
     /// ```
@@ -654,8 +654,8 @@ pub mod builders {
         }
 
         /// Specifies the name of the application creating the [`ConsumerClient`].
-        pub fn with_application_id(mut self, application_id: &str) -> Self {
-            self.application_id = Some(application_id.to_string());
+        pub fn with_application_id(mut self, application_id: String) -> Self {
+            self.application_id = Some(application_id);
             self
         }
 
@@ -676,21 +676,21 @@ pub mod builders {
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ///    let my_credential = DefaultAzureCredential::new()?;
         ///    let consumer = ConsumerClient::builder()
-        ///      .with_consumer_group("my_consumer_group")
-        ///      .open("my_namespace", "my_eventhub", my_credential).await?;
+        ///      .with_consumer_group("my_consumer_group".to_string())
+        ///      .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await?;
         ///   Ok(())
         /// }
         ///
         /// ```
         ///
-        pub fn with_consumer_group(mut self, consumer_group: &str) -> Self {
-            self.consumer_group = Some(consumer_group.to_string());
+        pub fn with_consumer_group(mut self, consumer_group: String) -> Self {
+            self.consumer_group = Some(consumer_group);
             self
         }
 
         /// Specifies an instance ID for this instance of a [`ConsumerClient`].
-        pub fn with_instance_id(mut self, instance_id: &str) -> Self {
-            self.instance_id = Some(instance_id.to_string());
+        pub fn with_instance_id(mut self, instance_id: String) -> Self {
+            self.instance_id = Some(instance_id);
             self
         }
 
@@ -711,8 +711,8 @@ pub mod builders {
         /// Note: The custom endpoint option allows a customer to specify an AMQP proxy
         /// which will be used to forward requests to the actual Event Hub instance.
         ///
-        pub fn with_custom_endpoint(mut self, endpoint: &str) -> Self {
-            self.custom_endpoint = Some(endpoint.to_string());
+        pub fn with_custom_endpoint(mut self, endpoint: String) -> Self {
+            self.custom_endpoint = Some(endpoint);
             self
         }
 
@@ -736,7 +736,7 @@ pub mod builders {
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ///     let my_credential = DefaultAzureCredential::new().unwrap();
         ///     let result = ConsumerClient::builder()
-        ///         .open("my_namespace", "my_eventhub", my_credential).await;
+        ///         .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await;
         ///
         ///     match result {
         ///         Ok(_connection) => {
@@ -753,8 +753,8 @@ pub mod builders {
         /// ```
         pub async fn open(
             self,
-            fully_qualified_namespace: &str,
-            eventhub_name: &str,
+            fully_qualified_namespace: String,
+            eventhub_name: String,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<super::ConsumerClient> {
             let custom_endpoint = match self.custom_endpoint {
@@ -763,8 +763,8 @@ pub mod builders {
             };
             trace!("Opening consumer client on {fully_qualified_namespace}.");
             let consumer = super::ConsumerClient::new(
-                fully_qualified_namespace.to_string(),
-                eventhub_name.to_string(),
+                fully_qualified_namespace,
+                eventhub_name,
                 self.consumer_group,
                 credential,
                 ConsumerClientOptions {
@@ -826,7 +826,7 @@ mod tests {
     #[test]
     fn test_start_position_builder_with_enqueued_time() {
         setup();
-        let enqueued_time = std::time::SystemTime::now();
+        let enqueued_time = SystemTime::now();
         let start_position = StartPosition {
             location: StartLocation::EnqueuedTime(enqueued_time),
             ..Default::default()
@@ -834,12 +834,12 @@ mod tests {
         info!("enqueued_time: {:?}", enqueued_time);
         info!(
             "enqueued_time: {:?}",
-            enqueued_time.duration_since(std::time::UNIX_EPOCH)
+            enqueued_time.duration_since(UNIX_EPOCH)
         );
         info!(
             "enqueued_time: {:?}",
             enqueued_time
-                .duration_since(std::time::UNIX_EPOCH)
+                .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_millis()
         );
@@ -853,7 +853,7 @@ mod tests {
             format!(
                 "amqp.annotation.x-opt-enqueued-time >'{}'",
                 enqueued_time
-                    .duration_since(std::time::UNIX_EPOCH)
+                    .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .as_millis()
             )

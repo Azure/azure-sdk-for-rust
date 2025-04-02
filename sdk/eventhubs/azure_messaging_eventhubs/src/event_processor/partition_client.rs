@@ -31,15 +31,15 @@ unsafe impl Sync for PartitionClient {}
 
 impl PartitionClient {
     pub(crate) fn new(
-        partition_id: &str,
+        partition_id: String,
         checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
-        client_details: &ConsumerClientDetails,
+        client_details: ConsumerClientDetails,
         consumers: Weak<ProcessorConsumersMap>,
     ) -> Self {
         Self {
-            partition_id: partition_id.to_string(),
+            partition_id,
             checkpoint_store,
-            client_details: client_details.clone(),
+            client_details,
             event_receiver: OnceLock::new(),
             consumers,
         }
@@ -48,8 +48,8 @@ impl PartitionClient {
     /// Returns the partition ID of the `PartitionClient`.
     ///
     /// # Returns
-    /// A reference to the partition ID as a `String`.
-    pub fn get_partition_id(&self) -> &String {
+    /// A reference to the partition ID as a String slice.
+    pub fn get_partition_id(&self) -> &str {
         &self.partition_id
     }
 
@@ -152,7 +152,7 @@ impl PartitionClient {
                 } else if key == crate::consumer::OFFSET_ANNOTATION {
                     match value {
                         azure_core_amqp::AmqpValue::String(value) => {
-                            offset = Some(value.as_str().to_string());
+                            offset = Some(value.to_string());
                         }
                         _ => {
                             return Err(azure_core::error::Error::message(
@@ -163,14 +163,14 @@ impl PartitionClient {
                     }
                 }
             }
-            let checkpoint = Checkpoint::new(
-                &self.client_details.fully_qualified_namespace,
-                &self.client_details.eventhub_name,
-                &self.client_details.consumer_group,
-                &self.partition_id,
+            let checkpoint = Checkpoint {
+                fully_qualified_namespace: self.client_details.fully_qualified_namespace.clone(),
+                event_hub_name: self.client_details.eventhub_name.clone(),
+                consumer_group: self.client_details.consumer_group.clone(),
+                partition_id: self.partition_id.clone(),
                 offset,
                 sequence_number,
-            );
+            };
             self.checkpoint_store.update_checkpoint(checkpoint).await?;
         }
         Ok(())

@@ -80,7 +80,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             }
             if let Some(incoming_locales) = options.incoming_locales {
                 for locale in incoming_locales {
-                    builder = builder.add_incoming_locales(locale.as_str());
+                    builder = builder.add_incoming_locales(locale);
                 }
             }
             if let Some(offered_capabilities) = options.offered_capabilities.as_ref() {

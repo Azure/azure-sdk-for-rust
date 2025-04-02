@@ -35,14 +35,11 @@ impl InMemoryCheckpointStore {
 
     /// Updates the ownership for a specific partition.
     pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
-        trace!(
-            "Update ownership for partition {}",
-            ownership.partition_id()
-        );
-        if ownership.partition_id().is_empty()
-            || ownership.event_hub_name().is_empty()
-            || ownership.fully_qualified_namespace().is_empty()
-            || ownership.partition_id().is_empty()
+        trace!("Update ownership for partition {}", ownership.partition_id);
+        if ownership.partition_id.is_empty()
+            || ownership.event_hub_name.is_empty()
+            || ownership.fully_qualified_namespace.is_empty()
+            || ownership.partition_id.is_empty()
         {
             warn!("Ownership is not valid: {:#?}", ownership);
             return Err(Error::message(
@@ -52,14 +49,14 @@ impl InMemoryCheckpointStore {
         }
         let mut store = self.ownerships.lock().unwrap();
         let key = Ownership::get_ownership_name(
-            ownership.fully_qualified_namespace(),
-            ownership.event_hub_name(),
-            ownership.consumer_group(),
-            ownership.partition_id(),
+            &ownership.fully_qualified_namespace,
+            &ownership.event_hub_name,
+            &ownership.consumer_group,
+            &ownership.partition_id,
         )?;
         trace!("Update ownership for key {}", key);
         if store.contains_key(&key) {
-            if ownership.etag() != store.get(&key).unwrap().etag() {
+            if ownership.etag != store.get(&key).unwrap().etag {
                 warn!("ETag mismatch {}", key);
                 return Err(Error::message(
                     AzureErrorKind::Other,
@@ -72,8 +69,8 @@ impl InMemoryCheckpointStore {
         } else {
             trace!("Insert new ownership for key {}", key);
             let mut new_ownership = ownership.clone();
-            new_ownership.set_etag(Etag::from(Uuid::new_v4().to_string()));
-            new_ownership.set_last_modified_time(SystemTime::now());
+            new_ownership.etag = Some(Etag::from(Uuid::new_v4().to_string()));
+            new_ownership.last_modified_time = Some(SystemTime::now());
             store.insert(key.clone(), new_ownership.clone());
             trace!("Inserted new ownership for key {}", key);
             Ok(new_ownership.clone())
@@ -88,28 +85,25 @@ impl CheckpointStore for InMemoryCheckpointStore {
         let mut claimed_ownerships = Vec::new();
         for ownership in ownerships {
             let ownership = self.update_ownership(ownership)?;
-            if ownership.etag().is_some() {
+            if ownership.etag.is_some() {
                 claimed_ownerships.push(ownership);
             }
         }
         Ok(claimed_ownerships)
     }
 
-    #[cfg(feature = "test_checkpoint_store")]
+    #[cfg(feature = "test")]
     async fn update_ownership(&self, ownership: Ownership) -> Result<()> {
         trace!(
             "update_ownership: update ownership for partition {}",
-            ownership.partition_id()
+            ownership.partition_id
         );
         let ownership = self.update_ownership(&ownership)?;
         trace!(
             "update_ownership: updated ownership for partition {}",
-            ownership.partition_id()
+            ownership.partition_id
         );
-        trace!(
-            "Update ownership for partition {}",
-            ownership.partition_id()
-        );
+        trace!("Update ownership for partition {}", ownership.partition_id);
         Ok(())
     }
 
@@ -129,7 +123,7 @@ impl CheckpointStore for InMemoryCheckpointStore {
                 checkpoints.push(value.clone());
             }
         }
-        checkpoints.sort_by(|a, b| a.partition_id().cmp(b.partition_id()));
+        checkpoints.sort_by(|a, b| a.partition_id.cmp(&b.partition_id));
         trace!("list_checkpoints: found {} checkpoints", checkpoints.len());
         Ok(checkpoints)
     }
@@ -152,7 +146,7 @@ impl CheckpointStore for InMemoryCheckpointStore {
                 .filter(|(key, _)| key.starts_with(&prefix))
                 .map(|(_, value)| value.clone()),
         );
-        ownerships.sort_by(|a, b| a.partition_id().cmp(b.partition_id()));
+        ownerships.sort_by(|a, b| a.partition_id.cmp(&b.partition_id));
         trace!("list_ownerships: found {} ownerships", ownerships.len());
         Ok(ownerships)
     }
@@ -160,7 +154,7 @@ impl CheckpointStore for InMemoryCheckpointStore {
     async fn update_checkpoint(&self, checkpoint: Checkpoint) -> Result<()> {
         trace!(
             "update_checkpoint: update checkpoint for {}",
-            checkpoint.partition_id()
+            checkpoint.partition_id
         );
         let mut checkpoints = self.checkpoints.lock().map_err(|e| {
             Error::message(
@@ -169,10 +163,10 @@ impl CheckpointStore for InMemoryCheckpointStore {
             )
         })?;
         let key = Checkpoint::get_checkpoint_blob_name(
-            checkpoint.fully_qualified_namespace(),
-            checkpoint.event_hub_name(),
-            checkpoint.consumer_group(),
-            checkpoint.partition_id(),
+            &checkpoint.fully_qualified_namespace,
+            &checkpoint.event_hub_name,
+            &checkpoint.consumer_group,
+            &checkpoint.partition_id,
         )?;
         trace!("update_checkpoint: insert {checkpoint:?} checkpoint key {key}");
         checkpoints.insert(key, checkpoint);

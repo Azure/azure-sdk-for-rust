@@ -15,8 +15,8 @@ async fn test_new(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let eventhub = env::var("EVENTHUB_NAME")?;
     let credential = recording.credential();
     let _client = ProducerClient::builder()
-        .with_application_id("test_new")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_new".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
 
     Ok(())
@@ -27,8 +27,8 @@ async fn test_new_with_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     let eventhub = env::var("EVENTHUB_NAME")?;
     let result = ProducerClient::builder()
-        .with_application_id("test_new_with_error")
-        .open("invalid_host", eventhub.as_str(), recording.credential())
+        .with_application_id("test_new_with_error".to_string())
+        .open("invalid_host".to_string(), eventhub, recording.credential())
         .await;
     assert!(result.is_err());
     info!("Error: {:?}", result.err());
@@ -43,8 +43,8 @@ async fn open(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let eventhub = env::var("EVENTHUB_NAME")?;
     let credential = recording.credential();
     let _client = ProducerClient::builder()
-        .with_application_id("test_open")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_open".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
 
     Ok(())
@@ -57,8 +57,8 @@ async fn close(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let eventhub = env::var("EVENTHUB_NAME")?;
     let credential = recording.credential();
     let client = ProducerClient::builder()
-        .with_application_id("test_close")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_close".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
     client.close().await?;
 
@@ -74,8 +74,8 @@ async fn get_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let credential = recording.credential();
 
     let client = ProducerClient::builder()
-        .with_application_id("test_get_properties")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_get_properties".to_string())
+        .open(host, eventhub.clone(), credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
     info!("Properties: {:?}", properties);
@@ -95,15 +95,13 @@ async fn get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     let credential = recording.credential();
 
     let client = ProducerClient::builder()
-        .with_application_id("test_get_partition_properties")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_get_partition_properties".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
 
     for partition_id in properties.partition_ids {
-        let partition_properties = client
-            .get_partition_properties(partition_id.as_str())
-            .await?;
+        let partition_properties = client.get_partition_properties(&partition_id).await?;
         info!("Partition properties: {:?}", partition_properties);
         assert_eq!(partition_properties.id, partition_id);
     }
@@ -156,10 +154,10 @@ fn create_eventdata() -> Result<(), Box<dyn Error>> {
     let data = b"hello world";
     let _ = azure_messaging_eventhubs::models::EventData::builder()
         .with_body(data.to_vec())
-        .with_content_type("text/plain")
+        .with_content_type("text/plain".to_string())
         .with_correlation_id("correlation_id")
         .with_message_id(35u64)
-        .add_property("key", "value")
+        .add_property("key".to_string(), "value")
         .build();
 
     Ok(())
@@ -174,8 +172,8 @@ async fn send_eventdata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let credential = recording.credential();
 
     let client = ProducerClient::builder()
-        .with_application_id("send_eventdata")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("send_eventdata".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
     {
         let data = b"hello world";
@@ -190,10 +188,10 @@ async fn send_eventdata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         let data = b"hello world";
         let ed1 = azure_messaging_eventhubs::models::EventData::builder()
             .with_body(data.to_vec())
-            .with_content_type("text/plain")
+            .with_content_type("text/plain".to_string())
             .with_correlation_id("correlation_id")
             .with_message_id(35u64)
-            .add_property("key", "value")
+            .add_property("key".to_string(), "value")
             .build();
 
         let res = client.send_event(ed1, None).await;
@@ -216,8 +214,8 @@ async fn send_message(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let credential = recording.credential();
 
     let client = ProducerClient::builder()
-        .with_application_id("send_eventdata")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("send_eventdata".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
     {
         let data = b"hello world";
@@ -260,8 +258,8 @@ async fn test_create_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let credential = recording.credential();
 
     let client = ProducerClient::builder()
-        .with_application_id("test_create_batch")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_create_batch".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
     {
         let batch = client.create_batch(None).await?;
@@ -280,8 +278,8 @@ async fn test_create_and_send_batch(ctx: TestContext) -> Result<(), Box<dyn Erro
     let credential = recording.credential();
 
     let client = ProducerClient::builder()
-        .with_application_id("test_create_and_send_batch")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_create_and_send_batch".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
 
     {
@@ -332,8 +330,8 @@ async fn test_add_amqp_messages_to_batch(
     let credential = recording.credential();
 
     let client = ProducerClient::builder()
-        .with_application_id("test_add_amqp_messages_to_batch")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_add_amqp_messages_to_batch".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
 
     let batch = client.create_batch(None).await?;
@@ -402,8 +400,8 @@ async fn test_overload_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     info!("Create producer client...");
 
     let client = ProducerClient::builder()
-        .with_application_id("test_overload_batch")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_overload_batch".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
 
     info!("Client is open.");

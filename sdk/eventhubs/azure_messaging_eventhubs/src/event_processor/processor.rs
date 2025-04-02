@@ -292,19 +292,16 @@ impl EventProcessor {
         let load_balancer = self.load_balancer.lock().await;
 
         let ownerships = load_balancer.load_balance(partition_ids).await;
-        if let Err(e) = ownerships {
+        let ownerships = ownerships.map_err(|e| {
             error!("Error in load balancing: {:?}", e);
-            return Err(e);
-        }
-        let ownerships = ownerships.unwrap();
+            e
+        })?;
 
         let checkpoints = self.get_checkpoint_map().await;
-        if let Err(e) = checkpoints {
+        let checkpoints = checkpoints.map_err(|e| {
             error!("Error in getting checkpoint map: {:?}", e);
-            return Err(e);
-        }
-        let checkpoints = checkpoints.unwrap();
-
+            e
+        })?;
         debug!(
             "Adding partition clients for {} ownerships ",
             ownerships.len()
@@ -312,7 +309,7 @@ impl EventProcessor {
         for ownership in ownerships {
             let err = self
                 .add_partition_client(
-                    &ownership.partition_id,
+                    ownership.partition_id,
                     &checkpoints,
                     Arc::downgrade(consumers),
                 )
@@ -328,22 +325,22 @@ impl EventProcessor {
 
     async fn add_partition_client(
         &self,
-        partition_id: &String,
+        partition_id: String,
         checkpoints: &HashMap<String, Checkpoint>,
         consumers: Weak<ProcessorConsumersMap>,
     ) -> Result<()> {
         info!("Add partition client for partition ID: {:?}", partition_id);
 
         let partition_client = Arc::new(PartitionClient::new(
-            partition_id,
+            partition_id.clone(),
             self.checkpoint_store.clone(),
-            &self.client_details,
+            self.client_details.clone(),
             consumers.clone(),
         ));
 
         if let Some(strong_consumers) = consumers.upgrade() {
             if !strong_consumers
-                .add_partition_client(partition_id.as_str(), partition_client.clone())
+                .add_partition_client(&partition_id, partition_client.clone())
                 .await?
             {
                 debug!(
@@ -361,7 +358,7 @@ impl EventProcessor {
         }
 
         // Since we can only have a single EventReceiver on a partition, we don't actually attempt to create the receiver until
-        let start_position = self.get_start_position(partition_id, checkpoints);
+        let start_position = self.get_start_position(&partition_id, checkpoints);
         debug!(
             "Start position for partition {}: {:?}",
             partition_id, start_position
@@ -369,7 +366,7 @@ impl EventProcessor {
         let receiver = self
             .consumer_client
             .open_receiver_on_partition(
-                partition_id,
+                partition_id.clone(),
                 Some(OpenReceiverOptions {
                     start_position: Some(start_position),
                     prefetch: Some(self.prefetch),
@@ -381,7 +378,7 @@ impl EventProcessor {
             error!("Error opening receiver for partition client: {:?}", e);
             return Err(e);
         }
-        info!("Receiver opened for partition client: {:?}", partition_id);
+        info!("Receiver opened for partition client: {:?}", &partition_id);
         let receiver = receiver.unwrap();
         partition_client.set_event_receiver(receiver)?;
 
@@ -489,7 +486,7 @@ impl EventProcessor {
     ///
     fn get_start_position(
         &self,
-        partition_id: &String,
+        partition_id: &str,
         checkpoints: &HashMap<String, Checkpoint>,
     ) -> StartPosition {
         let mut start_position = self.start_positions.default.clone();
@@ -536,10 +533,30 @@ pub mod builders {
     /// It provides a fluent interface for setting these options and building the event processor.
     /// # Examples
     /// ```
-    /// use azure_messaging_eventhubs::EventProcessor;
-    /// use azure_messaging_eventhubs::CheckpointStore;
-    /// use azure_messaging_eventhubs::ConsumerClient;
+    /// async fn create_processor() -> Result<(), Box<dyn std::error::Error>> {
+    /// use azure_messaging_eventhubs::{EventProcessor,CheckpointStore ,ConsumerClient, InMemoryCheckpointStore};
     /// use std::sync::Arc;
+    /// use azure_identity::DefaultAzureCredential;
+    ///
+    /// let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
+    /// let eventhub_name = std::env::var("EVENTHUB_NAME")?;
+    /// let consumer = Arc::new(
+    ///     ConsumerClient::builder()
+    ///         .open(
+    ///             eventhub_namespace,
+    ///             eventhub_name,
+    ///             DefaultAzureCredential::new()?.clone(),
+    ///         )
+    ///         .await?,
+    /// );
+    /// println!("Opened consumer client");
+    /// let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
+    /// let processor = EventProcessor::builder()
+    ///     .build(consumer.clone(), checkpoint_store)
+    ///     .await?;
+    /// Ok(())
+    /// }
+    /// ```
     #[derive(Default)]
     pub struct EventProcessorBuilder {
         update_interval: Option<Duration>,
@@ -557,7 +574,7 @@ pub mod builders {
         }
 
         /// Sets the load balancing strategy for the event processor.
-        /// The default strategy is `Balanced`.
+        /// The default strategy is `Greedy`.
         pub fn with_load_balancing_strategy(
             mut self,
             load_balancing_strategy: super::ProcessorStrategy,
@@ -566,7 +583,10 @@ pub mod builders {
             self
         }
 
-        /// Sets the partition expiration duration for the event processor.
+        /// Sets the processor update interval for the event processor.
+        ///
+        /// The processor will sleep for the update interval between each iteration.
+        /// The default update interval is 30 seconds.
         pub fn with_update_interval(mut self, update_interval: Duration) -> Self {
             self.update_interval = Some(update_interval);
             self

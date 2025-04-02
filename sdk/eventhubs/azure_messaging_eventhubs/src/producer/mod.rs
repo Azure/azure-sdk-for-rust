@@ -57,8 +57,8 @@ pub struct SendBatchOptions {}
 ///    let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
 ///    let my_credentials = DefaultAzureCredential::new()?;
 ///   let producer = ProducerClient::builder()
-///    .with_application_id("your_application_id")
-///    .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
+///    .with_application_id("your_application_id".to_string())
+///    .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
 ///   Ok(())
 /// }
 /// ```
@@ -259,8 +259,8 @@ impl ProducerClient {
     ///   let my_credentials = DefaultAzureCredential::new()?;
     ///
     ///   let producer = ProducerClient::builder()
-    ///    .with_application_id("your_application_id")
-    ///    .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
+    ///    .with_application_id("your_application_id".to_string())
+    ///    .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   Ok(())
     /// }
@@ -301,8 +301,8 @@ impl ProducerClient {
     ///   let my_credentials = DefaultAzureCredential::new()?;
     ///
     ///   let producer = ProducerClient::builder()
-    ///    .with_application_id("your_application_id")
-    ///    .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
+    ///    .with_application_id("your_application_id".to_string())
+    ///    .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
     ///
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
@@ -361,7 +361,7 @@ impl ProducerClient {
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
     ///   let producer = ProducerClient::builder()
-    ///     .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
+    ///     .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
     ///
     ///   let properties = producer.get_eventhub_properties().await?;
     ///   println!("Event Hub: {:?}", properties);
@@ -376,7 +376,7 @@ impl ProducerClient {
             .await
             .get()
             .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
-            .get_eventhub_properties(self.eventhub.as_str())
+            .get_eventhub_properties(&self.eventhub)
             .await
     }
 
@@ -400,7 +400,7 @@ impl ProducerClient {
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let my_credentials = DefaultAzureCredential::new()?;
     ///     let producer = ProducerClient::builder()
-    ///        .open(fully_qualified_namespace.as_str(), eventhub_name.as_str(), my_credentials.clone()).await?;
+    ///        .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
     ///     let partition_properties = producer.get_partition_properties("0").await?;
     ///     println!("Event Hub: {:?}", partition_properties);
     ///     Ok(())
@@ -417,7 +417,7 @@ impl ProducerClient {
             .await
             .get()
             .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
-            .get_eventhub_partition_properties(self.eventhub.as_str(), partition_id)
+            .get_eventhub_partition_properties(&self.eventhub, partition_id)
             .await
     }
 
@@ -538,7 +538,7 @@ pub mod builders {
     /// async fn main() {
     ///   let my_credential = DefaultAzureCredential::new().unwrap();
     ///   let producer = ProducerClient::builder()
-    ///      .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
+    ///      .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await.unwrap();
     /// }
     /// ```
     #[derive(Default)]
@@ -571,8 +571,8 @@ pub mod builders {
         }
 
         /// Sets the application id that will be used to identify the client.
-        pub fn with_application_id(mut self, application_id: &str) -> Self {
-            self.application_id = Some(application_id.to_string());
+        pub fn with_application_id(mut self, application_id: String) -> Self {
+            self.application_id = Some(application_id);
             self
         }
 
@@ -601,8 +601,8 @@ pub mod builders {
         /// Note: The custom endpoint option allows a customer to specify an AMQP proxy
         /// which will be used to forward requests to the actual Event Hub instance.
         ///
-        pub fn with_custom_endpoint(mut self, endpoint: &str) -> Self {
-            self.custom_endpoint = Some(endpoint.to_string());
+        pub fn with_custom_endpoint(mut self, endpoint: String) -> Self {
+            self.custom_endpoint = Some(endpoint);
             self
         }
 
@@ -612,8 +612,8 @@ pub mod builders {
         ///
         pub async fn open(
             self,
-            fully_qualified_namespace: &str,
-            eventhub: &str,
+            fully_qualified_namespace: String,
+            eventhub: String,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> azure_core::Result<ProducerClient> {
             let url = format!("amqps://{}/{}", fully_qualified_namespace, eventhub);

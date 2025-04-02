@@ -90,7 +90,7 @@ impl ConnectionManager {
         Ok(connection.clone())
     }
 
-    pub(crate) fn get_connection_id(&self) -> &String {
+    pub(crate) fn get_connection_id(&self) -> &str {
         &self.connection_name
     }
 
@@ -123,7 +123,7 @@ impl ConnectionManager {
                 .await?;
             let expires_at = token.expires_on;
             cbs.authorize_path(
-                path.as_str().to_string(),
+                path.to_string(),
                 None,
                 token.token.secret().to_string(),
                 expires_at,

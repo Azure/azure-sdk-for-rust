@@ -9,6 +9,7 @@ use crate::Deserializable;
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
 use azure_core::{Result, Uuid};
+use std::time::Duration;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type DeliveryImplementation = super::fe2o3::messaging::messaging_types::Fe2o3AmqpDelivery;
@@ -233,8 +234,8 @@ impl AmqpTarget {
         builders::AmqpTargetBuilder::new()
     }
 
-    pub fn address(&self) -> Option<&String> {
-        self.address.as_ref()
+    pub fn address(&self) -> Option<&str> {
+        self.address.as_deref()
     }
 
     pub fn durable(&self) -> Option<&TerminusDurability> {
@@ -257,8 +258,8 @@ impl AmqpTarget {
         self.dynamic_node_properties.as_ref()
     }
 
-    pub fn capabilities(&self) -> Option<&Vec<AmqpValue>> {
-        self.capabilities.as_ref()
+    pub fn capabilities(&self) -> Option<&[AmqpValue]> {
+        self.capabilities.as_deref()
     }
 }
 
@@ -577,7 +578,7 @@ impl From<AmqpSource> for AmqpList {
 pub struct AmqpMessageHeader {
     pub durable: bool,
     pub priority: u8,
-    pub time_to_live: Option<std::time::Duration>,
+    pub time_to_live: Option<Duration>,
     pub first_acquirer: bool,
     pub delivery_count: u32,
 }

@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+use azure_core::Uuid;
 /// This sample demonstrates how to send events to all partitions using a batch sender.
 ///
 use azure_identity::DefaultAzureCredential;
-use azure_core::Uuid;
 use azure_messaging_eventhubs::{models::EventData, EventDataBatchOptions, ProducerClient};
 
 #[tokio::main]
@@ -15,11 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
 
     let client = ProducerClient::builder()
-        .open(
-            eventhub_namespace.as_str(),
-            eventhub_name.as_str(),
-            credential.clone(),
-        )
+        .open(eventhub_namespace, eventhub_name, credential.clone())
         .await?;
 
     // Get the partition IDs
@@ -48,12 +44,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Send an event built using the `EventData` builder which allows for more control over the event.
         if batch.try_add_event_data(
             EventData::builder()
-                .with_content_type("text/plain")
+                .with_content_type("text/plain".to_string())
                 .with_correlation_id(Uuid::new_v4())
                 .with_body("This is some text")
-                .add_property("Event Property", "Property Value")
-                .add_property("Pi", std::f32::consts::PI)
-                .add_property("Binary", vec![0x08, 0x09, 0x0A])
+                .add_property("Event Property".to_string(), "Property Value")
+                .add_property("Pi".to_string(), std::f32::consts::PI)
+                .add_property("Binary".to_string(), vec![0x08, 0x09, 0x0A])
                 .build(),
             None,
         )? {

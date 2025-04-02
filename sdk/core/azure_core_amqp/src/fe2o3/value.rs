@@ -11,7 +11,7 @@ use crate::{
 };
 use serde_amqp::primitives::Timestamp;
 use serde_bytes::ByteBuf;
-use std::time::UNIX_EPOCH;
+use std::time::{Duration, UNIX_EPOCH};
 use typespec::error::ErrorKind;
 
 use super::error::Fe2o3SerializationError;
@@ -57,9 +57,7 @@ impl From<fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
             return AmqpTimestamp(None);
         }
         AmqpTimestamp(
-            std::time::UNIX_EPOCH.checked_add(std::time::Duration::from_millis(
-                timestamp.milliseconds() as u64,
-            )),
+            UNIX_EPOCH.checked_add(Duration::from_millis(timestamp.milliseconds() as u64)),
         )
     }
 }

@@ -23,8 +23,8 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let eventhub = env::var("EVENTHUB_NAME")?;
     let credential = recording.credential();
     let producer = ProducerClient::builder()
-        .with_application_id(TEST_NAME)
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id(TEST_NAME.to_string())
+        .open(host.clone(), eventhub.clone(), credential.clone())
         .await?;
 
     let partition_properties = producer
@@ -48,7 +48,7 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(batch.try_add_event_data(
         EventData::builder()
             .with_body(b"Hello, World!")
-            .add_property("Message#", 1)
+            .add_property("Message#".to_string(), 1)
             .with_message_id(1)
             .build(),
         None
@@ -97,12 +97,12 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let credential = recording.credential();
     let consumer = ConsumerClient::builder()
-        .with_application_id(TEST_NAME)
-        .open(host.as_str(), eventhub.as_str(), credential)
+        .with_application_id(TEST_NAME.to_string())
+        .open(host, eventhub, credential)
         .await?;
     let receiver = consumer
         .open_receiver_on_partition(
-            EVENTHUB_PARTITION,
+            EVENTHUB_PARTITION.to_string(),
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::SequenceNumber(start_sequence),

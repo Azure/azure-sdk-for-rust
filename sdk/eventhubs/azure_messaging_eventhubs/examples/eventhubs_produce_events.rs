@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-/// This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
-///
-use core::f32;
 use azure_core::Uuid;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{models::EventData, ProducerClient, SendEventOptions};
+/// This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
+///
+use core::f32;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,11 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
 
     let client = ProducerClient::builder()
-        .open(
-            eventhub_namespace.as_str(),
-            eventhub_name.as_str(),
-            credential.clone(),
-        )
+        .open(eventhub_namespace, eventhub_name, credential.clone())
         .await?;
 
     println!("Created producer client.");
@@ -45,12 +41,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client
         .send_event(
             EventData::builder()
-                .with_content_type("text/plain")
+                .with_content_type("text/plain".to_string())
                 .with_correlation_id(Uuid::new_v4())
                 .with_body("This is some text")
-                .add_property("Event Property", "Property Value")
-                .add_property("Pi", f32::consts::PI)
-                .add_property("Binary", vec![0x08, 0x09, 0x0A])
+                .add_property("Event Property".to_string(), "Property Value")
+                .add_property("Pi".to_string(), f32::consts::PI)
+                .add_property("Binary".to_string(), vec![0x08, 0x09, 0x0A])
                 .build(),
             None,
         )

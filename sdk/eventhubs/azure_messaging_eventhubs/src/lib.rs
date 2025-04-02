@@ -6,14 +6,14 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
-#[cfg(feature = "test_checkpoint_store")]
-pub(crate) mod in_memory_checkpoint_store;
+#[cfg(feature = "test")]
+mod in_memory_checkpoint_store;
 
-pub(crate) mod common;
-pub(crate) mod consumer;
-pub(crate) mod error;
-pub(crate) mod event_processor;
-pub(crate) mod producer;
+mod common;
+mod consumer;
+mod error;
+mod event_processor;
+mod producer;
 
 /// Types sent to and received from the Event Hubs service.
 pub mod models;
@@ -38,10 +38,11 @@ pub use event_processor::{processor::EventProcessor, CheckpointStore, ProcessorS
 /// Builders for producer client and consumer client.
 pub mod builders {
     pub use crate::consumer::builders::ConsumerClientBuilder;
+    pub use crate::event_processor::processor::builders::EventProcessorBuilder;
     pub use crate::producer::builders::ProducerClientBuilder;
 }
 
 pub use crate::error::{ErrorKind, EventHubsError};
 
-#[cfg(feature = "test_checkpoint_store")]
+#[cfg(feature = "test")]
 pub use in_memory_checkpoint_store::InMemoryCheckpointStore;

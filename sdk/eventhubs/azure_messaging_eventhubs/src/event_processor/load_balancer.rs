@@ -8,7 +8,8 @@ use super::{
 };
 use crate::models::ConsumerClientDetails;
 use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
-use rand::{rngs::StdRng, seq::SliceRandom, Rng, RngCore, SeedableRng};
+use rand::{seq::SliceRandom, Rng, RngCore, SeedableRng};
+use rand_chacha::ChaCha20Rng;
 use std::{
     cmp::min,
     collections::{HashMap, HashSet},
@@ -62,7 +63,7 @@ impl LoadBalancer {
             processor_strategy,
             duration,
             consumer_client_details,
-            rng: Mutex::new(rng.unwrap_or_else(|| Box::new(StdRng::from_entropy()))),
+            rng: Mutex::new(rng.unwrap_or_else(|| Box::new(ChaCha20Rng::from_entropy()))),
         }
     }
 
@@ -83,11 +84,9 @@ impl LoadBalancer {
         let ownerships = self
             .checkpoint_store
             .list_ownerships(
-                self.consumer_client_details
-                    .fully_qualified_namespace
-                    .as_str(),
-                self.consumer_client_details.eventhub_name.as_str(),
-                self.consumer_client_details.consumer_group.as_str(),
+                &self.consumer_client_details.fully_qualified_namespace,
+                &self.consumer_client_details.eventhub_name,
+                &self.consumer_client_details.consumer_group,
             )
             .await?;
 
@@ -108,17 +107,17 @@ impl LoadBalancer {
                 }
             }
             // If the owner ID is empty, it means the partition is unowned.
-            if ownership.owner_id.is_empty() {
+            let Some(owner_id) = &ownership.owner_id else {
                 unowned_or_expired.push(ownership.clone());
                 continue;
-            }
+            };
 
             // If we've not yet seen this owner, create an entry for the owner with an empty ownership vector.
-            if !grouped_by_owner.contains_key(&ownership.owner_id) {
-                grouped_by_owner.insert(ownership.owner_id.clone(), Vec::new());
+            if !grouped_by_owner.contains_key(owner_id) {
+                grouped_by_owner.insert(owner_id.clone(), Vec::new());
             }
 
-            if let Some(val) = grouped_by_owner.get_mut(&ownership.owner_id) {
+            if let Some(val) = grouped_by_owner.get_mut(owner_id) {
                 val.push(ownership.clone());
             };
         }
@@ -142,7 +141,7 @@ impl LoadBalancer {
                     .fully_qualified_namespace
                     .clone(),
                 partition_id: partition_id.to_string(),
-                owner_id: self.consumer_client_details.client_id.clone(),
+                owner_id: Some(self.consumer_client_details.client_id.clone()),
                 ..Default::default()
             });
         }
@@ -174,7 +173,7 @@ impl LoadBalancer {
         above_maximum.sort_by(|a, b| a.partition_id.cmp(&b.partition_id));
 
         let mut claim_more_partitions = true;
-        let current: &Vec<Ownership> =
+        let current: &[Ownership] =
             grouped_by_owner[&self.consumer_client_details.client_id].as_ref();
 
         if current.len() >= maximum_allowed {
@@ -194,7 +193,7 @@ impl LoadBalancer {
 
         let rv = LoadBalancerInfo {
             current_ownership: grouped_by_owner
-                .get(self.consumer_client_details.client_id.as_str())
+                .get(&self.consumer_client_details.client_id)
                 .unwrap_or(&vec![])
                 .clone(),
             unowned_or_expired,
@@ -231,7 +230,7 @@ impl LoadBalancer {
     }
 
     fn reset_ownership(&self, ownership: &mut Ownership) {
-        ownership.owner_id = self.consumer_client_details.client_id.clone();
+        ownership.owner_id = Some(self.consumer_client_details.client_id.clone());
     }
 
     fn balanced_load_balancer(
@@ -424,7 +423,12 @@ mod tests {
         }
         assert_eq!(ownerships.len(), partition_count);
 
-        let ownership_map = group_by(ownerships.as_slice(), |o| o.owner_id.clone());
+        let ownership_map = group_by(ownerships.as_slice(), |o| {
+            let Some(owner) = &o.owner_id else {
+                return "".to_string();
+            };
+            owner.clone()
+        });
 
         info!(
             "Ownership map: {}",
@@ -545,7 +549,7 @@ mod tests {
             event_hub_name: TEST_EVENTHUB_NAME.to_string(),
             consumer_group: TEST_CONSUMER_GROUP.to_string(),
             partition_id: partition_id.to_string(),
-            owner_id: client_id.to_string(),
+            owner_id: Some(client_id.to_string()),
             ..Default::default()
         }
     }
@@ -608,7 +612,9 @@ mod tests {
             .list_ownerships(TEST_EVENTHUB_FQDN, TEST_EVENTHUB_NAME, TEST_CONSUMER_GROUP)
             .await?;
 
-        let owners_map = group_by(final_ownerships.as_slice(), |o| o.owner_id.clone());
+        let owners_map = group_by(final_ownerships.as_slice(), |o| {
+            o.owner_id.clone().unwrap().clone()
+        });
 
         let other_partitions = map_to_strings(
             &owners_map[&some_other_client_id.to_string()],
@@ -646,9 +652,9 @@ mod tests {
     ) -> Result<()> {
         let ownerships = checkpoint_store
             .list_ownerships(
-                ownership.fully_qualified_namespace.as_str(),
-                ownership.event_hub_name.as_str(),
-                ownership.consumer_group.as_str(),
+                &ownership.fully_qualified_namespace,
+                &ownership.event_hub_name,
+                &ownership.consumer_group,
             )
             .await?;
         let etag = ownerships
@@ -659,10 +665,11 @@ mod tests {
                     && o.consumer_group == ownership.consumer_group
             })
             .unwrap()
-            .etag();
+            .etag
+            .clone();
         let mut ownership = ownership.clone();
         ownership.last_modified_time = Some(SystemTime::now() - Duration::from_secs(3600));
-        ownership.etag = etag.cloned();
+        ownership.etag = etag;
         checkpoint_store.update_ownership(ownership).await?;
         Ok(())
     }
@@ -673,9 +680,9 @@ mod tests {
     ) -> Result<()> {
         let ownerships = checkpoint_store
             .list_ownerships(
-                ownership.fully_qualified_namespace.as_str(),
-                ownership.event_hub_name.as_str(),
-                ownership.consumer_group.as_str(),
+                &ownership.fully_qualified_namespace,
+                &ownership.event_hub_name,
+                &ownership.consumer_group,
             )
             .await?;
         let etag = ownerships
@@ -686,10 +693,11 @@ mod tests {
                     && o.consumer_group == ownership.consumer_group
             })
             .unwrap()
-            .etag();
+            .etag
+            .clone();
         let mut ownership = ownership.clone();
-        ownership.owner_id = "".to_string();
-        ownership.etag = etag.cloned();
+        ownership.owner_id = None;
+        ownership.etag = etag;
         checkpoint_store.update_ownership(ownership).await?;
         Ok(())
     }
@@ -1114,7 +1122,7 @@ mod tests {
             assert_eq!(1, load_balancer_info.max_allowed);
             let lb_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!("..c", lb_result);
+            assert_eq!(".c.", lb_result);
         }
 
         {
@@ -1131,7 +1139,7 @@ mod tests {
             assert_eq!(3, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!("..b.bb", load_balance_result);
+            assert_eq!("...bbb", load_balance_result);
         }
         {
             info!("deficit, multiple partitions");
@@ -1162,7 +1170,7 @@ mod tests {
             assert_eq!(2, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!(".....d..d.", load_balance_result);
+            assert_eq!(".d......d.", load_balance_result);
         }
 
         {
@@ -1178,19 +1186,23 @@ mod tests {
             assert_eq!(3, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!("..b.bb.", load_balance_result);
+            assert_eq!("...bbb.", load_balance_result);
         }
 
         Ok(())
     }
 
-    fn ownerships_as_string(ownerships: &Vec<Ownership>, partition_count: usize) -> String {
+    fn ownerships_as_string(ownerships: &[Ownership], partition_count: usize) -> String {
         let mut bits = Vec::new();
         bits.resize(partition_count, '.');
 
         for o in ownerships {
             let partition_id = o.partition_id.parse::<usize>().unwrap();
-            bits[partition_id] = o.owner_id.chars().next().unwrap();
+            bits[partition_id] = if let Some(owner_id) = &o.owner_id {
+                owner_id.chars().next().unwrap()
+            } else {
+                '.'
+            };
         }
 
         bits.iter().collect::<String>()
@@ -1239,7 +1251,7 @@ mod tests {
                 event_hub_name: client_details.eventhub_name.clone(),
                 consumer_group: client_details.consumer_group.clone(),
                 partition_id: partition_info.0.clone(),
-                owner_id: partition_info.1.clone(),
+                owner_id: Some(partition_info.1.clone()),
                 ..Default::default()
             });
         }
@@ -1248,12 +1260,19 @@ mod tests {
         let claimed = checkpoint_store.claim_ownership(&ownerships).await?;
         assert_eq!(claimed.len(), partition_ids.len());
 
+        // A constant seed for the ChaCha20Rng to ensure deterministic results.
+        // This is important for the tests to be repeatable.
+        let seed = [
+            1, 0, 52, 0, 0, 0, 0, 0, 1, 0, 10, 0, 22, 32, 0, 0, 2, 0, 55, 49, 0, 11, 0, 0, 3, 0, 0,
+            0, 0, 0, 2, 92,
+        ];
+
         let load_balancer = LoadBalancer::new(
             checkpoint_store.clone(),
             client_details,
-            ProcessorStrategy::Balanced,               // Ignored.
-            Duration::from_secs(3600),                 // No partitions are expired in these tests.
-            Some(Box::new(StdRng::seed_from_u64(37))), // For deterministic results.
+            ProcessorStrategy::Balanced,                  // Ignored.
+            Duration::from_secs(3600), // No partitions are expired in these tests.
+            Some(Box::new(ChaCha20Rng::from_seed(seed))), // For deterministic results.
         );
         Ok((load_balancer, partition_ids))
     }

@@ -60,8 +60,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let consumer = Arc::new(
         ConsumerClient::builder()
             .open(
-                eventhub_namespace.as_str(),
-                eventhub_name.as_str(),
+                eventhub_namespace,
+                eventhub_name,
                 DefaultAzureCredential::new()?.clone(),
             )
             .await?,
@@ -114,9 +114,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Stopping background processor");
     background_processor.stop().await?;
     println!("Stopped background processor");
-
-    consumer.close().await?;
-    println!("Closed consumer client");
 
     Ok(())
 }

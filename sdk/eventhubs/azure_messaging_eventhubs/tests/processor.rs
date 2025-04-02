@@ -20,8 +20,8 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
 
     let consumer_client = ConsumerClient::builder()
         .open(
-            recording.var("EVENTHUBS_HOST", None).as_str(),
-            recording.var("EVENTHUB_NAME", None).as_str(),
+            recording.var("EVENTHUBS_HOST", None),
+            recording.var("EVENTHUB_NAME", None),
             recording.credential().clone(),
         )
         .await?;
@@ -88,8 +88,8 @@ async fn create_consumer_client(ctx: &TestContext) -> azure_core::Result<Arc<Con
     Ok(Arc::new(
         ConsumerClient::builder()
             .open(
-                recording.var("EVENTHUBS_HOST", None).as_str(),
-                recording.var("EVENTHUB_NAME", None).as_str(),
+                recording.var("EVENTHUBS_HOST", None),
+                recording.var("EVENTHUB_NAME", None),
                 recording.credential().clone(),
             )
             .await?,
@@ -102,8 +102,8 @@ async fn create_producer_client(ctx: &TestContext) -> azure_core::Result<Arc<Pro
     Ok(Arc::new(
         ProducerClient::builder()
             .open(
-                recording.var("EVENTHUBS_HOST", None).as_str(),
-                recording.var("EVENTHUB_NAME", None).as_str(),
+                recording.var("EVENTHUBS_HOST", None),
+                recording.var("EVENTHUB_NAME", None),
                 recording.credential().clone(),
             )
             .await?,
@@ -189,7 +189,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
             "Received partition client for partition {}",
             next_client.get_partition_id()
         );
-        found_clients.insert(next_client.get_partition_id().clone());
+        found_clients.insert(next_client.get_partition_id().to_string());
         partition_clients.push(next_client);
     }
 
@@ -324,7 +324,7 @@ async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<(
         for i in 0..10 {
             let event_data = format!("Hello world {}", i);
             let send_event_options = SendEventOptions {
-                partition_id: Some(partition_client.get_partition_id().clone()),
+                partition_id: Some(partition_client.get_partition_id().to_string()),
             };
             producer_client
                 .send_event(event_data, Some(send_event_options))

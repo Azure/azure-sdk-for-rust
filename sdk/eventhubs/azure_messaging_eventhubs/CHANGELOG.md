@@ -1,11 +1,15 @@
 # Release History
+
 ## 0.2.0 (Unreleased)
 
 ### Features Added
 
 - Added initial support for an EventHubs processor.
-  - Note that as currently implemented, the processor is not very functional, it requires that the customer provide an instance of a checkpoint store.
-    - For people who wish to play with the checkpoint store, there is an `InMemoryCheckpointStore` created (under the "test_checkpoint_store" feature) which can be used to experiment with the EventHubs processor.
+
+  Note that as currently implemented, the processor is not very functional, since it requires that the customer provide an instance of a checkpoint store.
+
+  For people who wish to play with the checkpoint store, there is an `InMemoryCheckpointStore` created (under the "test" feature) which can be used to experiment with the EventHubs processor.
+
 - Removed the requirement that streaming messages from the `stream_events` method on the `EventReceiver` use `pin_mut!()` on the provided stream.
 - Removed direct dependencies on `tokio` package.
 - Added `partition_id` option to `SendMessageOptions`.

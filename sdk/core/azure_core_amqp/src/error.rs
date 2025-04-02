@@ -55,8 +55,8 @@ impl AmqpDescribedError {
     pub fn condition(&self) -> &AmqpSymbol {
         &self.condition
     }
-    pub fn description(&self) -> Option<&String> {
-        self.description.as_ref()
+    pub fn description(&self) -> Option<&str> {
+        self.description.as_deref()
     }
     pub fn info(&self) -> &AmqpOrderedMap<AmqpSymbol, AmqpValue> {
         &self.info

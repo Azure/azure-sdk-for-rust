@@ -16,8 +16,8 @@ async fn consumer_new(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let _client = ConsumerClient::builder()
-        .with_application_id("test_new")
-        .open(host.as_str(), eventhub.as_str(), recording.credential())
+        .with_application_id("test_new".to_string())
+        .open(host, eventhub, recording.credential())
         .await?;
 
     Ok(())
@@ -29,8 +29,8 @@ async fn consumer_new_with_error(ctx: TestContext) -> Result<(), Box<dyn Error>>
     trace!("test_new_with_error");
     let eventhub = env::var("EVENTHUB_NAME")?;
     let result = ConsumerClient::builder()
-        .with_application_id("test_new")
-        .open("invalid_host", eventhub.as_str(), recording.credential())
+        .with_application_id("test_new".to_string())
+        .open("invalid_host".to_string(), eventhub, recording.credential())
         .await;
     assert!(result.is_err());
     match result {
@@ -64,8 +64,8 @@ async fn consumer_open(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let _client = ConsumerClient::builder()
-        .with_application_id("test_open")
-        .open(host.as_str(), eventhub.as_str(), recording.credential())
+        .with_application_id("test_open".to_string())
+        .open(host, eventhub, recording.credential())
         .await?;
 
     Ok(())
@@ -76,8 +76,8 @@ async fn consumer_close(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
     let client = ConsumerClient::builder()
-        .with_application_id("test_open")
-        .open(host.as_str(), eventhub.as_str(), recording.credential())
+        .with_application_id("test_open".to_string())
+        .open(host, eventhub, recording.credential())
         .await?;
     client.close().await?;
 
@@ -93,8 +93,8 @@ async fn consumer_get_properties(ctx: TestContext) -> Result<(), Box<dyn Error>>
     let credential = recording.credential();
 
     let client = ConsumerClient::builder()
-        .with_application_id("test_open")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_open".to_string())
+        .open(host, eventhub.clone(), credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
     info!("Properties: {:?}", properties);
@@ -112,15 +112,13 @@ async fn consumer_get_partition_properties(ctx: TestContext) -> Result<(), Box<d
     let credential = recording.credential();
 
     let client = ConsumerClient::builder()
-        .with_application_id("test_open")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_open".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
 
     for partition_id in properties.partition_ids {
-        let partition_properties = client
-            .get_partition_properties(partition_id.as_str())
-            .await?;
+        let partition_properties = client.get_partition_properties(&partition_id).await?;
         info!("Partition properties: {:?}", partition_properties);
         assert_eq!(partition_properties.id, partition_id);
     }
@@ -140,8 +138,8 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
 
     info!("Creating client.");
     let client = ConsumerClient::builder()
-        .with_application_id("test_open")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_open".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
 
     let eh_properties = client.get_eventhub_properties().await?;
@@ -152,7 +150,7 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
         info!("Creating receiver for partition: {partition_id}");
         let receiver = client
             .open_receiver_on_partition(
-                partition_id.as_str(),
+                partition_id,
                 Some(OpenReceiverOptions {
                     start_position: Some(StartPosition {
                         location: azure_messaging_eventhubs::StartLocation::Earliest,
@@ -178,7 +176,7 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
 
         let mut count = 0;
 
-        const TEST_DURATION: std::time::Duration = Duration::from_secs(10);
+        const TEST_DURATION: Duration = Duration::from_secs(10);
         info!("Receiving events for {:?}.", TEST_DURATION);
 
         // Read events from the stream for a bit of time.
@@ -217,14 +215,14 @@ async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 
     info!("Creating client.");
     let client = ConsumerClient::builder()
-        .with_application_id("test_open")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_open".to_string())
+        .open(host, eventhub, credential.clone())
         .await?;
 
     info!("Client open, create receiver.");
     let receiver = client
         .open_receiver_on_partition(
-            "0",
+            "0".to_string(),
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: azure_messaging_eventhubs::StartLocation::Earliest,
@@ -242,7 +240,7 @@ async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 
     let mut count = 0;
 
-    const TEST_DURATION: std::time::Duration = Duration::from_secs(10);
+    const TEST_DURATION: Duration = Duration::from_secs(10);
     info!("Receiving events for {:?}.", TEST_DURATION);
 
     // Read events from the stream for a bit of time.

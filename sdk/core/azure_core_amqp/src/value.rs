@@ -15,6 +15,7 @@ use crate::fe2o3::error::Fe2o3SerializationError;
 use crate::{Deserializable, Serializable};
 #[cfg(feature = "cplusplus")]
 use azure_core::Result;
+use std::time::SystemTime;
 
 /// An AMQP symbol.
 ///
@@ -122,10 +123,10 @@ impl From<Vec<AmqpValue>> for AmqpList {
 ///
 /// This time cannot be expressed as a `SystemTime`, so it is represented as `None`.
 #[derive(Debug, PartialEq, Clone)]
-pub struct AmqpTimestamp(pub Option<std::time::SystemTime>);
+pub struct AmqpTimestamp(pub Option<SystemTime>);
 
-impl From<std::time::SystemTime> for AmqpTimestamp {
-    fn from(v: std::time::SystemTime) -> Self {
+impl From<SystemTime> for AmqpTimestamp {
+    fn from(v: SystemTime) -> Self {
         AmqpTimestamp(Some(v))
     }
 }
@@ -530,12 +531,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::SystemTime;
     use std::vec;
 
     #[test]
     fn test_value_create_specific() {
         let uuid = Uuid::new_v4();
-        let timestamp = std::time::SystemTime::now();
+        let timestamp = SystemTime::now();
         let v1 = AmqpValue::Boolean(true);
         let v2 = AmqpValue::UByte(1);
         let v3 = AmqpValue::UShort(2);
@@ -642,7 +644,7 @@ mod tests {
         test_conversion!(
             AmqpTimestamp,
             TimeStamp,
-            AmqpTimestamp(Some(std::time::SystemTime::now()))
+            AmqpTimestamp(Some(SystemTime::now()))
         );
         test_conversion!(Uuid, Uuid, Uuid::new_v4());
         test_conversion!(Vec<u8>, Binary, vec![1, 2, 3]);
@@ -798,7 +800,7 @@ mod tests {
         assert_eq!(char_val, 'a');
 
         // Test AmqpValue::TimeStamp
-        let timestamp = std::time::SystemTime::now();
+        let timestamp = SystemTime::now();
         let timestamp_value: AmqpValue = AmqpValue::TimeStamp(AmqpTimestamp(Some(timestamp)));
         assert_eq!(
             timestamp_value,
