@@ -39,7 +39,9 @@ Param (
   [boolean] $ReplaceLatestEntryTitle
 )
 
-. (Join-Path $PSScriptRoot '../common/scripts/common.ps1')
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version 2.0
+. "$PSScriptRoot/../common/scripts/common.ps1"
 
 Write-Host "Getting package properties for $PackageName in $ServiceDirectory."
 $pkgProperties = Get-PkgProperties -PackageName $PackageName -ServiceDirectory $ServiceDirectory
@@ -84,8 +86,8 @@ if ($content -ne $updated) {
   Write-Host "Updaging dependencies in Cargo.toml files."
   Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
 
-  Write-Host "Updating Cargo.lock using 'cargo metadata'."
-  Invoke-LoggedCommand "cargo metadata --no-deps --format-version 1" | Out-Null
+  Write-Host "Updating Cargo.lock using 'cargo update --workspace'."
+  Invoke-LoggedCommand "cargo update --workspace" | Out-Null
 }
 else {
   Write-Host "$tomlPath already contains version $packageSemVer"

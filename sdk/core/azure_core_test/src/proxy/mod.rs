@@ -11,20 +11,23 @@ pub(crate) mod policy;
 pub(crate) mod sanitizers;
 
 #[cfg(not(target_arch = "wasm32"))]
-use azure_core::Result;
+use self::{
+    bootstrap::*, matchers::CustomDefaultMatcher, models::SanitizerList,
+    sanitizers::DEFAULT_SANITIZERS_TO_REMOVE,
+};
 use azure_core::{
     error::ErrorKind,
     http::{
         headers::{Header, HeaderName, HeaderValue},
         Url,
     },
+    Result,
 };
-#[cfg(not(target_arch = "wasm32"))]
-use bootstrap::*;
+use client::Client;
 use serde::Serializer;
 #[cfg(not(target_arch = "wasm32"))]
 use std::process::ExitStatus;
-use std::{fmt, str::FromStr};
+use std::{fmt, str::FromStr, sync::Arc};
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::process::Child;
 
@@ -43,6 +46,7 @@ pub struct Proxy {
     #[cfg(not(target_arch = "wasm32"))]
     command: Option<Child>,
     endpoint: Option<Url>,
+    client: Option<Client>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -102,6 +106,30 @@ impl Proxy {
                 trace_line(Level::ERROR, &line);
             }
         });
+
+        if let Some(endpoint) = &self.endpoint {
+            self.client = Some(Client::new(endpoint.clone())?);
+        }
+
+        Ok(())
+    }
+
+    pub(crate) async fn initialize(&self) -> Result<()> {
+        // Set default matcher and remove some sanitizers by default.
+        if let Some(client) = &self.client {
+            client
+                .set_matcher(CustomDefaultMatcher::default().into(), None)
+                .await?;
+
+            let body = SanitizerList {
+                sanitizers: Vec::from_iter(
+                    DEFAULT_SANITIZERS_TO_REMOVE
+                        .iter()
+                        .map(|s| String::from(*s)),
+                ),
+            };
+            client.remove_sanitizers(body.try_into()?, None).await?;
+        }
 
         Ok(())
     }
@@ -168,12 +196,14 @@ impl Proxy {
 
 impl Proxy {
     /// Gets a proxy representing an existing test-proxy process.
-    pub fn existing() -> Self {
-        Self {
+    pub fn existing() -> Result<Self> {
+        let endpoint: Url = "http://localhost:5000".parse()?;
+        Ok(Self {
             #[cfg(not(target_arch = "wasm32"))]
             command: None,
-            endpoint: Some("http://localhost:5000".parse().unwrap()),
-        }
+            endpoint: Some(endpoint.clone()),
+            client: Some(Client::new(endpoint)?),
+        })
     }
 
     /// Gets the [`Url`] to which the test-proxy is listening.
@@ -194,6 +224,16 @@ impl Drop for Proxy {
         if let Some(command) = &mut self.command {
             let _ = command.start_kill();
         }
+    }
+}
+
+pub(crate) trait ProxyExt<'a> {
+    fn client(&'a self) -> Option<&'a Client>;
+}
+
+impl<'a> ProxyExt<'a> for Option<Arc<Proxy>> {
+    fn client(&'a self) -> Option<&'a Client> {
+        self.as_ref().and_then(|proxy| proxy.client.as_ref())
     }
 }
 

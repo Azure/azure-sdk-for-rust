@@ -46,7 +46,7 @@ use typespec_client_core::{request_header, request_query};
 request_header!(
     /// The (friendly) version identifier for the client making the request
     ClientVersion,
-    CLIENT_VERSION
+    CLIENT_VERSION,
 );
 
 request_header!(
@@ -57,14 +57,32 @@ request_header!(
 
 request_header!(ActivityId, ACTIVITY_ID);
 request_header!(App, APP);
-request_header!(ClientRequestId, CLIENT_REQUEST_ID);
+request_header!(
+    /// The `x-ms-client-request-id` header.
+    ///
+    /// # Examples
+    ///
+    /// Add a caller-defined client request ID to a request.
+    ///
+    /// ```
+    /// use azure_core::{
+    ///     http::{ClientMethodOptions, request::options::ClientRequestId},
+    ///     Uuid,
+    /// };
+    /// let client_request_id: String = Uuid::new_v4().into();
+    /// let mut options = ClientMethodOptions::default();
+    /// options.context.insert(ClientRequestId::new(client_request_id));
+    /// ```
+    ClientRequestId,
+    CLIENT_REQUEST_ID,
+);
 request_header!(ContentDisposition, CONTENT_DISPOSITION);
 request_header!(Continuation, CONTINUATION);
 request_header!(IfTags, IF_TAGS);
 request_header!(Version, VERSION);
 
 request_query!(
-    /// Set delimiter for the request
+    /// Set delimiter for the request.
     Delimiter,
     "delimiter"
 );

@@ -121,8 +121,8 @@ jobs:
           $env:AZURESUBSCRIPTION_CLIENT_ID = $account.Id;
           $env:AZURESUBSCRIPTION_TENANT_ID = $account.Tenants;
 
-          Write-Host "./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(Toolchain)'"
-          ./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(Toolchain)'
+          Write-Host "./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'"
+          ./eng/scripts/Test-Packages.ps1 -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
         workingDirectory: $(Build.SourcesDirectory)
   - ${{ else }}:
     - task: Powershell@2
@@ -139,7 +139,6 @@ jobs:
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
         arguments: >
           -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
-          -Toolchain '$(Toolchain)'
 
   - ${{ parameters.PostSteps }}
 

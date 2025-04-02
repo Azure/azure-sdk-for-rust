@@ -103,14 +103,6 @@ impl TestAccount {
         // We need the context_id to be constant, so that record/replay work.
         let context_id = context.name().to_string();
 
-        // Disable some sanitizers that affect our tests
-        context
-            .recording()
-            .remove_sanitizers(&[
-                "AZSDK3430", // Sanitizes "id" properties. The tests need the id to be preserved.
-            ])
-            .await?;
-
         Ok(TestAccount {
             context,
             context_id,
