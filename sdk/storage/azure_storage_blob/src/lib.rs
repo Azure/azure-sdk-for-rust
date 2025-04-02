@@ -25,7 +25,6 @@ pub mod models {
     pub use crate::generated::models::{
         AccessTier, ArchiveStatus, BlobClientDownloadResult, BlobClientDownloadResultHeaders,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
-        BlobContainerClientCreateResult, BlobContainerClientDeleteResult,
         BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
         BlobImmutabilityPolicyMode, BlobType, BlockBlobClientCommitBlockListResult,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, BlockListType,

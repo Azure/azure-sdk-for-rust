@@ -3,12 +3,7 @@
 
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
-    generated::models::{
-        BlobContainerClientCreateResult, BlobContainerClientDeleteResult,
-        BlobContainerClientGetPropertiesResult,
-
-    },
-    pipeline::StorageHeadersPolicy,
+    generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
     BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientOptions,
 };
