@@ -32,7 +32,8 @@ jobs:
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
-      Toolchain: nightly
+      WorkingDirectory: $(System.DefaultWorkingDirectory)/eng/tools/generate_api_report
+      SetDefault: false
 
   - template: /eng/pipelines/templates/steps/use-rust.yml@self
     parameters:
@@ -69,3 +70,9 @@ jobs:
       ArtifactPath: $(Build.ArtifactStagingDirectory)
       ArtifactName: ${{ parameters.PipelineArtifactName }}
       CustomCondition: and(succeededOrFailed(), ne(variables['NoPackagesChanged'],'true'))
+
+  - template: /eng/common/pipelines/templates/steps/create-apireview.yml
+    parameters:
+      Artifacts: ${{ parameters.Artifacts }}
+      
+  - template: /eng/common/pipelines/templates/steps/detect-api-changes.yml
