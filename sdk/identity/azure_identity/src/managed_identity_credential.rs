@@ -153,6 +153,7 @@ mod tests {
     use azure_core::Bytes;
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
@@ -169,6 +170,8 @@ mod tests {
             std::mem::discriminant(&actual_source),
             std::mem::discriminant(&expected_source)
         );
+        let token_requests = Arc::new(AtomicUsize::new(0));
+        let token_requests_clone = token_requests.clone();
         let expires_on = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -176,6 +179,7 @@ mod tests {
             + 3600;
         let mock_client = MockHttpClient::new(move |actual| {
             {
+                token_requests_clone.fetch_add(1, Ordering::SeqCst);
                 let expected = model_request.clone();
                 let response_format = response_format.clone();
                 async move {
@@ -221,9 +225,12 @@ mod tests {
             ..Default::default()
         };
         let cred = ManagedIdentityCredential::new(Some(options)).expect("credential");
-        let token = cred.get_token(LIVE_TEST_SCOPES).await.expect("token");
-        assert_eq!(token.expires_on.unix_timestamp(), expires_on as i64);
-        assert_eq!(token.token.secret(), "*");
+        for _ in 0..4 {
+            let token = cred.get_token(LIVE_TEST_SCOPES).await.expect("token");
+            assert_eq!(token.expires_on.unix_timestamp(), expires_on as i64);
+            assert_eq!(token.token.secret(), "*");
+            assert_eq!(token_requests.load(Ordering::SeqCst), 1);
+        }
     }
 
     fn run_unsupported_source_test(env: Env, expected_source: ManagedIdentitySource) {
