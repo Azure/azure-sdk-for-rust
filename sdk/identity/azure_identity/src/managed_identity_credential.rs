@@ -83,6 +83,12 @@ impl ManagedIdentityCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ManagedIdentityCredential {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        if scopes.len() != 1 {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Credential,
+                || "ManagedIdentityCredential requires exactly one scope".to_string(),
+            ));
+        }
         self.credential.get_token(scopes).await
     }
 }
@@ -423,6 +429,17 @@ mod tests {
             ..Default::default()
         }))
         .await;
+    }
+
+    #[tokio::test]
+    async fn requires_one_scope() {
+        let credential = ManagedIdentityCredential::new(None).expect("valid credential");
+        for scopes in [&[][..], &["A", "B"][..]].iter() {
+            credential
+                .get_token(scopes)
+                .await
+                .expect_err("expected an error, got");
+        }
     }
 
     #[test]
