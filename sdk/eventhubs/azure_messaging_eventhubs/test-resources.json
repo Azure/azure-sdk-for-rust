@@ -66,8 +66,6 @@
     "storageDataOwnerRoleId": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
     "eventHubsNamespace": "[concat('eh-', parameters('baseName'))]",
     "storageAccount": "[concat('blb', parameters('baseName'))]",
-    "defaultSASKeyName": "RootManageSharedAccessKey",
-    "eventHubsAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', variables('eventHubsNamespace'), variables('defaultSASKeyName'))]",
     "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccount'))]",
     "authorizationName": "[concat(variables('eventHubsNamespace'), '/RootManageSharedAccessKey')]"
   },
@@ -112,7 +110,8 @@
       ],
       "properties": {
         "messageRetentionInDays": 1,
-        "partitionCount": 4
+        "partitionCount": 4,
+        "disableLocalAuth": true
       }
     },
     {

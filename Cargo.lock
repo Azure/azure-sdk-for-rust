@@ -299,12 +299,17 @@ dependencies = [
 name = "azure_messaging_eventhubs"
 version = "0.2.0"
 dependencies = [
+ "async-lock",
  "async-stream",
+ "async-trait",
  "azure_core",
  "azure_core_amqp",
  "azure_core_test",
  "azure_identity",
+ "azure_messaging_eventhubs",
  "futures",
+ "rand",
+ "rand_chacha",
  "rustc_version",
  "time",
  "tokio",

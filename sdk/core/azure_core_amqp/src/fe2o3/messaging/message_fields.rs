@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use std::time::Duration;
+
 use crate::{
     messaging::{
         AmqpAnnotationKey, AmqpAnnotations, AmqpApplicationProperties, AmqpMessageHeader,
@@ -136,9 +138,7 @@ impl From<fe2o3_amqp_types::messaging::Header> for AmqpMessageHeader {
         AmqpMessageHeader {
             durable: header.durable,
             priority: header.priority.into(),
-            time_to_live: header
-                .ttl
-                .map(|t| std::time::Duration::from_millis(t as u64)),
+            time_to_live: header.ttl.map(|t| Duration::from_millis(t as u64)),
             first_acquirer: (header.first_acquirer),
             delivery_count: (header.delivery_count),
         }
@@ -426,6 +426,8 @@ impl From<AmqpMessageProperties> for fe2o3_amqp_types::messaging::Properties {
 
 #[test]
 fn test_properties_conversion() {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
     {
         let properties = fe2o3_amqp_types::messaging::Properties {
             message_id: Some(fe2o3_amqp_types::messaging::MessageId::String(
@@ -451,14 +453,13 @@ fn test_properties_conversion() {
     }
 
     {
-        let time_now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
+        let time_now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_millis() as i64;
 
         // Round trip time_now through milliseconds to round down from nanoseconds.
-        let time_now: std::time::SystemTime =
-            std::time::UNIX_EPOCH + std::time::Duration::from_millis(time_now as u64);
+        let time_now: SystemTime = UNIX_EPOCH + Duration::from_millis(time_now as u64);
 
         let properties = AmqpMessageProperties {
             absolute_expiry_time: Some(time_now.into()),

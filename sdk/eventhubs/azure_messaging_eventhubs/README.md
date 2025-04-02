@@ -70,8 +70,8 @@ use azure_messaging_eventhubs::ProducerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let host = "<EVENTHUBS_HOST>";
-    let eventhub = "<EVENTHUB_NAME>";
+    let host = "<EVENTHUBS_HOST>".to_string();
+    let eventhub = "<EVENTHUB_NAME>".to_string();
 
     // Create new credential
     let credential = DefaultAzureCredential::new()?;
@@ -113,6 +113,7 @@ Additional examples for various scenarios can be found on in the examples direct
 [Event Hubs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/examples).
 
 <!-- no toc -->
+
 * [Open an Event Hubs message producer on an Event Hub instance](#open-an-event-hubs-message-producer-on-an-event-hub-instance)
 * [Send events](#send-events)
   * [Send events directly to the Event Hub](#send-events-directly-to-the-event-hub)
@@ -128,8 +129,8 @@ use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn open_producer_client() -> Result<ProducerClient, Error> {
-    let host = "<EVENTHUBS_HOST>";
-    let eventhub = "<EVENTHUB_NAME>";
+    let host = "<EVENTHUBS_HOST>".to_string();
+    let eventhub = "<EVENTHUB_NAME>".to_string();
 
     let credential = DefaultAzureCredential::new()?;
 
@@ -186,8 +187,8 @@ use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ConsumerClient;
 
 async fn open_consumer_client() -> Result<ConsumerClient, Error> {
-    let host = "<EVENTHUBS_HOST>";
-    let eventhub = "<EVENTHUB_NAME>";
+    let host = "<EVENTHUBS_HOST>".to_string();
+    let eventhub = "<EVENTHUB_NAME>".to_string();
 
     let credential = DefaultAzureCredential::new()?;
 
@@ -214,7 +215,6 @@ use azure_core::Error;
 use azure_messaging_eventhubs::{
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
-use futures::pin_mut;
 
 // By default, an event receiver only receives new events from the event hub. To receive events from earlier, specify
 // a `start_position` which represents the position from which to start receiving events.
@@ -222,7 +222,7 @@ use futures::pin_mut;
 async fn receive_events(client: &ConsumerClient) -> Result<(), Error> {
     let message_receiver = client
         .open_receiver_on_partition(
-            "0",
+            "0".to_string(),
             Some(OpenReceiverOptions {
                 start_position: Some(StartPosition {
                     location: StartLocation::Earliest,
@@ -233,9 +233,7 @@ async fn receive_events(client: &ConsumerClient) -> Result<(), Error> {
         )
         .await?;
 
-    let event_stream = message_receiver.stream_events();
-
-    pin_mut!(event_stream); // Needed for iteration.
+    let mut event_stream = message_receiver.stream_events();
 
     while let Some(event_result) = event_stream.next().await {
         match event_result {
@@ -292,7 +290,6 @@ Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sd
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
 [Product documentation]: https://learn.microsoft.com/azure/event-hubs/
-[REST API]: https://learn.microsoft.com/rest/api/eventhub/
 [Cargo]: https://crates.io/
 [Package (crates.io)]: https://crates.io/crates/azure_messaging_eventhubs
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/src

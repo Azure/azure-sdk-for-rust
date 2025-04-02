@@ -4,7 +4,6 @@
 use azure_core::error::Result;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ProducerClient;
-
 use std::env;
 
 #[tokio::main]
@@ -18,8 +17,8 @@ async fn main() -> Result<()> {
     let credential = DefaultAzureCredential::new()?;
 
     let result = ProducerClient::builder()
-        .with_application_id("test_get_properties")
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
+        .with_application_id("test_get_properties".to_string())
+        .open(host, eventhub.clone(), credential.clone())
         .await;
     if let Err(err) = result {
         eprintln!("Error opening client: {err}");

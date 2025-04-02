@@ -7,6 +7,7 @@ use crate::{
     error::{ErrorKind, EventHubsError},
     models::AmqpValue,
 };
+use async_lock::{Mutex, OnceCell};
 use azure_core::{credentials::AccessToken, http::Url, Result, Uuid};
 use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis as _, AmqpConnection,
@@ -14,7 +15,6 @@ use azure_core_amqp::{
 };
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{Mutex, OnceCell};
 use tracing::{debug, trace};
 
 /// The connection manager is responsible for managing the connection to the Event Hubs service.
@@ -28,13 +28,19 @@ pub(crate) struct ConnectionManager {
     custom_endpoint: Option<Url>,
     connections: OnceCell<Arc<AmqpConnection>>,
     authorization_scopes: Mutex<HashMap<Url, AccessToken>>,
+    connection_name: String,
 }
 
 impl ConnectionManager {
     pub fn new(url: Url, application_id: Option<String>, custom_endpoint: Option<Url>) -> Self {
+        let connection_name = application_id
+            .clone()
+            .unwrap_or_else(|| Uuid::new_v4().to_string());
+
         Self {
             url,
             application_id,
+            connection_name,
             custom_endpoint,
             connections: OnceCell::new(),
             authorization_scopes: Mutex::new(HashMap::new()),
@@ -44,11 +50,10 @@ impl ConnectionManager {
     async fn create_connection(&self) -> Result<Arc<AmqpConnection>> {
         trace!("Creating connection for {}.", self.url);
         let connection = Arc::new(AmqpConnection::new());
+
         connection
             .open(
-                self.application_id
-                    .clone()
-                    .unwrap_or_else(|| Uuid::new_v4().to_string()),
+                self.connection_name.clone(),
                 self.url.clone(),
                 Some(AmqpConnectionOptions {
                     properties: Some(
@@ -72,7 +77,7 @@ impl ConnectionManager {
 
     pub(crate) async fn ensure_connection(&self) -> Result<()> {
         self.connections
-            .get_or_try_init(|| async { self.create_connection().await })
+            .get_or_try_init(|| self.create_connection())
             .await?;
         Ok(())
     }
@@ -83,6 +88,10 @@ impl ConnectionManager {
             .get()
             .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
         Ok(connection.clone())
+    }
+
+    pub(crate) fn get_connection_id(&self) -> &str {
+        &self.connection_name
     }
 
     pub(crate) async fn close_connection(&self) -> Result<()> {
@@ -114,7 +123,7 @@ impl ConnectionManager {
                 .await?;
             let expires_at = token.expires_on;
             cbs.authorize_path(
-                path.as_str().to_string(),
+                path.to_string(),
                 None,
                 token.token.secret().to_string(),
                 expires_at,

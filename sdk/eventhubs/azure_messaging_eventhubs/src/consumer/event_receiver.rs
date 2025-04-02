@@ -3,10 +3,10 @@
 
 use crate::models::ReceivedEventData;
 use async_stream::try_stream;
-use azure_core::error::Result;
-use azure_core_amqp::{AmqpDeliveryApis, AmqpReceiver, AmqpReceiverApis};
-use futures::stream::Stream;
-use tokio::time::timeout;
+use azure_core::error::{ErrorKind as AzureErrorKind, Result};
+use azure_core_amqp::{AmqpDeliveryApis as _, AmqpReceiver, AmqpReceiverApis as _};
+use futures::{select, FutureExt, Stream, StreamExt};
+use std::time::Duration;
 use tracing::trace;
 
 /// A message receiver that can be used to receive messages from an Event Hub.
@@ -19,20 +19,18 @@ use tracing::trace;
 /// use azure_messaging_eventhubs::ConsumerClient;
 /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
 /// use futures::stream::StreamExt;
-/// use futures::pin_mut;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     let my_credential = DefaultAzureCredential::new()?;
 ///     let consumer = ConsumerClient::builder()
-///        .open("my_namespace", "my_eventhub", my_credential).await?;
-///     let partition_id = "0";
+///        .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await?;
+///     let partition_id = "0".to_string();
 ///
 ///     let receiver  = consumer.open_receiver_on_partition(partition_id, None).await?;
 ///
-///     let event_stream = receiver.stream_events();
+///     let mut event_stream = receiver.stream_events();
 ///
-///     pin_mut!(event_stream);
 ///     while let Some(event_result) = event_stream.next().await {
 ///         match event_result {
 ///             Ok(event) => {
@@ -52,12 +50,26 @@ use tracing::trace;
 /// ```
 pub struct EventReceiver {
     receiver: AmqpReceiver,
-    timeout: Option<std::time::Duration>,
+    partition_id: String,
+    timeout: Option<Duration>,
 }
 
 impl EventReceiver {
-    pub(crate) fn new(receiver: AmqpReceiver, timeout: Option<std::time::Duration>) -> Self {
-        Self { receiver, timeout }
+    pub(crate) fn new(
+        receiver: AmqpReceiver,
+        partition_id: String,
+        timeout: Option<Duration>,
+    ) -> Self {
+        Self {
+            receiver,
+            partition_id,
+            timeout,
+        }
+    }
+
+    /// Returns the partition ID of the receiver.
+    pub fn partition_id(&self) -> &str {
+        &self.partition_id
     }
 
     /// Receives messages from the Event Hub partition.
@@ -74,12 +86,10 @@ impl EventReceiver {
     /// ```no_run
     /// use azure_messaging_eventhubs::EventReceiver;
     /// use futures::stream::StreamExt;
-    /// use futures::pin_mut;
     ///
     /// async fn receive_events(receiver: &EventReceiver) {
-    ///     let event_stream = receiver.stream_events();
+    ///     let mut event_stream = receiver.stream_events();
     ///
-    ///     pin_mut!(event_stream);
     ///     while let Some(event_result) = event_stream.next().await {
     ///         match event_result {
     ///             Ok(event) => {
@@ -96,35 +106,36 @@ impl EventReceiver {
     ///
     /// ```
     ///
-    pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
+    pub fn stream_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
+        // Use async_stream to create a stream that yields messages from the receiver.
         try_stream! {
             loop {
-                if let Some(delivery_timeout) = self.timeout {
-                    let delivery_or_timeout = timeout(delivery_timeout,
-                        self.receiver.receive_delivery()).await;
-                    match delivery_or_timeout {
-                        Ok(delivery_or_error) => {
-                            let delivery = delivery_or_error?;
-                            let message = delivery.into_message();
-                            let message = ReceivedEventData::from(message);
-                            trace!("Received message: {:?}", message);
-                            yield message;
-                        }
-                        Err(e) => {
-                            // timeout returns an error if the timeout is reached.
-                            // Stop the stream when that happens rather than handle the error.
-                            trace!("Timeout receiving delivery: {e:?}");
-                            break;
-                        }
-                    }
-                } else {
-                        let delivery = self.receiver.receive_delivery().await?;
-                        let message = delivery.into_message();
-                        let message = ReceivedEventData::from(message);
-                        trace!("Received message: {:?}", message);
-                        yield message;
-                }
+                 let delivery = if let Some(delivery_timeout) = self.timeout {
+                    select! {
+                        delivery = self.receiver.receive_delivery().fuse() => Ok(delivery),
+                        _ = azure_core::sleep::sleep(delivery_timeout).fuse() => {
+                             Err(azure_core::Error::new(
+                                AzureErrorKind::Io,
+                                Box::new(std::io::Error::from(std::io::ErrorKind::TimedOut))))
+                        },
+                    }?
+                 } else {
+                     self.receiver.receive_delivery().await
+                 }?;
+
+                 // Now that we have a delivery, we can process it.
+                 let message = delivery.into_message();
+                 let message = ReceivedEventData::from(message);
+                 trace!("Received message: {:?}", message);
+                 yield message;
             }
         }
+        .boxed()
+    }
+
+    /// Closes the event receiver, detaching from the remote.
+    pub async fn close(self) -> Result<()> {
+        self.receiver.detach().await?;
+        Ok(())
     }
 }

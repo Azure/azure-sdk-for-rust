@@ -35,7 +35,7 @@ struct EventDataBatchState {
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credentials = azure_identity::DefaultAzureCredential::new()?;
 /// # let producer_client = ProducerClient::builder()
-/// #     .open("fully_qualified_domain_name", "event_hub_name", credentials.clone()).await?;
+/// #     .open("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), credentials.clone()).await?;
 /// #
 ///
 /// let mut batch = producer_client.create_batch(None).await?;
@@ -170,7 +170,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::builder().open("fully_qualified_domain_name", "event_hub_name", my_credential.clone()).await?;
+    /// # let producer_client = ProducerClient::builder().open("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone()).await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let event_data = EventData::builder().build();
@@ -214,7 +214,7 @@ impl<'a> EventDataBatch<'a> {
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
     /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
-    /// # let producer_client = ProducerClient::builder().open("fully_qualified_domain_name", "event_hub_name", my_credential.clone()).await?;
+    /// # let producer_client = ProducerClient::builder().open("fully_qualified_domain_name".to_string(), "event_hub_name".to_string(), my_credential.clone()).await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
     /// let amqp_message = AmqpMessage::builder().build();

@@ -43,12 +43,12 @@ impl AmqpSessionOptions {
         self.handle_max
     }
 
-    pub fn offered_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
-        self.offered_capabilities.as_ref()
+    pub fn offered_capabilities(&self) -> Option<&[AmqpSymbol]> {
+        self.offered_capabilities.as_deref()
     }
 
-    pub fn desired_capabilities(&self) -> Option<&Vec<AmqpSymbol>> {
-        self.desired_capabilities.as_ref()
+    pub fn desired_capabilities(&self) -> Option<&[AmqpSymbol]> {
+        self.desired_capabilities.as_deref()
     }
 
     pub fn properties(&self) -> Option<&AmqpOrderedMap<AmqpSymbol, AmqpValue>> {

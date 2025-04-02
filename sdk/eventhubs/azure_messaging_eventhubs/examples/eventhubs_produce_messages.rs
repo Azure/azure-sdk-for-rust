@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 /// This sample demonstrates how to send AMQP messages to an Event Hub partition using the `ProducerClient`.
 ///
 use azure_identity::DefaultAzureCredential;
@@ -14,11 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
 
     let client = ProducerClient::builder()
-        .open(
-            eventhub_namespace.as_str(),
-            eventhub_name.as_str(),
-            credential.clone(),
-        )
+        .open(eventhub_namespace, eventhub_name, credential.clone())
         .await?;
 
     println!("Created producer client.");

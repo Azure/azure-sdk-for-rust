@@ -18,22 +18,32 @@ categories = ["api-bindings"]
 edition.workspace = true
 
 [dependencies]
+async-lock.workspace = true
 async-stream.workspace = true
+async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
 azure_core_amqp.workspace = true
 futures.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
 time.workspace = true
-tokio.workspace = true
 tracing.workspace = true
 
 [build-dependencies]
 rustc_version.workspace = true
 
 [dev-dependencies]
-azure_core_test.workspace = true
+azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+azure_messaging_eventhubs = { path = ".", features = [
+  "test",
+] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+
+[features]
+test = []
+blob_checkpoint_store = []
 
 [lints]
 workspace = true
