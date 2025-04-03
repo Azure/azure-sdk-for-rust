@@ -3,7 +3,7 @@
 
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
-    clients::ServiceClient, models::BlobServiceClientGetPropertiesOptions, BlobClientOptions,
+    BlobServiceClient, BlobServiceClientGetPropertiesOptions, BlobServiceClientOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
 use std::error::Error;
@@ -12,12 +12,21 @@ use std::error::Error;
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording, BlobClientOptions::default()).await;
+    let (options, endpoint) = recorded_test_setup(recording);
+
+    let service_client_options = BlobServiceClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
 
     // Act
-    let service_client = ServiceClient::new(&endpoint, recording.credential(), Some(options))?;
+    let service_client = BlobServiceClient::new(
+        &endpoint,
+        recording.credential(),
+        Some(service_client_options),
+    )?;
     let response = service_client
-        .get_service_properties(Some(BlobServiceClientGetPropertiesOptions::default()))
+        .get_properties(Some(BlobServiceClientGetPropertiesOptions::default()))
         .await?;
 
     // Assert

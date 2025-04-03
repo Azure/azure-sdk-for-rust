@@ -2,26 +2,31 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::GeneratedBlobClient,
-    models::{
-        BlobBlobClientDownloadOptions, BlobBlobClientGetPropertiesOptions,
-        BlobBlockBlobClientCommitBlockListOptions, BlobBlockBlobClientStageBlockOptions,
-        BlobBlockBlobClientUploadOptions, BlobProperties, BlockLookupList,
+    generated::clients::BlobClient as GeneratedBlobClient,
+    generated::models::{
+        BlobClientDownloadResult, BlobClientGetPropertiesResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadResult,
     },
+    models::{BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
-    BlobClientOptions,
+    BlobClientDownloadOptions, BlobClientGetPropertiesOptions, BlobClientOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 use azure_core::{
-    base64, credentials::TokenCredential, BearerTokenCredentialPolicy, Bytes, Policy,
-    RequestContent, Response, Result, Url,
+    credentials::TokenCredential,
+    http::{
+        policies::{BearerTokenCredentialPolicy, Policy},
+        RequestContent, Response, Url,
+    },
+    Bytes, Result,
 };
 use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
     endpoint: Url,
-    container_name: String,
-    blob_name: String,
     client: GeneratedBlobClient,
 }
 
@@ -59,11 +64,15 @@ impl BlobClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
+        let client = GeneratedBlobClient::new(
+            endpoint,
+            credential.clone(),
+            container_name.clone(),
+            blob_name.clone(),
+            Some(options),
+        )?;
         Ok(Self {
             endpoint: endpoint.parse()?,
-            container_name,
-            blob_name,
             client,
         })
     }
@@ -75,12 +84,12 @@ impl BlobClient {
 
     /// Gets the container name of the Storage account this client is connected to.
     pub fn container_name(&self) -> &str {
-        &self.container_name
+        &self.client.container_name
     }
 
     /// Gets the blob name of the Storage account this client is connected to.
     pub fn blob_name(&self) -> &str {
-        &self.blob_name
+        &self.client.blob_name
     }
 
     /// Returns all user-defined metadata, standard HTTP properties, and system properties for the blob.
@@ -89,18 +98,12 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
-    pub async fn get_blob_properties(
+    pub async fn get_properties(
         &self,
-        options: Option<BlobBlobClientGetPropertiesOptions<'_>>,
-    ) -> Result<BlobProperties> {
-        let response = self
-            .client
-            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .get_properties(options)
-            .await?;
-
-        let blob_properties: BlobProperties = response.headers().get()?;
-        Ok(blob_properties)
+        options: Option<BlobClientGetPropertiesOptions<'_>>,
+    ) -> Result<Response<BlobClientGetPropertiesResult>> {
+        let response = self.client.get_properties(options).await?;
+        Ok(response)
     }
 
     /// Downloads a blob from the service, including its metadata and properties.
@@ -108,15 +111,11 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
-    pub async fn download_blob(
+    pub async fn download(
         &self,
-        options: Option<BlobBlobClientDownloadOptions<'_>>,
-    ) -> Result<Response> {
-        let response = self
-            .client
-            .get_blob_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .download(options)
-            .await?;
+        options: Option<BlobClientDownloadOptions<'_>>,
+    ) -> Result<Response<BlobClientDownloadResult>> {
+        let response = self.client.download(options).await?;
         Ok(response)
     }
 
@@ -129,24 +128,40 @@ impl BlobClient {
     ///   If False, the operation will fail with ResourceExistsError.
     /// * `content_length` - Total length of the blob data to be uploaded.
     /// * `options` - Optional configuration for the request.
-    pub async fn upload_blob(
+    pub async fn upload(
         &self,
         data: RequestContent<Bytes>,
         overwrite: bool,
-        content_length: i64,
-        options: Option<BlobBlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<()>> {
+        content_length: u64,
+        options: Option<BlockBlobClientUploadOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientUploadResult>> {
         let mut options = options.unwrap_or_default();
 
         if !overwrite {
             options.if_none_match = Some(String::from("*"));
         }
 
-        let response = self
-            .client
-            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
+        let block_blob_client = self.client.get_block_blob_client();
+
+        let response = block_blob_client
             .upload(data, content_length, Some(options))
             .await?;
+        Ok(response)
+    }
+
+    /// Writes to a blob based on blocks specified by the list of IDs and content that make up the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `blocks` - The list of Blob blocks to commit.
+    /// * `options` - Optional configuration for the request.
+    pub async fn commit_block_list(
+        &self,
+        blocks: RequestContent<BlockLookupList>,
+        options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientCommitBlockListResult>> {
+        let block_blob_client = self.client.get_block_blob_client();
+        let response = block_blob_client.commit_block_list(blocks, options).await?;
         Ok(response)
     }
 
@@ -157,40 +172,35 @@ impl BlobClient {
     /// * `block_id` - The unique identifier for the block. The identifier should be less than or equal to 64 bytes in size.
     ///   For a given blob, the `block_id` must be the same size for each block.
     /// * `content_length` - Total length of the blob data to be staged.
-    /// * `data` - The content of the blob.
+    /// * `data` - The content of the block.
     /// * `options` - Optional configuration for the request.
     pub async fn stage_block(
         &self,
-        block_id: &str,
-        content_length: i64,
-        data: RequestContent<Bytes>,
-        options: Option<BlobBlockBlobClientStageBlockOptions<'_>>,
-    ) -> Result<Response<()>> {
-        let block_id = base64::encode(block_id);
-        let response = self
-            .client
-            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .stage_block(&block_id, content_length, data, options)
+        block_id: Vec<u8>,
+        content_length: u64,
+        body: RequestContent<Bytes>,
+        options: Option<BlockBlobClientStageBlockOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientStageBlockResult>> {
+        let block_blob_client = self.client.get_block_blob_client();
+        let response = block_blob_client
+            .stage_block(block_id, content_length, body, options)
             .await?;
         Ok(response)
     }
 
-    /// Writes to a blob based on blocks specified by the list of IDs and content that make up the blob.
+    /// Retrieves the list of blocks that have been uploaded as part of a block blob.
     ///
     /// # Arguments
     ///
-    /// * `blocks` - The list of Block Blobs to commit.
+    /// * `list_type` - Specifies whether to return the list of committed blocks, uncommitted blocks, or both lists together.
     /// * `options` - Optional configuration for the request.
-    pub async fn commit_block_list(
+    pub async fn get_block_list(
         &self,
-        blocks: RequestContent<BlockLookupList>,
-        options: Option<BlobBlockBlobClientCommitBlockListOptions<'_>>,
-    ) -> Result<Response<()>> {
-        let response = self
-            .client
-            .get_blob_block_blob_client(self.container_name.clone(), self.blob_name.clone())
-            .commit_block_list(blocks, options)
-            .await?;
+        list_type: BlockListType,
+        options: Option<BlockBlobClientGetBlockListOptions<'_>>,
+    ) -> Result<Response<BlockList>> {
+        let block_blob_client = self.client.get_block_blob_client();
+        let response = block_blob_client.get_block_list(list_type, options).await?;
         Ok(response)
     }
 }

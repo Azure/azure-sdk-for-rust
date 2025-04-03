@@ -12,3 +12,10 @@ missingcontainer
 RAGRS
 restype
 testcontainer
+pagelist
+prevsnapshot
+deletedwithversions
+immutabilitypolicy
+uncommittedblobs
+policyid
+ruleid

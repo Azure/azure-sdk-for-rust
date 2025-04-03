@@ -2,16 +2,18 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::GeneratedBlobClient,
-    models::{
-        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientGetPropertiesOptions, ContainerProperties,
-    },
-    pipeline::StorageHeadersPolicy,
-    BlobClientOptions,
+    generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
+    generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
+    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+    BlobContainerClientGetPropertiesOptions, BlobContainerClientOptions,
 };
 use azure_core::{
-    credentials::TokenCredential, BearerTokenCredentialPolicy, Policy, Response, Result, Url,
+    credentials::TokenCredential,
+    http::{
+        policies::{BearerTokenCredentialPolicy, Policy},
+        Response, Url,
+    },
+    Result,
 };
 use std::sync::Arc;
 
@@ -19,7 +21,7 @@ use std::sync::Arc;
 pub struct BlobContainerClient {
     endpoint: Url,
     container_name: String,
-    client: GeneratedBlobClient,
+    client: GeneratedBlobContainerClient,
 }
 
 impl BlobContainerClient {
@@ -35,7 +37,7 @@ impl BlobContainerClient {
         endpoint: &str,
         container_name: String,
         credential: Arc<dyn TokenCredential>,
-        options: Option<BlobClientOptions>,
+        options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
 
@@ -54,7 +56,12 @@ impl BlobContainerClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobClient::new(endpoint, credential, Some(options))?;
+        let client = GeneratedBlobContainerClient::new(
+            endpoint,
+            credential,
+            container_name.clone(),
+            Some(options),
+        )?;
 
         Ok(Self {
             endpoint: endpoint.parse()?,
@@ -82,11 +89,7 @@ impl BlobContainerClient {
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
     ) -> Result<Response<()>> {
-        let response = self
-            .client
-            .get_blob_container_client(self.container_name.clone())
-            .create(options)
-            .await?;
+        let response = self.client.create(options).await?;
         Ok(response)
     }
 
@@ -99,11 +102,7 @@ impl BlobContainerClient {
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
-        let response = self
-            .client
-            .get_blob_container_client(self.container_name.clone())
-            .delete(options)
-            .await?;
+        let response = self.client.delete(options).await?;
         Ok(response)
     }
 
@@ -113,17 +112,12 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
-    pub async fn get_container_properties(
+    pub async fn get_properties(
         &self,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
-    ) -> Result<ContainerProperties> {
-        let response = self
-            .client
-            .get_blob_container_client(self.container_name.clone())
-            .get_properties(options)
-            .await?;
+    ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {
+        let response = self.client.get_properties(options).await?;
 
-        let container_properties: ContainerProperties = response.headers().get()?;
-        Ok(container_properties)
+        Ok(response)
     }
 }
