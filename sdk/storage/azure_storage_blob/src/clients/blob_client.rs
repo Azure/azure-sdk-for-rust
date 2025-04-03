@@ -98,7 +98,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
-    pub async fn get_blob_properties(
+    pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobClientGetPropertiesResult>> {
@@ -111,7 +111,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
-    pub async fn download_blob(
+    pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
     ) -> Result<Response<BlobClientDownloadResult>> {
@@ -128,7 +128,7 @@ impl BlobClient {
     ///   If False, the operation will fail with ResourceExistsError.
     /// * `content_length` - Total length of the blob data to be uploaded.
     /// * `options` - Optional configuration for the request.
-    pub async fn upload_blob(
+    pub async fn upload(
         &self,
         data: RequestContent<Bytes>,
         overwrite: bool,
@@ -153,7 +153,7 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
-    /// * `blocks` - The list of Block Blobs to commit.
+    /// * `blocks` - The list of Blob blocks to commit.
     /// * `options` - Optional configuration for the request.
     pub async fn commit_block_list(
         &self,
@@ -172,7 +172,7 @@ impl BlobClient {
     /// * `block_id` - The unique identifier for the block. The identifier should be less than or equal to 64 bytes in size.
     ///   For a given blob, the `block_id` must be the same size for each block.
     /// * `content_length` - Total length of the blob data to be staged.
-    /// * `data` - The content of the blob.
+    /// * `data` - The content of the block.
     /// * `options` - Optional configuration for the request.
     pub async fn stage_block(
         &self,

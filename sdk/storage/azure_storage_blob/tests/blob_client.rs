@@ -20,7 +20,7 @@ use std::error::Error;
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording).await;
+    let (options, endpoint) = recorded_test_setup(recording);
     let container_name = recording
         .random_string::<17>(Some("container"))
         .to_ascii_lowercase();
@@ -53,7 +53,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     )?;
 
     // Invalid Container Scenario
-    let response = blob_client.get_blob_properties(None).await;
+    let response = blob_client.get_properties(None).await;
 
     // Assert
     let error = response.unwrap_err().http_status();
@@ -64,7 +64,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     let data = b"hello rusty world";
 
     blob_client
-        .upload_blob(
+        .upload(
             RequestContent::from(data.to_vec()),
             true,
             u64::try_from(data.len())?,
@@ -73,7 +73,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         .await?;
 
     // No Option Scenario
-    let response = blob_client.get_blob_properties(None).await?;
+    let response = blob_client.get_properties(None).await?;
 
     // Assert
     let lease_state = response.lease_state()?;
@@ -93,8 +93,9 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 #[recorded::test]
 async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
+
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording).await;
+    let (options, endpoint) = recorded_test_setup(recording);
     let container_name = recording
         .random_string::<17>(Some("container"))
         .to_ascii_lowercase();
@@ -131,7 +132,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // No Overwrite Scenario
     blob_client
-        .upload_blob(
+        .upload(
             RequestContent::from(data.to_vec()),
             false,
             u64::try_from(data.len())?,
@@ -140,7 +141,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
 
     // Assert
-    let response = blob_client.download_blob(None).await?;
+    let response = blob_client.download(None).await?;
     let content_length = response.content_length()?;
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
@@ -152,7 +153,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Error Case (overwrite=false/none)
     let response = blob_client
-        .upload_blob(
+        .upload(
             RequestContent::from(new_data.to_vec()),
             false,
             u64::try_from(new_data.len())?,
@@ -162,21 +163,19 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     assert!(response.is_err());
-    assert_eq!(
-        "HttpResponse(Conflict, \"BlobAlreadyExists\")",
-        response.unwrap_err().kind().to_string()
-    );
+    let error = response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
 
     // Working Case (overwrite=true)
     let overwrite_response = blob_client
-        .upload_blob(
+        .upload(
             RequestContent::from(new_data.to_vec()),
             true,
             u64::try_from(new_data.len())?,
             None,
         )
         .await?;
-    let response = blob_client.download_blob(None).await?;
+    let response = blob_client.download(None).await?;
     let content_length = response.content_length()?;
 
     // Assert
@@ -194,7 +193,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording).await;
+    let (options, endpoint) = recorded_test_setup(recording);
     let container_name = recording
         .random_string::<17>(Some("container"))
         .to_ascii_lowercase();
@@ -228,14 +227,14 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     )?;
     let data = b"test download content";
     blob_client
-        .upload_blob(
+        .upload(
             RequestContent::from(data.to_vec()),
             true,
             u64::try_from(data.len())?,
             None,
         )
         .await?;
-    let response = blob_client.download_blob(None).await?;
+    let response = blob_client.download(None).await?;
 
     // Assert
     let content_length = response.content_length()?;
@@ -252,7 +251,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording).await;
+    let (options, endpoint) = recorded_test_setup(recording);
     let container_name = recording
         .random_string::<17>(Some("container"))
         .to_ascii_lowercase();
@@ -331,7 +330,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     blob_client.commit_block_list(request_content, None).await?;
 
-    let response = blob_client.download_blob(None).await?;
+    let response = blob_client.download(None).await?;
 
     // Assert
     let content_length = response.content_length()?;
@@ -351,7 +350,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_get_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording).await;
+    let (options, endpoint) = recorded_test_setup(recording);
     let container_name = recording
         .random_string::<17>(Some("container"))
         .to_ascii_lowercase();

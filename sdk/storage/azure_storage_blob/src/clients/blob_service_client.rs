@@ -70,7 +70,7 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
-    pub async fn get_service_properties(
+    pub async fn get_properties(
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<StorageServiceProperties>> {

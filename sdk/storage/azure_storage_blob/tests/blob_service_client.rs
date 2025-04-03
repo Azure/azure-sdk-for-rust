@@ -12,7 +12,7 @@ use std::error::Error;
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording).await;
+    let (options, endpoint) = recorded_test_setup(recording);
 
     let service_client_options = BlobServiceClientOptions {
         client_options: options.clone(),
@@ -26,7 +26,7 @@ async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
         Some(service_client_options),
     )?;
     let response = service_client
-        .get_service_properties(Some(BlobServiceClientGetPropertiesOptions::default()))
+        .get_properties(Some(BlobServiceClientGetPropertiesOptions::default()))
         .await?;
 
     // Assert

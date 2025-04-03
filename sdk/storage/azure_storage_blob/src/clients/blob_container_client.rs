@@ -112,7 +112,7 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
-    pub async fn get_container_properties(
+    pub async fn get_properties(
         &self,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {

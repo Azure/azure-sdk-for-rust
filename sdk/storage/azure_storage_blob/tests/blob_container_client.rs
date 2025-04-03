@@ -14,7 +14,7 @@ use std::error::Error;
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording).await;
+    let (options, endpoint) = recorded_test_setup(recording);
     let container_name = recording
         .random_string::<17>(Some("container"))
         .to_ascii_lowercase();
@@ -43,7 +43,7 @@ async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint) = recorded_test_setup(recording).await;
+    let (options, endpoint) = recorded_test_setup(recording);
     let container_name = recording
         .random_string::<17>(Some("container"))
         .to_ascii_lowercase();
@@ -62,7 +62,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
     )?;
 
     // Container Doesn't Exists Scenario
-    let response = container_client.get_container_properties(None).await;
+    let response = container_client.get_properties(None).await;
 
     // Assert
     assert!(response.is_err());
@@ -71,7 +71,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
 
     // Container Exists Scenario
     container_client.create_container(None).await?;
-    let container_properties = container_client.get_container_properties(None).await?;
+    let container_properties = container_client.get_properties(None).await?;
     let lease_state = container_properties.lease_state()?;
     let has_immutability_policy = container_properties.has_immutability_policy()?;
 

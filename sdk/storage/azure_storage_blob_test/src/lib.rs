@@ -4,7 +4,7 @@
 use azure_core::http::ClientOptions;
 use azure_core_test::Recording;
 
-pub async fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
+pub fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
     let endpoint = format!(
