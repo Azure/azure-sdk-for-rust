@@ -2,6 +2,16 @@
   "azure-pipelines.1ESPipelineTemplatesSchemaFile": true,
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": "doc/git-commit-recommendations.md"
+    }
+  ],
+  "github.copilot.chat.pullRequestDescriptionGeneration.instructions": [
+    {
+      "file": "doc/github-pullrequest-recommendations.md"
+    }
+  ],
   "markdownlint.config": {
     "MD024": false
   },
