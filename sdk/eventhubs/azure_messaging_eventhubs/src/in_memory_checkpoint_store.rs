@@ -29,7 +29,7 @@ macro_rules! check_non_empty_parameter(
         if $field.is_empty() {
             return Err(Error::message(
                 AzureErrorKind::Other,
-                String::from("Required field ") + stringify!(field) + " is empty",
+                String::from("Required field ") + stringify!($field) + " is empty",
             ));
         }
     }

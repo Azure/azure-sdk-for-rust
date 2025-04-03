@@ -482,7 +482,7 @@ impl EventProcessor {
     /// position is chosen from the configured default start positions.
     ///
     /// # Arguments
-    /// * `ownership` - The ownership information for the partition.
+    /// * partition_id - The partition for which to determine the start position.
     /// * `checkpoints` - A map of checkpoints for all partitions.
     ///
     fn get_start_position(
