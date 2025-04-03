@@ -7,7 +7,6 @@ use std::{borrow::Cow, sync::Arc};
 use azure_core::{credentials::Secret, http::TransportOptions, test::TestMode};
 use azure_core_test::TestContext;
 use azure_data_cosmos::{CosmosClientOptions, Query};
-use futures::StreamExt;
 use reqwest::ClientBuilder;
 
 /// Represents a Cosmos DB account for testing purposes.
@@ -156,14 +155,15 @@ impl TestAccount {
     /// Call this at the end of every test using the [`TestAccount`].
     #[cfg(feature = "key_auth")]
     pub async fn cleanup(self) -> Result<(), Box<dyn std::error::Error>> {
+        use futures::TryStreamExt;
+
         let cosmos_client = self.connect_with_key(None)?;
         let query = Query::from("SELECT * FROM root r WHERE r.id LIKE CONCAT('%_', @context_id)")
             .with_parameter("@context_id", &self.context_id)?;
         let mut pager = cosmos_client.query_databases(query, None)?;
         let mut ids = Vec::new();
-        while let Some(page) = pager.next().await {
-            let results = page?.into_body().await?;
-            for db in results.databases {
+        while let Some(page) = pager.try_next().await? {
+            for db in page.into_items() {
                 ids.push(db.id);
             }
         }
