@@ -14,13 +14,17 @@ use crate::generated::models::{
     PageBlobClientUploadPagesOptions, PageBlobClientUploadPagesResult, PageList,
     SequenceNumberActionType,
 };
-use azure_core::credentials::TokenCredential;
-use azure_core::fmt::SafeDebug;
-use azure_core::http::policies::{BearerTokenCredentialPolicy, Policy};
-use azure_core::http::{
-    ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
+use azure_core::{
+    base64,
+    credentials::TokenCredential,
+    date,
+    fmt::SafeDebug,
+    http::{
+        policies::{BearerTokenCredentialPolicy, Policy},
+        ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
+    },
+    Bytes, Result,
 };
-use azure_core::{base64, date, Bytes, Result};
 use std::sync::Arc;
 
 pub struct PageBlobClient {
@@ -31,10 +35,12 @@ pub struct PageBlobClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a [`PageBlobClient`](PageBlobClient)
+/// Options used when creating a `PageBlobClient`
 #[derive(Clone, SafeDebug)]
 pub struct PageBlobClientOptions {
+    /// Allows customization of the client.
     pub client_options: ClientOptions,
+    /// Specifies the version of the operation to use for this request.
     pub version: String,
 }
 
