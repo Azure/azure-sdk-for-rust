@@ -78,7 +78,7 @@ authentication flows. For more details on this scenario see [Configure an applic
 
 ```rust no_run
 use azure_core::credentials::{AccessToken, TokenCredential};
-use azure_identity::{ClientAssertion, ClientAssertionCredential, ImdsId, TokenCredentialOptions, VirtualMachineManagedIdentityCredential};
+use azure_identity::{ClientAssertion, ClientAssertionCredential, TokenCredentialOptions, ManagedIdentityCredential};
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -104,10 +104,7 @@ impl ClientAssertion for VmClientAssertion {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let assertion = VmClientAssertion {
-        credential: VirtualMachineManagedIdentityCredential::new(
-            ImdsId::SystemAssigned,
-            TokenCredentialOptions::default(),
-        )?,
+        credential: ManagedIdentityCredential::new(None)?,
         scope: String::from("api://AzureADTokenExchange/.default"),
     };
 

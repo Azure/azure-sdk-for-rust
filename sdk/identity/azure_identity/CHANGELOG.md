@@ -17,6 +17,7 @@
 - Removed `get_subscription()` and `get_tenant()` from `AzureCliCredential`.
 - `WorkloadIdentityCredential` constructors moved some parameters to an `Option<ClientAssertionCredentialOptions>` parameter.
 - Removed `clear_cache()` from all credential types
+- Replaced `AppServiceManagedIdentityCredential`, `VirtualMachineManagedIdentityCredential`, and `ImdsId` with `ManagedIdentityCredential` and `UserAssignedId`
 
 ### Bugs Fixed
 

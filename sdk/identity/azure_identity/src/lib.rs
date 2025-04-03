@@ -10,6 +10,7 @@ mod chained_token_credential;
 mod credentials;
 mod env;
 mod federated_credentials_flow;
+mod managed_identity_credential;
 mod oauth2_http_client;
 mod refresh_token;
 mod timeout;
@@ -18,6 +19,7 @@ use azure_core::{error::ErrorKind, Error, Result};
 pub use azure_pipelines_credential::*;
 pub use chained_token_credential::*;
 pub use credentials::*;
+pub use managed_identity_credential::*;
 use std::borrow::Cow;
 
 fn validate_not_empty<C>(value: &str, message: C) -> Result<()>
@@ -107,4 +109,10 @@ fn test_validate_tenant_id() {
     assert!(validate_tenant_id("invalid_tenant@id").is_err());
     assert!(validate_tenant_id("A-1.z").is_ok());
     assert!(validate_tenant_id("7b795fb9-09d3-42f4-a494-38864f99ba3c").is_ok());
+}
+
+#[cfg(test)]
+mod tests {
+    pub const LIVE_TEST_RESOURCE: &str = "https://management.azure.com";
+    pub const LIVE_TEST_SCOPES: &[&str] = &["https://management.azure.com/.default"];
 }
