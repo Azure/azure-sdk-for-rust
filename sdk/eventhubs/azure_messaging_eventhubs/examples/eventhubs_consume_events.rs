@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-use std::time::Duration;
+//! This sample demonstrates how to consume events from an Event Hub partition using the [`ConsumerClient`].
 
-/// This sample demonstrates how to consume events from an Event Hub partition using the [`ConsumerClient`].
-///
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
     ConsumerClient, OpenReceiverOptions, StartLocation, StartPosition,
 };
 use futures::StreamExt;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

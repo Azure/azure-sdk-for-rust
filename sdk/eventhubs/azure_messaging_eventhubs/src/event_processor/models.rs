@@ -15,12 +15,12 @@ use crate::StartPosition;
 /// the correct position in case of failures or restarts.
 #[derive(Debug, Default, Clone)]
 pub struct Checkpoint {
-    /// The name of the consumer group.
-    pub consumer_group: String,
-    /// The name of the Event Hub.
-    pub event_hub_name: String,
     /// The fully qualified namespace of the Event Hub.
     pub fully_qualified_namespace: String,
+    /// The name of the Event Hub.
+    pub event_hub_name: String,
+    /// The name of the consumer group.
+    pub consumer_group: String,
     /// The identifier of the partition.
     pub partition_id: String,
     /// The offset of the last processed event.
@@ -28,6 +28,7 @@ pub struct Checkpoint {
     /// The sequence number of the last processed event.
     pub sequence_number: Option<i64>,
 }
+
 macro_rules! check_non_empty_parameter(
     ($field:expr) => {
         if $field.is_empty() {
@@ -85,12 +86,12 @@ impl Checkpoint {
 /// and ensuring that each partition is processed by only one consumer at a time.
 #[derive(Debug, Default, Clone)]
 pub struct Ownership {
-    /// The name of the consumer group.
-    pub consumer_group: String,
-    /// The name of the Event Hub.
-    pub event_hub_name: String,
     /// The fully qualified namespace of the Event Hub.
     pub fully_qualified_namespace: String,
+    /// The name of the Event Hub.
+    pub event_hub_name: String,
+    /// The name of the consumer group.
+    pub consumer_group: String,
     /// The identifier of the partition.
     pub partition_id: String,
 

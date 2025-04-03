@@ -219,7 +219,6 @@ impl EventProcessor {
     /// ```
     ///
     pub async fn run(&self) -> Result<()> {
-        let consumers = Arc::new(ProcessorConsumersMap::new());
         {
             let mut is_running = self.is_running.lock().map_err(|_| {
                 Error::new(AzureErrorKind::Io, "Could not lock is_running on startup")
@@ -227,6 +226,7 @@ impl EventProcessor {
             *is_running = true;
         }
 
+        let consumers = Arc::new(ProcessorConsumersMap::new());
         let partition_ids = &self
             .partition_ids
             .iter()
@@ -302,6 +302,7 @@ impl EventProcessor {
             error!("Error in getting checkpoint map: {:?}", e);
             e
         })?;
+
         debug!(
             "Adding partition clients for {} ownerships ",
             ownerships.len()

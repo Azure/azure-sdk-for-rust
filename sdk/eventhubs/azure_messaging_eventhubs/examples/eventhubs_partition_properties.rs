@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
+
+//! Example of using the Event Hubs SDK to get partition properties.
+
 use azure_core::error::Result;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ProducerClient;
-
 use std::env;
 
 #[tokio::main]

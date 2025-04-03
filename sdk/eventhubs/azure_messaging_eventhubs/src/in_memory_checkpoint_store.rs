@@ -24,6 +24,17 @@ impl Default for InMemoryCheckpointStore {
     }
 }
 
+macro_rules! check_non_empty_parameter(
+    ($field:expr) => {
+        if $field.is_empty() {
+            return Err(Error::message(
+                AzureErrorKind::Other,
+                String::from("Required field ") + stringify!(field) + " is empty",
+            ));
+        }
+    }
+);
+
 impl InMemoryCheckpointStore {
     /// Creates a new instance of `InMemoryCheckpointStore`.
     pub fn new() -> Self {
@@ -36,17 +47,12 @@ impl InMemoryCheckpointStore {
     /// Updates the ownership for a specific partition.
     pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership> {
         trace!("Update ownership for partition {}", ownership.partition_id);
-        if ownership.partition_id.is_empty()
-            || ownership.event_hub_name.is_empty()
-            || ownership.fully_qualified_namespace.is_empty()
-            || ownership.partition_id.is_empty()
-        {
-            warn!("Ownership is not valid: {:#?}", ownership);
-            return Err(Error::message(
-                AzureErrorKind::Other,
-                format!("Ownership is not valid: {:#?}", ownership),
-            ));
-        }
+
+        check_non_empty_parameter!(ownership.fully_qualified_namespace);
+        check_non_empty_parameter!(ownership.event_hub_name);
+        check_non_empty_parameter!(ownership.consumer_group);
+        check_non_empty_parameter!(ownership.partition_id);
+
         let mut store = self.ownerships.lock().unwrap();
         let key = Ownership::get_ownership_name(
             &ownership.fully_qualified_namespace,
