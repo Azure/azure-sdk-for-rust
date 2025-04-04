@@ -20,7 +20,24 @@ pub use azure_pipelines_credential::*;
 pub use chained_token_credential::*;
 pub use credentials::*;
 pub use managed_identity_credential::*;
+use serde::Deserialize;
 use std::borrow::Cow;
+use typespec_client_core::http::Model;
+
+#[derive(Debug, Default, Deserialize, Model)]
+#[serde(default)]
+struct EntraIdErrorResponse {
+    error_description: String,
+}
+
+#[derive(Debug, Default, Deserialize, Model)]
+#[serde(default)]
+struct EntraIdTokenResponse {
+    token_type: String,
+    expires_in: u64,
+    ext_expires_in: u64,
+    access_token: String,
+}
 
 fn validate_not_empty<C>(value: &str, message: C) -> Result<()>
 where

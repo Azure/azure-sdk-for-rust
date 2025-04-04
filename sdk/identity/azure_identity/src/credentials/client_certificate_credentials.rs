@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
+use crate::{credentials::cache::TokenCache, EntraIdTokenResponse, TokenCredentialOptions};
 use azure_core::{
     base64,
     credentials::{AccessToken, Secret, TokenCredential},
@@ -23,10 +23,8 @@ use openssl::{
     sign::Signer,
     x509::X509,
 };
-use serde::Deserialize;
 use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
-use typespec_client_core::http::Model;
 use url::form_urlencoded;
 
 /// Refresh time to use in seconds.
@@ -260,7 +258,7 @@ impl ClientCertificateCredential {
             return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
         }
 
-        let response: AadTokenResponse = rsp.into_json_body().await?;
+        let response: EntraIdTokenResponse = rsp.into_json_body().await?;
         Ok(AccessToken::new(
             response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
@@ -329,15 +327,6 @@ impl ClientCertificateCredential {
             options,
         )
     }
-}
-
-#[derive(Model, Deserialize, Debug, Default)]
-#[serde(default)]
-struct AadTokenResponse {
-    token_type: String,
-    expires_in: u64,
-    ext_expires_in: u64,
-    access_token: String,
 }
 
 fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
