@@ -238,13 +238,8 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         )
         .await?;
 
-    // Assert
-    let response = blob_client.download(None).await?;
-    let content_length = response.content_length()?;
-    let (status_code, _, response_body) = response.deconstruct();
-    assert!(status_code.is_success());
-    assert_eq!(17, content_length.unwrap());
-    assert_eq!(Bytes::from_static(data), response_body.collect().await?);
+    // Existence Check
+    blob_client.get_properties(None).await?;
 
     blob_client.delete(None).await?;
 

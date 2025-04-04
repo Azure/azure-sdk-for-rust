@@ -149,7 +149,7 @@ impl BlobClient {
         Ok(response)
     }
 
-    /// Marks the specified blob for deletion. The blob is later deleted during garbage collection.
+    /// Deletes the blob.
     ///
     /// # Arguments
     ///

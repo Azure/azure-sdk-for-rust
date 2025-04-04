@@ -34,12 +34,12 @@ az storage account create -n my-storage-account-name -g my-resource-group
 
 #### Authenticate the client
 
-In order to interact with the Azure Blobs Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Azure Active Directory support for authenticating Azure SDK clients with their corresponding Azure services:
+In order to interact with the Azure Blobs Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 ```rust
 use azure_storage_blob::BlobClient;
 use azure_identity::DefaultAzureCredential;
 
-// Create a BlobClient that will authenticate through Active Directory
+// Create a BlobClient that will authenticate through Microsoft Entra ID
 let credential = DefaultAzureCredential::new()?;
 let blob_client = BlobClient::new(
     "https://<storage_account_name>.blob.core.windows.net/", // endpoint
@@ -57,7 +57,7 @@ let blob_client = BlobClient::new(
 use azure_storage_blob::BlobClient;
 use azure_identity::DefaultAzureCredential;
 
-// Create a BlobClient that will authenticate through Active Directory
+// Create a BlobClient that will authenticate through Microsoft Entra ID
 let credential = DefaultAzureCredential::new()?;
 let blob_client = BlobClient::new(
     "https://<storage_account_name>.blob.core.windows.net/", // endpoint
