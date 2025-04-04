@@ -14,11 +14,11 @@ pub use crate::generated::clients::{
     BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions,
 };
 pub use crate::generated::models::{
-    BlobClientDownloadOptions, BlobClientGetPropertiesOptions, BlobContainerClientCreateOptions,
-    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
-    BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
+    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+    BlobContainerClientGetPropertiesOptions, BlobServiceClientGetPropertiesOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 
 pub mod models {

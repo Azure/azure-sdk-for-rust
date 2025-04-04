@@ -1,3 +1,7 @@
-# 0.1.0 (2024-07)
+# Release History
 
-- initial TODO
+## 0.1.0 (2025-04-08)
+
+### Features Added
+
+* Initial supported release.
