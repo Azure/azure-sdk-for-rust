@@ -3,9 +3,10 @@
 
 // cspell: words checkpointing
 
-/// This sample demonstrates how to use an Event Hubs Processor to manage receiving
-/// events from an Event Hub partition and checkpointing the events that have been processed.
-///
+//! This sample demonstrates how to use an Event Hubs Processor to manage receiving
+//! events from an Event Hub partition and checkpointing the events that have been
+//! processed.
+
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, InMemoryCheckpointStore};
 use futures::StreamExt;
