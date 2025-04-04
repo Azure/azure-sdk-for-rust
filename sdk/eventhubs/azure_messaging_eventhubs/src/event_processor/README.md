@@ -1,6 +1,6 @@
 # Azure Event Hubs Event Processor notes
 
-The following are a set of collected (somewhat random) notes on EventHubs event processor functionality.
+The following are a set of collected notes on Event Hubs event processor functionality.
 
 ## Processor
 
