@@ -38,7 +38,7 @@ A processor partition client receives events from an eventhubs instance. It also
 
 The processor has several configuration options available:
 
-- Load Balancing Strategy - the strategy used by the load balancer (Greedy or Balanced). More on load balancing strategy in [Load Balancing Strategy]
+- Load Balancing Strategy - the strategy used by the load balancer (Greedy or Balanced). More on load balancing strategy in [Load Balancing Strategy](#load-balancing-strategy)
 - Update Interval - the duration that the processor should sleep between processor cycles. The default update interval is 30 seconds.
 - Partition Expiration Duration - The time after which a partition is considered unowned. The default partition expiration duration is 2 minutes.
 - Start Positions - the starting position for each partition (or a default starting position for all partitions).
