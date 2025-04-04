@@ -8,6 +8,7 @@
 - `AzureCliCredentialOptions` (new) accepts a `azure_core::process::Executor` to run the Azure CLI asynchronously.
   The `tokio` feature is disabled by default so `std::process::Command` is used; otherwise, if enabled, `tokio::process::Command` is used.
   Callers can also implement the trait themselves to use a different asynchronous runtime.
+- Restored `ClientSecretCredential`
 
 ### Breaking Changes
 
