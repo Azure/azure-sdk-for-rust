@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(doc)]
-use crate::{models::KeyBundle, KeyClient};
 use azure_core::{error::ErrorKind, http::Url, Result};
 use std::str::FromStr;
 
+use crate::models::CertificateOperation;
+
 /// Information about the resource.
 ///
-/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`KeyBundle`] to get this information.
+/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`CertificateBundle`](crate::models::CertificateBundle) to get this information.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResourceId {
     /// The source URL of the resource.
@@ -41,7 +41,7 @@ impl TryFrom<Url> for ResourceId {
 impl TryFrom<&Url> for ResourceId {
     type Error = azure_core::Error;
     fn try_from(url: &Url) -> Result<Self> {
-        deconstruct(url)
+        deconstruct(url, true)
     }
 }
 
@@ -49,23 +49,21 @@ impl TryFrom<&Url> for ResourceId {
 pub trait ResourceExt {
     /// Gets the [`ResourceId`] from this model.
     ///
-    /// You can parse the name and version to pass to subsequent [`KeyClient`] method calls.
+    /// You can parse the name and version to pass to subsequent [`CertificateClient`](crate::CertificateClient) method calls.
     ///
     /// # Examples
     ///
     /// ```
-    /// use azure_security_keyvault_keys::{models::{JsonWebKey, KeyBundle}, ResourceExt as _};
+    /// use azure_security_keyvault_certificates::{models::CertificateBundle, ResourceExt as _};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// // KeyClient::get_key() will return a KeyBundle.
-    /// let mut jwk = JsonWebKey::default();
-    /// jwk.kid = Some("https://my-vault.vault.azure.net/keys/my-key/abcd1234?api-version=7.5".into());
-    /// let mut key = KeyBundle::default();
-    /// key.key = Some(jwk);
+    /// // CertificateClient::get_certificate() will return a CertificateBundle.
+    /// let mut certificate = CertificateBundle::default();
+    /// certificate.id = Some("https://my-vault.vault.azure.net/certificates/my-certificate/abcd1234?api-version=7.5".into());
     ///
-    /// let id = key.resource_id()?;
+    /// let id = certificate.resource_id()?;
     /// assert_eq!(id.vault_url, "https://my-vault.vault.azure.net");
-    /// assert_eq!(id.name, "my-key");
+    /// assert_eq!(id.name, "my-certificate");
     /// assert_eq!(id.version, Some("abcd1234".into()));
     /// # Ok(())
     /// # }
@@ -86,11 +84,25 @@ where
         };
 
         let url: Url = id.parse()?;
-        deconstruct(&url)
+        deconstruct(&url, true)
     }
 }
 
-fn deconstruct(url: &Url) -> Result<ResourceId> {
+impl ResourceExt for CertificateOperation {
+    fn resource_id(&self) -> Result<ResourceId> {
+        let Some(id) = self.id.as_ref() else {
+            return Err(azure_core::Error::message(
+                ErrorKind::DataConversion,
+                "missing resource id",
+            ));
+        };
+
+        let url: Url = id.parse()?;
+        deconstruct(&url, false)
+    }
+}
+
+fn deconstruct(url: &Url, version: bool) -> Result<ResourceId> {
     let vault_url = format!("{}://{}", url.scheme(), url.authority(),);
     let mut segments = url
         .path_segments()
@@ -100,10 +112,10 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
         .next()
         .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing collection"))
         .and_then(|col| {
-            if col != "keys" {
+            if col != "certificates" {
                 return Err(azure_core::Error::message(
                     ErrorKind::DataConversion,
-                    "not in keys collection",
+                    "not in certificates collection",
                 ));
             }
             Ok(col)
@@ -112,62 +124,68 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
         .next()
         .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing name"))
         .map(String::from)?;
-    let version = segments.next().map(String::from);
 
-    Ok(ResourceId {
+    let mut resource_id = ResourceId {
         source_id: url.as_str().into(),
         vault_url,
         name,
-        version,
-    })
+        version: None,
+    };
+    if version {
+        resource_id.version = segments.next().map(String::from);
+    }
+
+    Ok(resource_id)
 }
 
 mod private {
-    use crate::models::{DeletedKeyBundle, DeletedKeyItem, KeyBundle, KeyItem};
+    use crate::models::{
+        CertificateBundle, CertificateItem, DeletedCertificateBundle, DeletedCertificateItem,
+    };
 
     pub trait AsId {
         fn as_id(&self) -> Option<&String>;
     }
 
-    impl AsId for KeyBundle {
+    impl AsId for CertificateBundle {
         fn as_id(&self) -> Option<&String> {
-            self.key.as_ref()?.kid.as_ref()
+            self.id.as_ref()
         }
     }
 
-    impl AsId for KeyItem {
+    impl AsId for CertificateItem {
         fn as_id(&self) -> Option<&String> {
-            self.kid.as_ref()
+            self.id.as_ref()
         }
     }
 
-    impl AsId for DeletedKeyBundle {
+    impl AsId for DeletedCertificateBundle {
         fn as_id(&self) -> Option<&String> {
-            self.key.as_ref()?.kid.as_ref()
+            self.id.as_ref()
         }
     }
 
-    impl AsId for DeletedKeyItem {
+    impl AsId for DeletedCertificateItem {
         fn as_id(&self) -> Option<&String> {
-            self.kid.as_ref()
+            self.id.as_ref()
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::models::{JsonWebKey, KeyBundle};
+    use crate::models::CertificateBundle;
 
     use super::*;
 
     #[test]
     fn try_from_str() {
         assert_eq!(
-            "https://vault.azure.net/keys/name/version"
+            "https://vault.azure.net/certificates/name/version"
                 .parse::<ResourceId>()
                 .unwrap(),
             ResourceId {
-                source_id: "https://vault.azure.net/keys/name/version".to_string(),
+                source_id: "https://vault.azure.net/certificates/name/version".to_string(),
                 vault_url: "https://vault.azure.net".into(),
                 name: "name".into(),
                 version: Some("version".into()),
@@ -177,12 +195,14 @@ mod tests {
 
     #[test]
     fn try_from_url() {
-        let url: Url = "https://vault.azure.net/keys/name/version".parse().unwrap();
+        let url: Url = "https://vault.azure.net/certificates/name/version"
+            .parse()
+            .unwrap();
         let resource: ResourceId = url.try_into().unwrap();
         assert_eq!(
             resource,
             ResourceId {
-                source_id: "https://vault.azure.net/keys/name/version".to_string(),
+                source_id: "https://vault.azure.net/certificates/name/version".to_string(),
                 vault_url: "https://vault.azure.net".into(),
                 name: "name".into(),
                 version: Some("version".into()),
@@ -192,15 +212,23 @@ mod tests {
 
     #[test]
     fn test_deconstruct() {
-        deconstruct(&"file:///tmp".parse().unwrap()).expect_err("cannot-be-base url");
-        deconstruct(&"https://vault.azure.net/".parse().unwrap()).expect_err("missing collection");
-        deconstruct(&"https://vault.azure.net/collection/".parse().unwrap())
-            .expect_err("invalid collection");
-        deconstruct(&"https://vault.azure.net/keys/".parse().unwrap()).expect_err("missing name");
+        deconstruct(&"file:///tmp".parse().unwrap(), true).expect_err("cannot-be-base url");
+        deconstruct(&"https://vault.azure.net/".parse().unwrap(), true)
+            .expect_err("missing collection");
+        deconstruct(
+            &"https://vault.azure.net/collection/".parse().unwrap(),
+            true,
+        )
+        .expect_err("invalid collection");
+        deconstruct(
+            &"https://vault.azure.net/certificates/".parse().unwrap(),
+            true,
+        )
+        .expect_err("missing name");
 
-        let url: Url = "https://vault.azure.net/keys/name".parse().unwrap();
+        let url: Url = "https://vault.azure.net/certificates/name".parse().unwrap();
         assert_eq!(
-            deconstruct(&url).unwrap(),
+            deconstruct(&url, true).unwrap(),
             ResourceId {
                 source_id: url.to_string(),
                 vault_url: "https://vault.azure.net".into(),
@@ -209,9 +237,11 @@ mod tests {
             }
         );
 
-        let url: Url = "https://vault.azure.net/keys/name/version".parse().unwrap();
+        let url: Url = "https://vault.azure.net/certificates/name/version"
+            .parse()
+            .unwrap();
         assert_eq!(
-            deconstruct(&url).unwrap(),
+            deconstruct(&url, true).unwrap(),
             ResourceId {
                 source_id: url.to_string(),
                 vault_url: "https://vault.azure.net".into(),
@@ -220,11 +250,11 @@ mod tests {
             }
         );
 
-        let url: Url = "https://vault.azure.net:443/keys/name/version"
+        let url: Url = "https://vault.azure.net:443/certificates/name/version"
             .parse()
             .unwrap();
         assert_eq!(
-            deconstruct(&url).unwrap(),
+            deconstruct(&url, true).unwrap(),
             ResourceId {
                 source_id: url.to_string(),
                 vault_url: "https://vault.azure.net".into(),
@@ -233,11 +263,11 @@ mod tests {
             }
         );
 
-        let url: Url = "https://vault.azure.net:8443/keys/name/version"
+        let url: Url = "https://vault.azure.net:8443/certificates/name/version"
             .parse()
             .unwrap();
         assert_eq!(
-            deconstruct(&url).unwrap(),
+            deconstruct(&url, true).unwrap(),
             ResourceId {
                 source_id: url.to_string(),
                 vault_url: "https://vault.azure.net:8443".into(),
@@ -248,25 +278,19 @@ mod tests {
     }
 
     #[test]
-    fn from_key_bundle() {
-        let mut key = KeyBundle {
-            key: None,
+    fn from_certificate_bundle() {
+        let mut certificate = CertificateBundle {
+            id: None,
             ..Default::default()
         };
-        key.resource_id().expect_err("missing resource id");
+        certificate.resource_id().expect_err("missing resource id");
 
-        let mut jwk = JsonWebKey {
-            kid: None,
-            ..Default::default()
-        };
-        key.key = Some(jwk.clone());
-        key.resource_id().expect_err("missing resource id");
-
-        let url: Url = "https://vault.azure.net/keys/name/version".parse().unwrap();
-        jwk.kid = Some(url.to_string());
-        key.key = Some(jwk);
+        let url: Url = "https://vault.azure.net/certificates/name/version"
+            .parse()
+            .unwrap();
+        certificate.id = Some(url.clone().into());
         assert_eq!(
-            key.resource_id().unwrap(),
+            certificate.resource_id().unwrap(),
             ResourceId {
                 source_id: url.to_string(),
                 vault_url: "https://vault.azure.net".into(),
@@ -277,13 +301,48 @@ mod tests {
     }
 
     #[test]
+    fn from_certificate_operation() {
+        use crate::models::CertificateOperation;
+
+        let mut operation = CertificateOperation {
+            id: None,
+            ..Default::default()
+        };
+        operation.resource_id().expect_err("missing resource id");
+
+        let url: Url = "https://vault.azure.net/certificates/name/pending"
+            .parse()
+            .unwrap();
+        operation.id = Some(url.clone().into());
+
+        // CertificateOperation should not include version in the ResourceId
+        let resource_id = operation.resource_id().unwrap();
+        assert_eq!(resource_id.source_id, url.to_string());
+        assert_eq!(resource_id.vault_url, "https://vault.azure.net");
+        assert_eq!(resource_id.name, "name");
+        assert_eq!(resource_id.version, None);
+
+        // Test with a URL that has a port
+        let url_with_port: Url = "https://vault.azure.net:8443/certificates/cert-name/pending"
+            .parse()
+            .unwrap();
+        operation.id = Some(url_with_port.clone().into());
+
+        let resource_id = operation.resource_id().unwrap();
+        assert_eq!(resource_id.source_id, url_with_port.to_string());
+        assert_eq!(resource_id.vault_url, "https://vault.azure.net:8443");
+        assert_eq!(resource_id.name, "cert-name");
+        assert_eq!(resource_id.version, None);
+    }
+
+    #[test]
     fn canonicalizes() {
         assert_eq!(
-            "https://vault.azure.net//keys/name/version"
+            "https://vault.azure.net//certificates/name/version"
                 .parse::<ResourceId>()
                 .unwrap(),
             ResourceId {
-                source_id: "https://vault.azure.net//keys/name/version".to_string(),
+                source_id: "https://vault.azure.net//certificates/name/version".to_string(),
                 vault_url: "https://vault.azure.net".into(),
                 name: "name".into(),
                 version: Some("version".into()),

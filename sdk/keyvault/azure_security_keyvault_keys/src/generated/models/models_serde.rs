@@ -8,8 +8,7 @@ use super::{
     KeyReleaseParameters, KeyRestoreParameters, KeyRotationPolicy, KeySignParameters,
     KeyUpdateParameters, KeyVerifyParameters,
 };
-use azure_core::http::RequestContent;
-use azure_core::{json::to_json, Result};
+use azure_core::{http::RequestContent, json::to_json, Result};
 
 impl TryFrom<GetRandomBytesRequest> for RequestContent<GetRandomBytesRequest> {
     type Error = azure_core::Error;

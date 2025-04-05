@@ -356,7 +356,7 @@ use azure_security_keyvault_keys::KeyClient;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = KeyClient::new(
-        "https://ronnieg-keyvault.vault.azure.net/",
+        "https://my-vault.vault.azure.net/",
         credential.clone(),
         None,
     )?;
@@ -380,7 +380,7 @@ Error: HttpError {
             "KeyNotFound",
         ),
         message: Some(
-            "A key with (name/id) key-name1 was not found in this key vault. If you recently deleted this key you may be able to recover it using the correct recovery command. For help resolving this issue, please see https://go.microsoft.com/fwlink/?linkid=2125182",
+            "A key with (name/id) key-name was not found in this key vault. If you recently deleted this key you may be able to recover it using the correct recovery command. For help resolving this issue, please see https://go.microsoft.com/fwlink/?linkid=2125182",
         ),
     },
     ..

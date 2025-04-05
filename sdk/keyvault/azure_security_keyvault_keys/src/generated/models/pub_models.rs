@@ -7,8 +7,7 @@ use super::{
     DeletionRecoveryLevel, JsonWebKeyCurveName, JsonWebKeyEncryptionAlgorithm, JsonWebKeyOperation,
     JsonWebKeySignatureAlgorithm, JsonWebKeyType, KeyEncryptionAlgorithm, KeyRotationPolicyAction,
 };
-use azure_core::base64;
-use azure_core::fmt::SafeDebug;
+use azure_core::{base64, fmt::SafeDebug};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use time::OffsetDateTime;
