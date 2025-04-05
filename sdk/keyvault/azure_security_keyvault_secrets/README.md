@@ -306,7 +306,7 @@ use azure_security_keyvault_secrets::SecretClient;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
-        "https://ronnieg-keyvault.vault.azure.net/",
+        "https://my-vault.vault.azure.net/",
         credential.clone(),
         None,
     )?;
@@ -330,7 +330,7 @@ Error: HttpError {
             "SecretNotFound",
         ),
         message: Some(
-            "A secret with (name/id) secret-name1 was not found in this key vault. If you recently deleted this secret you may be able to recover it using the correct recovery command. For help resolving this issue, please see https://go.microsoft.com/fwlink/?linkid=2125182",
+            "A secret with (name/id) secret-name was not found in this key vault. If you recently deleted this secret you may be able to recover it using the correct recovery command. For help resolving this issue, please see https://go.microsoft.com/fwlink/?linkid=2125182",
         ),
     },
     ..
