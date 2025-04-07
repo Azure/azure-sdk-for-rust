@@ -5,6 +5,7 @@ ckmaeskeywrap
 ckmaeskeywrappad
 ckmrsaaeskeywrap
 deletedcertificates
+deleteissuers
 deletedkeys
 deletedsecrets
 diffie
