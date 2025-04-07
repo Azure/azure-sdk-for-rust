@@ -65,7 +65,6 @@ typespec_client_core
 typespec_client_core
 typespec_macros
 typespec_macros
-tz-rs
 url
 uuid
 zerofrom
