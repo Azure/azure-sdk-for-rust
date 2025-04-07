@@ -37,18 +37,21 @@ az storage account create -n my-storage-account-name -g my-resource-group
 In order to interact with the Azure Blob Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
-use azure_storage_blob::{BlobClient, BlobClientOptions}
+use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
-// Create a BlobClient that will authenticate through Microsoft Entra ID
-let credential = DefaultAzureCredential::new()?;
-let blob_client = BlobClient::new(
-    "https://<storage_account_name>.blob.core.windows.net/", // endpoint
-    "container_name".to_string(),                            // container name
-    "blob_name".to_string(),                                 // blob name
-    credential,                                              // credential
-    Some(BlobClientOptions::default()),                      // BlobClient options
-)?;
+async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a BlobClient that will authenticate through Microsoft Entra ID
+    let credential = DefaultAzureCredential::new()?;
+    let blob_client = BlobClient::new(
+        "https://<storage_account_name>.blob.core.windows.net/", // endpoint
+        "container_name".to_string(),                            // container name
+        "blob_name".to_string(),                                 // blob name
+        credential,                                              // credential
+        Some(BlobClientOptions::default()),                      // BlobClient options
+    )?;
+    Ok(())
+}
 ```
 
 #### Permissions
@@ -60,43 +63,49 @@ You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID
 ### Create `BlobClient`
 
 ```rust no_run
-use azure_storage_blob::{BlobClient, BlobClientOptions}
+use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
-// Create a BlobClient that will authenticate through Microsoft Entra ID
-let credential = DefaultAzureCredential::new()?;
-let blob_client = BlobClient::new(
-    "https://<storage_account_name>.blob.core.windows.net/", // endpoint
-    "container_name".to_string(),                            // container name
-    "blob_name".to_string(),                                 // blob name
-    credential,                                              // credential
-    Some(BlobClientOptions::default()),                      // BlobClient options
-)?;
+async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a BlobClient that will authenticate through Microsoft Entra ID
+    let credential = DefaultAzureCredential::new()?;
+    let blob_client = BlobClient::new(
+        "https://<storage_account_name>.blob.core.windows.net/", // endpoint
+        "container_name".to_string(),                            // container name
+        "blob_name".to_string(),                                 // blob name
+        credential,                                              // credential
+        Some(BlobClientOptions::default()),                      // BlobClient options
+    )?;
+    Ok(())
+}
 ```
 
 ### Upload Blob
 
 ```rust no_run
-use azure_storage_blob::{BlobClient, BlobClientOptions}
+use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
-let credential = DefaultAzureCredential::new()?;
-let blob_client = BlobClient::new(
-    "https://<storage_account_name>.blob.core.windows.net/",
-    "container_name".to_string(),
-    "blob_name".to_string(),
-    credential,
-    Some(BlobClientOptions::default()),
-)?;
+async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let blob_client = BlobClient::new(
+        "https://<storage_account_name>.blob.core.windows.net/",
+        "container_name".to_string(),
+        "blob_name".to_string(),
+        credential,
+        Some(BlobClientOptions::default()),
+    )?;
 
-blob_client
-    .upload(
-        RequestContent::from(data.to_vec()), // data
-        false,                               // overwrite
-        u64::try_from(data.len())?,          // content length
-        None,                                // upload options
-    )
-    .await?;
+    blob_client
+        .upload(
+            RequestContent::from(data.to_vec()), // data
+            false,                               // overwrite
+            u64::try_from(data.len())?,          // content length
+            None,                                // upload options
+        )
+        .await?;
+    Ok(())
+}
 ```
 
 ### Get Blob Properties
@@ -105,18 +114,22 @@ blob_client
 use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
-let credential = DefaultAzureCredential::new()?;
-let blob_client = BlobClient::new(
-    "https://<storage_account_name>.blob.core.windows.net/",
-    "container_name".to_string(),
-    "blob_name".to_string(),
-    credential,
-    Some(BlobClientOptions::default()),
-)?;
-let blob_properties = blob_client.get_properties(
-    None // get properties options
-    )
-    .await?;
+async fn example() -> Result<(), Box<dyn std::error::Error>> {
+
+    let credential = DefaultAzureCredential::new()?;
+    let blob_client = BlobClient::new(
+        "https://<storage_account_name>.blob.core.windows.net/",
+        "container_name".to_string(),
+        "blob_name".to_string(),
+        credential,
+        Some(BlobClientOptions::default()),
+    )?;
+    let blob_properties = blob_client.get_properties(
+        None // get properties options
+        )
+        .await?;
+    Ok(())
+}
 ```
 
 ## Next steps
