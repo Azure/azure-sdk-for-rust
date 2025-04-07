@@ -84,7 +84,7 @@ use azure_security_keyvault_certificates::CertificateClient;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = CertificateClient::new(
-        "https://my-vault.vault.azure.net/",
+        "https://<my-vault>.vault.azure.net/",
         credential.clone(),
         None,
     )?;

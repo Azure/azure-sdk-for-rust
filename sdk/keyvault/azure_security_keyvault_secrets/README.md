@@ -306,7 +306,7 @@ use azure_security_keyvault_secrets::SecretClient;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
-        "https://my-vault.vault.azure.net/",
+        "https://<my-vault>.vault.azure.net/",
         credential.clone(),
         None,
     )?;
