@@ -4,11 +4,18 @@ ciphertext
 ckmaeskeywrap
 ckmaeskeywrappad
 ckmrsaaeskeywrap
+deletedcertificates
 deletedkeys
 deletedsecrets
+diffie
 echsm
+ekus
 fips
+getissuers
+innererror
 keyout
+managecontacts
+manageissuers
 newkey
 oaep
 purgeable
@@ -21,5 +28,7 @@ rsassa
 rsnull
 secg
 secp
+setissuers
 unwrapkey
+upns
 wrapkey

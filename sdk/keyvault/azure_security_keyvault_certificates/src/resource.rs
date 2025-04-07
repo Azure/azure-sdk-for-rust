@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::models::CertificateOperation;
 use azure_core::{error::ErrorKind, http::Url, Result};
 use std::str::FromStr;
-
-use crate::models::CertificateOperation;
 
 /// Information about the resource.
 ///
