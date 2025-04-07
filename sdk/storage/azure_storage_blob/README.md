@@ -1,4 +1,4 @@
-# Azure Storage Blobs client library for Rust
+# Azure Storage Blob client library for Rust
 
 Azure Blob storage is Microsoft's object storage solution for the cloud. Blob storage is optimized for storing massive amounts of unstructured data, such as text or binary data.
 
@@ -8,7 +8,7 @@ Azure Blob storage is Microsoft's object storage solution for the cloud. Blob st
 
 ### Install the package
 
-Install the Azure Storage Blobs client library for Rust with [cargo]:
+Install the Azure Storage Blob client library for Rust with [cargo]:
 
 ```sh
 cargo add azure_storage_blob
@@ -34,7 +34,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 
 #### Authenticate the client
 
-In order to interact with the Azure Blobs Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
+In order to interact with the Azure Blob Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 ```rust
 use azure_storage_blob::BlobClient;
 use azure_identity::DefaultAzureCredential;
@@ -49,6 +49,9 @@ let blob_client = BlobClient::new(
     Some(BlobClientOptions::default()),                      // BlobClient options
 )?;
 ```
+
+#### Permissions
+You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID. [Please see Assign an Azure role for access to blob data] for more details.
 
 ## Examples
 
@@ -138,3 +141,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Source code]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/storage/azure-storage-blob
 [REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/blob-service-rest-api
 [Product documentation]: https://learn.microsoft.com/azure/storage/blobs/storage-blobs-overview
+[Please see Assign an Azure role for access to blob data]: https://learn.microsoft.com/azure/storage/blobs/assign-azure-role-data-access?tabs=portal
