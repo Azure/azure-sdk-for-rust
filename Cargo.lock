@@ -370,7 +370,6 @@ dependencies = [
  "azure_core_test",
  "azure_identity",
  "azure_storage_blob_test",
- "azure_storage_common",
  "serde",
  "time",
  "tokio",
