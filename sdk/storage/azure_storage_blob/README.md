@@ -40,7 +40,8 @@ In order to interact with the Azure Blob Storage service, you'll need to create 
 use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
-async fn example() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a BlobClient that will authenticate through Microsoft Entra ID
     let credential = DefaultAzureCredential::new()?;
     let blob_client = BlobClient::new(
@@ -66,7 +67,8 @@ You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID
 use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
-async fn example() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a BlobClient that will authenticate through Microsoft Entra ID
     let credential = DefaultAzureCredential::new()?;
     let blob_client = BlobClient::new(
@@ -87,7 +89,8 @@ use azure_core::http::RequestContent;
 use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
-async fn example() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let blob_client = BlobClient::new(
         "https://<storage_account_name>.blob.core.windows.net/",
@@ -116,7 +119,8 @@ async fn example() -> Result<(), Box<dyn std::error::Error>> {
 use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
-async fn example() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let credential = DefaultAzureCredential::new()?;
     let blob_client = BlobClient::new(
