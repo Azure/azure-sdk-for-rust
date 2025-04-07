@@ -19,3 +19,4 @@ immutabilitypolicy
 uncommittedblobs
 policyid
 ruleid
+westus
