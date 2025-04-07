@@ -51,7 +51,7 @@ let blob_client = BlobClient::new(
 ```
 
 #### Permissions
-You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID. [Please see Assign an Azure role for access to blob data] for more details.
+You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID. Please see [Assign an Azure role for access to blob data] for more details.
 
 ## Examples
 
@@ -141,4 +141,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Source code]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/storage/azure-storage-blob
 [REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/blob-service-rest-api
 [Product documentation]: https://learn.microsoft.com/azure/storage/blobs/storage-blobs-overview
-[Please see Assign an Azure role for access to blob data]: https://learn.microsoft.com/azure/storage/blobs/assign-azure-role-data-access?tabs=portal
+[Assign an Azure role for access to blob data]: https://learn.microsoft.com/azure/storage/blobs/assign-azure-role-data-access?tabs=portal
