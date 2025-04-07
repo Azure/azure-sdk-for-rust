@@ -13,6 +13,9 @@ Cargo.lock
 .proxy/
 tests/data/
 
+# Dependencies.
+vcpkg_installed/
+
 # Editor user customizations.
 .vscode/launch.json
 .idea/
