@@ -1,3 +1,1 @@
-# sdk/storage
-
-TODO TODO TODO
+# Common Utilities for Azure Storage Libraries

@@ -18,12 +18,12 @@ cargo add azure_storage_blob
 
 * You must have an [Azure subscription] and an [Azure storage account] to use this package.
 
-
-
 ### Create a storage account
+
 If you wish to create a new storage account, you can use the
 [Azure Portal], [Azure PowerShell], or [Azure CLI]:
-```bash
+
+```sh
 # Create a new resource group to hold the storage account -
 # if using an existing resource group, skip this step
 az group create --name my-resource-group --location westus2
@@ -35,7 +35,8 @@ az storage account create -n my-storage-account-name -g my-resource-group
 #### Authenticate the client
 
 In order to interact with the Azure Blob Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
-```rust
+
+```rust no_run
 use azure_storage_blob::BlobClient;
 use azure_identity::DefaultAzureCredential;
 
@@ -51,12 +52,14 @@ let blob_client = BlobClient::new(
 ```
 
 #### Permissions
+
 You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID. Please see [Assign an Azure role for access to blob data] for more details.
 
 ## Examples
 
 ### Create `BlobClient`
-```rust
+
+```rust no_run
 use azure_storage_blob::BlobClient;
 use azure_identity::DefaultAzureCredential;
 
@@ -70,8 +73,10 @@ let blob_client = BlobClient::new(
     Some(BlobClientOptions::default()),                      // BlobClient options
 )?;
 ```
+
 ### Upload Blob
-```rust
+
+```rust no_run
 use azure_storage_blob::BlobClient;
 use azure_identity::DefaultAzureCredential;
 
@@ -95,7 +100,8 @@ blob_client
 ```
 
 ### Get Blob Properties
-```rust
+
+```rust no_run
 use azure_storage_blob::BlobClient;
 use azure_identity::DefaultAzureCredential;
 
@@ -112,7 +118,6 @@ let blob_properties = blob_client.get_properties(
     )
     .await?;
 ```
-
 
 ## Next steps
 
@@ -138,7 +143,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [API reference documentation]: https://docs.rs/crate/azure_storage_blob/latest
 [Package (crates.io)]: https://crates.io/crates/azure_storage_blob
-[Source code]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/storage/azure-storage-blob
+[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob
 [REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/blob-service-rest-api
 [Product documentation]: https://learn.microsoft.com/azure/storage/blobs/storage-blobs-overview
 [Assign an Azure role for access to blob data]: https://learn.microsoft.com/azure/storage/blobs/assign-azure-role-data-access?tabs=portal
