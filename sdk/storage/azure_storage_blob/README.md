@@ -83,6 +83,7 @@ async fn example() -> Result<(), Box<dyn std::error::Error>> {
 ### Upload Blob
 
 ```rust no_run
+use azure_core::http::RequestContent;
 use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
@@ -96,6 +97,7 @@ async fn example() -> Result<(), Box<dyn std::error::Error>> {
         Some(BlobClientOptions::default()),
     )?;
 
+    let data = b"hello world";
     blob_client
         .upload(
             RequestContent::from(data.to_vec()), // data
