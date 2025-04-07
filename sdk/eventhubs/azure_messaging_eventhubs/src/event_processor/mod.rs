@@ -1,57 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// Collected (somewhat random) notes on EventHubs event processor functionality.
-// Event Hubs Event Processor.
-//
-// By default, the load balancer will run every 30 seconds, and the default ownership timeout is 2 minutes.
-//
-// Load Balancing Cycle
-//  - Query Event Hub partitions; update state
-//
-//  - Renew Local Ownership
-//    - Based on local state
-//    - Each that the processor thinks it owns, call to SetMetadata.  May call Upload.
-//    - If no longer owned, results in HTTP 412, local state updated to remove ownership   (seen in the logs; indicates stolen between load balancing cycles)
-//
-//  - List All Ownership
-//    - Calls ListBlobs with metadata trait set
-//    - If this fails, the load balancing cycle cannot continue; local state is preserved  (seen in logs; processors will fight and Event Hubs will enforce single reader)
-//
-//  - Calculate Ownership
-//    - Update state for all ownership and all unowned partitions; expired ownership is unowned
-//    - Determine number of active processors by looking at ownership; an active processor must own at least one partition
-//
-//  - Claim Ownership
-//    - Determine if this instance has its fair share based on count of active processors
-//    - If fair share is owned, do nothing; assume unowned will be claimed by a processor without its fair share
-//    - If unowned partitions, pick one to claim at random
-//    - If no unowned partitions, pick one to steal at random
-//    - Update storage with any change, call to SetMetadata.  May call Upload.
-//    - If claimed by another, results in HTTP 412, local state updated to remove ownership   (seen in the logs; indicates stolen between load balancing cycles)
-//
-//  - Determine balance stability
-//    - If fair share of partitions are owned and no claim was needed, assume stable
-//
-//  - Ensure owned partitions are being processed
-//    - If no current processing task, initialize and start
-//    - If owned partition has a completed task, capture exceptions, initialize and restart
-//
-//  - Calculate next cycle time
-//    - If greedy strategy and not stable, run immediate
-//    - If elapsed time was more than the load balancing interval, run immediate
-//    - Delay for (load balancing interval - current cycle time), then run next
-//
-// CALLS PER CYCLE
-//    - Event Hubs
-//      - Query partitions (1)
-//      - Create receiver, start reading (varies by claimed/faulted, max of owned partitions)
-//
-//    - Storage
-//      - List Blobs (1)
-//      - SetMetadata (varies by owned/claimed, max of partition count * 2)
-//      - Upload (varies by new partitions, max of partition count)
-//
 pub(crate) mod load_balancer;
 pub(crate) mod models;
 pub(crate) mod partition_client;

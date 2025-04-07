@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+//! This sample shows retrieving the properties of an Event Hub.
+
 use azure_core::error::Result;
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ProducerClient;
