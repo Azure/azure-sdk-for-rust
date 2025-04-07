@@ -37,7 +37,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 In order to interact with the Azure Blob Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::{BlobClient, BlobClientOptions}
 use azure_identity::DefaultAzureCredential;
 
 // Create a BlobClient that will authenticate through Microsoft Entra ID
@@ -60,7 +60,7 @@ You may need to specify RBAC roles to access Blob Storage via Microsoft Entra ID
 ### Create `BlobClient`
 
 ```rust no_run
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::{BlobClient, BlobClientOptions}
 use azure_identity::DefaultAzureCredential;
 
 // Create a BlobClient that will authenticate through Microsoft Entra ID
@@ -77,7 +77,7 @@ let blob_client = BlobClient::new(
 ### Upload Blob
 
 ```rust no_run
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::{BlobClient, BlobClientOptions}
 use azure_identity::DefaultAzureCredential;
 
 let credential = DefaultAzureCredential::new()?;
@@ -102,7 +102,7 @@ blob_client
 ### Get Blob Properties
 
 ```rust no_run
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::{BlobClient, BlobClientOptions};
 use azure_identity::DefaultAzureCredential;
 
 let credential = DefaultAzureCredential::new()?;
