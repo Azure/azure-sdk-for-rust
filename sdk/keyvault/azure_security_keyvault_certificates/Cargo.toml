@@ -1,7 +1,7 @@
 [package]
-name = "azure_security_keyvault_secrets"
-version = "0.2.0"
-description = "Rust wrappers around Microsoft Azure REST APIs - Azure Key Vault Secrets"
+name = "azure_security_keyvault_certificates"
+version = "0.1.0"
+description = "Rust wrappers around Microsoft Azure REST APIs - Azure Key Vault Certificates"
 readme = "README.md"
 authors.workspace = true
 edition.workspace = true
@@ -9,8 +9,8 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_security_keyvault_secrets"
-keywords = ["sdk", "azure", "keyvault", "security", "secrets"]
+documentation = "https://docs.rs/azure_security_keyvault_certificates"
+keywords = ["sdk", "azure", "keyvault", "security", "certificates"]
 categories = ["api-bindings"]
 
 [dependencies]
@@ -27,6 +27,7 @@ azure_core_test = { workspace = true, features = [
   "tracing",
 ] }
 azure_identity.workspace = true
+azure_security_keyvault_keys = { path = "../azure_security_keyvault_keys" }
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 rand.workspace = true
 tokio.workspace = true

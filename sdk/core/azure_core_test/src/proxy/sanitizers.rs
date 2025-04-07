@@ -13,11 +13,20 @@ use std::{
     iter::{once, Once},
 };
 
+/// Sanitizes `$..id`.
+pub const SANITIZE_BODY_ID: &str = "AZSDK3430";
+
+/// Sanitizes `$..etag`.
+pub const SANITIZE_BODY_ETAG: &str = "AZSDK3490";
+
+/// Sanitizes `$..name`.
+pub const SANITIZE_BODY_NAME: &str = "AZSDK3493";
+
 /// Default sanitizers to remove.
-// See <https://github.com/Azure/azure-sdk-for-net/blob/eedbc408d565fbc5cbca96222807c737ae53605e/sdk/core/Azure.Core.TestFramework/src/RecordedTestBase.cs#L123>.
+// See <https://github.com/Azure/azure-sdk-tools/blob/528e97f7de3a97375beaf7b85e1334df013c8290/tools/test-proxy/Azure.Sdk.Tools.TestProxy/Common/SanitizerDictionary.cs>.
 pub const DEFAULT_SANITIZERS_TO_REMOVE: &[&str; 2] = &[
-    "AZSDK3430", // $..id
-    "AZSDK3490", // $..etag
+    SANITIZE_BODY_ID,   // $..id
+    SANITIZE_BODY_ETAG, // $..etag
 ];
 
 /// Default sanitization replacement value, "Sanitized";
