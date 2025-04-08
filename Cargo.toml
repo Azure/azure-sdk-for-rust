@@ -126,7 +126,6 @@ tokio = { version = "1.0", default-features = false, features = [
 ] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3"
-tz-rs = { version = "0.6" }
 url = "2.2"
 uuid = { version = "1.0", features = ["v4"] }
 zerofrom = "0.1.5"
