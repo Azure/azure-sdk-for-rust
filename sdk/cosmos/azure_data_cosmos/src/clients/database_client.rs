@@ -3,17 +3,15 @@
 
 use crate::{
     clients::ContainerClient,
-    models::{
-        ContainerProperties, ContainerQueryResults, DatabaseProperties, ThroughputProperties,
-    },
+    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
-    CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
+    CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
     ThroughputOptions,
 };
 
-use azure_core::http::{request::Request, response::Response, Method, Pager};
+use azure_core::http::{request::Request, response::Response, Method};
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -109,7 +107,7 @@ impl DatabaseClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryContainersOptions<'_>>,
-    ) -> azure_core::Result<Pager<ContainerQueryResults>> {
+    ) -> azure_core::Result<FeedPager<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
         let base_request = Request::new(url, Method::Post);

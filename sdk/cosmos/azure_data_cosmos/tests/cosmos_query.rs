@@ -79,8 +79,8 @@ pub async fn single_partition_query(context: TestContext) -> Result<(), Box<dyn 
 
     let mut results = container_client.query_items("select * from docs c", "Partition1", None)?;
     let mut items: Vec<TestItem> = Vec::new();
-    while let Some(response) = results.try_next().await? {
-        items.extend(response.into_body().await?.items);
+    while let Some(page) = results.try_next().await? {
+        items.extend(page.into_items());
     }
     assert_eq!(TEST_DATA[0..2].to_vec(), items);
 
@@ -100,8 +100,8 @@ pub async fn single_partition_query_with_parameters(
         .with_parameter("@some_value", 2)?;
     let mut results = container_client.query_items(query, "Partition1", None)?;
     let mut items: Vec<TestItem> = Vec::new();
-    while let Some(response) = results.try_next().await? {
-        items.extend(response.into_body().await?.items);
+    while let Some(page) = results.try_next().await? {
+        items.extend(page.into_items());
     }
     assert_eq!(TEST_DATA[1..2].to_vec(), items);
 
@@ -120,8 +120,8 @@ pub async fn single_partition_query_with_projection(
     let mut results =
         container_client.query_items("select value c.id from c", "Partition1", None)?;
     let mut items: Vec<Cow<'static, str>> = Vec::new();
-    while let Some(response) = results.try_next().await? {
-        items.extend(response.into_body().await?.items);
+    while let Some(page) = results.try_next().await? {
+        items.extend(page.into_items());
     }
     assert_eq!(
         TEST_DATA[0..2]
