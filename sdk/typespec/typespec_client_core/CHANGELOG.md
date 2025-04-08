@@ -1,17 +1,14 @@
 # Release History
 
-## 0.2.0 (Unreleased)
-
-### Features Added
+## 0.2.0 (2025-04-08)
 
 ### Breaking Changes
 
 - Consolidated all the `tokio` features into a single feature named `tokio`. Traits remain separate but `tokio` support is enabled with a single feature.
 - Removed `Header` re-export from `http` module. It is still defined in the `http::headers` module.
+- Removed `http-types` dependency and implemented `Method` instead.
 - Removed `Pager`.
 - Removed `parsing` module.
-
-### Bugs Fixed
 
 ### Other Changes
 
