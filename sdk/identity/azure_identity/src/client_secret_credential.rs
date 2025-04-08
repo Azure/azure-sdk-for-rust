@@ -38,14 +38,14 @@ pub struct ClientSecretCredential {
 
 impl ClientSecretCredential {
     pub fn new(
-        tenant_id: String,
+        tenant_id: &str,
         client_id: String,
-        secret: String,
+        secret: Secret,
         options: Option<ClientSecretCredentialOptions>,
     ) -> Result<Arc<Self>> {
-        crate::validate_tenant_id(&tenant_id)?;
+        crate::validate_tenant_id(tenant_id)?;
         crate::validate_not_empty(&client_id, "no client ID specified")?;
-        crate::validate_not_empty(&secret, "no secret specified")?;
+        crate::validate_not_empty(secret.secret(), "no secret specified")?;
 
         let options = options.unwrap_or_default();
         let endpoint = options
@@ -61,7 +61,7 @@ impl ClientSecretCredential {
             client_id,
             endpoint,
             options: options.credential_options,
-            secret: secret.into(),
+            secret,
         }))
     }
 
@@ -171,9 +171,9 @@ mod tests {
             ))),
         );
         let cred = ClientSecretCredential::new(
-            FAKE_TENANT_ID.to_string(),
+            FAKE_TENANT_ID,
             FAKE_CLIENT_ID.to_string(),
-            FAKE_SECRET.to_string(),
+            FAKE_SECRET.into(),
             Some(ClientSecretCredentialOptions {
                 credential_options: TokenCredentialOptions {
                     http_client: Arc::new(sts),
@@ -213,9 +213,9 @@ mod tests {
             ))),
         );
         let cred = ClientSecretCredential::new(
-            FAKE_TENANT_ID.to_string(),
+            FAKE_TENANT_ID,
             FAKE_CLIENT_ID.to_string(),
-            FAKE_SECRET.to_string(),
+            FAKE_SECRET.into(),
             Some(ClientSecretCredentialOptions {
                 credential_options: TokenCredentialOptions {
                     http_client: Arc::new(sts),
@@ -252,9 +252,9 @@ mod tests {
     #[test]
     fn invalid_tenant_id() {
         ClientSecretCredential::new(
-            "not a valid tenant".to_string(),
+            "not a valid tenant",
             FAKE_CLIENT_ID.to_string(),
-            FAKE_SECRET.to_string(),
+            FAKE_SECRET.into(),
             None,
         )
         .expect_err("invalid tenant ID");
@@ -263,9 +263,9 @@ mod tests {
     #[tokio::test]
     async fn no_scopes() {
         ClientSecretCredential::new(
-            FAKE_TENANT_ID.to_string(),
+            FAKE_TENANT_ID,
             FAKE_CLIENT_ID.to_string(),
-            FAKE_SECRET.to_string(),
+            FAKE_SECRET.into(),
             None,
         )
         .expect("valid credential")
