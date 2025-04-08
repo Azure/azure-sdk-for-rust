@@ -37,7 +37,7 @@ use tracing::{debug, trace};
 pub struct ConsumerClient {
     session_instances: AsyncMutex<HashMap<String, Arc<AmqpSession>>>,
     mgmt_client: AsyncMutex<OnceLock<ManagementInstance>>,
-    connection_manager: ConnectionManager,
+    connection_manager: Arc<ConnectionManager>,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
     consumer_group: String,
     eventhub: String,

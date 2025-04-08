@@ -65,7 +65,7 @@ pub struct SendBatchOptions {}
 pub struct ProducerClient {
     sender_instances: Mutex<HashMap<Url, SenderInstance>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
-    connection_manager: ConnectionManager,
+    connection_manager: Arc<ConnectionManager>,
     credential: Arc<dyn azure_core::credentials::TokenCredential>,
     eventhub: String,
     endpoint: Url,
