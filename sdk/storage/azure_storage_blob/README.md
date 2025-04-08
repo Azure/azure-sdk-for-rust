@@ -6,6 +6,8 @@ Azure Blob storage is Microsoft's object storage solution for the cloud. Blob st
 
 ## Getting started
 
+#### ⚠️ Note: The `azure_storage_blob` crate is currently under active development and not all features may be implemented or work as intended. This crate is in beta and not suitable for Production environments. For any general feedback or usage issues, please open a GitHub issue [here](https://github.com/Azure/azure-sdk-for-rust/issues)
+
 ### Install the package
 
 Install the Azure Storage Blob client library for Rust with [cargo]:
