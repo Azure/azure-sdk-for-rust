@@ -18,7 +18,6 @@ mod timeout;
 
 use azure_core::{error::ErrorKind, Error, Result};
 pub use azure_pipelines_credential::*;
-pub use chained_token_credential::*;
 pub use client_secret_credential::*;
 pub use credentials::*;
 pub use managed_identity_credential::*;
