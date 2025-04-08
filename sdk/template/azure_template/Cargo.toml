@@ -9,7 +9,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-azure_template_core = { path = "../azure_template_core", version = "0.2.0" }
+azure_template_core = { path = "../azure_template_core", version = "0.3.0" }
 serde = { version = "1", features = ["derive"] }
 
 [lints]
