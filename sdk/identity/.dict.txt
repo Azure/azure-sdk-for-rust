@@ -1,3 +1,4 @@
+AADSTS
 adfs
 appservice
 azureauth

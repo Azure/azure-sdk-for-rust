@@ -7,6 +7,7 @@
 mod authorization_code_flow;
 mod azure_pipelines_credential;
 mod chained_token_credential;
+mod client_secret_credential;
 mod credentials;
 mod env;
 mod federated_credentials_flow;
@@ -17,9 +18,27 @@ mod timeout;
 
 use azure_core::{error::ErrorKind, Error, Result};
 pub use azure_pipelines_credential::*;
+pub use client_secret_credential::*;
 pub use credentials::*;
 pub use managed_identity_credential::*;
+use serde::Deserialize;
 use std::borrow::Cow;
+use typespec_client_core::http::Model;
+
+#[derive(Debug, Default, Deserialize, Model)]
+#[serde(default)]
+struct EntraIdErrorResponse {
+    error_description: String,
+}
+
+#[derive(Debug, Default, Deserialize, Model)]
+#[serde(default)]
+struct EntraIdTokenResponse {
+    token_type: String,
+    expires_in: u64,
+    ext_expires_in: u64,
+    access_token: String,
+}
 
 fn validate_not_empty<C>(value: &str, message: C) -> Result<()>
 where
@@ -112,6 +131,51 @@ fn test_validate_tenant_id() {
 
 #[cfg(test)]
 mod tests {
+    use azure_core::{
+        error::ErrorKind,
+        http::{Request, Response},
+        Error, Result,
+    };
+    use std::sync::{Arc, Mutex};
+
+    pub const FAKE_CLIENT_ID: &str = "fake-client";
+    pub const FAKE_TENANT_ID: &str = "fake-tenant";
+    pub const FAKE_TOKEN: &str = "***";
     pub const LIVE_TEST_RESOURCE: &str = "https://management.azure.com";
     pub const LIVE_TEST_SCOPES: &[&str] = &["https://management.azure.com/.default"];
+
+    pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
+
+    pub struct MockSts {
+        responses: Mutex<Vec<Response>>,
+        on_request: Option<RequestCallback>,
+    }
+
+    impl std::fmt::Debug for MockSts {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("MockSts").finish()
+        }
+    }
+
+    impl MockSts {
+        pub fn new(responses: Vec<Response>, on_request: Option<RequestCallback>) -> Self {
+            Self {
+                responses: Mutex::new(responses),
+                on_request,
+            }
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl azure_core::http::HttpClient for MockSts {
+        async fn execute_request(&self, request: &Request) -> Result<Response> {
+            self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
+            let mut responses = self.responses.lock().unwrap();
+            if responses.is_empty() {
+                Err(Error::message(ErrorKind::Other, "No more mock responses"))
+            } else {
+                Ok(responses.remove(0)) // Use remove(0) to return responses in the correct order
+            }
+        }
+    }
 }
