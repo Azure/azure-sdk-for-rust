@@ -191,7 +191,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "azure_core",
  "fe2o3-amqp",

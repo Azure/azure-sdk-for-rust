@@ -57,7 +57,7 @@ features = [
 ]
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.2.0"
+version = "0.3.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_core_test]
