@@ -1,6 +1,6 @@
 # Release History
 
-## 0.23.0 (Unreleased)
+## 0.23.0 (2025-04-08)
 
 ### Features Added
 
@@ -53,10 +53,6 @@
 - Renamed `lro` module to `http::poller` module.
 - Renamed `lro` module types with prefix "Lro" to prefix "Poller".
 - Renamed `tokio` module to `fs` since it contained only the `typespec_client_core::fs` module members.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.22.0 (2025-02-18)
 
