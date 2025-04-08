@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#![allow(dead_code)]
+
 use crate::credentials::cache::TokenCache;
 use crate::TokenCredentialOptions;
 use async_lock::RwLock;
