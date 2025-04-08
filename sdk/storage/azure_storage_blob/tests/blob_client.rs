@@ -190,6 +190,70 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
+async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording);
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
+
+    let container_client_options = BlobContainerClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    // Act
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        container_name.clone(),
+        recording.credential(),
+        Some(container_client_options),
+    )?;
+    container_client.create_container(None).await?;
+
+    let blob_client_options = BlobClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    let blob_client = BlobClient::new(
+        &endpoint,
+        container_name,
+        blob_name,
+        recording.credential(),
+        Some(blob_client_options),
+    )?;
+
+    let data = b"hello rusty world";
+
+    blob_client
+        .upload(
+            RequestContent::from(data.to_vec()),
+            false,
+            u64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+
+    // Existence Check
+    blob_client.get_properties(None).await?;
+
+    blob_client.delete(None).await?;
+
+    let response = blob_client.download(None).await;
+
+    // Assert
+    let error = response.unwrap_err().http_status();
+    assert_eq!(StatusCode::NotFound, error.unwrap());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

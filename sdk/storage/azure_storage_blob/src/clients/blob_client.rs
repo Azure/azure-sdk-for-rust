@@ -10,8 +10,8 @@ use crate::{
     },
     models::{BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
-    BlobClientDownloadOptions, BlobClientGetPropertiesOptions, BlobClientOptions,
-    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
+    BlobClientOptions, BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
     BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 use azure_core::{
@@ -146,6 +146,19 @@ impl BlobClient {
         let response = block_blob_client
             .upload(data, content_length, Some(options))
             .await?;
+        Ok(response)
+    }
+
+    /// Deletes the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn delete(
+        &self,
+        options: Option<BlobClientDeleteOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let response = self.client.delete(options).await?;
         Ok(response)
     }
 

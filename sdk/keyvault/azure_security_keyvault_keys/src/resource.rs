@@ -1,14 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(doc)]
-use crate::{models::KeyBundle, KeyClient};
 use azure_core::{error::ErrorKind, http::Url, Result};
 use std::str::FromStr;
 
 /// Information about the resource.
 ///
-/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`KeyBundle`] to get this information.
+/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`KeyBundle`](crate::models::KeyBundle) to get this information.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResourceId {
     /// The source URL of the resource.
@@ -49,7 +47,7 @@ impl TryFrom<&Url> for ResourceId {
 pub trait ResourceExt {
     /// Gets the [`ResourceId`] from this model.
     ///
-    /// You can parse the name and version to pass to subsequent [`KeyClient`] method calls.
+    /// You can parse the name and version to pass to subsequent [`KeyClient`](crate::KeyClient) method calls.
     ///
     /// # Examples
     ///
@@ -248,7 +246,7 @@ mod tests {
     }
 
     #[test]
-    fn from_secret_bundle() {
+    fn from_key_bundle() {
         let mut key = KeyBundle {
             key: None,
             ..Default::default()
