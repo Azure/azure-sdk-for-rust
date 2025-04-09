@@ -1,6 +1,6 @@
 # Release History
 
-## 0.32.0 (Unreleased)
+## 0.23.0 (2025-04-09)
 
 ### Features Added
 
@@ -20,10 +20,6 @@
 - Removed `clear_cache()` from all credential types
 - Removed `old_azure_cli` feature. `AzureCliCredential` now requires a recent version of the Azure CLI (2.54.0 or later).
 - Replaced `AppServiceManagedIdentityCredential`, `VirtualMachineManagedIdentityCredential`, and `ImdsId` with `ManagedIdentityCredential` and `UserAssignedId`
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.22.0 (2025-02-18)
 
