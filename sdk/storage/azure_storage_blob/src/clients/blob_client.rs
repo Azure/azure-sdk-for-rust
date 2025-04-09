@@ -4,15 +4,16 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
+        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientSetHttpHeadersResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
     models::{BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientOptions, BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
+    BlobClientOptions, BlobClientSetHttpHeadersOptions, BlockBlobClientCommitBlockListOptions,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
+    BlockBlobClientUploadOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -106,9 +107,20 @@ impl BlobClient {
         Ok(response)
     }
 
-    /// Downloads a blob from the service, including its metadata and properties.
+    /// Sets system properties on the blob.
     ///
     /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_properties(
+        &self,
+        options: Option<BlobClientSetHttpHeadersOptions<'_>>,
+    ) -> Result<Response<BlobClientSetHttpHeadersResult>> {
+        let response = self.client.set_http_headers(options).await?;
+        Ok(response)
+    }
+
+    /// Downloads a blob from the service, including its metadata and properties.8
     ///
     /// * `options` - Optional configuration for the request.
     pub async fn download(
