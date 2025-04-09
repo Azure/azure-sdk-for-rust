@@ -4,14 +4,12 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
-mod authorization_code_flow;
 mod azure_developer_cli_credential;
 mod azure_pipelines_credential;
 mod client_secret_credential;
 mod credentials;
 mod env;
 mod managed_identity_credential;
-mod oauth2_http_client;
 
 use azure_core::{
     error::{ErrorKind, ResultExt},
