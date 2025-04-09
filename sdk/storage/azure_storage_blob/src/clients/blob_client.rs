@@ -120,7 +120,7 @@ impl BlobClient {
         Ok(response)
     }
 
-    /// Downloads a blob from the service, including its metadata and properties.8
+    /// Downloads a blob from the service, including its metadata and properties.
     ///
     /// * `options` - Optional configuration for the request.
     pub async fn download(
