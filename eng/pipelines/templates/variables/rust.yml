@@ -2,4 +2,3 @@ variables:
   RUSTFLAGS: "-Dwarnings"
   RUSTDOCFLAGS: "-Dwarnings"
   RUST_LOG: $[iif(eq(variables['System.Debug'], 'true'), 'debug', '')]
-  VCPKG_ROOT: "$(VCPKG_INSTALLATION_ROOT)"

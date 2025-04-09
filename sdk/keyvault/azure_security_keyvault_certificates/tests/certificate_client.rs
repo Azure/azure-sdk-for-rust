@@ -3,13 +3,7 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::{
-    base64,
-    error::{ErrorKind, ResultExt},
-    http::StatusCode,
-    sleep::sleep,
-    Result,
-};
+use azure_core::{base64, http::StatusCode, sleep::sleep, Result};
 use azure_core_test::{recorded, Recording, TestContext, TestMode, SANITIZE_BODY_NAME};
 use azure_security_keyvault_certificates::{
     models::{
@@ -25,7 +19,6 @@ use azure_security_keyvault_keys::{
 };
 use azure_security_keyvault_test::Retry;
 use futures::TryStreamExt;
-use openssl::hash::MessageDigest;
 use std::{collections::HashMap, sync::LazyLock, time::Duration};
 
 static DEFAULT_POLICY: LazyLock<CertificatePolicy> = LazyLock::new(|| CertificatePolicy {
@@ -305,16 +298,13 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     let key_client = KeyClient::new(&vault_url, recording.credential(), Some(key_options))?;
 
     // cspell:disable
-    const JWT: &str =
+    const _JWT: &str =
         "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJoZWF0aHMiLCJuYW1lIjoiSGVhdGggU3Rld2FydCIsImlhdCI6MTc0MzgzMzY5MX0";
-    let digest = base64::encode_url_safe(
-        openssl::hash::hash(MessageDigest::sha256(), JWT.as_bytes())
-            .with_context(ErrorKind::Other, || "failed to hash JWT")?,
-    );
+    const DIGEST: &str = "GDOTWbe5x6KXgoykVcqygzMOAsjXcYUoZdzAkJR5a7Y";
 
     let body = SignParameters {
         algorithm: Some(SignatureAlgorithm::ES256),
-        value: Some(base64::decode_url_safe(digest)?),
+        value: Some(base64::decode_url_safe(DIGEST)?),
     };
     let signature = key_client
         .sign(&name, "", body.try_into()?, None)

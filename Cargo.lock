@@ -326,7 +326,6 @@ dependencies = [
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
- "openssl",
  "rand",
  "rustc_version",
  "serde",
