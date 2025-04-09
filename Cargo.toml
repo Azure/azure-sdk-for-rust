@@ -33,19 +33,19 @@ rust-version = "1.80"
 [workspace.dependencies.typespec]
 default-features = false
 path = "sdk/typespec"
-version = "0.3.0"
+version = "0.4.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/typespec/typespec_client_core"
-version = "0.2.0"
+version = "0.3.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.2.0"
+version = "0.3.0"
 path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]
-version = "0.23.0"
+version = "0.24.0"
 path = "sdk/core/azure_core"
 default-features = false
 # Keep these in sync with azure_core. This allows
@@ -57,7 +57,7 @@ features = [
 ]
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.2.0"
+version = "0.3.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_core_test]

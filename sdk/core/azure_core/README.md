@@ -89,7 +89,7 @@ This type provides access to both the deserialized result of the service call, a
 ```rust no_run
 use azure_core::http::Response;
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{models::SecretBundle, SecretClient};
+use azure_security_keyvault_secrets::{models::Secret, SecretClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -109,7 +109,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret = response.into_body().await?;
 
     // get response again because it was moved in above statement
-    let response: Response<SecretBundle> = client.get_secret("secret-name", "", None).await?;
+    let response: Response<Secret> = client.get_secret("secret-name", "", None).await?;
 
     // 2. The deconstruct() method for accessing all the details of the HTTP response
     let (status, headers, body) = response.deconstruct();
@@ -184,7 +184,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // get a stream
-    let mut pager = client.list_secrets(None)?.into_stream();
+    let mut pager = client.list_secret_properties(None)?.into_stream();
 
     // poll the pager until there are no more SecretListResults
     while let Some(secrets) = pager.try_next().await? {
