@@ -148,45 +148,13 @@ impl TokenCredential for ImdsManagedIdentityCredential {
     }
 }
 
-// `expires_on` varies between a number and a date string depending on token server implementation
-// https://github.com/Azure/azure-sdk-for-go/blob/66eca06a3fb1a931ddd3c7e61462967f6e5b9c2e/sdk/azidentity/managed_identity_client.go#L310
 fn expires_on_string<'de, D>(deserializer: D) -> std::result::Result<OffsetDateTime, D::Error>
 where
     D: Deserializer<'de>,
 {
-    struct ExpiresOnVisitor;
-
-    impl de::Visitor<'_> for ExpiresOnVisitor {
-        type Value = OffsetDateTime;
-
-        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-            formatter.write_str("a string or integer representing a Unix timestamp")
-        }
-
-        fn visit_str<E>(self, value: &str) -> std::result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            let as_i64 = value.parse::<i64>().map_err(de::Error::custom)?;
-            OffsetDateTime::from_unix_timestamp(as_i64).map_err(de::Error::custom)
-        }
-
-        fn visit_i64<E>(self, value: i64) -> std::result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            OffsetDateTime::from_unix_timestamp(value).map_err(de::Error::custom)
-        }
-
-        fn visit_u64<E>(self, value: u64) -> std::result::Result<Self::Value, E>
-        where
-            E: de::Error,
-        {
-            OffsetDateTime::from_unix_timestamp(value as i64).map_err(de::Error::custom)
-        }
-    }
-
-    deserializer.deserialize_any(ExpiresOnVisitor)
+    let v = String::deserialize(deserializer)?;
+    let as_i64 = v.parse::<i64>().map_err(de::Error::custom)?;
+    OffsetDateTime::from_unix_timestamp(as_i64).map_err(de::Error::custom)
 }
 
 /// Convert a `AADv2` scope to an `AADv1` resource
@@ -211,7 +179,7 @@ fn scopes_to_resource<'a>(scopes: &'a [&'a str]) -> azure_core::Result<&'a str> 
     Ok(scope.strip_suffix("/.default").unwrap_or(*scope))
 }
 
-// NOTE: expires_on is _meant_ to be a String version of unix epoch time, not an integer, though it varies between implementations.
+// NOTE: expires_on is a String version of unix epoch time, not an integer.
 // https://learn.microsoft.com/azure/app-service/overview-managed-identity?tabs=dotnet#rest-protocol-examples
 #[derive(Debug, Clone, Deserialize)]
 #[allow(unused)]
@@ -241,21 +209,5 @@ mod tests {
         let parsed: TestExpires = from_json(as_string)?;
         assert_eq!(expected, parsed.date);
         Ok(())
-    }
-
-    #[test]
-    fn check_expires_on_int() -> azure_core::Result<()> {
-        let as_string = r#"{"date": 1586984735}"#;
-        let expected = datetime!(2020-4-15 21:5:35 UTC);
-        let parsed: TestExpires = from_json(as_string)?;
-        assert_eq!(expected, parsed.date);
-        Ok(())
-    }
-
-    #[test]
-    fn check_expires_on_invalid() {
-        let as_string = r#"{"date": "invalid"}"#;
-        let parsed: Result<TestExpires, Error> = from_json(as_string);
-        assert!(parsed.is_err());
     }
 }
