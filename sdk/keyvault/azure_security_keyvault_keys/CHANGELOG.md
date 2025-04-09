@@ -14,7 +14,7 @@
 - Renamed `KeyBundleBackup` to `KeyBackup`.
 - Renamed `KeyClient::get_keys` to `list_key_properties`.
 - Renamed `KeyItem` to `KeyProperties`.
-- Renamed all parameter types to match the *{Verb}{Noun}* format of the client methods that use them e.g., `createt_key` uses `CreateKeyParameters`.
+- Renamed all parameter types to match the *{Verb}{Noun}* format of the client methods that use them e.g., `create_key` uses `CreateKeyParameters`.
 
 ### Bugs Fixed
 
