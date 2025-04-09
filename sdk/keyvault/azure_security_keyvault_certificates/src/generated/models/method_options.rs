@@ -26,20 +26,6 @@ pub struct CertificateClientDeleteCertificateOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`CertificateClient::delete_certificate_contacts()`](crate::generated::clients::CertificateClient::delete_certificate_contacts())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientDeleteCertificateContactsOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-/// Options to be passed to [`CertificateClient::delete_certificate_issuer()`](crate::generated::clients::CertificateClient::delete_certificate_issuer())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientDeleteCertificateIssuerOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
 /// Options to be passed to [`CertificateClient::delete_certificate_operation()`](crate::generated::clients::CertificateClient::delete_certificate_operation())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientDeleteCertificateOperationOptions<'a> {
@@ -47,23 +33,23 @@ pub struct CertificateClientDeleteCertificateOperationOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`CertificateClient::delete_contacts()`](crate::generated::clients::CertificateClient::delete_contacts())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientDeleteContactsOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`CertificateClient::delete_issuer()`](crate::generated::clients::CertificateClient::delete_issuer())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientDeleteIssuerOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
 /// Options to be passed to [`CertificateClient::get_certificate()`](crate::generated::clients::CertificateClient::get_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientGetCertificateOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-/// Options to be passed to [`CertificateClient::get_certificate_contacts()`](crate::generated::clients::CertificateClient::get_certificate_contacts())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientGetCertificateContactsOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-/// Options to be passed to [`CertificateClient::get_certificate_issuer()`](crate::generated::clients::CertificateClient::get_certificate_issuer())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientGetCertificateIssuerOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -82,9 +68,23 @@ pub struct CertificateClientGetCertificatePolicyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`CertificateClient::get_contacts()`](crate::generated::clients::CertificateClient::get_contacts())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientGetContactsOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
 /// Options to be passed to [`CertificateClient::get_deleted_certificate()`](crate::generated::clients::CertificateClient::get_deleted_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientGetDeletedCertificateOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`CertificateClient::get_issuer()`](crate::generated::clients::CertificateClient::get_issuer())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientGetIssuerOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -96,51 +96,9 @@ pub struct CertificateClientImportCertificateOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`CertificateClient::list_certificate_issuers()`](crate::generated::clients::CertificateClient::list_certificate_issuers())
+/// Options to be passed to [`CertificateClient::list_certificate_properties()`](crate::generated::clients::CertificateClient::list_certificate_properties())
 #[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientListCertificateIssuersOptions<'a> {
-    /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-impl CertificateClientListCertificateIssuersOptions<'_> {
-    pub fn into_owned(self) -> CertificateClientListCertificateIssuersOptions<'static> {
-        CertificateClientListCertificateIssuersOptions {
-            maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
-                context: self.method_options.context.into_owned(),
-            },
-        }
-    }
-}
-
-/// Options to be passed to [`CertificateClient::list_certificate_versions()`](crate::generated::clients::CertificateClient::list_certificate_versions())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientListCertificateVersionsOptions<'a> {
-    /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-impl CertificateClientListCertificateVersionsOptions<'_> {
-    pub fn into_owned(self) -> CertificateClientListCertificateVersionsOptions<'static> {
-        CertificateClientListCertificateVersionsOptions {
-            maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
-                context: self.method_options.context.into_owned(),
-            },
-        }
-    }
-}
-
-/// Options to be passed to [`CertificateClient::list_certificates()`](crate::generated::clients::CertificateClient::list_certificates())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientListCertificatesOptions<'a> {
+pub struct CertificateClientListCertificatePropertiesOptions<'a> {
     /// Specifies whether to include certificates which are not completely provisioned.
     pub include_pending: Option<bool>,
 
@@ -151,9 +109,9 @@ pub struct CertificateClientListCertificatesOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl CertificateClientListCertificatesOptions<'_> {
-    pub fn into_owned(self) -> CertificateClientListCertificatesOptions<'static> {
-        CertificateClientListCertificatesOptions {
+impl CertificateClientListCertificatePropertiesOptions<'_> {
+    pub fn into_owned(self) -> CertificateClientListCertificatePropertiesOptions<'static> {
+        CertificateClientListCertificatePropertiesOptions {
             include_pending: self.include_pending,
             maxresults: self.maxresults,
             method_options: ClientMethodOptions {
@@ -163,9 +121,30 @@ impl CertificateClientListCertificatesOptions<'_> {
     }
 }
 
-/// Options to be passed to [`CertificateClient::list_deleted_certificates()`](crate::generated::clients::CertificateClient::list_deleted_certificates())
+/// Options to be passed to [`CertificateClient::list_certificate_properties_versions()`](crate::generated::clients::CertificateClient::list_certificate_properties_versions())
 #[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientListDeletedCertificatesOptions<'a> {
+pub struct CertificateClientListCertificatePropertiesVersionsOptions<'a> {
+    /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+impl CertificateClientListCertificatePropertiesVersionsOptions<'_> {
+    pub fn into_owned(self) -> CertificateClientListCertificatePropertiesVersionsOptions<'static> {
+        CertificateClientListCertificatePropertiesVersionsOptions {
+            maxresults: self.maxresults,
+            method_options: ClientMethodOptions {
+                context: self.method_options.context.into_owned(),
+            },
+        }
+    }
+}
+
+/// Options to be passed to [`CertificateClient::list_deleted_certificate_properties()`](crate::generated::clients::CertificateClient::list_deleted_certificate_properties())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientListDeletedCertificatePropertiesOptions<'a> {
     /// Specifies whether to include certificates which are not completely provisioned.
     pub include_pending: Option<bool>,
 
@@ -176,10 +155,31 @@ pub struct CertificateClientListDeletedCertificatesOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl CertificateClientListDeletedCertificatesOptions<'_> {
-    pub fn into_owned(self) -> CertificateClientListDeletedCertificatesOptions<'static> {
-        CertificateClientListDeletedCertificatesOptions {
+impl CertificateClientListDeletedCertificatePropertiesOptions<'_> {
+    pub fn into_owned(self) -> CertificateClientListDeletedCertificatePropertiesOptions<'static> {
+        CertificateClientListDeletedCertificatePropertiesOptions {
             include_pending: self.include_pending,
+            maxresults: self.maxresults,
+            method_options: ClientMethodOptions {
+                context: self.method_options.context.into_owned(),
+            },
+        }
+    }
+}
+
+/// Options to be passed to [`CertificateClient::list_issuer_properties()`](crate::generated::clients::CertificateClient::list_issuer_properties())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientListIssuerPropertiesOptions<'a> {
+    /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+impl CertificateClientListIssuerPropertiesOptions<'_> {
+    pub fn into_owned(self) -> CertificateClientListIssuerPropertiesOptions<'static> {
+        CertificateClientListIssuerPropertiesOptions {
             maxresults: self.maxresults,
             method_options: ClientMethodOptions {
                 context: self.method_options.context.into_owned(),
@@ -216,30 +216,16 @@ pub struct CertificateClientRestoreCertificateOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`CertificateClient::set_certificate_contacts()`](crate::generated::clients::CertificateClient::set_certificate_contacts())
+/// Options to be passed to [`CertificateClient::set_contacts()`](crate::generated::clients::CertificateClient::set_contacts())
 #[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientSetCertificateContactsOptions<'a> {
+pub struct CertificateClientSetContactsOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`CertificateClient::set_certificate_issuer()`](crate::generated::clients::CertificateClient::set_certificate_issuer())
+/// Options to be passed to [`CertificateClient::set_issuer()`](crate::generated::clients::CertificateClient::set_issuer())
 #[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientSetCertificateIssuerOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-/// Options to be passed to [`CertificateClient::update_certificate()`](crate::generated::clients::CertificateClient::update_certificate())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientUpdateCertificateOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-/// Options to be passed to [`CertificateClient::update_certificate_issuer()`](crate::generated::clients::CertificateClient::update_certificate_issuer())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientUpdateCertificateIssuerOptions<'a> {
+pub struct CertificateClientSetIssuerOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -254,6 +240,20 @@ pub struct CertificateClientUpdateCertificateOperationOptions<'a> {
 /// Options to be passed to [`CertificateClient::update_certificate_policy()`](crate::generated::clients::CertificateClient::update_certificate_policy())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientUpdateCertificatePolicyOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`CertificateClient::update_certificate_properties()`](crate::generated::clients::CertificateClient::update_certificate_properties())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientUpdateCertificatePropertiesOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`CertificateClient::update_issuer()`](crate::generated::clients::CertificateClient::update_issuer())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientUpdateIssuerOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }

@@ -55,7 +55,7 @@ Instantiate a `DefaultAzureCredential` to pass to the client. The same instance 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_secrets::{
-    models::{SecretBundle, SecretSetParameters},
+    models::{Secret, SetSecretParameters},
     ResourceExt, SecretClient,
 };
 
@@ -70,12 +70,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create a new secret using the secret client.
-    let secret_set_parameters = SecretSetParameters {
+    let secret_set_parameters = SetSecretParameters {
         value: Some("secret-value".into()),
         ..Default::default()
     };
 
-    let secret: SecretBundle = client
+    let secret: Secret = client
         .set_secret("secret-name", secret_set_parameters.try_into()?, None)
         .await?
         .into_body()
@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let version = secret.resource_id()?.version.unwrap_or_default();
 
     // Retrieve a secret using the secret client.
-    let secret: SecretBundle = client
+    let secret: Secret = client
         .get_secret("secret-name", version.as_ref(), None)
         .await?
         .into_body()
@@ -98,9 +98,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Key concepts
 
-### SecretBundle
+### Secret
 
-A `SecretBundle` is the fundamental resource within Azure Key Vault. From a developer's perspective, Azure Key Vault APIs accept and return secret values as strings.
+A `Secret` is the fundamental resource within Azure Key Vault. From a developer's perspective, Azure Key Vault APIs accept and return secret values as strings.
 
 ### SecretClient
 
@@ -126,7 +126,7 @@ The following section provides several code snippets using the `SecretClient`, c
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{models::SecretSetParameters, ResourceExt, SecretClient};
+use azure_security_keyvault_secrets::{models::SetSecretParameters, ResourceExt, SecretClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -138,7 +138,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create a new secret using the secret client.
-    let secret_set_parameters = SecretSetParameters {
+    let secret_set_parameters = SetSecretParameters {
         value: Some("secret-value".into()),
         ..Default::default()
     };
@@ -192,11 +192,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Update an existing secret
 
-`update_secret` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
+`update_secret_properties` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_secrets::{models::SecretUpdateParameters, SecretClient};
+use azure_security_keyvault_secrets::{models::UpdateSecretPropertiesParameters, SecretClient};
 use std::collections::HashMap;
 
 #[tokio::main]
@@ -209,7 +209,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Update a secret using the secret client.
-    let secret_update_parameters = SecretUpdateParameters {
+    let secret_update_parameters = UpdateSecretPropertiesParameters {
         content_type: Some("text/plain".into()),
         tags: HashMap::from_iter(vec![(
             "tag-name".into(),
@@ -219,7 +219,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     client
-        .update_secret(
+        .update_secret_properties(
             "secret-name",
             "",
             secret_update_parameters.try_into()?,
@@ -235,7 +235,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Delete a secret
 
-`delete_secret` will tell Key Vault to delete a secret but it is not deleted immediately. It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_secret` on the returned `DeletedSecretBundle.id`.
+`delete_secret` will tell Key Vault to delete a secret but it is not deleted immediately. It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_secret` on the returned `DeletedSecret.id`.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
@@ -276,7 +276,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    let mut pager = client.list_secrets(None)?.into_stream();
+    let mut pager = client.list_secret_properties(None)?.into_stream();
     while let Some(secrets) = pager.try_next().await? {
         let secrets = secrets.into_body().await?.value;
         for secret in secrets {

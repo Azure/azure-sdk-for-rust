@@ -33,9 +33,9 @@ pub struct SecretClientGetSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`SecretClient::list_deleted_secrets()`](crate::generated::clients::SecretClient::list_deleted_secrets())
+/// Options to be passed to [`SecretClient::list_deleted_secret_properties()`](crate::generated::clients::SecretClient::list_deleted_secret_properties())
 #[derive(Clone, Default, SafeDebug)]
-pub struct SecretClientListDeletedSecretsOptions<'a> {
+pub struct SecretClientListDeletedSecretPropertiesOptions<'a> {
     /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
 
@@ -43,9 +43,9 @@ pub struct SecretClientListDeletedSecretsOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl SecretClientListDeletedSecretsOptions<'_> {
-    pub fn into_owned(self) -> SecretClientListDeletedSecretsOptions<'static> {
-        SecretClientListDeletedSecretsOptions {
+impl SecretClientListDeletedSecretPropertiesOptions<'_> {
+    pub fn into_owned(self) -> SecretClientListDeletedSecretPropertiesOptions<'static> {
+        SecretClientListDeletedSecretPropertiesOptions {
             maxresults: self.maxresults,
             method_options: ClientMethodOptions {
                 context: self.method_options.context.into_owned(),
@@ -54,9 +54,9 @@ impl SecretClientListDeletedSecretsOptions<'_> {
     }
 }
 
-/// Options to be passed to [`SecretClient::list_secret_versions()`](crate::generated::clients::SecretClient::list_secret_versions())
+/// Options to be passed to [`SecretClient::list_secret_properties()`](crate::generated::clients::SecretClient::list_secret_properties())
 #[derive(Clone, Default, SafeDebug)]
-pub struct SecretClientListSecretVersionsOptions<'a> {
+pub struct SecretClientListSecretPropertiesOptions<'a> {
     /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
 
@@ -64,9 +64,9 @@ pub struct SecretClientListSecretVersionsOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl SecretClientListSecretVersionsOptions<'_> {
-    pub fn into_owned(self) -> SecretClientListSecretVersionsOptions<'static> {
-        SecretClientListSecretVersionsOptions {
+impl SecretClientListSecretPropertiesOptions<'_> {
+    pub fn into_owned(self) -> SecretClientListSecretPropertiesOptions<'static> {
+        SecretClientListSecretPropertiesOptions {
             maxresults: self.maxresults,
             method_options: ClientMethodOptions {
                 context: self.method_options.context.into_owned(),
@@ -75,9 +75,9 @@ impl SecretClientListSecretVersionsOptions<'_> {
     }
 }
 
-/// Options to be passed to [`SecretClient::list_secrets()`](crate::generated::clients::SecretClient::list_secrets())
+/// Options to be passed to [`SecretClient::list_secret_properties_versions()`](crate::generated::clients::SecretClient::list_secret_properties_versions())
 #[derive(Clone, Default, SafeDebug)]
-pub struct SecretClientListSecretsOptions<'a> {
+pub struct SecretClientListSecretPropertiesVersionsOptions<'a> {
     /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
 
@@ -85,9 +85,9 @@ pub struct SecretClientListSecretsOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl SecretClientListSecretsOptions<'_> {
-    pub fn into_owned(self) -> SecretClientListSecretsOptions<'static> {
-        SecretClientListSecretsOptions {
+impl SecretClientListSecretPropertiesVersionsOptions<'_> {
+    pub fn into_owned(self) -> SecretClientListSecretPropertiesVersionsOptions<'static> {
+        SecretClientListSecretPropertiesVersionsOptions {
             maxresults: self.maxresults,
             method_options: ClientMethodOptions {
                 context: self.method_options.context.into_owned(),
@@ -124,9 +124,9 @@ pub struct SecretClientSetSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`SecretClient::update_secret()`](crate::generated::clients::SecretClient::update_secret())
+/// Options to be passed to [`SecretClient::update_secret_properties()`](crate::generated::clients::SecretClient::update_secret_properties())
 #[derive(Clone, Default, SafeDebug)]
-pub struct SecretClientUpdateSecretOptions<'a> {
+pub struct SecretClientUpdateSecretPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }

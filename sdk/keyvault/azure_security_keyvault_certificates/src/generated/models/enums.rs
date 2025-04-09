@@ -15,6 +15,19 @@ create_enum!(
 );
 
 create_extensible_enum!(
+    #[doc = r#"/// Elliptic curve name. For valid values, see JsonWebKeyCurveName."#]
+    CurveName,
+    #[doc = r#"/// The NIST P-256 elliptic curve, AKA SECG curve SECP256R1."#]
+    (P256, "P-256"),
+    #[doc = r#"/// The SECG SECP256K1 elliptic curve."#]
+    (P256K, "P-256K"),
+    #[doc = r#"/// The NIST P-384 elliptic curve, AKA SECG curve SECP384R1."#]
+    (P384, "P-384"),
+    #[doc = r#"/// The NIST P-521 elliptic curve, AKA SECG curve SECP521R1."#]
+    (P521, "P-521")
+);
+
+create_extensible_enum!(
     #[doc = r#"/// Reflects the deletion recovery level currently in effect for secrets in the current vault. If it contains 'Purgeable',
 /// the secret can be permanently deleted by a privileged user; otherwise, only the system can purge the secret, at the end
 /// of the retention interval."#]
@@ -61,21 +74,8 @@ create_extensible_enum!(
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// Elliptic curve name. For valid values, see JsonWebKeyCurveName."#]
-    JsonWebKeyCurveName,
-    #[doc = r#"/// The NIST P-256 elliptic curve, AKA SECG curve SECP256R1."#]
-    (P256, "P-256"),
-    #[doc = r#"/// The SECG SECP256K1 elliptic curve."#]
-    (P256K, "P-256K"),
-    #[doc = r#"/// The NIST P-384 elliptic curve, AKA SECG curve SECP384R1."#]
-    (P384, "P-384"),
-    #[doc = r#"/// The NIST P-521 elliptic curve, AKA SECG curve SECP521R1."#]
-    (P521, "P-521")
-);
-
-create_extensible_enum!(
     #[doc = r#"/// The type of key pair to be used for the certificate."#]
-    JsonWebKeyType,
+    KeyType,
     #[doc = r#"/// Elliptic Curve."#]
     (EC, "EC"),
     #[doc = r#"/// Elliptic Curve with a private key which is not exportable from the HSM."#]

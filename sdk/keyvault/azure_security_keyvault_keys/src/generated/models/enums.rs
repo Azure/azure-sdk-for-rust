@@ -6,6 +6,19 @@
 use azure_core::{create_enum, create_extensible_enum};
 
 create_extensible_enum!(
+    #[doc = r#"/// Elliptic curve name. For valid values, see JsonWebKeyCurveName."#]
+    CurveName,
+    #[doc = r#"/// The NIST P-256 elliptic curve, AKA SECG curve SECP256R1."#]
+    (P256, "P-256"),
+    #[doc = r#"/// The SECG SECP256K1 elliptic curve."#]
+    (P256K, "P-256K"),
+    #[doc = r#"/// The NIST P-384 elliptic curve, AKA SECG curve SECP384R1."#]
+    (P384, "P-384"),
+    #[doc = r#"/// The NIST P-521 elliptic curve, AKA SECG curve SECP521R1."#]
+    (P521, "P-521")
+);
+
+create_extensible_enum!(
     #[doc = r#"/// Reflects the deletion recovery level currently in effect for certificates in the current vault. If it contains 'Purgeable',
 /// the certificate can be permanently deleted by a privileged user; otherwise, only the system can purge the certificate,
 /// at the end of the retention interval."#]
@@ -52,21 +65,8 @@ create_extensible_enum!(
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// Elliptic curve name. For valid values, see JsonWebKeyCurveName."#]
-    JsonWebKeyCurveName,
-    #[doc = r#"/// The NIST P-256 elliptic curve, AKA SECG curve SECP256R1."#]
-    (P256, "P-256"),
-    #[doc = r#"/// The SECG SECP256K1 elliptic curve."#]
-    (P256K, "P-256K"),
-    #[doc = r#"/// The NIST P-384 elliptic curve, AKA SECG curve SECP384R1."#]
-    (P384, "P-384"),
-    #[doc = r#"/// The NIST P-521 elliptic curve, AKA SECG curve SECP521R1."#]
-    (P521, "P-521")
-);
-
-create_extensible_enum!(
     #[doc = r#"/// An algorithm used for encryption and decryption."#]
-    JsonWebKeyEncryptionAlgorithm,
+    EncryptionAlgorithm,
     #[doc = r#"/// 128-bit AES-CBC."#]
     (A128Cbc, "A128CBC"),
     #[doc = r#"/// 128-bit AES-CBC with PKCS padding."#]
@@ -112,8 +112,19 @@ create_extensible_enum!(
 );
 
 create_extensible_enum!(
+    #[doc = r#"/// The encryption algorithm to use to protected the exported key material"#]
+    KeyEncryptionAlgorithm,
+    #[doc = r#"/// The CKM_RSA_AES_KEY_WRAP key wrap mechanism."#]
+    (CkmRsaAesKeyWrap, "CKM_RSA_AES_KEY_WRAP"),
+    #[doc = r#"/// The RSA_AES_KEY_WRAP_256 key wrap mechanism."#]
+    (RsaAesKeyWrap256, "RSA_AES_KEY_WRAP_256"),
+    #[doc = r#"/// The RSA_AES_KEY_WRAP_384 key wrap mechanism."#]
+    (RsaAesKeyWrap384, "RSA_AES_KEY_WRAP_384")
+);
+
+create_extensible_enum!(
     #[doc = r#"/// JSON web key operations. For more information, see JsonWebKeyOperation."#]
-    JsonWebKeyOperation,
+    KeyOperation,
     #[doc = r#"/// Indicates that the key can be used to decrypt."#]
     (Decrypt, "decrypt"),
     #[doc = r#"/// Indicates that the key can be used to encrypt."#]
@@ -132,9 +143,35 @@ create_extensible_enum!(
     (WrapKey, "wrapKey")
 );
 
+create_enum!(
+    #[doc = r#"/// The type of the action. The value should be compared case-insensitively."#]
+    KeyRotationPolicyAction,
+    #[doc = r#"/// Trigger Event Grid events. Defaults to 30 days before expiry. Key Vault only."#]
+    (Notify, "Notify"),
+    #[doc = r#"/// Rotate the key based on the key policy."#]
+    (Rotate, "Rotate")
+);
+
+create_extensible_enum!(
+    #[doc = r#"/// JsonWebKey Key Type (kty), as defined in <https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40>."#]
+    KeyType,
+    #[doc = r#"/// Elliptic Curve."#]
+    (EC, "EC"),
+    #[doc = r#"/// Elliptic Curve with a private key which is stored in the HSM."#]
+    (EcHsm, "EC-HSM"),
+    #[doc = r#"/// Octet sequence (used to represent symmetric keys)"#]
+    (Oct, "oct"),
+    #[doc = r#"/// Octet sequence (used to represent symmetric keys) which is stored the HSM."#]
+    (OctHsm, "oct-HSM"),
+    #[doc = r#"/// RSA (https://tools.ietf.org/html/rfc3447)"#]
+    (RSA, "RSA"),
+    #[doc = r#"/// RSA with a private key which is stored in the HSM."#]
+    (RsaHsm, "RSA-HSM")
+);
+
 create_extensible_enum!(
     #[doc = r#"/// The signing/verification algorithm identifier. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm."#]
-    JsonWebKeySignatureAlgorithm,
+    SignatureAlgorithm,
     #[doc = r#"/// ECDSA using P-256 and SHA-256, as described in <https://tools.ietf.org/html/rfc7518>."#]
     (ES256, "ES256"),
     #[doc = r#"/// ECDSA using P-256K and SHA-256, as described in <https://tools.ietf.org/html/rfc7518>"#]
@@ -163,41 +200,4 @@ create_extensible_enum!(
     (RS512, "RS512"),
     #[doc = r#"/// Reserved"#]
     (RSNULL, "RSNULL")
-);
-
-create_extensible_enum!(
-    #[doc = r#"/// JsonWebKey Key Type (kty), as defined in <https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40>."#]
-    JsonWebKeyType,
-    #[doc = r#"/// Elliptic Curve."#]
-    (EC, "EC"),
-    #[doc = r#"/// Elliptic Curve with a private key which is stored in the HSM."#]
-    (EcHsm, "EC-HSM"),
-    #[doc = r#"/// Octet sequence (used to represent symmetric keys)"#]
-    (Oct, "oct"),
-    #[doc = r#"/// Octet sequence (used to represent symmetric keys) which is stored the HSM."#]
-    (OctHsm, "oct-HSM"),
-    #[doc = r#"/// RSA (https://tools.ietf.org/html/rfc3447)"#]
-    (RSA, "RSA"),
-    #[doc = r#"/// RSA with a private key which is stored in the HSM."#]
-    (RsaHsm, "RSA-HSM")
-);
-
-create_extensible_enum!(
-    #[doc = r#"/// The encryption algorithm to use to protected the exported key material"#]
-    KeyEncryptionAlgorithm,
-    #[doc = r#"/// The CKM_RSA_AES_KEY_WRAP key wrap mechanism."#]
-    (CkmRsaAesKeyWrap, "CKM_RSA_AES_KEY_WRAP"),
-    #[doc = r#"/// The RSA_AES_KEY_WRAP_256 key wrap mechanism."#]
-    (RsaAesKeyWrap256, "RSA_AES_KEY_WRAP_256"),
-    #[doc = r#"/// The RSA_AES_KEY_WRAP_384 key wrap mechanism."#]
-    (RsaAesKeyWrap384, "RSA_AES_KEY_WRAP_384")
-);
-
-create_enum!(
-    #[doc = r#"/// The type of the action. The value should be compared case-insensitively."#]
-    KeyRotationPolicyAction,
-    #[doc = r#"/// Trigger Event Grid events. Defaults to 30 days before expiry. Key Vault only."#]
-    (Notify, "Notify"),
-    #[doc = r#"/// Rotate the key based on the key policy."#]
-    (Rotate, "Rotate")
 );

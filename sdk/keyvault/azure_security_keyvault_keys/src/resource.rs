@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 /// Information about the resource.
 ///
-/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`KeyBundle`](crate::models::KeyBundle) to get this information.
+/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`Key`](crate::models::Key) to get this information.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResourceId {
     /// The source URL of the resource.
@@ -52,13 +52,13 @@ pub trait ResourceExt {
     /// # Examples
     ///
     /// ```
-    /// use azure_security_keyvault_keys::{models::{JsonWebKey, KeyBundle}, ResourceExt as _};
+    /// use azure_security_keyvault_keys::{models::{JsonWebKey, Key}, ResourceExt as _};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// // KeyClient::get_key() will return a KeyBundle.
+    /// // KeyClient::get_key() will return a Key.
     /// let mut jwk = JsonWebKey::default();
     /// jwk.kid = Some("https://my-vault.vault.azure.net/keys/my-key/abcd1234?api-version=7.5".into());
-    /// let mut key = KeyBundle::default();
+    /// let mut key = Key::default();
     /// key.key = Some(jwk);
     ///
     /// let id = key.resource_id()?;
@@ -121,31 +121,31 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
 }
 
 mod private {
-    use crate::models::{DeletedKeyBundle, DeletedKeyItem, KeyBundle, KeyItem};
+    use crate::models::{DeletedKey, DeletedKeyProperties, Key, KeyProperties};
 
     pub trait AsId {
         fn as_id(&self) -> Option<&String>;
     }
 
-    impl AsId for KeyBundle {
+    impl AsId for Key {
         fn as_id(&self) -> Option<&String> {
             self.key.as_ref()?.kid.as_ref()
         }
     }
 
-    impl AsId for KeyItem {
+    impl AsId for KeyProperties {
         fn as_id(&self) -> Option<&String> {
             self.kid.as_ref()
         }
     }
 
-    impl AsId for DeletedKeyBundle {
+    impl AsId for DeletedKey {
         fn as_id(&self) -> Option<&String> {
             self.key.as_ref()?.kid.as_ref()
         }
     }
 
-    impl AsId for DeletedKeyItem {
+    impl AsId for DeletedKeyProperties {
         fn as_id(&self) -> Option<&String> {
             self.kid.as_ref()
         }
@@ -154,7 +154,7 @@ mod private {
 
 #[cfg(test)]
 mod tests {
-    use crate::models::{JsonWebKey, KeyBundle};
+    use crate::models::{JsonWebKey, Key};
 
     use super::*;
 
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn from_key_bundle() {
-        let mut key = KeyBundle {
+        let mut key = Key {
             key: None,
             ..Default::default()
         };

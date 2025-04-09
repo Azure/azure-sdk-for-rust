@@ -7,9 +7,8 @@ use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_keys::{
     models::{
-        JsonWebKeyCurveName, JsonWebKeyEncryptionAlgorithm, JsonWebKeySignatureAlgorithm,
-        JsonWebKeyType, KeyCreateParameters, KeyOperationsParameters, KeySignParameters,
-        KeyUpdateParameters, KeyVerifyParameters,
+        CreateKeyParameters, CurveName, EncryptionAlgorithm, KeyOperationParameters, KeyType,
+        SignParameters, SignatureAlgorithm, UpdateKeyPropertiesParameters, VerifyParameters,
     },
     KeyClient, KeyClientOptions, ResourceExt as _,
 };
@@ -31,8 +30,8 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create an RSA key.
-    let body = KeyCreateParameters {
-        kty: Some(JsonWebKeyType::RSA),
+    let body = CreateKeyParameters {
+        kty: Some(KeyType::RSA),
         key_size: Some(2048),
         ..Default::default()
     };
@@ -69,9 +68,9 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create an EC key.
-    let body = KeyCreateParameters {
-        kty: Some(JsonWebKeyType::EC),
-        curve: Some(JsonWebKeyCurveName::P256),
+    let body = CreateKeyParameters {
+        kty: Some(KeyType::EC),
+        curve: Some(CurveName::P256),
         ..Default::default()
     };
     let key = client
@@ -82,13 +81,13 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
     assert!(matches!(key.key, Some(ref jwk) if jwk.x.is_some()));
 
     // Update key properties.
-    let properties = KeyUpdateParameters {
+    let properties = UpdateKeyPropertiesParameters {
         key_attributes: key.attributes,
         tags: HashMap::from_iter(vec![("test-name".into(), "update_key_properties".into())]),
         ..Default::default()
     };
     let key = client
-        .update_key("update-key", "", properties.try_into()?, None)
+        .update_key_properties("update-key", "", properties.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -138,7 +137,7 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
     assert!(matches!(secret2.key, Some(ref jwk) if jwk.x.is_some()));
 
     // List keys.
-    let mut pager = client.list_keys(None)?.into_stream();
+    let mut pager = client.list_key_properties(None)?.into_stream();
     while let Some(keys) = pager.try_next().await? {
         let keys = keys.into_body().await?.value;
         for key in keys {
@@ -168,8 +167,8 @@ async fn purge_key(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create an RSA key.
-    let body = KeyCreateParameters {
-        kty: Some(JsonWebKeyType::RSA),
+    let body = CreateKeyParameters {
+        kty: Some(KeyType::RSA),
         key_size: Some(2048),
         ..Default::default()
     };
@@ -226,8 +225,8 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create an RSA key.
-    let body = KeyCreateParameters {
-        kty: Some(JsonWebKeyType::RSA),
+    let body = CreateKeyParameters {
+        kty: Some(KeyType::RSA),
         key_size: Some(2048),
         ..Default::default()
     };
@@ -243,8 +242,8 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
 
     // Encrypt plaintext.
     let plaintext = b"plaintext".to_vec();
-    let mut parameters = KeyOperationsParameters {
-        algorithm: Some(JsonWebKeyEncryptionAlgorithm::RsaOAEP256),
+    let mut parameters = KeyOperationParameters {
+        algorithm: Some(EncryptionAlgorithm::RsaOAEP256),
         value: Some(plaintext.clone()),
         ..Default::default()
     };
@@ -283,14 +282,14 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create an EC key.
-    let body = KeyCreateParameters {
-        kty: Some(JsonWebKeyType::EC),
-        curve: Some(JsonWebKeyCurveName::P256),
+    let body = CreateKeyParameters {
+        kty: Some(KeyType::EC),
+        curve: Some(CurveName::P256),
         ..Default::default()
     };
 
     const NAME: &str = "sign-verify";
-    const ALG: Option<JsonWebKeySignatureAlgorithm> = Some(JsonWebKeySignatureAlgorithm::ES256);
+    const ALG: Option<SignatureAlgorithm> = Some(SignatureAlgorithm::ES256);
 
     let key = client
         .create_key(NAME, body.try_into()?, None)
@@ -303,7 +302,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
     let plaintext = b"plaintext".to_vec();
     let digest = Sha256::digest(plaintext).to_vec();
 
-    let parameters = KeySignParameters {
+    let parameters = SignParameters {
         algorithm: ALG,
         value: Some(digest.clone()),
     };
@@ -315,7 +314,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
     assert!(matches!(signed.result.as_ref(), Some(signature) if !signature.is_empty()));
 
     // Verify signature.
-    let parameters = KeyVerifyParameters {
+    let parameters = VerifyParameters {
         algorithm: ALG,
         digest: Some(digest),
         signature: signed.result,
@@ -344,15 +343,14 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create a KEK using RSA.
-    let body = KeyCreateParameters {
-        kty: Some(JsonWebKeyType::RSA),
+    let body = CreateKeyParameters {
+        kty: Some(KeyType::RSA),
         key_size: Some(2048),
         ..Default::default()
     };
 
     const NAME: &str = "wrap-key-unwrap-key";
-    const ALG: Option<JsonWebKeyEncryptionAlgorithm> =
-        Some(JsonWebKeyEncryptionAlgorithm::RsaOAEP256);
+    const ALG: Option<EncryptionAlgorithm> = Some(EncryptionAlgorithm::RsaOAEP256);
 
     let key = client
         .create_key(NAME, body.try_into()?, None)
@@ -365,7 +363,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     let dek = recording.random::<[u8; 32]>().to_vec();
 
     // Wrap the DEK.
-    let mut parameters = KeyOperationsParameters {
+    let mut parameters = KeyOperationParameters {
         algorithm: ALG,
         value: Some(dek.clone()),
         ..Default::default()

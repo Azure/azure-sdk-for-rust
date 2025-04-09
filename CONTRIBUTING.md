@@ -30,6 +30,38 @@ Alternatively, you can build any one or more crates by passing their crate names
 You can also build the entire workspace by either building from the root source directory or running `cargo build --workspace`, but unless you're making changes to `azure_core`
 or its dependencies, this is generally unnecessary nor recommended. It will take considerable time and drive space.
 
+### Building on Windows
+
+By default we use the [`openssl`](https://crates.io/crates/openssl) crate and, indirectly, the [`openssl-sys`](https://crates.io/crates/openssl-sys) crate. On Windows, you may need to download and build openssl before you can successfully compile.
+Since `openssl-sys` supports [vcpkg](https://learn.microsoft.com/vcpkg/), you can bootstrap OpenSSL:
+
+1. Clone `vcpkg` somewhere in your development environment:
+
+   ```pwsh
+   git clone --depth=1 https://github.com/microsoft/vcpkg.git
+   ```
+
+2. Run the bootstrap script to download a prebuilt binary:
+
+   ```pwsh
+   cd vcpkg; .\bootstrap-vcpkg.bat
+   ```
+
+3. Set up environment variables:
+
+   ```pwsh
+   $env:VCPKG_ROOT = "C:\path\to\vcpkg" # from step 1
+   $env:PATH = "${env:VCPKG_ROOT};${env:PATH}"
+   ```
+
+   To persist these variables for future sessions, remember to set them in the Windows System Environment Variables panel.
+
+4. In the root of this repo, run:
+
+   ```pwsh
+   vcpkg install
+   ```
+
 ### Linting
 
 You can run `cargo clippy` to check for common issues. Like `cargo build`, you can pass one or more crate names to `--package`.
