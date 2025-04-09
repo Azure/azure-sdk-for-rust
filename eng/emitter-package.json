@@ -1,7 +1,7 @@
 {
   "main": "dist/src/index.js",
   "dependencies": {
-    "@azure-tools/typespec-rust": "0.13.2"
+    "@azure-tools/typespec-rust": "0.13.3"
   },
   "devDependencies": {
     "@azure-tools/typespec-azure-core": "0.54.0",

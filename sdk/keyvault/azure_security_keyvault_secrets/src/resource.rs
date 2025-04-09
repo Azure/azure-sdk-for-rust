@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 /// Information about the resource.
 ///
-/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`SecretBundle`](crate::models::SecretBundle) to get this information.
+/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`Secret`](crate::models::Secret) to get this information.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResourceId {
     /// The source URL of the resource.
@@ -52,11 +52,11 @@ pub trait ResourceExt {
     /// # Examples
     ///
     /// ```
-    /// use azure_security_keyvault_secrets::{models::SecretBundle, ResourceExt as _};
+    /// use azure_security_keyvault_secrets::{models::Secret, ResourceExt as _};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// // SecretClient::get_secret() will return a SecretBundle.
-    /// let mut secret = SecretBundle::default();
+    /// // SecretClient::get_secret() will return a Secret.
+    /// let mut secret = Secret::default();
     /// secret.id = Some("https://my-vault.vault.azure.net/secrets/my-secret/abcd1234?api-version=7.5".into());
     ///
     /// let id = secret.resource_id()?;
@@ -119,31 +119,31 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
 }
 
 mod private {
-    use crate::models::{DeletedSecretBundle, DeletedSecretItem, SecretBundle, SecretItem};
+    use crate::models::{DeletedSecret, DeletedSecretProperties, Secret, SecretProperties};
 
     pub trait AsId {
         fn as_id(&self) -> Option<&String>;
     }
 
-    impl AsId for SecretBundle {
+    impl AsId for Secret {
         fn as_id(&self) -> Option<&String> {
             self.id.as_ref()
         }
     }
 
-    impl AsId for SecretItem {
+    impl AsId for SecretProperties {
         fn as_id(&self) -> Option<&String> {
             self.id.as_ref()
         }
     }
 
-    impl AsId for DeletedSecretBundle {
+    impl AsId for DeletedSecret {
         fn as_id(&self) -> Option<&String> {
             self.id.as_ref()
         }
     }
 
-    impl AsId for DeletedSecretItem {
+    impl AsId for DeletedSecretProperties {
         fn as_id(&self) -> Option<&String> {
             self.id.as_ref()
         }
@@ -152,7 +152,7 @@ mod private {
 
 #[cfg(test)]
 mod tests {
-    use crate::models::SecretBundle;
+    use crate::models::Secret;
 
     use super::*;
 
@@ -250,7 +250,7 @@ mod tests {
 
     #[test]
     fn from_secret_bundle() {
-        let mut secret = SecretBundle {
+        let mut secret = Secret {
             id: None,
             ..Default::default()
         };

@@ -52,9 +52,9 @@ Instantiate a `DefaultAzureCredential` to pass to the client. The same instance 
 
 ## Key concepts
 
-### CertificateBundle
+### Certificate
 
-A Azure Key Vault certificate public key. The private key is never included when retrieving a `CertificateBundle`.
+A Azure Key Vault certificate public key. The private key is never included when retrieving a `Certificate`.
 
 ### CertificateClient
 
@@ -66,7 +66,345 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Examples
 
-> TODO
+The following section provides several code snippets using the `CertificateClient`, covering some of the most common Azure Key Vault certificates service related tasks:
+
+* [Create a certificate](#create-a-certificate)
+* [Retrieve a certificate](#retrieve-a-certificate)
+* [Update an existing certificate](#update-an-existing-certificate)
+* [Delete a certificate](#delete-a-certificate)
+* [List certificates](#list-certificates)
+
+### Create a certificate
+
+`create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
+Before we can create a new certificate, though, we need to define a certificate policy. This is used for the first certificate version and all subsequent versions of that certificate until changed.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::{
+    models::{CertificatePolicy, CreateCertificateParameters, IssuerParameters, X509CertificateProperties},
+    ResourceExt, CertificateClient,
+};
+use std::{sync::LazyLock, time::Duration};
+use tokio::time::sleep;
+
+static DEFAULT_POLICY: LazyLock<CertificatePolicy> = LazyLock::new(|| CertificatePolicy {
+    x509_certificate_properties: Some(X509CertificateProperties {
+        subject: Some("CN=DefaultPolicy".into()),
+        ..Default::default()
+    }),
+    issuer_parameters: Some(IssuerParameters {
+        name: Some("Self".into()),
+        ..Default::default()
+    }),
+    ..Default::default()
+});
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Create a self-signed certificate.
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        ..Default::default()
+    };
+
+    let mut operation = client
+        .create_certificate("certificate-name", body.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    let name = operation.resource_id()?.name;
+
+    // Wait for the certificate operation to complete.
+    loop {
+        if matches!(operation.status, Some(ref status) if status == "completed") {
+            break;
+        }
+
+        if let Some(err) = operation.error {
+            return Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                err.message
+                    .unwrap_or_else(|| "failed to create certificate".into()),
+            ))?;
+        }
+
+        sleep(Duration::from_secs(3)).await;
+
+        operation = client
+            .get_certificate_operation(&name, None)
+            .await?
+            .into_body()
+            .await?;
+    }
+
+    Ok(())
+}
+```
+
+### Key operations using certificates
+
+You can use a `KeyClient` to perform key operations on a certificate created with a `CertificateClient`.
+The following example shows how to sign data using an EC certificate key.
+
+```rust no_run
+use azure_core::{
+    base64,
+    error::{ErrorKind, ResultExt as _},
+};
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::{
+    models::{
+        CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
+        KeyType, KeyUsageType, X509CertificateProperties,
+    },
+    CertificateClient, ResourceExt, ResourceId,
+};
+use azure_security_keyvault_keys::{
+    models::{SignParameters, SignatureAlgorithm},
+    KeyClient,
+};
+use openssl::hash::MessageDigest;
+use std::{env, time::Duration};
+use tokio::time::sleep;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Pass data to sign as the first argument.
+    let plaintext = env::args().nth(1).ok_or("unsigned JWT required")?;
+
+    let certificate_client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        DefaultAzureCredential::new()?,
+        None,
+    )?;
+
+    // Create an EC certificate policy for signing.
+    let policy = CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=DefaultPolicy".into()),
+            key_usage: vec![KeyUsageType::DigitalSignature],
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        key_properties: Some(KeyProperties {
+            key_type: Some(KeyType::EC),
+            curve: Some(CurveName::P256),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    // Create a self-signed certificate.
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(policy),
+        ..Default::default()
+    };
+    let mut operation = certificate_client
+        .create_certificate("ec-signing-certificate", body.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    let ResourceId {
+        vault_url,
+        name: certificate_name,
+        ..
+    } = operation.resource_id()?;
+
+    // Wait for the certificate operation to complete.
+    loop {
+        if matches!(operation.status, Some(ref status) if status == "completed") {
+            break;
+        }
+
+        if let Some(err) = operation.error {
+            Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                err.message
+                    .unwrap_or_else(|| "failed to create certificate".into()),
+            ))?;
+        }
+
+        sleep(Duration::from_secs(3)).await;
+
+        operation = certificate_client
+            .get_certificate_operation(&certificate_name, None)
+            .await?
+            .into_body()
+            .await?;
+    }
+
+    // Hash the plaintext to be signed.
+    let digest = base64::encode_url_safe(
+        openssl::hash::hash(MessageDigest::sha256(), plaintext.as_bytes())
+            .with_context(ErrorKind::Other, || "failed to hash JWT")?,
+    );
+
+    // Create a KeyClient using the certificate to sign the digest.
+    let key_client = KeyClient::new(&vault_url, DefaultAzureCredential::new()?, None)?;
+    let body = SignParameters {
+        algorithm: Some(SignatureAlgorithm::ES256),
+        value: Some(base64::decode_url_safe(digest)?),
+    };
+
+    let signature = key_client
+        .sign(&certificate_name, "", body.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+
+    println!(
+        "Signature: {:?}",
+        signature.result.map(base64::encode_url_safe)
+    );
+
+    Ok(())
+}
+```
+
+### Retrieve a certificate
+
+`get_certificate` retrieves a certificate that was created or even still in progress in Key Vault.
+Setting the `certificate-version` to an empty string will return the latest version.
+
+```rust no_run
+use azure_core::base64;
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::CertificateClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    let certificate = client
+        .get_certificate("certificate-name", "certificate-version", None)
+        .await?
+        .into_body()
+        .await?;
+
+    println!(
+        "Certificate thumbprint: {:?}",
+        certificate.x509_thumbprint.map(base64::encode)
+    );
+
+    Ok(())
+}
+```
+
+### Update an existing certificate
+
+`update_certificate_properties` updates a certificate previously stored in the Azure Key Vault.
+Only the attributes of the certificate are updated. To regenerate the certificate, call `CertificateClient::create_certificate` on a certificate with the same name.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::{
+    models::UpdateCertificatePropertiesParameters, CertificateClient,
+};
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Update a certificate using the certificate client.
+    let certificate_update_parameters = UpdateCertificatePropertiesParameters {
+        tags: HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())]),
+        ..Default::default()
+    };
+
+    client
+        .update_certificate_properties(
+            "certificate-name",
+            "",
+            certificate_update_parameters.try_into()?,
+            None,
+        )
+        .await?
+        .into_body()
+        .await?;
+
+    Ok(())
+}
+```
+
+### Delete a certificate
+
+`delete_certificate` will tell Key Vault to delete a certificate but it is not deleted immediately.
+It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_certificate` on the returned `DeletedCertificate.id`.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::CertificateClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Delete a certificate using the certificate client.
+    client.delete_certificate("certificate-name", None).await?;
+
+    Ok(())
+}
+```
+
+### List certificates
+
+This example lists all the certificates in the specified Azure Key Vault.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::{CertificateClient, ResourceExt};
+use futures::TryStreamExt;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a new certificate client
+    let credential = DefaultAzureCredential::new()?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    let mut pager = client.list_certificate_properties(None)?.into_stream();
+    while let Some(certificates) = pager.try_next().await? {
+        let certificates = certificates.into_body().await?.value;
+        for certificate in certificates {
+            // Get the certificate name from the ID.
+            let name = certificate.resource_id()?.name;
+            println!("Found Certificate with Name: {}", name);
+        }
+    }
+
+    Ok(())
+}
+```
 
 ## Troubleshooting
 

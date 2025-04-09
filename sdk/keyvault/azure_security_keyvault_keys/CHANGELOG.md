@@ -8,7 +8,15 @@
 
 - Changed model fields defined as an `Option<HashMap<K, V>>` to just a `HashMap<K, V>`.
 - Changed model fields defined as an `Option<Vec<T>>` to just a `Vec<T>`.
+- Removed the "JsonWebKey" prefix from all types e.g., `JsonWebKeyCurveName` is now `CurveName`.
+- Renamed `DeletedKeyBundle` to `DeleteKey`.
+- Renamed `DeletedKeyItem` to `DeletedKeyProperties`.
 - Renamed `KeyClient::get_keys` to `list_keys`.
+- Renamed `KeyBundle` to `Key`.
+- Renamed `KeyBundleBackup` to `KeyBackup`.
+- Renamed `KeyClient::get_keys` to `list_key_properties`.
+- Renamed `KeyItem` to `KeyProperties`.
+- Renamed all parameter types to match the *{Verb}{Noun}* format of the client methods that use them e.g., `createt_key` uses `CreateKeyParameters`.
 
 ### Bugs Fixed
 

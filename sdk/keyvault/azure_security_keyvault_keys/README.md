@@ -79,7 +79,7 @@ az keyvault security-domain download --hsm-name <your-key-vault-name> --sd-wrapp
 
 ## Key concepts
 
-### KeyBundle
+### Key
 
 Azure Key Vault supports multiple key types and algorithms, and enables the use of hardware security modules (HSM) for high value keys.
 
@@ -109,7 +109,7 @@ The following section provides several code snippets using the `KeyClient`, cove
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_keys::{
-    models::{KeyBundle, KeyCreateParameters, JsonWebKeyCurveName, JsonWebKeyType},
+    models::{Key, CreateKeyParameters, CurveName, KeyType},
     ResourceExt, KeyClient,
 };
 
@@ -123,9 +123,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create an EC key.
-    let body = KeyCreateParameters {
-        kty: Some(JsonWebKeyType::EC),
-        curve: Some(JsonWebKeyCurveName::P256),
+    let body = CreateKeyParameters {
+        kty: Some(KeyType::EC),
+        curve: Some(CurveName::P256),
         ..Default::default()
     };
 
@@ -165,7 +165,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Retrieve a public key as a JWK using the key client.
     let key = client
-        .get_key("key-name".into(), "key-version".into(), None)
+        .get_key("key-name", "key-version", None)
         .await?
         .into_body()
         .await?;
@@ -178,11 +178,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Update an existing key
 
-`update_key` updates a key previously stored in the Azure Key Vault. Only the attributes of the key are updated. To update the value, call `KeyClient::create_key` on a key with the same name.
+`update_key_properties` updates a key previously stored in the Azure Key Vault. Only the attributes of the key are updated. To update the value, call `KeyClient::create_key` on a key with the same name.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
-use azure_security_keyvault_keys::{models::KeyUpdateParameters, KeyClient};
+use azure_security_keyvault_keys::{models::UpdateKeyPropertiesParameters, KeyClient};
 use std::collections::HashMap;
 
 #[tokio::main]
@@ -195,21 +195,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Update a key using the key client.
-    let key_update_parameters = KeyUpdateParameters {
-        tags: HashMap::from_iter(vec![(
-            "tag-name".into(),
-            "tag-value".into(),
-        )]),
+    let key_update_parameters = UpdateKeyPropertiesParameters {
+        tags: HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())]),
         ..Default::default()
     };
 
     client
-        .update_key(
-            "key-name".into(),
-            "".into(),
-            key_update_parameters.try_into()?,
-            None,
-        )
+        .update_key_properties("key-name", "", key_update_parameters.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -220,7 +212,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Delete a key
 
-`delete_key` will tell Key Vault to delete a key but it is not deleted immediately. It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_key` on the returned `DeletedKeyBundle.id`.
+`delete_key` will tell Key Vault to delete a key but it is not deleted immediately. It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_key` on the returned `DeletedKey.id`.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
@@ -236,7 +228,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Delete a key using the key client.
-    client.delete_key("key-name".into(), None).await?;
+    client.delete_key("key-name", None).await?;
 
     Ok(())
 }
@@ -261,7 +253,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    let mut pager = client.list_keys(None)?.into_stream();
+    let mut pager = client.list_key_properties(None)?.into_stream();
     while let Some(keys) = pager.try_next().await? {
         let keys = keys.into_body().await?.value;
         for key in keys {
@@ -283,7 +275,7 @@ without the private key ever leaving the HSM.
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_keys::{
-    models::{KeyBundle, KeyCreateParameters, KeyOperationsParameters, JsonWebKeyEncryptionAlgorithm, JsonWebKeyType},
+    models::{CreateKeyParameters, KeyOperationParameters, EncryptionAlgorithm, KeyType},
     ResourceExt, KeyClient,
 };
 use rand::random;
@@ -298,8 +290,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create a key encryption key (KEK) using RSA.
-    let body = KeyCreateParameters {
-        kty: Some(JsonWebKeyType::RSA),
+    let body = CreateKeyParameters {
+        kty: Some(KeyType::RSA),
         key_size: Some(2048),
         ..Default::default()
     };
@@ -315,8 +307,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dek = random::<u32>().to_le_bytes().to_vec();
 
     // Wrap the DEK. You'd store the wrapped DEK along with your encrypted data.
-    let mut parameters = KeyOperationsParameters {
-        algorithm: Some(JsonWebKeyEncryptionAlgorithm::RsaOAEP256),
+    let mut parameters = KeyOperationParameters {
+        algorithm: Some(EncryptionAlgorithm::RsaOAEP256),
         value: Some(dek.clone()),
         ..Default::default()
     };

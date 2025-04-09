@@ -82,9 +82,9 @@ pub struct KeyClientImportKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`KeyClient::list_deleted_keys()`](crate::generated::clients::KeyClient::list_deleted_keys())
+/// Options to be passed to [`KeyClient::list_deleted_key_properties()`](crate::generated::clients::KeyClient::list_deleted_key_properties())
 #[derive(Clone, Default, SafeDebug)]
-pub struct KeyClientListDeletedKeysOptions<'a> {
+pub struct KeyClientListDeletedKeyPropertiesOptions<'a> {
     /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
 
@@ -92,9 +92,9 @@ pub struct KeyClientListDeletedKeysOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl KeyClientListDeletedKeysOptions<'_> {
-    pub fn into_owned(self) -> KeyClientListDeletedKeysOptions<'static> {
-        KeyClientListDeletedKeysOptions {
+impl KeyClientListDeletedKeyPropertiesOptions<'_> {
+    pub fn into_owned(self) -> KeyClientListDeletedKeyPropertiesOptions<'static> {
+        KeyClientListDeletedKeyPropertiesOptions {
             maxresults: self.maxresults,
             method_options: ClientMethodOptions {
                 context: self.method_options.context.into_owned(),
@@ -103,9 +103,9 @@ impl KeyClientListDeletedKeysOptions<'_> {
     }
 }
 
-/// Options to be passed to [`KeyClient::list_key_versions()`](crate::generated::clients::KeyClient::list_key_versions())
+/// Options to be passed to [`KeyClient::list_key_properties()`](crate::generated::clients::KeyClient::list_key_properties())
 #[derive(Clone, Default, SafeDebug)]
-pub struct KeyClientListKeyVersionsOptions<'a> {
+pub struct KeyClientListKeyPropertiesOptions<'a> {
     /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
 
@@ -113,9 +113,9 @@ pub struct KeyClientListKeyVersionsOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl KeyClientListKeyVersionsOptions<'_> {
-    pub fn into_owned(self) -> KeyClientListKeyVersionsOptions<'static> {
-        KeyClientListKeyVersionsOptions {
+impl KeyClientListKeyPropertiesOptions<'_> {
+    pub fn into_owned(self) -> KeyClientListKeyPropertiesOptions<'static> {
+        KeyClientListKeyPropertiesOptions {
             maxresults: self.maxresults,
             method_options: ClientMethodOptions {
                 context: self.method_options.context.into_owned(),
@@ -124,9 +124,9 @@ impl KeyClientListKeyVersionsOptions<'_> {
     }
 }
 
-/// Options to be passed to [`KeyClient::list_keys()`](crate::generated::clients::KeyClient::list_keys())
+/// Options to be passed to [`KeyClient::list_key_properties_versions()`](crate::generated::clients::KeyClient::list_key_properties_versions())
 #[derive(Clone, Default, SafeDebug)]
-pub struct KeyClientListKeysOptions<'a> {
+pub struct KeyClientListKeyPropertiesVersionsOptions<'a> {
     /// Maximum number of results to return in a page. If not specified the service will return up to 25 results.
     pub maxresults: Option<i32>,
 
@@ -134,9 +134,9 @@ pub struct KeyClientListKeysOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl KeyClientListKeysOptions<'_> {
-    pub fn into_owned(self) -> KeyClientListKeysOptions<'static> {
-        KeyClientListKeysOptions {
+impl KeyClientListKeyPropertiesVersionsOptions<'_> {
+    pub fn into_owned(self) -> KeyClientListKeyPropertiesVersionsOptions<'static> {
+        KeyClientListKeyPropertiesVersionsOptions {
             maxresults: self.maxresults,
             method_options: ClientMethodOptions {
                 context: self.method_options.context.into_owned(),
@@ -194,9 +194,9 @@ pub struct KeyClientUnwrapKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`KeyClient::update_key()`](crate::generated::clients::KeyClient::update_key())
+/// Options to be passed to [`KeyClient::update_key_properties()`](crate::generated::clients::KeyClient::update_key_properties())
 #[derive(Clone, Default, SafeDebug)]
-pub struct KeyClientUpdateKeyOptions<'a> {
+pub struct KeyClientUpdateKeyPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }

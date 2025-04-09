@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 /// Information about the resource.
 ///
-/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`CertificateBundle`](crate::models::CertificateBundle) to get this information.
+/// Call [`ResourceExt::resource_id()`] on supported models e.g., [`Certificate`](crate::models::Certificate) to get this information.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResourceId {
     /// The source URL of the resource.
@@ -53,11 +53,11 @@ pub trait ResourceExt {
     /// # Examples
     ///
     /// ```
-    /// use azure_security_keyvault_certificates::{models::CertificateBundle, ResourceExt as _};
+    /// use azure_security_keyvault_certificates::{models::Certificate, ResourceExt as _};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// // CertificateClient::get_certificate() will return a CertificateBundle.
-    /// let mut certificate = CertificateBundle::default();
+    /// // CertificateClient::get_certificate() will return a Certificate.
+    /// let mut certificate = Certificate::default();
     /// certificate.id = Some("https://my-vault.vault.azure.net/certificates/my-certificate/abcd1234?api-version=7.5".into());
     ///
     /// let id = certificate.resource_id()?;
@@ -139,32 +139,32 @@ fn deconstruct(url: &Url, version: bool) -> Result<ResourceId> {
 
 mod private {
     use crate::models::{
-        CertificateBundle, CertificateItem, DeletedCertificateBundle, DeletedCertificateItem,
+        Certificate, CertificateProperties, DeletedCertificate, DeletedCertificateProperties,
     };
 
     pub trait AsId {
         fn as_id(&self) -> Option<&String>;
     }
 
-    impl AsId for CertificateBundle {
+    impl AsId for Certificate {
         fn as_id(&self) -> Option<&String> {
             self.id.as_ref()
         }
     }
 
-    impl AsId for CertificateItem {
+    impl AsId for CertificateProperties {
         fn as_id(&self) -> Option<&String> {
             self.id.as_ref()
         }
     }
 
-    impl AsId for DeletedCertificateBundle {
+    impl AsId for DeletedCertificate {
         fn as_id(&self) -> Option<&String> {
             self.id.as_ref()
         }
     }
 
-    impl AsId for DeletedCertificateItem {
+    impl AsId for DeletedCertificateProperties {
         fn as_id(&self) -> Option<&String> {
             self.id.as_ref()
         }
@@ -173,7 +173,7 @@ mod private {
 
 #[cfg(test)]
 mod tests {
-    use crate::models::CertificateBundle;
+    use crate::models::Certificate;
 
     use super::*;
 
@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn from_certificate_bundle() {
-        let mut certificate = CertificateBundle {
+        let mut certificate = Certificate {
             id: None,
             ..Default::default()
         };
