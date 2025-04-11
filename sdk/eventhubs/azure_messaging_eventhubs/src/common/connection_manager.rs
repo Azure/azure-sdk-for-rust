@@ -19,7 +19,6 @@ use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis as _, AmqpConnection, AmqpConnectionApis,
     AmqpConnectionOptions, AmqpSession, AmqpSessionApis as _, AmqpSymbol,
 };
-use futures::FutureExt;
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex as SyncMutex, OnceLock};
@@ -178,7 +177,8 @@ impl ConnectionManager {
             self.authorization_refresher.get_or_init(|| {
                 let spawner = new_task_spawner();
                 let self_clone = self.clone();
-                spawner.spawn(self_clone.refresh_tokens_task().boxed())
+                //                spawner.spawn(self_clone.refresh_tokens_task().boxed())
+                spawner.spawn(Box::pin(self_clone.refresh_tokens_task()))
             });
             trace!("Token added.");
         } else {
