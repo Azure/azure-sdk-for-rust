@@ -156,7 +156,7 @@ impl AmqpSenderApis for NoopAmqpSender {
         &self,
         session: &AmqpSession,
         name: String,
-        target: impl Into<AmqpTarget>,
+        target: impl Into<AmqpTarget> + Send,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {
         unimplemented!();
@@ -170,7 +170,7 @@ impl AmqpSenderApis for NoopAmqpSender {
 
     async fn send(
         &self,
-        message: impl Into<AmqpMessage>,
+        message: impl Into<AmqpMessage> + Send,
         options: Option<AmqpSendOptions>,
     ) -> Result<AmqpSendOutcome> {
         unimplemented!();
@@ -188,7 +188,7 @@ impl AmqpReceiverApis for NoopAmqpReceiver {
     async fn attach(
         &self,
         session: &AmqpSession,
-        source: impl Into<AmqpSource>,
+        source: impl Into<AmqpSource> + Send,
         options: Option<AmqpReceiverOptions>,
     ) -> Result<()> {
         unimplemented!();

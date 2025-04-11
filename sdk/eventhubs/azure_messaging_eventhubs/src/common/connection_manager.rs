@@ -336,7 +336,6 @@ mod tests {
     use super::*;
     use async_trait::async_trait;
     use azure_core::{http::Url, Result};
-    use rand::rngs::mock;
     use std::sync::Arc;
     use time::OffsetDateTime;
     use tracing::info;
