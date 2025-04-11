@@ -2,15 +2,15 @@
 // Licensed under the MIT License.
 
 use super::{SpawnHandle, TaskSpawner};
-use std::future::Future;
+use std::{future::Future, pin::Pin};
 
 /// A [`TaskSpawner`] using [`tokio::spawn`].
 #[derive(Debug)]
 pub struct TokioSpawner;
 
 impl TaskSpawner for TokioSpawner {
-    fn spawn_boxed(&self, f: Box<dyn Future<Output = ()> + Send + 'static>) -> SpawnHandle {
-        let handle = ::tokio::spawn(Box::into_pin(f));
+    fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send>>) -> SpawnHandle {
+        let handle = ::tokio::spawn(f);
         SpawnHandle(handle)
     }
 }

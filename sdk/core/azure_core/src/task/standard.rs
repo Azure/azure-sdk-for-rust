@@ -4,14 +4,14 @@
 use super::{SpawnHandle, TaskSpawner};
 use futures::executor::LocalPool;
 use futures::task::SpawnExt;
-use std::{future::Future, thread};
+use std::{future::Future, pin::Pin, thread};
 
 /// A [`TaskSpawner`] using [`std::thread::spawn`].
 #[derive(Debug)]
 pub struct StdSpawner;
 
 impl TaskSpawner for StdSpawner {
-    fn spawn_boxed(&self, f: Box<dyn Future<Output = ()> + Send + 'static>) -> SpawnHandle {
+    fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send + 'static>>) -> SpawnHandle {
         let th = thread::spawn(move || {
             // Create a local executor
             let mut local_pool = LocalPool::new();
@@ -19,7 +19,7 @@ impl TaskSpawner for StdSpawner {
 
             // Spawn the future on the local executor
             let future_handle = spawner
-                .spawn_with_handle(Box::into_pin(f))
+                .spawn_with_handle(f)
                 .expect("Failed to spawn future");
 
             // Drive the executor until the future completes

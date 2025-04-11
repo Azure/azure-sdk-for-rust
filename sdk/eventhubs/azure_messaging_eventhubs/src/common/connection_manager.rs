@@ -19,6 +19,7 @@ use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis as _, AmqpConnection, AmqpConnectionApis,
     AmqpConnectionOptions, AmqpSession, AmqpSessionApis as _, AmqpSymbol,
 };
+use futures::FutureExt;
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex as SyncMutex, OnceLock};
@@ -185,12 +186,7 @@ impl ConnectionManager {
             self.authorization_refresher.get_or_init(|| {
                 let spawner = new_task_spawner();
                 let self_clone = self.clone();
-                spawner.spawn_boxed(Box::new(async move {
-                    let r = self_clone.refresh_tokens().await;
-                    if let Err(e) = r {
-                        error!("Error refreshing tokens: {e}");
-                    }
-                }))
+                spawner.spawn(self_clone.refresh_tokens_task().boxed())
             });
             trace!("Token added.");
         } else {
@@ -201,6 +197,14 @@ impl ConnectionManager {
             .ok_or_else(|| EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken))?
             .access_token
             .clone())
+    }
+
+    async fn refresh_tokens_task(self: Arc<Self>) {
+        let result = self.refresh_tokens().await;
+        if let Err(e) = result {
+            error!("Error refreshing tokens: {e}");
+        }
+        debug!("Token refresher task completed.");
     }
 
     async fn refresh_tokens(self: &Arc<Self>) -> Result<()> {
@@ -356,13 +360,15 @@ mod tests {
     struct MockTokenCredential {
         /// Duration in seconds until the token expires
         token_duration: i64,
+
         /// The token itself
         /// This is a mock token, so we don't need to worry about the actual value
         token: SyncMutex<AccessToken>,
+
         /// Count of how many times the token has been requested
         /// This is used to verify that the token is being refreshed correctly
         /// in the tests
-        token_get_count: SyncMutex<usize>,
+        get_token_count: SyncMutex<usize>,
     }
 
     impl MockTokenCredential {
@@ -374,29 +380,23 @@ mod tests {
                     azure_core::credentials::Secret::new("mock_token"),
                     expires_on,
                 )),
-                token_get_count: SyncMutex::new(0),
+                get_token_count: SyncMutex::new(0),
             })
         }
 
         fn get_token_get_count(&self) -> usize {
-            trace!(
-                "MockTokenCredential::get_token_get_count called: {:p}",
-                self
-            );
-            *self.token_get_count.lock().unwrap()
+            *self.get_token_count.lock().unwrap()
         }
     }
 
     #[async_trait]
     impl TokenCredential for MockTokenCredential {
         async fn get_token(&self, _scopes: &[&str]) -> Result<AccessToken> {
-            trace!("MockTokenCredential::get_token called: {:p}", self);
             // Simulate a token refresh by incrementing the token get count
             // and updating the token expiration time
             {
-                let mut count = self.token_get_count.lock().unwrap();
+                let mut count = self.get_token_count.lock().unwrap();
                 *count += 1;
-                trace!("Token get count: {}", *count);
             }
 
             let expires_on = OffsetDateTime::now_utc() + Duration::seconds(self.token_duration);

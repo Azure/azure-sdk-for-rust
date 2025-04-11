@@ -3,14 +3,16 @@
 
 //! Asynchronous task execution utilities.
 
-use futures::FutureExt;
-use std::{fmt, future::Future, sync::Arc};
+use std::{fmt, future::Future, pin::Pin, sync::Arc};
 
 #[cfg(not(feature = "tokio"))]
 mod standard;
 
 #[cfg(feature = "tokio")]
 mod tokio_spawn;
+
+#[cfg(test)]
+mod tests;
 
 #[cfg(not(feature = "tokio"))]
 pub use standard::StdSpawner;
@@ -69,12 +71,6 @@ impl SpawnHandle {
 
 /// An async command runner.
 pub trait TaskSpawner: Send + Sync + fmt::Debug {
-    fn spawn(&self, f: impl Future<Output = ()> + Send + 'static) -> SpawnHandle
-    where
-        Self: Sized,
-    {
-        self.spawn_boxed(Box::new(f.boxed()))
-    }
     /// Spawn a task that executes a given future and returns the output.
-    fn spawn_boxed(&self, f: Box<dyn Future<Output = ()> + Send + 'static>) -> SpawnHandle;
+    fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send + 'static>>) -> SpawnHandle;
 }
