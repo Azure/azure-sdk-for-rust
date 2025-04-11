@@ -73,6 +73,7 @@ The following section provides several code snippets using the `CertificateClien
 * [Update an existing certificate](#update-an-existing-certificate)
 * [Delete a certificate](#delete-a-certificate)
 * [List certificates](#list-certificates)
+* [Key operations using certificates](#key-operations-using-certificates)
 
 ### Create a certificate
 
@@ -277,6 +278,122 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let name = certificate.resource_id()?.name;
             println!("Found Certificate with Name: {}", name);
         }
+    }
+
+    Ok(())
+}
+```
+
+### Key operations using certificates
+
+You can use a `KeyClient` to perform key operations on a certificate created with a `CertificateClient`.
+The following example shows how to sign data using an EC certificate key.
+
+```rust no_run
+use azure_core::base64;
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::{
+    models::{
+        CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
+        KeyType, KeyUsageType, X509CertificateProperties,
+    },
+    CertificateClient, ResourceExt, ResourceId,
+};
+use azure_security_keyvault_keys::{
+    models::{SignParameters, SignatureAlgorithm},
+    KeyClient,
+};
+use openssl::sha::sha256;
+use std::{env, time::Duration};
+use tokio::time::sleep;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Pass data to sign as the first argument.
+    let plaintext = env::args().nth(1).ok_or("plaintext required")?;
+
+    let certificate_client = CertificateClient::new(
+        "https://tcac7e9c41ef52cec.vault.azure.net/",
+        DefaultAzureCredential::new()?,
+        None,
+    )?;
+
+    // Create an EC certificate policy for signing.
+    let policy = CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=DefaultPolicy".into()),
+            key_usage: vec![KeyUsageType::DigitalSignature],
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        key_properties: Some(KeyProperties {
+            key_type: Some(KeyType::EC),
+            curve: Some(CurveName::P256),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    // Create a self-signed certificate.
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(policy),
+        ..Default::default()
+    };
+    let mut operation = certificate_client
+        .create_certificate("ec-signing-certificate", body.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+    let ResourceId {
+        vault_url,
+        name: certificate_name,
+        ..
+    } = operation.resource_id()?;
+
+    // Wait for the certificate operation to complete.
+    loop {
+        if matches!(operation.status, Some(ref status) if status == "completed") {
+            break;
+        }
+
+        if let Some(err) = operation.error {
+            Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                err.message
+                    .unwrap_or_else(|| "failed to create certificate".into()),
+            ))?;
+        }
+
+        sleep(Duration::from_secs(3)).await;
+
+        operation = certificate_client
+            .get_certificate_operation(&certificate_name, None)
+            .await?
+            .into_body()
+            .await?;
+    }
+
+    // Hash the plaintext to be signed.
+    let digest = sha256(plaintext.as_bytes()).to_vec();
+
+    // Create a KeyClient using the certificate to sign the digest.
+    let key_client = KeyClient::new(&vault_url, DefaultAzureCredential::new()?, None)?;
+    let body = SignParameters {
+        algorithm: Some(SignatureAlgorithm::ES256),
+        value: Some(digest),
+    };
+
+    let signature = key_client
+        .sign(&certificate_name, "", body.try_into()?, None)
+        .await?
+        .into_body()
+        .await?;
+
+    if let Some(signature) = signature.result.map(base64::encode_url_safe) {
+        println!("Signature: {}", signature);
     }
 
     Ok(())
