@@ -26,11 +26,6 @@ use std::sync::{Arc, Mutex as SyncMutex, OnceLock};
 use time::{Duration, OffsetDateTime};
 use tracing::{debug, error, trace};
 
-struct AuthorizationScope {
-    access_token: AccessToken,
-    credential: Arc<dyn TokenCredential>,
-}
-
 /// The connection manager is responsible for managing the connection to the Event Hubs service.
 /// It also handles authorization and connection recovery.
 ///
@@ -40,8 +35,9 @@ pub(crate) struct ConnectionManager {
     url: Url,
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
+    credential: Arc<dyn TokenCredential>,
     connections: OnceCell<Arc<AmqpConnection>>,
-    authorization_scopes: AsyncMutex<HashMap<Url, AuthorizationScope>>,
+    authorization_scopes: AsyncMutex<HashMap<Url, AccessToken>>,
     authorization_refresher: OnceLock<SpawnHandle>,
     connection_name: String,
     token_refresh_duration: SyncMutex<Duration>,
@@ -61,6 +57,7 @@ impl ConnectionManager {
         url: Url,
         application_id: Option<String>,
         custom_endpoint: Option<Url>,
+        credential: Arc<dyn TokenCredential>,
     ) -> Arc<Self> {
         let connection_name = application_id
             .clone()
@@ -71,6 +68,7 @@ impl ConnectionManager {
             application_id,
             connection_name,
             custom_endpoint,
+            credential,
             authorization_refresher: OnceLock::new(),
             connections: OnceCell::new(),
             authorization_scopes: AsyncMutex::new(HashMap::new()),
@@ -155,7 +153,6 @@ impl ConnectionManager {
         self: &Arc<Self>,
         connection: &Arc<AmqpConnection>,
         path: &Url,
-        credential: Arc<dyn TokenCredential>,
     ) -> Result<AccessToken> {
         debug!("Authorizing path: {path}");
         let mut scopes = self.authorization_scopes.lock().await;
@@ -164,20 +161,15 @@ impl ConnectionManager {
             debug!("Creating new authorization scope for path: {path}");
 
             debug!("Get Token.");
-            let token = credential
+            let token = self
+                .credential
                 .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
                 .await?;
 
             self.perform_authorization(connection, path, &token).await?;
 
             // insert returns some if it *fails* to insert, None if it succeeded.
-            let present = scopes.insert(
-                path.clone(),
-                AuthorizationScope {
-                    credential: credential.clone(),
-                    access_token: token,
-                },
-            );
+            let present = scopes.insert(path.clone(), token);
             if present.is_some() {
                 return Err(EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken).into());
             }
@@ -195,7 +187,6 @@ impl ConnectionManager {
         Ok(scopes
             .get(path)
             .ok_or_else(|| EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken))?
-            .access_token
             .clone())
     }
 
@@ -215,7 +206,7 @@ impl ConnectionManager {
                 let scopes = self.authorization_scopes.lock().await;
                 debug!("Got lock for scopes.");
                 for (_, token) in scopes.iter() {
-                    expiration_times.push(token.access_token.expires_on);
+                    expiration_times.push(token.expires_on);
                 }
             }
             expiration_times.sort();
@@ -274,12 +265,12 @@ impl ConnectionManager {
             {
                 let mut scopes = self.authorization_scopes.lock().await;
                 for (url, token) in scopes.iter() {
-                    if token.access_token.expires_on >= now + TOKEN_REFRESH_EXPIRATION {
+                    if token.expires_on >= now + TOKEN_REFRESH_EXPIRATION {
                         debug!("Token not expired for {url}");
                     }
 
-                    let credential = token.credential.clone();
-                    let new_token = credential
+                    let new_token = self
+                        .credential
                         .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
                         .await?;
 
@@ -291,13 +282,7 @@ impl ConnectionManager {
                         "Token refreshed for {url}, new expiration time: {}",
                         new_token.expires_on
                     );
-                    updated_tokens.insert(
-                        url.clone(),
-                        AuthorizationScope {
-                            access_token: new_token,
-                            credential,
-                        },
-                    );
+                    updated_tokens.insert(url.clone(), new_token);
                 }
                 // Now that we have the set of refreshed tokens, we can update the map.
                 for (url, token) in updated_tokens.into_iter() {
@@ -351,6 +336,7 @@ mod tests {
     use super::*;
     use async_trait::async_trait;
     use azure_core::{http::Url, Result};
+    use rand::rngs::mock;
     use std::sync::Arc;
     use time::OffsetDateTime;
     use tracing::info;
@@ -411,53 +397,94 @@ mod tests {
         }
     }
 
+    // The ConnectionManager implementation uses a UUID to identify connections unless an application ID is provided.
+    // This test verifies that a new connection manager uses a UUID for its connection ID when no application ID is specified.
+    // It also verifies that the connections aren't initialized during construction - they're created on-demand.
     #[test]
     fn test_connection_manager() {
         let url = Url::parse("amqps://example.com").unwrap();
-        let connection_manager = ConnectionManager::new(url, None, None);
+        let connection_manager =
+            ConnectionManager::new(url, None, None, MockTokenCredential::new(15));
         assert!(!connection_manager.connections.is_initialized());
         assert!(connection_manager.get_connection().is_err()); // Should return an error since connection is not established yet
         assert_eq!(connection_manager.get_connection_id().len(), 36); // UUID v4 string length
+
+        // verify that the connection_id can be parsed as a UUID.
+        Uuid::parse_str(connection_manager.get_connection_id()).unwrap();
     }
 
+    // When we construct a ConnectionManager with an application ID, the connection should use that ID
+    // instead of generating a UUID. This test verifies that behavior.
+    // Note: Using the actual application ID for the connection name helps with telemetry and debugging
+    // in production scenarios.
     #[test]
     fn test_connection_manager_with_application_id() {
         let url = Url::parse("amqps://example.com").unwrap();
         let app_id = "test-app-id".to_string();
-        let connection_manager = ConnectionManager::new(url, Some(app_id.clone()), None);
+        let connection_manager = ConnectionManager::new(
+            url,
+            Some(app_id.clone()),
+            None,
+            MockTokenCredential::new(15),
+        );
         assert!(!connection_manager.connections.is_initialized());
         assert_eq!(connection_manager.get_connection_id(), app_id);
     }
 
+    /// Verifies that a new connection is not open by default.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the connection is open.
     #[tokio::test]
-    async fn test_authorize_path_errors_without_connection() {
+    async fn test_connection_is_not_open_by_default() {
         let url = Url::parse("amqps://example.com").unwrap();
-        let connection_manager = Arc::new(ConnectionManager::new(url.clone(), None, None));
+        let connection_manager = Arc::new(ConnectionManager::new(
+            url.clone(),
+            None,
+            None,
+            MockTokenCredential::new(15),
+        ));
 
         // This should fail because we don't have a connection established
         let connection = connection_manager.get_connection();
         assert!(connection.is_err());
     }
 
+    // The ConnectionManager supports using a custom endpoint for connecting to Event Hubs proxies.
+    // This test verifies that the custom endpoint is properly stored in the ConnectionManager.
     #[test]
     fn test_constructor_with_custom_endpoint() {
         let url = Url::parse("amqps://example.com").unwrap();
         let custom_endpoint = Url::parse("https://custom-endpoint.com").unwrap();
-        let connection_manager = ConnectionManager::new(url, None, Some(custom_endpoint.clone()));
+        let connection_manager = ConnectionManager::new(
+            url,
+            None,
+            Some(custom_endpoint.clone()),
+            MockTokenCredential::new(15),
+        );
 
         assert_eq!(connection_manager.custom_endpoint, Some(custom_endpoint));
     }
 
+    // When a token is created, it needs to have a proper expiration time.
+    // This test verifies that the expiration time of tokens is set correctly when
+    // authorizing a path. It also confirms that tokens are properly stored for reuse
+    // and that their expiration times are within the expected range.
+    //
+    // In production, incorrect token expiration could lead to authentication failures
+    // or excessive token refresh operations, so this verification is critical.
     #[tokio::test]
     async fn test_token_credential_expiration() {
         crate::consumer::tests::setup();
 
         let url = Url::parse("amqps://example.com").unwrap();
         let path = Url::parse("amqps://example.com/test_token_credential_expiration").unwrap();
-        let connection_manager = Arc::new(ConnectionManager::new(url, None, None));
 
-        // Create a mock token credential that expires in 5 seconds
+        // Create a mock token credential that expires in 15 seconds
         let mock_credential = MockTokenCredential::new(15);
+
+        let connection_manager = Arc::new(ConnectionManager::new(url, None, None, mock_credential));
 
         // Override default connection creation for testing
         connection_manager
@@ -477,9 +504,7 @@ mod tests {
         let connection = connection_manager.get_connection().unwrap();
 
         // This should succeed and store the token in the authorization scopes
-        let result = connection_manager
-            .authorize_path(&connection, &path, mock_credential)
-            .await;
+        let result = connection_manager.authorize_path(&connection, &path).await;
         println!("Result: {:?}", result);
         assert!(result.is_ok());
 
@@ -488,26 +513,33 @@ mod tests {
         assert!(scopes.contains_key(&path));
 
         // Verify expiration time
-        let stored_token = &scopes.get(&path).unwrap().access_token;
+        let stored_token = scopes.get(&path).unwrap();
         let now = OffsetDateTime::now_utc();
         assert!(stored_token.expires_on > now);
         assert!(stored_token.expires_on < now + Duration::seconds(15)); // Should be less than now + 15 seconds
     }
 
-    // Test to ensure that the token refresh mechanism works as expected
-    // This test will create a mock token credential with a short expiration time and
-    // verify that the token is refreshed before it expires.
-    // It will also check that the token get count has increased, indicating a refresh was attempted.
+    // The ConnectionManager automatically refreshes tokens before they expire.
+    // This is a critical feature for long-running connections, as it prevents
+    // authentication failures due to expired tokens.
+    //
+    // This test verifies that the token refresh mechanism works correctly by:
+    // 1. Creating a mock credential with a short expiration time
+    // 2. Setting up the token refresh interval to be shorter than the token expiration
+    // 3. Waiting long enough for a refresh to happen
+    // 4. Verifying that additional token requests were made to the credential
+    //
+    // If this feature fails in production, clients would disconnect when their tokens expire,
+    // which could lead to data loss, application failures, or service degradation.
     #[tokio::test]
     async fn test_token_refresh() {
         crate::consumer::tests::setup();
 
         let url = Url::parse("amqps://example.com").unwrap();
         let path = Url::parse("amqps://example.com/test_token_refresh").unwrap();
-        let connection_manager = ConnectionManager::new(url, None, None);
-
         // Create a mock token credential with a very short expiration (15 second)
         let mock_credential = MockTokenCredential::new(15);
+        let connection_manager = ConnectionManager::new(url, None, None, mock_credential.clone());
 
         // Get initial token get count
         let initial_count = mock_credential.get_token_get_count();
@@ -531,13 +563,8 @@ mod tests {
         let connection = connection_manager.get_connection().unwrap();
 
         // Authorize the path, which will store the token
-        let cloned_credential = mock_credential.clone();
-        trace!(
-            "Cloned credential: {:?}",
-            cloned_credential.get_token_get_count()
-        );
         connection_manager
-            .authorize_path(&connection, &path, cloned_credential)
+            .authorize_path(&connection, &path)
             .await
             .unwrap();
 

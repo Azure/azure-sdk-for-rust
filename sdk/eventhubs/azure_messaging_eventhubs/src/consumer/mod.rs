@@ -38,7 +38,6 @@ pub struct ConsumerClient {
     session_instances: AsyncMutex<HashMap<String, Arc<AmqpSession>>>,
     mgmt_client: AsyncMutex<OnceLock<ManagementInstance>>,
     connection_manager: Arc<ConnectionManager>,
-    credential: Arc<dyn azure_core::credentials::TokenCredential>,
     consumer_group: String,
     eventhub: String,
     endpoint: Url,
@@ -111,8 +110,8 @@ impl ConsumerClient {
                 url.clone(),
                 options.application_id.clone(),
                 options.custom_endpoint.clone(),
+                credential,
             ),
-            credential,
             eventhub: eventhub_name,
             endpoint: url,
             consumer_group,
@@ -257,7 +256,7 @@ impl ConsumerClient {
         let connection = self.connection_manager.get_connection()?;
 
         self.connection_manager
-            .authorize_path(&connection, &source_url, self.credential.clone())
+            .authorize_path(&connection, &source_url)
             .await?;
 
         let session = self.get_session(&partition_id).await?;
@@ -428,7 +427,7 @@ impl ConsumerClient {
 
         let access_token = self
             .connection_manager
-            .authorize_path(&connection, &management_path, self.credential.clone())
+            .authorize_path(&connection, &management_path)
             .await?;
 
         trace!("Create management client.");

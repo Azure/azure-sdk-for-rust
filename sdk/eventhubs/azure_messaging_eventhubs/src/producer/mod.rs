@@ -66,7 +66,6 @@ pub struct ProducerClient {
     sender_instances: Mutex<HashMap<Url, SenderInstance>>,
     mgmt_client: Mutex<OnceLock<ManagementInstance>>,
     connection_manager: Arc<ConnectionManager>,
-    credential: Arc<dyn azure_core::credentials::TokenCredential>,
     eventhub: String,
     endpoint: Url,
     application_id: Option<String>,
@@ -120,8 +119,8 @@ impl ProducerClient {
                 endpoint.clone(),
                 application_id.clone(),
                 custom_endpoint.clone(),
+                credential,
             ),
-            credential: credential.clone(),
             eventhub,
             endpoint,
             retry_options,
@@ -452,7 +451,7 @@ impl ProducerClient {
         let management_path = Url::parse(&management_path)?;
         let access_token = self
             .connection_manager
-            .authorize_path(&connection, &management_path, self.credential.clone())
+            .authorize_path(&connection, &management_path)
             .await?;
 
         trace!("Create management client.");
@@ -474,7 +473,7 @@ impl ProducerClient {
             let connection = self.connection_manager.get_connection()?;
 
             self.connection_manager
-                .authorize_path(&connection, path, self.credential.clone())
+                .authorize_path(&connection, path)
                 .await?;
             let session = AmqpSession::new();
             session
