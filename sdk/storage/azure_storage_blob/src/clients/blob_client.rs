@@ -4,15 +4,16 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
+        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientSetMetadataResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
     models::{BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientOptions, BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
+    BlobClientOptions, BlobClientSetMetadataOptions, BlockBlobClientCommitBlockListOptions,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
+    BlockBlobClientUploadOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -146,6 +147,21 @@ impl BlobClient {
         let response = block_blob_client
             .upload(data, content_length, Some(options))
             .await?;
+        Ok(response)
+    }
+
+    /// Sets user-defined metadata for the specified blob as one or more name-value pairs. Each call to this operation
+    /// replaces all existing metadata attached to the blob. TO remove all metadata from the blob, call this operation with
+    /// no metadata headers.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_metadata(
+        &self,
+        options: Option<BlobClientSetMetadataOptions<'_>>,
+    ) -> Result<Response<BlobClientSetMetadataResult>> {
+        let response = self.client.set_metadata(options).await?;
         Ok(response)
     }
 
