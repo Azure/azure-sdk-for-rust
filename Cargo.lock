@@ -193,6 +193,7 @@ dependencies = [
 name = "azure_core_amqp"
 version = "0.3.0"
 dependencies = [
+ "async-trait",
  "azure_core",
  "fe2o3-amqp",
  "fe2o3-amqp-cbs",

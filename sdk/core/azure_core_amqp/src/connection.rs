@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
+use async_trait::async_trait;
 use azure_core::{error::Result, http::Url};
 use std::fmt::Debug;
 use time::Duration;
@@ -39,20 +40,21 @@ pub struct AmqpConnectionOptions {
 
 impl AmqpConnectionOptions {}
 
+#[async_trait]
 pub trait AmqpConnectionApis {
-    fn open(
+    async fn open(
         &self,
         name: String,
         url: Url,
         options: Option<AmqpConnectionOptions>,
-    ) -> impl std::future::Future<Output = Result<()>>;
-    fn close(&self) -> impl std::future::Future<Output = Result<()>>;
-    fn close_with_error(
+    ) -> Result<()>;
+    async fn close(&self) -> Result<()>;
+    async fn close_with_error(
         &self,
         condition: AmqpSymbol,
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-    ) -> impl std::future::Future<Output = Result<()>>;
+    ) -> Result<()>;
 }
 
 #[derive(Default)]
@@ -60,26 +62,30 @@ pub struct AmqpConnection {
     pub(crate) implementation: ConnectionImplementation,
 }
 
+#[async_trait]
 impl AmqpConnectionApis for AmqpConnection {
-    fn open(
+    async fn open(
         &self,
         name: String,
         url: Url,
         options: Option<AmqpConnectionOptions>,
-    ) -> impl std::future::Future<Output = Result<()>> {
-        self.implementation.open(name, url, options)
+    ) -> Result<()> {
+        self.implementation.open(name, url, options).await
     }
-    fn close(&self) -> impl std::future::Future<Output = Result<()>> {
-        self.implementation.close()
+
+    async fn close(&self) -> Result<()> {
+        self.implementation.close().await
     }
-    fn close_with_error(
+
+    async fn close_with_error(
         &self,
         condition: AmqpSymbol,
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
-    ) -> impl std::future::Future<Output = Result<()>> {
+    ) -> Result<()> {
         self.implementation
             .close_with_error(condition, description, info)
+            .await
     }
 }
 
