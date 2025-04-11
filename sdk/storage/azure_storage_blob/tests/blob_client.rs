@@ -8,8 +8,8 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
-        BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
-        BlobClientSetMetadataResult, BlockListType, BlockLookupList, LeaseState,
+        BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlockListType,
+        BlockLookupList, LeaseState,
     },
     BlobClient, BlobClientOptions, BlobClientSetMetadataOptions, BlobContainerClient,
     BlobContainerClientOptions, BlockBlobClientUploadOptions,
