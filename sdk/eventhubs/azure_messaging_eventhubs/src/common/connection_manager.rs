@@ -7,10 +7,9 @@ use crate::{
     error::{ErrorKind, EventHubsError},
     models::AmqpValue,
 };
-use async_lock::{Mutex, OnceCell};
+use async_lock::{Mutex as AsyncMutex, OnceCell};
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
-    error::ErrorKind as AzureErrorKind,
     http::Url,
     sleep::sleep,
     task::{new_task_spawner, SpawnHandle},
@@ -22,7 +21,7 @@ use azure_core_amqp::{
 };
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex as SyncMutex, OnceLock};
 use time::{Duration, OffsetDateTime};
 use tracing::{debug, error, trace};
 
@@ -41,11 +40,13 @@ pub(crate) struct ConnectionManager {
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
     connections: OnceCell<Arc<AmqpConnection>>,
-    authorization_scopes: Mutex<HashMap<Url, AuthorizationScope>>,
+    authorization_scopes: AsyncMutex<HashMap<Url, AuthorizationScope>>,
     authorization_refresher: OnceLock<SpawnHandle>,
     connection_name: String,
+    token_refresh_duration: SyncMutex<Duration>,
+    /// This is used to disable authorization for testing purposes.
     #[cfg(test)]
-    mock_connection: OnceLock<Arc<dyn AsRef<AmqpConnection>>>,
+    disable_authorization: SyncMutex<bool>,
 }
 
 unsafe impl Send for ConnectionManager {}
@@ -71,10 +72,29 @@ impl ConnectionManager {
             custom_endpoint,
             authorization_refresher: OnceLock::new(),
             connections: OnceCell::new(),
-            authorization_scopes: Mutex::new(HashMap::new()),
+            authorization_scopes: AsyncMutex::new(HashMap::new()),
+            token_refresh_duration: SyncMutex::new(TOKEN_REFRESH_EXPIRATION),
             #[cfg(test)]
-            mock_connection: OnceLock::new(),
+            disable_authorization: SyncMutex::new(false),
         })
+    }
+
+    #[cfg(test)]
+    fn disable_authorization(&self) -> Result<()> {
+        let mut disable_authorization = self.disable_authorization.lock().map_err(|e| {
+            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+        })?;
+        *disable_authorization = true;
+        Ok(())
+    }
+
+    #[cfg(test)]
+    fn set_token_refresh_duration(&self, duration: Duration) -> Result<()> {
+        let mut token_refresh_duration = self.token_refresh_duration.lock().map_err(|e| {
+            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+        })?;
+        *token_refresh_duration = duration;
+        Ok(())
     }
 
     async fn create_connection(&self) -> Result<Arc<AmqpConnection>> {
@@ -112,12 +132,7 @@ impl ConnectionManager {
         Ok(())
     }
 
-    pub(crate) fn get_connection(&self) -> Result<Arc<dyn AmqpConnectionApis>> {
-        #[cfg(test)]
-        if let Some(mock_connection) = self.mock_connection.get() {
-            return Ok(mock_connection.clone());
-        }
-
+    pub(crate) fn get_connection(&self) -> Result<Arc<AmqpConnection>> {
         let connection = self
             .connections
             .get()
@@ -135,21 +150,6 @@ impl ConnectionManager {
         connection.close().await
     }
 
-    #[cfg(test)]
-    pub(crate) fn set_mock_connection(
-        &self,
-        connection: Arc<impl AsRef<AmqpConnection> + 'static>,
-    ) -> Result<()> {
-        if self
-            .mock_connection
-            .set(connection as Arc<dyn AsRef<AmqpConnection>>)
-            .is_err()
-        {
-            return Err(EventHubsError::from(ErrorKind::UnableToSetMockConnection).into());
-        }
-        Ok(())
-    }
-
     pub(crate) async fn authorize_path(
         self: &Arc<Self>,
         connection: &Arc<AmqpConnection>,
@@ -160,25 +160,14 @@ impl ConnectionManager {
         let mut scopes = self.authorization_scopes.lock().await;
 
         if !scopes.contains_key(path) {
-            // Create an ephemeral session to host the authentication.
-            let session = AmqpSession::new();
-            session.begin(connection.as_ref(), None).await?;
-
-            let cbs = AmqpClaimsBasedSecurity::new(&session)?;
-            cbs.attach().await?;
+            debug!("Creating new authorization scope for path: {path}");
 
             debug!("Get Token.");
             let token = credential
                 .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
                 .await?;
-            let expires_at = token.expires_on;
-            cbs.authorize_path(
-                path.to_string(),
-                None,
-                token.token.secret().to_string(),
-                expires_at,
-            )
-            .await?;
+
+            self.perform_authorization(connection, path, &token).await?;
 
             // insert returns some if it *fails* to insert, None if it succeeded.
             let present = scopes.insert(
@@ -192,6 +181,7 @@ impl ConnectionManager {
                 return Err(EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken).into());
             }
 
+            debug!("Token added. Starting authorization refresher");
             self.authorization_refresher.get_or_init(|| {
                 let spawner = new_task_spawner();
                 let self_clone = self.clone();
@@ -203,6 +193,8 @@ impl ConnectionManager {
                 }))
             });
             trace!("Token added.");
+        } else {
+            debug!("Token already exists for path: {path}");
         }
         Ok(scopes
             .get(path)
@@ -213,26 +205,52 @@ impl ConnectionManager {
 
     async fn refresh_tokens(self: &Arc<Self>) -> Result<()> {
         debug!("Refreshing tokens.");
-        let mut scopes = self.authorization_scopes.lock().await;
-        let mut expiration_times = vec![];
-        for (_, token) in scopes.iter() {
-            expiration_times.push(token.access_token.expires_on);
-        }
-        expiration_times.sort();
-
-        let expiration_jitter = Duration::seconds(thread_rng().gen_range(0..=10));
-
         loop {
+            let mut expiration_times = vec![];
+            {
+                let scopes = self.authorization_scopes.lock().await;
+                debug!("Got lock for scopes.");
+                for (_, token) in scopes.iter() {
+                    expiration_times.push(token.access_token.expires_on);
+                }
+            }
+            expiration_times.sort();
+            debug!("Found expiration times: {:?}", expiration_times);
+            if expiration_times.is_empty() {
+                debug!("No tokens to refresh.");
+                continue;
+            }
+
+            let expiration_jitter = Duration::seconds(thread_rng().gen_range(0..=10));
+
+            debug!("Expiration jitter: {expiration_jitter}");
+
             // Calculate duration until we should refresh (6 minutes before expiration,
             // with added random jitter)
+
             let now = OffsetDateTime::now_utc();
-            let refresh_time = expiration_times[0]
+            let most_recent_refresh = expiration_times
+                .first()
+                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
+            let refresh_time = most_recent_refresh
                 .checked_sub(
-                    TOKEN_REFRESH_EXPIRATION
+                    self.token_refresh_duration
+                        .lock()
+                        .map_err(|e| {
+                            azure_core::Error::message(
+                                azure_core::error::ErrorKind::Other,
+                                format!("Unable to grab token refresh duration mutex: {}", e),
+                            )
+                        })?
                         .checked_add(expiration_jitter)
-                        .unwrap(),
+                        .ok_or_else(|| {
+                            EventHubsError::from(ErrorKind::InvalidManagementResponse)
+                        })?,
                 )
-                .unwrap();
+                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
+
+            debug!("Current time: {now}");
+            debug!("Refresh time: {refresh_time}");
 
             // Convert to a duration if refresh time is in the future and sleep until it's time
             // to refresh the token.
@@ -240,6 +258,7 @@ impl ConnectionManager {
                 let sleep_duration = refresh_time - now;
                 let std_duration =
                     std::time::Duration::from_secs_f64(sleep_duration.as_seconds_f64());
+                debug!("Sleeping for {std_duration:?} until {sleep_duration:?}");
                 sleep(std_duration).await;
             }
 
@@ -248,100 +267,147 @@ impl ConnectionManager {
             // we create a map of updated tokens and then update the scopes map after we are done.
             let mut updated_tokens = HashMap::new();
 
-            for (url, token) in scopes.iter() {
-                if token.access_token.expires_on >= now + TOKEN_REFRESH_EXPIRATION {
-                    debug!("Token not expired for {url}");
+            {
+                let mut scopes = self.authorization_scopes.lock().await;
+                for (url, token) in scopes.iter() {
+                    if token.access_token.expires_on >= now + TOKEN_REFRESH_EXPIRATION {
+                        debug!("Token not expired for {url}");
+                    }
+
+                    let credential = token.credential.clone();
+                    let new_token = credential
+                        .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
+                        .await?;
+
+                    // Create an ephemeral session to host the authentication.
+                    self.perform_authorization(&self.get_connection()?, url, &new_token)
+                        .await?;
+
+                    debug!(
+                        "Token refreshed for {url}, new expiration time: {}",
+                        new_token.expires_on
+                    );
+                    updated_tokens.insert(
+                        url.clone(),
+                        AuthorizationScope {
+                            access_token: new_token,
+                            credential,
+                        },
+                    );
                 }
-
-                let credential = token.credential.clone();
-                let new_token = credential
-                    .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
-                    .await?;
-
-                // Create an ephemeral session to host the authentication.
-                let session = AmqpSession::new();
-                session
-                    .begin(
-                        self.connections
-                            .get()
-                            .ok_or_else(|| {
-                                azure_core::Error::message(
-                                    AzureErrorKind::Other,
-                                    "Could not retrieve connection?",
-                                )
-                            })?
-                            .as_ref(),
-                        None,
-                    )
-                    .await?;
-
-                let cbs = AmqpClaimsBasedSecurity::new(&session)?;
-                cbs.attach().await?;
-
-                debug!("Refreshing Token.");
-
-                let expires_at = new_token.expires_on;
-                cbs.authorize_path(
-                    url.to_string(),
-                    None,
-                    new_token.token.secret().to_string(),
-                    expires_at,
-                )
-                .await?;
-
-                updated_tokens.insert(
-                    url.clone(),
-                    AuthorizationScope {
-                        access_token: new_token,
-                        credential,
-                    },
-                );
-                debug!("Token refreshed for {url}");
-            }
-
-            // Now that we have the set of refreshed tokens, we can update the map.
-            for (url, token) in updated_tokens.into_iter() {
-                scopes.insert(url.clone(), token);
+                // Now that we have the set of refreshed tokens, we can update the map.
+                for (url, token) in updated_tokens.into_iter() {
+                    scopes.insert(url.clone(), token);
+                }
+                debug!("Updated tokens.");
             }
         }
         //        Ok(())
+    }
+
+    async fn perform_authorization(
+        self: &Arc<Self>,
+        connection: &Arc<AmqpConnection>,
+        url: &Url,
+        new_token: &AccessToken,
+    ) -> Result<()> {
+        #[cfg(test)]
+        {
+            let disable_authorization = self.disable_authorization.lock().map_err(|e| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("Unable to grab disable mutex: {}", e),
+                )
+            })?;
+            if *disable_authorization {
+                debug!("Authorization disabled for testing.");
+                return Ok(());
+            }
+        }
+        debug!("Performing authorization for {url}");
+        let session = AmqpSession::new();
+        session.begin(connection.as_ref(), None).await?;
+        let cbs = AmqpClaimsBasedSecurity::new(&session)?;
+        cbs.attach().await?;
+        debug!("Refreshing Token.");
+        let expires_at = new_token.expires_on;
+        cbs.authorize_path(
+            url.to_string(),
+            None,
+            new_token.token.secret().to_string(),
+            expires_at,
+        )
+        .await?;
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::testing::{
-        MockAmqpClaimsBasedSecurity, MockAmqpConnection, MockAmqpSession,
-    };
     use async_trait::async_trait;
     use azure_core::{http::Url, Result};
-    use azure_core_test::{recorded, TestContext};
-    use std::{sync::Arc, time::Duration as StdDuration};
+    use std::sync::Arc;
     use time::OffsetDateTime;
+    use tracing::info;
 
     // Helper struct to mock token credential
     #[derive(Debug)]
     struct MockTokenCredential {
-        token: AccessToken,
+        /// Duration in seconds until the token expires
+        token_duration: i64,
+        /// The token itself
+        /// This is a mock token, so we don't need to worry about the actual value
+        token: SyncMutex<AccessToken>,
+        /// Count of how many times the token has been requested
+        /// This is used to verify that the token is being refreshed correctly
+        /// in the tests
+        token_get_count: SyncMutex<usize>,
     }
 
     impl MockTokenCredential {
-        fn new(expires_in_seconds: i64) -> Self {
+        fn new(expires_in_seconds: i64) -> Arc<Self> {
             let expires_on = OffsetDateTime::now_utc() + Duration::seconds(expires_in_seconds);
-            Self {
-                token: AccessToken::new(
+            Arc::new(Self {
+                token_duration: expires_in_seconds,
+                token: SyncMutex::new(AccessToken::new(
                     azure_core::credentials::Secret::new("mock_token"),
                     expires_on,
-                ),
-            }
+                )),
+                token_get_count: SyncMutex::new(0),
+            })
+        }
+
+        fn get_token_get_count(&self) -> usize {
+            trace!(
+                "MockTokenCredential::get_token_get_count called: {:p}",
+                self
+            );
+            *self.token_get_count.lock().unwrap()
         }
     }
 
     #[async_trait]
     impl TokenCredential for MockTokenCredential {
         async fn get_token(&self, _scopes: &[&str]) -> Result<AccessToken> {
-            Ok(self.token.clone())
+            trace!("MockTokenCredential::get_token called: {:p}", self);
+            // Simulate a token refresh by incrementing the token get count
+            // and updating the token expiration time
+            {
+                let mut count = self.token_get_count.lock().unwrap();
+                *count += 1;
+                trace!("Token get count: {}", *count);
+            }
+
+            let expires_on = OffsetDateTime::now_utc() + Duration::seconds(self.token_duration);
+            {
+                let mut token = self.token.lock().unwrap();
+                *token = AccessToken::new(
+                    azure_core::credentials::Secret::new("mock_token"),
+                    expires_on,
+                );
+                Ok(token.clone())
+            }
         }
     }
 
@@ -367,8 +433,6 @@ mod tests {
     async fn test_authorize_path_errors_without_connection() {
         let url = Url::parse("amqps://example.com").unwrap();
         let connection_manager = Arc::new(ConnectionManager::new(url.clone(), None, None));
-        let credential = Arc::new(MockTokenCredential::new(300)) as Arc<dyn TokenCredential>;
-        let path = Url::parse("amqps://example.com/path").unwrap();
 
         // This should fail because we don't have a connection established
         let connection = connection_manager.get_connection();
@@ -385,63 +449,115 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_create_connection_with_mocks() {
-        // Arrange
+    async fn test_token_credential_expiration() {
+        crate::consumer::tests::setup();
+
         let url = Url::parse("amqps://example.com").unwrap();
-        let app_id = "test-connection-id".to_string();
+        let path = Url::parse("amqps://example.com/test_token_credential_expiration").unwrap();
+        let connection_manager = Arc::new(ConnectionManager::new(url, None, None));
 
-        // Create a ConnectionManager with mocked connection capabilities
-        let connection_manager = ConnectionManager::new(url, Some(app_id.clone()), None);
+        // Create a mock token credential that expires in 5 seconds
+        let mock_credential = MockTokenCredential::new(15);
 
-        // Create a mock connection and set it in the manager
-        let mock_connection = Arc::new(MockAmqpConnection::new());
+        // Override default connection creation for testing
         connection_manager
-            .set_mock_connection(mock_connection)
+            .connections
+            .get_or_init(|| async { Arc::new(AmqpConnection::new()) })
+            .await;
+
+        // Disable actual authorization for testing
+        connection_manager.disable_authorization().unwrap();
+        // Wake up the token refresher every 10 seconds with a jitter of 10 seconds.
+        // The token in question expires in 5 seconds, so we want to refresh it before then.
+        connection_manager
+            .set_token_refresh_duration(Duration::seconds(10))
             .unwrap();
 
-        // Act
-        let connection = connection_manager.get_connection();
+        // Get access to the connection
+        let connection = connection_manager.get_connection().unwrap();
 
-        // Assert
-        assert!(connection.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_close_connection() {
-        // Arrange
-        let url = Url::parse("amqps://example.com").unwrap();
-        let connection_manager = ConnectionManager::new(url, None, None);
-
-        // Create and set a mock connection
-        let mock_connection = Arc::new(MockAmqpConnection::new());
-        connection_manager
-            .set_mock_connection(mock_connection)
-            .unwrap();
-
-        // Act & Assert
-        let connection_result = connection_manager.get_connection();
-        assert!(connection_result.is_ok());
-
-        let close_result = connection_manager.close_connection().await;
-        assert!(close_result.is_ok());
-    }
-
-    #[test]
-    fn test_set_mock_connection() {
-        // Arrange
-        let url = Url::parse("amqps://example.com").unwrap();
-        let connection_manager = ConnectionManager::new(url, None, None);
-        let mock_connection = Arc::new(MockAmqpConnection::new());
-
-        // Act
-        let result = connection_manager.set_mock_connection(mock_connection);
-
-        // Assert
+        // This should succeed and store the token in the authorization scopes
+        let result = connection_manager
+            .authorize_path(&connection, &path, mock_credential)
+            .await;
+        println!("Result: {:?}", result);
         assert!(result.is_ok());
 
-        // Setting it again should fail
-        let second_mock = Arc::new(MockAmqpConnection::new());
-        let second_result = connection_manager.set_mock_connection(second_mock);
-        assert!(second_result.is_err());
+        // Verify token is stored
+        let scopes = connection_manager.authorization_scopes.lock().await;
+        assert!(scopes.contains_key(&path));
+
+        // Verify expiration time
+        let stored_token = &scopes.get(&path).unwrap().access_token;
+        let now = OffsetDateTime::now_utc();
+        assert!(stored_token.expires_on > now);
+        assert!(stored_token.expires_on < now + Duration::seconds(15)); // Should be less than now + 15 seconds
+    }
+
+    // Test to ensure that the token refresh mechanism works as expected
+    // This test will create a mock token credential with a short expiration time and
+    // verify that the token is refreshed before it expires.
+    // It will also check that the token get count has increased, indicating a refresh was attempted.
+    #[tokio::test]
+    async fn test_token_refresh() {
+        crate::consumer::tests::setup();
+
+        let url = Url::parse("amqps://example.com").unwrap();
+        let path = Url::parse("amqps://example.com/test_token_refresh").unwrap();
+        let connection_manager = ConnectionManager::new(url, None, None);
+
+        // Create a mock token credential with a very short expiration (15 second)
+        let mock_credential = MockTokenCredential::new(15);
+
+        // Get initial token get count
+        let initial_count = mock_credential.get_token_get_count();
+
+        // Override default connection creation for testing
+        connection_manager
+            .connections
+            .get_or_init(|| async { Arc::new(AmqpConnection::new()) })
+            .await;
+
+        // Disable actual authorization for testing
+        connection_manager.disable_authorization().unwrap();
+
+        // Wake up the token refresher every 5 seconds with a jitter of 10 seconds.
+        // The token in question expires in 15 seconds, so we want to refresh it before then.
+        connection_manager
+            .set_token_refresh_duration(Duration::seconds(5))
+            .unwrap();
+
+        // Get access to the connection
+        let connection = connection_manager.get_connection().unwrap();
+
+        // Authorize the path, which will store the token
+        let cloned_credential = mock_credential.clone();
+        trace!(
+            "Cloned credential: {:?}",
+            cloned_credential.get_token_get_count()
+        );
+        connection_manager
+            .authorize_path(&connection, &path, cloned_credential)
+            .await
+            .unwrap();
+
+        // Verify initial token retrieval count
+        let current_count = mock_credential.get_token_get_count();
+        assert_eq!(current_count, initial_count + 1);
+
+        debug!("Sleeping for 11 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
+
+        // Sleep a bit to ensure token is considered expired (past the 10 second we set)
+        tokio::time::sleep(std::time::Duration::from_secs(11)).await;
+
+        // Verify that the token get count has increased, indicating a refresh was attempted
+        let final_count = mock_credential.get_token_get_count();
+        debug!("After sleeping, token count: {final_count}");
+        assert!(
+            final_count > initial_count + 1,
+            "Expected token get count to be higher than initial+1, but got {}",
+            final_count
+        );
+        info!("Final token get count: {}", final_count);
     }
 }

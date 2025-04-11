@@ -6,6 +6,7 @@ use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
 use crate::error::AmqpErrorKind;
 use crate::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use crate::AmqpError;
+use async_trait::async_trait;
 use azure_core::{http::Url, Result};
 use fe2o3_amqp::connection::ConnectionHandle;
 use std::{borrow::BorrowMut, sync::OnceLock};
@@ -45,6 +46,7 @@ impl Drop for Fe2o3AmqpConnection {
     }
 }
 
+#[async_trait]
 impl AmqpConnectionApis for Fe2o3AmqpConnection {
     async fn open(
         &self,

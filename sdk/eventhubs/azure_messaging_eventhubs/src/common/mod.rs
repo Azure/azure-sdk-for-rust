@@ -14,9 +14,6 @@ use std::time::SystemTime;
 pub(crate) mod connection_manager;
 pub(crate) mod user_agent;
 
-#[cfg(test)]
-pub(crate) mod testing;
-
 pub(crate) struct ManagementInstance {
     pub management: AmqpManagement,
 }

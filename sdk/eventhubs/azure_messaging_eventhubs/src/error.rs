@@ -28,9 +28,6 @@ pub enum ErrorKind {
     /// Unable to add authentication token.
     UnableToAddAuthenticationToken,
 
-    #[cfg(test)]
-    UnableToSetMockConnection,
-
     /// Unable to add a connection.
     UnableToAddConnection,
 
@@ -68,8 +65,6 @@ impl std::fmt::Display for EventHubsError {
             ErrorKind::UnableToAddAuthenticationToken => {
                 f.write_str("Unable to add authentication token")
             }
-            #[cfg(test)]
-            ErrorKind::UnableToSetMockConnection => f.write_str("Unable to set mock connection"),
             ErrorKind::MissingSession => {
                 f.write_str("The session for the specified partition is missing.")
             }

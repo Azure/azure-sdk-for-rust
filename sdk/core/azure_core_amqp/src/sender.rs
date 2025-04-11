@@ -7,6 +7,7 @@ use super::messaging::{AmqpMessage, AmqpSource, AmqpTarget};
 use super::session::AmqpSession;
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::{ReceiverSettleMode, SenderSettleMode};
+use async_trait::async_trait;
 use azure_core::error::Result;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -29,21 +30,22 @@ pub struct AmqpSenderOptions {
 impl AmqpSenderOptions {}
 
 #[allow(unused_variables)]
+#[async_trait]
 pub trait AmqpSenderApis {
-    fn attach(
+    async fn attach(
         &self,
         session: &AmqpSession,
         name: String,
-        target: impl Into<AmqpTarget>,
+        target: impl Into<AmqpTarget> + Send,
         options: Option<AmqpSenderOptions>,
-    ) -> impl std::future::Future<Output = Result<()>>;
-    fn detach(self) -> impl std::future::Future<Output = Result<()>>;
-    fn max_message_size(&self) -> impl std::future::Future<Output = Result<Option<u64>>>;
-    fn send(
+    ) -> Result<()>;
+    async fn detach(self) -> Result<()>;
+    async fn max_message_size(&self) -> Result<Option<u64>>;
+    async fn send(
         &self,
-        message: impl Into<AmqpMessage> + std::fmt::Debug,
+        message: impl Into<AmqpMessage> + std::fmt::Debug + Send,
         options: Option<AmqpSendOptions>,
-    ) -> impl std::future::Future<Output = Result<AmqpSendOutcome>>;
+    ) -> Result<AmqpSendOutcome>;
 }
 
 /// Possible outcomes from a Send operation.
@@ -124,12 +126,13 @@ pub struct AmqpSender {
     implementation: SenderImplementation,
 }
 
+#[async_trait]
 impl AmqpSenderApis for AmqpSender {
     async fn attach(
         &self,
         session: &AmqpSession,
         name: String,
-        target: impl Into<AmqpTarget>,
+        target: impl Into<AmqpTarget> + Send,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {
         self.implementation
@@ -145,7 +148,7 @@ impl AmqpSenderApis for AmqpSender {
     }
     async fn send(
         &self,
-        message: impl Into<AmqpMessage> + std::fmt::Debug,
+        message: impl Into<AmqpMessage> + std::fmt::Debug + Send,
         options: Option<AmqpSendOptions>,
     ) -> Result<AmqpSendOutcome> {
         self.implementation.send(message, options).await

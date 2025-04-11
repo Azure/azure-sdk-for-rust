@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use async_trait::async_trait;
 use azure_core::error::Result;
 
 use super::session::AmqpSession;
@@ -11,6 +12,7 @@ type CbsImplementation<'a> = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity<'a>;
 #[cfg(any(not(any(feature = "fe2o3_amqp")), target_arch = "wasm32"))]
 type CbsImplementation<'a> = super::noop::NoopAmqpClaimsBasedSecurity<'a>;
 
+#[async_trait]
 pub trait AmqpClaimsBasedSecurityApis {
     /// Asynchronously attaches the Claims-Based Security (CBS) node to the AMQP session.
     ///
@@ -23,11 +25,11 @@ pub trait AmqpClaimsBasedSecurityApis {
     /// - `Ok(())` on successful attachment of the CBS node.
     /// - `Err(e)` where `e` is an error from the `azure_core::error::Result` indicating the failure reason.
     ///
-    fn attach(&self) -> impl std::future::Future<Output = Result<()>>;
+    async fn attach(&self) -> Result<()>;
 
     /// Asynchronously detaches the Claims-Based Security (CBS) node from the AMQP session.
     /// This method is responsible for cleaning up the AMQP links used for CBS operations.
-    fn detach(self) -> impl std::future::Future<Output = Result<()>>;
+    async fn detach(self) -> Result<()>;
 
     /// Asynchronously authorizes an AMQP path using the provided secret.
     ///
@@ -46,13 +48,13 @@ pub trait AmqpClaimsBasedSecurityApis {
     /// - `Ok(())` on successful authorization of the AMQP path.
     /// - `Err(e)` where `e` is an error from the `azure_core::error::Result` indicating the failure reason.
     ///
-    fn authorize_path(
+    async fn authorize_path(
         &self,
         path: String,
         token_type: Option<String>,
         secret: String,
         expires_on: time::OffsetDateTime,
-    ) -> impl std::future::Future<Output = Result<()>>;
+    ) -> Result<()>;
 }
 
 pub struct AmqpClaimsBasedSecurity<'a> {
@@ -67,6 +69,7 @@ impl<'a> AmqpClaimsBasedSecurity<'a> {
     }
 }
 
+#[async_trait]
 impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'_> {
     async fn authorize_path(
         &self,

@@ -197,7 +197,7 @@ impl ProducerClient {
     ///
     pub async fn send_message(
         &self,
-        message: impl Into<AmqpMessage> + Debug,
+        message: impl Into<AmqpMessage> + Debug + Send,
         #[allow(unused_variables)] options: Option<SendMessageOptions>,
     ) -> Result<()> {
         let options = options.unwrap_or_default();
