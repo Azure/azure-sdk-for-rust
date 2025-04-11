@@ -3,6 +3,7 @@
 
 //! Asynchronous task execution utilities.
 
+use async_trait::async_trait;
 use std::{fmt, future::Future, pin::Pin, sync::Arc};
 
 #[cfg(not(feature = "tokio"))]
@@ -70,6 +71,8 @@ impl SpawnHandle {
 }
 
 /// An async command runner.
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait TaskSpawner: Send + Sync + fmt::Debug {
     /// Spawn a task that executes a given future and returns the output.
     fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send + 'static>>) -> SpawnHandle;

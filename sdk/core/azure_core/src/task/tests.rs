@@ -91,9 +91,12 @@ async fn test_std_specific_handling() {
     let task_completed = Arc::new(Mutex::new(false));
     let task_completed_clone = Arc::clone(&task_completed);
 
-    let handle = spawner.spawn(async move {
-        *task_completed_clone.lock().unwrap() = true;
-    });
+    let handle = spawner.spawn(
+        async move {
+            *task_completed_clone.lock().unwrap() = true;
+        }
+        .boxed(),
+    );
 
     // For std threads, we need to wait for the task to complete
     tokio::time::sleep(Duration::from_millis(100)).await;
