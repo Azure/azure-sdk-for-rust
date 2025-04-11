@@ -13,6 +13,17 @@
 If you want to contribute to a file that is generated (the file is located in a `generated` subdirectory), the best approach is to open a PR on the TypeSpec specification since we cannot replace generated code that will be replaced when regenerated.
 Please visit the [Azure/azure-rest-api-specs repo](https://github.com/Azure/azure-rest-api-specs/) to view and make changes to Azure service API specifications.
 
+Once changes are merged,
+
+1. Change directories to the crate you want to regenerate:
+
+   ```sh
+   cd sdk/keyvault/azure_security_keyvault_secrets
+   ```
+
+2. Update `tsp-location.yml` with the commit in the `Azure/azure-sdk-for-rust` repository.
+3. Run `tsp-client update`.
+
 ## Coding
 
 We welcome contributions! But before you start coding, please read our [Rust Guidelines] including [implementation details](https://azure.github.io/azure-sdk/rust_implementation.html) for contributors.
