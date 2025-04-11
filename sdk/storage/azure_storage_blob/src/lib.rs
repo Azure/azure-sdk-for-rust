@@ -17,20 +17,21 @@ pub use crate::generated::clients::{
 };
 pub use crate::generated::models::{
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientGetPropertiesOptions, BlobServiceClientGetPropertiesOptions,
-    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
+    BlobClientSetMetadataOptions, BlobContainerClientCreateOptions,
+    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
+    BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
+    BlockBlobClientUploadOptions,
 };
 
 pub mod models {
     pub use crate::generated::models::{
         AccessTier, ArchiveStatus, BlobClientDownloadResult, BlobClientDownloadResultHeaders,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
-        BlobImmutabilityPolicyMode, BlobType, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, BlockListType,
-        BlockLookupList, CopyStatus, LeaseState, LeaseStatus, PublicAccessType, RehydratePriority,
-        StorageServiceProperties,
+        BlobClientSetMetadataResult, BlobContainerClientGetPropertiesResult,
+        BlobContainerClientGetPropertiesResultHeaders, BlobImmutabilityPolicyMode, BlobType,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadResult, BlockList, BlockListType, BlockLookupList, CopyStatus,
+        LeaseState, LeaseStatus, PublicAccessType, RehydratePriority, StorageServiceProperties,
     };
 }
