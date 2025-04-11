@@ -12,6 +12,7 @@ Cargo.lock
 .assets/
 .proxy/
 tests/data/
+review/
 
 # Dependencies.
 vcpkg_installed/
@@ -30,5 +31,3 @@ vcpkg_installed/
 
 # Temporary folder to refresh SDK with TypeSpec.
 TempTypeSpecFiles/
-
-review/

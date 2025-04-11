@@ -66,6 +66,8 @@ jobs:
     parameters:
       Toolchain: $(RustToolchainName)
 
+  - template: /eng/pipelines/templates/steps/vcpkg.yml
+
   - ${{ parameters.PreSteps }}
 
   - template: /eng/common/TestResources/build-test-resource-config.yml
