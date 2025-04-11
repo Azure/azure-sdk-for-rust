@@ -198,6 +198,24 @@ impl ConnectionManager {
         debug!("Token refresher task completed.");
     }
 
+    /// Refresh the authorization tokens associated with this connection manager.
+    ///
+    /// Each connection manager maintains an authorization token for each
+    /// resource it accesses, and this method ensures that all tokens are
+    /// refreshed before their expiration.
+    ///
+    /// This method is designed to be called periodically to ensure that
+    /// tokens are kept up to date.
+    ///
+    /// The first step in the refresh process is to gather the expiration times
+    /// of all tokens. This allows us to determine when to refresh each token
+    /// based on its expiration time.
+    ///
+    /// We calculate the first token to expire and sleep until it expires (with a bit of
+    /// jitter in the sleep).
+    ///
+    /// After we wake up, we iterate over all the authorized paths and refresh their tokens with
+    /// the Event Hubs service.
     async fn refresh_tokens(self: &Arc<Self>) -> Result<()> {
         debug!("Refreshing tokens.");
         loop {
@@ -284,6 +302,7 @@ impl ConnectionManager {
                     );
                     updated_tokens.insert(url.clone(), new_token);
                 }
+
                 // Now that we have the set of refreshed tokens, we can update the map.
                 for (url, token) in updated_tokens.into_iter() {
                     scopes.insert(url.clone(), token);
@@ -294,12 +313,24 @@ impl ConnectionManager {
         //        Ok(())
     }
 
+    /// Actually perform an authorization against the Event Hubs service.
+    ///
+    /// This method establishes a connection to the Event Hubs service and
+    /// performs the necessary authorization steps using the provided token.
+    ///
+    /// # Arguments
+    ///
+    /// * `connection` - The AMQP connection to use for the authorization.
+    /// * `url` - The URL of the resource being authorized.
+    /// * `new_token` - The new access token to use for authorization.
+    ///
     async fn perform_authorization(
         self: &Arc<Self>,
         connection: &Arc<AmqpConnection>,
         url: &Url,
         new_token: &AccessToken,
     ) -> Result<()> {
+        // Test Hook: Disable interacting with Event Hubs service if the test doesn't want it.
         #[cfg(test)]
         {
             let disable_authorization = self.disable_authorization.lock().map_err(|e| {
@@ -313,12 +344,13 @@ impl ConnectionManager {
                 return Ok(());
             }
         }
+
         debug!("Performing authorization for {url}");
         let session = AmqpSession::new();
         session.begin(connection.as_ref(), None).await?;
         let cbs = AmqpClaimsBasedSecurity::new(&session)?;
         cbs.attach().await?;
-        debug!("Refreshing Token.");
+
         let expires_at = new_token.expires_on;
         cbs.authorize_path(
             url.to_string(),

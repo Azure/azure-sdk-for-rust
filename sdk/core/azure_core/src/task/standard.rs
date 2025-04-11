@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{SpawnHandle, TaskSpawner};
+use async_trait::async_trait;
 use futures::executor::LocalPool;
 use futures::task::SpawnExt;
 use std::{future::Future, pin::Pin, thread};
@@ -10,6 +11,8 @@ use std::{future::Future, pin::Pin, thread};
 #[derive(Debug)]
 pub struct StdSpawner;
 
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl TaskSpawner for StdSpawner {
     fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send>>) -> SpawnHandle {
         let th = thread::spawn(move || {
