@@ -3,9 +3,11 @@
 
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
-    generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
+    generated::models::BlobContainerClientGetPropertiesResult,
+    models::ListBlobsFlatSegmentResponse, pipeline::StorageHeadersPolicy,
     BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientGetPropertiesOptions, BlobContainerClientOptions,
+    BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
+    BlobContainerClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -117,6 +119,20 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {
         let response = self.client.get_properties(options).await?;
+
+        Ok(response)
+    }
+
+    /// Returns a list of the blobs under the specified container.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn list_blobs(
+        &self,
+        options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
+    ) -> Result<Response<ListBlobsFlatSegmentResponse>> {
+        let response = self.client.list_blob_flat_segment(options).await?;
 
         Ok(response)
     }
