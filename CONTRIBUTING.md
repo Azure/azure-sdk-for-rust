@@ -55,7 +55,8 @@ Since `openssl-sys` supports [vcpkg](https://learn.microsoft.com/vcpkg/), you ca
 2. Run the bootstrap script to download a prebuilt binary:
 
    ```pwsh
-   cd vcpkg; .\bootstrap-vcpkg.bat
+   cd vcpkg
+   .\bootstrap-vcpkg.bat
    ```
 
 3. Set up environment variables:
@@ -67,10 +68,13 @@ Since `openssl-sys` supports [vcpkg](https://learn.microsoft.com/vcpkg/), you ca
 
    To persist these variables for future sessions, remember to set them in the Windows System Environment Variables panel.
 
-4. In the root of this repo, run:
+4. Change directories into the `eng/` folder in this repo and run:
 
    ```pwsh
+   cd eng
    vcpkg install
+
+   $env:OPENSSL_DIR = "$PWD\vcpkg_installed\x64-windows"
    ```
 
 ### Linting
