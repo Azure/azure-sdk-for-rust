@@ -3,11 +3,13 @@
 
 //! Asynchronous task execution utilities.
 
-use async_trait::async_trait;
 use std::{fmt, future::Future, pin::Pin, sync::Arc};
 
-#[cfg(not(feature = "tokio"))]
-mod standard;
+#[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
+mod standard_spawn;
+
+#[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
+mod wasm_spawn;
 
 #[cfg(feature = "tokio")]
 mod tokio_spawn;
@@ -15,24 +17,37 @@ mod tokio_spawn;
 #[cfg(test)]
 mod tests;
 
-#[cfg(not(feature = "tokio"))]
-pub use standard::StdSpawner;
+#[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
+pub use standard_spawn::StdSpawner;
+
+#[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
+pub use wasm_spawn::WasmSpawner;
 
 #[cfg(feature = "tokio")]
 pub use tokio_spawn::TokioSpawner;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
+
+#[cfg(target_arch = "wasm32")]
+pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
 
 /// Creates a new [`TaskSpawner`].
 ///
 /// This returns a [`TaskSpawner`] that spawns a [`std::thread`] to run the task unless `tokio` was enabled,
 /// in which case an executor is returned that calls [`tokio::task::spawn`].
 pub fn new_task_spawner() -> Arc<dyn TaskSpawner> {
-    #[cfg(not(feature = "tokio"))]
-    {
-        Arc::new(StdSpawner)
-    }
     #[cfg(feature = "tokio")]
     {
         Arc::new(TokioSpawner)
+    }
+    #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
+    {
+        Arc::new(StdSpawner)
+    }
+    #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
+    {
+        Arc::new(WasmSpawner)
     }
 }
 
@@ -53,11 +68,11 @@ impl SpawnHandle {
     }
 }
 
-#[cfg(not(feature = "tokio"))]
+#[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
 #[derive(Debug)]
 pub struct SpawnHandle(std::thread::JoinHandle<()>);
 
-#[cfg(not(feature = "tokio"))]
+#[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
 impl SpawnHandle {
     /// Wait for the task to complete and return the result.
     pub async fn await_result(self) -> crate::Result<()> {
@@ -70,10 +85,20 @@ impl SpawnHandle {
     }
 }
 
+#[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
+#[derive(Debug)]
+pub struct SpawnHandle();
+
+#[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
+impl SpawnHandle {
+    /// Wait for the task to complete and return the result.
+    pub async fn await_result(self) -> crate::Result<()> {
+        unimplemented!()
+    }
+}
+
 /// An async command runner.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait TaskSpawner: Send + Sync + fmt::Debug {
     /// Spawn a task that executes a given future and returns the output.
-    fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send>>) -> SpawnHandle;
+    fn spawn(&self, f: TaskFuture) -> SpawnHandle;
 }
