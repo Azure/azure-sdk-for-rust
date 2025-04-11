@@ -11,7 +11,7 @@ use std::{future::Future, pin::Pin, thread};
 pub struct StdSpawner;
 
 impl TaskSpawner for StdSpawner {
-    fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send + 'static>>) -> SpawnHandle {
+    fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send>>) -> SpawnHandle {
         let th = thread::spawn(move || {
             // Create a local executor
             let mut local_pool = LocalPool::new();

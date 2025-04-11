@@ -75,5 +75,5 @@ impl SpawnHandle {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait TaskSpawner: Send + Sync + fmt::Debug {
     /// Spawn a task that executes a given future and returns the output.
-    fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send + 'static>>) -> SpawnHandle;
+    fn spawn(&self, f: Pin<Box<dyn Future<Output = ()> + Send>>) -> SpawnHandle;
 }
