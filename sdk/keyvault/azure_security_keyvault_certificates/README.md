@@ -164,7 +164,7 @@ use azure_security_keyvault_certificates::CertificateClient;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
         None,
     )?;
@@ -200,7 +200,7 @@ use std::collections::HashMap;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
         None,
     )?;
@@ -239,7 +239,7 @@ use azure_security_keyvault_certificates::CertificateClient;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
         None,
     )?;
@@ -265,7 +265,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a new certificate client
     let credential = DefaultAzureCredential::new()?;
     let client = CertificateClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
         None,
     )?;
@@ -313,7 +313,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let plaintext = env::args().nth(1).ok_or("plaintext required")?;
 
     let certificate_client = CertificateClient::new(
-        "https://tcac7e9c41ef52cec.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         DefaultAzureCredential::new()?,
         None,
     )?;
