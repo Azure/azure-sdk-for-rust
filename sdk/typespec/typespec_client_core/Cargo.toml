@@ -57,11 +57,11 @@ tokio = ["tokio/fs", "tokio/sync", "tokio/time", "tokio/io-util"]
 xml = ["dep:quick-xml"]
 
 [[example]]
-name = "binary_data_request"
+name = "core_binary_data_request"
 required-features = ["tokio"]
 
 [[example]]
-name = "stream_response"
+name = "core_stream_response"
 required-features = ["derive"]
 
 [package.metadata.docs.rs]
