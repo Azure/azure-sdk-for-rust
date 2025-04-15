@@ -122,6 +122,7 @@ param (
     $NewTestResourcesRemainingArguments
 )
 
+. (Join-Path $PSScriptRoot .. scripts common.ps1)
 . (Join-Path $PSScriptRoot .. scripts Helpers Resource-Helpers.ps1)
 . $PSScriptRoot/TestResources-Helpers.ps1
 . $PSScriptRoot/SubConfig-Helpers.ps1
@@ -205,9 +206,8 @@ try {
     # Try detecting repos that support OutFile and defaulting to it
     if (!$CI -and !$PSBoundParameters.ContainsKey('OutFile')) {
         # TODO: find a better way to detect the language
-        if ($IsWindows -and (Test-Path "$repositoryRoot/eng/service.proj")) {
+        if ($IsWindows -and $Language -eq 'dotnet') {
             $OutFile = $true
-            $isDotnet = $true
             Log "Detected .NET repository. Defaulting OutFile to true. Test environment settings will be stored into a file so you don't need to set environment variables manually."
         } elseif (Test-Path "$root/assets.json") {
             $assets = Get-Content -Raw "$root/assets.json" | ConvertFrom-Json
@@ -869,7 +869,7 @@ Force creation of resources instead of being prompted.
 Save test environment settings into a .env file next to test resources template.
 
 On Windows in the Azure/azure-sdk-for-net repository,
-he contents of the file are protected via the .NET Data Protection API (DPAPI).
+the contents of the file are protected via the .NET Data Protection API (DPAPI).
 The environment file is scoped to the current service directory.
 The environment file will be named for the test resources template that it was
 generated for. For ARM templates, it will be test-resources.json.env. For
