@@ -151,7 +151,7 @@ impl BlobClient {
     }
 
     /// Sets user-defined metadata for the specified blob as one or more name-value pairs. Each call to this operation
-    /// replaces all existing metadata attached to the blob. TO remove all metadata from the blob, call this operation with
+    /// replaces all existing metadata attached to the blob. To remove all metadata from the blob, call this operation with
     /// no metadata headers.
     ///
     /// # Arguments
