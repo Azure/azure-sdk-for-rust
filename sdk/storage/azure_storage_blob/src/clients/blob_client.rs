@@ -4,7 +4,7 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientSetMetadataResult,
+        BlobClientDownloadResult, BlobClientGetPropertiesResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
@@ -160,7 +160,7 @@ impl BlobClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<BlobClientSetMetadataResult>> {
+    ) -> Result<Response<()>> {
         let response = self.client.set_metadata(options).await?;
         Ok(response)
     }

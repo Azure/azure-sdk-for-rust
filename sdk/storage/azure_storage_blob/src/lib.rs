@@ -28,10 +28,10 @@ pub mod models {
     pub use crate::generated::models::{
         AccessTier, ArchiveStatus, BlobClientDownloadResult, BlobClientDownloadResultHeaders,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
-        BlobClientSetMetadataResult, BlobContainerClientGetPropertiesResult,
-        BlobContainerClientGetPropertiesResultHeaders, BlobImmutabilityPolicyMode, BlobType,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadResult, BlockList, BlockListType, BlockLookupList, CopyStatus,
-        LeaseState, LeaseStatus, PublicAccessType, RehydratePriority, StorageServiceProperties,
+        BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
+        BlobImmutabilityPolicyMode, BlobType, BlockBlobClientCommitBlockListResult,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, BlockListType,
+        BlockLookupList, CopyStatus, LeaseState, LeaseStatus, PublicAccessType, RehydratePriority,
+        StorageServiceProperties,
     };
 }
