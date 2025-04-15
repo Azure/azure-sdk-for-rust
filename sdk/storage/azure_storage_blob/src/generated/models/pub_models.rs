@@ -163,10 +163,6 @@ pub struct BlobClientSetImmutabilityPolicyResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetLegalHoldResult;
 
-/// Contains results for `BlobClient::set_metadata()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetMetadataResult;
-
 /// Contains results for `BlobClient::set_tags()`
 #[derive(SafeDebug)]
 pub struct BlobClientSetTagsResult;
