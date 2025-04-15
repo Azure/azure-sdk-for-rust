@@ -18,7 +18,12 @@ use super::{
     BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
     BlobContainerClientRenameResult, BlobContainerClientRenewLeaseResult,
     BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyResult,
+<<<<<<< HEAD
     BlobImmutabilityPolicyMode, BlobServiceClientGetAccountInfoResult, BlobTags, BlobType,
+=======
+    BlobContainerClientSetMetadataResult, BlobImmutabilityPolicyMode,
+    BlobServiceClientGetAccountInfoResult, BlobTags, BlobType,
+>>>>>>> main
     BlockBlobClientCommitBlockListResult, BlockBlobClientPutBlobFromUrlResult,
     BlockBlobClientQueryResult, BlockBlobClientStageBlockFromUrlResult,
     BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, CopyStatus,
