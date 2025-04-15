@@ -7,11 +7,7 @@ use crate::{
     recording::Recording,
     TestContext,
 };
-use azure_core::{
-    error::{ErrorKind, ResultExt},
-    test::TestMode,
-    Result,
-};
+use azure_core::{test::TestMode, Result};
 pub use azure_core_test_macros::test;
 use std::sync::Arc;
 #[cfg(not(target_arch = "wasm32"))]
@@ -74,9 +70,12 @@ pub async fn start(
     );
 
     // Attempt to read any .env file up to the repo root.
+    #[cfg(not(target_arch = "wasm32"))]
     if let Ok(path) = crate::find_ancestor_file(ctx.crate_dir, ".env") {
         tracing::debug!("loading environment variables from {}", path.display());
-        dotenvy::from_filename(&path).with_context(ErrorKind::Io, || {
+
+        use azure_core::error::ResultExt as _;
+        dotenvy::from_filename(&path).with_context(azure_core::error::ErrorKind::Io, || {
             format!(
                 "failed to load environment variables from {}",
                 path.display()
