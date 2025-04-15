@@ -19,9 +19,9 @@ pub use crate::generated::models::{
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
     BlobClientSetMetadataOptions, BlobContainerClientCreateOptions,
     BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
-    BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobContainerClientSetMetadataOptions, BlobServiceClientGetPropertiesOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 
 pub mod models {

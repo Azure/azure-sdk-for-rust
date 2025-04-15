@@ -826,60 +826,6 @@ pub struct BlobClientSetExpiryOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobClient::set_http_headers()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobClientSetHttpHeadersOptions<'a> {
-    /// Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read
-    /// request.
-    pub blob_cache_control: Option<String>,
-
-    /// Optional. Sets the blob's content disposition. If specified, this property is stored with the blob and returned with a
-    /// read request.
-    pub blob_content_disposition: Option<String>,
-
-    /// Optional. Sets the blob's content encoding. If specified, this property is stored with the blob and returned with a read
-    /// request.
-    pub blob_content_encoding: Option<String>,
-
-    /// Optional. Set the blob's content language. If specified, this property is stored with the blob and returned with a read
-    /// request.
-    pub blob_content_language: Option<String>,
-
-    /// Optional. An MD5 hash of the blob content. Note that this hash is not validated, as the hashes for the individual blocks
-    /// were validated when each was uploaded.
-    pub blob_content_md5: Option<Vec<u8>>,
-
-    /// Optional. Sets the blob's content type. If specified, this property is stored with the blob and returned with a read request.
-    pub blob_content_type: Option<String>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// The request should only proceed if an entity matches this string.
-    pub if_match: Option<String>,
-
-    /// The request should only proceed if the entity was modified after this time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// The request should only proceed if no entity matches this string.
-    pub if_none_match: Option<String>,
-
-    /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
-    pub if_tags: Option<String>,
-
-    /// The request should only proceed if the entity was not modified after this time.
-    pub if_unmodified_since: Option<OffsetDateTime>,
-
-    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
-    pub lease_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
 /// Options to be passed to `BlobClient::set_immutability_policy()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobClientSetImmutabilityPolicyOptions<'a> {
@@ -974,6 +920,60 @@ pub struct BlobClientSetMetadataOptions<'a> {
 
     /// The metadata headers.
     pub metadata: Option<HashMap<String, String>>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `BlobClient::set_properties()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobClientSetPropertiesOptions<'a> {
+    /// Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read
+    /// request.
+    pub blob_cache_control: Option<String>,
+
+    /// Optional. Sets the blob's content disposition. If specified, this property is stored with the blob and returned with a
+    /// read request.
+    pub blob_content_disposition: Option<String>,
+
+    /// Optional. Sets the blob's content encoding. If specified, this property is stored with the blob and returned with a read
+    /// request.
+    pub blob_content_encoding: Option<String>,
+
+    /// Optional. Set the blob's content language. If specified, this property is stored with the blob and returned with a read
+    /// request.
+    pub blob_content_language: Option<String>,
+
+    /// Optional. An MD5 hash of the blob content. Note that this hash is not validated, as the hashes for the individual blocks
+    /// were validated when each was uploaded.
+    pub blob_content_md5: Option<Vec<u8>>,
+
+    /// Optional. Sets the blob's content type. If specified, this property is stored with the blob and returned with a read request.
+    pub blob_content_type: Option<String>,
+
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// The request should only proceed if an entity matches this string.
+    pub if_match: Option<String>,
+
+    /// The request should only proceed if the entity was modified after this time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// The request should only proceed if no entity matches this string.
+    pub if_none_match: Option<String>,
+
+    /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
+    pub if_tags: Option<String>,
+
+    /// The request should only proceed if the entity was not modified after this time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,

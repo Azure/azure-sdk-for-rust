@@ -20,8 +20,8 @@ use crate::generated::{
         BlobContainerClientRenewLeaseResult, BlobContainerClientRestoreOptions,
         BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyOptions,
         BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetMetadataOptions,
-        BlobContainerClientSetMetadataResult, FilterBlobSegment, ListBlobsFlatSegmentResponse,
-        ListBlobsHierarchySegmentResponse, SignedIdentifier,
+        FilterBlobSegment, ListBlobsFlatSegmentResponse, ListBlobsHierarchySegmentResponse,
+        SignedIdentifier,
     },
 };
 use azure_core::{
@@ -815,7 +815,7 @@ impl BlobContainerClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientSetMetadataResult>> {
+    ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
