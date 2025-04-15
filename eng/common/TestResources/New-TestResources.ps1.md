@@ -590,7 +590,7 @@ Accept wildcard characters: False
 Save test environment settings into a .env file next to test resources template.
 
 On Windows in the Azure/azure-sdk-for-net repository,
-he contents of the file are protected via the .NET Data Protection API (DPAPI).
+the contents of the file are protected via the .NET Data Protection API (DPAPI).
 The environment file is scoped to the current service directory.
 The environment file will be named for the test resources template that it was
 generated for. For ARM templates, it will be test-resources.json.env. For
