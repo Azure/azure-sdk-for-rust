@@ -16,10 +16,10 @@ use crate::generated::{
         BlobClientGetAccountInfoResult, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
         BlobClientReleaseLeaseResult, BlobClientRenewLeaseOptions, BlobClientRenewLeaseResult,
-        BlobClientSetExpiryOptions, BlobClientSetExpiryResult, BlobClientSetHttpHeadersOptions,
-        BlobClientSetHttpHeadersResult, BlobClientSetImmutabilityPolicyOptions,
-        BlobClientSetImmutabilityPolicyResult, BlobClientSetLegalHoldOptions,
-        BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions, BlobClientSetMetadataResult,
+        BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
+        BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
+        BlobClientSetMetadataResult, BlobClientSetPropertiesOptions, BlobClientSetPropertiesResult,
         BlobClientSetTagsOptions, BlobClientSetTagsResult, BlobClientSetTierOptions,
         BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult,
         BlobClientUndeleteOptions, BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
@@ -1027,78 +1027,6 @@ impl BlobClient {
         self.pipeline.send(&ctx, &mut request).await
     }
 
-    /// The Set HTTP Headers operation sets system properties on the blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    pub async fn set_http_headers(
-        &self,
-        options: Option<BlobClientSetHttpHeadersOptions<'_>>,
-    ) -> Result<Response<BlobClientSetHttpHeadersResult>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_key_only("SetHTTPHeaders")
-            .append_pair("comp", "properties");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                date::to_rfc7231(&if_unmodified_since),
-            );
-        }
-        if let Some(blob_cache_control) = options.blob_cache_control {
-            request.insert_header("x-ms-blob-cache-control", blob_cache_control);
-        }
-        if let Some(blob_content_disposition) = options.blob_content_disposition {
-            request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
-        }
-        if let Some(blob_content_encoding) = options.blob_content_encoding {
-            request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
-        }
-        if let Some(blob_content_language) = options.blob_content_language {
-            request.insert_header("x-ms-blob-content-language", blob_content_language);
-        }
-        if let Some(blob_content_md5) = options.blob_content_md5 {
-            request.insert_header("x-ms-blob-content-md5", base64::encode(blob_content_md5));
-        }
-        if let Some(blob_content_type) = options.blob_content_type {
-            request.insert_header("x-ms-blob-content-type", blob_content_type);
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
-    }
-
     /// Set the immutability policy of a blob
     ///
     /// # Arguments
@@ -1262,6 +1190,78 @@ impl BlobClient {
             for (k, v) in &metadata {
                 request.insert_header(format!("x-ms-meta-{}", k), v);
             }
+        }
+        request.insert_header("x-ms-version", &self.version);
+        self.pipeline.send(&ctx, &mut request).await
+    }
+
+    /// The Set HTTP Headers operation sets system properties on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    pub async fn set_properties(
+        &self,
+        options: Option<BlobClientSetPropertiesOptions<'_>>,
+    ) -> Result<Response<BlobClientSetPropertiesResult>> {
+        let options = options.unwrap_or_default();
+        let ctx = Context::with_context(&options.method_options.context);
+        let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
+        url.query_pairs_mut()
+            .append_key_only("SetHTTPHeaders")
+            .append_pair("comp", "properties");
+        if let Some(timeout) = options.timeout {
+            url.query_pairs_mut()
+                .append_pair("timeout", &timeout.to_string());
+        }
+        let mut request = Request::new(url, Method::Put);
+        request.insert_header("accept", "application/json");
+        request.insert_header("content-type", "application/xml");
+        if let Some(if_match) = options.if_match {
+            request.insert_header("if-match", if_match);
+        }
+        if let Some(if_modified_since) = options.if_modified_since {
+            request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
+        }
+        if let Some(if_none_match) = options.if_none_match {
+            request.insert_header("if-none-match", if_none_match);
+        }
+        if let Some(if_unmodified_since) = options.if_unmodified_since {
+            request.insert_header(
+                "if-unmodified-since",
+                date::to_rfc7231(&if_unmodified_since),
+            );
+        }
+        if let Some(blob_cache_control) = options.blob_cache_control {
+            request.insert_header("x-ms-blob-cache-control", blob_cache_control);
+        }
+        if let Some(blob_content_disposition) = options.blob_content_disposition {
+            request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
+        }
+        if let Some(blob_content_encoding) = options.blob_content_encoding {
+            request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
+        }
+        if let Some(blob_content_language) = options.blob_content_language {
+            request.insert_header("x-ms-blob-content-language", blob_content_language);
+        }
+        if let Some(blob_content_md5) = options.blob_content_md5 {
+            request.insert_header("x-ms-blob-content-md5", base64::encode(blob_content_md5));
+        }
+        if let Some(blob_content_type) = options.blob_content_type {
+            request.insert_header("x-ms-blob-content-type", blob_content_type);
+        }
+        if let Some(client_request_id) = options.client_request_id {
+            request.insert_header("x-ms-client-request-id", client_request_id);
+        }
+        if let Some(if_tags) = options.if_tags {
+            request.insert_header("x-ms-if-tags", if_tags);
+        }
+        if let Some(lease_id) = options.lease_id {
+            request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await

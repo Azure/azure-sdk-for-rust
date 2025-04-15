@@ -17,7 +17,7 @@ pub use crate::generated::clients::{
 };
 pub use crate::generated::models::{
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientSetHttpHeadersOptions, BlobContainerClientCreateOptions,
+    BlobClientSetPropertiesOptions, BlobContainerClientCreateOptions,
     BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
     BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
     BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
@@ -28,7 +28,7 @@ pub mod models {
     pub use crate::generated::models::{
         AccessTier, ArchiveStatus, BlobClientDownloadResult, BlobClientDownloadResultHeaders,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
-        BlobClientSetHttpHeadersResult, BlobContainerClientGetPropertiesResult,
+        BlobClientSetPropertiesResult, BlobContainerClientGetPropertiesResult,
         BlobContainerClientGetPropertiesResultHeaders, BlobImmutabilityPolicyMode, BlobType,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult, BlockList, BlockListType, BlockLookupList, CopyStatus,

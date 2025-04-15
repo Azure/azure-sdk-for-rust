@@ -11,7 +11,7 @@ use azure_storage_blob::{
         BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlockListType,
         BlockLookupList, LeaseState,
     },
-    BlobClient, BlobClientOptions, BlobClientSetHttpHeadersOptions, BlobContainerClient,
+    BlobClient, BlobClientOptions, BlobClientSetPropertiesOptions, BlobContainerClient,
     BlobContainerClientOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
@@ -139,7 +139,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         .await?;
 
     // Set Content Settings
-    let set_properties_options = BlobClientSetHttpHeadersOptions {
+    let set_properties_options = BlobClientSetPropertiesOptions {
         blob_content_language: Some("spanish".to_string()),
         blob_content_disposition: Some("inline".to_string()),
         ..Default::default()

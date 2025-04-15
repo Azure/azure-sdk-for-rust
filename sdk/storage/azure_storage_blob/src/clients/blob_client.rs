@@ -4,14 +4,14 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientSetHttpHeadersResult,
+        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientSetPropertiesResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
     models::{BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientOptions, BlobClientSetHttpHeadersOptions, BlockBlobClientCommitBlockListOptions,
+    BlobClientOptions, BlobClientSetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
     BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
     BlockBlobClientUploadOptions,
 };
@@ -114,9 +114,9 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn set_properties(
         &self,
-        options: Option<BlobClientSetHttpHeadersOptions<'_>>,
-    ) -> Result<Response<BlobClientSetHttpHeadersResult>> {
-        let response = self.client.set_http_headers(options).await?;
+        options: Option<BlobClientSetPropertiesOptions<'_>>,
+    ) -> Result<Response<BlobClientSetPropertiesResult>> {
+        let response = self.client.set_properties(options).await?;
         Ok(response)
     }
 

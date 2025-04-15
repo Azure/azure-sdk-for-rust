@@ -151,10 +151,6 @@ pub struct BlobClientRenewLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetExpiryResult;
 
-/// Contains results for `BlobClient::set_http_headers()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetHttpHeadersResult;
-
 /// Contains results for `BlobClient::set_immutability_policy()`
 #[derive(SafeDebug)]
 pub struct BlobClientSetImmutabilityPolicyResult;
@@ -166,6 +162,10 @@ pub struct BlobClientSetLegalHoldResult;
 /// Contains results for `BlobClient::set_metadata()`
 #[derive(SafeDebug)]
 pub struct BlobClientSetMetadataResult;
+
+/// Contains results for `BlobClient::set_properties()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetPropertiesResult;
 
 /// Contains results for `BlobClient::set_tags()`
 #[derive(SafeDebug)]
