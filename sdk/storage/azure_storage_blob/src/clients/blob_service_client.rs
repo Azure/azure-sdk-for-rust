@@ -5,6 +5,7 @@ use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
     models::StorageServiceProperties, pipeline::StorageHeadersPolicy,
     BlobServiceClientGetPropertiesOptions, BlobServiceClientOptions,
+    BlobServiceClientSetPropertiesOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -75,6 +76,19 @@ impl BlobServiceClient {
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<StorageServiceProperties>> {
         let response = self.client.get_properties(options).await?;
+        Ok(response)
+    }
+
+    /// Sets properties for a storage account's Blob service endpoint, including properties for Storage Analytics and CORS rules.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_properties(
+        &self,
+        options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let response = self.client.set_properties(options).await?;
         Ok(response)
     }
 }
