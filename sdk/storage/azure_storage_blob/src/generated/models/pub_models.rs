@@ -151,10 +151,6 @@ pub struct BlobClientRenewLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetExpiryResult;
 
-/// Contains results for `BlobClient::set_http_headers()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetHttpHeadersResult;
-
 /// Contains results for `BlobClient::set_immutability_policy()`
 #[derive(SafeDebug)]
 pub struct BlobClientSetImmutabilityPolicyResult;

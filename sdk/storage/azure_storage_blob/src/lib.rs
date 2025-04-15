@@ -17,7 +17,7 @@ pub use crate::generated::clients::{
 };
 pub use crate::generated::models::{
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientSetMetadataOptions, BlobContainerClientCreateOptions,
+    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobContainerClientCreateOptions,
     BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
     BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
     BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,

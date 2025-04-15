@@ -11,9 +11,9 @@ use crate::{
     models::{BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientOptions, BlobClientSetMetadataOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobClientOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -107,9 +107,20 @@ impl BlobClient {
         Ok(response)
     }
 
-    /// Downloads a blob from the service, including its metadata and properties.
+    /// Sets system properties on the blob.
     ///
     /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_properties(
+        &self,
+        options: Option<BlobClientSetPropertiesOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let response = self.client.set_properties(options).await?;
+        Ok(response)
+    }
+
+    /// Downloads a blob from the service, including its metadata and properties.
     ///
     /// * `options` - Optional configuration for the request.
     pub async fn download(

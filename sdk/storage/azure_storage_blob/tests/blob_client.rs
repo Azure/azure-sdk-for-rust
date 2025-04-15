@@ -11,8 +11,8 @@ use azure_storage_blob::{
         BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlockListType,
         BlockLookupList, LeaseState,
     },
-    BlobClient, BlobClientOptions, BlobClientSetMetadataOptions, BlobContainerClient,
-    BlobContainerClientOptions, BlockBlobClientUploadOptions,
+    BlobClient, BlobClientOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
+    BlobContainerClient, BlobContainerClientOptions, BlockBlobClientUploadOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
 use std::{collections::HashMap, error::Error};
@@ -86,6 +86,75 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     assert_eq!(17, content_length.unwrap());
     assert!(etag.is_some());
     assert!(creation_time.is_some());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording);
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
+
+    let container_client_options = BlobContainerClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    // Act
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        container_name.clone(),
+        recording.credential(),
+        Some(container_client_options),
+    )?;
+
+    let blob_client_options = BlobClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    let blob_client = BlobClient::new(
+        &endpoint,
+        container_name,
+        blob_name,
+        recording.credential(),
+        Some(blob_client_options),
+    )?;
+
+    container_client.create_container(None).await?;
+    let data = b"hello rusty world";
+    blob_client
+        .upload(
+            RequestContent::from(data.to_vec()),
+            true,
+            u64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+
+    // Set Content Settings
+    let set_properties_options = BlobClientSetPropertiesOptions {
+        blob_content_language: Some("spanish".to_string()),
+        blob_content_disposition: Some("inline".to_string()),
+        ..Default::default()
+    };
+    blob_client
+        .set_properties(Some(set_properties_options))
+        .await?;
+
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    let content_language = response.content_language()?;
+    let content_disposition = response.content_disposition()?;
+
+    assert_eq!("spanish".to_string(), content_language.unwrap());
+    assert_eq!("inline".to_string(), content_disposition.unwrap());
 
     container_client.delete_container(None).await?;
     Ok(())
