@@ -13,10 +13,11 @@ toml = "0.8.10"
 use cargo_util_schemas::manifest::{InheritableDependency, TomlDependency, TomlManifest};
 use serde::Deserialize;
 use std::{
-    io::Read,
-    path::PathBuf,
-    process::{Command, Stdio},
+    path::{Path, PathBuf},
+    process::Command,
 };
+
+static EXEMPTIONS: &[(&str, &str)] = &[("azure_template", "serde")];
 
 fn main() {
     let manifest_path = std::env::args()
@@ -30,102 +31,127 @@ fn main() {
         .expect("manifest path");
 
     let package_manifest_path = package_manifest_path(&manifest_path);
-    let workspace_manifest_path = workspace_manifest_path(&manifest_path);
+    let workspace_manifest_path = workspace_manifest_path();
+    let packages = if package_manifest_path == workspace_manifest_path {
+        workspace_packages(&workspace_manifest_path)
+    } else {
+        vec![package_manifest_path]
+    };
 
-    eprintln!("Checking {}", package_manifest_path.display());
-    let package_manifest_content =
-        std::fs::read_to_string(package_manifest_path).expect("read package manifest");
-    let package_manifest: TomlManifest =
-        toml::from_str(&package_manifest_content).expect("deserialize package manifest");
+    let mut found = false;
+    for ref package_manifest_path in packages {
+        eprintln!("Checking {}", package_manifest_path.display());
+        let package_manifest_content =
+            std::fs::read_to_string(package_manifest_path).expect("read package manifest");
+        let package_manifest: TomlManifest =
+            toml::from_str(&package_manifest_content).expect("deserialize package manifest");
 
-    // Collect all package dependencies including in platform targets.
-    let mut all_dependencies = vec![
-        (
-            "dependencies".to_string(),
-            package_manifest.dependencies.as_ref(),
-        ),
-        (
-            "dev-dependencies".to_string(),
-            package_manifest.dev_dependencies(),
-        ),
-        (
-            "build-dependencies".to_string(),
-            package_manifest.build_dependencies(),
-        ),
-    ];
-    if let Some(targets) = package_manifest.target.as_ref() {
-        for (target, platform) in targets {
-            all_dependencies.push((
-                format!("target.'{}'.dependencies", target),
-                platform.dependencies.as_ref(),
-            ));
-            all_dependencies.push((
-                format!("target.'{}'.dev-dependencies", target),
-                platform.dev_dependencies(),
-            ));
-            all_dependencies.push((
-                format!("target.'{}'.build-dependencies", target),
-                platform.build_dependencies(),
-            ));
+        // Collect all package dependencies including in platform targets.
+        let mut all_dependencies = vec![
+            (
+                "dependencies".to_string(),
+                package_manifest.dependencies.as_ref(),
+            ),
+            (
+                "dev-dependencies".to_string(),
+                package_manifest.dev_dependencies(),
+            ),
+            (
+                "build-dependencies".to_string(),
+                package_manifest.build_dependencies(),
+            ),
+        ];
+        if let Some(targets) = package_manifest.target.as_ref() {
+            for (target, platform) in targets {
+                all_dependencies.push((
+                    format!("target.'{}'.dependencies", target),
+                    platform.dependencies.as_ref(),
+                ));
+                all_dependencies.push((
+                    format!("target.'{}'.dev-dependencies", target),
+                    platform.dev_dependencies(),
+                ));
+                all_dependencies.push((
+                    format!("target.'{}'.build-dependencies", target),
+                    platform.build_dependencies(),
+                ));
+            }
+        }
+
+        let mut dependencies: Vec<Package> = all_dependencies
+            .into_iter()
+            .filter_map(|v| {
+                if let Some(dependencies) = v.1 {
+                    return Some((v.0, dependencies));
+                }
+                None
+            })
+            .flat_map(|v| std::iter::repeat(v.0).zip(v.1.iter()))
+            .filter_map(|v| match v.1 .1 {
+                InheritableDependency::Value(dep) => match dep {
+                    TomlDependency::Simple(_) => Some(Package {
+                        section: v.0,
+                        name: v.1 .0.to_string(),
+                    }),
+                    TomlDependency::Detailed(details) if details.path.is_none() => Some(Package {
+                        section: v.0,
+                        name: v.1 .0.to_string(),
+                    }),
+                    _ => None,
+                },
+                InheritableDependency::Inherit(_) => None,
+            })
+            .filter(|v| {
+                package_manifest
+                    .package
+                    .as_ref()
+                    .is_some_and(|package| !EXEMPTIONS.contains(&(package.name.as_str(), &v.name)))
+            })
+            .collect();
+
+        if !dependencies.is_empty() {
+            dependencies.sort();
+            println!(
+                "The following `{}` dependencies do not inherit from workspace `{}`:\n",
+                package_manifest_path.display(),
+                workspace_manifest_path.display(),
+            );
+            println!(
+                "* {}\n",
+                dependencies
+                    .into_iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<String>>()
+                    .join("\n* ")
+            );
+            println!("Add dependencies to workspace and change the package dependency to `{{ workspace = true }}`.");
+            println!("See <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inheriting-a-dependency-from-a-workspace> for more information.");
+            println!();
+
+            found = true;
         }
     }
 
-    let mut dependencies: Vec<Package> = all_dependencies
-        .into_iter()
-        .filter_map(|v| {
-            if let Some(dependencies) = v.1 {
-                return Some((v.0, dependencies));
-            }
-            None
-        })
-        .flat_map(|v| std::iter::repeat(v.0).zip(v.1.into_iter()))
-        .filter_map(|v| match v.1 .1 {
-            InheritableDependency::Value(dep) => match dep {
-                TomlDependency::Simple(_) => Some(Package {
-                    section: v.0,
-                    name: v.1 .0.to_string(),
-                }),
-                TomlDependency::Detailed(details) if details.path.is_none() => Some(Package {
-                    section: v.0,
-                    name: v.1 .0.to_string(),
-                }),
-                _ => None,
-            },
-            InheritableDependency::Inherit(_) => None,
-        })
-        .collect();
-
-    if !dependencies.is_empty() {
-        dependencies.sort();
-        println!(
-            "The following dependencies do not inherit from workspace `{}`:\n",
-            workspace_manifest_path.display()
-        );
-        println!(
-            "* {}\n",
-            dependencies
-                .into_iter()
-                .map(|v| v.to_string())
-                .collect::<Vec<String>>()
-                .join("\n* ")
-        );
-        println!("Add dependencies to workspace and change the package dependency to `{{ workspace = true }}`.");
-        println!("See <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inheriting-a-dependency-from-a-workspace> for more information.");
-
+    if found {
         std::process::exit(1);
     }
 }
 
 fn package_manifest_path(manifest_path: &str) -> PathBuf {
-    let mut cmd = Command::new("cargo")
-        .args(&["read-manifest", "--manifest-path", manifest_path])
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("executing cargo read-manifest");
+    let output = Command::new("cargo")
+        .args([
+            "locate-project",
+            "--message-format",
+            "plain",
+            "--manifest-path",
+            manifest_path,
+        ])
+        .output()
+        .expect("executing cargo locate-project");
 
-    let path: PathBuf = read_manifest(&mut cmd)
-        .manifest_path
-        .expect("manifest_path")
+    let path: PathBuf = String::from_utf8(output.stdout)
+        .expect("valid path")
+        .trim_end()
         .into();
 
     if !path.exists() {
@@ -135,31 +161,45 @@ fn package_manifest_path(manifest_path: &str) -> PathBuf {
     path
 }
 
-fn workspace_manifest_path(manifest_path: &str) -> PathBuf {
-    let mut cmd = Command::new("cargo")
-        .args(&[
-            "metadata",
-            "--format-version",
-            "1",
-            "--all-features",
-            "--manifest-path",
-            manifest_path,
-        ])
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("executing cargo metadata");
+fn workspace_manifest_path() -> PathBuf {
+    let output = Command::new("cargo")
+        .args(["locate-project", "--message-format", "plain", "--workspace"])
+        .output()
+        .expect("executing cargo locate-project");
 
-    let path: PathBuf = read_manifest(&mut cmd)
-        .workspace_root
-        .expect("workspace_root")
+    let path: PathBuf = String::from_utf8(output.stdout)
+        .expect("valid path")
+        .trim_end()
         .into();
-    let path = path.join("Cargo.toml");
 
     if !path.exists() {
         panic!("workspace manifest not found");
     }
 
     path
+}
+
+fn workspace_packages(manifest_path: &Path) -> Vec<PathBuf> {
+    let output = Command::new("cargo")
+        .args([
+            "metadata",
+            "--format-version",
+            "1",
+            "--no-deps",
+            "--manifest-path",
+            &manifest_path.to_string_lossy(),
+        ])
+        .output()
+        .expect("executing cargo metadata");
+    let manifest: Manifest =
+        serde_json::from_slice(&output.stdout).expect("bad workspace metadata");
+
+    let mut paths = Vec::with_capacity(manifest.packages.len());
+    for package in manifest.packages {
+        paths.push(package.manifest_path.into());
+    }
+
+    paths
 }
 
 fn find_file(dir: impl AsRef<std::path::Path>, name: &str) -> Option<String> {
@@ -172,19 +212,14 @@ fn find_file(dir: impl AsRef<std::path::Path>, name: &str) -> Option<String> {
     None
 }
 
-fn read_manifest(cmd: &mut std::process::Child) -> CargoManifest {
-    let mut reader = std::io::BufReader::new(cmd.stdout.take().expect("buffering stdout"));
-
-    let mut content: String = Default::default();
-    reader.read_to_string(&mut content).expect("reading stdout");
-
-    serde_json::from_str::<CargoManifest>(&content).expect("deserializing manifest")
+#[derive(Deserialize)]
+struct Manifest {
+    packages: Vec<ManifestPackage>,
 }
 
 #[derive(Deserialize)]
-struct CargoManifest {
-    pub manifest_path: Option<String>,
-    pub workspace_root: Option<String>,
+struct ManifestPackage {
+    manifest_path: String,
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]

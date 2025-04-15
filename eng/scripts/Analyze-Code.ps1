@@ -35,29 +35,20 @@ if ($CheckWasm) {
 Invoke-LoggedCommand "cargo doc --workspace --no-deps --all-features"
 
 # Verify package dependencies
+$verifyDependenciesScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-dependencies.rs' -Resolve
 
-# BUGBUG: https://github.com/Azure/azure-sdk-for-rust/issues/2186
-# $verifyDependenciesScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-dependencies.rs' -Resolve
-#
-# if (!$SkipPackageAnalysis) {
-#   if (!(Test-Path $PackageInfoDirectory)) {
-#     Write-Error "Package info path '$PackageInfoDirectory' does not exist."
-#     exit 1
-#   }
-#
-#   $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
-#   | Get-Content -Raw
-#   | ConvertFrom-Json
-#
-#   Push-Location
-#   try {
-#     foreach ($package in $packagesToTest) {
-#       Set-Location (Join-Path $RepoRoot $package.DirectoryPath)
-#       Write-Host "Analyzing package: '$($package.Name)' in directory: '$($package.DirectoryPath)'`n"
-#       Invoke-LoggedCommand "cargo +nightly -Zscript $verifyDependenciesScript"
-#     }
-#   }
-#   finally {
-#     Pop-Location
-#   }
-# }
+if (!$SkipPackageAnalysis) {
+  if (!(Test-Path $PackageInfoDirectory)) {
+    Write-Host "Analyzing workspace`n"
+    return Invoke-LoggedCommand "&$verifyDependenciesScript $RepoRoot/Cargo.toml"
+  }
+
+  $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
+  | Get-Content -Raw
+  | ConvertFrom-Json
+
+  foreach ($package in $packagesToTest) {
+    Write-Host "Analyzing package '$($package.Name)' in directory '$($package.DirectoryPath)'`n"
+    Invoke-LoggedCommand "&$verifyDependenciesScript $($package.DirectoryPath)/Cargo.toml"
+  }
+}
