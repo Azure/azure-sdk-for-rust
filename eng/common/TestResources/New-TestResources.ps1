@@ -203,11 +203,18 @@ try {
     $PSBoundParameters['BaseName'] = $BaseName
 
     # Try detecting repos that support OutFile and defaulting to it
-    if (!$CI -and !$PSBoundParameters.ContainsKey('OutFile') -and $IsWindows) {
+    if (!$CI -and !$PSBoundParameters.ContainsKey('OutFile')) {
         # TODO: find a better way to detect the language
-        if (Test-Path "$repositoryRoot/eng/service.proj") {
+        if ($IsWindows -and (Test-Path "$repositoryRoot/eng/service.proj")) {
             $OutFile = $true
-            Log "Detected .NET repository. Defaulting OutFile to true. Test environment settings would be stored into the file so you don't need to set environment variables manually."
+            $isDotnet = $true
+            Log "Detected .NET repository. Defaulting OutFile to true. Test environment settings will be stored into a file so you don't need to set environment variables manually."
+        } elseif (Test-Path "$root/assets.json") {
+            $assets = Get-Content -Raw "$root/assets.json" | ConvertFrom-Json
+            if ($assets.Dotenv) {
+              $OutFile = $true
+              Log "Defaulting OutFile to true since '$root/assets.json' dictates. Test environment settings will be stored in '$root/.env' so you don't need to set environment variables manually."
+            }
         }
     }
 
@@ -860,13 +867,17 @@ Force creation of resources instead of being prompted.
 
 .PARAMETER OutFile
 Save test environment settings into a .env file next to test resources template.
-The contents of the file are protected via the .NET Data Protection API (DPAPI).
-This is supported only on Windows. The environment file is scoped to the current
-service directory.
 
+On Windows in the Azure/azure-sdk-for-net repository,
+he contents of the file are protected via the .NET Data Protection API (DPAPI).
+The environment file is scoped to the current service directory.
 The environment file will be named for the test resources template that it was
 generated for. For ARM templates, it will be test-resources.json.env. For
 Bicep templates, test-resources.bicep.env.
+
+If enabled in other repositories or on other platforms, a .env file is written
+unencrypted to the service directory if and only if it is in .gitignore.
+Enable -OutFile automatically by putting `"Dotenv": true` in your assets.json file.
 
 .PARAMETER SuppressVsoCommands
 By default, the -CI parameter will print out secrets to logs with Azure Pipelines log
