@@ -1,0 +1,6 @@
+{
+  "name": "azure-sdk-for-rust",
+  "dependencies": [
+    "openssl"
+  ]
+}

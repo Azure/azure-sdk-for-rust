@@ -11,11 +11,11 @@ use azure_storage_blob::{
         BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlockListType,
         BlockLookupList, LeaseState,
     },
-    BlobClient, BlobClientOptions, BlobClientSetPropertiesOptions, BlobContainerClient,
-    BlobContainerClientOptions,
+    BlobClient, BlobClientOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
+    BlobContainerClient, BlobContainerClientOptions, BlockBlobClientUploadOptions,
 };
 use azure_storage_blob_test::recorded_test_setup;
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -378,6 +378,88 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(Bytes::from_static(data), response_body.collect().await?);
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+
+    let recording = ctx.recording();
+    let (options, endpoint) = recorded_test_setup(recording);
+    let container_name = recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase();
+    let blob_name = recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase();
+
+    let container_client_options = BlobContainerClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    //Act
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        container_name.clone(),
+        recording.credential(),
+        Some(container_client_options),
+    )?;
+    container_client.create_container(None).await?;
+
+    let blob_client_options = BlobClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    let blob_client = BlobClient::new(
+        &endpoint,
+        container_name,
+        blob_name,
+        recording.credential(),
+        Some(blob_client_options),
+    )?;
+
+    let data = b"hello rusty world";
+
+    // Upload Blob With Metadata
+    let initial_metadata = HashMap::from([("initial".to_string(), "metadata".to_string())]);
+
+    let options_with_metadata = BlockBlobClientUploadOptions {
+        metadata: Some(initial_metadata.clone()),
+        ..Default::default()
+    };
+    blob_client
+        .upload(
+            RequestContent::from(data.to_vec()),
+            false,
+            u64::try_from(data.len())?,
+            Some(options_with_metadata),
+        )
+        .await?;
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    let response_metadata = response.metadata()?;
+    assert_eq!(initial_metadata, response_metadata);
+
+    // Set Metadata With Values
+    let update_metadata = HashMap::from([("updated".to_string(), "values".to_string())]);
+    let set_metadata_options = BlobClientSetMetadataOptions {
+        metadata: Some(update_metadata.clone()),
+        ..Default::default()
+    };
+    blob_client.set_metadata(Some(set_metadata_options)).await?;
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    let response_metadata = response.metadata()?;
+    assert_eq!(update_metadata, response_metadata);
+
+    // Set Metadata No Values (Clear Metadata)
+    blob_client.set_metadata(None).await?;
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    let response_metadata = response.metadata()?;
+    assert_eq!(HashMap::new(), response_metadata);
+
     Ok(())
 }
 

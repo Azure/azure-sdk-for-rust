@@ -6,7 +6,7 @@
 use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_secrets::{
-    models::{SecretSetParameters, SecretUpdateParameters},
+    models::{SetSecretParameters, UpdateSecretPropertiesParameters},
     ResourceExt as _, SecretClient, SecretClientOptions,
 };
 use azure_security_keyvault_test::Retry;
@@ -27,7 +27,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     )?;
 
     // Set a secret.
-    let body = SecretSetParameters {
+    let body = SetSecretParameters {
         value: Some("secret-value".into()),
         ..Default::default()
     };
@@ -64,7 +64,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
     )?;
 
     // Set a secret.
-    let body = SecretSetParameters {
+    let body = SetSecretParameters {
         value: Some("secret-value".into()),
         ..Default::default()
     };
@@ -76,7 +76,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
     assert_eq!(secret.value, Some("secret-value".into()));
 
     // Update secret properties.
-    let properties = SecretUpdateParameters {
+    let properties = UpdateSecretPropertiesParameters {
         content_type: Some("text/plain".into()),
         secret_attributes: secret.attributes,
         tags: HashMap::from_iter(vec![(
@@ -85,7 +85,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         )]),
     };
     let secret = client
-        .update_secret("update-secret", "", properties.try_into()?, None)
+        .update_secret_properties("update-secret", "", properties.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -128,7 +128,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     assert_eq!(secret2.value, Some("secret-value-2".into()));
 
     // List secrets.
-    let mut pager = client.list_secrets(None)?.into_stream();
+    let mut pager = client.list_secret_properties(None)?.into_stream();
     while let Some(secrets) = pager.try_next().await? {
         let secrets = secrets.into_body().await?.value;
         for secret in secrets {
@@ -161,7 +161,7 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
     let secret = client
         .set_secret(
             "purge-secret",
-            SecretSetParameters {
+            SetSecretParameters {
                 value: Some("secret-value".into()),
                 ..Default::default()
             }

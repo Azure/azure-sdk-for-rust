@@ -13,6 +13,17 @@
 If you want to contribute to a file that is generated (the file is located in a `generated` subdirectory), the best approach is to open a PR on the TypeSpec specification since we cannot replace generated code that will be replaced when regenerated.
 Please visit the [Azure/azure-rest-api-specs repo](https://github.com/Azure/azure-rest-api-specs/) to view and make changes to Azure service API specifications.
 
+Once changes are merged,
+
+1. Change directories to the crate you want to regenerate:
+
+   ```sh
+   cd sdk/keyvault/azure_security_keyvault_secrets
+   ```
+
+2. Update `tsp-location.yml` with the commit in the `Azure/azure-sdk-for-rust` repository.
+3. Run `tsp-client update`.
+
 ## Coding
 
 We welcome contributions! But before you start coding, please read our [Rust Guidelines] including [implementation details](https://azure.github.io/azure-sdk/rust_implementation.html) for contributors.
@@ -29,6 +40,42 @@ Alternatively, you can build any one or more crates by passing their crate names
 
 You can also build the entire workspace by either building from the root source directory or running `cargo build --workspace`, but unless you're making changes to `azure_core`
 or its dependencies, this is generally unnecessary nor recommended. It will take considerable time and drive space.
+
+### Building on Windows
+
+By default we use the [`openssl`](https://crates.io/crates/openssl) crate and, indirectly, the [`openssl-sys`](https://crates.io/crates/openssl-sys) crate. On Windows, you may need to download and build openssl before you can successfully compile.
+Since `openssl-sys` supports [vcpkg](https://learn.microsoft.com/vcpkg/), you can bootstrap OpenSSL:
+
+1. Clone `vcpkg` somewhere in your development environment:
+
+   ```pwsh
+   git clone --depth=1 https://github.com/microsoft/vcpkg.git
+   ```
+
+2. Run the bootstrap script to download a prebuilt binary:
+
+   ```pwsh
+   cd vcpkg
+   .\bootstrap-vcpkg.bat
+   ```
+
+3. Set up environment variables:
+
+   ```pwsh
+   $env:VCPKG_ROOT = "C:\path\to\vcpkg" # from step 1
+   $env:PATH = "${env:VCPKG_ROOT};${env:PATH}"
+   ```
+
+   To persist these variables for future sessions, remember to set them in the Windows System Environment Variables panel.
+
+4. Change directories into the `eng/` folder in this repo and run:
+
+   ```pwsh
+   cd eng
+   vcpkg install
+
+   $env:OPENSSL_DIR = "$PWD\vcpkg_installed\x64-windows"
+   ```
 
 ### Linting
 

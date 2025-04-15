@@ -49,6 +49,8 @@ jobs:
     parameters:
       Toolchain: $(RustToolchainName)
 
+  - template: /eng/pipelines/templates/steps/vcpkg.yml
+  
   - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
 
   - template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self

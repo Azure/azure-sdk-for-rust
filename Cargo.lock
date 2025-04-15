@@ -164,7 +164,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "azure_core"
-version = "0.23.0"
+version = "0.24.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -191,7 +191,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "azure_core",
  "fe2o3-amqp",
@@ -296,7 +296,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-lock",
  "async-stream",
@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -326,6 +326,7 @@ dependencies = [
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
+ "openssl",
  "rand",
  "rustc_version",
  "serde",
@@ -337,7 +338,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -356,7 +357,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -1592,9 +1593,9 @@ checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 
 [[package]]
 name = "openssl"
-version = "0.10.70"
+version = "0.10.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61cfb4e166a8bb8c9b55c500bc2308550148ece889be90f609377e58140f42c6"
+checksum = "fedfea7d58a1f73118430a55da6a286e7b044961736ce96a16a17068ea25e5da"
 dependencies = [
  "bitflags 2.6.0",
  "cfg-if",
@@ -1624,9 +1625,9 @@ checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.105"
+version = "0.9.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b22d5b84be05a8d6947c7cb71f7c849aa0f112acd4bf51c2a7c1c988ac0a9dc"
+checksum = "8288979acd84749c744a9014b4382d42b8f7b2592847b5afb2ed29e5d16ede07"
 dependencies = [
  "cc",
  "libc",
@@ -2716,7 +2717,7 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "typespec"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "base64",
  "serde",
@@ -2727,7 +2728,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -2753,7 +2754,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",

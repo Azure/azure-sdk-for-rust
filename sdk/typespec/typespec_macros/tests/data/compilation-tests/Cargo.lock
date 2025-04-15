@@ -112,6 +112,7 @@ name = "compilation_tests"
 version = "0.1.0"
 dependencies = [
  "litemap",
+ "openssl",
  "serde",
  "typespec_client_core",
  "zerofrom",
@@ -696,9 +697,9 @@ checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
 
 [[package]]
 name = "openssl"
-version = "0.10.71"
+version = "0.10.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e14130c6a98cd258fdcb0fb6d744152343ff729cbfcb28c656a9d12b999fbcd"
+checksum = "fedfea7d58a1f73118430a55da6a286e7b044961736ce96a16a17068ea25e5da"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -728,9 +729,9 @@ checksum = "d05e27ee213611ffe7d6348b942e8f942b37114c00cc03cec254295a4a17852e"
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.106"
+version = "0.9.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bb61ea9811cc39e3c2069f40b8b8e2e70d8569b361f879786cc7ed48b777cdd"
+checksum = "8288979acd84749c744a9014b4382d42b8f7b2592847b5afb2ed29e5d16ede07"
 dependencies = [
  "cc",
  "libc",
@@ -1250,7 +1251,7 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
 name = "typespec"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "base64",
  "serde",
@@ -1260,7 +1261,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -1284,7 +1285,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "proc-macro2",
  "quote",

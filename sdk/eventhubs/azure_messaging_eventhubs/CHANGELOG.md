@@ -1,6 +1,16 @@
 # Release History
 
-## 0.2.0 (Unreleased)
+## 0.3.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.2.0 (2025-04-08)
 
 ### Features Added
 
@@ -24,8 +34,6 @@
 ### Bugs Fixed
 
 - If you call `send_event` or `send_message` with a specific target partition, the call now respects the desired target partition.
-
-### Other Changes
 
 ## 0.1.0 (2025-02-18)
 

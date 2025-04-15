@@ -19,8 +19,8 @@ use crate::generated::{
         BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
         BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
-        BlobClientSetMetadataResult, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
-        BlobClientSetTagsResult, BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTagsResult,
+        BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions,
         BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
         BlobExpiryOptions, BlobTags,
     },
@@ -1131,7 +1131,7 @@ impl BlobClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<BlobClientSetMetadataResult>> {
+    ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

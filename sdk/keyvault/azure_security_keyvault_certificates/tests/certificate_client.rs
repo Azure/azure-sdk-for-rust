@@ -3,49 +3,33 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::{base64, http::StatusCode, sleep::sleep, Result};
-use azure_core_test::{recorded, TestContext, TestMode, SANITIZE_BODY_NAME};
+use azure_core::{http::StatusCode, sleep::sleep, Result};
+use azure_core_test::{recorded, Recording, TestContext, TestMode, SANITIZE_BODY_NAME};
 use azure_security_keyvault_certificates::{
     models::{
-        Action, CertificateCreateParameters, CertificatePolicy, CertificatePolicyAction,
-        CertificateUpdateParameters, IssuerParameters, JsonWebKeyCurveName, JsonWebKeyType,
-        KeyProperties, LifetimeAction, SecretProperties, Trigger, X509CertificateProperties,
+        CertificateOperation, CertificatePolicy, CreateCertificateParameters, CurveName,
+        IssuerParameters, KeyProperties, KeyType, UpdateCertificatePropertiesParameters,
+        X509CertificateProperties,
     },
     CertificateClient, CertificateClientOptions, ResourceExt as _, ResourceId,
 };
 use azure_security_keyvault_keys::{
-    models::{JsonWebKeySignatureAlgorithm, KeySignParameters},
+    models::{SignParameters, SignatureAlgorithm},
     KeyClient, KeyClientOptions,
 };
 use azure_security_keyvault_test::Retry;
 use futures::TryStreamExt;
+use openssl::sha::sha256;
 use std::{collections::HashMap, sync::LazyLock, time::Duration};
 
 static DEFAULT_POLICY: LazyLock<CertificatePolicy> = LazyLock::new(|| CertificatePolicy {
     x509_certificate_properties: Some(X509CertificateProperties {
-        subject: Some("CN=Azure/azure-sdk-for-rust".into()),
+        subject: Some("CN=DefaultPolicy".into()),
         ..Default::default()
     }),
     issuer_parameters: Some(IssuerParameters {
         name: Some("Self".into()),
         ..Default::default()
-    }),
-    lifetime_actions: vec![LifetimeAction {
-        action: Some(Action {
-            action_type: Some(CertificatePolicyAction::AutoRenew),
-        }),
-        trigger: Some(Trigger {
-            days_before_expiry: Some(90),
-            ..Default::default()
-        }),
-    }],
-    key_properties: Some(KeyProperties {
-        key_type: Some(JsonWebKeyType::RSA),
-        key_size: Some(2048),
-        ..Default::default()
-    }),
-    secret_properties: Some(SecretProperties {
-        content_type: Some("application/x-pem-file".into()),
     }),
     ..Default::default()
 });
@@ -65,20 +49,16 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create a self-signed certificate.
-    let body = CertificateCreateParameters {
+    let body = CreateCertificateParameters {
         certificate_policy: Some(DEFAULT_POLICY.clone()),
         ..Default::default()
     };
-    let _operation = client
+    let operation = client
         .create_certificate("certificate-roundtrip", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
-
-    // TODO: Actually wait for the certificate operation to complete.
-    if recording.test_mode() != TestMode::Playback {
-        sleep(Duration::from_secs(3)).await;
-    }
+    wait_for_certificate_completion(recording, &client, operation).await?;
 
     // Get the latest version of the certificate we just created.
     let certificate = client
@@ -109,20 +89,16 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create a self-signed certificate.
-    let body = CertificateCreateParameters {
+    let body = CreateCertificateParameters {
         certificate_policy: Some(DEFAULT_POLICY.clone()),
         ..Default::default()
     };
-    let _operation = client
+    let operation = client
         .create_certificate("update-properties", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
-
-    // TODO: Actually wait for the certificate operation to complete.
-    if recording.test_mode() != TestMode::Playback {
-        sleep(Duration::from_secs(3)).await;
-    }
+    wait_for_certificate_completion(recording, &client, operation).await?;
 
     // Get the latest version of the certificate we just created.
     let certificate = client
@@ -133,7 +109,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
     let version = certificate.resource_id()?.version;
 
     // Update certificate properties.
-    let parameters = CertificateUpdateParameters {
+    let parameters = UpdateCertificatePropertiesParameters {
         certificate_attributes: certificate.attributes,
         tags: HashMap::from_iter(vec![(
             "test-name".into(),
@@ -142,7 +118,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let certificate = client
-        .update_certificate(
+        .update_certificate_properties(
             "update-properties",
             version.as_deref().unwrap_or(""),
             parameters.try_into()?,
@@ -176,29 +152,26 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
 
     // Create several self-signed certificates.
     let mut names = vec!["list-certificates-1", "list-certificates-2"];
-    let body = CertificateCreateParameters {
+    let body = CreateCertificateParameters {
         certificate_policy: Some(DEFAULT_POLICY.clone()),
         ..Default::default()
     };
-    let _operation = client
+    let operation1 = client
         .create_certificate("list-certificates-1", body.clone().try_into()?, None)
         .await?
         .into_body()
         .await?;
+    wait_for_certificate_completion(recording, &client, operation1).await?;
 
-    let _operation = client
+    let operation2 = client
         .create_certificate("list-certificates-2", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
-
-    // TODO: Actually wait for the certificate operation to complete.
-    if recording.test_mode() != TestMode::Playback {
-        sleep(Duration::from_secs(3)).await;
-    }
+    wait_for_certificate_completion(recording, &client, operation2).await?;
 
     // List certificates.
-    let mut pager = client.list_certificates(None)?.into_stream();
+    let mut pager = client.list_certificate_properties(None)?.into_stream();
     while let Some(certificates) = pager.try_next().await? {
         let certificates = certificates.into_body().await?.value;
         for certificate in certificates {
@@ -229,7 +202,7 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create a self-signed certificate.
-    let body = CertificateCreateParameters {
+    let body = CreateCertificateParameters {
         certificate_policy: Some(DEFAULT_POLICY.clone()),
         ..Default::default()
     };
@@ -238,14 +211,10 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
         .await?
         .into_body()
         .await?;
-
-    // TODO: Actually wait for the certificate operation to complete.
-    if recording.test_mode() != TestMode::Playback {
-        sleep(Duration::from_secs(3)).await;
-    }
+    let name = operation.resource_id()?.name;
+    wait_for_certificate_completion(recording, &client, operation).await?;
 
     // Delete the certificate.
-    let name = operation.resource_id()?.name;
     client.delete_certificate(name.as_ref(), None).await?;
 
     // Because deletes may not happen right away, try purging in a loop.
@@ -290,38 +259,26 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         Some(options),
     )?;
 
-    // Create an EC certificate policy for key encipherment.
+    // Create an EC certificate policy for signing.
     let policy = CertificatePolicy {
         x509_certificate_properties: Some(X509CertificateProperties {
-            subject: Some("CN=Azure/azure-sdk-for-rust".into()),
+            subject: Some("CN=DefaultPolicy".into()),
             ..Default::default()
         }),
         issuer_parameters: Some(IssuerParameters {
             name: Some("Self".into()),
             ..Default::default()
         }),
-        lifetime_actions: vec![LifetimeAction {
-            action: Some(Action {
-                action_type: Some(CertificatePolicyAction::AutoRenew),
-            }),
-            trigger: Some(Trigger {
-                days_before_expiry: Some(90),
-                ..Default::default()
-            }),
-        }],
         key_properties: Some(KeyProperties {
-            key_type: Some(JsonWebKeyType::EC),
-            curve: Some(JsonWebKeyCurveName::P256),
+            key_type: Some(KeyType::EC),
+            curve: Some(CurveName::P256),
             ..Default::default()
-        }),
-        secret_properties: Some(SecretProperties {
-            content_type: Some("application/x-pem-file".into()),
         }),
         ..Default::default()
     };
 
     // Create a self-signed certificate.
-    let body = CertificateCreateParameters {
+    let body = CreateCertificateParameters {
         certificate_policy: Some(policy),
         ..Default::default()
     };
@@ -330,29 +287,25 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         .await?
         .into_body()
         .await?;
-
-    // TODO: Actually wait for the certificate operation to complete.
-    if recording.test_mode() != TestMode::Playback {
-        sleep(Duration::from_secs(3)).await;
-    }
+    let ResourceId {
+        vault_url, name, ..
+    } = operation.resource_id()?;
+    wait_for_certificate_completion(recording, &client, operation).await?;
 
     let mut key_options = KeyClientOptions::default();
     recording.instrument(&mut key_options.client_options);
 
     // Sign a JWT.
-    let ResourceId {
-        vault_url, name, ..
-    } = operation.resource_id()?;
     let key_client = KeyClient::new(&vault_url, recording.credential(), Some(key_options))?;
 
     // cspell:disable
-    const _JWT: &str =
-        "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJoZWF0aHMiLCJuYW1lIjoiSGVhdGggU3Rld2FydCIsImlhdCI6MTc0MzgzMzY5MX0";
-    const DIGEST: &str = "GDOTWbe5x6KXgoykVcqygzMOAsjXcYUoZdzAkJR5a7Y";
+    const JWT: &[u8] =
+        b"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJoZWF0aHMiLCJuYW1lIjoiSGVhdGggU3Rld2FydCIsImlhdCI6MTc0MzgzMzY5MX0";
+    let digest = sha256(JWT).to_vec();
 
-    let body = KeySignParameters {
-        algorithm: Some(JsonWebKeySignatureAlgorithm::ES256),
-        value: Some(base64::decode_url_safe(DIGEST)?),
+    let body = SignParameters {
+        algorithm: Some(SignatureAlgorithm::ES256),
+        value: Some(digest),
     };
     let signature = key_client
         .sign(&name, "", body.try_into()?, None)
@@ -362,6 +315,40 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     assert!(signature.result.is_some());
     // example: 6AIg-utePBdmCU-uGvpjh4uKb3UV0yvdWKNLSp-EivC4oavdqpfxmfMB9GsR6dBMM1Ekp8ZBrzUMaCvShXWyog
     // cspell:enable
+
+    Ok(())
+}
+
+async fn wait_for_certificate_completion(
+    recording: &Recording,
+    client: &CertificateClient,
+    operation: CertificateOperation,
+) -> azure_core::Result<()> {
+    let mut operation = operation;
+    let name = operation.resource_id()?.name;
+    loop {
+        if matches!(operation.status, Some(ref status) if status == "completed") {
+            break;
+        }
+
+        if let Some(err) = operation.error {
+            return Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                err.message
+                    .unwrap_or_else(|| "failed to create certificate".into()),
+            ));
+        }
+
+        if recording.test_mode() != TestMode::Playback {
+            sleep(Duration::from_secs(3)).await;
+        }
+
+        operation = client
+            .get_certificate_operation(&name, None)
+            .await?
+            .into_body()
+            .await?;
+    }
 
     Ok(())
 }

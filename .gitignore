@@ -12,6 +12,10 @@ Cargo.lock
 .assets/
 .proxy/
 tests/data/
+review/
+
+# Dependencies.
+vcpkg_installed/
 
 # Editor user customizations.
 .vscode/launch.json
@@ -27,5 +31,3 @@ tests/data/
 
 # Temporary folder to refresh SDK with TypeSpec.
 TempTypeSpecFiles/
-
-review/
