@@ -18,9 +18,10 @@ pub use crate::generated::clients::{
 pub use crate::generated::models::{
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
     BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientGetPropertiesOptions, BlobServiceClientGetPropertiesOptions,
-    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
+    BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
+    BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
+    BlockBlobClientUploadOptions,
 };
 
 pub mod models {
@@ -30,7 +31,7 @@ pub mod models {
         BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
         BlobImmutabilityPolicyMode, BlobType, BlockBlobClientCommitBlockListResult,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, BlockListType,
-        BlockLookupList, CopyStatus, LeaseState, LeaseStatus, PublicAccessType, RehydratePriority,
-        StorageServiceProperties,
+        BlockLookupList, CopyStatus, LeaseState, LeaseStatus, ListBlobsFlatSegmentResponse,
+        PublicAccessType, RehydratePriority, StorageServiceProperties,
     };
 }
