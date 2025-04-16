@@ -8,8 +8,6 @@ The TypeSpec Macros crate provides procedural macros for [TypeSpec](https://type
 
 > **Note:** This crate is primarily intended for internal use by the `typespec_client_core` crate. Direct usage is discouraged unless you are contributing to or debugging the TypeSpec ecosystem.
 
-### Install the package
-
 ## Key concepts
 
 This crate provides the following derive macros:
