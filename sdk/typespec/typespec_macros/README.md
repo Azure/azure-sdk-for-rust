@@ -6,10 +6,10 @@ The TypeSpec Macros crate provides procedural macros for [TypeSpec](https://type
 
 ## Getting started
 
-> **Note:** This crate should not be used directly. Users should depend on the `typespec_client_core` crate instead.
+> **Note:** This crate is primarily intended for internal use by the `typespec_client_core` crate. Direct usage is discouraged unless you are contributing to or debugging the TypeSpec ecosystem.
 ### Install the package
 
-If you need to use this crate directly, install the TypeSpec Macros crate for Rust with cargo:
+> **Disclaimer:** The following instructions are intended for advanced users or contributors who need to work directly with the `typespec_macros` crate. Most users should depend on the `typespec_client_core` crate instead.
 
 ```bash
 cargo add typespec_macros
