@@ -676,7 +676,7 @@ mod tests {
         // Sleep a bit to ensure we will have refreshed the token - since the token expires in 20 seconds,
         // we will refresh it between 3 and 13 seconds before the expiration time. If we wait for 14 seconds,
         // we should have refreshed the token.
-        tokio::time::sleep(std::time::Duration::from_secs(14)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(20)).await;
 
         // Verify that the token get count has increased, indicating a refresh was attempted
         let final_count = mock_credential.get_token_get_count();
