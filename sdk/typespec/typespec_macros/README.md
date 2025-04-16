@@ -6,14 +6,7 @@ The TypeSpec Macros crate provides procedural macros for [TypeSpec](https://type
 
 ## Getting started
 
-> **Note:** This crate should not be used directly. Users should depend on the `typespec_client_core` crate instead.
-### Install the package
-
-If you need to use this crate directly, install the TypeSpec Macros crate for Rust with cargo:
-
-```bash
-cargo add typespec_macros
-```
+> **Note:** This crate supports `typespec_client_core` e.g., deriving the `Model` trait, and should not be imported directly. Import `typespec_client_core` instead. Read its [documentation](https://docs.rs/typespec_client_core) for more information.
 
 ## Key concepts
 
@@ -29,38 +22,6 @@ The `Model` derive macro is used to implement the `Model` trait for structs that
 ### The SafeDebug derive macro
 
 The `SafeDebug` derive macro creates a `Debug` implementation that respects the `#[sensitive]` attribute on struct fields. Fields marked with this attribute will not have their values printed in debug output, protecting potentially sensitive information.
-
-## Examples
-
-### Using the Model derive macro
-
-```rust
-use typespec_macros::Model;
-use serde::Deserialize;
-
-#[derive(Model, Deserialize)]
-pub struct User {
-    pub id: String,
-    pub name: String,
-    pub email: String,
-}
-```
-
-### Using the SafeDebug derive macro
-
-```rust
-use typespec_macros::SafeDebug;
-
-#[derive(SafeDebug)]
-pub struct Credentials {
-    pub username: String,
-    #[sensitive]
-    pub password: String,
-}
-
-// When debug printed, the password will be hidden:
-// Credentials { username: "user123", password: "***" }
-```
 
 ## Contributing
 
