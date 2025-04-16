@@ -6,7 +6,9 @@ The TypeSpec Macros crate provides procedural macros for [TypeSpec](https://type
 
 ## Getting started
 
-> **Note:** This crate supports `typespec_client_core` e.g., deriving the `Model` trait, and should not be imported directly. Import `typespec_client_core` instead. Read its [documentation](https://docs.rs/typespec_client_core) for more information.
+> **Note:** This crate is primarily intended for internal use by the `typespec_client_core` crate. Direct usage is discouraged unless you are contributing to or debugging the TypeSpec ecosystem.
+
+### Install the package
 
 ## Key concepts
 
