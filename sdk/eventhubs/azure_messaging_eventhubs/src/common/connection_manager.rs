@@ -10,6 +10,7 @@ use crate::{
 use async_lock::{Mutex as AsyncMutex, OnceCell};
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
+    error::ErrorKind as AzureErrorKind,
     http::Url,
     task::{new_task_spawner, SpawnHandle},
     Result, Uuid,
@@ -270,9 +271,9 @@ impl ConnectionManager {
 
             let mut now = OffsetDateTime::now_utc();
             trace!("refresh_tokens: Start pass for: {now}");
-            let most_recent_refresh = expiration_times
-                .first()
-                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
+            let most_recent_refresh = expiration_times.first().ok_or_else(|| {
+                azure_core::Error::message(AzureErrorKind::Other, "No tokens to refresh?")
+            })?;
 
             debug!(
                 "Nearest token refresh time: {most_recent_refresh}, in {}",
@@ -300,12 +301,22 @@ impl ConnectionManager {
                 token_refresh_bias = token_refresh_times
                     .before_expiration_refresh_time
                     .checked_add(expiration_jitter)
-                    .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
+                    .ok_or_else(|| {
+                        azure_core::Error::message(
+                            AzureErrorKind::Other,
+                            "Unable to calculate token refresh bias - overflow",
+                        )
+                    })?;
                 debug!("Token refresh bias with jitter: {token_refresh_bias}");
 
                 refresh_time = most_recent_refresh
                     .checked_sub(token_refresh_bias)
-                    .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
+                    .ok_or_else(|| {
+                        azure_core::Error::message(
+                            AzureErrorKind::Other,
+                            "Unable to calculate token refresh bias - underflow",
+                        )
+                    })?;
             }
             debug!("refresh_tokens: Refresh time: {refresh_time}");
 
