@@ -62,7 +62,7 @@ foreach ($package in $packagesToTest) {
     Invoke-LoggedCommand "cargo test --doc --no-fail-fast" -GroupOutput
     Write-Host "`n`n"
 
-    $env:RUST_LOG = "$package=trace"
+    $env:RUST_LOG = "azure_messaging_eventhubs=trace"
 
     Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast" -GroupOutput
     Write-Host "`n`n"
