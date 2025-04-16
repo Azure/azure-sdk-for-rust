@@ -631,8 +631,8 @@ mod tests {
 
         let url = Url::parse("amqps://example.com").unwrap();
         let path = Url::parse("amqps://example.com/test_token_refresh").unwrap();
-        // Create a mock token credential with a very short expiration (15 second)
-        let mock_credential = MockTokenCredential::new(15);
+        // Create a mock token credential with a very short expiration (20 seconds)
+        let mock_credential = MockTokenCredential::new(20);
         let connection_manager = ConnectionManager::new(url, None, None, mock_credential.clone());
 
         // Get initial token get count
@@ -648,13 +648,13 @@ mod tests {
         // Disable actual authorization for testing
         connection_manager.disable_authorization().unwrap();
 
-        // Wake up the token refresher every 5 seconds with a jitter of 10 seconds.
-        // The token in question expires in 15 seconds, so we want to refresh it before then.
+        // Set token refresh times to 8 seconds before expiration with default jitter.
+        // This means we will refresh the token somewhere between 3 and 13 seconds before it expires.
+        // The token in question expires in 20 seconds, so we want to refresh it before then.
         connection_manager
             .set_token_refresh_times(TokenRefreshTimes {
-                before_expiration_refresh_time: Duration::seconds(5),
-                jitter_max: TOKEN_REFRESH_JITTER_MAX,
-                jitter_min: TOKEN_REFRESH_JITTER_MIN,
+                before_expiration_refresh_time: Duration::seconds(8),
+                ..Default::default()
             })
             .unwrap();
 
@@ -667,14 +667,16 @@ mod tests {
             .await
             .unwrap();
 
-        // Verify initial token retrieval count
+        // Verify initial token retrieval count - we will only have authorized the token once.
         let current_count = mock_credential.get_token_get_count();
-        assert_eq!(current_count, initial_count + 1);
+        assert_eq!(current_count, 1);
 
-        debug!("Sleeping for 11 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
+        debug!("Sleeping for 14 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
 
-        // Sleep a bit to ensure token is considered expired (past the 10 second we set)
-        tokio::time::sleep(std::time::Duration::from_secs(11)).await;
+        // Sleep a bit to ensure we will have refreshed the token - since the token expires in 20 seconds,
+        // we will refresh it between 3 and 13 seconds before the expiration time. If we wait for 14 seconds,
+        // we should have refreshed the token.
+        tokio::time::sleep(std::time::Duration::from_secs(14)).await;
 
         // Verify that the token get count has increased, indicating a refresh was attempted
         let final_count = mock_credential.get_token_get_count();
@@ -682,10 +684,9 @@ mod tests {
 
         assert_eq!(
             final_count, 2,
-            "Expected token get count to be higher than initial+2, but got {}",
-            final_count
+            "Expected token get count to be 2, but got {final_count}"
         );
-        info!("Final token get count: {}", final_count);
+        info!("Final token get count: {final_count}");
     }
 
     #[tokio::test]

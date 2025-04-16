@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{SpawnHandle, TaskFuture, TaskSpawner};
+use super::{TaskFuture, TaskSpawner};
 use futures::executor::LocalPool;
 use futures::task::SpawnExt;
 use std::thread;
@@ -28,5 +28,20 @@ impl TaskSpawner for StdSpawner {
 
         // Return a handle that will await the result
         SpawnHandle(th)
+    }
+}
+
+#[derive(Debug)]
+pub struct SpawnHandle(std::thread::JoinHandle<()>);
+
+impl SpawnHandle {
+    /// Wait for the task to complete and return the result.
+    pub async fn await_result(self) -> crate::Result<()> {
+        self.0.join().map_err(|_| {
+            crate::Error::message(
+                crate::error::ErrorKind::Other,
+                "Task was cancelled before completion.",
+            )
+        })
     }
 }

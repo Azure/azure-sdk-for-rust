@@ -12,3 +12,13 @@ impl TaskSpawner for WasmSpawner {
         unimplemented!()
     }
 }
+
+#[derive(Debug)]
+pub struct SpawnHandle();
+
+impl SpawnHandle {
+    /// Wait for the task to complete and return the result.
+    pub async fn await_result(&mut self) -> crate::Result<()> {
+        unimplemented!()
+    }
+}
