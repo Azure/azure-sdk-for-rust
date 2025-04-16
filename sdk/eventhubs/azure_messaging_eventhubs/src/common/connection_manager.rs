@@ -631,6 +631,7 @@ mod tests {
 
         let url = Url::parse("amqps://example.com").unwrap();
         let path = Url::parse("amqps://example.com/test_token_refresh").unwrap();
+
         // Create a mock token credential with a very short expiration (20 seconds)
         let mock_credential = MockTokenCredential::new(20);
         let connection_manager = ConnectionManager::new(url, None, None, mock_credential.clone());
@@ -648,12 +649,12 @@ mod tests {
         // Disable actual authorization for testing
         connection_manager.disable_authorization().unwrap();
 
-        // Set token refresh times to 8 seconds before expiration with default jitter.
-        // This means we will refresh the token somewhere between 3 and 13 seconds before it expires.
+        // Set token refresh times to 6 seconds before expiration with default jitter.
+        // This means we will refresh the token somewhere between 1 and 11 seconds before it expires.
         // The token in question expires in 20 seconds, so we want to refresh it before then.
         connection_manager
             .set_token_refresh_times(TokenRefreshTimes {
-                before_expiration_refresh_time: Duration::seconds(8),
+                before_expiration_refresh_time: Duration::seconds(6),
                 ..Default::default()
             })
             .unwrap();
@@ -674,9 +675,9 @@ mod tests {
         debug!("Sleeping for 14 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
 
         // Sleep a bit to ensure we will have refreshed the token - since the token expires in 20 seconds,
-        // we will refresh it between 3 and 13 seconds before the expiration time. If we wait for 14 seconds,
+        // we will refresh it between 1 and 11 seconds before the expiration time. If we wait for 15 seconds,
         // we should have refreshed the token.
-        tokio::time::sleep(std::time::Duration::from_secs(20)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(15)).await;
 
         // Verify that the token get count has increased, indicating a refresh was attempted
         let final_count = mock_credential.get_token_get_count();
