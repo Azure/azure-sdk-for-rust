@@ -17,11 +17,12 @@ pub use crate::generated::clients::{
 };
 pub use crate::generated::models::{
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobContainerClientCreateOptions,
-    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
-    BlobContainerClientSetMetadataOptions, BlobServiceClientGetPropertiesOptions,
-    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
+    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+    BlobContainerClientGetPropertiesOptions, BlobContainerClientSetMetadataOptions,
+    BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
+    BlockBlobClientUploadOptions,
 };
 
 pub mod models {
