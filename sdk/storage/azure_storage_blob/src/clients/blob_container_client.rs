@@ -6,6 +6,7 @@ use crate::{
     generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
     BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientOptions,
+    BlobContainerClientSetMetadataOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -90,6 +91,21 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientCreateOptions<'_>>,
     ) -> Result<Response<()>> {
         let response = self.client.create(options).await?;
+        Ok(response)
+    }
+
+    /// Sets user-defined metadata for the specified container as one or more name-value pairs. Each call to this operation
+    /// replaces all existing metadata attached to the container. To remove all metadata from the container, call this operation with
+    /// no metadata headers.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_metadata(
+        &self,
+        options: Option<BlobContainerClientSetMetadataOptions<'_>>,
+    ) -> Result<Response<()>> {
+        let response = self.client.set_metadata(options).await?;
         Ok(response)
     }
 

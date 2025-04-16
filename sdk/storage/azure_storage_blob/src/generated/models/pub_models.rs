@@ -211,10 +211,6 @@ pub struct BlobContainerClientRestoreResult;
 #[derive(SafeDebug)]
 pub struct BlobContainerClientSetAccessPolicyResult;
 
-/// Contains results for `BlobContainerClient::set_metadata()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientSetMetadataResult;
-
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
