@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{SpawnHandle, TaskFuture, TaskSpawner};
+use super::{TaskFuture, TaskSpawner};
 
 /// A [`TaskSpawner`] using wasm.
 #[derive(Debug)]

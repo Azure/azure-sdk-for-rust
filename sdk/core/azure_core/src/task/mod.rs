@@ -21,7 +21,7 @@ mod tests;
 pub use standard_spawn::{SpawnHandle, StdSpawner};
 
 #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
-pub use wasm_spawn::{SpawnHandle, WasmSpawnHandle};
+pub use wasm_spawn::{SpawnHandle, WasmSpawner};
 
 #[cfg(feature = "tokio")]
 pub use tokio_spawn::{SpawnHandle, TokioSpawner};
