@@ -650,12 +650,13 @@ mod tests {
         connection_manager.disable_authorization().unwrap();
 
         // Set token refresh times to 10 seconds before expiration with default jitter.
-        // This means we will refresh the token somewhere between 5 and 15 seconds before it expires.
+        // This means we will refresh the token somewhere between 8 and 12 seconds before it expires.
         // The token in question expires in 20 seconds, so we want to refresh it before then.
         connection_manager
             .set_token_refresh_times(TokenRefreshTimes {
                 before_expiration_refresh_time: Duration::seconds(10),
-                ..Default::default()
+                jitter_min: -2,
+                jitter_max: 2,
             })
             .unwrap();
 
@@ -675,9 +676,9 @@ mod tests {
         debug!("Sleeping for 15 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
 
         // Sleep a bit to ensure we will have refreshed the token - since the token expires in 20 seconds,
-        // we will refresh it between 5 and 15 seconds before the expiration time. If we wait for 18 seconds,
+        // we will refresh it between 8 and 12 seconds before the expiration time. If we wait for 13 seconds,
         // we should have refreshed the token.
-        tokio::time::sleep(std::time::Duration::from_secs(18)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(13)).await;
 
         // Verify that the token get count has increased, indicating a refresh was attempted
         let final_count = mock_credential.get_token_get_count();
@@ -691,7 +692,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn multiple_tokens_refresh() -> Result<()> {
+    async fn multiple_token_refresh() -> Result<()> {
         crate::consumer::tests::setup();
 
         let host = Url::parse("amqps://example.com").unwrap();
