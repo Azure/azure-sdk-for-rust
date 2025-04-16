@@ -11,7 +11,6 @@ use async_lock::{Mutex as AsyncMutex, OnceCell};
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     http::Url,
-    sleep::sleep,
     task::{new_task_spawner, SpawnHandle},
     Result, Uuid,
 };
@@ -24,6 +23,28 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex as SyncMutex, OnceLock};
 use time::{Duration, OffsetDateTime};
 use tracing::{debug, error, trace};
+
+// The number of seconds before token expiration that we wake up to refresh the token.
+const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we refresh tokens 6 minutes before they expire.
+const TOKEN_REFRESH_JITTER_MIN: i64 = -5; // Minimum jitter in seconds
+const TOKEN_REFRESH_JITTER_MAX: i64 = 5; // Maximum jitter in seconds
+
+#[derive(Debug)]
+struct TokenRefreshTimes {
+    before_expiration_refresh_time: Duration,
+    jitter_min: i64,
+    jitter_max: i64,
+}
+
+impl Default for TokenRefreshTimes {
+    fn default() -> Self {
+        Self {
+            before_expiration_refresh_time: TOKEN_REFRESH_BIAS,
+            jitter_min: TOKEN_REFRESH_JITTER_MIN,
+            jitter_max: TOKEN_REFRESH_JITTER_MAX,
+        }
+    }
+}
 
 /// The connection manager is responsible for managing the connection to the Event Hubs service.
 /// It also handles authorization and connection recovery.
@@ -39,7 +60,8 @@ pub(crate) struct ConnectionManager {
     authorization_scopes: AsyncMutex<HashMap<Url, AccessToken>>,
     authorization_refresher: OnceLock<SpawnHandle>,
     connection_name: String,
-    token_refresh_duration: SyncMutex<Duration>,
+    /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
+    token_refresh_bias: SyncMutex<TokenRefreshTimes>,
     /// This is used to disable authorization for testing purposes.
     #[cfg(test)]
     disable_authorization: SyncMutex<bool>,
@@ -48,7 +70,6 @@ pub(crate) struct ConnectionManager {
 unsafe impl Send for ConnectionManager {}
 unsafe impl Sync for ConnectionManager {}
 
-const TOKEN_REFRESH_EXPIRATION: Duration = Duration::minutes(6); // 6 minutes
 const EVENTHUBS_AUTHORIZATION_SCOPE: &str = "https://eventhubs.azure.net/.default";
 
 impl ConnectionManager {
@@ -71,7 +92,7 @@ impl ConnectionManager {
             authorization_refresher: OnceLock::new(),
             connections: OnceCell::new(),
             authorization_scopes: AsyncMutex::new(HashMap::new()),
-            token_refresh_duration: SyncMutex::new(TOKEN_REFRESH_EXPIRATION),
+            token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             #[cfg(test)]
             disable_authorization: SyncMutex::new(false),
         })
@@ -87,11 +108,11 @@ impl ConnectionManager {
     }
 
     #[cfg(test)]
-    fn set_token_refresh_duration(&self, duration: Duration) -> Result<()> {
-        let mut token_refresh_duration = self.token_refresh_duration.lock().map_err(|e| {
+    fn set_token_refresh_times(&self, refresh_times: TokenRefreshTimes) -> Result<()> {
+        let mut token_refresh_bias = self.token_refresh_bias.lock().map_err(|e| {
             azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
-        *token_refresh_duration = duration;
+        *token_refresh_bias = refresh_times;
         Ok(())
     }
 
@@ -165,6 +186,8 @@ impl ConnectionManager {
                 .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
                 .await?;
 
+            debug!("Token for path {path} expires at {}", token.expires_on);
+
             self.perform_authorization(connection, path, &token).await?;
 
             // insert returns some if it *fails* to insert, None if it succeeded.
@@ -173,14 +196,13 @@ impl ConnectionManager {
                 return Err(EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken).into());
             }
 
-            debug!("Token added. Starting authorization refresher");
+            debug!("Token verified.");
             self.authorization_refresher.get_or_init(|| {
+                debug!("Starting authorization refresh task.");
                 let spawner = new_task_spawner();
                 let self_clone = self.clone();
-                //                spawner.spawn(self_clone.refresh_tokens_task().boxed())
                 spawner.spawn(Box::pin(self_clone.refresh_tokens_task()))
             });
-            trace!("Token added.");
         } else {
             debug!("Token already exists for path: {path}");
         }
@@ -222,57 +244,85 @@ impl ConnectionManager {
             let mut expiration_times = vec![];
             {
                 let scopes = self.authorization_scopes.lock().await;
-                debug!("Got lock for scopes.");
-                for (_, token) in scopes.iter() {
+                for (path, token) in scopes.iter() {
+                    debug!(
+                        "Token expiration time for path {}: {}",
+                        path, token.expires_on
+                    );
                     expiration_times.push(token.expires_on);
                 }
             }
             expiration_times.sort();
             debug!("Found expiration times: {:?}", expiration_times);
             if expiration_times.is_empty() {
-                debug!("No tokens to refresh.");
+                debug!("No tokens to refresh, sleeping for {TOKEN_REFRESH_BIAS}.");
+                azure_core::sleep::sleep(
+                    std::time::Duration::try_from(TOKEN_REFRESH_BIAS).map_err(|e| {
+                        azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
+                    })?,
+                )
+                .await;
                 continue;
             }
-
-            let expiration_jitter = Duration::seconds(thread_rng().gen_range(0..=10));
-
-            debug!("Expiration jitter: {expiration_jitter}");
 
             // Calculate duration until we should refresh (6 minutes before expiration,
             // with added random jitter)
 
-            let now = OffsetDateTime::now_utc();
+            let mut now = OffsetDateTime::now_utc();
+            trace!("refresh_tokens: Start pass for: {now}");
             let most_recent_refresh = expiration_times
                 .first()
                 .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
-            let refresh_time = most_recent_refresh
-                .checked_sub(
-                    self.token_refresh_duration
-                        .lock()
-                        .map_err(|e| {
-                            azure_core::Error::message(
-                                azure_core::error::ErrorKind::Other,
-                                format!("Unable to grab token refresh duration mutex: {}", e),
-                            )
-                        })?
-                        .checked_add(expiration_jitter)
-                        .ok_or_else(|| {
-                            EventHubsError::from(ErrorKind::InvalidManagementResponse)
-                        })?,
-                )
-                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
 
-            debug!("Current time: {now}");
-            debug!("Refresh time: {refresh_time}");
+            debug!(
+                "Nearest token refresh time: {most_recent_refresh}, in {}",
+                *most_recent_refresh - now
+            );
+
+            let refresh_time: OffsetDateTime;
+            let token_refresh_bias: Duration;
+            {
+                let token_refresh_times = self.token_refresh_bias.lock().map_err(|e| {
+                    azure_core::Error::message(
+                        azure_core::error::ErrorKind::Other,
+                        format!("Unable to grab token refresh bias mutex: {}", e),
+                    )
+                })?;
+
+                debug!("Token refresh times: {token_refresh_times:?}");
+
+                let expiration_jitter = Duration::seconds(
+                    thread_rng()
+                        .gen_range(token_refresh_times.jitter_min..token_refresh_times.jitter_max),
+                );
+                debug!("Expiration jitter: {expiration_jitter}");
+
+                token_refresh_bias = token_refresh_times
+                    .before_expiration_refresh_time
+                    .checked_add(expiration_jitter)
+                    .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
+                debug!("Token refresh bias with jitter: {token_refresh_bias}");
+
+                refresh_time = most_recent_refresh
+                    .checked_sub(token_refresh_bias)
+                    .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
+            }
+            debug!("refresh_tokens: Refresh time: {refresh_time}");
 
             // Convert to a duration if refresh time is in the future and sleep until it's time
             // to refresh the token.
             if refresh_time > now {
                 let sleep_duration = refresh_time - now;
-                let std_duration =
-                    std::time::Duration::from_secs_f64(sleep_duration.as_seconds_f64());
-                debug!("Sleeping for {std_duration:?} until {sleep_duration:?}");
-                sleep(std_duration).await;
+                let std_duration = std::time::Duration::try_from(sleep_duration)
+                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
+                debug!(
+                    "refresh_tokens: Sleeping for {std_duration:?} until {:?}",
+                    now + std_duration
+                );
+                azure_core::sleep::sleep(std_duration).await;
+                now = OffsetDateTime::now_utc();
+            } else {
+                debug!("Not sleeping because refresh time ({refresh_time}) is in the past (now = {now}).");
             }
 
             // Refresh the tokens.
@@ -283,9 +333,18 @@ impl ConnectionManager {
             {
                 let mut scopes = self.authorization_scopes.lock().await;
                 for (url, token) in scopes.iter() {
-                    if token.expires_on >= now + TOKEN_REFRESH_EXPIRATION {
-                        debug!("Token not expired for {url}");
+                    if token.expires_on >= now + (token_refresh_bias) {
+                        debug!(
+                            "Token not expired for {url}: ExpiresOn: {}, Now: {}, Bias: {}",
+                            token.expires_on, now, token_refresh_bias
+                        );
+                        continue;
                     }
+
+                    debug!(
+                        "Token about to be expired for {url}: ExpiresOn: {}, Now: {}, Bias: {}",
+                        token.expires_on, now, token_refresh_bias
+                    );
 
                     let new_token = self
                         .credential
@@ -432,7 +491,7 @@ mod tests {
     // This test verifies that a new connection manager uses a UUID for its connection ID when no application ID is specified.
     // It also verifies that the connections aren't initialized during construction - they're created on-demand.
     #[test]
-    fn test_connection_manager() {
+    fn connection_manager() {
         let url = Url::parse("amqps://example.com").unwrap();
         let connection_manager =
             ConnectionManager::new(url, None, None, MockTokenCredential::new(15));
@@ -449,7 +508,7 @@ mod tests {
     // Note: Using the actual application ID for the connection name helps with telemetry and debugging
     // in production scenarios.
     #[test]
-    fn test_connection_manager_with_application_id() {
+    fn connection_manager_with_application_id() {
         let url = Url::parse("amqps://example.com").unwrap();
         let app_id = "test-app-id".to_string();
         let connection_manager = ConnectionManager::new(
@@ -468,7 +527,7 @@ mod tests {
     ///
     /// Panics if the connection is open.
     #[tokio::test]
-    async fn test_connection_is_not_open_by_default() {
+    async fn connection_is_not_open_by_default() {
         let url = Url::parse("amqps://example.com").unwrap();
         let connection_manager = Arc::new(ConnectionManager::new(
             url.clone(),
@@ -485,7 +544,7 @@ mod tests {
     // The ConnectionManager supports using a custom endpoint for connecting to Event Hubs proxies.
     // This test verifies that the custom endpoint is properly stored in the ConnectionManager.
     #[test]
-    fn test_constructor_with_custom_endpoint() {
+    fn constructor_with_custom_endpoint() {
         let url = Url::parse("amqps://example.com").unwrap();
         let custom_endpoint = Url::parse("https://custom-endpoint.com").unwrap();
         let connection_manager = ConnectionManager::new(
@@ -506,7 +565,7 @@ mod tests {
     // In production, incorrect token expiration could lead to authentication failures
     // or excessive token refresh operations, so this verification is critical.
     #[tokio::test]
-    async fn test_token_credential_expiration() {
+    async fn token_credential_expiration() {
         crate::consumer::tests::setup();
 
         let url = Url::parse("amqps://example.com").unwrap();
@@ -525,10 +584,14 @@ mod tests {
 
         // Disable actual authorization for testing
         connection_manager.disable_authorization().unwrap();
-        // Wake up the token refresher every 10 seconds with a jitter of 10 seconds.
-        // The token in question expires in 5 seconds, so we want to refresh it before then.
+
+        // Expire tokens 10 seconds before they would normally expire.
+        // The token in question expires in 15 seconds, so we want to refresh it before then.
         connection_manager
-            .set_token_refresh_duration(Duration::seconds(10))
+            .set_token_refresh_times(TokenRefreshTimes {
+                before_expiration_refresh_time: Duration::seconds(10),
+                ..Default::default()
+            })
             .unwrap();
 
         // Get access to the connection
@@ -563,7 +626,7 @@ mod tests {
     // If this feature fails in production, clients would disconnect when their tokens expire,
     // which could lead to data loss, application failures, or service degradation.
     #[tokio::test]
-    async fn test_token_refresh() {
+    async fn token_refresh() {
         crate::consumer::tests::setup();
 
         let url = Url::parse("amqps://example.com").unwrap();
@@ -574,6 +637,7 @@ mod tests {
 
         // Get initial token get count
         let initial_count = mock_credential.get_token_get_count();
+        assert_eq!(initial_count, 0);
 
         // Override default connection creation for testing
         connection_manager
@@ -587,7 +651,11 @@ mod tests {
         // Wake up the token refresher every 5 seconds with a jitter of 10 seconds.
         // The token in question expires in 15 seconds, so we want to refresh it before then.
         connection_manager
-            .set_token_refresh_duration(Duration::seconds(5))
+            .set_token_refresh_times(TokenRefreshTimes {
+                before_expiration_refresh_time: Duration::seconds(5),
+                jitter_max: TOKEN_REFRESH_JITTER_MAX,
+                jitter_min: TOKEN_REFRESH_JITTER_MIN,
+            })
             .unwrap();
 
         // Get access to the connection
@@ -611,11 +679,107 @@ mod tests {
         // Verify that the token get count has increased, indicating a refresh was attempted
         let final_count = mock_credential.get_token_get_count();
         debug!("After sleeping, token count: {final_count}");
-        assert!(
-            final_count > initial_count + 1,
-            "Expected token get count to be higher than initial+1, but got {}",
+
+        assert_eq!(
+            final_count, 2,
+            "Expected token get count to be higher than initial+2, but got {}",
             final_count
         );
         info!("Final token get count: {}", final_count);
+    }
+
+    #[tokio::test]
+    async fn multiple_token_refresh() -> Result<()> {
+        crate::consumer::tests::setup();
+
+        let host = Url::parse("amqps://example.com").unwrap();
+        // Create a mock token credential with a very short expiration (20 seconds) - we choose 20 seconds because we configure the token refresh bias (the time before expiration we will attempt a refresh to 5 seconds and there's a +- 5 second
+        let mock_credential = MockTokenCredential::new(20);
+        let connection_manager = ConnectionManager::new(host, None, None, mock_credential.clone());
+
+        // Get initial token get count
+        let initial_count = mock_credential.get_token_get_count();
+        assert_eq!(initial_count, 0);
+
+        // Override default connection creation for testing
+        connection_manager
+            .connections
+            .get_or_init(|| async { Arc::new(AmqpConnection::new()) })
+            .await;
+
+        // Disable actual authorization for testing
+        connection_manager.disable_authorization().unwrap();
+
+        // We will refresh the token 5 seconds before it expires (with jitter).
+        // The token in question expires in 15 seconds, so we want to refresh it before then.
+        // In practice, this means that we can guarantee that the token will be refreshed
+        // between 4 and 6 seconds before it expires.
+        connection_manager
+            .set_token_refresh_times(TokenRefreshTimes {
+                before_expiration_refresh_time: Duration::seconds(5),
+                jitter_min: -1,
+                jitter_max: 1,
+            })
+            .unwrap();
+
+        // Authorize the path, which will store the token
+        let path1 = Url::parse("amqps://example.com/test_token_refresh_1").unwrap();
+        // Get access to the connection
+        let connection = connection_manager.get_connection().unwrap();
+        connection_manager
+            .authorize_path(&connection, &path1)
+            .await
+            .unwrap();
+
+        // Because the token expires in 20 seconds, token_refresh_1 will be refreshed
+        // between 14 and 16 seconds from now.
+
+        // The second token expires after the first token.
+        debug!("Sleeping for 10 seconds to establish separation between token_refresh_1 and token_refresh_2.");
+        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+
+        // Authorize the second path, which will store the token
+        let path2 = Url::parse("amqps://example.com/test_token_refresh_2").unwrap();
+        connection_manager
+            .authorize_path(&connection, &path2)
+            .await
+            .unwrap();
+
+        // Verify initial token retrieval count - it should have been refreshed three times -
+        let current_count = mock_credential.get_token_get_count();
+        // Two paths are authorized, so we called get_token twice.
+        assert_eq!(current_count, initial_count + 2);
+
+        // Token_refresh_1 will be refreshed between 4 and 6 seconds from now.
+        // Token_refresh_2 will be refreshed between 14 and 16 from now.
+        debug!("Sleeping for 7 seconds to allow token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
+        tokio::time::sleep(std::time::Duration::from_secs(7)).await;
+
+        // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_1 but not token_refresh_2.
+        let final_count = mock_credential.get_token_get_count();
+        debug!("After sleeping the first time, token count: {final_count}");
+        assert_eq!(
+            final_count, 3,
+            "Expected first get token count to be 3, but got {}",
+            final_count
+        );
+
+        info!("First token expiration get count: {}", final_count);
+        // Token_refresh_1 will be refreshed between 13 and 15 seconds from now.
+        // Token_refresh_2 will be refreshed between 7 and 9 seconds from now.
+
+        // Sleep for 10 seconds to allow the second token to expire and be refreshed.
+        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+
+        // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_2.
+        let final_count = mock_credential.get_token_get_count();
+        debug!("Getting second token count: {final_count}");
+        assert_eq!(
+            final_count, 4,
+            "Expected second get token count to be 4, but got {final_count}"
+        );
+        info!("Second token expiration get count: {}", final_count);
+
+        Ok(())
     }
 }
