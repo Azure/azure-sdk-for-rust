@@ -38,9 +38,9 @@ pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
 /// This returns a [`TaskSpawner`] that runs a task asynchronously.
 ///
 /// The implementation depends on the target architecture and the features enabled:
-/// - If the `tokio` feature is enabled, it uses [`TokioSpawner`].
-/// - If the `tokio` feature is not enabled and the target architecture is not `wasm32`, it uses [`StdSpawner`].
-/// - If the `tokio` feature is not enabled and the target architecture is `wasm32`, it uses [`WasmSpawner`].
+/// - If the `tokio` feature is enabled, it uses a tokio based spawner.
+/// - If the `tokio` feature is not enabled and the target architecture is not `wasm32`, it uses a std::thread based spawner.
+/// - If the `tokio` feature is not enabled and the target architecture is `wasm32`, it uses a wasm specific spawner.
 ///
 pub fn new_task_spawner() -> Arc<dyn TaskSpawner> {
     #[cfg(feature = "tokio")]
