@@ -183,25 +183,21 @@ impl ClientAssertion for Token {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{env::Env, tests::*};
+    use crate::{
+        credentials::client_assertion_credentials::tests::{is_valid_request, FAKE_ASSERTION},
+        env::Env,
+        tests::*,
+    };
     use azure_core::{
-        authority_hosts::AZURE_PUBLIC_CLOUD,
-        http::{
-            headers::{self, content_type, Headers},
-            Body, Method, Request, Response, StatusCode,
-        },
+        http::{headers::Headers, Response, StatusCode},
         Bytes,
     };
     use std::{
-        collections::HashMap,
         env,
         fs::File,
         io::Write,
         time::{SystemTime, UNIX_EPOCH},
     };
-    use url::form_urlencoded;
-
-    const FAKE_ASSERTION: &str = "fake assertion";
 
     pub struct TempFile {
         pub path: PathBuf,
@@ -227,48 +223,6 @@ mod tests {
     impl Drop for TempFile {
         fn drop(&mut self) {
             let _ = fs::remove_file(&self.path);
-        }
-    }
-
-    fn is_valid_request() -> impl Fn(&Request) -> azure_core::Result<()> {
-        let expected_url = format!(
-            "{}{}/oauth2/v2.0/token",
-            AZURE_PUBLIC_CLOUD.as_str(),
-            FAKE_TENANT_ID
-        );
-        move |req: &Request| {
-            assert_eq!(&Method::Post, req.method());
-            assert_eq!(expected_url, req.url().to_string());
-            assert_eq!(
-                req.headers().get_str(&headers::CONTENT_TYPE).unwrap(),
-                content_type::APPLICATION_X_WWW_FORM_URLENCODED.as_str()
-            );
-            let expected_params = [
-                ("client_assertion", FAKE_ASSERTION),
-                (
-                    "client_assertion_type",
-                    "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-                ),
-                ("client_id", FAKE_CLIENT_ID),
-                ("grant_type", "client_credentials"),
-                ("scope", &LIVE_TEST_SCOPES.join(" ")),
-            ];
-            let body = match req.body() {
-                Body::Bytes(bytes) => str::from_utf8(bytes).unwrap(),
-                _ => panic!("unexpected body type"),
-            };
-            let actual_params: HashMap<String, String> = form_urlencoded::parse(body.as_bytes())
-                .map(|(k, v)| (k.to_string(), v.to_string()))
-                .collect();
-            for (key, value) in expected_params.iter() {
-                assert_eq!(
-                    *value,
-                    actual_params
-                        .get(*key)
-                        .unwrap_or_else(|| panic!("no {} in request body", key))
-                );
-            }
-            Ok(())
         }
     }
 
