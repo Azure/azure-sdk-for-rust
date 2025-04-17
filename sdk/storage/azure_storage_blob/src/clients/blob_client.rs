@@ -8,12 +8,13 @@ use crate::{
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
-    models::{BlockList, BlockListType, BlockLookupList},
+    models::{AccessTier, BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
     BlobClientOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
-    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
+    BlobClientSetTierOptions, BlockBlobClientCommitBlockListOptions,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
+    BlockBlobClientUploadOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -242,5 +243,20 @@ impl BlobClient {
         let block_blob_client = self.client.get_block_blob_client();
         let response = block_blob_client.get_block_list(list_type, options).await?;
         Ok(response)
+    }
+
+    /// Sets the tier on a blob. Standard tiers are only applicable for Block blobs, while Premium tiers are only applicable
+    /// for Page blobs.
+    ///
+    /// # Arguments
+    ///
+    /// * `tier` - The tier to be set on the blob.
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_tier(
+        &self,
+        tier: AccessTier,
+        options: Option<BlobClientSetTierOptions<'_>>,
+    ) -> Result<Response<()>> {
+        self.client.set_tier(tier, options).await
     }
 }
