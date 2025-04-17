@@ -2,7 +2,7 @@ use std::error::Error;
 
 use azure_data_cosmos::{CosmosClient, PartitionKey};
 use clap::{Args, Subcommand};
-use futures::StreamExt;
+use futures::TryStreamExt;
 
 /// Run a single-partition query against a container.
 #[derive(Clone, Args)]
@@ -56,11 +56,10 @@ impl QueryCommand {
                 let mut items =
                     container_client.query_items::<serde_json::Value>(&query, pk, None)?;
 
-                while let Some(page) = items.next().await {
-                    let page = page?.into_body().await?;
+                while let Some(page) = items.try_next().await? {
                     println!("Results Page");
                     println!("  Items:");
-                    for item in page.items {
+                    for item in page.into_items() {
                         println!("    * {:#?}", item);
                     }
                 }
@@ -69,11 +68,10 @@ impl QueryCommand {
             Subcommands::Databases { query } => {
                 let mut dbs = client.query_databases(query, None)?;
 
-                while let Some(page) = dbs.next().await {
-                    let page = page?.into_body().await?;
+                while let Some(page) = dbs.try_next().await? {
                     println!("Results Page");
                     println!("  Databases:");
-                    for item in page.databases {
+                    for item in page.into_items() {
                         println!("    * {:#?}", item);
                     }
                 }
@@ -83,11 +81,10 @@ impl QueryCommand {
                 let db_client = client.database_client(&database);
                 let mut dbs = db_client.query_containers(query, None)?;
 
-                while let Some(page) = dbs.next().await {
-                    let page = page?.into_body().await?;
+                while let Some(page) = dbs.try_next().await? {
                     println!("Results Page");
                     println!("  Containers:");
-                    for item in page.containers {
+                    for item in page.into_items() {
                         println!("    * {:#?}", item);
                     }
                 }

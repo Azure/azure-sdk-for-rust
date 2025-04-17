@@ -7,10 +7,11 @@ use std::error::Error;
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{models::ThroughputProperties, CreateDatabaseOptions, Query};
 use framework::TestAccount;
-use futures::StreamExt;
 
 #[recorded::test]
 pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
+    use futures::TryStreamExt;
+
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
 
@@ -34,9 +35,8 @@ pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
         Query::from("SELECT * FROM root r WHERE r.id = @id").with_parameter("@id", &test_db_id)?;
     let mut pager = cosmos_client.query_databases(query.clone(), None)?;
     let mut ids = Vec::new();
-    while let Some(page) = pager.next().await {
-        let results = page?.into_body().await?;
-        for db in results.databases {
+    while let Some(page) = pager.try_next().await? {
+        for db in page.into_items() {
             ids.push(db.id);
         }
     }
@@ -50,9 +50,8 @@ pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
 
     let mut pager = cosmos_client.query_databases(query, None)?;
     let mut ids = Vec::new();
-    while let Some(page) = pager.next().await {
-        let results = page?.into_body().await?;
-        for db in results.databases {
+    while let Some(page) = pager.try_next().await? {
+        for db in page.into_items() {
             ids.push(db.id);
         }
     }

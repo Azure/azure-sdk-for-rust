@@ -7,19 +7,16 @@ mod signature_target;
 use std::sync::Arc;
 
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::http::{
-    request::Request, response::Model, response::Response, ClientOptions, Context, Method, Pager,
-    PagerResult,
-};
-use futures::StreamExt;
-use serde::{de::DeserializeOwned, Deserialize};
+use azure_core::http::{request::Request, response::Response, ClientOptions, Context, Method};
+use futures::TryStreamExt;
+use serde::de::DeserializeOwned;
 use url::Url;
 
 use crate::{
     constants,
     models::ThroughputProperties,
     resource_context::{ResourceLink, ResourceType},
-    Query,
+    FeedPage, FeedPager, Query,
 };
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
@@ -72,7 +69,7 @@ impl CosmosPipeline {
         query: Query,
         mut base_request: Request,
         resource_link: ResourceLink,
-    ) -> azure_core::Result<Pager<T>> {
+    ) -> azure_core::Result<FeedPager<T>> {
         base_request.insert_header(constants::QUERY, "True");
         base_request.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
         base_request.set_json(&query)?;
@@ -81,7 +78,7 @@ impl CosmosPipeline {
         // First we clone the pipeline to pass it in to the closure
         let pipeline = self.pipeline.clone();
         let ctx = ctx.with_value(resource_link).into_owned();
-        Ok(Pager::from_callback(move |continuation| {
+        Ok(FeedPager::from_callback(move |continuation| {
             // Then we have to clone it again to pass it in to the async block.
             // This is because Pageable can't borrow any data, it has to own it all.
             // That's probably good, because it means a Pageable can outlive the client that produced it, but it requires some extra cloning.
@@ -94,11 +91,9 @@ impl CosmosPipeline {
                 }
 
                 let resp = pipeline.send(&ctx, &mut req).await?;
+                let page = FeedPage::<T>::from_response(resp).await?;
 
-                Ok(PagerResult::from_response_header(
-                    resp,
-                    &constants::CONTINUATION,
-                ))
+                Ok(page.into())
             }
         }))
     }
@@ -113,12 +108,6 @@ impl CosmosPipeline {
         context: Context<'_>,
         resource_id: &str,
     ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
-        #[derive(Model, Deserialize)]
-        struct OfferResults {
-            #[serde(rename = "Offers")]
-            pub offers: Vec<ThroughputProperties>,
-        }
-
         // We only have to into_owned here in order to call send_query_request below,
         // since it returns `Pager` which must own it's data.
         // See https://github.com/Azure/azure-sdk-for-rust/issues/1911 for further discussion
@@ -128,19 +117,18 @@ impl CosmosPipeline {
         let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
             .with_parameter("@rid", resource_id)?;
         let offers_link = ResourceLink::root(ResourceType::Offers);
-        let mut results: Pager<OfferResults> = self.send_query_request(
+        let mut results = self.send_query_request(
             context.clone(),
             query,
             Request::new(self.url(&offers_link), Method::Post),
             offers_link.clone(),
         )?;
-        let offers = results
-            .next()
-            .await
-            .expect("the first pager result should always be Some, even when there's an error")?
-            .into_body()
+
+        let page = results
+            .try_next()
             .await?
-            .offers;
+            .expect("the first pager result should always be Some, even when there's an error");
+        let offers: &[ThroughputProperties] = page.items();
 
         if offers.is_empty() {
             // No offers found for this resource.

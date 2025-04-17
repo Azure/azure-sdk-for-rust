@@ -3,15 +3,15 @@
 
 use crate::{
     constants,
-    models::{ContainerProperties, PatchDocument, QueryResults, ThroughputProperties},
+    models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
-    DeleteContainerOptions, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
+    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
     ReplaceContainerOptions, ThroughputOptions,
 };
 
-use azure_core::http::{headers, request::Request, response::Response, Method, Pager};
+use azure_core::http::{headers, request::Request, response::Response, Method};
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -671,7 +671,7 @@ impl ContainerClient {
         query: impl Into<Query>,
         partition_key: impl Into<QueryPartitionStrategy>,
         options: Option<QueryOptions<'_>>,
-    ) -> azure_core::Result<Pager<QueryResults<T>>> {
+    ) -> azure_core::Result<FeedPager<T>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut base_request = Request::new(url, Method::Post);
