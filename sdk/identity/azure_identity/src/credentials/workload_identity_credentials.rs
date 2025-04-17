@@ -9,7 +9,9 @@ use azure_core::{
 };
 use futures::channel::oneshot;
 use std::{
-    fs, str,
+    fs,
+    path::PathBuf,
+    str,
     sync::Arc,
     thread,
     time::{Duration, Instant},
@@ -44,7 +46,7 @@ pub struct WorkloadIdentityCredentialOptions {
 
     /// Path of a file containing a Kubernetes service account token. Defaults to the value of the environment
     /// variable AZURE_FEDERATED_TOKEN_FILE.
-    pub token_file_path: Option<String>,
+    pub token_file_path: Option<PathBuf>,
 }
 
 impl WorkloadIdentityCredential {
@@ -63,7 +65,7 @@ impl WorkloadIdentityCredential {
         crate::validate_tenant_id(&tenant_id)?;
         let path = match options.token_file_path {
             Some(path) => path,
-            None => env.var(AZURE_FEDERATED_TOKEN_FILE).with_context(ErrorKind::Credential, || {
+            None => env.var(AZURE_FEDERATED_TOKEN_FILE).map(PathBuf::from).with_context(ErrorKind::Credential, || {
                 "no token file specified. Check pod configuration or set token_file_path in the options"
             })?
         };
@@ -77,7 +79,7 @@ impl WorkloadIdentityCredential {
             ClientAssertionCredential::<Token>::new_exclusive(
                 tenant_id,
                 client_id,
-                Token::new(&path)?,
+                Token::new(path)?,
                 Some(options.credential_options),
             )?,
         )))
@@ -110,7 +112,7 @@ impl From<TokenCredentialOptions> for WorkloadIdentityCredentialOptions {
 
 #[derive(Debug)]
 struct Token {
-    path: String,
+    path: PathBuf,
     cache: Arc<RwLock<FileCache>>,
 }
 
@@ -121,14 +123,17 @@ struct FileCache {
 }
 
 impl Token {
-    fn new(path: &str) -> azure_core::Result<Self> {
+    fn new(path: PathBuf) -> azure_core::Result<Self> {
         let last_read = Instant::now();
-        let token = std::fs::read_to_string(path).with_context(ErrorKind::Credential, || {
-            format!("failed to read federated token from file {}", path)
+        let token = std::fs::read_to_string(&path).with_context(ErrorKind::Credential, || {
+            format!(
+                "failed to read federated token from file {}",
+                path.display()
+            )
         })?;
 
         Ok(Self {
-            path: path.into(),
+            path,
             cache: Arc::new(RwLock::new(FileCache {
                 token: Secret::new(token),
                 last_read,
@@ -151,7 +156,10 @@ impl ClientAssertion for Token {
             let (tx, rx) = oneshot::channel();
             thread::spawn(move || {
                 let token = fs::read_to_string(&path).with_context(ErrorKind::Credential, || {
-                    format!("failed to read federated token from file {}", &path)
+                    format!(
+                        "failed to read federated token from file {}",
+                        path.display()
+                    )
                 });
                 tx.send(token)
             });
@@ -195,7 +203,7 @@ mod tests {
     const FAKE_ASSERTION: &str = "fake assertion";
 
     pub struct TempFile {
-        pub path: String,
+        pub path: PathBuf,
     }
 
     impl TempFile {
@@ -210,9 +218,7 @@ mod tests {
                 .write_all(content.as_bytes())
                 .expect("write temp file");
 
-            Self {
-                path: path.to_string_lossy().to_string(),
-            }
+            Self { path }
         }
     }
 
@@ -285,7 +291,7 @@ mod tests {
                         &[
                             (AZURE_CLIENT_ID, FAKE_CLIENT_ID),
                             (AZURE_TENANT_ID, FAKE_TENANT_ID),
-                            (AZURE_FEDERATED_TOKEN_FILE, temp_file.path.as_str()),
+                            (AZURE_FEDERATED_TOKEN_FILE, temp_file.path.to_str().unwrap()),
                         ][..],
                     ),
                     http_client: Arc::new(mock),
@@ -359,7 +365,10 @@ mod tests {
                         &[
                             (AZURE_CLIENT_ID, "wrong-client-id"),
                             (AZURE_TENANT_ID, "wrong-tenant-id"),
-                            (AZURE_FEDERATED_TOKEN_FILE, wrong_file.path.as_str()),
+                            (
+                                AZURE_FEDERATED_TOKEN_FILE,
+                                wrong_file.path.to_str().unwrap(),
+                            ),
                         ][..],
                     ),
                     http_client: Arc::new(mock),
