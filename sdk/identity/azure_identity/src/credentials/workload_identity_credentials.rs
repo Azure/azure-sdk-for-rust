@@ -26,8 +26,9 @@ const AZURE_CLIENT_ID: &str = "AZURE_CLIENT_ID";
 const AZURE_FEDERATED_TOKEN_FILE: &str = "AZURE_FEDERATED_TOKEN_FILE";
 const AZURE_TENANT_ID: &str = "AZURE_TENANT_ID";
 
-/// WorkloadIdentityCredential supports Azure workload identity on Kubernetes. See
-/// [Azure Kubernetes Service documentation](https://learn.microsoft.com/azure/aks/workload-identity-overview)
+/// `WorkloadIdentityCredential` supports Azure workload identity on Kubernetes.
+///
+/// See [Azure Kubernetes Service documentation](https://learn.microsoft.com/azure/aks/workload-identity-overview)
 /// for more information.
 #[derive(Debug)]
 pub struct WorkloadIdentityCredential(ClientAssertionCredential<Token>);
@@ -38,7 +39,7 @@ pub struct WorkloadIdentityCredentialOptions {
     /// Options for the [`ClientAssertionCredential`] used by the [`WorkloadIdentityCredential`].
     pub credential_options: ClientAssertionCredentialOptions,
 
-    /// Client ID of the Entra identity. Defaults to the value of the environment variable AZURE_CLIENT_ID.
+    /// Client ID of the Entra identity. Defaults to the value of the environment variable `AZURE_CLIENT_ID`.
     pub client_id: Option<String>,
 
     /// Tenant ID of the Entra identity. Defaults to the value of the environment variable `AZURE_TENANT_ID`.
