@@ -41,11 +41,11 @@ pub struct WorkloadIdentityCredentialOptions {
     /// Client ID of the Entra identity. Defaults to the value of the environment variable AZURE_CLIENT_ID.
     pub client_id: Option<String>,
 
-    /// Tenant ID of the Entra identity. Defaults to the value of the environment variable AZURE_TENANT_ID.
+    /// Tenant ID of the Entra identity. Defaults to the value of the environment variable `AZURE_TENANT_ID`.
     pub tenant_id: Option<String>,
 
     /// Path of a file containing a Kubernetes service account token. Defaults to the value of the environment
-    /// variable AZURE_FEDERATED_TOKEN_FILE.
+    /// variable `AZURE_FEDERATED_TOKEN_FILE`.
     pub token_file_path: Option<PathBuf>,
 }
 
