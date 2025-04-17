@@ -211,6 +211,7 @@ mod tests {
             let n = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
+                // cspell:disable-next-line
                 .subsec_nanos();
             let path = env::temp_dir().join(format!("azure_identity_test_{}", n));
             File::create(&path)

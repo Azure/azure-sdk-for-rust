@@ -8,7 +8,5 @@ cloudshell
 imds
 managedidentity
 msal
-nanos
 replacen
-subsec
 workloadidentity
