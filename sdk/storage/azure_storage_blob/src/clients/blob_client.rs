@@ -257,7 +257,6 @@ impl BlobClient {
         tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<()>> {
-        let response = self.client.set_tier(tier, options).await?;
-        Ok(response)
+        self.client.set_tier(tier, options).await
     }
 }
