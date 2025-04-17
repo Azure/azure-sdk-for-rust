@@ -9,9 +9,6 @@ use azure_core::{
 use std::{fmt::Debug, str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 
-const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
-const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
-
 /// Enables authentication of a Microsoft Entra service principal using a signed client assertion.
 #[derive(Debug)]
 pub struct ClientAssertionCredential<C> {
@@ -78,53 +75,6 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
             cache: TokenCache::new(),
             options: options.unwrap_or_default(),
         })
-    }
-
-    /// Create a new `ClientAssertionCredential` from environment variables.
-    ///
-    /// # Variables
-    ///
-    /// * `AZURE_TENANT_ID`
-    /// * `AZURE_CLIENT_ID`
-    pub fn from_env(
-        assertion: C,
-        options: Option<ClientAssertionCredentialOptions>,
-    ) -> azure_core::Result<Arc<Self>> {
-        Ok(Arc::new(Self::from_env_exclusive(assertion, options)?))
-    }
-
-    /// Create a new `ClientAssertionCredential` from environment variables,
-    /// without wrapping it in an `Arc`. Intended for use by other credentials
-    /// in the crate that will themselves be protected by an `Arc`.
-    ///
-    /// # Variables
-    ///
-    /// * `AZURE_TENANT_ID`
-    /// * `AZURE_CLIENT_ID`
-    pub(crate) fn from_env_exclusive(
-        assertion: C,
-        options: Option<ClientAssertionCredentialOptions>,
-    ) -> azure_core::Result<Self> {
-        let options = options.unwrap_or_default();
-        let env = options.credential_options.env();
-        let tenant_id =
-            env.var(AZURE_TENANT_ID_ENV_KEY)
-                .with_context(ErrorKind::Credential, || {
-                    format!(
-                        "working identity credential requires {} environment variable",
-                        AZURE_TENANT_ID_ENV_KEY
-                    )
-                })?;
-        let client_id =
-            env.var(AZURE_CLIENT_ID_ENV_KEY)
-                .with_context(ErrorKind::Credential, || {
-                    format!(
-                        "working identity credential requires {} environment variable",
-                        AZURE_CLIENT_ID_ENV_KEY
-                    )
-                })?;
-
-        ClientAssertionCredential::new_exclusive(tenant_id, client_id, assertion, Some(options))
     }
 
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {

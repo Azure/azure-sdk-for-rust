@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Moved `WorkloadIdentityCredential::new` arguments into `WorkloadIdentityCredentialOptions` except `token`, which has been removed (the credential now reads service account tokens only from a file).
+- Removed `ClientAssertionCredential::from_env` and `ClientCertificateCredential::from_env`.
 - Removed `WorkloadIdentityCredential::from_env`. `::new` now reads the same environment variables except for `AZURE_FEDERATED_TOKEN` (the Workload Identity webhook doesn't set that variable). `WorkloadIdentityCredentialOptions` overrides environment variable values.
 
 ### Bugs Fixed
