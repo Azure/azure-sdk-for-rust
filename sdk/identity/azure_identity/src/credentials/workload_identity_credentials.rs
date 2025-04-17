@@ -203,9 +203,8 @@ mod tests {
             let n = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
-                .subsec_nanos()
-                % 1000;
-            let path = env::temp_dir().join(format!("azure_identity_test_{:03}", n));
+                .subsec_nanos();
+            let path = env::temp_dir().join(format!("azure_identity_test_{}", n));
             File::create(&path)
                 .expect("create temp file")
                 .write_all(content.as_bytes())
