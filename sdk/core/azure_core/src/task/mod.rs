@@ -3,7 +3,13 @@
 
 //! Asynchronous task execution utilities.
 
-use std::{fmt, future::Future, pin::Pin, sync::Arc};
+use async_trait::async_trait;
+use std::{
+    fmt::{self, Debug},
+    future::Future,
+    pin::Pin,
+    sync::Arc,
+};
 
 #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
 mod standard_spawn;
@@ -17,14 +23,53 @@ mod tokio_spawn;
 #[cfg(test)]
 mod tests;
 
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+pub trait SpawnHandleMethods: Send + fmt::Debug {
+    /// Wait for the task to complete and return the result.
+    async fn wait(self) -> crate::Result<()>;
+}
+
+pub struct SpawnHandleT<T>
+where
+    T: SpawnHandleMethods + 'static,
+{
+    pub(crate) inner: T,
+}
+
+impl<T> Debug for SpawnHandleT<T>
+where
+    T: SpawnHandleMethods + 'static,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SpawnHandleT")
+            .field("inner", &self.inner)
+            .finish()
+    }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+impl<T> SpawnHandleMethods for SpawnHandleT<T>
+where
+    T: SpawnHandleMethods + 'static,
+{
+    /// Wait for the task to complete and return the result.
+    async fn wait(self) -> crate::Result<()> {
+        self.inner.wait().await
+    }
+}
+
+// A type alias for the spawn handle.
+// This is used to abstract over the different spawn handle types used in different implementations.
 #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
-pub use standard_spawn::{SpawnHandle, StdSpawner};
+pub type SpawnHandle = SpawnHandleT<standard_spawn::StdSpawnHandle>;
 
 #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
-pub use wasm_spawn::{SpawnHandle, WasmSpawner};
+pub type SpawnHandle = SpawnHandleT<wasm_spawn::WasmSpawnHandle>;
 
 #[cfg(feature = "tokio")]
-pub use tokio_spawn::{SpawnHandle, TokioSpawner};
+pub type SpawnHandle = SpawnHandleT<tokio_spawn::TokioSpawnHandle>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
@@ -45,15 +90,15 @@ pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
 pub fn new_task_spawner() -> Arc<dyn TaskSpawner> {
     #[cfg(feature = "tokio")]
     {
-        Arc::new(TokioSpawner)
+        Arc::new(tokio_spawn::TokioSpawner)
     }
     #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
     {
-        Arc::new(StdSpawner)
+        Arc::new(standard_spawn::StdSpawner)
     }
     #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
     {
-        Arc::new(WasmSpawner)
+        Arc::new(wasm_spawn::WasmSpawner)
     }
 }
 

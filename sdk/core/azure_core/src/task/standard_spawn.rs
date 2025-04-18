@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{TaskFuture, TaskSpawner};
+use super::{SpawnHandleMethods, SpawnHandleT, TaskFuture, TaskSpawner};
+use async_trait::async_trait;
 use futures::executor::LocalPool;
 use futures::task::SpawnExt;
 use std::thread;
@@ -11,7 +12,7 @@ use std::thread;
 pub struct StdSpawner;
 
 impl TaskSpawner for StdSpawner {
-    fn spawn(&self, f: TaskFuture) -> SpawnHandle {
+    fn spawn(&self, f: TaskFuture) -> SpawnHandleT<StdSpawnHandle> {
         let th = thread::spawn(move || {
             // Create a local executor
             let mut local_pool = LocalPool::new();
@@ -27,16 +28,19 @@ impl TaskSpawner for StdSpawner {
         });
 
         // Return a handle that will await the result
-        SpawnHandle(th)
+        SpawnHandleT {
+            inner: StdSpawnHandle(th),
+        }
     }
 }
 
 #[derive(Debug)]
-pub struct SpawnHandle(std::thread::JoinHandle<()>);
+pub struct StdSpawnHandle(std::thread::JoinHandle<()>);
 
-impl SpawnHandle {
+#[async_trait]
+impl SpawnHandleMethods for StdSpawnHandle {
     /// Wait for the task to complete and return the result.
-    pub async fn await_result(self) -> crate::Result<()> {
+    async fn wait(self) -> crate::Result<()> {
         self.0.join().map_err(|_| {
             crate::Error::message(
                 crate::error::ErrorKind::Other,

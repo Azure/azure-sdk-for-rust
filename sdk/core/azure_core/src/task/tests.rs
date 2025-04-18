@@ -24,7 +24,7 @@ async fn test_task_execution() {
 
     // Wait for task completion
     handle
-        .await_result()
+        .wait()
         .await
         .expect("Task should complete successfully");
 
@@ -54,7 +54,7 @@ async fn test_multiple_tasks() {
     // Wait for all tasks
     for handle in handles {
         handle
-            .await_result()
+            .wait()
             .await
             .expect("Task should complete successfully");
     }
@@ -65,7 +65,7 @@ async fn test_multiple_tasks() {
 #[cfg(feature = "tokio")]
 #[tokio::test]
 async fn test_tokio_specific_handling() {
-    let spawner = Arc::new(TokioSpawner);
+    let spawner = Arc::new(tokio_spawn::TokioSpawner);
     let task_completed = Arc::new(Mutex::new(false));
     let task_completed_clone = Arc::clone(&task_completed);
 
@@ -77,7 +77,7 @@ async fn test_tokio_specific_handling() {
     );
 
     handle
-        .await_result()
+        .wait()
         .await
         .expect("Task should complete successfully");
     assert!(*task_completed.lock().unwrap());
@@ -86,7 +86,7 @@ async fn test_tokio_specific_handling() {
 #[cfg(not(feature = "tokio"))]
 #[tokio::test]
 async fn std_specific_handling() {
-    let spawner = Arc::new(StdSpawner);
+    let spawner = Arc::new(standard_spawn::StdSpawner);
     let task_completed = Arc::new(Mutex::new(false));
     let task_completed_clone = Arc::clone(&task_completed);
 
@@ -100,7 +100,7 @@ async fn std_specific_handling() {
     // For std threads, we need to wait for the task to complete
     tokio::time::sleep(Duration::from_millis(100)).await;
     handle
-        .await_result()
+        .wait()
         .await
         .expect("Task should complete successfully");
     assert!(*task_completed.lock().unwrap());
@@ -109,7 +109,7 @@ async fn std_specific_handling() {
 #[cfg(not(feature = "tokio"))]
 #[tokio::test]
 async fn std_multiple_tasks() {
-    let spawner = new_task_spawner();
+    let spawner = Arc::new(standard_spawn::StdSpawner);
     let counter = Arc::new(Mutex::new(0));
     let mut handles = Vec::new();
 
@@ -130,7 +130,7 @@ async fn std_multiple_tasks() {
     // Wait for all tasks
     for handle in handles {
         handle
-            .await_result()
+            .wait()
             .await
             .expect("Task should complete successfully");
     }
@@ -141,7 +141,7 @@ async fn std_multiple_tasks() {
 #[cfg(not(feature = "tokio"))]
 #[tokio::test]
 async fn std_task_execution() {
-    let spawner = new_task_spawner();
+    let spawner = Arc::new(standard_spawn::StdSpawner);
     let result = Arc::new(Mutex::new(false));
     let result_clone = Arc::clone(&result);
 
@@ -157,7 +157,7 @@ async fn std_task_execution() {
 
     // Wait for task completion
     handle
-        .await_result()
+        .wait()
         .await
         .expect("Task should complete successfully");
 
