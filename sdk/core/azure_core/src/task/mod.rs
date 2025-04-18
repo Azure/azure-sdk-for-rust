@@ -30,22 +30,12 @@ pub trait SpawnHandleMethods: Send + fmt::Debug {
     async fn wait(self) -> crate::Result<()>;
 }
 
+#[derive(Debug)]
 pub struct SpawnHandleT<T>
 where
     T: SpawnHandleMethods + 'static,
 {
     pub(crate) inner: T,
-}
-
-impl<T> Debug for SpawnHandleT<T>
-where
-    T: SpawnHandleMethods + 'static,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SpawnHandleT")
-            .field("inner", &self.inner)
-            .finish()
-    }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
