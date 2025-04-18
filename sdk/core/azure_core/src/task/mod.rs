@@ -118,7 +118,7 @@ pub trait TaskSpawner: Send + Sync + fmt::Debug {
     /// # Arguments
     ///
     /// * `f` - A future representing the task to be spawned. This future cannot capture any variables
-    ///  from its environment by reference, as it will be executed in a different thread or context.
+    ///   from its environment by reference, as it will be executed in a different thread or context.
     fn spawn(&self, f: TaskFuture) -> SpawnHandle;
 }
 
