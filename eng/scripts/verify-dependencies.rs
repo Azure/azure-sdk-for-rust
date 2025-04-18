@@ -17,7 +17,10 @@ use std::{
     process::Command,
 };
 
-static EXEMPTIONS: &[(&str, &str)] = &[("azure_template", "serde")];
+static EXEMPTIONS: &[(&str, &str)] = &[
+    ("azure_core_test", "dotenvy"),
+    ("azure_template", "serde"),
+];
 
 fn main() {
     let manifest_path = std::env::args()
