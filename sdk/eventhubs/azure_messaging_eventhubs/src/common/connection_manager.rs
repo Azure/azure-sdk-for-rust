@@ -256,7 +256,7 @@ impl ConnectionManager {
             expiration_times.sort();
             debug!("Found expiration times: {:?}", expiration_times);
             if expiration_times.is_empty() {
-                debug!("No tokens to refresh, sleeping for {TOKEN_REFRESH_BIAS}.");
+                debug!("No tokens to refresh. Sleeping for {TOKEN_REFRESH_BIAS}.");
                 azure_core::sleep::sleep(
                     std::time::Duration::try_from(TOKEN_REFRESH_BIAS).map_err(|e| {
                         azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
