@@ -4,9 +4,9 @@
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
-    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientGetPropertiesOptions, BlobContainerClientOptions,
-    BlobContainerClientSetMetadataOptions,
+    BlobClient, BlobClientOptions, BlobContainerClientCreateOptions,
+    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientOptions, BlobContainerClientSetMetadataOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -22,6 +22,7 @@ use std::sync::Arc;
 pub struct BlobContainerClient {
     endpoint: Url,
     container_name: String,
+    credential: Arc<dyn TokenCredential>,
     client: GeneratedBlobContainerClient,
 }
 
@@ -59,7 +60,7 @@ impl BlobContainerClient {
 
         let client = GeneratedBlobContainerClient::new(
             endpoint,
-            credential,
+            credential.clone(),
             container_name.clone(),
             Some(options),
         )?;
@@ -67,8 +68,29 @@ impl BlobContainerClient {
         Ok(Self {
             endpoint: endpoint.parse()?,
             container_name,
+            credential,
             client,
         })
+    }
+
+    /// Returns a new instance of BlobClient.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_name` - The name of the blob.
+    /// * `options` - Optional configuration for the client.
+    pub fn get_blob_client(
+        &self,
+        blob_name: String,
+        options: Option<BlobClientOptions>,
+    ) -> Result<BlobClient> {
+        BlobClient::new(
+            self.endpoint().as_str(),
+            self.container_name().to_string(),
+            blob_name,
+            self.credential.clone(),
+            options,
+        )
     }
 
     /// Gets the endpoint of the Storage account this client is connected to.
