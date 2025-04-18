@@ -22,6 +22,7 @@ base64
 bytes
 cargo_metadata
 clap
+dotenvy
 dyn-clone
 fe2o3-amqp
 fe2o3-amqp-cbs

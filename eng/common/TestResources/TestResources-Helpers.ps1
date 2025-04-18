@@ -203,19 +203,34 @@ function SetDeploymentOutputs(
     $deploymentOutputs = BuildDeploymentOutputs $serviceName $azContext $deployment $deploymentEnvironmentVariables
 
     if ($OutFile) {
-        if (!$IsWindows) {
-            Write-Host 'File option is supported only on Windows'
+        if ($IsWindows -and $isDotnet) {
+            $outputFile = "$($templateFile.originalFilePath).env"
+
+            $environmentText = $deploymentOutputs | ConvertTo-Json;
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($environmentText)
+            $protectedBytes = [Security.Cryptography.ProtectedData]::Protect($bytes, $null, [Security.Cryptography.DataProtectionScope]::CurrentUser)
+
+            Set-Content $outputFile -Value $protectedBytes -AsByteStream -Force
+
+            Write-Host "Test environment settings`n$environmentText`nstored into encrypted $outputFile"
         }
+        else {
+            $outputFile = $templateFile.originalFilePath | Split-Path | Join-Path -ChildPath '.env'
 
-        $outputFile = "$($templateFile.originalFilePath).env"
+            # Make sure the file would be ignored.
+            git check-ignore -- "$outputFile" > $null
+            if ($?) {
+                $environmentText = foreach ($kv in $deploymentOutputs.GetEnumerator()) {
+                    "$($kv.Key)=`"$($kv.Value)`""
+                }
 
-        $environmentText = $deploymentOutputs | ConvertTo-Json;
-        $bytes = [System.Text.Encoding]::UTF8.GetBytes($environmentText)
-        $protectedBytes = [Security.Cryptography.ProtectedData]::Protect($bytes, $null, [Security.Cryptography.DataProtectionScope]::CurrentUser)
-
-        Set-Content $outputFile -Value $protectedBytes -AsByteStream -Force
-
-        Write-Host "Test environment settings`n $environmentText`nstored into encrypted $outputFile"
+                Set-Content $outputFile -Value $environmentText -Force
+                Write-Host "Test environment settings`n$environmentText`nstored in $outputFile"
+            }
+            else {
+                Write-Error "$outputFile is not ignored by .gitignore. No file written."
+            }
+        }
     }
     else {
         if (!$CI) {
