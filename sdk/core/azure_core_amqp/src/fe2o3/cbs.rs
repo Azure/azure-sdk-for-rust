@@ -6,6 +6,7 @@ use crate::{
     cbs::AmqpClaimsBasedSecurityApis, fe2o3::error::Fe2o3ManagementError, session::AmqpSession,
     AmqpError,
 };
+use async_trait::async_trait;
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
@@ -55,6 +56,7 @@ impl Drop for Fe2o3ClaimsBasedSecurity<'_> {
     }
 }
 
+#[async_trait]
 impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
     async fn attach(&self) -> Result<()> {
         let session = self.session.implementation.get()?;

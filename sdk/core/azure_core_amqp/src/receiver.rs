@@ -5,6 +5,7 @@ use super::messaging::{AmqpDelivery, AmqpSource, AmqpTarget};
 use super::session::AmqpSession;
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::ReceiverSettleMode;
+use async_trait::async_trait;
 use azure_core::error::Result;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -48,33 +49,22 @@ pub struct AmqpReceiverOptions {
 impl AmqpReceiverOptions {}
 
 #[allow(unused_variables)]
+#[async_trait]
 pub trait AmqpReceiverApis {
-    fn attach(
+    async fn attach(
         &self,
         session: &AmqpSession,
-        source: impl Into<AmqpSource>,
+        source: impl Into<AmqpSource> + Send,
         options: Option<AmqpReceiverOptions>,
-    ) -> impl std::future::Future<Output = Result<()>>;
+    ) -> Result<()>;
 
-    fn detach(self) -> impl std::future::Future<Output = Result<()>>;
-    fn set_credit_mode(
-        &self,
-        credit_mode: ReceiverCreditMode,
-    ) -> impl std::future::Future<Output = Result<()>>;
-    fn credit_mode(&self) -> impl std::future::Future<Output = Result<ReceiverCreditMode>>;
-    fn receive_delivery(&self) -> impl std::future::Future<Output = Result<AmqpDelivery>>;
-    fn accept_delivery(
-        &self,
-        delivery: &AmqpDelivery,
-    ) -> impl std::future::Future<Output = Result<()>>;
-    fn reject_delivery(
-        &self,
-        delivery: &AmqpDelivery,
-    ) -> impl std::future::Future<Output = Result<()>>;
-    fn release_delivery(
-        &self,
-        delivery: &AmqpDelivery,
-    ) -> impl std::future::Future<Output = Result<()>>;
+    async fn detach(self) -> Result<()>;
+    async fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()>;
+    async fn credit_mode(&self) -> Result<ReceiverCreditMode>;
+    async fn receive_delivery(&self) -> Result<AmqpDelivery>;
+    async fn accept_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+    async fn reject_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+    async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
 }
 
 #[derive(Default)]
@@ -82,11 +72,12 @@ pub struct AmqpReceiver {
     implementation: ReceiverImplementation,
 }
 
+#[async_trait]
 impl AmqpReceiverApis for AmqpReceiver {
     async fn attach(
         &self,
         session: &AmqpSession,
-        source: impl Into<AmqpSource>,
+        source: impl Into<AmqpSource> + Send,
         options: Option<AmqpReceiverOptions>,
     ) -> Result<()> {
         self.implementation.attach(session, source, options).await

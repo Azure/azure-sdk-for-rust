@@ -5,6 +5,7 @@ use super::{
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
 };
+use async_trait::async_trait;
 use azure_core::{credentials::AccessToken, error::Result};
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -13,22 +14,24 @@ type ManagementImplementation = super::fe2o3::management::Fe2o3AmqpManagement;
 #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
 type ManagementImplementation = super::noop::NoopAmqpManagement;
 
+#[async_trait]
 pub trait AmqpManagementApis {
-    fn attach(&self) -> impl std::future::Future<Output = Result<()>>;
-    fn detach(self) -> impl std::future::Future<Output = Result<()>>;
+    async fn attach(&self) -> Result<()>;
+    async fn detach(self) -> Result<()>;
 
     #[allow(unused_variables)]
-    fn call(
+    async fn call(
         &self,
         operation_type: String,
         application_properties: AmqpOrderedMap<String, AmqpValue>,
-    ) -> impl std::future::Future<Output = Result<AmqpOrderedMap<String, AmqpValue>>>;
+    ) -> Result<AmqpOrderedMap<String, AmqpValue>>;
 }
 
 pub struct AmqpManagement {
     implementation: ManagementImplementation,
 }
 
+#[async_trait]
 impl AmqpManagementApis for AmqpManagement {
     async fn attach(&self) -> Result<()> {
         self.implementation.attach().await
