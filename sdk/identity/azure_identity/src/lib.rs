@@ -10,13 +10,16 @@ mod chained_token_credential;
 mod client_secret_credential;
 mod credentials;
 mod env;
-mod federated_credentials_flow;
 mod managed_identity_credential;
 mod oauth2_http_client;
 mod refresh_token;
 mod timeout;
 
-use azure_core::{error::ErrorKind, Error, Result};
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    http::Response,
+    Error, Result,
+};
 pub use azure_pipelines_credential::*;
 pub use client_secret_credential::*;
 pub use credentials::*;
@@ -38,6 +41,22 @@ struct EntraIdTokenResponse {
     expires_in: u64,
     ext_expires_in: u64,
     access_token: String,
+}
+
+async fn deserialize<T>(credential_name: &str, res: Response) -> Result<T>
+where
+    T: serde::de::DeserializeOwned,
+{
+    let t: T = res
+        .into_json_body()
+        .await
+        .with_context(ErrorKind::Credential, || {
+            format!(
+                "{} authentication failed: invalid response",
+                credential_name
+            )
+        })?;
+    Ok(t)
 }
 
 fn validate_not_empty<C>(value: &str, message: C) -> Result<()>

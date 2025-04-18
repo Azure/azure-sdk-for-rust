@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, EntraIdTokenResponse};
-use crate::{EntraIdErrorResponse, TokenCredentialOptions};
-use azure_core::http::{Response, StatusCode};
+use crate::{
+    credentials::cache::TokenCache, deserialize, EntraIdErrorResponse, EntraIdTokenResponse,
+    TokenCredentialOptions,
+};
+use azure_core::http::StatusCode;
 use azure_core::Result;
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
@@ -18,6 +20,8 @@ use std::time::Duration;
 use std::{str, sync::Arc};
 use time::OffsetDateTime;
 use url::form_urlencoded;
+
+const CLIENT_SECRET_CREDENTIAL: &str = "ClientSecretCredential";
 
 /// Options for constructing a new [`ClientSecretCredential`].
 #[derive(Debug, Default)]
@@ -83,18 +87,24 @@ impl ClientSecretCredential {
 
         match res.status() {
             StatusCode::Ok => {
-                let token_response: EntraIdTokenResponse = deserialize(res).await?;
+                let token_response: EntraIdTokenResponse =
+                    deserialize(CLIENT_SECRET_CREDENTIAL, res).await?;
                 Ok(AccessToken::new(
                     token_response.access_token,
                     OffsetDateTime::now_utc() + Duration::from_secs(token_response.expires_in),
                 ))
             }
             _ => {
-                let error_response: EntraIdErrorResponse = deserialize(res).await?;
-                let mut message = "ClientSecretCredential authentication failed".to_string();
-                if !error_response.error_description.is_empty() {
-                    message = format!("{}: {}", message, error_response.error_description);
-                }
+                let error_response: EntraIdErrorResponse =
+                    deserialize(CLIENT_SECRET_CREDENTIAL, res).await?;
+                let message = if error_response.error_description.is_empty() {
+                    format!("{} authentication failed.", CLIENT_SECRET_CREDENTIAL)
+                } else {
+                    format!(
+                        "{} authentication failed. {}",
+                        CLIENT_SECRET_CREDENTIAL, error_response.error_description
+                    )
+                };
                 Err(Error::message(ErrorKind::Credential, message))
             }
         }
@@ -112,19 +122,6 @@ impl TokenCredential for ClientSecretCredential {
             .get_token(scopes, self.get_token_impl(scopes))
             .await
     }
-}
-
-async fn deserialize<T>(res: Response) -> Result<T>
-where
-    T: serde::de::DeserializeOwned,
-{
-    let t: T = res
-        .into_json_body()
-        .await
-        .with_context(ErrorKind::Credential, || {
-            "ClientSecretCredential authentication failed: invalid response"
-        })?;
-    Ok(t)
 }
 
 #[cfg(test)]
