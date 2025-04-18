@@ -127,7 +127,6 @@ async fn std_multiple_tasks() {
     }
 
     // Wait for all tasks
-    // Wait for all tasks
     for handle in handles {
         handle
             .wait()
