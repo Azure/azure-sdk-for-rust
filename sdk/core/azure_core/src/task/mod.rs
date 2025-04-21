@@ -65,44 +65,36 @@ pub trait SpawnHandleMethods: Send + fmt::Debug {
     async fn wait(self) -> crate::Result<()>;
 }
 
-/// A spawn handle that can be used to wait for a task to complete.
+/// A `SpawnHandle` is a handle to a spawned task, allowing you to wait for its completion.
 #[derive(Debug)]
-pub struct SpawnHandleT<T>
-where
-    T: SpawnHandleMethods + 'static,
-{
-    pub(crate) inner: T,
+pub enum SpawnHandle {
+    /// A handle to a spawned task, allowing you to wait for its completion.
+    #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
+    Std(standard_spawn::StdSpawnHandle),
+    /// A handle to a spawned task, allowing you to wait for its completion.
+    #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
+    Wasm(wasm_spawn::WasmSpawnHandle),
+    /// A handle to a spawned task, allowing you to wait for its completion.
+    #[cfg(feature = "tokio")]
+    Tokio(tokio_spawn::TokioSpawnHandle),
 }
-
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-impl<T> SpawnHandleMethods for SpawnHandleT<T>
-where
-    T: SpawnHandleMethods + 'static,
-{
+impl SpawnHandle {
     /// Wait for the task to complete and return the result.
-    async fn wait(self) -> crate::Result<()> {
-        self.inner.wait().await
+    ///
+    /// # Returns
+    /// A `Result` indicating the success or failure of the task.
+    ///
+    pub async fn wait(self) -> crate::Result<()> {
+        match self {
+            #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
+            SpawnHandle::Std(handle) => handle.wait().await,
+            #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
+            SpawnHandle::Wasm(handle) => handle.wait().await,
+            #[cfg(feature = "tokio")]
+            SpawnHandle::Tokio(handle) => handle.wait().await,
+        }
     }
 }
-
-/// A type alias for the spawn handle when using Tokio.
-///
-/// A `SpawnHandle` is a handle to a spawned task, allowing you to wait for its completion.
-#[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
-pub type SpawnHandle = SpawnHandleT<standard_spawn::StdSpawnHandle>;
-
-/// A type alias for the spawn handle when using Tokio.
-///
-/// A `SpawnHandle` is a handle to a spawned task, allowing you to wait for its completion.
-#[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
-pub type SpawnHandle = SpawnHandleT<wasm_spawn::WasmSpawnHandle>;
-
-/// A type alias for the spawn handle when using Tokio.
-///
-/// A `SpawnHandle` is a handle to a spawned task, allowing you to wait for its completion.
-#[cfg(feature = "tokio")]
-pub type SpawnHandle = SpawnHandleT<tokio_spawn::TokioSpawnHandle>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
