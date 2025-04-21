@@ -3,18 +3,12 @@
 
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
-    generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadResult,
-    },
+    generated::models::{BlobClientDownloadResult, BlobClientGetPropertiesResult},
     models::{AccessTier, BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
     BlobClientOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobClientSetTierOptions, BlockBlobClient, BlockBlobClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -29,6 +23,7 @@ use std::sync::Arc;
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
     endpoint: Url,
+    credential: Arc<dyn TokenCredential>,
     client: GeneratedBlobClient,
 }
 
@@ -75,8 +70,27 @@ impl BlobClient {
         )?;
         Ok(Self {
             endpoint: endpoint.parse()?,
+            credential,
             client,
         })
+    }
+
+    /// Returns a new instance of BlockBlobClient.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the client.
+    pub fn get_block_blob_client(
+        &self,
+        options: Option<BlockBlobClientOptions>,
+    ) -> Result<BlockBlobClient> {
+        BlockBlobClient::new(
+            self.endpoint().as_str(),
+            self.container_name().to_string(),
+            self.blob_name().to_string(),
+            self.credential.clone(),
+            options,
+        )
     }
 
     /// Gets the endpoint of the Storage account this client is connected to.
@@ -132,36 +146,6 @@ impl BlobClient {
         Ok(response)
     }
 
-    /// Creates a new blob from a data source.
-    ///
-    /// # Arguments
-    ///
-    /// * `data` - The blob data to upload.
-    /// * `overwrite` - Whether the blob to be uploaded should overwrite the current data. If True, `upload_blob` will overwrite the existing data.
-    ///   If False, the operation will fail with ResourceExistsError.
-    /// * `content_length` - Total length of the blob data to be uploaded.
-    /// * `options` - Optional configuration for the request.
-    pub async fn upload(
-        &self,
-        data: RequestContent<Bytes>,
-        overwrite: bool,
-        content_length: u64,
-        options: Option<BlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadResult>> {
-        let mut options = options.unwrap_or_default();
-
-        if !overwrite {
-            options.if_none_match = Some(String::from("*"));
-        }
-
-        let block_blob_client = self.client.get_block_blob_client();
-
-        let response = block_blob_client
-            .upload(data, content_length, Some(options))
-            .await?;
-        Ok(response)
-    }
-
     /// Sets user-defined metadata for the specified blob as one or more name-value pairs. Each call to this operation
     /// replaces all existing metadata attached to the blob. To remove all metadata from the blob, call this operation with
     /// no metadata headers.
@@ -187,61 +171,6 @@ impl BlobClient {
         options: Option<BlobClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         let response = self.client.delete(options).await?;
-        Ok(response)
-    }
-
-    /// Writes to a blob based on blocks specified by the list of IDs and content that make up the blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `blocks` - The list of Blob blocks to commit.
-    /// * `options` - Optional configuration for the request.
-    pub async fn commit_block_list(
-        &self,
-        blocks: RequestContent<BlockLookupList>,
-        options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientCommitBlockListResult>> {
-        let block_blob_client = self.client.get_block_blob_client();
-        let response = block_blob_client.commit_block_list(blocks, options).await?;
-        Ok(response)
-    }
-
-    /// Creates a new block to be later committed as part of a blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `block_id` - The unique identifier for the block. The identifier should be less than or equal to 64 bytes in size.
-    ///   For a given blob, the `block_id` must be the same size for each block.
-    /// * `content_length` - Total length of the blob data to be staged.
-    /// * `data` - The content of the block.
-    /// * `options` - Optional configuration for the request.
-    pub async fn stage_block(
-        &self,
-        block_id: Vec<u8>,
-        content_length: u64,
-        body: RequestContent<Bytes>,
-        options: Option<BlockBlobClientStageBlockOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientStageBlockResult>> {
-        let block_blob_client = self.client.get_block_blob_client();
-        let response = block_blob_client
-            .stage_block(block_id, content_length, body, options)
-            .await?;
-        Ok(response)
-    }
-
-    /// Retrieves the list of blocks that have been uploaded as part of a block blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `list_type` - Specifies whether to return the list of committed blocks, uncommitted blocks, or both lists together.
-    /// * `options` - Optional configuration for the request.
-    pub async fn get_block_list(
-        &self,
-        list_type: BlockListType,
-        options: Option<BlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockList>> {
-        let block_blob_client = self.client.get_block_blob_client();
-        let response = block_blob_client.get_block_list(list_type, options).await?;
         Ok(response)
     }
 

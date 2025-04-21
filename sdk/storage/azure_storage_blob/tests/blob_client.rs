@@ -65,6 +65,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     let data = b"hello rusty world";
 
     blob_client
+        .get_block_blob_client(None)?
         .upload(
             RequestContent::from(data.to_vec()),
             true,
@@ -130,6 +131,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     container_client.create_container(None).await?;
     let data = b"hello rusty world";
     blob_client
+        .get_block_blob_client(None)?
         .upload(
             RequestContent::from(data.to_vec()),
             true,
@@ -202,6 +204,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // No Overwrite Scenario
     blob_client
+        .get_block_blob_client(None)?
         .upload(
             RequestContent::from(data.to_vec()),
             false,
@@ -223,6 +226,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Error Case (overwrite=false/none)
     let response = blob_client
+        .get_block_blob_client(None)?
         .upload(
             RequestContent::from(new_data.to_vec()),
             false,
@@ -238,6 +242,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Working Case (overwrite=true)
     let overwrite_response = blob_client
+        .get_block_blob_client(None)?
         .upload(
             RequestContent::from(new_data.to_vec()),
             true,
@@ -300,6 +305,7 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data = b"hello rusty world";
 
     blob_client
+        .get_block_blob_client(None)?
         .upload(
             RequestContent::from(data.to_vec()),
             false,
@@ -361,6 +367,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     )?;
     let data = b"test download content";
     blob_client
+        .get_block_blob_client(None)?
         .upload(
             RequestContent::from(data.to_vec()),
             true,
@@ -429,6 +436,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
         ..Default::default()
     };
     blob_client
+        .get_block_blob_client(None)?
         .upload(
             RequestContent::from(data.to_vec()),
             false,
@@ -509,6 +517,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_3_id: Vec<u8> = b"3".to_vec();
 
     blob_client
+        .get_block_blob_client(None)?
         .stage_block(
             block_1_id.clone(),
             u64::try_from(block_1.len())?,
@@ -518,6 +527,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
 
     blob_client
+        .get_block_blob_client(None)?
         .stage_block(
             block_2_id.clone(),
             u64::try_from(block_2.len())?,
@@ -526,6 +536,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         )
         .await?;
     blob_client
+        .get_block_blob_client(None)?
         .stage_block(
             block_3_id.clone(),
             u64::try_from(block_3.len())?,
@@ -544,7 +555,10 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let request_content = RequestContent::try_from(block_lookup_list)?;
 
-    blob_client.commit_block_list(request_content, None).await?;
+    blob_client
+        .get_block_blob_client(None)?
+        .commit_block_list(request_content, None)
+        .await?;
 
     let response = blob_client.download(None).await?;
 
@@ -608,6 +622,7 @@ async fn test_get_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_3_id: Vec<u8> = b"3".to_vec();
 
     blob_client
+        .get_block_blob_client(None)?
         .stage_block(
             block_1_id.clone(),
             u64::try_from(block_1.len())?,
@@ -617,6 +632,7 @@ async fn test_get_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
 
     blob_client
+        .get_block_blob_client(None)?
         .stage_block(
             block_2_id.clone(),
             u64::try_from(block_2.len())?,
@@ -625,6 +641,7 @@ async fn test_get_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         )
         .await?;
     blob_client
+        .get_block_blob_client(None)?
         .stage_block(
             block_3_id.clone(),
             u64::try_from(block_3.len())?,
@@ -635,6 +652,7 @@ async fn test_get_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Three Staged Blocks Scenario
     let block_list = blob_client
+        .get_block_blob_client(None)?
         .get_block_list(BlockListType::All, None)
         .await?
         .into_body()
@@ -654,10 +672,14 @@ async fn test_get_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let request_content = RequestContent::try_from(block_lookup_list)?;
 
-    blob_client.commit_block_list(request_content, None).await?;
+    blob_client
+        .get_block_blob_client(None)?
+        .commit_block_list(request_content, None)
+        .await?;
 
     // Three Committed Blocks Scenario
     let block_list = blob_client
+        .get_block_blob_client(None)?
         .get_block_list(BlockListType::All, None)
         .await?
         .into_body()
@@ -710,6 +732,7 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let data = b"hello rusty world";
     blob_client
+        .get_block_blob_client(None)?
         .upload(
             RequestContent::from(data.to_vec()),
             true,
