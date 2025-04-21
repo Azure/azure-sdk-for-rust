@@ -1,13 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{http::ClientOptions, Result};
+use azure_core::{
+    http::{ClientOptions, RequestContent, Response},
+    Result,
+};
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
-    BlobServiceClient, BlobServiceClientOptions,
+    models::BlockBlobClientUploadResult, BlobClient, BlobClientOptions, BlobContainerClient,
+    BlobContainerClientOptions, BlobServiceClient, BlobServiceClientOptions,
 };
 
+/// Takes in a Recording instance and returns an instrumented options bag and endpoint.
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
 pub fn _recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
@@ -19,6 +27,11 @@ pub fn _recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     (client_options, endpoint)
 }
 
+/// Returns an instance of a BlobServiceClient.
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
 pub fn get_blob_service_client(recording: &Recording) -> Result<BlobServiceClient> {
     let (options, endpoint) = _recorded_test_setup(recording);
     let service_client_options = BlobServiceClientOptions {
@@ -32,6 +45,11 @@ pub fn get_blob_service_client(recording: &Recording) -> Result<BlobServiceClien
     )
 }
 
+/// Returns an instance of a BlobContainerClient.
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
 pub fn get_container_client(recording: &Recording) -> Result<BlobContainerClient> {
     let container_name = recording
         .random_string::<17>(Some("container"))
@@ -49,6 +67,12 @@ pub fn get_container_client(recording: &Recording) -> Result<BlobContainerClient
     )
 }
 
+/// Returns an instance of a BlobClient.
+///
+/// # Arguments
+///
+/// * `container_name` - The name of the container containing this blob.
+/// * `recording` - A reference to a Recording instance.
 pub fn get_blob_client(
     container_name: Option<String>,
     recording: &Recording,
@@ -73,4 +97,22 @@ pub fn get_blob_client(
         recording.credential(),
         Some(blob_client_options),
     )
+}
+
+/// Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17.
+///
+/// # Arguments
+///
+/// * `blob_client` - A reference to a BlobClient instance.
+pub async fn create_test_blob(
+    blob_client: &BlobClient,
+) -> Result<Response<BlockBlobClientUploadResult>> {
+    blob_client
+        .upload(
+            RequestContent::from(b"hello rusty world".to_vec()),
+            true,
+            17,
+            None,
+        )
+        .await
 }

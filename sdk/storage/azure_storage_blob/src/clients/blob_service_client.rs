@@ -95,7 +95,6 @@ impl BlobServiceClient {
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<StorageServiceProperties>> {
-        let response = self.client.get_properties(options).await?;
-        Ok(response)
+        self.client.get_properties(options).await
     }
 }

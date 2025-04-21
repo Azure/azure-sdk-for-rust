@@ -13,7 +13,7 @@ use azure_storage_blob::{
     },
     BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions,
 };
-use azure_storage_blob_test::{get_blob_client, get_container_client};
+use azure_storage_blob_test::{create_test_blob, get_blob_client, get_container_client};
 use std::{collections::HashMap, error::Error};
 
 #[recorded::test]
@@ -34,15 +34,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     assert_eq!(StatusCode::NotFound, error.unwrap());
 
     container_client.create_container(None).await?;
-    let data = b"hello rusty world";
-    blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            true,
-            u64::try_from(data.len())?,
-            None,
-        )
-        .await?;
+    create_test_blob(&blob_client).await?;
 
     // No Option Scenario
     let response = blob_client.get_properties(None).await?;
@@ -72,16 +64,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         recording,
     )?;
     container_client.create_container(None).await?;
-
-    let data = b"hello rusty world";
-    blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            true,
-            u64::try_from(data.len())?,
-            None,
-        )
-        .await?;
+    create_test_blob(&blob_client).await?;
 
     // Set Content Settings
     let set_properties_options = BlobClientSetPropertiesOptions {
@@ -189,17 +172,7 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         recording,
     )?;
     container_client.create_container(None).await?;
-
-    let data = b"hello rusty world";
-
-    blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            false,
-            u64::try_from(data.len())?,
-            None,
-        )
-        .await?;
+    create_test_blob(&blob_client).await?;
 
     // Existence Check
     blob_client.get_properties(None).await?;
@@ -226,24 +199,19 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         recording,
     )?;
     container_client.create_container(None).await?;
+    create_test_blob(&blob_client).await?;
 
-    let data = b"test download content";
-    blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            true,
-            u64::try_from(data.len())?,
-            None,
-        )
-        .await?;
     let response = blob_client.download(None).await?;
 
     // Assert
     let content_length = response.content_length()?;
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
-    assert_eq!(21, content_length.unwrap());
-    assert_eq!(Bytes::from_static(data), response_body.collect().await?);
+    assert_eq!(17, content_length.unwrap());
+    assert_eq!(
+        b"hello rusty world".to_vec(),
+        response_body.collect().await?
+    );
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -260,7 +228,6 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
         recording,
     )?;
     container_client.create_container(None).await?;
-
     let data = b"hello rusty world";
 
     // Upload Blob With Metadata
@@ -471,16 +438,7 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         recording,
     )?;
     container_client.create_container(None).await?;
-
-    let data = b"hello rusty world";
-    blob_client
-        .upload(
-            RequestContent::from(data.to_vec()),
-            true,
-            u64::try_from(data.len())?,
-            None,
-        )
-        .await?;
+    create_test_blob(&blob_client).await?;
 
     let original_response = blob_client.get_properties(None).await?;
     let og_access_tier = original_response.tier()?;
