@@ -11,7 +11,7 @@
 //! Example usage:
 //!
 //! ```
-//! use azure_core::task::{new_task_spawner, TaskSpawner, SpawnHandleMethods};
+//! use azure_core::task::{new_task_spawner, TaskSpawner};
 //! use futures::FutureExt;
 //!
 //! #[tokio::main]
@@ -29,7 +29,6 @@
 //! ```
 //!
 //!
-use async_trait::async_trait;
 use std::{
     fmt::{self, Debug},
     future::Future,
@@ -48,22 +47,6 @@ mod tokio_spawn;
 
 #[cfg(test)]
 mod tests;
-
-/// Common methods for all spawn handles.
-///
-/// This trait defines the common interface for all spawn handles.
-/// It is implemented for different types of spawn handles depending on the target architecture and features.
-///
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-pub trait SpawnHandleMethods: Send + fmt::Debug {
-    /// Wait for the task to complete and return the result.
-    ///
-    /// # Returns
-    /// A `Result` indicating the success or failure of the task.
-    ///
-    async fn wait(self) -> crate::Result<()>;
-}
 
 /// A `SpawnHandle` is a handle to a spawned task, allowing you to wait for its completion.
 #[derive(Debug)]
@@ -84,6 +67,22 @@ impl SpawnHandle {
     /// # Returns
     /// A `Result` indicating the success or failure of the task.
     ///
+    /// # Example
+    /// ```
+    /// use azure_core::task::{new_task_spawner, TaskSpawner};
+    /// use futures::FutureExt;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///   let spawner = new_task_spawner();
+    ///   let handle = spawner.spawn(async {
+    ///     // Simulate some work
+    ///     std::thread::sleep(std::time::Duration::from_secs(1));
+    ///   }.boxed());
+    ///
+    ///   handle.wait().await.expect("Task should complete successfully");
+    /// }
+    /// ```
     pub async fn wait(self) -> crate::Result<()> {
         match self {
             #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
@@ -111,6 +110,26 @@ pub trait TaskSpawner: Send + Sync + fmt::Debug {
     ///
     /// * `f` - A future representing the task to be spawned. This future cannot capture any variables
     ///   from its environment by reference, as it will be executed in a different thread or context.
+    ///
+    /// # Returns
+    /// A `SpawnHandle` that can be used to wait for the task to complete.
+    ///
+    /// # Example
+    /// ```
+    /// use azure_core::task::{new_task_spawner, TaskSpawner};
+    /// use futures::FutureExt;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///   let spawner = new_task_spawner();
+    ///   let handle = spawner.spawn(async {
+    ///     // Simulate some work
+    ///     std::thread::sleep(std::time::Duration::from_secs(1));
+    ///   }.boxed());
+    ///   handle.wait().await.expect("Task should complete successfully");
+    /// }
+    /// ```
+    ///
     fn spawn(&self, f: TaskFuture) -> SpawnHandle;
 }
 
@@ -124,6 +143,22 @@ pub trait TaskSpawner: Send + Sync + fmt::Debug {
 ///
 /// # Returns
 ///  A new instance of a [`TaskSpawner`] which can be used to spawn background tasks.
+///
+/// # Example
+///
+/// ```
+/// use azure_core::task::{new_task_spawner, TaskSpawner};
+/// use futures::FutureExt;
+///
+/// #[tokio::main]
+/// async fn main() {
+///   let spawner = new_task_spawner();
+///   let handle = spawner.spawn(async {
+///     // Simulate some work
+///     std::thread::sleep(std::time::Duration::from_secs(1));
+///   }.boxed());
+/// }
+/// ```
 ///
 pub fn new_task_spawner() -> Arc<dyn TaskSpawner> {
     #[cfg(feature = "tokio")]
