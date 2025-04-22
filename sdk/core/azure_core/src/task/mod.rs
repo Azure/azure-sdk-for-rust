@@ -37,11 +37,7 @@ use std::{
     sync::Arc,
 };
 
-#[cfg(not(target_arch = "wasm32"))]
 mod standard_spawn;
-
-#[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
-mod wasm_spawn;
 
 #[cfg(feature = "tokio")]
 mod tokio_spawn;
@@ -101,7 +97,6 @@ pub trait TaskSpawner: Send + Sync + fmt::Debug {
 /// The implementation depends on the target architecture and the features enabled:
 /// - If the `tokio` feature is enabled, it uses a tokio based spawner.
 /// - If the `tokio` feature is not enabled and the target architecture is not `wasm32`, it uses a std::thread based spawner.
-/// - If the `tokio` feature is not enabled and the target architecture is `wasm32`, it uses a wasm specific spawner.
 ///
 /// # Returns
 ///  A new instance of a [`TaskSpawner`] which can be used to spawn background tasks.
@@ -123,16 +118,12 @@ pub trait TaskSpawner: Send + Sync + fmt::Debug {
 /// ```
 ///
 pub fn new_task_spawner() -> Arc<dyn TaskSpawner> {
-    #[cfg(feature = "tokio")]
-    {
-        Arc::new(tokio_spawn::TokioSpawner)
-    }
-    #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
+    #[cfg(not(feature = "tokio"))]
     {
         Arc::new(standard_spawn::StdSpawner)
     }
-    #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
+    #[cfg(feature = "tokio")]
     {
-        Arc::new(wasm_spawn::WasmSpawner)
+        Arc::new(tokio_spawn::TokioSpawner)
     }
 }
