@@ -3,8 +3,8 @@
 
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
-    models::StorageServiceProperties, pipeline::StorageHeadersPolicy,
-    BlobServiceClientGetPropertiesOptions, BlobServiceClientOptions,
+    models::StorageServiceProperties, pipeline::StorageHeadersPolicy, BlobContainerClient,
+    BlobContainerClientOptions, BlobServiceClientGetPropertiesOptions, BlobServiceClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -19,6 +19,7 @@ use std::sync::Arc;
 /// A client to interact with an Azure storage account.
 pub struct BlobServiceClient {
     endpoint: Url,
+    credential: Arc<dyn TokenCredential>,
     client: GeneratedBlobServiceClient,
 }
 
@@ -52,12 +53,32 @@ impl BlobServiceClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobServiceClient::new(endpoint, credential, Some(options))?;
+        let client = GeneratedBlobServiceClient::new(endpoint, credential.clone(), Some(options))?;
 
         Ok(Self {
             endpoint: endpoint.parse()?,
+            credential,
             client,
         })
+    }
+
+    /// Returns a new instance of BlobContainerClient.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_name` - The name of the container.
+    /// * `options` - Optional configuration for the client.
+    pub fn blob_container_client(
+        &self,
+        container_name: String,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<BlobContainerClient> {
+        BlobContainerClient::new(
+            self.endpoint().as_str(),
+            container_name,
+            self.credential.clone(),
+            options,
+        )
     }
 
     /// Gets the endpoint of the Storage account this client is connected to.
@@ -74,7 +95,6 @@ impl BlobServiceClient {
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<StorageServiceProperties>> {
-        let response = self.client.get_properties(options).await?;
-        Ok(response)
+        self.client.get_properties(options).await
     }
 }

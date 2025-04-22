@@ -4,9 +4,9 @@
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
-    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientGetPropertiesOptions, BlobContainerClientOptions,
-    BlobContainerClientSetMetadataOptions,
+    BlobClient, BlobClientOptions, BlobContainerClientCreateOptions,
+    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientOptions, BlobContainerClientSetMetadataOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -22,6 +22,7 @@ use std::sync::Arc;
 pub struct BlobContainerClient {
     endpoint: Url,
     container_name: String,
+    credential: Arc<dyn TokenCredential>,
     client: GeneratedBlobContainerClient,
 }
 
@@ -59,7 +60,7 @@ impl BlobContainerClient {
 
         let client = GeneratedBlobContainerClient::new(
             endpoint,
-            credential,
+            credential.clone(),
             container_name.clone(),
             Some(options),
         )?;
@@ -67,8 +68,29 @@ impl BlobContainerClient {
         Ok(Self {
             endpoint: endpoint.parse()?,
             container_name,
+            credential,
             client,
         })
+    }
+
+    /// Returns a new instance of BlobClient.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_name` - The name of the blob.
+    /// * `options` - Optional configuration for the client.
+    pub fn blob_client(
+        &self,
+        blob_name: String,
+        options: Option<BlobClientOptions>,
+    ) -> Result<BlobClient> {
+        BlobClient::new(
+            self.endpoint().as_str(),
+            self.container_name().to_string(),
+            blob_name,
+            self.credential.clone(),
+            options,
+        )
     }
 
     /// Gets the endpoint of the Storage account this client is connected to.
@@ -90,8 +112,7 @@ impl BlobContainerClient {
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
     ) -> Result<Response<()>> {
-        let response = self.client.create(options).await?;
-        Ok(response)
+        self.client.create(options).await
     }
 
     /// Sets user-defined metadata for the specified container as one or more name-value pairs. Each call to this operation
@@ -105,8 +126,7 @@ impl BlobContainerClient {
         &self,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<()>> {
-        let response = self.client.set_metadata(options).await?;
-        Ok(response)
+        self.client.set_metadata(options).await
     }
 
     /// Marks the specified container for deletion. The container and any blobs contained within are later deleted during garbage collection.
@@ -118,8 +138,7 @@ impl BlobContainerClient {
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
-        let response = self.client.delete(options).await?;
-        Ok(response)
+        self.client.delete(options).await
     }
 
     /// Returns all user-defined metadata and system properties for the specified container.
@@ -132,8 +151,6 @@ impl BlobContainerClient {
         &self,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {
-        let response = self.client.get_properties(options).await?;
-
-        Ok(response)
+        self.client.get_properties(options).await
     }
 }

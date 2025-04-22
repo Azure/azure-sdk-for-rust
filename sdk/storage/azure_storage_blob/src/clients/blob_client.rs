@@ -104,8 +104,7 @@ impl BlobClient {
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobClientGetPropertiesResult>> {
-        let response = self.client.get_properties(options).await?;
-        Ok(response)
+        self.client.get_properties(options).await
     }
 
     /// Sets system properties on the blob.
@@ -117,8 +116,7 @@ impl BlobClient {
         &self,
         options: Option<BlobClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<()>> {
-        let response = self.client.set_properties(options).await?;
-        Ok(response)
+        self.client.set_properties(options).await
     }
 
     /// Downloads a blob from the service, including its metadata and properties.
@@ -128,8 +126,7 @@ impl BlobClient {
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
     ) -> Result<Response<BlobClientDownloadResult>> {
-        let response = self.client.download(options).await?;
-        Ok(response)
+        self.client.download(options).await
     }
 
     /// Creates a new blob from a data source.
@@ -156,10 +153,9 @@ impl BlobClient {
 
         let block_blob_client = self.client.get_block_blob_client();
 
-        let response = block_blob_client
+        block_blob_client
             .upload(data, content_length, Some(options))
-            .await?;
-        Ok(response)
+            .await
     }
 
     /// Sets user-defined metadata for the specified blob as one or more name-value pairs. Each call to this operation
@@ -173,8 +169,7 @@ impl BlobClient {
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
     ) -> Result<Response<()>> {
-        let response = self.client.set_metadata(options).await?;
-        Ok(response)
+        self.client.set_metadata(options).await
     }
 
     /// Deletes the blob.
@@ -186,8 +181,7 @@ impl BlobClient {
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
-        let response = self.client.delete(options).await?;
-        Ok(response)
+        self.client.delete(options).await
     }
 
     /// Writes to a blob based on blocks specified by the list of IDs and content that make up the blob.
@@ -202,8 +196,7 @@ impl BlobClient {
         options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
     ) -> Result<Response<BlockBlobClientCommitBlockListResult>> {
         let block_blob_client = self.client.get_block_blob_client();
-        let response = block_blob_client.commit_block_list(blocks, options).await?;
-        Ok(response)
+        block_blob_client.commit_block_list(blocks, options).await
     }
 
     /// Creates a new block to be later committed as part of a blob.
@@ -223,10 +216,9 @@ impl BlobClient {
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
     ) -> Result<Response<BlockBlobClientStageBlockResult>> {
         let block_blob_client = self.client.get_block_blob_client();
-        let response = block_blob_client
+        block_blob_client
             .stage_block(block_id, content_length, body, options)
-            .await?;
-        Ok(response)
+            .await
     }
 
     /// Retrieves the list of blocks that have been uploaded as part of a block blob.
@@ -241,8 +233,7 @@ impl BlobClient {
         options: Option<BlockBlobClientGetBlockListOptions<'_>>,
     ) -> Result<Response<BlockList>> {
         let block_blob_client = self.client.get_block_blob_client();
-        let response = block_blob_client.get_block_list(list_type, options).await?;
-        Ok(response)
+        block_blob_client.get_block_list(list_type, options).await
     }
 
     /// Sets the tier on a blob. Standard tiers are only applicable for Block blobs, while Premium tiers are only applicable
