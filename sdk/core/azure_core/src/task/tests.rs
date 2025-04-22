@@ -83,7 +83,64 @@ async fn test_tokio_specific_handling() {
     assert!(*task_completed.lock().unwrap());
 }
 
-#[cfg(not(feature = "tokio"))]
+#[cfg(feature = "tokio")]
+#[tokio::test]
+async fn tokio_multiple_tasks() {
+    let spawner = Arc::new(tokio_spawn::TokioSpawner);
+    let counter = Arc::new(Mutex::new(0));
+    let mut handles = Vec::new();
+
+    // Spawn multiple tasks
+    for _ in 0..5 {
+        let counter_clone = Arc::clone(&counter);
+        let handle = spawner.spawn(
+            async move {
+                let mut value = counter_clone.lock().unwrap();
+                *value += 1;
+            }
+            .boxed(),
+        );
+        handles.push(handle);
+    }
+
+    // Wait for all tasks
+    for handle in handles {
+        handle
+            .wait()
+            .await
+            .expect("Task should complete successfully");
+    }
+    // Verify all tasks executed
+    assert_eq!(*counter.lock().unwrap(), 5);
+}
+
+#[cfg(feature = "tokio")]
+#[tokio::test]
+async fn tokio_task_execution() {
+    let spawner = Arc::new(tokio_spawn::TokioSpawner);
+    let result = Arc::new(Mutex::new(false));
+    let result_clone = Arc::clone(&result);
+
+    let handle = spawner.spawn(
+        async move {
+            // Simulate some work
+            crate::sleep::sleep(Duration::from_millis(50)).await;
+            let mut value = result_clone.lock().unwrap();
+            *value = true;
+        }
+        .boxed(),
+    );
+
+    // Wait for task completion
+    handle
+        .wait()
+        .await
+        .expect("Task should complete successfully");
+
+    // Verify the task executed
+    assert!(*result.lock().unwrap());
+}
+
 #[tokio::test]
 async fn std_specific_handling() {
     let spawner = Arc::new(standard_spawn::StdSpawner);
@@ -106,7 +163,6 @@ async fn std_specific_handling() {
     assert!(*task_completed.lock().unwrap());
 }
 
-#[cfg(not(feature = "tokio"))]
 #[tokio::test]
 async fn std_multiple_tasks() {
     let spawner = Arc::new(standard_spawn::StdSpawner);
@@ -137,9 +193,12 @@ async fn std_multiple_tasks() {
     assert_eq!(*counter.lock().unwrap(), 5);
 }
 
+// When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
+// When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
+
 #[cfg(not(feature = "tokio"))]
-#[tokio::test]
-async fn std_task_execution() {
+#[test]
+fn std_task_execution() {
     let spawner = Arc::new(standard_spawn::StdSpawner);
     let result = Arc::new(Mutex::new(false));
     let result_clone = Arc::clone(&result);
@@ -155,10 +214,7 @@ async fn std_task_execution() {
     );
 
     // Wait for task completion
-    handle
-        .wait()
-        .await
-        .expect("Task should complete successfully");
+    futures::executor::block_on(handle.wait()).expect("Task should complete successfully");
 
     // Verify the task executed
     assert!(*result.lock().unwrap());

@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use std::fmt::Debug;
 
 /// A [`TaskSpawner`] using [`tokio::spawn`].
+#[cfg(feature = "tokio")]
 #[derive(Debug)]
 pub struct TokioSpawner;
 
@@ -16,9 +17,11 @@ impl TaskSpawner for TokioSpawner {
     }
 }
 
+#[cfg(feature = "tokio")]
 #[derive(Debug)]
 pub struct TokioSpawnHandle(tokio::task::JoinHandle<()>);
 
+#[cfg(feature = "tokio")]
 #[async_trait]
 impl SpawnHandle for TokioSpawnHandle {
     /// Wait for the task to complete and return the result.

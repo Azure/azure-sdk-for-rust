@@ -37,7 +37,7 @@ use std::{
     sync::Arc,
 };
 
-#[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
+#[cfg(not(target_arch = "wasm32"))]
 mod standard_spawn;
 
 #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
@@ -56,37 +56,6 @@ pub trait SpawnHandle: Send + fmt::Debug {
     /// Wait for the task to complete and return the result.
     async fn wait(self: Box<Self>) -> crate::Result<()>;
 }
-
-// #[derive(Debug)]
-// pub struct SpawnHandleT<T>
-// where
-//     T: SpawnHandle + 'static,
-// {
-//     pub(crate) inner: T,
-// }
-
-// #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-// #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-// impl<T> SpawnHandle for SpawnHandleT<T>
-// where
-//     T: SpawnHandle + 'static,
-// {
-//     /// Wait for the task to complete and return the result.
-//     async fn wait(self) -> crate::Result<()> {
-//         self.inner.wait().await
-//     }
-// }
-
-// // A type alias for the spawn handle.
-// // This is used to abstract over the different spawn handle types used in different implementations.
-// #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
-// pub type SpawnHandleImpl = SpawnHandleT<standard_spawn::StdSpawnHandle>;
-
-// #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
-// pub type SpawnHandleImpl = SpawnHandleT<wasm_spawn::WasmSpawnHandle>;
-
-// #[cfg(feature = "tokio")]
-// pub type SpawnHandleImpl = SpawnHandleT<tokio_spawn::TokioSpawnHandle>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;

@@ -39,10 +39,10 @@ pub struct StdSpawnHandle(std::thread::JoinHandle<()>);
 impl SpawnHandle for StdSpawnHandle {
     /// Wait for the task to complete and return the result.
     async fn wait(self: Box<Self>) -> crate::Result<()> {
-        self.0.join().map_err(|_| {
+        self.0.join().map_err(|e| {
             crate::Error::message(
                 crate::error::ErrorKind::Other,
-                "Task was cancelled before completion.",
+                format!("Task was cancelled before completion: {:?}", e),
             )
         })
     }
