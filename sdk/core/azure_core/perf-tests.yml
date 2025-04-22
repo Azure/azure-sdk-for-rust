@@ -1,0 +1,12 @@
+Service: core
+
+Project: azure-core
+
+PackageVersions:
+  - azure-core: source
+
+Tests:
+  - Test: url_parsing/parse_basic_url/1000
+    Class: url
+    Arguments:
+      - --e 1
