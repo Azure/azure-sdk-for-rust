@@ -59,7 +59,7 @@ pub(crate) struct ConnectionManager {
     credential: Arc<dyn TokenCredential>,
     connections: OnceCell<Arc<AmqpConnection>>,
     authorization_scopes: AsyncMutex<HashMap<Url, AccessToken>>,
-    authorization_refresher: OnceLock<SpawnHandle>,
+    authorization_refresher: OnceLock<Box<dyn SpawnHandle>>,
     connection_name: String,
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,

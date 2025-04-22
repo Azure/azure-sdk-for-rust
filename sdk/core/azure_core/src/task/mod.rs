@@ -29,8 +29,9 @@
 //! ```
 //!
 //!
+use async_trait::async_trait;
 use std::{
-    fmt::{self, Debug},
+    fmt::{self},
     future::Future,
     pin::Pin,
     sync::Arc,
@@ -49,51 +50,43 @@ mod tokio_spawn;
 mod tests;
 
 /// A `SpawnHandle` is a handle to a spawned task, allowing you to wait for its completion.
-#[derive(Debug)]
-pub enum SpawnHandle {
-    /// A handle to a spawned task, allowing you to wait for its completion.
-    #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
-    Std(standard_spawn::StdSpawnHandle),
-    /// A handle to a spawned task, allowing you to wait for its completion.
-    #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
-    Wasm(wasm_spawn::WasmSpawnHandle),
-    /// A handle to a spawned task, allowing you to wait for its completion.
-    #[cfg(feature = "tokio")]
-    Tokio(tokio_spawn::TokioSpawnHandle),
-}
-impl SpawnHandle {
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+pub trait SpawnHandle: Send + fmt::Debug {
     /// Wait for the task to complete and return the result.
-    ///
-    /// # Returns
-    /// A `Result` indicating the success or failure of the task.
-    ///
-    /// # Example
-    /// ```
-    /// use azure_core::task::{new_task_spawner, TaskSpawner};
-    /// use futures::FutureExt;
-    ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///   let spawner = new_task_spawner();
-    ///   let handle = spawner.spawn(async {
-    ///     // Simulate some work
-    ///     std::thread::sleep(std::time::Duration::from_secs(1));
-    ///   }.boxed());
-    ///
-    ///   handle.wait().await.expect("Task should complete successfully");
-    /// }
-    /// ```
-    pub async fn wait(self) -> crate::Result<()> {
-        match self {
-            #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
-            SpawnHandle::Std(handle) => handle.wait().await,
-            #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
-            SpawnHandle::Wasm(handle) => handle.wait().await,
-            #[cfg(feature = "tokio")]
-            SpawnHandle::Tokio(handle) => handle.wait().await,
-        }
-    }
+    async fn wait(self: Box<Self>) -> crate::Result<()>;
 }
+
+// #[derive(Debug)]
+// pub struct SpawnHandleT<T>
+// where
+//     T: SpawnHandle + 'static,
+// {
+//     pub(crate) inner: T,
+// }
+
+// #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+// #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+// impl<T> SpawnHandle for SpawnHandleT<T>
+// where
+//     T: SpawnHandle + 'static,
+// {
+//     /// Wait for the task to complete and return the result.
+//     async fn wait(self) -> crate::Result<()> {
+//         self.inner.wait().await
+//     }
+// }
+
+// // A type alias for the spawn handle.
+// // This is used to abstract over the different spawn handle types used in different implementations.
+// #[cfg(all(not(feature = "tokio"), not(target_arch = "wasm32")))]
+// pub type SpawnHandleImpl = SpawnHandleT<standard_spawn::StdSpawnHandle>;
+
+// #[cfg(all(not(feature = "tokio"), target_arch = "wasm32"))]
+// pub type SpawnHandleImpl = SpawnHandleT<wasm_spawn::WasmSpawnHandle>;
+
+// #[cfg(feature = "tokio")]
+// pub type SpawnHandleImpl = SpawnHandleT<tokio_spawn::TokioSpawnHandle>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
@@ -130,7 +123,7 @@ pub trait TaskSpawner: Send + Sync + fmt::Debug {
     /// }
     /// ```
     ///
-    fn spawn(&self, f: TaskFuture) -> SpawnHandle;
+    fn spawn(&self, f: TaskFuture) -> Box<dyn SpawnHandle>;
 }
 
 /// Creates a new [`TaskSpawner`] to enable running tasks asynchronously.

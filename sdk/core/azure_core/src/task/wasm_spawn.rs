@@ -2,13 +2,14 @@
 // Licensed under the MIT License.
 
 use super::{SpawnHandle, TaskFuture, TaskSpawner};
+use async_trait::async_trait;
 
 /// A [`TaskSpawner`] using wasm.
 #[derive(Debug)]
 pub struct WasmSpawner;
 
 impl TaskSpawner for WasmSpawner {
-    fn spawn(&self, _f: TaskFuture) -> SpawnHandle {
+    fn spawn(&self, _f: TaskFuture) -> Box<dyn SpawnHandle> {
         unimplemented!()
     }
 }
@@ -16,9 +17,10 @@ impl TaskSpawner for WasmSpawner {
 #[derive(Debug)]
 pub struct WasmSpawnHandle();
 
-impl WasmSpawnHandle {
+#[async_trait(?Send)]
+impl SpawnHandle for WasmSpawnHandle {
     /// Wait for the task to complete and return the result.
-    pub(crate) async fn wait(self) -> crate::Result<()> {
+    async fn wait(self: Box<Self>) -> crate::Result<()> {
         unimplemented!()
     }
 }
