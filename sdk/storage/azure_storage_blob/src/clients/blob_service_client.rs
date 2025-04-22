@@ -68,7 +68,7 @@ impl BlobServiceClient {
     ///
     /// * `container_name` - The name of the container.
     /// * `options` - Optional configuration for the client.
-    pub fn get_blob_container_client(
+    pub fn blob_container_client(
         &self,
         container_name: String,
         options: Option<BlobContainerClientOptions>,
