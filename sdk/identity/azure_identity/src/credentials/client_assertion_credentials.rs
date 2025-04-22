@@ -87,7 +87,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
             .authority_host()?
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
             .with_context(ErrorKind::DataConversion, || {
-                format!("tenant_id '{tenant_id}' could not be URL encoded")
+                format!("tenant_id {tenant_id} could not be URL encoded")
             })?;
         Ok(Self {
             client_id,
