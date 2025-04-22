@@ -10,13 +10,13 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
-        Method, Request, StatusCode,
+        Method, Request, StatusCode, Url,
     },
     Error,
 };
 use std::{fmt::Debug, str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
-use url::{form_urlencoded, Url};
+use url::form_urlencoded;
 
 const ASSERTION_TYPE: &str = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 const CLIENT_ASSERTION_CREDENTIAL: &str = "ClientAssertionCredential";
