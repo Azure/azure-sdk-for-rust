@@ -201,6 +201,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Performance Testing
+
+Azure Core includes performance benchmarks to help monitor the performance of critical components. These benchmarks are written using the [criterion](https://crates.io/crates/criterion) crate, a statistics-driven benchmarking library.
+
+To run the performance tests:
+
+```bash
+cd sdk/core/azure_core
+cargo bench
+```
+
+The benchmarks measure critical operations like serialization/deserialization, HTTP request processing, and token acquisition to ensure optimal performance of the SDK.
+
 <!-- ## Troubleshooting -->
 
 ## Contributing
