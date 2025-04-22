@@ -6,7 +6,7 @@ const INPUTS: &[usize] = &[1, 10, 100];
 
 fn url_parsing_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("url_parsing");
-    group.measurement_time(Duration::from_secs(10));
+    //group.measurement_time(Duration::from_secs(10));
     for num in INPUTS {
         let mut url = String::new();
         url.push_str("https://example.com/path/resource?param=value");
@@ -24,5 +24,9 @@ fn url_parsing_benchmark(c: &mut Criterion) {
 }
 
 // Main benchmark group
-criterion_group!(url_benches, url_parsing_benchmark);
+criterion_group!{
+    name = url_benches;
+    config = Criterion::default().sample_size(200).warm_up_time(Duration::from_secs(5)); // default is 100 samples, warmup 3, just an example
+    targets = url_parsing_benchmark
+}
 criterion_main!(url_benches);
