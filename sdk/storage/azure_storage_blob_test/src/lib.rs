@@ -16,7 +16,7 @@ use azure_storage_blob::{
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
-pub fn _recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
+fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
     let endpoint = format!(
@@ -33,7 +33,7 @@ pub fn _recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
 ///
 /// * `recording` - A reference to a Recording instance.
 pub fn get_blob_service_client(recording: &Recording) -> Result<BlobServiceClient> {
-    let (options, endpoint) = _recorded_test_setup(recording);
+    let (options, endpoint) = recorded_test_setup(recording);
     let service_client_options = BlobServiceClientOptions {
         client_options: options.clone(),
         ..Default::default()
@@ -54,7 +54,7 @@ pub fn get_container_client(recording: &Recording) -> Result<BlobContainerClient
     let container_name = recording
         .random_string::<17>(Some("container"))
         .to_ascii_lowercase();
-    let (options, endpoint) = _recorded_test_setup(recording);
+    let (options, endpoint) = recorded_test_setup(recording);
     let container_client_options = BlobContainerClientOptions {
         client_options: options.clone(),
         ..Default::default()
@@ -85,7 +85,7 @@ pub fn get_blob_client(
     let blob_name = recording
         .random_string::<12>(Some("blob"))
         .to_ascii_lowercase();
-    let (options, endpoint) = _recorded_test_setup(recording);
+    let (options, endpoint) = recorded_test_setup(recording);
     let blob_client_options = BlobClientOptions {
         client_options: options.clone(),
         ..Default::default()
