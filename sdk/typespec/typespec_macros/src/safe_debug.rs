@@ -87,7 +87,12 @@ fn generate_fields(path: &Path, fields: &Fields) -> TokenStream {
             }
         }
         #[cfg(not(feature = "debug"))]
-        Fields::Named(FieldsNamed { .. }) => {
+        Fields::Named(FieldsNamed { ref named, .. }) => {
+            if named.is_empty() {
+                return quote! {
+                    #path {} => f.write_str(#name_str)
+                };
+            }
             quote! {
                 #path { .. } => f
                     .debug_struct(#name_str).finish_non_exhaustive()
@@ -109,7 +114,12 @@ fn generate_fields(path: &Path, fields: &Fields) -> TokenStream {
             }
         }
         #[cfg(not(feature = "debug"))]
-        Fields::Unnamed(FieldsUnnamed { .. }) => {
+        Fields::Unnamed(FieldsUnnamed { ref unnamed, .. }) => {
+            if unnamed.is_empty() {
+                return quote! {
+                    #path() => f.write_str(#name_str)
+                };
+            }
             quote! {
                 #path(..) => f
                     .debug_tuple(#name_str).finish_non_exhaustive()
