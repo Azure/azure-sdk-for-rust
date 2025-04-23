@@ -19,6 +19,7 @@ debug = []
 [dependencies]
 proc-macro2.workspace = true
 quote.workspace = true
+rustc_version.workspace = true
 syn.workspace = true
 
 [dev-dependencies]

@@ -89,7 +89,7 @@ fn generate_fields(path: &Path, fields: &Fields) -> TokenStream {
                 .collect();
 
             // Use an "and the rest" matcher as needed, along with the appropriate `DebugStruct` finisher.
-            let (matcher, finisher) = finish(&fields, named);
+            let (matcher, finisher) = finish(&fields, named, false);
             quote! {
                 #path { #(#names),* #matcher } => f
                     .debug_struct(#name_str)
@@ -114,7 +114,7 @@ fn generate_fields(path: &Path, fields: &Fields) -> TokenStream {
             };
 
             // Use an "and the rest" matcher as needed, along with the appropriate `DebugTuple` finisher.
-            let (matcher, finisher) = finish(&indices, unnamed);
+            let (matcher, finisher) = finish(&indices, unnamed, true);
             quote! {
                 #path(#(#indices),* #matcher) => f
                     .debug_tuple(#name_str)
@@ -125,13 +125,27 @@ fn generate_fields(path: &Path, fields: &Fields) -> TokenStream {
     }
 }
 
-fn finish(remaining: &[TokenStream], all: &Punctuated<Field, Comma>) -> (TokenStream, TokenStream) {
+fn finish(
+    remaining: &[TokenStream],
+    all: &Punctuated<Field, Comma>,
+    tuple: bool,
+) -> (TokenStream, TokenStream) {
+    const MSRV: rustc_version::Version = rustc_version::Version::new(1, 80, 0);
+    const MIN: rustc_version::Version = rustc_version::Version::new(1, 82, 0);
+
+    // DebugTuple::finish_non_exhaustive() wasn't added till 1.82.
+    let non_exhaustive_finisher = if tuple && rustc_version::version().unwrap_or(MSRV) < MIN {
+        quote! {.finish()}
+    } else {
+        quote! {.finish_non_exhaustive()}
+    };
+
     if remaining.len() == all.len() {
         (TokenStream::new(), quote! {.finish()})
     } else if !remaining.is_empty() {
-        (quote! {, ..}, quote! {.finish_non_exhaustive()})
+        (quote! {, ..}, non_exhaustive_finisher)
     } else {
-        (quote! {..}, quote!(.finish_non_exhaustive()))
+        (quote! {..}, non_exhaustive_finisher)
     }
 }
 

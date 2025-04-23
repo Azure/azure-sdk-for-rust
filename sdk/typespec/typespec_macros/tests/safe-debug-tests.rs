@@ -37,7 +37,7 @@ fn debug_tests() {
 }
 
 #[test]
-fn no_debug_tests() {
+fn safe_debug_tests() {
     let test_root = {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         p.push("tests");

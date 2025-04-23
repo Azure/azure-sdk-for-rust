@@ -886,6 +886,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "719b953e2095829ee67db738b3bfa9fa368c94900df327b3f07fe6e794d2fe1f"
 
 [[package]]
+name = "rustc_version"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
+dependencies = [
+ "semver",
+]
+
+[[package]]
 name = "rustix"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -930,6 +939,7 @@ name = "safe_debug_tests"
 version = "0.1.0"
 dependencies = [
  "litemap",
+ "rustc_version",
  "typespec_client_core",
  "zerofrom",
 ]
@@ -965,6 +975,12 @@ dependencies = [
  "core-foundation-sys",
  "libc",
 ]
+
+[[package]]
+name = "semver"
+version = "1.0.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56e6fa9c48d24d85fb3de5ad847117517440f6beceb7798af16b4a87d616b8d0"
 
 [[package]]
 name = "serde"
@@ -1287,6 +1303,7 @@ version = "0.3.0"
 dependencies = [
  "proc-macro2",
  "quote",
+ "rustc_version",
  "syn",
 ]
 

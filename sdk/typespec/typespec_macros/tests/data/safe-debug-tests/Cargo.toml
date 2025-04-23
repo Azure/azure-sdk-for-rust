@@ -18,6 +18,9 @@ typespec_client_core = { path = "../../../../typespec_client_core", features = [
 ] }
 zerofrom = "0.1.5"
 
+[dev-dependencies]
+rustc_version = "0.4.1"
+
 [[test]]
 name = "debug"
 path = "tests/debug.rs"

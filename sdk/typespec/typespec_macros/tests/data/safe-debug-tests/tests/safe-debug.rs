@@ -2,12 +2,24 @@
 // Licensed under the MIT License.
 
 #![cfg_attr(feature = "debug", allow(dead_code))]
+use rustc_version::Version;
 use safe_debug_tests::*;
+use std::sync::LazyLock;
+
+const MSRV: Version = Version::new(1, 80, 0);
+const MIN: Version = Version::new(1, 82, 0);
+
+static RUSTC_VERSION: LazyLock<Version> =
+    LazyLock::new(|| rustc_version::version().unwrap_or(MSRV));
 
 #[cfg_attr(not(feature = "debug"), test)]
 fn safe_debug_tuple() {
     let x = Tuple(1, "foo");
-    assert_eq!(format!("{x:?}"), r#"Tuple(..)"#);
+    if *RUSTC_VERSION < MIN {
+        assert_eq!(format!("{x:?}"), r#"Tuple"#);
+    } else {
+        assert_eq!(format!("{x:?}"), r#"Tuple(..)"#);
+    }
 }
 
 #[test]
@@ -43,7 +55,11 @@ fn safe_debug_enum_unit() {
 #[cfg_attr(not(feature = "debug"), test)]
 fn safe_debug_enum_tuple() {
     let x = Enum::Tuple(1, "foo");
-    assert_eq!(format!("{x:?}"), r#"Tuple(..)"#);
+    if *RUSTC_VERSION < MIN {
+        assert_eq!(format!("{x:?}"), r#"Tuple"#);
+    } else {
+        assert_eq!(format!("{x:?}"), r#"Tuple(..)"#);
+    }
 }
 
 #[test]

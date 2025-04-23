@@ -2759,6 +2759,7 @@ dependencies = [
  "cargo_metadata",
  "proc-macro2",
  "quote",
+ "rustc_version",
  "serde",
  "serde_json",
  "syn",
