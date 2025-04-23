@@ -23,8 +23,3 @@ pub mod xml;
 pub use crate::error::{Error, Result};
 pub use bytes::Bytes;
 pub use uuid::Uuid;
-
-#[doc(hidden)]
-mod __private {
-    pub trait Sealed {}
-}

@@ -32,3 +32,6 @@ typespec_client_core = { path = "../typespec_client_core", features = [
   "json",
   "xml",
 ] }
+
+[package.metadata.docs.rs]
+features = []
