@@ -12,9 +12,11 @@ publish = false
 debug = ["typespec_client_core/debug"]
 
 [dependencies]
+litemap = "0.7.4"
 typespec_client_core = { path = "../../../../typespec_client_core", features = [
   "derive",
 ] }
+zerofrom = "0.1.5"
 
 [[test]]
 name = "debug"
