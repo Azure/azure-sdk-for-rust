@@ -51,6 +51,7 @@
     "maxresults",
     "maxsize",
     "msrc",
+    "msrv",
     "newtonsoft",
     "oidc",
     "pageable",
