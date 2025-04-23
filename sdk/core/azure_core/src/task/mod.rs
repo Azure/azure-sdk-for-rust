@@ -22,20 +22,14 @@
 //!         std::thread::sleep(std::time::Duration::from_secs(1));
 //!     }.boxed());
 //!
-//!     handle.wait().await.expect("Task should complete successfully");
+//!     handle.await.expect("Task should complete successfully");
 //!
 //!     println!("Task completed");
 //! }
 //! ```
 //!
 //!
-use async_trait::async_trait;
-use std::{
-    fmt::{self},
-    future::Future,
-    pin::Pin,
-    sync::Arc,
-};
+use std::{fmt::Debug, future::Future, pin::Pin, sync::Arc};
 
 mod standard_spawn;
 
@@ -45,13 +39,13 @@ mod tokio_spawn;
 #[cfg(test)]
 mod tests;
 
-/// A `SpawnHandle` is a handle to a spawned task, allowing you to wait for its completion.
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-pub trait SpawnHandle: Send + fmt::Debug {
-    /// Wait for the task to complete and return the result.
-    async fn wait(self: Box<Self>) -> crate::Result<()>;
-}
+// /// A `SpawnHandle` is a handle to a spawned task, allowing you to wait for its completion.
+// #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+// #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+// pub trait SpawnHandle: Send + fmt::Debug {
+//     /// Wait for the task to complete and return the result.
+//     async fn wait(self: Box<Self>) -> crate::Result<()>;
+// }
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
@@ -60,8 +54,21 @@ pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 #[cfg(target_arch = "wasm32")]
 pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
 
+/// A `SpawnedTask` is a future that represents a running task.
+/// It can be awaited to block until the task has completed.
+#[cfg(not(target_arch = "wasm32"))]
+pub type SpawnedTask = Pin<
+    Box<dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error>>> + Send + 'static>,
+>;
+
+#[cfg(target_arch = "wasm32")]
+pub type SpawnedTask =
+    Pin<Box<dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error>>> + 'static>>;
+
 /// An async command runner.
-pub trait TaskSpawner: Send + Sync + fmt::Debug {
+//#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+//#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+pub trait TaskSpawner: Send + Sync + Debug {
     /// Spawn a task that executes a given future and returns the output.
     ///
     /// # Arguments
@@ -70,7 +77,7 @@ pub trait TaskSpawner: Send + Sync + fmt::Debug {
     ///   from its environment by reference, as it will be executed in a different thread or context.
     ///
     /// # Returns
-    /// A `SpawnHandle` that can be used to wait for the task to complete.
+    /// A future which can be awaited to block until the task has completed.
     ///
     /// # Example
     /// ```
@@ -80,15 +87,15 @@ pub trait TaskSpawner: Send + Sync + fmt::Debug {
     /// #[tokio::main]
     /// async fn main() {
     ///   let spawner = new_task_spawner();
-    ///   let handle = spawner.spawn(async {
+    ///   let future = spawner.spawn(async {
     ///     // Simulate some work
     ///     std::thread::sleep(std::time::Duration::from_secs(1));
     ///   }.boxed());
-    ///   handle.wait().await.expect("Task should complete successfully");
+    ///   future.await.expect("Task should complete successfully");
     /// }
     /// ```
     ///
-    fn spawn(&self, f: TaskFuture) -> Box<dyn SpawnHandle>;
+    fn spawn(&self, f: TaskFuture) -> SpawnedTask;
 }
 
 /// Creates a new [`TaskSpawner`] to enable running tasks asynchronously.
@@ -124,6 +131,6 @@ pub fn new_task_spawner() -> Arc<dyn TaskSpawner> {
     }
     #[cfg(feature = "tokio")]
     {
-        Arc::new(tokio_spawn::TokioSpawner)
+        Arc::new(tokio_spawn::TokioSpawner) as Arc<dyn TaskSpawner>
     }
 }

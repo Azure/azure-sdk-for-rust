@@ -8,11 +8,12 @@ use crate::{
     models::AmqpValue,
 };
 use async_lock::{Mutex as AsyncMutex, OnceCell};
+use azure_core::task::SpawnedTask;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::ErrorKind as AzureErrorKind,
     http::Url,
-    task::{new_task_spawner, SpawnHandle},
+    task::new_task_spawner,
     Result, Uuid,
 };
 use azure_core_amqp::{
@@ -59,7 +60,7 @@ pub(crate) struct ConnectionManager {
     credential: Arc<dyn TokenCredential>,
     connections: OnceCell<Arc<AmqpConnection>>,
     authorization_scopes: AsyncMutex<HashMap<Url, AccessToken>>,
-    authorization_refresher: OnceLock<Box<dyn SpawnHandle>>,
+    authorization_refresher: OnceLock<SpawnedTask>,
     connection_name: String,
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
@@ -200,8 +201,8 @@ impl ConnectionManager {
             debug!("Token verified.");
             self.authorization_refresher.get_or_init(|| {
                 debug!("Starting authorization refresh task.");
-                let spawner = new_task_spawner();
                 let self_clone = self.clone();
+                let spawner = new_task_spawner();
                 spawner.spawn(Box::pin(self_clone.refresh_tokens_task()))
             });
         } else {

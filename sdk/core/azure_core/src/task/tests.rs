@@ -23,10 +23,7 @@ async fn test_task_execution() {
     );
 
     // Wait for task completion
-    handle
-        .wait()
-        .await
-        .expect("Task should complete successfully");
+    handle.await.expect("Task should complete successfully");
 
     // Verify the task executed
     assert!(*result.lock().unwrap());
@@ -53,10 +50,7 @@ async fn test_multiple_tasks() {
 
     // Wait for all tasks
     for handle in handles {
-        handle
-            .wait()
-            .await
-            .expect("Task should complete successfully");
+        handle.await.expect("Task should complete successfully");
     }
     // Verify all tasks executed
     assert_eq!(*counter.lock().unwrap(), 5);
@@ -76,10 +70,7 @@ async fn test_tokio_specific_handling() {
         .boxed(),
     );
 
-    handle
-        .wait()
-        .await
-        .expect("Task should complete successfully");
+    handle.await.expect("Task should complete successfully");
     assert!(*task_completed.lock().unwrap());
 }
 
@@ -105,10 +96,7 @@ async fn tokio_multiple_tasks() {
 
     // Wait for all tasks
     for handle in handles {
-        handle
-            .wait()
-            .await
-            .expect("Task should complete successfully");
+        handle.await.expect("Task should complete successfully");
     }
     // Verify all tasks executed
     assert_eq!(*counter.lock().unwrap(), 5);
@@ -132,10 +120,7 @@ async fn tokio_task_execution() {
     );
 
     // Wait for task completion
-    handle
-        .wait()
-        .await
-        .expect("Task should complete successfully");
+    handle.await.expect("Task should complete successfully");
 
     // Verify the task executed
     assert!(*result.lock().unwrap());
@@ -156,10 +141,7 @@ async fn std_specific_handling() {
 
     // For std threads, we need to wait for the task to complete
     tokio::time::sleep(Duration::from_millis(100)).await;
-    handle
-        .wait()
-        .await
-        .expect("Task should complete successfully");
+    handle.await.expect("Task should complete successfully");
     assert!(*task_completed.lock().unwrap());
 }
 
@@ -184,10 +166,7 @@ async fn std_multiple_tasks() {
 
     // Wait for all tasks
     for handle in handles {
-        handle
-            .wait()
-            .await
-            .expect("Task should complete successfully");
+        handle.await.expect("Task should complete successfully");
     }
     // Verify all tasks executed
     assert_eq!(*counter.lock().unwrap(), 5);
@@ -206,7 +185,7 @@ fn std_task_execution() {
     let handle = spawner.spawn(
         async move {
             // Simulate some work
-            crate::sleep::sleep(Duration::from_millis(50)).await;
+            crate::sleep::sleep(Duration::from_millis(500)).await;
             let mut value = result_clone.lock().unwrap();
             *value = true;
         }
@@ -214,7 +193,7 @@ fn std_task_execution() {
     );
 
     // Wait for task completion
-    futures::executor::block_on(handle.wait()).expect("Task should complete successfully");
+    futures::executor::block_on(handle).expect("Task should complete successfully");
 
     // Verify the task executed
     assert!(*result.lock().unwrap());
