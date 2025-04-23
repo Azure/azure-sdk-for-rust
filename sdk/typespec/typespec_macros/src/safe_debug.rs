@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::Result;
-use proc_macro2::TokenStream;
-use quote::quote;
+use proc_macro2::{Span, TokenStream};
+use quote::{quote, ToTokens};
 use syn::{
-    spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Error, Fields, FieldsNamed,
-    FieldsUnnamed, Ident, Path,
+    punctuated::Punctuated, spanned::Spanned, token::Comma, Data, DataEnum, DataStruct,
+    DeriveInput, Error, Field, Fields, FieldsNamed, FieldsUnnamed, Ident, Path,
 };
 
 pub fn derive_safe_debug_impl(ast: DeriveInput) -> Result<TokenStream> {
@@ -69,62 +69,69 @@ fn generate_fields(path: &Path, fields: &Fields) -> TokenStream {
     let name_str = name.to_string();
 
     match fields {
-        #[cfg(feature = "debug")]
         Fields::Named(FieldsNamed { ref named, .. }) => {
-            let names: Vec<&Ident> = named
+            let names: Vec<&Ident> = if cfg!(feature = "debug") {
+                named
+                    .iter()
+                    .map(|f| f.ident.as_ref().expect("expected named field"))
+                    .collect()
+            } else {
+                // Should we ever add a `#[safe(bool)]` helper attribute to denote which fields we can safely include,
+                // filter the fields to match and emit based on the inherited value or field attribute value.
+                Vec::new()
+            };
+            let fields: Vec<TokenStream> = names
                 .iter()
-                .map(|f| f.ident.as_ref().expect("expected named field"))
+                .map(|field_name| {
+                    let field_name_str = field_name.to_string();
+                    quote! {.field(#field_name_str, &#field_name)}
+                })
                 .collect();
-            let fields = names.iter().map(|field_name| {
-                let field_name_str = field_name.to_string();
-                quote! {.field(#field_name_str, &#field_name)}
-            });
+
+            // Use an "and the rest" matcher as needed, along with the appropriate `DebugStruct` finisher.
+            let (matcher, finisher) = finish(&fields, named);
             quote! {
-                #path { #(#names),* } => f
+                #path { #(#names),* #matcher } => f
                     .debug_struct(#name_str)
                         #(#fields)*
-                        .finish()
-            }
-        }
-        #[cfg(not(feature = "debug"))]
-        Fields::Named(FieldsNamed { ref named, .. }) => {
-            if named.is_empty() {
-                return quote! {
-                    #path {} => f.write_str(#name_str)
-                };
-            }
-            quote! {
-                #path { .. } => f
-                    .debug_struct(#name_str).finish_non_exhaustive()
+                        #finisher
             }
         }
         Fields::Unit => quote! {#path => f.write_str(#name_str)},
-        #[cfg(feature = "debug")]
         Fields::Unnamed(FieldsUnnamed { ref unnamed, .. }) => {
-            let indices: Vec<Ident> = unnamed
-                .iter()
-                .enumerate()
-                .map(|(i, _)| Ident::new(&format!("f{i}"), proc_macro2::Span::call_site()))
-                .collect();
+            let indices: Vec<TokenStream> = if cfg!(feature = "debug") {
+                unnamed
+                    .iter()
+                    .enumerate()
+                    .map(|(i, _)| {
+                        Ident::new(&format!("f{i}"), Span::call_site()).into_token_stream()
+                    })
+                    .collect()
+            } else {
+                // Should we ever add a `#[safe(bool)]` helper attribute to denote which fields we can safely include,
+                // filter the fields to match and emit based on the inherited value or field attribute value.
+                Vec::new()
+            };
+
+            // Use an "and the rest" matcher as needed, along with the appropriate `DebugTuple` finisher.
+            let (matcher, finisher) = finish(&indices, unnamed);
             quote! {
-                #path(#(#indices),*) => f
+                #path(#(#indices),* #matcher) => f
                     .debug_tuple(#name_str)
                         #(.field(&#indices))*
-                        .finish()
+                        #finisher
             }
         }
-        #[cfg(not(feature = "debug"))]
-        Fields::Unnamed(FieldsUnnamed { ref unnamed, .. }) => {
-            if unnamed.is_empty() {
-                return quote! {
-                    #path() => f.write_str(#name_str)
-                };
-            }
-            quote! {
-                #path(..) => f
-                    .debug_tuple(#name_str).finish_non_exhaustive()
-            }
-        }
+    }
+}
+
+fn finish(remaining: &[TokenStream], all: &Punctuated<Field, Comma>) -> (TokenStream, TokenStream) {
+    if remaining.len() == all.len() {
+        (TokenStream::new(), quote! {.finish()})
+    } else if !remaining.is_empty() {
+        (quote! {, ..}, quote! {.finish_non_exhaustive()})
+    } else {
+        (quote! {..}, quote!(.finish_non_exhaustive()))
     }
 }
 
