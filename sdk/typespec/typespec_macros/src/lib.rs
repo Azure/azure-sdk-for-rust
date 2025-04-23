@@ -85,10 +85,10 @@ pub fn derive_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     run_derive_macro(input, model::derive_model_impl)
 }
 
-/// Derive macro for implementing the `SafeDebug` trait.
+/// Derive macro for implementing the [`Debug`](std::fmt::Debug) trait safely.
 ///
-/// Deriving this trait will derive a [`std::fmt::Debug`] implementation that should not leak personally identifiable information (PII).
-/// By default, only the structure or enumeration name will be returned.
+/// Deriving this trait will derive a `Debug` implementation that will not leak personally identifiable information (PII).
+/// By default, only the structure or enumeration name will be returned. Enable the `debug` feature to derive `Debug` normally.
 ///
 /// # Examples
 ///

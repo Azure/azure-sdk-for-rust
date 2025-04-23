@@ -10,6 +10,8 @@
 
 ### Other Changes
 
+- Deriving `SafeDebug` formats non-exhaustive types by default. Enable `debug` feature to format normal `Debug` output.
+
 ## 0.2.0 (2025-04-08)
 
 ### Other Changes

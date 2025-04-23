@@ -48,6 +48,7 @@ default = [
   "reqwest_gzip",
 ]
 azurite_workaround = []
+debug = ["typespec_client_core/debug"]
 hmac_openssl = ["dep:openssl"]
 hmac_rust = ["dep:sha2", "dep:hmac"]
 reqwest = ["typespec_client_core/reqwest"]
