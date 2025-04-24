@@ -3,22 +3,17 @@
 
 use super::{SpawnedTask, TaskFuture, TaskSpawner};
 #[cfg(not(target_arch = "wasm32"))]
-use futures::executor::LocalPool;
-#[cfg(not(target_arch = "wasm32"))]
-use futures::task::SpawnExt;
+use futures::{executor::LocalPool, task::SpawnExt};
 use std::future;
 #[cfg(not(target_arch = "wasm32"))]
-use std::future::Future;
-#[cfg(not(target_arch = "wasm32"))]
-use std::pin::Pin;
-#[cfg(not(target_arch = "wasm32"))]
-use std::sync::{Arc, Mutex};
-#[cfg(not(target_arch = "wasm32"))]
-use std::task::Waker;
-#[cfg(not(target_arch = "wasm32"))]
-use std::task::{Context, Poll};
-#[cfg(not(target_arch = "wasm32"))]
-use std::thread;
+use std::{
+    future::Future,
+    pin::Pin,
+    sync::{Arc, Mutex},
+    task::Waker,
+    task::{Context, Poll},
+    thread,
+};
 use tracing::debug;
 
 /// A future that completes when a thread join handle completes.
@@ -40,7 +35,7 @@ struct ThreadJoinState {
 impl Future for ThreadJoinFuture {
     type Output = std::result::Result<(), Box<dyn std::error::Error + Send>>;
 
-    fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut join_state = self.join_state.lock().map_err(|e| {
             debug!("Failed to lock join state: {}", e);
             Box::new(crate::Error::message(
@@ -49,35 +44,35 @@ impl Future for ThreadJoinFuture {
             )) as Box<dyn std::error::Error + Send>
         })?;
 
-        if join_state.join_handle.is_some() {
-            // Join handle is present, so we can check if the thread has finished
-            // and take the handle if it has.
-            // This is safe because we are holding the lock on the join state.
-            // We can safely take the handle and join it without blocking.
-            // This allows us to retrieve the terminal state of the thread.
-            //        if let Some(handle) = &join_state.join_handle {
-            //            if handle.is_finished() {
-            if join_state.thread_finished {
-                // Thread is finished, so we can safely take the handle
-                // Since we know the thread is finished, we can safely take the handle
-                // and join it without blocking. This allows us to retrieve the terminal state of the thread.
-                match join_state.join_handle.take().unwrap().join() {
-                    Ok(_) => Poll::Ready(Ok(())),
-                    Err(e) => Poll::Ready(Err(Box::new(crate::Error::message(
-                        crate::error::ErrorKind::Other,
-                        format!("Thread panicked: {:?}", e),
-                    ))
-                        as Box<dyn std::error::Error + Send>)),
-                }
-            } else {
-                // Thread is still running, so we need to register the waker
-                // for when it completes.
-                join_state.waker = Some(_cx.waker().clone());
-                Poll::Pending
+        // Join handle is present, so we can check if the thread has finished
+        // and take the handle if it has.
+        // This is safe because we are holding the lock on the join state.
+        // We can safely take the handle and join it without blocking.
+        // This allows us to retrieve the terminal state of the thread.
+        if join_state.thread_finished {
+            // Thread is finished, so we can safely take the handle
+            let Some(join_handle) = join_state.join_handle.take() else {
+                // The join handle was already removed from the state, we know we're done.
+                return Poll::Ready(Ok(()));
+            };
+
+            // Since we know the thread is finished, we can safely take the handle
+            // and join it. This allows us to retrieve the terminal state of the thread.
+            //
+            // Technically this might block (because the `thread_finished` flag
+            // is set before the thread *actually* finishes), but it should be negligible.
+            match join_handle.join() {
+                Ok(_) => Poll::Ready(Ok(())),
+                Err(e) => Poll::Ready(Err(Box::new(crate::Error::message(
+                    crate::error::ErrorKind::Other,
+                    format!("Thread panicked: {:?}", e),
+                )) as Box<dyn std::error::Error + Send>)),
             }
         } else {
-            // Handle has been taken, so we've already completed
-            Poll::Ready(Ok(()))
+            // Thread is still running, so we need to register the waker
+            // for when it completes.
+            join_state.waker = Some(cx.waker().clone());
+            Poll::Pending
         }
     }
 }
