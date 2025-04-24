@@ -24,7 +24,7 @@ fn url_parsing_benchmark(c: &mut Criterion) {
 }
 
 // Main benchmark group
-criterion_group!{
+criterion_group! {
     name = url_benches;
     config = Criterion::default().sample_size(200).warm_up_time(Duration::from_secs(5)); // default is 100 samples, warmup 3, just an example
     targets = url_parsing_benchmark
