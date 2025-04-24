@@ -18,6 +18,7 @@ categories = ["api-bindings"]
 edition.workspace = true
 
 [dependencies]
+async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
 fe2o3-amqp = { workspace = true, optional = true }
 fe2o3-amqp-cbs = { workspace = true, optional = true }

@@ -372,7 +372,7 @@ impl LoadBalancer {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::{
         event_processor::Ownership, in_memory_checkpoint_store::InMemoryCheckpointStore,
@@ -381,7 +381,9 @@ mod tests {
     use azure_core::Result;
     use tracing::info;
 
-    pub fn test_setup() {}
+    pub fn test_setup() {
+        crate::consumer::tests::setup();
+    }
 
     fn map_to_strings<T, U>(source: &[T], mapper: U) -> Vec<String>
     where

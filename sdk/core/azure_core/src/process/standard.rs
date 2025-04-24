@@ -21,9 +21,7 @@ impl Executor for StdExecutor {
             let output = cmd.output();
             tx.send(output)
         });
-        let output = rx
-            .await
-            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))??;
+        let output = rx.await.map_err(io::Error::other)??;
         Ok(output)
     }
 }

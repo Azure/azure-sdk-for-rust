@@ -15,6 +15,8 @@ pub mod fs;
 pub mod hmac;
 pub mod http;
 pub mod process;
+pub mod task;
+
 #[cfg(feature = "test")]
 pub mod test;
 

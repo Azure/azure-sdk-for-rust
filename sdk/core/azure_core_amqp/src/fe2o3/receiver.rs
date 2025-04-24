@@ -9,6 +9,7 @@ use crate::{
     session::AmqpSession,
     AmqpError,
 };
+use async_trait::async_trait;
 use azure_core::error::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
@@ -44,11 +45,12 @@ impl From<&fe2o3_amqp::link::receiver::CreditMode> for ReceiverCreditMode {
     }
 }
 
+#[async_trait]
 impl AmqpReceiverApis for Fe2o3AmqpReceiver {
     async fn attach(
         &self,
         session: &AmqpSession,
-        source: impl Into<AmqpSource>,
+        source: impl Into<AmqpSource> + Send,
         options: Option<AmqpReceiverOptions>,
     ) -> Result<()> {
         if self.receiver.get().is_some() {
