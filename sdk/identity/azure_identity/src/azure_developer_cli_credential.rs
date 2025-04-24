@@ -159,7 +159,9 @@ mod tests {
         tenant_id: Option<String>,
     ) -> azure_core::Result<AccessToken> {
         let tenant_id_for_on_run = tenant_id.clone();
+        let system_root = "/dev/null";
         let options = AzureDeveloperCliCredentialOptions {
+            env: Some(Env::from(&[("SYSTEMROOT", system_root)][..])),
             executor: Some(MockExecutor::with_output(
                 exit_code,
                 stdout,
@@ -172,9 +174,12 @@ mod tests {
                     if cfg!(target_os = "windows") {
                         assert_eq!(program.to_string_lossy(), "cmd");
                         assert_eq!(args[0], "/C");
+                        assert!(args[1]
+                            .starts_with(&format!("cd {system_root} && azd auth token -o json")));
                     } else {
                         assert_eq!(program, "/bin/sh");
                         assert_eq!(args[0], "-c");
+                        assert!(args[1].starts_with("cd /bin && azd auth token -o json"));
                     }
                     for scope in LIVE_TEST_SCOPES {
                         assert!(args[1].contains(&format!(" --scope {scope}")));
@@ -187,7 +192,6 @@ mod tests {
                 })),
             )),
             tenant_id,
-            ..Default::default()
         };
         let cred = AzureDeveloperCliCredential::new(Some(options))?;
         return cred.get_token(LIVE_TEST_SCOPES).await;
