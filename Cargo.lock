@@ -106,12 +106,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arrayvec"
-version = "0.7.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
-
-[[package]]
 name = "async-compression"
 version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -187,11 +181,7 @@ dependencies = [
  "criterion",
  "futures",
  "hmac",
- "num-format",
- "num-ordinal",
  "openssl",
- "ordinal",
- "ordinal-type",
  "pin-project",
  "rustc_version",
  "serde",
@@ -210,6 +200,7 @@ dependencies = [
 name = "azure_core_amqp"
 version = "0.3.0"
 dependencies = [
+ "async-trait",
  "azure_core",
  "fe2o3-amqp",
  "fe2o3-amqp-cbs",
@@ -1709,31 +1700,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51d515d32fb182ee37cda2ccdcb92950d6a3c2893aa280e540671c2cd0f3b1d9"
 
 [[package]]
-name = "num-format"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a652d9771a63711fd3c3deb670acfbe5c30a4072e664d7a3bf5a9e1056ac72c3"
-dependencies = [
- "arrayvec",
- "itoa",
-]
-
-[[package]]
-name = "num-integer"
-version = "0.1.46"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
-name = "num-ordinal"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b244f65fa4ff30000abd52b6f916061f852b907cc17de811639c1aa2418eab6"
-
-[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1835,25 +1801,6 @@ dependencies = [
  "num-traits",
  "rand",
  "serde",
-]
-
-[[package]]
-name = "ordinal"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c80c1530f46e9d8985706d7deb80b83172b250538902f607dea6cd6028851083"
-dependencies = [
- "num-integer",
-]
-
-[[package]]
-name = "ordinal-type"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6e69a1a73a33ae41be74e9f3f9228b37492e39beac836ca80d42ce72d1b7e8b"
-dependencies = [
- "num-integer",
- "num-traits",
 ]
 
 [[package]]
@@ -3036,6 +2983,7 @@ dependencies = [
  "cargo_metadata",
  "proc-macro2",
  "quote",
+ "rustc_version",
  "serde",
  "serde_json",
  "syn",

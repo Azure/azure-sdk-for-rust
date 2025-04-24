@@ -45,6 +45,7 @@ typespec_macros.path = "../typespec_macros"
 
 [features]
 default = ["http", "json", "reqwest", "reqwest_deflate", "reqwest_gzip"]
+debug = ["typespec_macros?/debug"]
 derive = ["dep:typespec_macros"]
 http = ["typespec/http"]
 json = ["typespec/json"]

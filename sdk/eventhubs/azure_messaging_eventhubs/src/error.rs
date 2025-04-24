@@ -5,6 +5,7 @@ use azure_core_amqp::AmqpDescribedError;
 
 /// Represents the different kinds of errors that can occur in the Eventhubs module.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum ErrorKind {
     /// The session was missing for the partition.
     MissingSession,

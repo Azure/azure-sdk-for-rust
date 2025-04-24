@@ -10,6 +10,7 @@ use crate::{
     session::AmqpSession,
     AmqpOrderedMap, AmqpSymbol, AmqpValue,
 };
+use async_trait::async_trait;
 use azure_core::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
@@ -36,12 +37,13 @@ impl Fe2o3AmqpSender {
     }
 }
 
+#[async_trait]
 impl AmqpSenderApis for Fe2o3AmqpSender {
     async fn attach(
         &self,
         session: &AmqpSession,
         name: String,
-        target: impl Into<AmqpTarget>,
+        target: impl Into<AmqpTarget> + Send,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {
         let mut session_builder = fe2o3_amqp::Sender::builder();
@@ -127,7 +129,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
 
     async fn send(
         &self,
-        message: impl Into<AmqpMessage> + std::fmt::Debug,
+        message: impl Into<AmqpMessage> + std::fmt::Debug + Send,
         options: Option<AmqpSendOptions>,
     ) -> Result<AmqpSendOutcome> {
         let message: AmqpMessage = message.into();

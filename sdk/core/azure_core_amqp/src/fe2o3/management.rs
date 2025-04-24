@@ -11,6 +11,7 @@ use crate::{
     value::{AmqpOrderedMap, AmqpValue},
     AmqpError,
 };
+use async_trait::async_trait;
 use azure_core::{credentials::AccessToken, Result};
 use fe2o3_amqp_management::operations::ReadResponse;
 use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::SimpleValue};
@@ -63,6 +64,7 @@ impl Fe2o3AmqpManagement {
     }
 }
 
+#[async_trait]
 impl AmqpManagementApis for Fe2o3AmqpManagement {
     async fn attach(&self) -> Result<()> {
         let management = fe2o3_amqp_management::client::MgmtClient::builder()

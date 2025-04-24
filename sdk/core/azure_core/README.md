@@ -71,7 +71,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
         Some(options),
     )?;
@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // create a client
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
         None,
     )?;
@@ -140,7 +140,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // create a client
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
         None,
     )?;
@@ -178,7 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // create a client
     let credential = DefaultAzureCredential::new()?;
     let client = SecretClient::new(
-        "https://your-key-vault-name.vault.azure.net/",
+        "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
         None,
     )?;
@@ -215,6 +215,49 @@ cargo bench
 The benchmarks measure critical operations like serialization/deserialization, HTTP request processing, and token acquisition to ensure optimal performance of the SDK.
 
 <!-- ## Troubleshooting -->
+## Troubleshooting
+
+### Logging
+
+To help protected end users from accidental Personally-Identifiable Information (PII) from leaking into logs or traces, models' default implementation of `core::fmt::Debug` formats as non-exhaustive structure tuple e.g.,
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // create a client
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://<your-key-vault-name>.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // get a secret
+    let secret = client.get_secret("secret-name", "", None)
+        .await?
+        .into_body()
+        .await?;
+
+    println!("{secret:#?}");
+
+    Ok(())
+}
+```
+
+By default this will print:
+
+```text
+Secret { .. }
+```
+
+Though not recommended for production, you can enable normal `core::fmt::Debug` formatting complete with field names and values by enabling the `debug` feature of `azure_core` e.g.,
+
+```sh
+cargo add azure_core -F debug
+```
 
 ## Contributing
 

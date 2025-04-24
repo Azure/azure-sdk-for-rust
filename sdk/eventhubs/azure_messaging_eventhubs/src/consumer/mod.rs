@@ -37,8 +37,7 @@ use tracing::{debug, trace};
 pub struct ConsumerClient {
     session_instances: AsyncMutex<HashMap<String, Arc<AmqpSession>>>,
     mgmt_client: AsyncMutex<OnceLock<ManagementInstance>>,
-    connection_manager: ConnectionManager,
-    credential: Arc<dyn azure_core::credentials::TokenCredential>,
+    connection_manager: Arc<ConnectionManager>,
     consumer_group: String,
     eventhub: String,
     endpoint: Url,
@@ -111,8 +110,8 @@ impl ConsumerClient {
                 url.clone(),
                 options.application_id.clone(),
                 options.custom_endpoint.clone(),
+                credential,
             ),
-            credential,
             eventhub: eventhub_name,
             endpoint: url,
             consumer_group,
@@ -257,7 +256,7 @@ impl ConsumerClient {
         let connection = self.connection_manager.get_connection()?;
 
         self.connection_manager
-            .authorize_path(&connection, &source_url, self.credential.clone())
+            .authorize_path(&connection, &source_url)
             .await?;
 
         let session = self.get_session(&partition_id).await?;
@@ -428,7 +427,7 @@ impl ConsumerClient {
 
         let access_token = self
             .connection_manager
-            .authorize_path(&connection, &management_path, self.credential.clone())
+            .authorize_path(&connection, &management_path)
             .await?;
 
         trace!("Create management client.");
@@ -781,18 +780,24 @@ pub mod builders {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use tracing::info;
 
     static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
 
     #[test]
-    fn setup() {
+    pub(crate) fn setup() {
         INIT_LOGGING.call_once(|| {
             println!("Setting up test logger...");
 
-            tracing_subscriber::fmt::init();
+            use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
+            tracing_subscriber::fmt()
+                .with_env_filter(EnvFilter::from_default_env())
+                .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+                .with_ansi(std::env::var("NO_COLOR").map_or(true, |v| v.is_empty()))
+                .with_writer(std::io::stderr)
+                .init();
         });
     }
 
