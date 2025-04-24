@@ -3,10 +3,11 @@ Service: core
 Project: azure-core
 
 PackageVersions:
-  - azure-core: "0.24.0"
+  - azure-core: source
+  - azure-core:
 
 Tests:
-  - Test: url_parsing/parse_basic_url/1000
-    Class: url
+  - Test: url_parsing/parse_basic_url
+    Class: url_parsing/parse_basic_url/1000
     Arguments:
       - --e 1
