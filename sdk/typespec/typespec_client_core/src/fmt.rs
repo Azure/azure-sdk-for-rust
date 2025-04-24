@@ -3,17 +3,18 @@
 
 //! Formatting helpers.
 
-use std::{borrow::Cow, fmt::Debug};
+use std::borrow::Cow;
 
-#[cfg(feature = "derive")]
-pub use typespec_macros::SafeDebug;
-
-/// When deriving this trait, helps prevent leaking personally identifiable information (PII) that deriving [`Debug`] might otherwise.
+/// Derive to help prevent leaking personally identifiable information (PII) that deriving [`Debug`](std::fmt::Debug) might otherwise.
+///
+/// `SafeDebug` is not a trait and cannot be implemented, nor should you derive `Debug` explicitly.
+/// Only when you derive `SafeDebug` will types help prevent leaking PII because, by default, only the type name is printed.
+/// Only when you import `typespec_client_core` with feature `debug` will it derive `Debug` normally.
 ///
 /// # Examples
 ///
 /// ```
-/// use typespec_macros::SafeDebug;
+/// use typespec_client_core::fmt::SafeDebug;
 ///
 /// #[derive(SafeDebug)]
 /// struct MyModel {
@@ -23,9 +24,14 @@ pub use typespec_macros::SafeDebug;
 /// let model = MyModel {
 ///     name: Some("Kelly Smith".to_string()),
 /// };
-/// assert_eq!(format!("{model:?}"), "MyModel { .. }");
+/// if cfg!(feature = "debug") {
+///     assert_eq!(format!("{model:?}"), r#"MyModel { name: Some("Kelly Smith") }"#);
+/// } else {
+///     assert_eq!(format!("{model:?}"), "MyModel { .. }");
+/// }
 /// ```
-pub trait SafeDebug: Debug {}
+#[cfg(feature = "derive")]
+pub use typespec_macros::SafeDebug;
 
 /// Converts ASCII characters in `value` to lowercase if required; otherwise, returns the original slice.
 ///
