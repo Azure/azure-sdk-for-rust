@@ -6,7 +6,6 @@ const PARAMS: &[usize] = &[1, 10, 100, 1000];
 
 fn url_parsing_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("url_parsing");
-    //group.measurement_time(Duration::from_secs(10));
     for num in PARAMS {
         let mut url = String::new();
         url.push_str("https://example.com/path/resource?param=value");
