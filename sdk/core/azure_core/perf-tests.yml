@@ -3,8 +3,8 @@ Service: core
 Project: azure-core
 
 PackageVersions:
+  - azure-core: "aeb60b43820d38827b08dae837f43659cced60dd"
   - azure-core: source
-  - azure-core:
 
 Tests:
   - Test: url_parsing/parse_basic_url
