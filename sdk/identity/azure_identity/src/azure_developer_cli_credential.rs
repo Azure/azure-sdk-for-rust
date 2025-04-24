@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore SYSTEMROOT
+// cspell:ignore SYSTEMROOT workdir
 
 use crate::{env::Env, validate_scope, validate_tenant_id};
 use azure_core::{
