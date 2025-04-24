@@ -4,9 +4,10 @@
 use super::{SpawnedTask, TaskFuture, TaskSpawner};
 #[cfg(not(target_arch = "wasm32"))]
 use futures::{executor::LocalPool, task::SpawnExt};
-use std::future;
+
 #[cfg(not(target_arch = "wasm32"))]
 use std::{
+    future,
     future::Future,
     pin::Pin,
     sync::{Arc, Mutex},
@@ -14,6 +15,7 @@ use std::{
     task::{Context, Poll},
     thread,
 };
+#[cfg(not(target_arch = "wasm32"))]
 use tracing::debug;
 
 /// A future that completes when a thread join handle completes.
