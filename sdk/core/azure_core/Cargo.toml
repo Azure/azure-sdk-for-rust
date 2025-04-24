@@ -19,10 +19,6 @@ async-trait.workspace = true
 bytes.workspace = true
 futures.workspace = true
 hmac = { workspace = true, optional = true }
-num-format = "0.4.4"
-num-ordinal = "0.2.0"
-ordinal = "0.3.2"
-ordinal-type = "0.3.0"
 openssl = { workspace = true, optional = true }
 pin-project.workspace = true
 serde.workspace = true
