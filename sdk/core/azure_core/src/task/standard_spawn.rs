@@ -4,7 +4,6 @@
 use super::{SpawnedTask, TaskFuture, TaskSpawner};
 #[cfg(not(target_arch = "wasm32"))]
 use futures::{executor::LocalPool, task::SpawnExt};
-
 #[cfg(not(target_arch = "wasm32"))]
 use std::{
     future,
@@ -83,8 +82,6 @@ impl Future for ThreadJoinFuture {
 #[derive(Debug)]
 pub struct StdSpawner;
 
-//#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-//#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl TaskSpawner for StdSpawner {
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {
@@ -96,54 +93,50 @@ impl TaskSpawner for StdSpawner {
         {
             let join_state = Arc::new(Mutex::new(ThreadJoinState::default()));
             {
-                let js = join_state.lock();
-                match js {
-                    Ok(mut js) => {
-                        let join_state_clone = join_state.clone();
-                        js.join_handle = Some(thread::spawn(move || {
-                            // Create a local executor
-                            let mut local_pool = LocalPool::new();
-                            let spawner = local_pool.spawner();
+                let Ok(mut js) = join_state.lock() else {
+                    return Box::pin(future::ready(Err(Box::new(crate::Error::message(
+                        crate::error::ErrorKind::Other,
+                        "Thread panicked.",
+                    ))
+                        as Box<dyn std::error::Error + Send>)));
+                };
 
-                            // Spawn the future on the local executor
-                            let spawn_result = spawner.spawn_with_handle(f);
-                            match spawn_result {
-                                Err(err) => Err(Box::new(crate::Error::message(
-                                    crate::error::ErrorKind::Other,
-                                    format!("Failed to spawn future: {}", err),
-                                ))
-                                    as Box<dyn std::error::Error + Send>),
-                                Ok(future_handle) => {
-                                    // Drive the executor until the future completes
-                                    local_pool.run_until(future_handle);
+                // Clone the join state so it can be moved into the thread
+                // and used to notify the waker when the thread finishes.
+                let join_state_clone = join_state.clone();
 
-                                    let join_state = join_state_clone.lock();
-                                    let Ok(mut join_state) = join_state else {
-                                        return Err(Box::new(crate::Error::message(
-                                            crate::error::ErrorKind::Other,
-                                            "Failed to lock join state",
-                                        ))
-                                            as Box<dyn std::error::Error + Send>);
-                                    };
-                                    // The thread has finished, so we can take the waker
-                                    // and notify it.
-                                    join_state.thread_finished = true;
-                                    if let Some(waker) = join_state.waker.take() {
-                                        waker.wake();
-                                    }
-                                    Ok(())
-                                }
-                            }
-                        }));
-                    }
-                    Err(err) => {
-                        return Box::pin(future::ready(Err(Box::new(crate::Error::message(
+                js.join_handle = Some(thread::spawn(move || {
+                    // Create a local executor
+                    let mut local_pool = LocalPool::new();
+                    let spawner = local_pool.spawner();
+
+                    // Spawn the future on the local executor
+                    let Ok(future_handle) = spawner.spawn_with_handle(f) else {
+                        return Err(Box::new(crate::Error::message(
                             crate::error::ErrorKind::Other,
-                            format!("Thread panicked: {}", err),
+                            "Failed to spawn future.",
                         ))
-                            as Box<dyn std::error::Error + Send>)));
+                            as Box<dyn std::error::Error + Send>);
+                    };
+                    // Drive the executor until the future completes
+                    local_pool.run_until(future_handle);
+
+                    let Ok(mut join_state) = join_state_clone.lock() else {
+                        return Err(Box::new(crate::Error::message(
+                            crate::error::ErrorKind::Other,
+                            "Failed to lock join state",
+                        ))
+                            as Box<dyn std::error::Error + Send>);
+                    };
+
+                    // The thread has finished, so we can take the waker
+                    // and notify it.
+                    join_state.thread_finished = true;
+                    if let Some(waker) = join_state.waker.take() {
+                        waker.wake();
                     }
-                }
+                    Ok(())
+                }));
             }
             // Create a future that will complete when the thread joins
             let join_future = ThreadJoinFuture { join_state };

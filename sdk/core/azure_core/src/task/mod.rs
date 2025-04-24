@@ -63,7 +63,6 @@ pub type SpawnedTask =
 
 /// An async command runner.
 ///
-// Note that this trait cannot use *`async_trait`* because method implementations in an async_trait never directly return futures, and we want the `spawn` method to return a future that can be awaited.
 pub trait TaskSpawner: Send + Sync + Debug {
     /// Spawn a task that executes a given future and returns the output.
     ///
@@ -90,6 +89,14 @@ pub trait TaskSpawner: Send + Sync + Debug {
     ///   future.await.expect("Task should complete successfully");
     /// }
     /// ```
+    ///
+    /// # Note
+    ///
+    /// This trait intentionally does not use the *`async_trait`* macro because when the
+    /// `async_trait` attribute is applied to a trait  implementation, the rewritten
+    /// method cannot directly return a future, instead they wrap the return value
+    /// in a future, and we want the `spawn` method to directly return a future
+    /// that can be awaited.
     ///
     fn spawn(&self, f: TaskFuture) -> SpawnedTask;
 }
