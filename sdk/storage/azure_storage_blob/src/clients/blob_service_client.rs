@@ -3,8 +3,10 @@
 
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
-    models::StorageServiceProperties, pipeline::StorageHeadersPolicy, BlobContainerClient,
-    BlobContainerClientOptions, BlobServiceClientGetPropertiesOptions, BlobServiceClientOptions,
+    generated::models::BlobServiceClientGetAccountInfoResult, models::StorageServiceProperties,
+    pipeline::StorageHeadersPolicy, BlobContainerClient, BlobContainerClientOptions,
+    BlobServiceClientGetAccountInfoOptions, BlobServiceClientGetPropertiesOptions,
+    BlobServiceClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -96,5 +98,18 @@ impl BlobServiceClient {
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<StorageServiceProperties>> {
         self.client.get_properties(options).await
+    }
+
+    /// Gets information related to the Storage account.
+    /// This includes the `sku_name` and `account_kind`.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_account_info(
+        &self,
+        options: Option<BlobServiceClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobServiceClientGetAccountInfoResult>> {
+        self.client.get_account_info(options).await
     }
 }

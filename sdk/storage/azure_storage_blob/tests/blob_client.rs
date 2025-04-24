@@ -8,13 +8,16 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
-        AccessTier, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
-        BlockListType, BlockLookupList, LeaseState,
+        AccessTier, AccountKind, BlobClientDownloadResultHeaders,
+        BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesResultHeaders,
+        BlobImmutabilityPolicyMode, BlockListType, BlockLookupList, LeaseState,
     },
-    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions,
+    BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
+    BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions,
 };
 use azure_storage_blob_test::{create_test_blob, get_blob_client, get_container_client};
 use std::{collections::HashMap, error::Error};
+use time::OffsetDateTime;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -453,5 +456,75 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(AccessTier::Cold, access_tier.unwrap());
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let blob_client = get_blob_client(None, recording)?;
+
+    // Act
+    let response = blob_client.get_account_info(None).await?;
+
+    // Assert
+    let sku_name = response.sku_name()?;
+    let account_kind = response.account_kind()?;
+
+    assert!(sku_name.is_some());
+    assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // TODO: Support versioning, will also need some way to indicate this needs to be versioned
+    // TODO: In Python, we use the management client to enable ImmutableStorageWithVersioning
+
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording)?;
+    let blob_client = get_blob_client(
+        Some(container_client.container_name().to_string()),
+        recording,
+    )?;
+    container_client.create_container(None).await?;
+    create_test_blob(&blob_client).await?;
+
+    // Act
+    let response = blob_client.get_properties(None).await?;
+    let immutability_policy = response.immutability_policy_mode()?;
+    assert!(immutability_policy.is_none());
+
+    // Set Immutability Policy
+    let set_immutability_policy_options = BlobClientSetImmutabilityPolicyOptions {
+        immutability_policy_expiry: Some(
+            OffsetDateTime::now_utc().saturating_add(time::Duration::minutes(5)),
+        ),
+        immutability_policy_mode: Some(BlobImmutabilityPolicyMode::Unlocked),
+        ..Default::default()
+    };
+    blob_client
+        .set_immutability_policy(Some(set_immutability_policy_options))
+        .await?;
+
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let immutability_policy = response.immutability_policy_mode()?;
+    assert_eq!(
+        BlobImmutabilityPolicyMode::Mutable,
+        immutability_policy.unwrap()
+    );
+
+    // Delete Immutability Policy
+    blob_client.delete_immutability_policy(None).await?;
+
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let immutability_policy = response.immutability_policy_mode()?;
+    assert!(immutability_policy.is_none());
+
     Ok(())
 }

@@ -4,7 +4,10 @@
 use azure_core::http::StatusCode;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
-    models::{BlobContainerClientGetPropertiesResultHeaders, LeaseState},
+    models::{
+        AccountKind, BlobContainerClientGetAccountInfoResultHeaders,
+        BlobContainerClientGetPropertiesResultHeaders, LeaseState,
+    },
     BlobContainerClientSetMetadataOptions,
 };
 use azure_storage_blob_test::get_container_client;
@@ -81,5 +84,24 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     assert_eq!(HashMap::new(), response_metadata);
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording)?;
+
+    // Act
+    let response = container_client.get_account_info(None).await?;
+
+    // Assert
+    let sku_name = response.sku_name()?;
+    let account_kind = response.account_kind()?;
+
+    assert!(sku_name.is_some());
+    assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
+
     Ok(())
 }
