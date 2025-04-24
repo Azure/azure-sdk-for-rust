@@ -6,8 +6,9 @@ use futures::FutureExt;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-#[tokio::test]
-async fn test_task_execution() {
+#[cfg(not(feature = "tokio"))]
+#[test]
+fn test_task_spawner_execution() {
     let spawner = new_task_spawner();
     let result = Arc::new(Mutex::new(false));
     let result_clone = Arc::clone(&result);
@@ -22,38 +23,33 @@ async fn test_task_execution() {
         .boxed(),
     );
 
-    // Wait for task completion
-    handle.await.expect("Task should complete successfully");
+    futures::executor::block_on(handle).expect("Task should complete successfully");
 
     // Verify the task executed
     assert!(*result.lock().unwrap());
 }
 
+#[cfg(feature = "tokio")]
 #[tokio::test]
-async fn test_multiple_tasks() {
+async fn tokio_task_spawner_execution() {
     let spawner = new_task_spawner();
-    let counter = Arc::new(Mutex::new(0));
-    let mut handles = Vec::new();
+    let result = Arc::new(Mutex::new(false));
+    let result_clone = Arc::clone(&result);
 
-    // Spawn multiple tasks
-    for _ in 0..5 {
-        let counter_clone = Arc::clone(&counter);
-        let handle = spawner.spawn(
-            async move {
-                let mut value = counter_clone.lock().unwrap();
-                *value += 1;
-            }
-            .boxed(),
-        );
-        handles.push(handle);
-    }
+    let handle = spawner.spawn(
+        async move {
+            // Simulate some work
+            crate::sleep::sleep(Duration::from_millis(50)).await;
+            let mut value = result_clone.lock().unwrap();
+            *value = true;
+        }
+        .boxed(),
+    );
 
-    // Wait for all tasks
-    for handle in handles {
-        handle.await.expect("Task should complete successfully");
-    }
-    // Verify all tasks executed
-    assert_eq!(*counter.lock().unwrap(), 5);
+    handle.await.expect("Task should complete successfully");
+
+    // Verify the task executed
+    assert!(*result.lock().unwrap());
 }
 
 #[cfg(feature = "tokio")]
@@ -126,8 +122,10 @@ async fn tokio_task_execution() {
     assert!(*result.lock().unwrap());
 }
 
-#[tokio::test]
-async fn std_specific_handling() {
+// When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
+// When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
+#[test]
+fn std_specific_handling() {
     let spawner = Arc::new(standard_spawn::StdSpawner);
     let task_completed = Arc::new(Mutex::new(false));
     let task_completed_clone = Arc::clone(&task_completed);
@@ -140,13 +138,13 @@ async fn std_specific_handling() {
     );
 
     // For std threads, we need to wait for the task to complete
-    tokio::time::sleep(Duration::from_millis(100)).await;
-    handle.await.expect("Task should complete successfully");
+    std::thread::sleep(Duration::from_millis(100));
+    futures::executor::block_on(handle).expect("Task should complete successfully");
     assert!(*task_completed.lock().unwrap());
 }
 
-#[tokio::test]
-async fn std_multiple_tasks() {
+#[test]
+fn std_multiple_tasks() {
     let spawner = Arc::new(standard_spawn::StdSpawner);
     let counter = Arc::new(Mutex::new(0));
     let mut handles = Vec::new();
@@ -166,7 +164,7 @@ async fn std_multiple_tasks() {
 
     // Wait for all tasks
     for handle in handles {
-        handle.await.expect("Task should complete successfully");
+        futures::executor::block_on(handle).expect("Task should complete successfully");
     }
     // Verify all tasks executed
     assert_eq!(*counter.lock().unwrap(), 5);
@@ -174,7 +172,6 @@ async fn std_multiple_tasks() {
 
 // When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
 // When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
-
 #[cfg(not(feature = "tokio"))]
 #[test]
 fn std_task_execution() {

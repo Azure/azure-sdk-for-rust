@@ -39,14 +39,6 @@ mod tokio_spawn;
 #[cfg(test)]
 mod tests;
 
-// /// A `SpawnHandle` is a handle to a spawned task, allowing you to wait for its completion.
-// #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-// #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-// pub trait SpawnHandle: Send + fmt::Debug {
-//     /// Wait for the task to complete and return the result.
-//     async fn wait(self: Box<Self>) -> crate::Result<()>;
-// }
-
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 
@@ -58,7 +50,11 @@ pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
 /// It can be awaited to block until the task has completed.
 #[cfg(not(target_arch = "wasm32"))]
 pub type SpawnedTask = Pin<
-    Box<dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error>>> + Send + 'static>,
+    Box<
+        dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error + Send>>>
+            + Send
+            + 'static,
+    >,
 >;
 
 #[cfg(target_arch = "wasm32")]
@@ -66,8 +62,8 @@ pub type SpawnedTask =
     Pin<Box<dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error>>> + 'static>>;
 
 /// An async command runner.
-//#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-//#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+///
+// Note that this trait cannot use *`async_trait`* because method implementations in an async_trait never directly return futures, and we want the `spawn` method to return a future that can be awaited.
 pub trait TaskSpawner: Send + Sync + Debug {
     /// Spawn a task that executes a given future and returns the output.
     ///

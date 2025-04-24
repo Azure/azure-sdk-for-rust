@@ -14,7 +14,7 @@ impl TaskSpawner for TokioSpawner {
         Box::pin(async move {
             handle
                 .await
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send>)
         })
     }
 }
