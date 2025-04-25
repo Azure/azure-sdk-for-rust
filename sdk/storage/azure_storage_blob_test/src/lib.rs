@@ -7,7 +7,7 @@ use azure_core::{
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    models::BlockBlobClientUploadResult, BlobClient, BlobClientOptions, BlobContainerClient,
+    models::BlockBlobClientUploadResult, BlobClient, BlobContainerClient,
     BlobContainerClientOptions, BlobServiceClient, BlobServiceClientOptions,
 };
 
@@ -25,6 +25,18 @@ fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     );
 
     (client_options, endpoint)
+}
+
+pub fn get_blob_name(recording: &Recording) -> String {
+    recording
+        .random_string::<12>(Some("blob"))
+        .to_ascii_lowercase()
+}
+
+pub fn get_container_name(recording: &Recording) -> String {
+    recording
+        .random_string::<17>(Some("container"))
+        .to_ascii_lowercase()
 }
 
 /// Returns an instance of a BlobServiceClient.
@@ -50,53 +62,27 @@ pub fn get_blob_service_client(recording: &Recording) -> Result<BlobServiceClien
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
-pub fn get_container_client(recording: &Recording) -> Result<BlobContainerClient> {
-    let container_name = recording
-        .random_string::<17>(Some("container"))
-        .to_ascii_lowercase();
+/// * `create` - An optional flag to determine whether the container should also be created.
+pub async fn get_container_client(
+    recording: &Recording,
+    create: Option<bool>,
+) -> Result<BlobContainerClient> {
+    let container_name = get_container_name(recording);
     let (options, endpoint) = recorded_test_setup(recording);
     let container_client_options = BlobContainerClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };
-    BlobContainerClient::new(
+    let container_client = BlobContainerClient::new(
         &endpoint,
         container_name,
         recording.credential(),
         Some(container_client_options),
-    )
-}
-
-/// Returns an instance of a BlobClient.
-///
-/// # Arguments
-///
-/// * `container_name` - The name of the container containing this blob.
-/// * `recording` - A reference to a Recording instance.
-pub fn get_blob_client(
-    container_name: Option<String>,
-    recording: &Recording,
-) -> Result<BlobClient> {
-    let container_name = container_name.unwrap_or(
-        recording
-            .random_string::<17>(Some("container"))
-            .to_ascii_lowercase(),
-    );
-    let blob_name = recording
-        .random_string::<12>(Some("blob"))
-        .to_ascii_lowercase();
-    let (options, endpoint) = recorded_test_setup(recording);
-    let blob_client_options = BlobClientOptions {
-        client_options: options.clone(),
-        ..Default::default()
-    };
-    BlobClient::new(
-        &endpoint,
-        container_name,
-        blob_name,
-        recording.credential(),
-        Some(blob_client_options),
-    )
+    )?;
+    if let Some(true) = create {
+        container_client.create_container(None).await?;
+    }
+    Ok(container_client)
 }
 
 /// Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17.
