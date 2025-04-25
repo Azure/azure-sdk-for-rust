@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
+    generated::clients::BlobClient as GeneratedBlobClient,
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
     BlobClient, BlobClientOptions, BlobContainerClientCreateOptions,
@@ -20,10 +21,9 @@ use std::sync::Arc;
 
 /// A client to interact with a specified Azure storage container.
 pub struct BlobContainerClient {
-    endpoint: Url,
-    container_name: String,
-    credential: Arc<dyn TokenCredential>,
-    client: GeneratedBlobContainerClient,
+    pub(crate) endpoint: Url,
+    pub(crate) container_name: String,
+    pub(crate) client: GeneratedBlobContainerClient,
 }
 
 impl BlobContainerClient {
@@ -68,7 +68,6 @@ impl BlobContainerClient {
         Ok(Self {
             endpoint: endpoint.parse()?,
             container_name,
-            credential,
             client,
         })
     }
@@ -79,18 +78,18 @@ impl BlobContainerClient {
     ///
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    pub fn blob_client(
-        &self,
-        blob_name: String,
-        options: Option<BlobClientOptions>,
-    ) -> Result<BlobClient> {
-        BlobClient::new(
-            self.endpoint().as_str(),
-            self.container_name().to_string(),
-            blob_name,
-            self.credential.clone(),
-            options,
-        )
+    pub fn blob_client(&self, blob_name: String) -> BlobClient {
+        let generated_blob_client = GeneratedBlobClient {
+            blob_name: blob_name.clone(),
+            container_name: self.container_name.clone(),
+            endpoint: self.client.endpoint.clone(),
+            pipeline: self.client.pipeline.clone(),
+            version: self.client.version.clone(),
+        };
+        BlobClient {
+            endpoint: self.client.endpoint.clone(),
+            client: generated_blob_client,
+        }
     }
 
     /// Gets the endpoint of the Storage account this client is connected to.
