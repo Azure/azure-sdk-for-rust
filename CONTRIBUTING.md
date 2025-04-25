@@ -122,13 +122,6 @@ which is important if it shows an example running against live resources that li
 
 More guidance for writing documentation tests can be found in our [Rust Guidelines].
 
-### Performance testing
-
-Performance testing is supported via [criterion](https://bheisler.github.io/criterion.rs/book/criterion_rs.html)
-There are samples of performance tests under `sdk/core/azure_core/benches` folder.
-To execute the performance tests in azure_core folder you can run `cargo bench` in the `sdk/core/azure_core` folder.
-The output of the tests will be presented in the command line as well as saved under the `target/criterion` folder.
-
 ### Debugging with Visual Studio Code
 
 [Visual Studio Code] with recommended extensions installed can be used to run and debug tests for a module or individual tests.
@@ -317,6 +310,14 @@ Once all of the above steps are met, the following process will be followed:
 - If a reviewer marks your PR as approved along with specific comments, it is expected that those comments will be addressed or resolved prior to merging.
   - One exception is when a comment clearly states that the feedback is optional or just a nit
   - When in doubt, reach out to the commenter to confirm that they have no concerns with you merging without addressing a comment.
+
+
+### Performance Testing
+
+Performance testing is supported via [criterion](https://bheisler.github.io/criterion.rs/book/criterion_rs.html)
+There are samples of performance tests under `sdk/core/azure_core/benches` folder.
+To execute the performance tests in azure_core folder you can run `cargo bench` in the `sdk/core/azure_core` folder.
+The output of the tests will be presented in the command line as well as saved under the `target/criterion` folder.
 
 ## Samples
 
