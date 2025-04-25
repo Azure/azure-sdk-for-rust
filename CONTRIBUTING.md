@@ -126,7 +126,7 @@ More guidance for writing documentation tests can be found in our [Rust Guidelin
 
 Performance testing is supported via [criterion](https://bheisler.github.io/criterion.rs/book/criterion_rs.html)
 There are samples of performance tests under `sdk/core/azure_core/benches` folder.
-To execute the performance tests in azure_core folder you can run `cargo bench` in the `sdk/core/azure_core` folder.
+To execute the performance tests in `azure_core` folder you can run `cargo bench` in the `sdk/core/azure_core` folder.
 The output of the tests will be presented in the command line as well as saved under the `target/criterion` folder.
 
 ### Debugging with Visual Studio Code
