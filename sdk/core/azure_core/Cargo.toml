@@ -76,5 +76,5 @@ features = [
 ]
 
 [[bench]]
-name = "core_benchmarks"
+name = "benchmarks"
 harness = false

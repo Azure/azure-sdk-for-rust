@@ -1,11 +1,10 @@
 use azure_core::http::Url;
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use std::time::Duration;
 // how many params to add to the url
 const PARAMS: &[usize] = &[1, 10, 100, 1000];
 
 fn url_parsing_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("url_parsing");
     for num in PARAMS {
         let mut url = String::new();
         url.push_str("https://example.com/path/resource?param=value");
@@ -13,19 +12,18 @@ fn url_parsing_benchmark(c: &mut Criterion) {
         for i in 0..*num {
             url.push_str(&format!("&param{}=value{}", i, i));
         }
-        group.bench_function(BenchmarkId::new("parse_basic_url", num), |b| {
+        c.bench_function(&format!("parse_basic_url_{}", num), |b| {
             b.iter(|| {
-                let _url = Url::parse(&url).unwrap();
+                black_box(Url::parse(&url).unwrap());
             })
         });
     }
-    group.finish();
 }
 
-// Main benchmark group
+// Main benchmark configuration
 criterion_group! {
-    name = url_benches;
-    config = Criterion::default().sample_size(200).warm_up_time(Duration::from_secs(5)); // default is 100 samples, warmup 3, just an example
+    name = benchmarks;
+    config = Criterion::default().sample_size(200).warm_up_time(Duration::from_secs(5));
     targets = url_parsing_benchmark
 }
-criterion_main!(url_benches);
+criterion_main!(benchmarks);
