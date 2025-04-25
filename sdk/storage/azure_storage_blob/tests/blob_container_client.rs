@@ -14,7 +14,7 @@ use std::{collections::HashMap, error::Error};
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording)?;
+    let container_client = get_container_client(recording, Some(false)).await?;
 
     container_client.create_container(None).await?;
 
@@ -26,7 +26,7 @@ async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording)?;
+    let container_client = get_container_client(recording, Some(false)).await?;
 
     // Container Doesn't Exists Scenario
     let response = container_client.get_properties(None).await;
@@ -54,8 +54,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
 async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording)?;
-    container_client.create_container(None).await?;
+    let container_client = get_container_client(recording, Some(true)).await?;
 
     // Set Metadata With Values
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
