@@ -28,7 +28,7 @@ authors = ["Microsoft"]
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-rust-version = "1.80"
+rust-version = "1.81"
 
 [workspace.dependencies.typespec]
 default-features = false
@@ -80,6 +80,7 @@ base64 = "0.22"
 bytes = "1.0"
 cargo_metadata = "0.18.1"
 clap = { version = "4.4.16", features = ["derive"] }
+criterion = "0.5.1"
 dyn-clone = "1.0"
 fe2o3-amqp = { version = "0.12", features = ["native-tls", "tracing", "uuid"] }
 fe2o3-amqp-ext = { version = "0.12" }
