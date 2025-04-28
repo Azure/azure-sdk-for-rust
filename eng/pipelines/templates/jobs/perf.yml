@@ -40,7 +40,8 @@ extends:
           runProxy: true
           rootFolder: "$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}"
           templateFolder: "$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}"
-
+      - script: ls -R /mnt/vss/_work/1/s/sdk/core/
+        displayName: list files
     ServiceDirectory: ${{ parameters.ServiceDirectory }}
     PackageVersions: ${{ parameters.PackageVersions }}
     Tests: ${{ parameters.Tests }}
