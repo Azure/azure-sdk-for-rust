@@ -13,7 +13,6 @@ mod env;
 mod managed_identity_credential;
 mod oauth2_http_client;
 mod refresh_token;
-mod timeout;
 
 use azure_core::{
     error::{ErrorKind, ResultExt},
