@@ -21,9 +21,9 @@ use std::sync::Arc;
 
 /// A client to interact with a specified Azure storage container.
 pub struct BlobContainerClient {
-    pub(crate) endpoint: Url,
-    pub(crate) container_name: String,
-    pub(crate) client: GeneratedBlobContainerClient,
+    pub(super) endpoint: Url,
+    pub(super) container_name: String,
+    pub(super) client: GeneratedBlobContainerClient,
 }
 
 impl BlobContainerClient {
