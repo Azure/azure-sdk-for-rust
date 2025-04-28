@@ -65,7 +65,7 @@ pub fn get_blob_service_client(recording: &Recording) -> Result<BlobServiceClien
 /// * `create` - An optional flag to determine whether the container should also be created.
 pub async fn get_container_client(
     recording: &Recording,
-    create: Option<bool>,
+    create: bool,
 ) -> Result<BlobContainerClient> {
     let container_name = get_container_name(recording);
     let (options, endpoint) = recorded_test_setup(recording);
@@ -79,7 +79,7 @@ pub async fn get_container_client(
         recording.credential(),
         Some(container_client_options),
     )?;
-    if let Some(true) = create {
+    if create {
         container_client.create_container(None).await?;
     }
     Ok(container_client)

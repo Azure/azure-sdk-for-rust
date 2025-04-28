@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::BlobClient as GeneratedBlobClient,
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
     BlobClient, BlobClientOptions, BlobContainerClientCreateOptions,
@@ -79,16 +78,9 @@ impl BlobContainerClient {
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
     pub fn blob_client(&self, blob_name: String) -> BlobClient {
-        let generated_blob_client = GeneratedBlobClient {
-            blob_name: blob_name.clone(),
-            container_name: self.container_name.clone(),
-            endpoint: self.client.endpoint.clone(),
-            pipeline: self.client.pipeline.clone(),
-            version: self.client.version.clone(),
-        };
         BlobClient {
             endpoint: self.client.endpoint.clone(),
-            client: generated_blob_client,
+            client: self.client.get_blob_client(blob_name),
         }
     }
 

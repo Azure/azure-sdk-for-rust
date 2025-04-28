@@ -20,7 +20,7 @@ use std::{collections::HashMap, error::Error};
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, Some(false)).await?;
+    let container_client = get_container_client(recording, false).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
 
     // Invalid Container Scenario
@@ -55,7 +55,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, Some(true)).await?;
+    let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
     create_test_blob(&blob_client).await?;
 
@@ -85,7 +85,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, Some(true)).await?;
+    let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
 
     let data = b"hello rusty world";
@@ -153,7 +153,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, Some(true)).await?;
+    let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
     create_test_blob(&blob_client).await?;
 
@@ -176,7 +176,7 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, Some(true)).await?;
+    let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
     let data = b"hello rusty world";
 
@@ -209,7 +209,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     // Recording Setup
 
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, Some(true)).await?;
+    let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
     let data = b"hello rusty world";
 
@@ -259,7 +259,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, Some(true)).await?;
+    let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
 
     let block_1 = b"AAA";
@@ -328,7 +328,7 @@ async fn test_put_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_get_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, Some(true)).await?;
+    let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
 
     let block_1 = b"AAA";
@@ -407,7 +407,7 @@ async fn test_get_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, Some(true)).await?;
+    let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
     create_test_blob(&blob_client).await?;
 
