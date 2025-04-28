@@ -1,45 +1,45 @@
 parameters:
-- name: InstallLanguageSteps
-  type: object
-  default: []
-- name: ServiceDirectory
-  type: string
-  default: ''
-- name: PackageVersions
-  type: string
-  default: '.*'
-- name: Tests
-  type: string
-  default: '.*'
-- name: Arguments
-  type: string
-  default: '.*'
-- name: Iterations
-  type: number
-  default: '5'
-- name: AdditionalArguments
-  type: string
-  default: ''
-- name: Profile
-  type: boolean
-  default: false
-- name: EnvVars
-  type: object
-  default: []
+  - name: InstallLanguageSteps
+    type: object
+    default: []
+  - name: ServiceDirectory
+    type: string
+    default: ""
+  - name: PackageVersions
+    type: string
+    default: ".*"
+  - name: Tests
+    type: string
+    default: ".*"
+  - name: Arguments
+    type: string
+    default: ".*"
+  - name: Iterations
+    type: number
+    default: "5"
+  - name: AdditionalArguments
+    type: string
+    default: ""
+  - name: Profile
+    type: boolean
+    default: false
+  - name: EnvVars
+    type: object
+    default: []
 
 extends:
   template: /eng/common/pipelines/templates/jobs/perf.yml
   parameters:
     Variables:
-    - template: /eng/pipelines/templates/variables/globals.yml
-    Language: Cpp
-    LanguageVersion: 'N/A'
+      - template: /eng/pipelines/templates/variables/globals.yml
+    Language: Rust
+    LanguageVersion: "N/A"
     InstallLanguageSteps:
       - template: /eng/common/testproxy/test-proxy-tool.yml
         parameters:
           runProxy: true
-          rootFolder: '$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}'
-          templateFolder: '$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}'
+          rootFolder: "$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}"
+          templateFolder: "$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}"
 
     ServiceDirectory: ${{ parameters.ServiceDirectory }}
     PackageVersions: ${{ parameters.PackageVersions }}
