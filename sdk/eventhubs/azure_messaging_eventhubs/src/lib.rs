@@ -44,5 +44,7 @@ pub mod builders {
 
 pub use crate::error::{ErrorKind, EventHubsError};
 
+pub(crate) use common::retry::RetryOptions;
+
 #[cfg(feature = "test")]
 pub use in_memory_checkpoint_store::InMemoryCheckpointStore;

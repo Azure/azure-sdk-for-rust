@@ -182,57 +182,6 @@ pub struct AmqpSendOptions {
 
 impl AmqpSendOptions {}
 
-pub(crate) mod error {
-    use crate::{
-        error::{AmqpDescribedError, AmqpErrorKind},
-        AmqpError,
-    };
-
-    pub enum AmqpSenderError {
-        // Sender Errors
-        NonTerminalDeliveryState,
-        IllegalDeliveryState,
-
-        /// Remote peer rejected delivery of the message
-        NotAccepted(Option<AmqpDescribedError>),
-    }
-
-    impl std::error::Error for AmqpSenderError {}
-
-    impl std::fmt::Debug for AmqpSenderError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "AmqpSenderError: {}", self)?;
-            Ok(())
-        }
-    }
-
-    impl std::fmt::Display for AmqpSenderError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                AmqpSenderError::NotAccepted(e) => {
-                    write!(f, "Message delivery was not accepted: {:?}", e)
-                }
-                AmqpSenderError::NonTerminalDeliveryState => {
-                    write!(f, "Non-terminal delivery state")
-                }
-                AmqpSenderError::IllegalDeliveryState => write!(f, "Illegal delivery state"),
-            }
-        }
-    }
-
-    impl From<AmqpSenderError> for AmqpError {
-        fn from(e: AmqpSenderError) -> Self {
-            AmqpError::from(AmqpErrorKind::SenderError(e))
-        }
-    }
-
-    impl From<AmqpSenderError> for azure_core::Error {
-        fn from(e: AmqpSenderError) -> Self {
-            AmqpError::from(e).into()
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

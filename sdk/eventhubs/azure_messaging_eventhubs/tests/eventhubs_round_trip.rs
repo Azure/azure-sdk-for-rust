@@ -24,7 +24,7 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let credential = recording.credential();
     let producer = ProducerClient::builder()
         .with_application_id(TEST_NAME.to_string())
-        .open(host.clone(), eventhub.clone(), credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     let partition_properties = producer
@@ -98,7 +98,7 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let credential = recording.credential();
     let consumer = ConsumerClient::builder()
         .with_application_id(TEST_NAME.to_string())
-        .open(host, eventhub, credential)
+        .open(host.as_str(), eventhub, credential)
         .await?;
     let receiver = consumer
         .open_receiver_on_partition(

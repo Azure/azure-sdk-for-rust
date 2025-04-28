@@ -5,17 +5,17 @@
 /// Receive messages from a partition.
 pub(crate) mod event_receiver;
 
-use super::{
-    common::ManagementInstance,
-    error::ErrorKind,
-    models::{EventHubPartitionProperties, EventHubProperties},
+use crate::{
+    common::{connection_manager::ConnectionManager, ManagementInstance},
+    error::{ErrorKind, EventHubsError},
+    models::{ConsumerClientDetails, EventHubPartitionProperties, EventHubProperties},
+    RetryOptions,
 };
-use crate::{common::connection_manager::ConnectionManager, error::EventHubsError, models};
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
     credentials::TokenCredential,
     error::{Error, ErrorKind as AzureErrorKind, Result},
-    http::{RetryOptions, Url},
+    http::Url,
     Uuid,
 };
 use azure_core_amqp::{
@@ -41,11 +41,10 @@ pub struct ConsumerClient {
     consumer_group: String,
     eventhub: String,
     endpoint: Url,
-    /// The instance ID to set.
+    // The instance ID to set.
     instance_id: Option<String>,
-    /// The retry options to set.
-    #[allow(dead_code)]
-    retry_options: Option<RetryOptions>,
+    // The retry options to set.
+    retry_options: RetryOptions,
 }
 
 // Clippy complains if a method has too many parameters, so we put some of the
@@ -87,7 +86,7 @@ impl ConsumerClient {
     }
 
     fn new(
-        fully_qualified_namespace: String,
+        fully_qualified_namespace: &str,
         eventhub_name: String,
         consumer_group: Option<String>,
         credential: Arc<dyn TokenCredential>,
@@ -103,7 +102,7 @@ impl ConsumerClient {
         trace!("Creating consumer client for {url}.");
         Ok(Self {
             instance_id: options.instance_id,
-            retry_options: options.retry_options,
+            retry_options: options.retry_options.unwrap_or_default(),
             session_instances: AsyncMutex::new(HashMap::new()),
             mgmt_client: AsyncMutex::new(OnceLock::new()),
             connection_manager: ConnectionManager::new(
@@ -162,8 +161,8 @@ impl ConsumerClient {
     /// Retrieves the details of the consumer client.
     ///
     /// This function retrieves the details of the consumer client associated with the [`ConsumerClient`].
-    pub(crate) fn get_details(&self) -> Result<models::ConsumerClientDetails> {
-        Ok(models::ConsumerClientDetails {
+    pub(crate) fn get_details(&self) -> Result<ConsumerClientDetails> {
+        Ok(ConsumerClientDetails {
             eventhub_name: self.eventhub.clone(),
             consumer_group: self.consumer_group.clone(),
             fully_qualified_namespace: self
@@ -438,7 +437,10 @@ impl ConsumerClient {
         )?;
         management.attach().await?;
         mgmt_client
-            .set(ManagementInstance::new(management))
+            .set(ManagementInstance::new(
+                management,
+                self.retry_options.clone(),
+            ))
             .map_err(|_| EventHubsError::from(ErrorKind::MissingManagementClient))?;
         trace!("Management client created.");
         Ok(())
@@ -752,7 +754,7 @@ pub mod builders {
         /// ```
         pub async fn open(
             self,
-            fully_qualified_namespace: String,
+            fully_qualified_namespace: &str,
             eventhub_name: String,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<super::ConsumerClient> {

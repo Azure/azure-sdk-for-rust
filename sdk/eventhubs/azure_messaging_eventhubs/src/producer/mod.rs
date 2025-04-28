@@ -5,13 +5,10 @@ use crate::{
     common::{connection_manager::ConnectionManager, ManagementInstance},
     error::{ErrorKind, EventHubsError},
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
+    RetryOptions,
 };
 use async_lock::Mutex;
-use azure_core::{
-    error::Result,
-    http::{RetryOptions, Url},
-    Uuid,
-};
+use azure_core::{error::Result, http::Url, Uuid};
 use azure_core_amqp::{
     AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSession,
     AmqpSessionApis, AmqpSessionOptions,
@@ -71,8 +68,7 @@ pub struct ProducerClient {
     application_id: Option<String>,
 
     /// The options used to configure retry operations.
-    #[allow(dead_code)]
-    retry_options: Option<RetryOptions>,
+    retry_options: RetryOptions,
 }
 
 /// Options used when sending an event to an Event Hub.
@@ -109,7 +105,7 @@ impl ProducerClient {
         eventhub: String,
         credential: Arc<dyn azure_core::credentials::TokenCredential>,
         application_id: Option<String>,
-        retry_options: Option<RetryOptions>,
+        retry_options: RetryOptions,
         custom_endpoint: Option<Url>,
     ) -> Self {
         Self {
@@ -429,12 +425,9 @@ impl ProducerClient {
         Ok(())
     }
     async fn ensure_management_client(&self) -> Result<()> {
-        trace!("Ensure management client.");
-
         let mgmt_client = self.mgmt_client.lock().await;
 
         if mgmt_client.get().is_some() {
-            trace!("Management client already exists.");
             return Ok(());
         }
 
@@ -459,7 +452,10 @@ impl ProducerClient {
             AmqpManagement::new(session, "eventhubs_management".to_string(), access_token)?;
         management.attach().await?;
         mgmt_client
-            .set(ManagementInstance::new(management))
+            .set(ManagementInstance::new(
+                management,
+                self.retry_options.clone(),
+            ))
             .map_err(|_| EventHubsError::from(ErrorKind::MissingManagementClient))?;
         trace!("Management client created.");
         Ok(())
@@ -518,9 +514,8 @@ impl ProducerClient {
 
 pub mod builders {
     use super::ProducerClient;
-    use azure_core::http::RetryOptions;
-    use azure_core::http::Url;
-    use azure_core::Error;
+    use crate::RetryOptions;
+    use azure_core::{http::Url, Error};
     use std::sync::Arc;
 
     /// A builder for creating a [`ProducerClient`].
@@ -607,12 +602,18 @@ pub mod builders {
 
         /// Opens the connection to the Event Hub.
         ///
-        /// This method must be called before any other operation on the EventHub producer.
+        /// # Arguments
+        /// * `fully_qualified_namespace` - The fully qualified namespace of the Event Hubs instance.
+        /// * `eventhub` - The name of the Event Hub.
+        /// * `credential` - The token credential to be used for authorization.
+        ///
+        /// # Returns
+        /// A new instance of [`ProducerClient`].
         ///
         pub async fn open(
             self,
-            fully_qualified_namespace: String,
-            eventhub: String,
+            fully_qualified_namespace: &str,
+            eventhub: &str,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> azure_core::Result<ProducerClient> {
             let url = format!("amqps://{}/{}", fully_qualified_namespace, eventhub);
@@ -628,7 +629,7 @@ pub mod builders {
                 eventhub.to_string(),
                 credential,
                 self.application_id,
-                self.retry_options,
+                self.retry_options.unwrap_or_default(),
                 custom_endpoint,
             );
 
