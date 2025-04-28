@@ -42,6 +42,8 @@ extends:
           templateFolder: "$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}"
       - script: ls -R /mnt/vss/_work/1/s/sdk/core/
         displayName: list files
+      - script: cat /mnt/vss/_work/1/s/sdk/core/perf-tests.yml
+        displayName: list files
     ServiceDirectory: ${{ parameters.ServiceDirectory }}
     PackageVersions: ${{ parameters.PackageVersions }}
     Tests: ${{ parameters.Tests }}
