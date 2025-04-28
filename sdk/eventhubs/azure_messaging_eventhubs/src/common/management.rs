@@ -53,7 +53,7 @@ impl ManagementInstance {
                 if let Some(e) = e.source() {
                     debug!("Error: {}", e);
 
-                    if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
+                    if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
                         Self::should_retry_amqp_error(amqp_error)
                     } else {
                         debug!("Non AMQP error: {}", e);
@@ -242,31 +242,69 @@ mod tests {
         consumer::tests::setup();
 
         {
-            let error = azure_core::Error::new(
-                AzureErrorKind::Amqp,
-                AmqpError::new_management_error(
-                    azure_core::http::StatusCode::TooManyRequests,
-                    Some("Too many requests!".into()),
-                ),
-            );
+            let error: azure_core::Error = AmqpError::new_management_error(
+                azure_core::http::StatusCode::TooManyRequests,
+                Some("Too many requests!".into()),
+            )
+            .into();
+
             assert!(ManagementInstance::should_retry_management_response(&error));
         }
         {
-            let error = azure_core::Error::new(
-                AzureErrorKind::Amqp,
-                AmqpError::new_management_error(
-                    azure_core::http::StatusCode::TooManyRequests,
-                    Some("Too many requests!".into()),
-                ),
-            );
-            assert!(ManagementInstance::should_retry_management_response(&error));
-        }
-        {
-            let error =
-                azure_core::Error::from(EventHubsError::from(ErrorKind::InvalidManagementResponse));
+            let error: azure_core::Error = AmqpError::new_management_error(
+                azure_core::http::StatusCode::SwitchingProtocols,
+                Some("Switcheroo".into()),
+            )
+            .into();
             assert!(!ManagementInstance::should_retry_management_response(
                 &error
             ));
+        }
+        {
+            let error: azure_core::Error = AmqpError::new_management_error(
+                azure_core::http::StatusCode::RequestTimeout,
+                Some("Request Timeout".into()),
+            )
+            .into();
+            assert!(ManagementInstance::should_retry_management_response(&error));
+        }
+        {
+            let error: azure_core::Error = AmqpError::new_management_error(
+                azure_core::http::StatusCode::InternalServerError,
+                Some("Internal Server Error".into()),
+            )
+            .into();
+            assert!(ManagementInstance::should_retry_management_response(&error));
+            {
+                let error: azure_core::Error =
+                    EventHubsError::from(ErrorKind::InvalidManagementResponse).into();
+                assert!(!ManagementInstance::should_retry_management_response(
+                    &error
+                ));
+            }
+
+            {
+                let error: azure_core::Error = AmqpError::new_described_error(
+                    AmqpErrorCondition::ResourceLimitExceeded,
+                    Some("Resource Limit Exceeded".into()),
+                    Default::default(),
+                )
+                .into();
+
+                assert!(ManagementInstance::should_retry_management_response(&error));
+            }
+            {
+                let error: azure_core::Error = AmqpError::new_described_error(
+                    AmqpErrorCondition::IllegalState,
+                    Some("Illegal State".into()),
+                    Default::default(),
+                )
+                .into();
+
+                assert!(!ManagementInstance::should_retry_management_response(
+                    &error
+                ));
+            }
         }
     }
 }
