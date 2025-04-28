@@ -5,7 +5,7 @@ exclude-dev = true
 [advisories]
 git-fetch-with-cli = true
 ignore = [
-    { id = "RUSTSEC-2025-0009", reason = "we do not use `ring` but require `reqwest-tls/rustls` for `symcrypt`" }
+    { id = "RUSTSEC-2024-0384", reason = "We're tracking https://github.com/minghuaw/fe2o3-amqp/issues/306" },
 ]
 
 [licenses]
@@ -15,7 +15,7 @@ allow = [
     "BSL-1.0",
     "ISC",
     "MIT",
-    "OpenSSL",
+    # "OpenSSL",
     "Unicode-3.0",
 ]
 
@@ -27,7 +27,7 @@ license-files = [
 ]
 
 [bans]
-multiple-versions = "warn"
+multiple-versions = "allow"
 wildcards = "deny"
 allow-wildcard-paths = true
 deny = [

@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- The `reqwest_rustls` feature enables `rustls-tls-native-roots-no-provider` instead of `rustls-tls-native-roots` to remove the dependency on the `ring` crate.
+
 ### Bugs Fixed
 
 ### Other Changes

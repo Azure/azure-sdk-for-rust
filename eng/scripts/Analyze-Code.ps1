@@ -38,7 +38,7 @@ if ($CheckWasm) {
 }
 
 if ($Deny) {
-  Invoke-LoggedCommand "cargo deny check"
+  Invoke-LoggedCommand "cargo deny --all-features check"
 }
 
 Invoke-LoggedCommand "cargo doc --workspace --no-deps --all-features"
