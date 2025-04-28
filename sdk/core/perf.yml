@@ -7,10 +7,6 @@ parameters:
   displayName: Tests (regex of tests to run)
   type: string
   default: '.*'
-- name: Arguments
-  displayName: Arguments (regex of arguments to run)
-  type: string
-  default: '.*'
 - name: Iterations
   displayName: Iterations (times to run each test)
   type: number
@@ -29,7 +25,6 @@ extends:
     ServiceDirectory: core
     PackageVersions: ${{ parameters.PackageVersions }}
     Tests: ${{ parameters.Tests }}
-    Arguments: ${{ parameters.Arguments }}
     Iterations: ${{ parameters.Iterations }}
     AdditionalArguments: ${{ parameters.AdditionalArguments }}
     Profile: ${{ parameters.Profile }}
