@@ -15,7 +15,7 @@ use typespec::error::{ErrorKind, Result, ResultExt};
 const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 /// The XML declaration used when serializing.
-const DECLARATION: &[u8; 40] = br#"<?xml version="1.0" encoding="utf-8"?>\n"#;
+const DECLARATION: &[u8; 38] = br#"<?xml version="1.0" encoding="utf-8"?>"#;
 
 /// Reads XML from bytes.
 pub fn read_xml_str<T>(body: &str) -> Result<T>
@@ -126,7 +126,7 @@ mod test {
     #[test]
     fn writing_xml() -> Result<()> {
         assert_eq!(
-            br#"<?xml version="1.0" encoding="utf-8"?>\n<Foo><x>Hello, world!</x></Foo>"#,
+            br#"<?xml version="1.0" encoding="utf-8"?><Foo><x>Hello, world!</x></Foo>"#,
             to_xml(&Test {
                 x: "Hello, world!".to_string()
             })?
@@ -135,7 +135,7 @@ mod test {
         );
 
         assert_eq!(
-            br#"<?xml version="1.0" encoding="utf-8"?>\n<Bob><x>Hello, world!</x></Bob>"#,
+            br#"<?xml version="1.0" encoding="utf-8"?><Bob><x>Hello, world!</x></Bob>"#,
             to_xml_with_root(
                 "Bob",
                 &Test {
