@@ -18,9 +18,8 @@ use std::sync::Arc;
 
 /// A client to interact with an Azure storage account.
 pub struct BlobServiceClient {
-    endpoint: Url,
-    credential: Arc<dyn TokenCredential>,
-    client: GeneratedBlobServiceClient,
+    pub(super) endpoint: Url,
+    pub(super) client: GeneratedBlobServiceClient,
 }
 
 impl BlobServiceClient {
@@ -57,7 +56,6 @@ impl BlobServiceClient {
 
         Ok(Self {
             endpoint: endpoint.parse()?,
-            credential,
             client,
         })
     }
@@ -68,17 +66,11 @@ impl BlobServiceClient {
     ///
     /// * `container_name` - The name of the container.
     /// * `options` - Optional configuration for the client.
-    pub fn blob_container_client(
-        &self,
-        container_name: String,
-        options: Option<BlobContainerClientOptions>,
-    ) -> Result<BlobContainerClient> {
-        BlobContainerClient::new(
-            self.endpoint().as_str(),
-            container_name,
-            self.credential.clone(),
-            options,
-        )
+    pub fn blob_container_client(&self, container_name: String) -> BlobContainerClient {
+        BlobContainerClient {
+            endpoint: self.client.endpoint.clone(),
+            client: self.client.get_blob_container_client(container_name),
+        }
     }
 
     /// Gets the endpoint of the Storage account this client is connected to.

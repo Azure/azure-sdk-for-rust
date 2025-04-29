@@ -20,10 +20,8 @@ use std::sync::Arc;
 
 /// A client to interact with a specified Azure storage container.
 pub struct BlobContainerClient {
-    endpoint: Url,
-    container_name: String,
-    credential: Arc<dyn TokenCredential>,
-    client: GeneratedBlobContainerClient,
+    pub(super) endpoint: Url,
+    pub(super) client: GeneratedBlobContainerClient,
 }
 
 impl BlobContainerClient {
@@ -67,8 +65,6 @@ impl BlobContainerClient {
 
         Ok(Self {
             endpoint: endpoint.parse()?,
-            container_name,
-            credential,
             client,
         })
     }
@@ -79,18 +75,11 @@ impl BlobContainerClient {
     ///
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    pub fn blob_client(
-        &self,
-        blob_name: String,
-        options: Option<BlobClientOptions>,
-    ) -> Result<BlobClient> {
-        BlobClient::new(
-            self.endpoint().as_str(),
-            self.container_name().to_string(),
-            blob_name,
-            self.credential.clone(),
-            options,
-        )
+    pub fn blob_client(&self, blob_name: String) -> BlobClient {
+        BlobClient {
+            endpoint: self.client.endpoint.clone(),
+            client: self.client.get_blob_client(blob_name),
+        }
     }
 
     /// Gets the endpoint of the Storage account this client is connected to.
@@ -100,7 +89,7 @@ impl BlobContainerClient {
 
     /// Gets the container name of the Storage account this client is connected to.
     pub fn container_name(&self) -> &str {
-        &self.container_name
+        &self.client.container_name
     }
 
     /// Creates a new container under the specified account. If the container with the same name already exists, the operation fails.
