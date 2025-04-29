@@ -47,7 +47,7 @@ use std::time::SystemTime;
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DefaultAzureCredential::new()?;
 /// let consumer_client = azure_messaging_eventhubs::ConsumerClient::builder()
-///    .open("fully_qualified_domain".to_string(), "eventhub_name".to_string(), my_credentials.clone()).await?;
+///    .open("fully_qualified_domain", "eventhub_name".to_string(), my_credentials.clone()).await?;
 ///
 /// let eventhub_properties = consumer_client.get_eventhub_properties().await?;
 ///
@@ -93,7 +93,7 @@ pub struct EventHubProperties {
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DefaultAzureCredential::new()?;
 /// let consumer_client = azure_messaging_eventhubs::ConsumerClient::builder()
-///   .open("fully_qualified_domain".to_string(), "eventhub_name".to_string(), my_credentials.clone()).await?;
+///   .open("fully_qualified_domain", "eventhub_name".to_string(), my_credentials.clone()).await?;
 ///
 /// let partition_properties = consumer_client.get_partition_properties("0").await?;
 /// # Ok(()) }

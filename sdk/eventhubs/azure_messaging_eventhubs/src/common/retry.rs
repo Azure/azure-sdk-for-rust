@@ -51,30 +51,6 @@ impl Default for RetryOptions {
 /// * `Result<T, E>` - The result of the operation if it succeeds, or the last error if all
 ///   retries are exhausted.
 ///
-/// # Example
-///
-/// ```
-/// # use azure_messaging_eventhubs::common::retry::{retry_with_backoff, RetryOptions};
-/// # use std::time::Duration;
-/// # async fn example() -> azure_core::error::Result<()> {
-/// let options = RetryOptions {
-///     initial_delay: Duration::from_millis(100),
-///     max_delay: Duration::from_secs(5),
-///     max_retries: 3,
-///     jitter: 0.2,
-/// };
-///
-/// let result = retry_with_backoff(
-///     || async {
-///         // Your operation that may fail
-///         Ok(())
-///     },
-///     &options,
-///     None,
-/// ).await;
-/// # Ok(())
-/// # }
-/// ```
 pub async fn retry_with_backoff<F, Fut, T, E>(
     operation: F,
     options: &RetryOptions,

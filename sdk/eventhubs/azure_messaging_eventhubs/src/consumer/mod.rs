@@ -77,7 +77,7 @@ impl ConsumerClient {
     ///
     ///     let my_credential = DefaultAzureCredential::new()?;
     /// let consumer = ConsumerClient::builder()
-    ///    .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential.clone()).await?;
+    ///    .open("my_namespace", "my_eventhub".to_string(), my_credential.clone()).await?;
     /// # Ok(())}
     /// ```
     ///
@@ -100,9 +100,10 @@ impl ConsumerClient {
         let url = Url::parse(&url)?;
 
         trace!("Creating consumer client for {url}.");
+        let retry_options = options.retry_options.unwrap_or_default();
         Ok(Self {
             instance_id: options.instance_id,
-            retry_options: options.retry_options.unwrap_or_default(),
+            retry_options: retry_options.clone(),
             session_instances: AsyncMutex::new(HashMap::new()),
             mgmt_client: AsyncMutex::new(OnceLock::new()),
             connection_manager: ConnectionManager::new(
@@ -110,6 +111,7 @@ impl ConsumerClient {
                 options.application_id.clone(),
                 options.custom_endpoint.clone(),
                 credential,
+                retry_options,
             ),
             eventhub: eventhub_name,
             endpoint: url,
@@ -138,7 +140,7 @@ impl ConsumerClient {
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::builder()
-    ///         .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await.unwrap();
+    ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await.unwrap();
     ///
     ///     let result = consumer.close().await;
     ///
@@ -207,7 +209,7 @@ impl ConsumerClient {
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let my_credential = DefaultAzureCredential::new()?;
     ///     let consumer = ConsumerClient::builder()
-    ///        .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await?;
+    ///        .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
     ///     let partition_id = "0".to_string();
     ///
     ///     let receiver  = consumer.open_receiver_on_partition(partition_id, None).await?;
@@ -297,6 +299,7 @@ impl ConsumerClient {
         Ok(EventReceiver::new(
             receiver,
             partition_id,
+            self.retry_options.clone(),
             options.receive_timeout,
         ))
     }
@@ -320,7 +323,7 @@ impl ConsumerClient {
     /// async fn main(){
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::builder()
-    ///         .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await.unwrap();
+    ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await.unwrap();
     ///
     ///     let eventhub_properties = consumer.get_eventhub_properties().await;
     ///
@@ -371,7 +374,7 @@ impl ConsumerClient {
     /// async fn main() {
     ///     let my_credential = DefaultAzureCredential::new().unwrap();
     ///     let consumer = ConsumerClient::builder()
-    ///         .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await.unwrap();
+    ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await.unwrap();
     ///     let partition_id = "0";
     ///
     ///     let partition_properties = consumer.get_partition_properties(partition_id).await;
@@ -634,7 +637,7 @@ pub mod builders {
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///    let my_credential = DefaultAzureCredential::new().unwrap();
     ///   let consumer = ConsumerClient::builder()
-    ///      .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await?;
+    ///      .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
     ///   Ok(())
     /// }
     /// ```
@@ -678,7 +681,7 @@ pub mod builders {
         ///    let my_credential = DefaultAzureCredential::new()?;
         ///    let consumer = ConsumerClient::builder()
         ///      .with_consumer_group("my_consumer_group".to_string())
-        ///      .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await?;
+        ///      .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
         ///   Ok(())
         /// }
         ///
@@ -737,7 +740,7 @@ pub mod builders {
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ///     let my_credential = DefaultAzureCredential::new().unwrap();
         ///     let result = ConsumerClient::builder()
-        ///         .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await;
+        ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await;
         ///
         ///     match result {
         ///         Ok(_connection) => {

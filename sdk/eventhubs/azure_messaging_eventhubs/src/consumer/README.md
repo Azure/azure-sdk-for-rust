@@ -17,7 +17,7 @@ use azure_messaging_eventhubs::ConsumerClient;
 async fn main() -> Result<(), azure_core::Error> {
     let my_credential = DefaultAzureCredential::new()?;
     let consumer = ConsumerClient::builder()
-        .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential)
+        .open("my_namespace", "my_eventhub".to_string(), my_credential)
         .await?;
     Ok(())
 }
@@ -33,7 +33,7 @@ use azure_messaging_eventhubs::ConsumerClient;
 async fn main() -> Result<(), azure_core::Error> {
     let my_credential = DefaultAzureCredential::new()?;
     let result = ConsumerClient::builder()
-        .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential)
+        .open("my_namespace", "my_eventhub".to_string(), my_credential)
         .await;
 
     match result {
@@ -60,7 +60,7 @@ use azure_messaging_eventhubs::ConsumerClient;
 async fn main() -> Result<(), azure_core::Error> {
     let my_credential = DefaultAzureCredential::new()?;
     let consumer = ConsumerClient::builder()
-        .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential)
+        .open("my_namespace", "my_eventhub".to_string(), my_credential)
         .await?;
 
     let result = consumer.close().await;
@@ -91,7 +91,7 @@ use futures::pin_mut;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let my_credential = DefaultAzureCredential::new().unwrap();
     let consumer = ConsumerClient::builder()
-        .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential)
+        .open("my_namespace", "my_eventhub".to_string(), my_credential)
         .await?;
     let partition_id = "0".to_string();
 

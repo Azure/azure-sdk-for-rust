@@ -544,7 +544,7 @@ pub mod builders {
     /// let consumer = Arc::new(
     ///     ConsumerClient::builder()
     ///         .open(
-    ///             eventhub_namespace,
+    ///             &eventhub_namespace,
     ///             eventhub_name,
     ///             DefaultAzureCredential::new()?.clone(),
     ///         )

@@ -2,21 +2,29 @@
 // Licensed under the MIT license.
 
 use crate::{
-    common::{connection_manager::ConnectionManager, ManagementInstance},
+    common::{connection_manager::ConnectionManager, retry_azure_operation, ManagementInstance},
     error::{ErrorKind, EventHubsError},
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
     RetryOptions,
 };
 use async_lock::Mutex;
-use azure_core::{error::Result, http::Url, Uuid};
+use azure_core::{
+    error::{ErrorKind as AzureErrorKind, Result},
+    http::Url,
+    Uuid,
+};
 use azure_core_amqp::{
-    AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSession,
-    AmqpSessionApis, AmqpSessionOptions,
+    error::{AmqpErrorCondition, AmqpErrorKind},
+    AmqpError, AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender, AmqpSenderApis,
+    AmqpSession, AmqpSessionApis, AmqpSessionOptions,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
-use std::sync::{Arc, OnceLock};
-use std::{collections::HashMap, fmt::Debug};
-use tracing::trace;
+use std::{
+    error::Error,
+    sync::{Arc, OnceLock},
+    {collections::HashMap, fmt::Debug},
+};
+use tracing::{debug, trace, warn};
 
 /// Types used to collect messages into a "batch" before submitting them to an Event Hub.
 pub(crate) mod batch;
@@ -55,7 +63,7 @@ pub struct SendBatchOptions {}
 ///    let my_credentials = DefaultAzureCredential::new()?;
 ///   let producer = ProducerClient::builder()
 ///    .with_application_id("your_application_id".to_string())
-///    .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
+///    .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
 ///   Ok(())
 /// }
 /// ```
@@ -116,6 +124,7 @@ impl ProducerClient {
                 application_id.clone(),
                 custom_endpoint.clone(),
                 credential,
+                retry_options.clone(),
             ),
             eventhub,
             endpoint,
@@ -147,6 +156,62 @@ impl ProducerClient {
     /// Note that dropping the ProducerClient will also close the connection.
     pub async fn close(self) -> Result<()> {
         self.connection_manager.close_connection().await
+    }
+
+    fn should_retry_send_operation(e: &azure_core::Error) -> bool {
+        match e.kind() {
+            AzureErrorKind::Amqp => {
+                warn!("Amqp operation failed: {}", e.source().unwrap());
+                if let Some(e) = e.source() {
+                    debug!("Error: {}", e);
+
+                    if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
+                        Self::should_retry_amqp_error(amqp_error)
+                    } else {
+                        debug!("Non AMQP error: {}", e);
+                        false
+                    }
+                } else {
+                    debug!("No source error found");
+                    false
+                }
+            }
+            _ => {
+                debug!("Non AMQP error: {}", e);
+                false
+            }
+        }
+    }
+
+    fn should_retry_amqp_error(amqp_error: &AmqpError) -> bool {
+        match amqp_error.kind() {
+            AmqpErrorKind::ManagementStatusCode(code, _) => {
+                debug!("Management operation error: {}", code);
+                match code {
+                    // Retry on 408 (Request Timeout) and 429 (Too Many Requests)
+                    azure_core::http::StatusCode::RequestTimeout
+                    | azure_core::http::StatusCode::TooManyRequests
+                    | azure_core::http::StatusCode::InternalServerError
+                    | azure_core::http::StatusCode::BadGateway
+                    | azure_core::http::StatusCode::ServiceUnavailable
+                    | azure_core::http::StatusCode::GatewayTimeout => true,
+                    _ => false,
+                }
+            }
+            AmqpErrorKind::AmqpDescribedError(described_error) => {
+                debug!("AMQP described error: {:?}", described_error);
+                matches!(
+                    described_error.condition(),
+                    AmqpErrorCondition::ResourceLimitExceeded
+                        | AmqpErrorCondition::ConnectionFramingError
+                        | AmqpErrorCondition::LinkStolen
+                )
+            }
+            _ => {
+                debug!("Other AMQP error: {}", amqp_error);
+                false
+            }
+        }
     }
 
     /// Sends an event to the Event Hub.
@@ -203,17 +268,28 @@ impl ProducerClient {
         }
         let sender = self.ensure_sender(&target).await?;
 
-        let outcome = sender
-            .lock()
-            .await
-            .send(
-                message,
-                Some(AmqpSendOptions {
-                    message_format: None,
-                    ..Default::default()
-                }),
-            )
-            .await?;
+        let message = message.into();
+        let outcome = retry_azure_operation(
+            || {
+                let sender = sender.clone();
+                let message = message.clone();
+                async move {
+                    let sender_guard = sender.lock().await;
+                    sender_guard
+                        .send(
+                            message,
+                            Some(AmqpSendOptions {
+                                message_format: None,
+                                ..Default::default()
+                            }),
+                        )
+                        .await
+                }
+            },
+            &self.retry_options,
+            Some(Self::should_retry_send_operation),
+        )
+        .await?;
 
         // We treat all outcomes other than "rejected" as successful.
         match outcome {
@@ -255,7 +331,7 @@ impl ProducerClient {
     ///
     ///   let producer = ProducerClient::builder()
     ///    .with_application_id("your_application_id".to_string())
-    ///    .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
+    ///    .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
     ///   let mut batch = producer.create_batch(None).await?;
     ///   Ok(())
     /// }
@@ -297,7 +373,7 @@ impl ProducerClient {
     ///
     ///   let producer = ProducerClient::builder()
     ///    .with_application_id("your_application_id".to_string())
-    ///    .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
+    ///    .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
     ///
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
@@ -356,7 +432,7 @@ impl ProducerClient {
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///   let my_credentials = DefaultAzureCredential::new()?;
     ///   let producer = ProducerClient::builder()
-    ///     .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
+    ///     .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
     ///
     ///   let properties = producer.get_eventhub_properties().await?;
     ///   println!("Event Hub: {:?}", properties);
@@ -395,7 +471,7 @@ impl ProducerClient {
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let my_credentials = DefaultAzureCredential::new()?;
     ///     let producer = ProducerClient::builder()
-    ///        .open(fully_qualified_namespace, eventhub_name, my_credentials.clone()).await?;
+    ///        .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
     ///     let partition_properties = producer.get_partition_properties("0").await?;
     ///     println!("Event Hub: {:?}", partition_properties);
     ///     Ok(())
@@ -532,7 +608,7 @@ pub mod builders {
     /// async fn main() {
     ///   let my_credential = DefaultAzureCredential::new().unwrap();
     ///   let producer = ProducerClient::builder()
-    ///      .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await.unwrap();
+    ///      .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
     /// }
     /// ```
     #[derive(Default)]
