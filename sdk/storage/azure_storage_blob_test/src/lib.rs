@@ -114,8 +114,10 @@ pub fn test_blob_tag_equality(tags1: BlobTags, tags2: BlobTags) -> bool {
     // Iterate through second set of tags
     for blob_tag in tags2.blob_tag_set {
         // If tag is not found, return false
-        if !count_map.contains_key(&blob_tag.key.unwrap()) {
+        if !count_map.contains_key(&blob_tag.key.clone().unwrap()) {
             return false;
+        } else {
+            count_map.remove(&blob_tag.key.unwrap());
         }
     }
     // Ensure HashMap has been completely consumed
