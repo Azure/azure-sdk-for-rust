@@ -35,15 +35,9 @@ extends:
     Language: Rust
     LanguageVersion: "N/A"
     InstallLanguageSteps:
-      - template: /eng/common/testproxy/test-proxy-tool.yml
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
         parameters:
-          runProxy: true
-          rootFolder: "$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}"
-          templateFolder: "$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}"
-      - script: ls -R /mnt/vss/_work/1/s/sdk/core/
-        displayName: list files
-      - script: cat /mnt/vss/_work/1/s/sdk/core/perf-tests.yml
-        displayName: list files
+          Toolchain: stable
     ServiceDirectory: ${{ parameters.ServiceDirectory }}
     PackageVersions: ${{ parameters.PackageVersions }}
     Tests: ${{ parameters.Tests }}
