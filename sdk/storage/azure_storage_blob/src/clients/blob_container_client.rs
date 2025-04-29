@@ -74,7 +74,6 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `blob_name` - The name of the blob.
-    /// * `options` - Optional configuration for the client.
     pub fn blob_client(&self, blob_name: String) -> BlobClient {
         BlobClient {
             endpoint: self.client.endpoint.clone(),

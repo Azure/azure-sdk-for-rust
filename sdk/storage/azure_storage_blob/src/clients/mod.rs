@@ -6,7 +6,9 @@
 mod blob_client;
 mod blob_container_client;
 mod blob_service_client;
+mod block_blob_client;
 
 pub use blob_client::BlobClient;
 pub use blob_container_client::BlobContainerClient;
 pub use blob_service_client::BlobServiceClient;
+pub use block_blob_client::BlockBlobClient;
