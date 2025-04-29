@@ -4,17 +4,19 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadResult,
+        BlobClientDeleteImmutabilityPolicyResult, BlobClientDownloadResult,
+        BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
+        BlobClientSetImmutabilityPolicyResult, BlockBlobClientCommitBlockListResult,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult,
     },
     models::{AccessTier, BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
-    BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobClientDeleteImmutabilityPolicyOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
+    BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientOptions,
+    BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
+    BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -249,5 +251,42 @@ impl BlobClient {
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client.set_tier(tier, options).await
+    }
+
+    /// Gets information related to the Storage account in which the blob resides.
+    /// This includes the `sku_name` and `account_kind`.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_account_info(
+        &self,
+        options: Option<BlobClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobClientGetAccountInfoResult>> {
+        self.client.get_account_info(options).await
+    }
+
+    /// Sets the immutability policy on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_immutability_policy(
+        &self,
+        options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
+    ) -> Result<Response<BlobClientSetImmutabilityPolicyResult>> {
+        self.client.set_immutability_policy(options).await
+    }
+
+    /// Deletes the immutability policy on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn delete_immutability_policy(
+        &self,
+        options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
+    ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult>> {
+        self.client.delete_immutability_policy(options).await
     }
 }
