@@ -1,0 +1,40 @@
+[graph]
+all-features = true
+exclude-dev = true
+
+[advisories]
+git-fetch-with-cli = true
+ignore = [
+    { id = "RUSTSEC-2024-0384", reason = "We're tracking https://github.com/minghuaw/fe2o3-amqp/issues/306" },
+]
+
+[licenses]
+allow = [
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "ISC",
+    "MIT",
+    # "OpenSSL",
+    "Unicode-3.0",
+]
+
+[[licenses.clarify]]
+name = "ring"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [
+    { path = "LICENSE", hash = 0xbd0eed23 },
+]
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+allow-wildcard-paths = true
+deny = [
+    "ring",
+    "smol",
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
