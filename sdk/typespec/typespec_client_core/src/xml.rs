@@ -41,6 +41,7 @@ where
 }
 
 /// Serializes a type to bytes.
+///
 /// Automatically includes the XML declaration.
 pub fn to_xml<T>(value: &T) -> Result<Bytes>
 where
@@ -50,10 +51,14 @@ where
         let t = core::any::type_name::<T>();
         format!("failed to serialize {t} into xml")
     })?;
-    Ok(Bytes::from(format!("{DECLARATION}{value}")))
+    let mut buf = bytes::BytesMut::with_capacity(DECLARATION.len() + value.len());
+    buf.extend_from_slice(DECLARATION.as_bytes());
+    buf.extend_from_slice(value.as_bytes());
+    Ok(buf.into())
 }
 
 /// Serializes a type to bytes with a specified root tag.
+///
 /// Automatically includes the XML declaration.
 pub fn to_xml_with_root<T>(root_tag: &str, value: &T) -> Result<Bytes>
 where
@@ -64,7 +69,10 @@ where
             let t = core::any::type_name::<T>();
             format!("failed to serialize {t} into xml")
         })?;
-    Ok(Bytes::from(format!("{DECLARATION}{value}")))
+    let mut buf = bytes::BytesMut::with_capacity(DECLARATION.len() + value.len());
+    buf.extend_from_slice(DECLARATION.as_bytes());
+    buf.extend_from_slice(value.as_bytes());
+    Ok(buf.into())
 }
 
 /// Returns bytes without the UTF-8 BOM.
