@@ -69,7 +69,6 @@ impl BlobServiceClient {
     pub fn blob_container_client(&self, container_name: String) -> BlobContainerClient {
         BlobContainerClient {
             endpoint: self.client.endpoint.clone(),
-            container_name: container_name.clone(),
             client: self.client.get_blob_container_client(container_name),
         }
     }

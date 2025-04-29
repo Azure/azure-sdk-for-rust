@@ -4,7 +4,7 @@
 
 - [Rust toolchain](https://www.rust-lang.org/tools/install)
 
-  When you run `cargo build`, toolchain version [1.80](https://releases.rs/docs/1.80.0/) and necessary components will be installed automatically.
+  When you run `cargo build`, toolchain version [1.81](https://releases.rs/docs/1.81.0/) and necessary components will be installed automatically.
 
 - (Recommended) If you use [Visual Studio Code], install recommended extensions to improve your development experience.
 
@@ -310,6 +310,13 @@ Once all of the above steps are met, the following process will be followed:
 - If a reviewer marks your PR as approved along with specific comments, it is expected that those comments will be addressed or resolved prior to merging.
   - One exception is when a comment clearly states that the feedback is optional or just a nit
   - When in doubt, reach out to the commenter to confirm that they have no concerns with you merging without addressing a comment.
+
+### Performance Testing
+
+Performance testing is supported via [criterion](https://bheisler.github.io/criterion.rs/book/criterion_rs.html)
+There are samples of performance tests under `sdk/core/azure_core/benches` folder.
+To execute the performance tests in `azure_core` folder you can run `cargo bench` in the `sdk/core/azure_core` folder.
+The output of the tests will be presented in the command line as well as saved under the `target/criterion` folder.
 
 ## Samples
 

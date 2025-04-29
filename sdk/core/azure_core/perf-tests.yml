@@ -1,0 +1,17 @@
+Service: core
+
+Project: azure_core
+
+PackageVersions:
+  - azure_core: source
+
+Tests:
+  - Test: parse_basic_url 100
+    Class: parse_basic_url_100
+    Arguments:
+      -
+
+  - Test: parse basic 1000 urls
+    Class: parse_basic_url_1000
+    Arguments:
+      -
