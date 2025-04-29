@@ -28,10 +28,10 @@ parameters:
     default: []
 
 extends:
-  template: /eng/common/pipelines/templates/jobs/perf.yml
+  template: /eng/common/pipelines/templates/jobs/perf.yml@self
   parameters:
     Variables:
-      - template: /eng/pipelines/templates/variables/globals.yml
+      - template: /eng/pipelines/templates/variables/globals.yml@self
     Language: Rust
     LanguageVersion: "N/A"
     InstallLanguageSteps:
