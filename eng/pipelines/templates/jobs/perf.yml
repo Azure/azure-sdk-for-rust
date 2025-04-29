@@ -1,0 +1,48 @@
+parameters:
+  - name: InstallLanguageSteps
+    type: object
+    default: []
+  - name: ServiceDirectory
+    type: string
+    default: ""
+  - name: PackageVersions
+    type: string
+    default: ".*"
+  - name: Tests
+    type: string
+    default: ".*"
+  - name: Arguments
+    type: string
+    default: ".*"
+  - name: Iterations
+    type: number
+    default: 1
+  - name: AdditionalArguments
+    type: string
+    default: ""
+  - name: Profile
+    type: boolean
+    default: false
+  - name: EnvVars
+    type: object
+    default: []
+
+extends:
+  template: /eng/common/pipelines/templates/jobs/perf.yml@self
+  parameters:
+    Variables:
+      - template: /eng/pipelines/templates/variables/globals.yml@self
+    Language: Rust
+    LanguageVersion: "N/A"
+    InstallLanguageSteps:
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: stable
+    ServiceDirectory: ${{ parameters.ServiceDirectory }}
+    PackageVersions: ${{ parameters.PackageVersions }}
+    Tests: ${{ parameters.Tests }}
+    Arguments: ${{ parameters.Arguments }}
+    Iterations: ${{ parameters.Iterations }}
+    AdditionalArguments: ${{ parameters.AdditionalArguments }}
+    Profile: ${{ parameters.Profile }}
+    EnvVars: ${{ parameters.EnvVars}}
