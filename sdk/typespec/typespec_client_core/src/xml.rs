@@ -41,7 +41,7 @@ where
 }
 
 /// Serializes a type to bytes.
-/// Automaticallyl includes the XML declaration.
+/// Automatically includes the XML declaration.
 pub fn to_xml<T>(value: &T) -> Result<Bytes>
 where
     T: serde::Serialize,
@@ -54,7 +54,7 @@ where
 }
 
 /// Serializes a type to bytes with a specified root tag.
-/// Automaticallyl includes the XML declaration.
+/// Automatically includes the XML declaration.
 pub fn to_xml_with_root<T>(root_tag: &str, value: &T) -> Result<Bytes>
 where
     T: serde::Serialize,
