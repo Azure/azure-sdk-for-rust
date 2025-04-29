@@ -65,6 +65,7 @@ workspace = true
 
 [package.metadata.docs.rs]
 features = [
+  "debug",
   "hmac_openssl",
   "hmac_rust",
   "reqwest",

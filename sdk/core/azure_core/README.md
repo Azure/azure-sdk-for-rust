@@ -40,6 +40,18 @@ We guarantee that all client instance methods are thread-safe and independent of
 [Consuming Service Methods Returning `Pager<T>`](#consuming-service-methods-returning-pagert)
 <!-- CLIENT COMMON BAR -->
 
+## Features
+
+- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
+- `hmac_openssl`: configures HMAC using `openssl`.
+- `hmac_rust`: configures HMAC using pure Rust.
+- `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
+- `reqwest_deflate` (default): enables deflate compression for `reqwest`.
+- `reqwest_gzip` (default): enables gzip compression for `reqwest`.
+- `reqwest_rustls`: enables `reqwest`'s `rustls-tls-native-roots-no-provider` feature,
+- `tokio`: enables and sets `tokio` as the default async runtime.
+- `xml`: enables XML support.
+
 ## Examples
 
 **NOTE:** Samples in this file apply only to packages that follow [Azure SDK Design Guidelines][guidelines]. Names of such packages typically start with `azure_`.
@@ -200,8 +212,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
-
-
 
 <!-- ## Troubleshooting -->
 ## Troubleshooting
