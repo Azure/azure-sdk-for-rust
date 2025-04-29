@@ -16,7 +16,7 @@ parameters:
     default: ".*"
   - name: Iterations
     type: number
-    default: "1"
+    default: 1
   - name: AdditionalArguments
     type: string
     default: ""
