@@ -17,22 +17,22 @@ pub use crate::generated::clients::{
 };
 pub use crate::generated::models::{
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientGetPropertiesOptions, BlobContainerClientSetMetadataOptions,
-    BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobClientGetTagsOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
+    BlobClientSetTagsOptions, BlobClientSetTierOptions, BlobContainerClientCreateOptions,
+    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientSetMetadataOptions, BlobServiceClientGetPropertiesOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 
 pub mod models {
     pub use crate::generated::models::{
         AccessTier, ArchiveStatus, BlobClientDownloadResult, BlobClientDownloadResultHeaders,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
-        BlobImmutabilityPolicyMode, BlobType, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, BlockListType,
-        BlockLookupList, CopyStatus, LeaseState, LeaseStatus, PublicAccessType, RehydratePriority,
-        StorageServiceProperties,
+        BlobClientSetTagsResultHeaders, BlobContainerClientGetPropertiesResult,
+        BlobContainerClientGetPropertiesResultHeaders, BlobImmutabilityPolicyMode, BlobTag,
+        BlobTags, BlobType, BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadResult, BlockList, BlockListType, BlockLookupList, CopyStatus,
+        LeaseState, LeaseStatus, PublicAccessType, RehydratePriority, StorageServiceProperties,
     };
 }

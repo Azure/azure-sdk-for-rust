@@ -7,9 +7,11 @@ use azure_core::{
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    models::BlockBlobClientUploadResult, BlobClient, BlobContainerClient,
-    BlobContainerClientOptions, BlobServiceClient, BlobServiceClientOptions,
+    models::{BlobTag, BlobTags, BlockBlobClientUploadResult},
+    BlobClient, BlobContainerClient, BlobContainerClientOptions, BlobServiceClient,
+    BlobServiceClientOptions,
 };
+use std::collections::HashMap;
 
 /// Takes in a Recording instance and returns an instrumented options bag and endpoint.
 ///
@@ -101,4 +103,21 @@ pub async fn create_test_blob(
             None,
         )
         .await
+}
+
+pub fn test_blob_tag_equality(tags1: BlobTags, tags2: BlobTags) -> bool {
+    let mut count_map = HashMap::new();
+    // Iterate through first set of tags, populate HashMap
+    for blob_tag in tags1.blob_tag_set {
+        count_map.insert(blob_tag.key.unwrap(), blob_tag.value.unwrap());
+    }
+    // Iterate through second set of tags
+    for blob_tag in tags2.blob_tag_set {
+        // If tag is not found, return false
+        if !count_map.contains_key(&blob_tag.key.unwrap()) {
+            return false;
+        }
+    }
+    // Ensure HashMap has been completely consumed
+    count_map.is_empty()
 }
