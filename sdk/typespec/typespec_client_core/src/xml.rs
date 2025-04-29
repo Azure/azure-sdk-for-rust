@@ -15,7 +15,7 @@ use typespec::error::{ErrorKind, Result, ResultExt};
 const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 /// The XML declaration used when serializing.
-const DECLARATION: &str = r#"<?xml version="1.0" encoding="utf-8"?>\n"#;
+const DECLARATION: &[u8; 40] = br#"<?xml version="1.0" encoding="utf-8"?>\n"#;
 
 /// Reads XML from bytes.
 pub fn read_xml_str<T>(body: &str) -> Result<T>
@@ -52,7 +52,7 @@ where
         format!("failed to serialize {t} into xml")
     })?;
     let mut buf = bytes::BytesMut::with_capacity(DECLARATION.len() + value.len());
-    buf.extend_from_slice(DECLARATION.as_bytes());
+    buf.extend_from_slice(DECLARATION);
     buf.extend_from_slice(value.as_bytes());
     Ok(buf.into())
 }
@@ -70,7 +70,7 @@ where
             format!("failed to serialize {t} into xml")
         })?;
     let mut buf = bytes::BytesMut::with_capacity(DECLARATION.len() + value.len());
-    buf.extend_from_slice(DECLARATION.as_bytes());
+    buf.extend_from_slice(DECLARATION);
     buf.extend_from_slice(value.as_bytes());
     Ok(buf.into())
 }
