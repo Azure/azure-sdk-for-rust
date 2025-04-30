@@ -1,6 +1,6 @@
 use azure_core::http::{
     headers::{HeaderName, HeaderValue, Headers},
-    Method, Request, Url,new_http_client,StatusCode
+    new_http_client, Method, Request, StatusCode, Url,
 };
 
 use azure_core::error::ErrorKind;
@@ -122,28 +122,35 @@ fn header_operations_benchmark(c: &mut Criterion) {
 fn http_transport_test(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
 
-    async fn make_get_request()-> azure_core::Result<StatusCode>{
-        let req = Request::new(Url::parse("http://127.0.0.1:5000/Admin/isAlive").unwrap(), Method::Get);
+    async fn make_get_request() -> azure_core::Result<StatusCode> {
+        let req = Request::new(
+            Url::parse("http://127.0.0.1:5000/Admin/isAlive").unwrap(),
+            Method::Get,
+        );
         let http_client = new_http_client();
-        let resp  = http_client.execute_request(&req).await?;
+        let resp = http_client.execute_request(&req).await?;
 
         if resp.status() != StatusCode::Ok {
             let status_code = resp.status();
 
-            return Err(
-                azure_core::Error::message(
-                    ErrorKind::http_response(status_code, Some(status_code.canonical_reason().to_string())),
-                     format!("{status_code} response from server"),
-                )
-            );
+            return Err(azure_core::Error::message(
+                ErrorKind::http_response(
+                    status_code,
+                    Some(status_code.canonical_reason().to_string()),
+                ),
+                format!("{status_code} response from server"),
+            ));
         }
 
         let status = resp.status();
         Ok(status)
     }
 
-    async fn make_post_request()-> azure_core::Result<StatusCode>{
-        let mut req = Request::new(Url::parse("http://127.0.0.1:5000/Admin/setRecordingOptions").unwrap(), Method::Post);
+    async fn make_post_request() -> azure_core::Result<StatusCode> {
+        let mut req = Request::new(
+            Url::parse("http://127.0.0.1:5000/Admin/setRecordingOptions").unwrap(),
+            Method::Post,
+        );
         let body = "{ \"HandleRedirects\": \"true\"}".to_string();
         req.set_body(body.as_bytes().to_vec());
         req.insert_header(
@@ -151,17 +158,18 @@ fn http_transport_test(c: &mut Criterion) {
             HeaderValue::from("application/json"),
         );
         let http_client = new_http_client();
-        let resp  = http_client.execute_request(&req).await?;
+        let resp = http_client.execute_request(&req).await?;
 
         if resp.status() != StatusCode::Ok {
             let status_code = resp.status();
 
-            return Err(
-                azure_core::Error::message(
-                    ErrorKind::http_response(status_code, Some(status_code.canonical_reason().to_string())),
-                     format!("{status_code} response from server"),
-                )
-            );
+            return Err(azure_core::Error::message(
+                ErrorKind::http_response(
+                    status_code,
+                    Some(status_code.canonical_reason().to_string()),
+                ),
+                format!("{status_code} response from server"),
+            ));
         }
 
         let status = resp.status();
