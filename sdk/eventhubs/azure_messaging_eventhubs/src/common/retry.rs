@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell: ignore retryable
+// cspell: ignore retryable backoff
 
 use azure_core::error::Result;
 use rand::{thread_rng, Rng};
