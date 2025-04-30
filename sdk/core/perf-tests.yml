@@ -11,7 +11,54 @@ Tests:
     Arguments:
       - --sync
 
-  - Test: parse basic 1000 urls
+  - Test: parse_basic_url_1000
     Class: parse_basic_url_1000
+    Arguments:
+      - --sync
+
+  - Test: create_request_100
+    Class: create_request_
+    Arguments:
+      - --sync
+  - Test: create_request_1000
+    Class: create_request_
+    Arguments:
+      - --sync
+
+  - Test: header_operations_100
+    Class: header_operations_
+    Arguments:
+      - --sync
+
+  - Test: header_operations_1000
+    Class: header_operations_
+    Arguments:
+      - --sync
+
+  - Test: create_request_with_body_100
+    Class: create_request_with_body_
+    Arguments:
+      - --sync
+
+  - Test: create_request_with_body_1000
+    Class: create_request_with_body_
+    Arguments:
+      - --sync
+
+  - Test: create_request_with_headers_100
+    Class: create_request_with_headers_
+    Arguments:
+      - --sync
+
+  - Test: create_request_with_headers_1000
+    Class: create_request_with_headers_
+    Arguments:
+      - --sync
+
+  - Test: http_transport_get_async
+    Class: http_transport_get_async
+      - --sync
+  - Test: http_transport_post_async
+    Class: http_transport_post_async
     Arguments:
       - --sync

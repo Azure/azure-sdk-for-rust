@@ -38,6 +38,12 @@ extends:
       - template: /eng/pipelines/templates/steps/use-rust.yml@self
         parameters:
           Toolchain: stable
+      - template: /eng/common/testproxy/test-proxy-tool.yml
+        parameters:
+          runProxy: true
+          rootFolder: '$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}'
+          templateFolder: '$(Build.SourcesDirectory)/sdk/${{parameters.ServiceDirectory}}'
+
     ServiceDirectory: ${{ parameters.ServiceDirectory }}
     PackageVersions: ${{ parameters.PackageVersions }}
     Tests: ${{ parameters.Tests }}
