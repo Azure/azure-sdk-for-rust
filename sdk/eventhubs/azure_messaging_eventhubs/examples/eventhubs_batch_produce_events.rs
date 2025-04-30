@@ -5,7 +5,9 @@
 
 use azure_core::Uuid;
 use azure_identity::DefaultAzureCredential;
-use azure_messaging_eventhubs::{models::EventData, EventDataBatchOptions, ProducerClient};
+use azure_messaging_eventhubs::{
+    models::EventData, EventDataBatchOptions, ProducerClient, RetryOptions,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -15,6 +17,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
 
     let client = ProducerClient::builder()
+        .with_retry_options(RetryOptions {
+            initial_delay: std::time::Duration::from_millis(100),
+            ..Default::default()
+        })
         .open(
             eventhub_namespace.as_str(),
             eventhub_name.as_str(),

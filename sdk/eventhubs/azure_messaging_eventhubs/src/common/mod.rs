@@ -3,7 +3,7 @@
 
 pub(crate) mod connection_manager;
 pub(crate) mod management;
-pub(crate) mod retry;
+pub mod retry;
 pub(crate) mod user_agent;
 
 // Public API

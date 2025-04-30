@@ -55,6 +55,8 @@ impl ManagementInstance {
 
                     if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
                         Self::should_retry_amqp_error(amqp_error)
+                    } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
+                        Self::should_retry_amqp_error(amqp_error)
                     } else {
                         debug!("Non AMQP error: {}", e);
                         false
@@ -259,6 +261,26 @@ mod tests {
             assert!(!ManagementInstance::should_retry_management_response(
                 &error
             ));
+        }
+        // Verify that an explicitly boxed error is handled correctly
+        {
+            let error = azure_core::Error::new(
+                AzureErrorKind::Amqp,
+                Box::new(AmqpError::new_management_error(
+                    azure_core::http::StatusCode::TooManyRequests,
+                    Some("Too many requests!".into()),
+                )),
+            );
+            assert!(ManagementInstance::should_retry_management_response(&error));
+        }
+
+        {
+            let error: azure_core::Error = AmqpError::new_management_error(
+                azure_core::http::StatusCode::BadGateway,
+                Some("Bad Gateway".into()),
+            )
+            .into();
+            assert!(ManagementInstance::should_retry_management_response(&error));
         }
         {
             let error: azure_core::Error = AmqpError::new_management_error(

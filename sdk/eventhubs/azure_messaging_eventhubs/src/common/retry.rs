@@ -11,13 +11,16 @@ use tracing::{debug, warn};
 /// Options for configuring exponential backoff retry behavior.
 #[derive(Debug, Clone)]
 pub struct RetryOptions {
-    /// The initial backoff delay.
+    /// The initial backoff delay (Default is 100ms).
     pub initial_delay: Duration,
-    /// The maximum backoff delay.
+
+    /// The maximum backoff delay (Default is 30s).
     pub max_delay: Duration,
-    /// The maximum number of retries.
+
+    /// The maximum number of retries (Default is 5).
     pub max_retries: usize,
-    /// The jitter factor to apply to backoff timing (0.0 to 1.0).
+
+    /// The jitter factor to apply to backoff timing (0.0 to 1.0) (Default is 0.2).
     /// A jitter factor of 0.2 means the delay will be randomly adjusted by up to ±20%.
     pub jitter: f64,
 }
@@ -51,7 +54,7 @@ impl Default for RetryOptions {
 /// * `Result<T, E>` - The result of the operation if it succeeds, or the last error if all
 ///   retries are exhausted.
 ///
-pub async fn retry_with_backoff<F, Fut, T, E>(
+pub(crate) async fn retry_with_backoff<F, Fut, T, E>(
     operation: F,
     options: &RetryOptions,
     is_retryable: Option<fn(&E) -> bool>,
@@ -134,7 +137,7 @@ where
 ///
 /// * `Result<T>` - The result of the operation if it succeeds, or the last error if all
 ///   retries are exhausted.
-pub async fn retry_azure_operation<F, Fut, T>(
+pub(crate) async fn retry_azure_operation<F, Fut, T>(
     operation: F,
     options: &RetryOptions,
     is_retryable: Option<fn(&azure_core::Error) -> bool>,

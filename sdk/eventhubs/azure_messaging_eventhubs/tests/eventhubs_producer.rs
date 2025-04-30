@@ -115,10 +115,17 @@ async fn get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         let amqp_error = err.source();
         assert!(amqp_error.is_some());
         let amqp_error = amqp_error.unwrap();
-        assert!(amqp_error.is::<Box<AmqpError>>());
-        let amqp_error = amqp_error.downcast_ref::<Box<AmqpError>>();
-        assert!(amqp_error.is_some());
-        let amqp_error = amqp_error.unwrap();
+        assert!(amqp_error.is::<Box<AmqpError>>() || amqp_error.is::<AmqpError>());
+
+        let amqp_error = if amqp_error.is::<Box<AmqpError>>() {
+            let error = amqp_error.downcast_ref::<Box<AmqpError>>();
+            assert!(error.is_some());
+            error.unwrap().as_ref()
+        } else {
+            let error = amqp_error.downcast_ref::<AmqpError>();
+            assert!(error.is_some());
+            error.unwrap()
+        };
         info!("AMQP error: {:?}", amqp_error);
         if let AmqpErrorKind::ManagementStatusCode(code, _) = amqp_error.kind() {
             assert_eq!(*code, StatusCode::BadRequest);
@@ -127,11 +134,7 @@ async fn get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         }
 
         // Simplest form of the above:
-        let amqp_error = err
-            .source()
-            .unwrap()
-            .downcast_ref::<Box<AmqpError>>()
-            .unwrap();
+        let amqp_error = err.source().unwrap().downcast_ref::<AmqpError>().unwrap();
         info!("AMQP error: {:?}", amqp_error);
     }
 
