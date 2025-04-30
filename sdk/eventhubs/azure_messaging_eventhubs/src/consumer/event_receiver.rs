@@ -174,7 +174,7 @@ impl EventReceiver {
         // Use async_stream to create a stream that yields messages from the receiver.
         try_stream! {
             loop {
-                 let delivery = retry_azure_operation(async move || {
+                 let delivery = retry_azure_operation( || async move {
                      if let Some(delivery_timeout) = self.timeout {
                     select! {
                         delivery = self.receiver.receive_delivery().fuse() => Ok(delivery),

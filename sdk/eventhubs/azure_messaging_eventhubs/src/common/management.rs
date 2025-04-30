@@ -106,7 +106,7 @@ impl ManagementInstance {
 
     pub async fn get_eventhub_properties(&self, eventhub: &str) -> Result<EventHubProperties> {
         let response = retry_azure_operation(
-            async move || {
+            || async move {
                 let mut application_properties: AmqpOrderedMap<String, AmqpValue> =
                     AmqpOrderedMap::new();
                 application_properties.insert(EVENTHUB_PROPERTY_NAME.to_string(), eventhub.into());
@@ -164,7 +164,7 @@ impl ManagementInstance {
         partition_id: &str,
     ) -> Result<EventHubPartitionProperties> {
         let response = retry_azure_operation(
-            async move || {
+            || async move {
                 let mut application_properties: AmqpOrderedMap<String, AmqpValue> =
                     AmqpOrderedMap::new();
                 application_properties.insert(EVENTHUB_PROPERTY_NAME.to_string(), eventhub.into());

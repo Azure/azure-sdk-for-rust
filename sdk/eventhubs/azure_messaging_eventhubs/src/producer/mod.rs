@@ -396,9 +396,9 @@ impl ProducerClient {
                 let sender = sender.clone();
                 async move {
                     let messages = batch.get_messages();
+                    let sender = sender.lock().await;
+
                     sender
-                        .lock()
-                        .await
                         .send(
                             messages,
                             Some(AmqpSendOptions {
