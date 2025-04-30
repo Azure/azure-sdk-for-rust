@@ -167,6 +167,8 @@ impl ProducerClient {
 
                     if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
                         Self::should_retry_amqp_error(amqp_error)
+                    } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
+                        Self::should_retry_amqp_error(amqp_error)
                     } else {
                         debug!("Non AMQP error: {}", e);
                         false
@@ -277,7 +279,7 @@ impl ProducerClient {
                     let sender_guard = sender.lock().await;
                     sender_guard
                         .send(
-                            message,
+                            message.clone(),
                             Some(AmqpSendOptions {
                                 message_format: None,
                                 ..Default::default()
@@ -388,19 +390,30 @@ impl ProducerClient {
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
         let sender = self.ensure_sender(&batch.get_batch_path()?).await?;
-        let messages = batch.get_messages();
 
-        let outcome = sender
-            .lock()
-            .await
-            .send(
-                messages,
-                Some(AmqpSendOptions {
-                    message_format: Some(Self::BATCH_MESSAGE_FORMAT),
-                    ..Default::default()
-                }),
-            )
-            .await?;
+        let outcome = retry_azure_operation(
+            || {
+                let sender = sender.clone();
+                async move {
+                    let messages = batch.get_messages();
+                    sender
+                        .lock()
+                        .await
+                        .send(
+                            messages,
+                            Some(AmqpSendOptions {
+                                message_format: Some(Self::BATCH_MESSAGE_FORMAT),
+                                ..Default::default()
+                            }),
+                        )
+                        .await
+                }
+            },
+            &self.retry_options,
+            Some(Self::should_retry_send_operation),
+        )
+        .await?;
+
         // We treat all outcomes other than "rejected" as successful.
         match outcome {
             azure_core_amqp::AmqpSendOutcome::Rejected(error) => Err(azure_core::Error::new(

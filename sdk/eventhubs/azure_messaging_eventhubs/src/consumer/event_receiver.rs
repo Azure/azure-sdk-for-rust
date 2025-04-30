@@ -87,6 +87,8 @@ impl EventReceiver {
 
                     if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
                         Self::should_retry_amqp_error(amqp_error)
+                    } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
+                        Self::should_retry_amqp_error(amqp_error)
                     } else {
                         debug!("Non AMQP error: {}", e);
                         false
