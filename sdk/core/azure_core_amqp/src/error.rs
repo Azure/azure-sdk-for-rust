@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use std::str::FromStr;
+
 use azure_core::{create_enum, create_extensible_enum};
 
 //pub use crate::sender::error::AmqpSenderError;
@@ -96,51 +98,9 @@ create_extensible_enum!(
 
 impl From<AmqpSymbol> for AmqpErrorCondition {
     fn from(condition: AmqpSymbol) -> Self {
-        match condition.0.as_str() {
-            "amqp:decode-error" => Self::DecodeError,
-            "amqp:frame-size-too-small" => Self::FrameSizeTooSmall,
-            "amqp:illegal-state" => Self::IllegalState,
-            "amqp:internal-error" => Self::InternalError,
-            "amqp:invalid-field" => Self::InvalidField,
-            "amqp:not-allowed" => Self::NotAllowed,
-            "amqp:not-found" => Self::NotFound,
-            "amqp:not-implemented" => Self::NotImplemented,
-            "amqp:precondition-failed" => Self::PreconditionFailed,
-            "amqp:resource-deleted" => Self::ResourceDeleted,
-            "amqp:resource-limit-exceeded" => Self::ResourceLimitExceeded,
-            "amqp:resource-locked" => Self::ResourceLocked,
-            "amqp:unauthorized-access" => Self::UnauthorizedAccess,
-            "amqp:link:stolen" => Self::LinkStolen,
-            "amqp:link:message-size-exceeded" => Self::LinkPayloadSizeExceeded,
-            "amqp:link:detach-forced" => Self::LinkDetachForced,
-            "amqp:connection:forced" => Self::ConnectionForced,
-            "com.microsoft:server-busy" => Self::ServerBusyError,
-            "com.microsoft:argument-error" => Self::ArgumentError,
-            "com.microsoft:argument-out-of-range" => Self::ArgumentOutOfRangeError,
-            "com.microsoft:entity-disabled" => Self::EntityDisabledError,
-            "com.microsoft:partition-not-owned" => Self::PartitionNotOwnedError,
-            "com.microsoft:store-lock-lost" => Self::StoreLockLostError,
-            "com.microsoft:publisher-revoked" => Self::PublisherRevokedError,
-            "com.microsoft:timeout" => Self::TimeoutError,
-            "com.microsoft:tracking-id" => Self::TrackingIdProperty,
-            "proton:io" => Self::ProtonIo,
-            "amqp:connection:framing-error" => Self::ConnectionFramingError,
-            "com.microsoft:operation-cancelled" => Self::OperationCancelled,
-            "com.microsoft:message-lock-lost" => Self::MessageLockLost,
-            "com.microsoft:session-lock-lost" => Self::SessionLockLost,
-            "com.microsoft:session-cannot-be-locked" => Self::SessionCannotBeLocked,
-            "com.microsoft:message-not-found" => Self::MessageNotFound,
-            "com.microsoft:session-not-found" => Self::SessionNotFound,
-            "com.microsoft:entity-already-exists" => Self::EntityAlreadyExists,
-            "amqp:connection:redirect" => Self::ConnectionRedirect,
-            "amqp:link:redirect" => Self::LinkRedirect,
-            "amqp:link:transfer-limit-exceeded" => Self::TransferLimitExceeded,
-            "amqp:session:window-violation" => Self::SessionWindowViolation,
-            "amqp:session:errant-link" => Self::SessionErrantLink,
-            "amqp:session:handle-in-use" => Self::SessionHandleInUse,
-            "amqp:session:unattached-handle" => Self::SessionUnattachedHandle,
-            _ => Self::UnknownValue(condition.0),
-        }
+        // Note that the `from_str` implementation from `create_extensible_enum` will
+        // never return an error. So the `expect` is there to silence the compiler.
+        AmqpErrorCondition::from_str(condition.0.as_str()).expect("Invalid AMQP error condition")
     }
 }
 
@@ -308,7 +268,7 @@ impl std::fmt::Debug for AmqpError {
 
 impl From<AmqpError> for azure_core::Error {
     fn from(e: AmqpError) -> Self {
-        Self::new(azure_core::error::ErrorKind::Amqp, Box::new(e))
+        Self::new(azure_core::error::ErrorKind::Amqp, e)
     }
 }
 
