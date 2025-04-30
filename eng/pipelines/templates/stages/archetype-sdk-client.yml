@@ -72,7 +72,7 @@ parameters:
 extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
   parameters:
-    autoBaseline: ${{ and(eq(variables['Build.DefinitionName'], 'rust - core'), eq(replace(variables['Build.SourceBranchName'], 'refs/heads/', ''), 'main'), eq(variables['System.TeamProject'], 'internal')) }}
+    AutoBaseline: ${{ and(eq(variables['Build.DefinitionName'], 'rust - core'), eq(replace(variables['Build.SourceBranchName'], 'refs/heads/', ''), 'main'), eq(variables['System.TeamProject'], 'internal')) }}
     stages:
     - stage: Build
       variables:
