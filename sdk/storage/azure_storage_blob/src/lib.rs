@@ -18,17 +18,18 @@ pub use crate::generated::clients::{
 pub use crate::generated::models::{
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
     BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientGetPropertiesOptions, BlobContainerClientSetMetadataOptions,
-    BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobClientStartCopyFromUrlOptions, BlobContainerClientCreateOptions,
+    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientSetMetadataOptions, BlobServiceClientGetPropertiesOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 
 pub mod models {
     pub use crate::generated::models::{
         AccessTier, ArchiveStatus, BlobClientDownloadResult, BlobClientDownloadResultHeaders,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
+        BlobClientStartCopyFromUrlResult, BlobClientStartCopyFromUrlResultHeaders,
         BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
         BlobImmutabilityPolicyMode, BlobType, BlockBlobClientCommitBlockListResult,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, BlockListType,
