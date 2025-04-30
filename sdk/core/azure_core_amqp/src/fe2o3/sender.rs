@@ -223,6 +223,10 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
             fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented
+            | fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName
+            | fe2o3_amqp::link::SenderAttachError::NonAttachFrameReceived
+            | fe2o3_amqp::link::SenderAttachError::ExpectImmediateDetach
+            | fe2o3_amqp::link::SenderAttachError::IncomingTargetIsNone
             | fe2o3_amqp::link::SenderAttachError::SndSettleModeNotSupported
             | fe2o3_amqp::link::SenderAttachError::RcvSettleModeNotSupported
             | fe2o3_amqp::link::SenderAttachError::TargetAddressIsNoneWhenDynamicIsTrue
@@ -230,10 +234,6 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
             | fe2o3_amqp::link::SenderAttachError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => {
                 AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }
-            fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName
-            | fe2o3_amqp::link::SenderAttachError::NonAttachFrameReceived => todo!(),
-            fe2o3_amqp::link::SenderAttachError::ExpectImmediateDetach
-            | fe2o3_amqp::link::SenderAttachError::IncomingTargetIsNone => todo!(),
         }
     }
 }
