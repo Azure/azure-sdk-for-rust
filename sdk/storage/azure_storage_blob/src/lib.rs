@@ -11,9 +11,9 @@ pub mod clients;
 mod generated;
 mod pipeline;
 
-pub use crate::clients::{BlobClient, BlobContainerClient, BlobServiceClient};
+pub use crate::clients::{BlobClient, BlobContainerClient, BlobServiceClient, BlockBlobClient};
 pub use crate::generated::clients::{
-    BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions,
+    BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions, BlockBlobClientOptions,
 };
 pub use crate::generated::models::{
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
