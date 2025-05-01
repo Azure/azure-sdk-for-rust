@@ -483,6 +483,15 @@ impl From<Box<AmqpDescribed>> for AmqpDescribed {
     }
 }
 
+impl From<&AmqpValue> for String {
+    fn from(b: &AmqpValue) -> Self {
+        match b {
+            AmqpValue::String(s) => s.clone(),
+            _ => panic!("Expected a String value"),
+        }
+    }
+}
+
 impl From<&str> for AmqpValue {
     fn from(b: &str) -> Self {
         AmqpValue::String(b.to_string())

@@ -545,10 +545,9 @@ impl From<Fe2o3SerializationError> for azure_core::Error {
             | serde_amqp::Error::SequenceLengthMismatch
             | serde_amqp::Error::InvalidLength
             | serde_amqp::Error::InvalidValue
-            | serde_amqp::Error::IsDescribedType => azure_core::Error::new(
-                ErrorKind::Amqp,
-                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(err.0))),
-            ),
+            | serde_amqp::Error::IsDescribedType => {
+                AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(err.0))).into()
+            }
         }
     }
 }

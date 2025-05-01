@@ -127,7 +127,6 @@ impl ManagementInstance {
         let name: String = response
             .get(EVENTHUB_PROPERTY_NAME)
             .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
-            .clone()
             .into();
         let created_at: Option<SystemTime> = Into::<AmqpTimestamp>::into(
             response

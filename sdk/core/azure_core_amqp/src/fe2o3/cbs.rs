@@ -116,9 +116,10 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
                 Ok(amqp_error) => amqp_error.into(),
                 Err(e) => {
                     debug!("Failed to convert management error to azure error: {:?}", e);
-                    azure_core::Error::message(
+                    azure_core::Error::full(
                         azure_core::error::ErrorKind::Amqp,
-                        format!("Failed to convert management error to azure error: {}", e),
+                        e,
+                        "Failed to convert management error to azure error.",
                     )
                 }
             })?;
