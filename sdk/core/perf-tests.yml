@@ -16,46 +16,6 @@ Tests:
     Arguments:
       - --sync
 
-  - Test: create_request_100
-    Class: create_request_100
-    Arguments:
-      - --sync
-
-  - Test: create_request_1000
-    Class: create_request_1000
-    Arguments:
-      - --sync
-
-  - Test: header_operations_100
-    Class: header_operations_100
-    Arguments:
-      - --sync
-
-  - Test: header_operations_1000
-    Class: header_operations_1000
-    Arguments:
-      - --sync
-
-  - Test: create_request_with_body_100
-    Class: create_request_with_body_100
-    Arguments:
-      - --sync
-
-  - Test: create_request_with_body_1000
-    Class: create_request_with_body_1000
-    Arguments:
-      - --sync
-
-  - Test: create_request_with_headers_100
-    Class: create_request_with_headers_100
-    Arguments:
-      - --sync
-
-  - Test: create_request_with_headers_1000
-    Class: create_request_with_headers_1000
-    Arguments:
-      - --sync
-
   - Test: http_transport_get_async
     Class: http_transport_get_async
     Arguments:
