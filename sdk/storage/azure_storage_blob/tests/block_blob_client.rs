@@ -57,15 +57,21 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
 
     // Assert
-    assert_eq!(0, block_list.committed_blocks.len());
-    assert_eq!(3, block_list.uncommitted_blocks.len());
+    assert!(block_list.committed_blocks.is_none());
+    assert_eq!(
+        3,
+        block_list
+            .uncommitted_blocks
+            .expect("expected uncommitted_blocks")
+            .len()
+    );
 
     let latest_blocks: Vec<Vec<u8>> = vec![block_1_id, block_2_id, block_3_id];
 
     let block_lookup_list = BlockLookupList {
-        committed: Vec::new(),
-        latest: latest_blocks,
-        uncommitted: Vec::new(),
+        committed: Some(Vec::new()),
+        latest: Some(latest_blocks),
+        uncommitted: Some(Vec::new()),
     };
 
     let request_content = RequestContent::try_from(block_lookup_list)?;
@@ -91,8 +97,14 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         Bytes::from_static(b"AAABBBCCC"),
         response_body.collect().await?
     );
-    assert_eq!(3, block_list.committed_blocks.len());
-    assert_eq!(0, block_list.uncommitted_blocks.len());
+    assert_eq!(
+        3,
+        block_list
+            .committed_blocks
+            .expect("expected committed_blocks")
+            .len()
+    );
+    assert!(block_list.uncommitted_blocks.is_none());
 
     container_client.delete_container(None).await?;
     Ok(())

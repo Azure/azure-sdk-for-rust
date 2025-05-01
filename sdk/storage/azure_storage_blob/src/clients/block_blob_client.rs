@@ -125,7 +125,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
     ) -> Result<Response<BlockBlobClientStageBlockResult>> {
         self.client
-            .stage_block(block_id, content_length, body, options)
+            .stage_block(&block_id, content_length, body, options)
             .await
     }
 

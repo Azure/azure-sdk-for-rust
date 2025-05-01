@@ -111,10 +111,10 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
     // Update certificate properties.
     let parameters = UpdateCertificatePropertiesParameters {
         certificate_attributes: certificate.attributes,
-        tags: HashMap::from_iter(vec![(
+        tags: Some(HashMap::from_iter(vec![(
             "test-name".into(),
             "update_certificate_properties".into(),
-        )]),
+        )])),
         ..Default::default()
     };
     let certificate = client
@@ -129,7 +129,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         .await?;
 
     assert_eq!(
-        certificate.tags.get("test-name"),
+        certificate.tags.expect("expected tags").get("test-name"),
         Some(&String::from("update_certificate_properties"))
     );
 
