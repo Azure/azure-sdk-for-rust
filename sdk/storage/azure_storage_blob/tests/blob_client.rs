@@ -17,7 +17,7 @@ use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_cli
 use std::{collections::HashMap, error::Error};
 
 #[recorded::test]
-async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_get_blob_propertiess(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, false).await?;
