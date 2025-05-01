@@ -55,12 +55,12 @@ impl Default for RetryOptions {
 ///   retries are exhausted.
 ///
 pub(crate) async fn retry_with_backoff<F, Fut, T, E>(
-    mut operation: F,
+    operation: F,
     options: &RetryOptions,
     is_retryable: Option<fn(&E) -> bool>,
 ) -> std::result::Result<T, E>
 where
-    F: FnMut() -> Fut,
+    F: Fn() -> Fut,
     Fut: std::future::Future<Output = std::result::Result<T, E>>,
     E: Debug + std::fmt::Display,
 {
