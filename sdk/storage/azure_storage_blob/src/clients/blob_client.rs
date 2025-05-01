@@ -4,7 +4,7 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
+        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientStartCopyFromUrlResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
@@ -12,9 +12,9 @@ use crate::{
     pipeline::StorageHeadersPolicy,
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
     BlobClientOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -249,5 +249,24 @@ impl BlobClient {
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client.set_tier(tier, options).await
+    }
+
+    /// Copies a blob or an internet resource to a new blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `copy_source` - A URL of up to 2 KB in length that specifies a file or blob.
+    ///        The value should be URL-encoded as it would appear in a request URI.
+    ///        If the source is in another account, the source must either be public
+    ///        or must be authenticated via a shared access signature. If the source
+    ///        is public, no authentication is required.
+    ///        Example: https://myaccount.blob.core.windows.net/mycontainer/myblob
+    /// * `options` - Optional configuration for the request.
+    pub async fn start_copy_from_url(
+        &self,
+        copy_source: &str,
+        options: Option<BlobClientStartCopyFromUrlOptions<'_>>,
+    ) -> Result<Response<BlobClientStartCopyFromUrlResult>> {
+        self.client.start_copy_from_url(copy_source, options).await
     }
 }

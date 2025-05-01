@@ -9,7 +9,8 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
         AccessTier, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
-        BlockListType, BlockLookupList, LeaseState,
+        BlobClientStartCopyFromUrlResultHeaders, BlockListType, BlockLookupList, CopyStatus,
+        LeaseState,
     },
     BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions,
 };
@@ -422,6 +423,39 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     let access_tier = response.tier()?;
     assert_eq!(AccessTier::Cold, access_tier.unwrap());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_start_copy_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let source_blob_client = container_client.blob_client(get_blob_name(recording));
+    create_test_blob(&source_blob_client).await?;
+
+    let blob_client = container_client.blob_client("destination_blob".to_string());
+    let source_url = format!(
+        "{}{}/{}",
+        source_blob_client.endpoint().as_str(),
+        source_blob_client.container_name(),
+        source_blob_client.blob_name()
+    );
+    let response = blob_client.start_copy_from_url(&source_url, None).await?;
+    let (_, _, source_content) = source_blob_client.download(None).await?.deconstruct();
+    let (_, _, copied_content) = blob_client.download(None).await?.deconstruct();
+
+    // Assert
+    let copy_status = response.copy_status()?;
+    let copy_id = response.copy_id()?;
+    assert_eq!(CopyStatus::Success, copy_status.unwrap());
+    assert!(copy_id.is_some());
+    assert_eq!(
+        source_content.collect().await?,
+        copied_content.collect().await?
+    );
 
     container_client.delete_container(None).await?;
     Ok(())

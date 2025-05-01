@@ -1387,7 +1387,7 @@ impl BlobClient {
         path = path.replace("{blobName}", &self.blob_name);
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "copy");
+        // url.query_pairs_mut().append_pair("comp", "copy");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
