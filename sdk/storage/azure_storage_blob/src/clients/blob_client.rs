@@ -4,17 +4,17 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
+        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientSetTagsResult, BlobTags,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
     models::{AccessTier, BlockList, BlockListType, BlockLookupList},
     pipeline::StorageHeadersPolicy,
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobClientGetTagsOptions, BlobClientOptions, BlobClientSetMetadataOptions,
+    BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -249,5 +249,31 @@ impl BlobClient {
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client.set_tier(tier, options).await
+    }
+
+    /// Sets tags on a blob. Note that each call to this operation replaces all existing tags. To remove
+    /// all tags from the blob, call this operation with no tags specified.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_tags(
+        &self,
+        tags: RequestContent<BlobTags>,
+        options: Option<BlobClientSetTagsOptions<'_>>,
+    ) -> Result<Response<BlobClientSetTagsResult>> {
+        self.client.set_tags(tags, options).await
+    }
+
+    /// Gets the tags on a blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_tags(
+        &self,
+        options: Option<BlobClientGetTagsOptions<'_>>,
+    ) -> Result<Response<BlobTags>> {
+        self.client.get_tags(options).await
     }
 }

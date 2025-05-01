@@ -2,18 +2,21 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{RequestContent, StatusCode},
+    http::{response, Request, RequestContent, StatusCode},
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
-        AccessTier, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
-        BlockListType, BlockLookupList, LeaseState,
+        AccessTier, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobTag,
+        BlobTags, BlockListType, BlockLookupList, LeaseState,
     },
-    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions,
+    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
+    BlockBlobClientUploadOptions,
 };
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, test_blob_tag_equality,
+};
 use std::{collections::HashMap, error::Error};
 
 #[recorded::test]
@@ -422,6 +425,52 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     let access_tier = response.tier()?;
     assert_eq!(AccessTier::Cold, access_tier.unwrap());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+    create_test_blob(&blob_client).await?;
+
+    // Set Tags with Tags Specified
+    let blob_tag_1 = BlobTag {
+        key: Some("hello".to_string()),
+        value: Some("world".to_string()),
+    };
+    let blob_tag_2 = BlobTag {
+        key: Some("ferris".to_string()),
+        value: Some("crab".to_string()),
+    };
+    let blob_tags = BlobTags {
+        blob_tag_set: vec![blob_tag_1, blob_tag_2],
+    };
+    blob_client
+        .set_tags(RequestContent::try_from(blob_tags.clone())?, None)
+        .await?;
+
+    // Assert
+    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    assert!(test_blob_tag_equality(blob_tags, response_tags));
+
+    // Set Tags with No Tags (Clear Tags)
+    blob_client
+        .set_tags(
+            RequestContent::try_from(BlobTags {
+                blob_tag_set: vec![],
+            })?,
+            None,
+        )
+        .await?;
+
+    // Assert
+    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    assert!(response_tags.blob_tag_set.is_empty());
 
     container_client.delete_container(None).await?;
     Ok(())
