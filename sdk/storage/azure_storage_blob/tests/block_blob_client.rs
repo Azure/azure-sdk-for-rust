@@ -25,7 +25,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     block_blob_client
         .stage_block(
-            block_1_id.clone(),
+            &block_1_id,
             u64::try_from(block_1.len())?,
             RequestContent::from(block_1.to_vec()),
             None,
@@ -34,7 +34,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     block_blob_client
         .stage_block(
-            block_2_id.clone(),
+            &block_2_id,
             u64::try_from(block_2.len())?,
             RequestContent::from(block_2.to_vec()),
             None,
@@ -42,7 +42,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
     block_blob_client
         .stage_block(
-            block_3_id.clone(),
+            &block_3_id,
             u64::try_from(block_3.len())?,
             RequestContent::from(block_3.to_vec()),
             None,
