@@ -155,10 +155,10 @@ impl From<fe2o3_amqp::session::BeginError> for AmqpError {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
             fe2o3_amqp::session::BeginError::RemoteEnded => {
-                AmqpErrorKind::ClosedByRemote(None).into()
+                AmqpErrorKind::ClosedByRemote(Box::new(e)).into()
             }
             fe2o3_amqp::session::BeginError::RemoteEndedWithError(error) => {
-                AmqpErrorKind::ClosedByRemote(Some(error.into())).into()
+                AmqpErrorKind::AmqpDescribedError(error.into()).into()
             }
             fe2o3_amqp::session::BeginError::LocalChannelMaxReached => {
                 AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
@@ -178,9 +178,11 @@ impl From<fe2o3_amqp::session::Error> for AmqpError {
             | fe2o3_amqp::session::Error::TransferFrameToSender => {
                 AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }
-            fe2o3_amqp::session::Error::RemoteEnded => AmqpErrorKind::ClosedByRemote(None).into(),
+            fe2o3_amqp::session::Error::RemoteEnded => {
+                AmqpErrorKind::ClosedByRemote(Box::new(e)).into()
+            }
             fe2o3_amqp::session::Error::RemoteEndedWithError(error) => {
-                AmqpErrorKind::ClosedByRemote(Some(error.into())).into()
+                AmqpErrorKind::AmqpDescribedError(error.into()).into()
             }
         }
     }

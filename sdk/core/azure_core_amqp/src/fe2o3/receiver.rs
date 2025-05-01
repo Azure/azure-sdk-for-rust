@@ -3,7 +3,6 @@
 
 use crate::{
     error::AmqpErrorKind,
-    fe2o3::error::{Fe2o3IllegalLinkStateError, Fe2o3ReceiverError},
     messaging::{AmqpDelivery, AmqpSource},
     receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     session::AmqpSession,
@@ -125,7 +124,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         > = receiver
             .recv()
             .await
-            .map_err(|e| azure_core::Error::from(Fe2o3ReceiverError(e)))?;
+            .map_err(|e| azure_core::Error::from(AmqpError::from(e)))?;
         trace!("Received delivery: {:?}", delivery);
         Ok(delivery.into())
     }
@@ -142,7 +141,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         receiver
             .accept(&delivery.0.delivery)
             .await
-            .map_err(|e| azure_core::Error::from(Fe2o3IllegalLinkStateError(e)))?;
+            .map_err(AmqpError::from)?;
         trace!("Accepted delivery.");
 
         Ok(())
@@ -160,7 +159,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         receiver
             .reject(&delivery.0.delivery, None)
             .await
-            .map_err(|e| azure_core::Error::from(Fe2o3IllegalLinkStateError(e)))?;
+            .map_err(AmqpError::from)?;
         trace!("Rejected delivery.");
 
         Ok(())
@@ -178,7 +177,7 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         receiver
             .release(&delivery.0.delivery)
             .await
-            .map_err(|e| azure_core::Error::from(Fe2o3IllegalLinkStateError(e)))?;
+            .map_err(AmqpError::from)?;
         trace!("Released delivery.");
 
         Ok(())
@@ -224,7 +223,7 @@ impl From<fe2o3_amqp::link::ReceiverAttachError> for AmqpError {
     fn from(e: fe2o3_amqp::link::ReceiverAttachError) -> Self {
         match e {
             fe2o3_amqp::link::ReceiverAttachError::RemoteClosedWithError(e) => {
-                AmqpErrorKind::ClosedByRemote(Some(e.into())).into()
+                AmqpErrorKind::AmqpDescribedError(e.into()).into()
             }
             fe2o3_amqp::link::ReceiverAttachError::IllegalSessionState
             | fe2o3_amqp::link::ReceiverAttachError::IllegalState => {
@@ -235,11 +234,11 @@ impl From<fe2o3_amqp::link::ReceiverAttachError> for AmqpError {
     }
 }
 
-impl From<Fe2o3ReceiverError> for azure_core::Error {
-    fn from(e: Fe2o3ReceiverError) -> Self {
-        AmqpError::from(e.0).into()
-    }
-}
+// impl From<Fe2o3ReceiverError> for azure_core::Error {
+//     fn from(e: Fe2o3ReceiverError) -> Self {
+//         AmqpError::from(e.0).into()
+//     }
+// }
 
 impl From<fe2o3_amqp::link::RecvError> for AmqpError {
     fn from(e: fe2o3_amqp::link::RecvError) -> Self {

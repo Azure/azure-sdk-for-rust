@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
 
     let result = ProducerClient::builder()
         .with_application_id("test_get_properties".to_string())
-        .open(host, eventhub.clone(), credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await;
     if let Err(err) = result {
         eprintln!("Error opening client: {err}");

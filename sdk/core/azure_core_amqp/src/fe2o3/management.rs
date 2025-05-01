@@ -5,7 +5,6 @@ use std::borrow::BorrowMut;
 
 use crate::{
     error::AmqpErrorKind,
-    fe2o3::error::Fe2o3ManagementError,
     management::AmqpManagementApis,
     session::AmqpSession,
     value::{AmqpOrderedMap, AmqpValue},
@@ -110,21 +109,21 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
 
         let response = management.call(request).await;
         if let Err(e) = response {
-            let e = azure_core::Error::try_from(Fe2o3ManagementError(e))?;
-            Err(e)
+            let e = AmqpError::try_from(e)?;
+            Err(e.into())
         } else {
             Ok(response.unwrap().entity_attributes.into())
         }
     }
 }
 
-impl TryFrom<Fe2o3ManagementError> for azure_core::Error {
-    type Error = azure_core::Error;
-    fn try_from(e: Fe2o3ManagementError) -> std::result::Result<Self, Self::Error> {
-        let e = AmqpError::try_from(e.0)?;
-        Ok(e.into())
-    }
-}
+// impl TryFrom<Fe2o3ManagementError> for azure_core::Error {
+//     type Error = azure_core::Error;
+//     fn try_from(e: Fe2o3ManagementError) -> std::result::Result<Self, Self::Error> {
+//         let e = AmqpError::try_from(e.0)?;
+//         Ok(e.into())
+//     }
+// }
 
 impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpError {
     type Error = azure_core::Error;

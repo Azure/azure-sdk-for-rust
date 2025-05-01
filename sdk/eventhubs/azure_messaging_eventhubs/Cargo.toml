@@ -33,6 +33,7 @@ tracing.workspace = true
 rustc_version.workspace = true
 
 [dev-dependencies]
+azure_core_amqp = { workspace = true, features = ["test"] }
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
 azure_messaging_eventhubs = { path = ".", features = [

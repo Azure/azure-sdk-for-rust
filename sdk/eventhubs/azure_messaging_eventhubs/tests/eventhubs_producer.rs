@@ -16,7 +16,7 @@ async fn test_new(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let credential = recording.credential();
     let _client = ProducerClient::builder()
         .with_application_id("test_new".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     Ok(())
@@ -28,7 +28,7 @@ async fn test_new_with_error(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let eventhub = env::var("EVENTHUB_NAME")?;
     let result = ProducerClient::builder()
         .with_application_id("test_new_with_error".to_string())
-        .open("invalid_host".to_string(), eventhub, recording.credential())
+        .open("invalid_host", eventhub.as_str(), recording.credential())
         .await;
     assert!(result.is_err());
     info!("Error: {:?}", result.err());
@@ -44,7 +44,7 @@ async fn open(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let credential = recording.credential();
     let _client = ProducerClient::builder()
         .with_application_id("test_open".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     Ok(())
@@ -58,7 +58,7 @@ async fn close(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let credential = recording.credential();
     let client = ProducerClient::builder()
         .with_application_id("test_close".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     client.close().await?;
 
@@ -75,7 +75,7 @@ async fn get_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let client = ProducerClient::builder()
         .with_application_id("test_get_properties".to_string())
-        .open(host, eventhub.clone(), credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
     info!("Properties: {:?}", properties);
@@ -96,7 +96,7 @@ async fn get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     let client = ProducerClient::builder()
         .with_application_id("test_get_partition_properties".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
 
@@ -115,10 +115,17 @@ async fn get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         let amqp_error = err.source();
         assert!(amqp_error.is_some());
         let amqp_error = amqp_error.unwrap();
-        assert!(amqp_error.is::<Box<AmqpError>>());
-        let amqp_error = amqp_error.downcast_ref::<Box<AmqpError>>();
-        assert!(amqp_error.is_some());
-        let amqp_error = amqp_error.unwrap();
+        assert!(amqp_error.is::<Box<AmqpError>>() || amqp_error.is::<AmqpError>());
+
+        let amqp_error = if amqp_error.is::<Box<AmqpError>>() {
+            let error = amqp_error.downcast_ref::<Box<AmqpError>>();
+            assert!(error.is_some());
+            error.unwrap().as_ref()
+        } else {
+            let error = amqp_error.downcast_ref::<AmqpError>();
+            assert!(error.is_some());
+            error.unwrap()
+        };
         info!("AMQP error: {:?}", amqp_error);
         if let AmqpErrorKind::ManagementStatusCode(code, _) = amqp_error.kind() {
             assert_eq!(*code, StatusCode::BadRequest);
@@ -127,11 +134,7 @@ async fn get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         }
 
         // Simplest form of the above:
-        let amqp_error = err
-            .source()
-            .unwrap()
-            .downcast_ref::<Box<AmqpError>>()
-            .unwrap();
+        let amqp_error = err.source().unwrap().downcast_ref::<AmqpError>().unwrap();
         info!("AMQP error: {:?}", amqp_error);
     }
 
@@ -173,7 +176,7 @@ async fn send_eventdata(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let client = ProducerClient::builder()
         .with_application_id("send_eventdata".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     {
         let data = b"hello world";
@@ -215,7 +218,7 @@ async fn send_message(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let client = ProducerClient::builder()
         .with_application_id("send_eventdata".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     {
         let data = b"hello world";
@@ -259,7 +262,7 @@ async fn test_create_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let client = ProducerClient::builder()
         .with_application_id("test_create_batch".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
     {
         let batch = client.create_batch(None).await?;
@@ -279,7 +282,7 @@ async fn test_create_and_send_batch(ctx: TestContext) -> Result<(), Box<dyn Erro
 
     let client = ProducerClient::builder()
         .with_application_id("test_create_and_send_batch".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     {
@@ -331,7 +334,7 @@ async fn test_add_amqp_messages_to_batch(
 
     let client = ProducerClient::builder()
         .with_application_id("test_add_amqp_messages_to_batch".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     let batch = client.create_batch(None).await?;
@@ -401,7 +404,7 @@ async fn test_overload_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let client = ProducerClient::builder()
         .with_application_id("test_overload_batch".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub.as_str(), credential.clone())
         .await?;
 
     info!("Client is open.");

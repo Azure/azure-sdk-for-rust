@@ -207,6 +207,7 @@ dependencies = [
  "fe2o3-amqp-ext",
  "fe2o3-amqp-management",
  "fe2o3-amqp-types",
+ "serde",
  "serde_amqp",
  "serde_bytes",
  "time",
@@ -214,6 +215,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "typespec",
+ "typespec_macros",
 ]
 
 [[package]]

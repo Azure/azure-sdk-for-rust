@@ -42,6 +42,8 @@ pub mod builders {
     pub use crate::producer::builders::ProducerClientBuilder;
 }
 
+pub use common::retry::RetryOptions;
+
 pub use crate::error::{ErrorKind, EventHubsError};
 
 #[cfg(feature = "test")]

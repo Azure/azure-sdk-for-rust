@@ -198,10 +198,14 @@ impl From<fe2o3_amqp::link::SendError> for AmqpError {
             fe2o3_amqp::link::SendError::LinkStateError(link_state_error) => {
                 AmqpError::from(link_state_error)
             }
-            fe2o3_amqp::link::SendError::Detached(detach_error) => AmqpError::from(detach_error),
-            fe2o3_amqp::link::SendError::NonTerminalDeliveryState
-            | fe2o3_amqp::link::SendError::IllegalDeliveryState
-            | fe2o3_amqp::link::SendError::MessageEncodeError => {
+            fe2o3_amqp::link::SendError::Detached(detach_error) => detach_error.into(),
+            fe2o3_amqp::link::SendError::NonTerminalDeliveryState => {
+                AmqpErrorKind::NonTerminalDeliveryState.into()
+            }
+            fe2o3_amqp::link::SendError::IllegalDeliveryState => {
+                AmqpErrorKind::IllegalDeliveryState.into()
+            }
+            fe2o3_amqp::link::SendError::MessageEncodeError => {
                 AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e)))
             }
         }
@@ -212,17 +216,17 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
     fn from(e: fe2o3_amqp::link::SenderAttachError) -> Self {
         match e {
             fe2o3_amqp::link::SenderAttachError::RemoteClosedWithError(e) => {
-                AmqpErrorKind::ClosedByRemote(Some(e.into())).into()
+                AmqpErrorKind::AmqpDescribedError(e.into()).into()
             }
             fe2o3_amqp::link::SenderAttachError::IllegalSessionState
             | fe2o3_amqp::link::SenderAttachError::IllegalState => {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
-            fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName
-            | fe2o3_amqp::link::SenderAttachError::NonAttachFrameReceived => todo!(),
-            fe2o3_amqp::link::SenderAttachError::ExpectImmediateDetach
-            | fe2o3_amqp::link::SenderAttachError::IncomingTargetIsNone => todo!(),
             fe2o3_amqp::link::SenderAttachError::CoordinatorIsNotImplemented
+            | fe2o3_amqp::link::SenderAttachError::DuplicatedLinkName
+            | fe2o3_amqp::link::SenderAttachError::NonAttachFrameReceived
+            | fe2o3_amqp::link::SenderAttachError::ExpectImmediateDetach
+            | fe2o3_amqp::link::SenderAttachError::IncomingTargetIsNone
             | fe2o3_amqp::link::SenderAttachError::SndSettleModeNotSupported
             | fe2o3_amqp::link::SenderAttachError::RcvSettleModeNotSupported
             | fe2o3_amqp::link::SenderAttachError::TargetAddressIsNoneWhenDynamicIsTrue

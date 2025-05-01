@@ -4,7 +4,12 @@
 
 ### Features Added
 
+- Added EventHubs token refresh.
+- Added retries for failed EventHubs operations.
+
 ### Breaking Changes
+
+- The `fully_qualified_domain` parameter to the `open` method on the `ProducerClient` and `ConsumerClient` builder now takes an `&str` instead of a `String` to better follow the Azure SDK for Rust API guidelines.
 
 ### Bugs Fixed
 

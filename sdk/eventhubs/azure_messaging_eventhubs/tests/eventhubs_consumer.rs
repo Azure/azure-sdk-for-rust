@@ -17,7 +17,7 @@ async fn consumer_new(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let eventhub = env::var("EVENTHUB_NAME")?;
     let _client = ConsumerClient::builder()
         .with_application_id("test_new".to_string())
-        .open(host, eventhub, recording.credential())
+        .open(host.as_str(), eventhub, recording.credential())
         .await?;
 
     Ok(())
@@ -30,7 +30,7 @@ async fn consumer_new_with_error(ctx: TestContext) -> Result<(), Box<dyn Error>>
     let eventhub = env::var("EVENTHUB_NAME")?;
     let result = ConsumerClient::builder()
         .with_application_id("test_new".to_string())
-        .open("invalid_host".to_string(), eventhub, recording.credential())
+        .open("invalid_host", eventhub, recording.credential())
         .await;
     assert!(result.is_err());
     match result {
@@ -65,7 +65,7 @@ async fn consumer_open(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let eventhub = env::var("EVENTHUB_NAME")?;
     let _client = ConsumerClient::builder()
         .with_application_id("test_open".to_string())
-        .open(host, eventhub, recording.credential())
+        .open(host.as_str(), eventhub, recording.credential())
         .await?;
 
     Ok(())
@@ -77,7 +77,7 @@ async fn consumer_close(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let eventhub = env::var("EVENTHUB_NAME")?;
     let client = ConsumerClient::builder()
         .with_application_id("test_open".to_string())
-        .open(host, eventhub, recording.credential())
+        .open(host.as_str(), eventhub, recording.credential())
         .await?;
     client.close().await?;
 
@@ -94,7 +94,7 @@ async fn consumer_get_properties(ctx: TestContext) -> Result<(), Box<dyn Error>>
 
     let client = ConsumerClient::builder()
         .with_application_id("test_open".to_string())
-        .open(host, eventhub.clone(), credential.clone())
+        .open(host.as_str(), eventhub.clone(), credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
     info!("Properties: {:?}", properties);
@@ -113,7 +113,7 @@ async fn consumer_get_partition_properties(ctx: TestContext) -> Result<(), Box<d
 
     let client = ConsumerClient::builder()
         .with_application_id("test_open".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub, credential.clone())
         .await?;
     let properties = client.get_eventhub_properties().await?;
 
@@ -139,7 +139,7 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
     info!("Creating client.");
     let client = ConsumerClient::builder()
         .with_application_id("test_open".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub, credential.clone())
         .await?;
 
     let eh_properties = client.get_eventhub_properties().await?;
@@ -216,7 +216,7 @@ async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     info!("Creating client.");
     let client = ConsumerClient::builder()
         .with_application_id("test_open".to_string())
-        .open(host, eventhub, credential.clone())
+        .open(host.as_str(), eventhub, credential.clone())
         .await?;
 
     info!("Client open, create receiver.");

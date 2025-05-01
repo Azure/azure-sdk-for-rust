@@ -70,8 +70,8 @@ use azure_messaging_eventhubs::ProducerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let host = "<EVENTHUBS_HOST>".to_string();
-    let eventhub = "<EVENTHUB_NAME>".to_string();
+    let host = "<EVENTHUBS_HOST>";
+    let eventhub = "<EVENTHUB_NAME>";
 
     // Create new credential
     let credential = DefaultAzureCredential::new()?;
@@ -129,8 +129,8 @@ use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn open_producer_client() -> Result<ProducerClient, Error> {
-    let host = "<EVENTHUBS_HOST>".to_string();
-    let eventhub = "<EVENTHUB_NAME>".to_string();
+    let host = "<EVENTHUBS_HOST>";
+    let eventhub = "<EVENTHUB_NAME>";
 
     let credential = DefaultAzureCredential::new()?;
 
@@ -193,7 +193,7 @@ async fn open_consumer_client() -> Result<ConsumerClient, Error> {
     let credential = DefaultAzureCredential::new()?;
 
     let consumer = azure_messaging_eventhubs::ConsumerClient::builder()
-        .open(host, eventhub, credential.clone())
+        .open(&host, eventhub, credential.clone())
         .await?;
 
     Ok(consumer)

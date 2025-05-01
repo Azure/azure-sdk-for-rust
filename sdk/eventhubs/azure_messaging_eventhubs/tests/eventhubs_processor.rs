@@ -20,7 +20,7 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
 
     let consumer_client = ConsumerClient::builder()
         .open(
-            recording.var("EVENTHUBS_HOST", None),
+            recording.var("EVENTHUBS_HOST", None).as_str(),
             recording.var("EVENTHUB_NAME", None),
             recording.credential().clone(),
         )
@@ -88,7 +88,7 @@ async fn create_consumer_client(ctx: &TestContext) -> azure_core::Result<Arc<Con
     Ok(Arc::new(
         ConsumerClient::builder()
             .open(
-                recording.var("EVENTHUBS_HOST", None),
+                recording.var("EVENTHUBS_HOST", None).as_str(),
                 recording.var("EVENTHUB_NAME", None),
                 recording.credential().clone(),
             )
@@ -102,8 +102,8 @@ async fn create_producer_client(ctx: &TestContext) -> azure_core::Result<Arc<Pro
     Ok(Arc::new(
         ProducerClient::builder()
             .open(
-                recording.var("EVENTHUBS_HOST", None),
-                recording.var("EVENTHUB_NAME", None),
+                recording.var("EVENTHUBS_HOST", None).as_str(),
+                recording.var("EVENTHUB_NAME", None).as_str(),
                 recording.credential().clone(),
             )
             .await?,
