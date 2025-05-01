@@ -21,12 +21,9 @@ use tracing_subscriber::{
     registry::{LookupSpan, Registry},
 };
 
+/// A custom tracing layer that sends log messages to Azure Event Hubs.
 struct EventHubsLayer {
     sender: mpsc::Sender<EventData>,
-}
-
-struct EventVisitor {
-    buffer: String,
 }
 
 impl EventHubsLayer {
@@ -60,6 +57,8 @@ impl EventHubsLayer {
     }
 }
 
+/// Constants for property names in the EventData.
+/// These constants are used to set properties in the EventData object.
 const LOG_LEVEL_PROPERTY: &str = "log_level";
 const NAME_PROPERTY: &str = "name";
 const TARGET_PROPERTY: &str = "target";
@@ -82,13 +81,13 @@ where
         };
 
         event.record(&mut visitor);
-        let buffer = visitor.buffer;
 
         // Add timestamp, level, and target
         let metadata = event.metadata();
 
+        // Build an EventData object containing both the event body and properties reflecting the event's metadata.
         let mut event_data_builder = EventData::builder()
-            .with_body(buffer)
+            .with_body(visitor.buffer)
             .add_property(LOG_LEVEL_PROPERTY.to_string(), metadata.level().as_str())
             .add_property(
                 TIMESTAMP_PROPERTY.to_string(),
@@ -103,6 +102,7 @@ where
             .add_property(IS_EVENT_PROPERTY.to_string(), metadata.is_event())
             .add_property(IS_SPAN_PROPERTY.to_string(), metadata.is_span());
 
+        // Handle optional metadata fields.
         if let Some(module_path) = metadata.module_path() {
             event_data_builder =
                 event_data_builder.add_property(MODULE_PATH_PROPERTY.to_string(), module_path);
@@ -115,11 +115,17 @@ where
         }
 
         let event_data = event_data_builder.build();
-        // Send to EventHubs asynchronously
+
+        // Send the event to Event Hubs asynchronously
         self.sender.try_send(event_data).unwrap_or_else(|_| {
             eprintln!("Failed to send event to EventHubs");
         });
     }
+}
+
+/// A visitor that formats log messages and collects them into a buffer.
+struct EventVisitor {
+    buffer: String,
 }
 
 impl Visit for EventVisitor {
@@ -137,6 +143,7 @@ impl Visit for EventVisitor {
     }
 }
 
+/// Test struct to demonstrate structured data logging.
 #[derive(Debug)]
 struct StructuredData {
     body: String,
@@ -151,7 +158,7 @@ impl std::fmt::Display for StructuredData {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // Get EventHubs connection string and hub name from environment variables
+    // Get EventHubs fully qualified domain name and hub name from environment variables
     let fully_qualified_domain_name =
         env::var("EVENTHUBS_HOST").expect("EVENTHUBS_HOST must be set");
     let eventhub_name = env::var("EVENTHUB_NAME").expect("EVENTHUB_NAME must be set");
@@ -159,7 +166,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Create our custom EventHubsLayer
     let eventhubs_layer = EventHubsLayer::new(&fully_qualified_domain_name, &eventhub_name).await?;
 
-    // Set up tracing subscriber with both console and EventHubs outputs
+    // Set up tracing subscriber with both console and EventHubs outputs. Note that the components of the EventHubs service (which also uses tracing)
+    // need to be disabled.
     let subscriber = Registry::default()
         .with(fmt::layer().with_target(true))
         .with(eventhubs_layer)
@@ -171,6 +179,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .add_directive("fe2o3_amqp=off".parse()?), // disable fe2o3 AMQP logs because they become recursive.
         );
 
+    // Initialize the tracing subscriber
     tracing::subscriber::set_global_default(subscriber)?;
 
     // Application code
@@ -199,6 +208,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         tracing::debug!("Debug message inside a span");
     });
     tracing::info!("Exiting the span");
+
     // Sleep to allow logs to be sent
     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
