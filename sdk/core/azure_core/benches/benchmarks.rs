@@ -48,7 +48,8 @@ fn http_request_creation_benchmark(c: &mut Criterion) {
     for num in PARAMS {
         c.bench_function(&format!("create_request_{}", num), |b| {
             b.iter(|| {
-                black_box(create_request(*num));
+                create_request(*num);
+                black_box(());
             })
         });
     }
@@ -68,7 +69,8 @@ fn http_request_creation_benchmark(c: &mut Criterion) {
     for num in PARAMS {
         c.bench_function(&format!("create_request_with_headers_{}", num), |b| {
             b.iter(|| {
-                black_box(create_request_with_headers(*num));
+                create_request_with_headers(*num);
+                black_box(());
             })
         });
     }
@@ -78,11 +80,9 @@ fn http_request_creation_benchmark(c: &mut Criterion) {
         let body = "0".repeat(*size);
         c.bench_function(&format!("create_request_with_body_{}", size), |b| {
             b.iter(|| {
-                black_box({
-                    let mut req =
-                        Request::new(Url::parse("https://example.com").unwrap(), Method::Put);
-                    req.set_body(body.as_bytes().to_vec());
-                })
+                let mut req = Request::new(Url::parse("https://example.com").unwrap(), Method::Put);
+                req.set_body(body.as_bytes().to_vec());
+                black_box(())
             })
         });
     }
@@ -113,7 +113,8 @@ fn header_operations_benchmark(c: &mut Criterion) {
     for num in PARAMS {
         c.bench_function(&format!("header_operations_{}", num), |b| {
             b.iter(|| {
-                black_box(header_operations(*num));
+                header_operations(*num);
+                black_box(());
             })
         });
     }
@@ -175,12 +176,13 @@ fn http_transport_test(c: &mut Criterion) {
         let status = resp.status();
         Ok(status)
     }
-
+    // Benchmark GET and POST requests
     c.bench_function("http_transport_get_async", |b| {
         b.to_async(&rt).iter(|| async {
             make_get_request().await.unwrap_or_else(|err| {
                 panic!("Failed to make GET request {err}");
-            })
+            });
+            black_box(());
         });
     });
 
@@ -188,7 +190,8 @@ fn http_transport_test(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             make_post_request().await.unwrap_or_else(|err| {
                 panic!("Failed to make POST request {err}");
-            })
+            });
+            black_box(());
         });
     });
 }
