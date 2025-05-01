@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let consumer = Arc::new(
         ConsumerClient::builder()
             .open(
-                eventhub_namespace,
+                eventhub_namespace.as_str(),
                 eventhub_name,
                 DefaultAzureCredential::new()?.clone(),
             )

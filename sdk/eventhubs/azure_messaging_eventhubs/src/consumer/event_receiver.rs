@@ -1,13 +1,16 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::models::ReceivedEventData;
+use crate::{common::retry_azure_operation, models::ReceivedEventData, RetryOptions};
 use async_stream::try_stream;
 use azure_core::error::{ErrorKind as AzureErrorKind, Result};
-use azure_core_amqp::{AmqpDeliveryApis as _, AmqpReceiver, AmqpReceiverApis as _};
+use azure_core_amqp::{
+    error::{AmqpErrorCondition, AmqpErrorKind},
+    AmqpDeliveryApis as _, AmqpError, AmqpReceiver, AmqpReceiverApis as _,
+};
 use futures::{select, FutureExt, Stream, StreamExt};
-use std::time::Duration;
-use tracing::trace;
+use std::{error::Error, time::Duration};
+use tracing::{debug, trace, warn};
 
 /// A message receiver that can be used to receive messages from an Event Hub.
 ///
@@ -24,7 +27,7 @@ use tracing::trace;
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     let my_credential = DefaultAzureCredential::new()?;
 ///     let consumer = ConsumerClient::builder()
-///        .open("my_namespace".to_string(), "my_eventhub".to_string(), my_credential).await?;
+///        .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
 ///     let partition_id = "0".to_string();
 ///
 ///     let receiver  = consumer.open_receiver_on_partition(partition_id, None).await?;
@@ -51,6 +54,7 @@ use tracing::trace;
 pub struct EventReceiver {
     receiver: AmqpReceiver,
     partition_id: String,
+    retry_options: RetryOptions,
     timeout: Option<Duration>,
 }
 
@@ -58,18 +62,78 @@ impl EventReceiver {
     pub(crate) fn new(
         receiver: AmqpReceiver,
         partition_id: String,
+        retry_options: RetryOptions,
         timeout: Option<Duration>,
     ) -> Self {
         Self {
             receiver,
             partition_id,
             timeout,
+            retry_options,
         }
     }
 
     /// Returns the partition ID of the receiver.
     pub fn partition_id(&self) -> &str {
         &self.partition_id
+    }
+
+    fn should_retry_receive_operation(e: &azure_core::Error) -> bool {
+        match e.kind() {
+            AzureErrorKind::Amqp => {
+                warn!("Amqp operation failed: {}", e.source().unwrap());
+                if let Some(e) = e.source() {
+                    debug!("Error: {}", e);
+
+                    if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
+                        Self::should_retry_amqp_error(amqp_error)
+                    } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
+                        Self::should_retry_amqp_error(amqp_error)
+                    } else {
+                        debug!("Non AMQP error: {}", e);
+                        false
+                    }
+                } else {
+                    debug!("No source error found");
+                    false
+                }
+            }
+            _ => {
+                debug!("Non AMQP error: {}", e);
+                false
+            }
+        }
+    }
+
+    fn should_retry_amqp_error(amqp_error: &AmqpError) -> bool {
+        match amqp_error.kind() {
+            AmqpErrorKind::ManagementStatusCode(code, _) => {
+                debug!("Management operation error: {}", code);
+                match code {
+                    // Retry on 408 (Request Timeout) and 429 (Too Many Requests)
+                    azure_core::http::StatusCode::RequestTimeout
+                    | azure_core::http::StatusCode::TooManyRequests
+                    | azure_core::http::StatusCode::InternalServerError
+                    | azure_core::http::StatusCode::BadGateway
+                    | azure_core::http::StatusCode::ServiceUnavailable
+                    | azure_core::http::StatusCode::GatewayTimeout => true,
+                    _ => false,
+                }
+            }
+            AmqpErrorKind::AmqpDescribedError(described_error) => {
+                debug!("AMQP described error: {:?}", described_error);
+                matches!(
+                    described_error.condition(),
+                    AmqpErrorCondition::ResourceLimitExceeded
+                        | AmqpErrorCondition::ConnectionFramingError
+                        | AmqpErrorCondition::LinkStolen
+                )
+            }
+            _ => {
+                debug!("Other AMQP error: {}", amqp_error);
+                false
+            }
+        }
     }
 
     /// Receives messages from the Event Hub partition.
@@ -110,7 +174,8 @@ impl EventReceiver {
         // Use async_stream to create a stream that yields messages from the receiver.
         try_stream! {
             loop {
-                 let delivery = if let Some(delivery_timeout) = self.timeout {
+                 let delivery = retry_azure_operation( || async move {
+                     if let Some(delivery_timeout) = self.timeout {
                     select! {
                         delivery = self.receiver.receive_delivery().fuse() => Ok(delivery),
                         _ = azure_core::sleep::sleep(delivery_timeout).fuse() => {
@@ -121,7 +186,7 @@ impl EventReceiver {
                     }?
                  } else {
                      self.receiver.receive_delivery().await
-                 }?;
+                 }}, &self.retry_options, Some(Self::should_retry_receive_operation)).await?;
 
                  // Now that we have a delivery, we can process it.
                  let message = delivery.into_message();

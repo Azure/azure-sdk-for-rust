@@ -2,10 +2,7 @@
 // Licensed under the MIT license.
 // cspell:: words amqp servicebus sastoken
 
-use crate::{
-    cbs::AmqpClaimsBasedSecurityApis, fe2o3::error::Fe2o3ManagementError, session::AmqpSession,
-    AmqpError,
-};
+use crate::{cbs::AmqpClaimsBasedSecurityApis, session::AmqpSession, AmqpError};
 use async_trait::async_trait;
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
@@ -115,13 +112,15 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
             .borrow_mut()
             .put_token(path, cbs_token)
             .await
-            .map_err(|e| {
-                let me = azure_core::Error::try_from(Fe2o3ManagementError(e));
-                if let Err(e) = me {
+            .map_err(|e| match AmqpError::try_from(e) {
+                Ok(amqp_error) => amqp_error.into(),
+                Err(e) => {
                     debug!("Failed to convert management error to azure error: {:?}", e);
-                    return e;
+                    azure_core::Error::message(
+                        azure_core::error::ErrorKind::Amqp,
+                        format!("Failed to convert management error to azure error: {}", e),
+                    )
                 }
-                me.unwrap()
             })?;
         Ok(())
     }

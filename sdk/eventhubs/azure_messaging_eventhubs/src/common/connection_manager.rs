@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use crate::common::retry_azure_operation;
 use crate::common::user_agent::get_package_version;
 use crate::{
     common::user_agent::{get_package_name, get_platform_info, get_user_agent},
@@ -16,15 +17,19 @@ use azure_core::{
     task::new_task_spawner,
     Result, Uuid,
 };
+use azure_core_amqp::error::{AmqpErrorCondition, AmqpErrorKind};
 use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis as _, AmqpConnection, AmqpConnectionApis,
-    AmqpConnectionOptions, AmqpSession, AmqpSessionApis as _, AmqpSymbol,
+    AmqpConnectionOptions, AmqpError, AmqpSession, AmqpSessionApis as _, AmqpSymbol,
 };
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
+use std::error::Error;
 use std::sync::{Arc, Mutex as SyncMutex, OnceLock};
 use time::{Duration, OffsetDateTime};
-use tracing::{debug, error, trace};
+use tracing::{debug, error, trace, warn};
+
+use super::RetryOptions;
 
 // The number of seconds before token expiration that we wake up to refresh the token.
 const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we refresh tokens 6 minutes before they expire.
@@ -64,6 +69,7 @@ pub(crate) struct ConnectionManager {
     connection_name: String,
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
+    retry_options: RetryOptions,
     /// This is used to disable authorization for testing purposes.
     #[cfg(test)]
     disable_authorization: SyncMutex<bool>,
@@ -80,6 +86,7 @@ impl ConnectionManager {
         application_id: Option<String>,
         custom_endpoint: Option<Url>,
         credential: Arc<dyn TokenCredential>,
+        retry_options: RetryOptions,
     ) -> Arc<Self> {
         let connection_name = application_id
             .clone()
@@ -91,6 +98,7 @@ impl ConnectionManager {
             connection_name,
             custom_endpoint,
             credential,
+            retry_options,
             authorization_refresher: OnceLock::new(),
             connections: OnceCell::new(),
             authorization_scopes: AsyncMutex::new(HashMap::new()),
@@ -384,6 +392,64 @@ impl ConnectionManager {
         //        Ok(())
     }
 
+    fn should_retry_cbs_response(e: &azure_core::Error) -> bool {
+        match e.kind() {
+            AzureErrorKind::Amqp => {
+                warn!("Amqp operation failed: {}", e.source().unwrap());
+                if let Some(e) = e.source() {
+                    debug!("Error: {}", e);
+
+                    if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
+                        Self::should_retry_amqp_error(amqp_error)
+                    } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
+                        Self::should_retry_amqp_error(amqp_error)
+                    } else {
+                        debug!("Non AMQP error: {}", e);
+                        false
+                    }
+                } else {
+                    debug!("No source error found");
+                    false
+                }
+            }
+            _ => {
+                debug!("Non AMQP error: {}", e);
+                false
+            }
+        }
+    }
+
+    fn should_retry_amqp_error(amqp_error: &AmqpError) -> bool {
+        match amqp_error.kind() {
+            AmqpErrorKind::ManagementStatusCode(code, _) => {
+                debug!("Management operation error: {}", code);
+                match code {
+                    // Retry on 408 (Request Timeout) and 429 (Too Many Requests)
+                    azure_core::http::StatusCode::RequestTimeout
+                    | azure_core::http::StatusCode::TooManyRequests
+                    | azure_core::http::StatusCode::InternalServerError
+                    | azure_core::http::StatusCode::BadGateway
+                    | azure_core::http::StatusCode::ServiceUnavailable
+                    | azure_core::http::StatusCode::GatewayTimeout => true,
+                    _ => false,
+                }
+            }
+            AmqpErrorKind::AmqpDescribedError(described_error) => {
+                debug!("AMQP described error: {:?}", described_error);
+                matches!(
+                    described_error.condition(),
+                    AmqpErrorCondition::ResourceLimitExceeded
+                        | AmqpErrorCondition::ConnectionFramingError
+                        | AmqpErrorCondition::LinkStolen
+                )
+            }
+            _ => {
+                debug!("Other AMQP error: {}", amqp_error);
+                false
+            }
+        }
+    }
+
     /// Actually perform an authorization against the Event Hubs service.
     ///
     /// This method establishes a connection to the Event Hubs service and
@@ -417,17 +483,24 @@ impl ConnectionManager {
         }
 
         debug!("Performing authorization for {url}");
-        let session = AmqpSession::new();
-        session.begin(connection.as_ref(), None).await?;
-        let cbs = AmqpClaimsBasedSecurity::new(&session)?;
-        cbs.attach().await?;
 
-        let expires_at = new_token.expires_on;
-        cbs.authorize_path(
-            url.to_string(),
-            None,
-            new_token.token.secret().to_string(),
-            expires_at,
+        retry_azure_operation(
+            || async {
+                let connection = connection.clone();
+                let path = url.to_string();
+                let token = new_token.token.secret().to_string();
+                let expires_at = new_token.expires_on;
+
+                let session = AmqpSession::new();
+                session.begin(connection.as_ref(), None).await?;
+                let cbs = AmqpClaimsBasedSecurity::new(&session)?;
+                cbs.attach().await?;
+
+                cbs.authorize_path(path, None, token, expires_at).await?;
+                Ok(())
+            },
+            &self.retry_options,
+            Some(Self::should_retry_cbs_response),
         )
         .await?;
         Ok(())
@@ -505,8 +578,13 @@ mod tests {
     #[test]
     fn connection_manager() {
         let url = Url::parse("amqps://example.com").unwrap();
-        let connection_manager =
-            ConnectionManager::new(url, None, None, MockTokenCredential::new(15));
+        let connection_manager = ConnectionManager::new(
+            url,
+            None,
+            None,
+            MockTokenCredential::new(15),
+            Default::default(),
+        );
         assert!(!connection_manager.connections.is_initialized());
         assert!(connection_manager.get_connection().is_err()); // Should return an error since connection is not established yet
         assert_eq!(connection_manager.get_connection_id().len(), 36); // UUID v4 string length
@@ -528,6 +606,7 @@ mod tests {
             Some(app_id.clone()),
             None,
             MockTokenCredential::new(15),
+            Default::default(),
         );
         assert!(!connection_manager.connections.is_initialized());
         assert_eq!(connection_manager.get_connection_id(), app_id);
@@ -546,6 +625,7 @@ mod tests {
             None,
             None,
             MockTokenCredential::new(15),
+            Default::default(),
         ));
 
         // This should fail because we don't have a connection established
@@ -564,6 +644,7 @@ mod tests {
             None,
             Some(custom_endpoint.clone()),
             MockTokenCredential::new(15),
+            Default::default(),
         );
 
         assert_eq!(connection_manager.custom_endpoint, Some(custom_endpoint));
@@ -586,7 +667,13 @@ mod tests {
         // Create a mock token credential that expires in 15 seconds
         let mock_credential = MockTokenCredential::new(15);
 
-        let connection_manager = Arc::new(ConnectionManager::new(url, None, None, mock_credential));
+        let connection_manager = Arc::new(ConnectionManager::new(
+            url,
+            None,
+            None,
+            mock_credential,
+            Default::default(),
+        ));
 
         // Override default connection creation for testing
         connection_manager
@@ -646,7 +733,8 @@ mod tests {
 
         // Create a mock token credential with a very short expiration (20 seconds)
         let mock_credential = MockTokenCredential::new(20);
-        let connection_manager = ConnectionManager::new(url, None, None, mock_credential.clone());
+        let connection_manager =
+            ConnectionManager::new(url, None, None, mock_credential.clone(), Default::default());
 
         // Get initial token get count
         let initial_count = mock_credential.get_token_get_count();
@@ -710,7 +798,13 @@ mod tests {
         let host = Url::parse("amqps://example.com").unwrap();
         // Create a mock token credential with a very short expiration (20 seconds) - we choose 20 seconds because we configure the token refresh bias (the time before expiration we will attempt a refresh to 5 seconds and there's a +- 5 second
         let mock_credential = MockTokenCredential::new(20);
-        let connection_manager = ConnectionManager::new(host, None, None, mock_credential.clone());
+        let connection_manager = ConnectionManager::new(
+            host,
+            None,
+            None,
+            mock_credential.clone(),
+            Default::default(),
+        );
 
         // Get initial token get count
         let initial_count = mock_credential.get_token_get_count();

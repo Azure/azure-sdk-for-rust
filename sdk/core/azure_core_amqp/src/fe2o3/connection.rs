@@ -5,7 +5,6 @@ use super::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3Transpor
 use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
 use crate::error::AmqpErrorKind;
 use crate::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
-use crate::AmqpError;
 use async_trait::async_trait;
 use azure_core::{http::Url, Result};
 use fe2o3_amqp::connection::ConnectionHandle;
@@ -188,15 +187,15 @@ impl From<Fe2o3ConnectionOpenError> for azure_core::Error {
                 azure_core::Error::from(parse_error)
             }
             fe2o3_amqp::connection::OpenError::RemoteClosed => {
-                AmqpError::from(AmqpErrorKind::ClosedByRemote(None)).into()
+                AmqpErrorKind::ClosedByRemote(Box::new(e.0)).into()
             }
             fe2o3_amqp::connection::OpenError::RemoteClosedWithError(error) => {
-                AmqpError::from(AmqpErrorKind::ClosedByRemote(Some(error.into()))).into()
+                AmqpErrorKind::AmqpDescribedError(error.into()).into()
             }
             fe2o3_amqp::connection::OpenError::TransportError(error) => {
                 azure_core::Error::from(Fe2o3TransportError(error))
             }
-            _ => AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e.0))).into(),
+            _ => AmqpErrorKind::TransportImplementationError(Box::new(e.0)).into(),
         }
     }
 }
@@ -208,13 +207,13 @@ impl From<Fe2o3ConnectionError> for azure_core::Error {
                 azure_core::Error::from(Fe2o3TransportError(error))
             }
             fe2o3_amqp::connection::Error::RemoteClosed => {
-                AmqpError::from(AmqpErrorKind::ClosedByRemote(None)).into()
+                AmqpErrorKind::ClosedByRemote(Box::new(e.0)).into()
             }
             fe2o3_amqp::connection::Error::RemoteClosedWithError(error) => {
-                AmqpError::from(AmqpErrorKind::ClosedByRemote(Some(error.into()))).into()
+                AmqpErrorKind::AmqpDescribedError(error.into()).into()
             }
 
-            _ => AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e.0))).into(),
+            _ => AmqpErrorKind::TransportImplementationError(Box::new(e.0)).into(),
         }
     }
 }
