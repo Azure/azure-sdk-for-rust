@@ -127,7 +127,6 @@ impl ManagementInstance {
         let name: String = response
             .get(EVENTHUB_PROPERTY_NAME)
             .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
-            .clone()
             .into();
         let created_at: Option<SystemTime> = Into::<AmqpTimestamp>::into(
             response
@@ -192,40 +191,33 @@ impl ManagementInstance {
             beginning_sequence_number: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_BEGIN_SEQUENCE_NUMBER)
                 .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
-                .clone()
                 .into(),
             id: response
                 .get(EVENTHUB_PROPERTY_PARTITION)
                 .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
-                .clone()
                 .into(),
             eventhub: response
                 .get(EVENTHUB_PROPERTY_NAME)
                 .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
-                .clone()
                 .into(),
 
             last_enqueued_sequence_number: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER)
                 .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
-                .clone()
                 .into(),
             last_enqueued_offset: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_OFFSET)
                 .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
-                .clone()
                 .into(),
             last_enqueued_time_utc: Into::<AmqpTimestamp>::into(
                 response
                     .get(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_TIME_UTC)
-                    .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
-                    .clone(),
+                    .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?,
             )
             .0,
             is_empty: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_IS_EMPTY)
                 .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
-                .clone()
                 .into(),
         })
     }
