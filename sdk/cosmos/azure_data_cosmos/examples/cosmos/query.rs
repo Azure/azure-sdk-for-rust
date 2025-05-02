@@ -25,7 +25,7 @@ enum Subcommands {
 
         /// The partition key to use when querying the container. Currently this only supports a single string partition key.
         #[arg(long, short)]
-        partition_key: String,
+        partition_key: Option<String>,
     },
     Databases {
         /// The query to execute.
@@ -52,7 +52,11 @@ impl QueryCommand {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container);
 
-                let pk = PartitionKey::from(&partition_key);
+                let pk = match partition_key {
+                    Some(pk) => PartitionKey::from(pk),
+                    None => PartitionKey::EMPTY,
+                };
+
                 let mut items =
                     container_client.query_items::<serde_json::Value>(&query, pk, None)?;
 

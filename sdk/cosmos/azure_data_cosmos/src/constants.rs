@@ -13,6 +13,8 @@ use azure_core::http::{
 
 pub const QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");
 pub const PARTITION_KEY: HeaderName = HeaderName::from_static("x-ms-documentdb-partitionkey");
+pub const QUERY_ENABLE_CROSS_PARTITION: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-query-enablecrosspartition");
 pub const CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
 pub const INDEX_METRICS: HeaderName = HeaderName::from_static("x-ms-cosmos-index-utilization");
 pub const QUERY_METRICS: HeaderName = HeaderName::from_static("x-ms-documentdb-query-metrics");

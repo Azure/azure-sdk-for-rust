@@ -7,8 +7,8 @@ use crate::{
     options::{QueryOptions, ReadContainerOptions},
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
-    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
-    ReplaceContainerOptions, ThroughputOptions,
+    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
+    ThroughputOptions,
 };
 
 use azure_core::http::{headers, request::Request, response::Response, Method};
@@ -625,12 +625,18 @@ impl ContainerClient {
     /// # Arguments
     ///
     /// * `query` - The query to execute.
-    /// * `partition_key_strategy` - The partition key to scope the query on.
+    /// * `partition_key` - The partition key to scope the query on, or specify an empty key (`()`) to perform a cross-partition query.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Cross Partition Queries
+    ///
+    /// Cross-partition queries are significantly limited in the current version of the Cosmos DB SDK.
+    /// They are run on the gateway and limited to simple projections (`SELECT`) and filtering (`WHERE`).
+    /// For more details, see [the Cosmos DB documentation page on cross-partition queries](https://learn.microsoft.com/en-us/rest/api/cosmos-db/querying-cosmosdb-resources-using-the-rest-api#queries-that-cannot-be-served-by-gateway).
     ///
     /// # Examples
     ///
-    /// The `query` and `partition_key_strategy` parameters accept anything that can be transformed [`Into`] their relevant types.
+    /// The `query` and `partition_key` parameters accept anything that can be transformed [`Into`] their relevant types.
     /// This allows simple queries without parameters to be expressed easily:
     ///
     /// ```rust,no_run
@@ -669,13 +675,21 @@ impl ContainerClient {
     pub fn query_items<T: DeserializeOwned + Send>(
         &self,
         query: impl Into<Query>,
-        partition_key: impl Into<QueryPartitionStrategy>,
+        partition_key: impl Into<PartitionKey>,
         options: Option<QueryOptions<'_>>,
     ) -> azure_core::Result<FeedPager<T>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
+
+        #[cfg(feature = "query_engine")]
+        if options.query_engine.is_some() {
+            // If the query engine is enabled, we need to use the query engine to execute the query.
+            // This is a placeholder for future implementation.
+            todo!("Implement query engine support for cross-partition queries");
+        }
+
         let mut base_request = Request::new(url, Method::Post);
-        let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
+        let partition_key = partition_key.into();
         base_request.insert_headers(&partition_key)?;
 
         self.pipeline.send_query_request(
