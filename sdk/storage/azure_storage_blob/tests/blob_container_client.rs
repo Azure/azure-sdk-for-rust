@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::StatusCode;
+use azure_core::http::{Page, Pager, PagerResult, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientSetMetadataOptions,
-    LeaseState,
+    LeaseState, ListBlobsFlatSegmentResponse,
 };
 use azure_storage_blob_test::get_container_client;
 use std::{collections::HashMap, error::Error};
@@ -78,6 +78,39 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     let response = container_client.get_properties(None).await?;
     let response_metadata = response.metadata()?;
     assert_eq!(HashMap::new(), response_metadata);
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client_1 = container_client.blob_client("testblob1".to_string());
+    let blob_client_2 = container_client.blob_client("testblob2".to_string());
+
+    container_client.create_container(None).await?;
+    let data = b"hello rusty world";
+    blob_client_1
+        .upload(
+            RequestContent::from(data.to_vec()),
+            false,
+            u64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+    blob_client_2
+        .upload(
+            RequestContent::from(data.to_vec()),
+            false,
+            u64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+
+    let blob_list = container_client.list_blobs(None).await?;
 
     container_client.delete_container(None).await?;
     Ok(())

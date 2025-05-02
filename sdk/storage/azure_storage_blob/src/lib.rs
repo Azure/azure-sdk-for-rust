@@ -21,12 +21,14 @@ pub mod models {
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
         BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-        BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientSetMetadataOptions,
+        BlobContainerClientGetPropertiesResultHeaders,
+        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientSetMetadataOptions,
         BlobImmutabilityPolicyMode, BlobServiceClientGetPropertiesOptions, BlobType,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
         BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
         BlockList, BlockListType, BlockLookupList, CopyStatus, LeaseState, LeaseStatus,
-        PublicAccessType, RehydratePriority, StorageServiceProperties,
+        ListBlobsFlatSegmentResponse, PublicAccessType, RehydratePriority,
+        StorageServiceProperties,
     };
 }
