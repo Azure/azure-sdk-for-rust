@@ -203,7 +203,7 @@ impl PageBlobClient {
     /// * `options` - Optional parameters for the request.
     pub async fn copy_incremental(
         &self,
-        copy_source: &str,
+        copy_source: String,
         options: Option<PageBlobClientCopyIncrementalOptions<'_>>,
     ) -> Result<Response<PageBlobClientCopyIncrementalResult>> {
         let options = options.unwrap_or_default();
@@ -239,7 +239,7 @@ impl PageBlobClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
-        request.insert_header("x-ms-copy-source", copy_source.to_owned());
+        request.insert_header("x-ms-copy-source", copy_source);
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -778,10 +778,10 @@ impl PageBlobClient {
     /// * `options` - Optional parameters for the request.
     pub async fn upload_pages_from_url(
         &self,
-        source_url: &str,
-        source_range: &str,
+        source_url: String,
+        source_range: String,
         content_length: u64,
-        range: &str,
+        range: String,
         options: Option<PageBlobClientUploadPagesFromUrlOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult>> {
         let options = options.unwrap_or_default();
@@ -821,7 +821,7 @@ impl PageBlobClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
-        request.insert_header("x-ms-copy-source", source_url.to_owned());
+        request.insert_header("x-ms-copy-source", source_url);
         if let Some(copy_source_authorization) = options.copy_source_authorization {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
         }
@@ -866,7 +866,7 @@ impl PageBlobClient {
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        request.insert_header("x-ms-range", range.to_owned());
+        request.insert_header("x-ms-range", range);
         if let Some(source_content_crc64) = options.source_content_crc64 {
             request.insert_header(
                 "x-ms-source-content-crc64",
@@ -894,7 +894,7 @@ impl PageBlobClient {
                 date::to_rfc7231(&source_if_unmodified_since),
             );
         }
-        request.insert_header("x-ms-source-range", source_range.to_owned());
+        request.insert_header("x-ms-source-range", source_range);
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await
     }

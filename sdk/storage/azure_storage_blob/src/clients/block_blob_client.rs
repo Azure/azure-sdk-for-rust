@@ -119,7 +119,7 @@ impl BlockBlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn stage_block(
         &self,
-        block_id: Vec<u8>,
+        block_id: &[u8],
         content_length: u64,
         body: RequestContent<Bytes>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,

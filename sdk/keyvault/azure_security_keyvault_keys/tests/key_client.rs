@@ -83,7 +83,10 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
     // Update key properties.
     let properties = UpdateKeyPropertiesParameters {
         key_attributes: key.attributes,
-        tags: HashMap::from_iter(vec![("test-name".into(), "update_key_properties".into())]),
+        tags: Some(HashMap::from_iter(vec![(
+            "test-name".into(),
+            "update_key_properties".into(),
+        )])),
         ..Default::default()
     };
     let key = client
@@ -92,7 +95,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
         .into_body()
         .await?;
     assert_eq!(
-        key.tags.get("test-name"),
+        key.tags.expect("expected tags").get("test-name"),
         Some(&String::from("update_key_properties"))
     );
 

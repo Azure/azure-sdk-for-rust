@@ -71,8 +71,8 @@ pub struct DeletedSecret {
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 
     /// The secret value.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -122,8 +122,8 @@ pub struct DeletedSecretProperties {
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// The deleted secret list result
@@ -136,7 +136,7 @@ pub struct ListDeletedSecretPropertiesResult {
 
     /// A response message containing a list of deleted secrets in the key vault along with a link to the next page of deleted
     /// secrets.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub value: Vec<DeletedSecretProperties>,
 }
 
@@ -149,7 +149,7 @@ pub struct ListSecretPropertiesResult {
     pub next_link: Option<String>,
 
     /// A response message containing a list of secrets in the key vault along with a link to the next page of secrets.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub value: Vec<SecretProperties>,
 }
 
@@ -193,8 +193,8 @@ pub struct Secret {
     pub managed: Option<bool>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 
     /// The secret value.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -274,8 +274,8 @@ pub struct SecretProperties {
     pub managed: Option<bool>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// The secret set parameters.
@@ -290,8 +290,8 @@ pub struct SetSecretParameters {
     pub secret_attributes: Option<SecretAttributes>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 
     /// The value of the secret.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -310,6 +310,6 @@ pub struct UpdateSecretPropertiesParameters {
     pub secret_attributes: Option<SecretAttributes>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }

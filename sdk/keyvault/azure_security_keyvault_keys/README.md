@@ -196,7 +196,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Update a key using the key client.
     let key_update_parameters = UpdateKeyPropertiesParameters {
-        tags: HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())]),
+        tags: Some(HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())])),
         ..Default::default()
     };
 

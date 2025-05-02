@@ -88,8 +88,8 @@ pub struct Certificate {
     pub sid: Option<String>,
 
     /// Application specific metadata in the form of key-value pairs
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 
     /// Thumbprint of the certificate.
     #[serde(
@@ -225,8 +225,8 @@ pub struct CertificatePolicy {
     pub key_properties: Option<KeyProperties>,
 
     /// Actions that will be performed by Key Vault over the lifetime of a certificate.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub lifetime_actions: Vec<LifetimeAction>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lifetime_actions: Option<Vec<LifetimeAction>>,
 
     /// Properties of the secret backing a certificate.
     #[serde(rename = "secret_props", skip_serializing_if = "Option::is_none")]
@@ -250,8 +250,8 @@ pub struct CertificateProperties {
     pub id: Option<String>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 
     /// Thumbprint of the certificate.
     #[serde(
@@ -284,8 +284,8 @@ pub struct Contact {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 pub struct Contacts {
     /// The contact list for the vault certificates.
-    #[serde(default, rename = "contacts", skip_serializing_if = "Vec::is_empty")]
-    pub contact_list: Vec<Contact>,
+    #[serde(rename = "contacts", skip_serializing_if = "Option::is_none")]
+    pub contact_list: Option<Vec<Contact>>,
 
     /// Identifier for the contacts collection.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -309,8 +309,8 @@ pub struct CreateCertificateParameters {
     pub preserve_cert_order: Option<bool>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// A Deleted Certificate consisting of its previous id, attributes and its tags, as well as information on when it will be
@@ -379,8 +379,8 @@ pub struct DeletedCertificate {
     pub sid: Option<String>,
 
     /// Application specific metadata in the form of key-value pairs
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 
     /// Thumbprint of the certificate.
     #[serde(
@@ -428,8 +428,8 @@ pub struct DeletedCertificateProperties {
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 
     /// Thumbprint of the certificate.
     #[serde(
@@ -467,8 +467,8 @@ pub struct ImportCertificateParameters {
     pub preserve_cert_order: Option<bool>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// The issuer for Key Vault certificate.
@@ -644,7 +644,7 @@ pub struct ListCertificatePropertiesResult {
     pub next_link: Option<String>,
 
     /// A response message containing a list of certificates in the key vault along with a link to the next page of certificates.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub value: Vec<CertificateProperties>,
 }
 
@@ -658,7 +658,7 @@ pub struct ListDeletedCertificatePropertiesResult {
 
     /// A response message containing a list of deleted certificates in the vault along with a link to the next page of deleted
     /// certificates.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub value: Vec<DeletedCertificateProperties>,
 }
 
@@ -672,7 +672,7 @@ pub struct ListIssuerPropertiesResult {
 
     /// A response message containing a list of certificate issuers in the key vault along with a link to the next page of certificate
     /// issuers.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub value: Vec<IssuerProperties>,
 }
 
@@ -684,29 +684,25 @@ pub struct MergeCertificateParameters {
     pub certificate_attributes: Option<CertificateAttributes>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 
     /// The certificate or the certificate chain to merge.
     #[serde(
         default,
         rename = "x5c",
-        skip_serializing_if = "Vec::is_empty",
-        with = "models_serde::vec_encoded_bytes_std"
+        skip_serializing_if = "Option::is_none",
+        with = "models_serde::option_vec_encoded_bytes_std"
     )]
-    pub x509_certificates: Vec<Vec<u8>>,
+    pub x509_certificates: Option<Vec<Vec<u8>>>,
 }
 
 /// Details of the organization of the certificate issuer.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 pub struct OrganizationDetails {
     /// Details of the organization administrator.
-    #[serde(
-        default,
-        rename = "admin_details",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub admin_contacts: Vec<AdministratorContact>,
+    #[serde(rename = "admin_details", skip_serializing_if = "Option::is_none")]
+    pub admin_contacts: Option<Vec<AdministratorContact>>,
 
     /// Id of the organization.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -759,16 +755,16 @@ pub struct SetIssuerParameters {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 pub struct SubjectAlternativeNames {
     /// Domain names.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub dns_names: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dns_names: Option<Vec<String>>,
 
     /// Email addresses.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub emails: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub emails: Option<Vec<String>>,
 
     /// User principal names.
-    #[serde(default, rename = "upns", skip_serializing_if = "Vec::is_empty")]
-    pub user_principal_names: Vec<String>,
+    #[serde(rename = "upns", skip_serializing_if = "Option::is_none")]
+    pub user_principal_names: Option<Vec<String>>,
 }
 
 /// The certificate operation update parameters.
@@ -791,8 +787,8 @@ pub struct UpdateCertificatePropertiesParameters {
     pub certificate_policy: Option<CertificatePolicy>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// The certificate issuer update parameters.
@@ -819,12 +815,12 @@ pub struct UpdateIssuerParameters {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 pub struct X509CertificateProperties {
     /// The enhanced key usage.
-    #[serde(default, rename = "ekus", skip_serializing_if = "Vec::is_empty")]
-    pub enhanced_key_usage: Vec<String>,
+    #[serde(rename = "ekus", skip_serializing_if = "Option::is_none")]
+    pub enhanced_key_usage: Option<Vec<String>>,
 
     /// Defines how the certificate's key may be used.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub key_usage: Vec<KeyUsageType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key_usage: Option<Vec<KeyUsageType>>,
 
     /// The subject name. Should be a valid X509 distinguished Name.
     #[serde(skip_serializing_if = "Option::is_none")]
