@@ -99,8 +99,8 @@ create_extensible_enum!(
 impl From<AmqpSymbol> for AmqpErrorCondition {
     fn from(condition: AmqpSymbol) -> Self {
         // Note that the `from_str` implementation from `create_extensible_enum` will
-        // never return an error. So the `expect` is there to silence the compiler.
-        AmqpErrorCondition::from_str(condition.0.as_str()).expect("Invalid AMQP error condition")
+        // never return an error. So the `unwrap` is there to silence the compiler.
+        AmqpErrorCondition::from_str(condition.0.as_str()).unwrap()
     }
 }
 
