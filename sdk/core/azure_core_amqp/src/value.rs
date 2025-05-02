@@ -405,6 +405,14 @@ macro_rules! conversions_for_amqp_types {
                     }
                 }
             }
+            impl From<&AmqpValue> for $t {
+                fn from(v: &AmqpValue) -> Self {
+                    match v {
+                        AmqpValue::$field(v) => v.clone(),
+                        _ => panic!("Expected a {}", stringify!($t)),
+                    }
+                }
+            }
 
             impl PartialEq<$t> for AmqpValue {
                 fn eq(&self, other: &$t) -> bool {
@@ -480,15 +488,6 @@ impl PartialEq<AmqpValue> for () {
 impl From<Box<AmqpDescribed>> for AmqpDescribed {
     fn from(b: Box<AmqpDescribed>) -> Self {
         *b
-    }
-}
-
-impl From<&AmqpValue> for String {
-    fn from(b: &AmqpValue) -> Self {
-        match b {
-            AmqpValue::String(s) => s.clone(),
-            _ => panic!("Expected a String value"),
-        }
     }
 }
 
