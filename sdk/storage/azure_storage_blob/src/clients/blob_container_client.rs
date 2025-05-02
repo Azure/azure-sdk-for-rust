@@ -3,10 +3,13 @@
 
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
-    generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
-    BlobClient, BlobClientOptions, BlobContainerClientCreateOptions,
-    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
-    BlobContainerClientOptions, BlobContainerClientSetMetadataOptions,
+    generated::models::BlobContainerClientGetPropertiesResult,
+    models::{
+        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientSetMetadataOptions,
+    },
+    pipeline::StorageHeadersPolicy,
+    BlobClient, BlobContainerClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,

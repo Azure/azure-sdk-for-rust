@@ -683,7 +683,7 @@ impl PageBlobClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", transactional_content_md5);
+            request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/octet-stream");
         if let Some(if_match) = options.if_match {
@@ -705,7 +705,10 @@ impl PageBlobClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
-            request.insert_header("x-ms-content-crc64", transactional_content_crc64);
+            request.insert_header(
+                "x-ms-content-crc64",
+                base64::encode(transactional_content_crc64),
+            );
         }
         if let Some(encryption_algorithm) = options.encryption_algorithm {
             request.insert_header(
@@ -874,7 +877,10 @@ impl PageBlobClient {
             );
         }
         if let Some(source_content_md5) = options.source_content_md5 {
-            request.insert_header("x-ms-source-content-md5", source_content_md5);
+            request.insert_header(
+                "x-ms-source-content-md5",
+                base64::encode(source_content_md5),
+            );
         }
         if let Some(source_if_match) = options.source_if_match {
             request.insert_header("x-ms-source-if-match", source_if_match);

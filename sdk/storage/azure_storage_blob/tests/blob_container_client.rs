@@ -3,9 +3,9 @@
 
 use azure_core::http::StatusCode;
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::{
-    models::{BlobContainerClientGetPropertiesResultHeaders, LeaseState},
-    BlobContainerClientSetMetadataOptions,
+use azure_storage_blob::models::{
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientSetMetadataOptions,
+    LeaseState,
 };
 use azure_storage_blob_test::get_container_client;
 use std::{collections::HashMap, error::Error};

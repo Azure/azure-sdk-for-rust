@@ -11,28 +11,22 @@ pub mod clients;
 mod generated;
 mod pipeline;
 
-pub use crate::clients::{BlobClient, BlobContainerClient, BlobServiceClient, BlockBlobClient};
-pub use crate::generated::clients::{
-    BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions, BlockBlobClientOptions,
-};
-pub use crate::generated::models::{
-    BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-    BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-    BlobContainerClientGetPropertiesOptions, BlobContainerClientSetMetadataOptions,
-    BlobServiceClientGetPropertiesOptions, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
-};
+pub use clients::*;
 
 pub mod models {
     pub use crate::generated::models::{
-        AccessTier, ArchiveStatus, BlobClientDownloadResult, BlobClientDownloadResultHeaders,
+        AccessTier, ArchiveStatus, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        BlobClientDownloadResult, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
-        BlobImmutabilityPolicyMode, BlobType, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, BlockListType,
-        BlockLookupList, CopyStatus, LeaseState, LeaseStatus, PublicAccessType, RehydratePriority,
-        StorageServiceProperties,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
+        BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientSetMetadataOptions,
+        BlobImmutabilityPolicyMode, BlobServiceClientGetPropertiesOptions, BlobType,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
+        BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
+        BlockList, BlockListType, BlockLookupList, CopyStatus, LeaseState, LeaseStatus,
+        PublicAccessType, RehydratePriority, StorageServiceProperties,
     };
 }

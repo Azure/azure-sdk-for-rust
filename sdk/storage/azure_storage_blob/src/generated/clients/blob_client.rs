@@ -265,10 +265,12 @@ impl BlobClient {
     ///
     /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
     ///   lease ID must match.
+    /// * `proposed_lease_id` - Required. The proposed lease ID for the container.
     /// * `options` - Optional parameters for the request.
     pub async fn change_lease(
         &self,
         lease_id: String,
+        proposed_lease_id: String,
         options: Option<BlobClientChangeLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientChangeLeaseResult>> {
         let options = options.unwrap_or_default();
@@ -310,9 +312,7 @@ impl BlobClient {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-lease-id", lease_id);
-        if let Some(proposed_lease_id) = options.proposed_lease_id {
-            request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
-        }
+        request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await
     }
@@ -374,7 +374,7 @@ impl BlobClient {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
         }
         if let Some(copy_source_tags) = options.copy_source_tags {
-            request.insert_header("x-ms-copy-source-tags", copy_source_tags);
+            request.insert_header("x-ms-copy-source-tag-option", copy_source_tags);
         }
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
@@ -406,7 +406,10 @@ impl BlobClient {
             }
         }
         if let Some(source_content_md5) = options.source_content_md5 {
-            request.insert_header("x-ms-source-content-md5", source_content_md5);
+            request.insert_header(
+                "x-ms-source-content-md5",
+                base64::encode(source_content_md5),
+            );
         }
         if let Some(source_if_match) = options.source_if_match {
             request.insert_header("x-ms-source-if-match", source_if_match);
@@ -694,6 +697,9 @@ impl BlobClient {
                 "x-ms-range-get-content-md5",
                 range_get_content_md5.to_string(),
             );
+        }
+        if let Some(structured_body_type) = options.structured_body_type {
+            request.insert_header("x-ms-structured-body", structured_body_type);
         }
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await
@@ -1296,14 +1302,17 @@ impl BlobClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", transactional_content_md5);
+            request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
-            request.insert_header("x-ms-content-crc64", transactional_content_crc64);
+            request.insert_header(
+                "x-ms-content-crc64",
+                base64::encode(transactional_content_crc64),
+            );
         }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
@@ -1387,7 +1396,6 @@ impl BlobClient {
         path = path.replace("{blobName}", &self.blob_name);
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "copy");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());

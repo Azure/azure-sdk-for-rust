@@ -222,10 +222,9 @@ pub struct BlobFlatListSegment {
         default,
         deserialize_with = "Blob_itemsBlob::unwrap",
         rename = "BlobItems",
-        serialize_with = "Blob_itemsBlob::wrap",
-        skip_serializing_if = "Option::is_none"
+        serialize_with = "Blob_itemsBlob::wrap"
     )]
-    pub blob_items: Option<Vec<BlobItemInternal>>,
+    pub blob_items: Vec<BlobItemInternal>,
 }
 
 /// Represents an array of blobs.
@@ -239,10 +238,9 @@ pub struct BlobHierarchyListSegment {
         default,
         deserialize_with = "Blob_itemsBlob::unwrap",
         rename = "BlobItems",
-        serialize_with = "Blob_itemsBlob::wrap",
-        skip_serializing_if = "Option::is_none"
+        serialize_with = "Blob_itemsBlob::wrap"
     )]
-    pub blob_items: Option<Vec<BlobItemInternal>>,
+    pub blob_items: Vec<BlobItemInternal>,
 
     /// The blob prefixes.
     #[serde(
@@ -971,6 +969,19 @@ pub struct JsonTextConfiguration {
     pub record_separator: Option<String>,
 }
 
+/// Key information
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[typespec(format = "xml")]
+pub struct KeyInfo {
+    /// The date-time the key expires.
+    #[serde(rename = "Expiry", skip_serializing_if = "Option::is_none")]
+    pub expiry: Option<String>,
+
+    /// The date-time the key is active.
+    #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+}
+
 /// An enumeration of blobs.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
@@ -998,8 +1009,8 @@ pub struct ListBlobsFlatSegmentResponse {
     pub prefix: Option<String>,
 
     /// The blob segment.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub segment: Option<BlobFlatListSegment>,
+    #[serde(default)]
+    pub segment: BlobFlatListSegment,
 
     /// The service endpoint.
     #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
@@ -1037,8 +1048,8 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub prefix: Option<String>,
 
     /// The blob segment.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub segment: Option<BlobHierarchyListSegment>,
+    #[serde(default)]
+    pub segment: BlobHierarchyListSegment,
 
     /// The service endpoint.
     #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
@@ -1056,10 +1067,9 @@ pub struct ListContainersSegmentResponse {
         default,
         deserialize_with = "Container_itemsContainer::unwrap",
         rename = "Containers",
-        serialize_with = "Container_itemsContainer::wrap",
-        skip_serializing_if = "Option::is_none"
+        serialize_with = "Container_itemsContainer::wrap"
     )]
-    pub container_items: Option<Vec<ContainerItem>>,
+    pub container_items: Vec<ContainerItem>,
 
     /// The marker of the containers.
     #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
@@ -1342,7 +1352,6 @@ pub struct StaticWebsite {
 
 /// The service properties.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[non_exhaustive]
 #[typespec(format = "xml")]
 pub struct StorageServiceProperties {
     /// The CORS properties.
