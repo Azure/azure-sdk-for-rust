@@ -1,36 +1,32 @@
-use azure_core::http::{headers::Headers, HttpClient, Response, StatusCode};
-use azure_core_test::http::MockHttpClient;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use futures::FutureExt;
-use std::sync::Arc;
-
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_keys::{
     models::{CreateKeyParameters, CurveName, Key, KeyType},
     KeyClient,
 };
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn create_key_benchmark(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
 
-    // client to be used in the benchmark
-    let mock_client = Arc::new(MockHttpClient::new(move |_| {
-        async move { Ok(Response::from_bytes(StatusCode::Ok, Headers::new(), vec![])) }.boxed()
-    })) as Arc<dyn HttpClient>;
-
-    async fn create_key() -> Result<Key, azure_core::Error> {
+    async fn setup_key_client() -> (KeyClient, CreateKeyParameters) {
         let keyvault_url: String = std::env::var("AZURE_KEYVAULT_URL")
             .unwrap_or_else(|e| panic!("AZURE_KEYVAULT_URL not set: {}", e));
-        // Get credentials
         let credential = DefaultAzureCredential::new().unwrap();
-        // Create a client
         let client: KeyClient = KeyClient::new(&keyvault_url, credential.clone(), None).unwrap();
-        // Setup parameters for the key creation
         let body = CreateKeyParameters {
             kty: Some(KeyType::EC),
             curve: Some(CurveName::P256),
             ..Default::default()
         };
+        (client, body)
+    }
+
+    let (client, body) = rt.block_on(async { setup_key_client().await });
+
+    async fn create_key(
+        client: &KeyClient,
+        body: CreateKeyParameters,
+    ) -> Result<Key, azure_core::Error> {
         // Create the key
         let key: Key = client
             .create_key("key-name", body.try_into()?, None)
@@ -39,13 +35,12 @@ fn create_key_benchmark(c: &mut Criterion) {
             .await?;
         Ok(key)
     }
-
     // Benchmark create key
     c.bench_function("create_key", |b| {
         b.to_async(&rt).iter(|| async {
-            create_key()
+            create_key(&client, body.clone())
                 .await
-                .unwrap_or_else(|_| panic!("Failed to create key"));
+                .unwrap_or_else(|e| panic!("Failed to create key {}", e));
             black_box(());
         });
     });
@@ -53,7 +48,7 @@ fn create_key_benchmark(c: &mut Criterion) {
 // Main benchmark configuration
 criterion_group! {
     name = benchmarks;
-    config = Criterion::default().sample_size(10);
+    config = Criterion::default().sample_size(10).warm_up_time(std::time::Duration::new(1, 0));
     targets = create_key_benchmark
 }
 
