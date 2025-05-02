@@ -3,6 +3,12 @@
 
 use serde::Serialize;
 
+#[cfg(feature = "query_engine")]
+mod engine;
+
+#[cfg(feature = "query_engine")]
+pub use engine::*;
+
 /// Represents a Cosmos DB Query, with optional parameters.
 ///
 /// # Examples

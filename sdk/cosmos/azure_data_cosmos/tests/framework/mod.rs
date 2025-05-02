@@ -6,5 +6,23 @@
 //! The framework allows tests to easily run against real Cosmos DB instances, the local emulator, or a mock server using test-proxy.
 
 mod test_account;
+pub mod test_data;
+
+#[cfg(feature = "query_engine")]
+pub mod query_engine;
 
 pub use test_account::TestAccount;
+
+use serde::{Deserialize, Serialize};
+
+/// Represents a single item in the mock engine.
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MockItem {
+    /// The ID of the item.
+    pub id: String,
+    /// The partition key of the item.
+    pub partition_key: String,
+    /// The global merge order of the item, which will be used by the mock query pipeline to sort items.
+    pub merge_order: usize,
+}

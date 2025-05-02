@@ -70,6 +70,13 @@ pub struct QueryDatabasesOptions<'a> {
 #[derive(Clone, Default)]
 pub struct QueryOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
+
+    /// An external query engine to use for executing the query.
+    ///
+    /// NOTE: This is an unstable feature and may change in the future.
+    /// Specifically, the query engine may be built-in to the SDK in the future, and this option may be removed entirely.
+    #[cfg(feature = "query_engine")]
+    pub query_engine: Option<std::sync::Arc<dyn crate::query::QueryEngine>>,
 }
 
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
