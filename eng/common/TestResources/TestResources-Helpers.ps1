@@ -149,6 +149,33 @@ function BuildBicepFile([System.IO.FileSystemInfo] $file) {
     return $templateFilePath
 }
 
+function LintBicepFile([string] $path) {
+    if (!(Get-Command bicep -ErrorAction Ignore)) {
+      Write-Error "A bicep file was found at '$path' but the Azure Bicep CLI is not installed. See https://aka.ms/bicep-install"
+      throw
+    }
+
+    # Work around lack of config file override: https://github.com/Azure/bicep/issues/5013
+    $output = bicep lint "$path" 2>&1
+    if ($LASTEXITCODE) {
+        Write-Error "Failed linting bicep file '$path'"
+        throw
+    }
+
+    $clean = $true
+    foreach ($line in $output) {
+        $line = $line.ToString()
+
+        # See https://learn.microsoft.com/azure/azure-resource-manager/bicep/bicep-config-linter for lints.
+        if ($line.Contains('outputs-should-not-contain-secrets')) {
+            $clean = $false
+        }
+        Write-Warning $line
+    }
+
+    $clean
+}
+
 function BuildDeploymentOutputs([string]$serviceName, [object]$azContext, [object]$deployment, [hashtable]$environmentVariables) {
     $serviceDirectoryPrefix = BuildServiceDirectoryPrefix $serviceName
     # Add default values
@@ -215,7 +242,13 @@ function SetDeploymentOutputs(
             Write-Host "Test environment settings`n$environmentText`nstored into encrypted $outputFile"
         }
         else {
-            $outputFile = $templateFile.originalFilePath | Split-Path | Join-Path -ChildPath '.env'
+            $bicepTemplateFile = $templateFile.originalFilePath
+
+            # Make sure the file would not write secrets to .env file.
+            if (!(LintBicepFile $bicepTemplateFile)) {
+                Write-Error "$bicepTemplateFile may write secrets. No file written."
+            }
+            $outputFile = $bicepTemplateFile | Split-Path | Join-Path -ChildPath '.env'
 
             # Make sure the file would be ignored.
             git check-ignore -- "$outputFile" > $null

@@ -209,12 +209,9 @@ try {
         if ($IsWindows -and $Language -eq 'dotnet') {
             $OutFile = $true
             Log "Detected .NET repository. Defaulting OutFile to true. Test environment settings will be stored into a file so you don't need to set environment variables manually."
-        } elseif (Test-Path "$root/assets.json") {
-            $assets = Get-Content -Raw "$root/assets.json" | ConvertFrom-Json
-            if ($assets.Dotenv) {
-              $OutFile = $true
-              Log "Defaulting OutFile to true since '$root/assets.json' dictates. Test environment settings will be stored in '$root/.env' so you don't need to set environment variables manually."
-            }
+        } elseif ($SupportsDotenv) {
+            $OutFile = $true
+            Log "Repository supports reading .env files. Defaulting OutFile to true. Test environment settings may be stored in a .env file so they are read by tests automatically."
         }
     }
 
@@ -349,10 +346,10 @@ try {
         if ($context.Account.Type -eq 'User') {
             # Support corp tenant and TME tenant user id lookups
             $user = Get-AzADUser -Mail $context.Account.Id
-            if ($user -eq $null -or !$user.Id) {
+            if ($null -eq $user -or !$user.Id) {
                 $user = Get-AzADUser -UserPrincipalName $context.Account.Id
             }
-            if ($user -eq $null -or !$user.Id) {
+            if ($null -eq $user -or !$user.Id) {
                 throw "Failed to find entra object ID for the current user"
             }
             $ProvisionerApplicationOid = $user.Id
@@ -426,10 +423,10 @@ try {
 
         # Support corp tenant and TME tenant user id lookups
         $userAccount = (Get-AzADUser -Mail (Get-AzContext).Account.Id)
-        if ($userAccount -eq $null -or !$userAccount.Id) {
+        if ($null -eq $userAccount -or !$userAccount.Id) {
             $userAccount = (Get-AzADUser -UserPrincipalName (Get-AzContext).Account)
         }
-        if ($userAccount -eq $null -or !$userAccount.Id) {
+        if ($null -eq $userAccount -or !$userAccount.Id) {
             throw "Failed to find entra object ID for the current user"
         }
         $TestApplicationOid = $userAccount.Id
