@@ -207,7 +207,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Update a certificate using the certificate client.
     let certificate_update_parameters = UpdateCertificatePropertiesParameters {
-        tags: HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())]),
+        tags: Some(HashMap::from_iter(vec![("tag-name".into(), "tag-value".into())])),
         ..Default::default()
     };
 
@@ -322,7 +322,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let policy = CertificatePolicy {
         x509_certificate_properties: Some(X509CertificateProperties {
             subject: Some("CN=DefaultPolicy".into()),
-            key_usage: vec![KeyUsageType::DigitalSignature],
+            key_usage: Some(vec![KeyUsageType::DigitalSignature]),
             ..Default::default()
         }),
         issuer_parameters: Some(IssuerParameters {

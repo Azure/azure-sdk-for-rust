@@ -194,7 +194,7 @@ impl AppendBlobClient {
     /// * `options` - Optional parameters for the request.
     pub async fn append_block_from_url(
         &self,
-        source_url: &str,
+        source_url: String,
         content_length: u64,
         options: Option<AppendBlobClientAppendBlockFromUrlOptions<'_>>,
     ) -> Result<Response<AppendBlobClientAppendBlockFromUrlResult>> {
@@ -243,7 +243,7 @@ impl AppendBlobClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
-        request.insert_header("x-ms-copy-source", source_url.to_owned());
+        request.insert_header("x-ms-copy-source", source_url);
         if let Some(copy_source_authorization) = options.copy_source_authorization {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
         }

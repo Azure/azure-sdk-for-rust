@@ -38,8 +38,8 @@ pub struct CreateKeyParameters {
     pub key_attributes: Option<KeyAttributes>,
 
     /// Json web key operations. For more information on possible key operations, see JsonWebKeyOperation.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub key_ops: Vec<KeyOperation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key_ops: Option<Vec<KeyOperation>>,
 
     /// The key size in bits. For example: 2048, 3072, or 4096 for RSA.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -58,8 +58,8 @@ pub struct CreateKeyParameters {
     pub release_policy: Option<KeyReleasePolicy>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// A DeletedKeyBundle consisting of a WebKey plus its Attributes and deletion info
@@ -105,8 +105,8 @@ pub struct DeletedKey {
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// The deleted key item containing the deleted key metadata and information about deletion.
@@ -148,8 +148,8 @@ pub struct DeletedKeyProperties {
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// The get random bytes request object.
@@ -180,8 +180,8 @@ pub struct ImportKeyParameters {
     pub release_policy: Option<KeyReleasePolicy>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// As of <http://tools.ietf.org/html/draft-ietf-jose-json-web-key-18>
@@ -237,8 +237,8 @@ pub struct JsonWebKey {
     pub k: Option<Vec<u8>>,
 
     /// Json web key operations. For more information on possible key operations, see JsonWebKeyOperation.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub key_ops: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key_ops: Option<Vec<String>>,
 
     /// Key identifier.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -334,8 +334,8 @@ pub struct Key {
     pub release_policy: Option<KeyReleasePolicy>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// The key attestation information.
@@ -552,8 +552,8 @@ pub struct KeyProperties {
     pub managed: Option<bool>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// The policy rules under which the key can be exported.
@@ -602,12 +602,8 @@ pub struct KeyRotationPolicy {
     /// Actions that will be performed by Key Vault over the lifetime of a key. For preview, lifetimeActions can only have two
     /// items at maximum: one for rotate, one for notify. Notification time would be default to 30 days before expiry and it is
     /// not configurable.
-    #[serde(
-        default,
-        rename = "lifetimeActions",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub lifetime_actions: Vec<LifetimeAction>,
+    #[serde(rename = "lifetimeActions", skip_serializing_if = "Option::is_none")]
+    pub lifetime_actions: Option<Vec<LifetimeAction>>,
 }
 
 /// The key rotation policy attributes.
@@ -686,7 +682,7 @@ pub struct ListDeletedKeyPropertiesResult {
     pub next_link: Option<String>,
 
     /// A response message containing a list of deleted keys in the key vault along with a link to the next page of deleted keys.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub value: Vec<DeletedKeyProperties>,
 }
 
@@ -699,7 +695,7 @@ pub struct ListKeyPropertiesResult {
     pub next_link: Option<String>,
 
     /// A response message containing a list of keys in the key vault along with a link to the next page of keys.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub value: Vec<KeyProperties>,
 }
 
@@ -772,16 +768,16 @@ pub struct UpdateKeyPropertiesParameters {
     pub key_attributes: Option<KeyAttributes>,
 
     /// Json web key operations. For more information on possible key operations, see JsonWebKeyOperation.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub key_ops: Vec<KeyOperation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key_ops: Option<Vec<KeyOperation>>,
 
     /// The policy rules under which the key can be exported.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub release_policy: Option<KeyReleasePolicy>,
 
     /// Application specific metadata in the form of key-value pairs.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub tags: HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<HashMap<String, String>>,
 }
 
 /// The key verify parameters.

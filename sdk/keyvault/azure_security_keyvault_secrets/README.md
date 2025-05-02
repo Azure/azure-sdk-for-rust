@@ -211,10 +211,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Update a secret using the secret client.
     let secret_update_parameters = UpdateSecretPropertiesParameters {
         content_type: Some("text/plain".into()),
-        tags: HashMap::from_iter(vec![(
+        tags: Some(HashMap::from_iter(vec![(
             "tag-name".into(),
             "tag-value".into(),
-        )]),
+        )])),
         ..Default::default()
     };
 

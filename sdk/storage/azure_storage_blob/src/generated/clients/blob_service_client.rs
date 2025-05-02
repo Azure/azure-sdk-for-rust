@@ -245,8 +245,8 @@ impl BlobServiceClient {
     /// * `options` - Optional parameters for the request.
     pub async fn get_user_delegation_key(
         &self,
-        start: &str,
-        expiry: &str,
+        start: String,
+        expiry: String,
         options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
     ) -> Result<Response<UserDelegationKey>> {
         let options = options.unwrap_or_default();
@@ -266,11 +266,8 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let body: RequestContent<GetUserDelegationKeyRequest> = GetUserDelegationKeyRequest {
-            start: start.to_owned(),
-            expiry: expiry.to_owned(),
-        }
-        .try_into()?;
+        let body: RequestContent<GetUserDelegationKeyRequest> =
+            GetUserDelegationKeyRequest { start, expiry }.try_into()?;
         request.set_body(body);
         self.pipeline.send(&ctx, &mut request).await
     }

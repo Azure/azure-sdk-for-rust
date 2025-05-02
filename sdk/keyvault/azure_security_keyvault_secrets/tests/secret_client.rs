@@ -79,10 +79,10 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
     let properties = UpdateSecretPropertiesParameters {
         content_type: Some("text/plain".into()),
         secret_attributes: secret.attributes,
-        tags: HashMap::from_iter(vec![(
+        tags: Some(HashMap::from_iter(vec![(
             "test-name".into(),
             "update_secret_properties".into(),
-        )]),
+        )])),
     };
     let secret = client
         .update_secret_properties("update-secret", "", properties.try_into()?, None)
@@ -91,7 +91,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         .await?;
     assert_eq!(secret.content_type, Some("text/plain".into()));
     assert_eq!(
-        secret.tags.get("test-name"),
+        secret.tags.expect("expected tags").get("test-name"),
         Some(&String::from("update_secret_properties"))
     );
 
