@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{Page, Pager, PagerResult, RequestContent, StatusCode};
+use azure_core::http::{Pager, PagerResult, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientSetMetadataOptions,
     LeaseState, ListBlobsFlatSegmentResponse,
 };
 use azure_storage_blob_test::get_container_client;
+use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error};
 
 #[recorded::test]
@@ -110,7 +111,66 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         )
         .await?;
 
-    let blob_list = container_client.list_blobs(None).await?;
+    let mut list_blobs_response = container_client.list_blobs(None).await?;
+
+    while let Some(page) = list_blobs_response.try_next().await? {
+        let list_blob_segment_response = page.into_body().await?;
+        let blob_list = list_blob_segment_response.segment.blob_items;
+        for blob in blob_list {
+            println!("{}", blob.name.unwrap().content.unwrap())
+        }
+    }
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs_2(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client_1 = container_client.blob_client("testblob1".to_string());
+    let blob_client_2 = container_client.blob_client("testblob2".to_string());
+
+    container_client.create_container(None).await?;
+    let data = b"hello rusty world";
+    blob_client_1
+        .upload(
+            RequestContent::from(data.to_vec()),
+            false,
+            u64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+    blob_client_2
+        .upload(
+            RequestContent::from(data.to_vec()),
+            false,
+            u64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+
+    let mut list_blobs_response = container_client.list_blobs(None).await?;
+    let mut count = 0;
+
+    while let Some(page) = list_blobs_response.try_next().await? {
+        println!("while: {}", count);
+        count += 1;
+        let list_blob_segment_response = page.into_body().await?;
+        let blob_list = list_blob_segment_response.segment.blob_items;
+
+        // for blob in blob_list {
+        //     println!("inside of inner for-loop");
+        //     println!("{}", blob.name.unwrap().content.unwrap())
+        // }
+
+        let first_slice = blob_list.first();
+        println!("Is this some? {}", first_slice.is_some());
+
+        println!("bottom of outer while-loop reached")
+    }
 
     container_client.delete_container(None).await?;
     Ok(())
