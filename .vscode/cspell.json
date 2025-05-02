@@ -62,6 +62,7 @@
     "pwsh",
     "posix",
     "reqwest",
+    "runtimes",
     "rustup",
     "seekable",
     "servicebus",

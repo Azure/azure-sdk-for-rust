@@ -1,14 +1,12 @@
 # Release History
 
-## 0.3.0 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
+## 0.3.0 (2025-05-02)
 
 ### Other Changes
+
+- Updated dependencies.
+- Converted AMQP traits to use `async_trait` rather than attempting to implement the `async_trait` functionality manually.
+- Restructured and refactored AMQP errors to make them easier to interpret.
 
 ## 0.2.0 (2025-04-08)
 

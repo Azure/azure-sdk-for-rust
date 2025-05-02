@@ -1,16 +1,19 @@
 # Release History
 
-## 0.24.0 (Unreleased)
+## 0.24.0 (2025-05-02)
 
 ### Features Added
 
+- Added `TaskSpawner` abstraction to spawn asynchronous tasks for different async runtimes. Defaults to optional `tokio` runtime.
+
 ### Breaking Changes
 
-### Bugs Fixed
+- `PagerResult` always returns items of type `T` instead of `Response<T>`.
 
 ### Other Changes
 
 - Deriving `SafeDebug` formats non-exhaustive types by default. Enable `debug` feature to format normal `Debug` output.
+- Updated dependencies.
 
 ## 0.23.0 (2025-04-08)
 

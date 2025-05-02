@@ -1,18 +1,15 @@
 # Release History
 
-## 0.3.0 (Unreleased)
-
-### Features Added
+## 0.3.0 (2025-05-02)
 
 ### Breaking Changes
 
 - The `reqwest_rustls` feature enables `rustls-tls-native-roots-no-provider` instead of `rustls-tls-native-roots` to remove the dependency on the `ring` crate.
 
-### Bugs Fixed
-
 ### Other Changes
 
 - Deriving `SafeDebug` formats non-exhaustive types by default. Enable `debug` feature to format normal `Debug` output.
+- Updated dependencies.
 
 ## 0.2.0 (2025-04-08)
 

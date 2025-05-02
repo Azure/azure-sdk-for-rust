@@ -1,16 +1,11 @@
 # Release History
 
-## 0.3.0 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
+## 0.3.0 (2025-05-02)
 
 ### Other Changes
 
 - Deriving `SafeDebug` formats non-exhaustive types by default. Enable `debug` feature to format normal `Debug` output.
+- Updated dependencies.
 
 ## 0.2.0 (2025-04-08)
 
