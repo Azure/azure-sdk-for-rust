@@ -9,13 +9,17 @@
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{models::EventData, ProducerClient};
 use std::error::Error;
+use std::fmt::Debug;
 use std::sync::Arc;
 use std::{env, time::SystemTime};
 use tokio::sync::mpsc;
-use tracing::field::Visit;
-use tracing::{Event, Level, Subscriber};
+use tracing::{
+    field::Visit,
+    span, {Event, Level, Subscriber},
+};
 use tracing_subscriber::{
     fmt,
+    fmt::format::FmtSpan,
     layer::{Context, Layer},
     prelude::*,
     registry::{LookupSpan, Registry},
@@ -46,7 +50,6 @@ impl EventHubsLayer {
         // Spawn a task that receives log messages and sends them to EventHubs
         tokio::spawn(async move {
             while let Some(event) = receiver.recv().await {
-                println!("Sending event to EventHubs: {:?}", event);
                 if let Err(err) = producer_clone.send_event(event, None).await {
                     eprintln!("Failed to send event to EventHubs: {err}");
                 }
@@ -69,6 +72,12 @@ const FIELDS_PROPERTY: &str = "fields";
 const IS_SPAN_PROPERTY: &str = "is_span";
 const IS_EVENT_PROPERTY: &str = "is_event";
 const TIMESTAMP_PROPERTY: &str = "timestamp";
+const EVENT_TYPE_PROPERTY: &str = "event_type";
+const SPAN_ID_PROPERTY: &str = "span_id";
+
+const EVENT_TYPE: &str = "event";
+const SPAN_OPEN: &str = "span_open";
+const SPAN_CLOSE: &str = "span_close";
 
 impl<S> Layer<S> for EventHubsLayer
 where
@@ -88,7 +97,8 @@ where
         // Build an EventData object containing both the event body and properties reflecting the event's metadata.
         let mut event_data_builder = EventData::builder()
             .with_body(visitor.buffer)
-            .add_property(LOG_LEVEL_PROPERTY.to_string(), metadata.level().as_str())
+            .add_property(EVENT_TYPE_PROPERTY.into(), EVENT_TYPE)
+            .add_property(LOG_LEVEL_PROPERTY.into(), metadata.level().as_str())
             .add_property(
                 TIMESTAMP_PROPERTY.to_string(),
                 SystemTime::now()
@@ -121,6 +131,42 @@ where
             eprintln!("Failed to send event to EventHubs");
         });
     }
+
+    fn on_new_span(&self, attrs: &span::Attributes<'_>, id: &span::Id, _ctx: Context<'_, S>) {
+        let event_data = EventData::builder()
+            .add_property(EVENT_TYPE_PROPERTY.into(), SPAN_OPEN)
+            .add_property(LOG_LEVEL_PROPERTY.into(), attrs.metadata().level().as_str())
+            .add_property(SPAN_ID_PROPERTY.into(), id.into_u64())
+            .add_property(
+                TIMESTAMP_PROPERTY.to_string(),
+                SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            )
+            .add_property(NAME_PROPERTY.to_string(), attrs.metadata().name())
+            .build();
+        self.sender.try_send(event_data).unwrap_or_else(|_| {
+            eprintln!("Failed to send span open event to EventHubs");
+        });
+    }
+    fn on_close(&self, id: span::Id, _ctx: Context<'_, S>) {
+        // This method is called when a span is closed.
+        let event_data = EventData::builder()
+            .add_property(EVENT_TYPE_PROPERTY.into(), SPAN_CLOSE)
+            .add_property(NAME_PROPERTY.into(), id.into_u64())
+            .add_property(
+                TIMESTAMP_PROPERTY.to_string(),
+                SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            )
+            .build();
+        self.sender.try_send(event_data).unwrap_or_else(|_| {
+            eprintln!("Failed to send span close event to EventHubs");
+        });
+    }
 }
 
 /// A visitor that formats log messages and collects them into a buffer.
@@ -130,14 +176,12 @@ struct EventVisitor {
 
 impl Visit for EventVisitor {
     fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
-        println!("record_str: {}: {}", field.name(), value);
         // Append the field name and value to the buffer
         self.buffer
             .push_str(&format!("{}: {}", field.name(), value));
     }
 
     fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
-        println!("record_debug: {}: {:?}", field.name(), value);
         self.buffer
             .push_str(&format!("{}: {:?}", field.name(), value));
     }
@@ -156,8 +200,8 @@ impl std::fmt::Display for StructuredData {
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+/// Enable a tracing subscriber that sends logs to the Azure Event Hubs service.
+async fn enable_eventhubs_logging() -> Result<(), Box<dyn Error>> {
     // Get EventHubs fully qualified domain name and hub name from environment variables
     let fully_qualified_domain_name =
         env::var("EVENTHUBS_HOST").expect("EVENTHUBS_HOST must be set");
@@ -169,18 +213,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Set up tracing subscriber with both console and EventHubs outputs. Note that the components of the EventHubs service (which also uses tracing)
     // need to be disabled.
     let subscriber = Registry::default()
-        .with(fmt::layer().with_target(true))
-        .with(eventhubs_layer)
+        .with(fmt::layer().with_target(true).with_span_events(
+            FmtSpan::NEW | FmtSpan::ENTER | FmtSpan::EXIT | FmtSpan::CLOSE | FmtSpan::FULL,
+        ))
+        // Add filters to exclude the AMQP and EventHubs logs to avoid recursive logging.
         .with(
             tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(Level::DEBUG.into())
-                .add_directive("azure_messaging_eventhubs=off".parse()?) // disable eventhubs logs because they become recursive.
-                .add_directive("azure_core_amqp=off".parse()?) // disable AMQP logs because they become recursive.
-                .add_directive("fe2o3_amqp=off".parse()?), // disable fe2o3 AMQP logs because they become recursive.
-        );
+                .add_directive("azure_messaging_eventhubs=off".parse()?)
+                .add_directive("azure_core_amqp=off".parse()?)
+                .add_directive("fe2o3_amqp=off".parse()?),
+        )
+        .with(eventhubs_layer);
 
-    // Initialize the tracing subscriber
+    // Initialize the global tracing subscriber
     tracing::subscriber::set_global_default(subscriber)?;
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    enable_eventhubs_logging().await?;
 
     // Application code
     tracing::info!("Application started");
@@ -201,7 +253,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     tracing::info!("Sending structured data to EventHubs");
     tracing::info!("Structured data: {:?}", data);
-    tracing::info!("Structured data2: {}", data);
+    tracing::event!(Level::TRACE, "Structured data2: {}", data);
+
+    tracing::info!(field1 = 1, field2 = "string", "logged a couple fields");
 
     tracing::span!(Level::TRACE, "example_span").in_scope(|| {
         tracing::info!("Inside a span");
