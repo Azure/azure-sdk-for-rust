@@ -3,11 +3,10 @@
 
 //! HTTP responses.
 
-use crate::http::{headers::Headers, StatusCode};
+use crate::http::{headers::Headers, DefaultFormat, Format, StatusCode};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
-use std::future::Future;
 use std::{fmt, marker::PhantomData, pin::Pin};
 use typespec::error::{ErrorKind, ResultExt};
 
@@ -19,42 +18,6 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send +
 #[cfg(target_arch = "wasm32")]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
-/// Trait that represents types that can be deserialized from an HTTP response body.
-///
-/// [`Response<T>`] is designed to work with values that may be serialized in various formats (JSON, XML, etc.).
-/// In order to support that, the `T` provided must implement [`Model`], which provides the [`Model::from_response_body`]
-/// method to deserialize the type from a response body.
-pub trait Model: Sized {
-    /// Deserialize the response body into type `Self`.
-    ///
-    /// A [`ResponseBody`] represents a stream of bytes coming from the server.
-    /// The server may still be sending data, so it's up to implementors whether they want to wait for the entire body to be received or not.
-    /// For example, a type representing a simple REST API response will want to wait for the entire body to be received and then parse the body.
-    /// However, a type representing the download of a large file, may not want to do that and instead prepare to stream the body to a file or other destination.
-    #[cfg(not(target_arch = "wasm32"))]
-    fn from_response_body(
-        body: ResponseBody,
-    ) -> impl Future<Output = crate::Result<Self>> + Send + Sync;
-
-    #[cfg(target_arch = "wasm32")]
-    fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>>;
-}
-
-// Allow for deserializing into "raw" JSON.
-impl Model for serde_json::Value {
-    #[cfg(not(target_arch = "wasm32"))]
-    fn from_response_body(
-        body: ResponseBody,
-    ) -> impl Future<Output = crate::Result<Self>> + Send + Sync {
-        body.json()
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>> {
-        body.json()
-    }
-}
-
 /// An HTTP response.
 ///
 /// The type parameter `T` is a marker type that indicates what the caller should expect to be able to deserialize the body into.
@@ -64,14 +27,14 @@ impl Model for serde_json::Value {
 /// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
 /// However, because the type `T` is just a marker type, the user can also deserialize the body into a different type by calling [`Response::into_json_body`] or [`Response::into_xml_body`],
 /// or access the raw body using [`Response::into_raw_body`].
-pub struct Response<T = ResponseBody> {
+pub struct Response<T = ResponseBody, F: Format = DefaultFormat> {
     status: StatusCode,
     headers: Headers,
     body: ResponseBody,
-    phantom: PhantomData<T>,
+    phantom: PhantomData<(T, F)>,
 }
 
-impl<T> Response<T> {
+impl<T, F: Format> Response<T, F> {
     /// Create an HTTP response from an asynchronous stream of bytes.
     pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
         Self {
@@ -114,108 +77,9 @@ impl<T> Response<T> {
     pub fn into_raw_body(self) -> ResponseBody {
         self.body
     }
-
-    /// Fetches the entire body and tries to deserialize it as JSON into type `U`.
-    ///
-    /// This method is intended for situations where:
-    ///
-    /// 1. The response was not given a specific type by the service SDK e.g., the API returned `Response<ResponseBody>`, indicating a raw response.
-    /// 2. You want to deserialize the response into your OWN type, rather than the default type specified by the service SDK.
-    ///
-    /// # Example
-    /// ```rust
-    /// # pub struct GetSecretResponse { }
-    /// use typespec_client_core::http::{Model, Response, StatusCode};
-    /// # #[cfg(not(feature = "derive"))]
-    /// # use typespec_macros::Model;
-    /// use serde::Deserialize;
-    /// use bytes::Bytes;
-    ///
-    /// #[derive(Model, Deserialize)]
-    /// struct MySecretResponse {
-    ///    value: String,
-    /// }
-    ///
-    /// async fn parse_response(response: Response<GetSecretResponse>) {
-    ///   // Calling `into_json_body` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
-    ///   let my_struct: MySecretResponse = response.into_json_body().await.unwrap();
-    ///   assert_eq!("hunter2", my_struct.value);
-    /// }
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() {
-    /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
-    /// #      StatusCode::Ok,
-    /// #      typespec_client_core::http::headers::Headers::new(),
-    /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
-    /// #    );
-    /// #    parse_response(r).await;
-    /// # }
-    /// ```
-    #[cfg(feature = "json")]
-    pub async fn into_json_body<U: DeserializeOwned>(self) -> crate::Result<U> {
-        self.into_raw_body().json().await
-    }
-
-    /// Fetches the entire body and tries to deserialize it as XML into type `U`.
-    ///
-    /// This method is intended for situations where:
-    ///
-    /// 1. The response was not given a specific type by the service SDK (i.e. the API returned `Response<ResponseBody>`, indicating a raw response).
-    /// 2. You want to deserialize the response into your OWN type, rather than the default type specified by the service SDK.
-    ///
-    /// # Example
-    /// ```rust
-    /// # pub struct GetSecretResponse { }
-    /// use typespec_client_core::http::{Model, Response, StatusCode};
-    /// # #[cfg(not(feature = "derive"))]
-    /// # use typespec_macros::Model;
-    /// use serde::Deserialize;
-    /// use bytes::Bytes;
-    ///
-    /// #[derive(Model, Deserialize)]
-    /// struct MySecretResponse {
-    ///    value: String,
-    /// }
-    ///
-    /// async fn parse_response(response: Response<GetSecretResponse>) {
-    ///   // Calling `into_xml_body` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
-    ///   let my_struct: MySecretResponse = response.into_xml_body().await.unwrap();
-    ///   assert_eq!("hunter2", my_struct.value);
-    /// }
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() {
-    /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
-    /// #      StatusCode::Ok,
-    /// #      typespec_client_core::http::headers::Headers::new(),
-    /// #      "<Response><name>database_password</name><value>hunter2</value></Response>",
-    /// #    );
-    /// #    parse_response(r).await;
-    /// # }
-    /// ```
-    #[cfg(feature = "xml")]
-    pub async fn into_xml_body<U: DeserializeOwned>(self) -> crate::Result<U> {
-        self.into_raw_body().xml().await
-    }
 }
 
-impl Response<ResponseBody> {
-    /// Changes the type of the response body.
-    ///
-    /// Used to set the "type" of an untyped `Response<ResponseBody>`, transforming it into a `Response<T>`.
-    pub(crate) fn with_default_deserialize_type<T>(self) -> Response<T> {
-        // This method name is a little clunky, but it's crate-local. If we ever decide it's useful outside this crate (which might happen), we can revisit the name.
-        Response {
-            status: self.status,
-            headers: self.headers,
-            body: self.body,
-            phantom: PhantomData,
-        }
-    }
-}
-
-impl<T: Model> Response<T> {
+impl<T: FormattedBy<F>, F: Format> Response<T, F> {
     /// Fetches the entire body and tries to convert it into type `T`.
     ///
     /// This is the preferred method for parsing the body of a service response into it's default model type.
@@ -255,9 +119,7 @@ impl<T: Model> Response<T> {
     /// assert_eq!(model.value, "hunter2");
     /// # }
     /// ```
-    pub async fn into_body(self) -> crate::Result<T> {
-        T::from_response_body(self.body).await
-    }
+    pub async fn into_body(self) -> crate::Result<T> {}
 }
 
 impl<T> fmt::Debug for Response<T> {
