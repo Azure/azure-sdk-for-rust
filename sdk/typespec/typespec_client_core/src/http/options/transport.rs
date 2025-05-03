@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::http::{clients, policies::Policy, Context, HttpClient, Request, Response};
+use crate::http::{
+    clients, policies::Policy, Context, DeserializeWith, Format, HttpClient, Request, Response,
+};
 use std::sync::Arc;
 use typespec::error::Result;
 
@@ -36,14 +38,18 @@ impl TransportOptions {
     }
 
     /// Use these options to send a request.
-    pub async fn send<T>(&self, ctx: &Context<'_>, request: &mut Request) -> Result<Response<T>> {
+    pub async fn send<T: DeserializeWith<F>, F: Format>(
+        &self,
+        ctx: &Context<'_>,
+        request: &mut Request,
+    ) -> Result<Response<T, F>> {
         use TransportOptionsImpl as I;
         let raw_response = match &self.inner {
             I::Http { http_client } => http_client.execute_request(request).await,
             I::Custom(s) => s.send(ctx, request, &[]).await,
         };
 
-        raw_response.map(|r| r.with_default_deserialize_type())
+        raw_response.map(|r| r.into_typed())
     }
 }
 
