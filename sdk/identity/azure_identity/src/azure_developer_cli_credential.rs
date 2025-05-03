@@ -3,7 +3,7 @@
 
 // cspell:ignore SYSTEMROOT workdir
 
-use crate::{env::Env, validate_scope, validate_tenant_id};
+use crate::{env::Env, validate_scope, validate_tenant_id, TokenCredentialOptions};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind},
@@ -142,6 +142,15 @@ impl TokenCredential for AzureDeveloperCliCredential {
                 );
                 Err(Error::with_message(ErrorKind::Credential, || message))
             }
+        }
+    }
+}
+
+impl From<TokenCredentialOptions> for AzureDeveloperCliCredentialOptions {
+    fn from(options: TokenCredentialOptions) -> Self {
+        Self {
+            executor: Some(options.executor.clone()),
+            ..Default::default()
         }
     }
 }
