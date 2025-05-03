@@ -23,7 +23,7 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
-pub use response::{Model, Response};
+pub use response::Response;
 
 // Re-export important types.
 pub use typespec::http::StatusCode;
