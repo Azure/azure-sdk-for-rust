@@ -60,16 +60,7 @@ foreach ($package in $packagesToTest) {
     Write-Host "`n`n"
     # test individual targets so we can exclude the bench target which in some cases requires
     #deployed resources
-    Invoke-LoggedCommand "cargo test --lib --no-fail-fast" -GroupOutput
-    Write-Host "`n`n"
-
-    Invoke-LoggedCommand "cargo test --bins --no-fail-fast" -GroupOutput
-    Write-Host "`n`n"
-
-    Invoke-LoggedCommand "cargo test --examples --no-fail-fast" -GroupOutput
-    Write-Host "`n`n"
-
-    Invoke-LoggedCommand "cargo test --tests --no-fail-fast" -GroupOutput
+    Invoke-LoggedCommand "cargo test --lib --bins --examples --tests --no-fail-fast" -GroupOutput
     Write-Host "`n`n"
 
     Invoke-LoggedCommand "cargo test --doc --no-fail-fast" -GroupOutput
