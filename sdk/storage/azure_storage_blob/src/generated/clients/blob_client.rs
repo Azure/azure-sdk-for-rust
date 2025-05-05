@@ -37,6 +37,7 @@ use azure_core::{
     Result,
 };
 use std::sync::Arc;
+use typespec_client_core::http::XmlFormat;
 
 pub struct BlobClient {
     pub(crate) blob_name: String,

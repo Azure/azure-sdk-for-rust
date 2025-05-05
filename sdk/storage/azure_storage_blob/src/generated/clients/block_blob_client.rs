@@ -24,6 +24,7 @@ use azure_core::{
     Bytes, Result,
 };
 use std::sync::Arc;
+use typespec_client_core::http::XmlFormat;
 
 pub struct BlockBlobClient {
     pub(crate) blob_name: String,
@@ -232,7 +233,7 @@ impl BlockBlobClient {
         &self,
         list_type: BlockListType,
         options: Option<BlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockList>> {
+    ) -> Result<Response<BlockList, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -263,7 +264,7 @@ impl BlockBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send_format(&ctx, &mut request).await
     }
 
     /// The Put Blob from URL operation creates a new Block Blob where the contents of the blob are read from a given URL. This
