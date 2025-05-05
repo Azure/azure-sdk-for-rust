@@ -183,22 +183,166 @@ impl From<TokenCredentialOptions> for AzureCliCredentialOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::{MockExecutor, FAKE_TENANT_ID, FAKE_TOKEN, LIVE_TEST_SCOPES};
+    use std::ffi::OsStr;
+    use time::{format_description::well_known::Rfc3339, UtcOffset};
 
-    #[test]
-    fn read_cli_token_response() -> azure_core::Result<()> {
-        let json = br#"
-        {
-            "accessToken": "MuchLonger_NotTheRealOne_Sv8Orn0Wq0OaXuQEg",
-            "expiresOn": "2024-01-01 19:23:16.000000",
-            "expires_on": 1704158596,
-            "subscription": "33b83be5-faf7-42ea-a712-320a5f9dd111",
-            "tenant": "065e9f5e-870d-4ed1-af2b-1b58092353f3",
-            "tokenType": "Bearer"
-        }
-        "#;
-        let token_response: CliTokenResponse = from_json(json)?;
-        assert_eq!(token_response.expires_on, Some(1704158596));
-        assert_eq!(token_response.expires_on()?.unix_timestamp(), 1704158596);
-        Ok(())
+    async fn run_test(
+        exit_code: i32,
+        stdout: &str,
+        stderr: &str,
+        subscription: Option<String>,
+        tenant_id: Option<String>,
+    ) -> azure_core::Result<AccessToken> {
+        let subscription_for_on_run = subscription.clone();
+        let tenant_for_on_run = tenant_id.clone();
+        let system_root = "/dev/null";
+        let options =
+            AzureCliCredentialOptions {
+                env: Some(Env::from(&[("SYSTEMROOT", system_root)][..])),
+                executor: Some(MockExecutor::with_output(
+                    exit_code,
+                    stdout,
+                    stderr,
+                    Some(Arc::new(move |program: &OsStr, args: &[&OsStr]| {
+                        let args: Vec<String> = args
+                            .iter()
+                            .map(|arg| arg.to_string_lossy().to_string())
+                            .collect();
+                        if cfg!(target_os = "windows") {
+                            assert_eq!(program.to_string_lossy(), "cmd");
+                            assert_eq!(args[0], "/C");
+                            assert!(args[1].starts_with(&format!(
+                                "cd {system_root} && az account get-access-token -o json"
+                            )));
+                        } else {
+                            assert_eq!(program, "/bin/sh");
+                            assert_eq!(args[0], "-c");
+                            assert!(args[1]
+                                .starts_with("cd /bin && az account get-access-token -o json"));
+                        }
+                        for scope in LIVE_TEST_SCOPES {
+                            assert!(args[1].contains(&format!(" --scope {scope}")));
+                        }
+                        if let Some(ref subscription_id) = subscription_for_on_run {
+                            assert!(args[1]
+                                .contains(&format!(r#" --subscription "{subscription_id}""#)));
+                        } else {
+                            assert!(!args[1].contains("--subscription"));
+                        }
+                        if let Some(ref tenant_id) = tenant_for_on_run {
+                            assert!(args[1].contains(&format!(" --tenant {tenant_id}")));
+                        } else {
+                            assert!(!args[1].contains("--tenant"));
+                        }
+                    })),
+                )),
+                tenant_id,
+                subscription,
+                ..Default::default()
+            };
+        let cred = AzureCliCredential::new(Some(options))?;
+        return cred.get_token(LIVE_TEST_SCOPES).await;
+    }
+
+    #[tokio::test]
+    async fn error_includes_stderr() {
+        let stderr = "something went wrong";
+        let err = run_test(1, "stdout", stderr, None, None)
+            .await
+            .expect_err("expected error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert!(err.to_string().contains(stderr));
+    }
+
+    #[tokio::test]
+    async fn get_token_success() {
+        let expires_on = OffsetDateTime::parse("2038-01-18T00:00:00Z", &Rfc3339).unwrap();
+        let stdout = format!(
+            r#"{{"accessToken":"{FAKE_TOKEN}",
+            "expiresOn":"2030-01-02 03:04:05.000000",
+            "expires_on":{},
+            "subscription":"...",
+            "tenant":"{FAKE_TENANT_ID}",
+            "tokenType":"Bearer"}}"#,
+            expires_on.unix_timestamp()
+        );
+
+        let token = run_test(0, &stdout, "", None, None).await.expect("token");
+
+        assert_eq!(FAKE_TOKEN, token.token.secret());
+        assert_eq!(UtcOffset::UTC, token.expires_on.offset());
+        assert_eq!(expires_on, token.expires_on);
+    }
+
+    #[tokio::test]
+    async fn not_logged_in() {
+        let err = run_test(1, "", "Please run 'az login' to setup account.", None, None)
+            .await
+            .expect_err("error");
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+        assert!(err.to_string().contains("az login"));
+    }
+
+    #[tokio::test]
+    async fn program_not_found() {
+        let executor = MockExecutor::with_error(std::io::Error::from_raw_os_error(127));
+        let options = AzureCliCredentialOptions {
+            executor: Some(executor),
+            ..Default::default()
+        };
+
+        let err = AzureCliCredential::new(Some(options))
+            .expect("valid credential")
+            .get_token(LIVE_TEST_SCOPES)
+            .await
+            .expect_err("expected error");
+
+        assert!(matches!(err.kind(), ErrorKind::Credential));
+    }
+
+    #[tokio::test]
+    async fn subscription() {
+        let expires_on = OffsetDateTime::parse("2038-01-18T00:00:00Z", &Rfc3339).unwrap();
+        let subscription = "subscription name";
+        let stdout = format!(
+            r#"{{"accessToken":"{FAKE_TOKEN}",
+            "expiresOn":"2030-01-02 03:04:05.000000",
+            "expires_on":{},
+            "subscription":"{subscription}",
+            "tenant":"{FAKE_TENANT_ID}",
+            "tokenType":"Bearer"}}"#,
+            expires_on.unix_timestamp()
+        );
+
+        let token = run_test(0, &stdout, "", Some(subscription.to_string()), None)
+            .await
+            .expect("token");
+
+        assert_eq!(FAKE_TOKEN, token.token.secret());
+        assert_eq!(UtcOffset::UTC, token.expires_on.offset());
+        assert_eq!(expires_on, token.expires_on);
+    }
+
+    #[tokio::test]
+    async fn tenant_id() {
+        let expires_on = OffsetDateTime::parse("2038-01-18T00:00:00Z", &Rfc3339).unwrap();
+        let stdout = format!(
+            r#"{{"accessToken":"{FAKE_TOKEN}",
+            "expiresOn":"2030-01-02 03:04:05.000000",
+            "expires_on":{},
+            "subscription":"...",
+            "tenant":"{FAKE_TENANT_ID}",
+            "tokenType":"Bearer"}}"#,
+            expires_on.unix_timestamp()
+        );
+
+        let token = run_test(0, &stdout, "", None, Some(FAKE_TENANT_ID.to_string()))
+            .await
+            .expect("token");
+
+        assert_eq!(FAKE_TOKEN, token.token.secret());
+        assert_eq!(UtcOffset::UTC, token.expires_on.offset());
+        assert_eq!(expires_on, token.expires_on);
     }
 }
