@@ -96,10 +96,7 @@ impl Pipeline {
         ctx: &Context<'_>,
         request: &mut Request,
     ) -> crate::Result<Response<T, F>> {
-        self.pipeline[0]
-            .send(ctx, request, &self.pipeline[1..])
-            .await
-            .map(|r| r.with_model_type())
+        self.send(ctx, request).await.map(|r| r.with_format())
     }
 }
 
