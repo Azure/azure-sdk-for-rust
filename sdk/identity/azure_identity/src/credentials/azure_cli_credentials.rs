@@ -3,6 +3,8 @@
 
 use crate::{
     credentials::{cache::TokenCache, TokenCredentialOptions},
+    env::Env,
+    process_ext::{ExecutorExt, OutputProcessor},
     validate_scope, validate_subscription, validate_tenant_id,
 };
 use azure_core::{
@@ -12,7 +14,7 @@ use azure_core::{
     process::{new_executor, Executor},
 };
 use serde::Deserialize;
-use std::{ffi::OsStr, fmt::Debug, str, sync::Arc};
+use std::{fmt::Debug, marker::PhantomData, str, sync::Arc};
 use time::OffsetDateTime;
 use tracing::trace;
 
@@ -42,6 +44,27 @@ impl CliTokenResponse {
                 "expires_on field not found. Please use Azure CLI 2.54.0 or newer.",
             )),
         }
+    }
+}
+
+impl OutputProcessor for CliTokenResponse {
+    fn credential_name() -> &'static str {
+        "AzureCliCredential"
+    }
+
+    fn get_error_message(_stderr: &str) -> Option<&str> {
+        // Azure CLI's errors are generally clear and more helpful than anything we'd write here
+        None
+    }
+
+    fn deserialize_token(stdout: &str) -> azure_core::Result<AccessToken> {
+        let response: Self = from_json(stdout)?;
+        let expires_on = response.expires_on()?;
+        Ok(AccessToken::new(response.access_token, expires_on))
+    }
+
+    fn tool_name() -> &'static str {
+        "Azure CLI"
     }
 }
 
@@ -76,6 +99,8 @@ pub struct AzureCliCredentialOptions {
     /// If `None`, one is created using [`new_executor`]; alternatively,
     /// you can supply your own implementation using a different asynchronous runtime.
     pub executor: Option<Arc<dyn Executor>>,
+
+    env: Option<Env>,
 }
 
 impl AzureCliCredential {
@@ -88,6 +113,9 @@ impl AzureCliCredential {
         if let Some(ref subscription) = options.subscription {
             validate_subscription(subscription)?;
         }
+        if options.env.is_none() {
+            options.env = Some(Env::default());
+        }
         if options.executor.is_none() {
             options.executor = Some(new_executor());
         }
@@ -98,89 +126,40 @@ impl AzureCliCredential {
         }))
     }
 
-    /// Get an access token for an optional resource
-    async fn get_access_token(&self, scopes: &[&str]) -> azure_core::Result<CliTokenResponse> {
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::new(
                 ErrorKind::Credential,
                 "exactly one scope required",
             ));
         }
-        // Pass the CLI a Microsoft Entra ID v1 resource because we don't know which CLI version is installed and older ones don't support v2 scopes.
-        let resource = scopes[0].trim_end_matches("/.default");
-        validate_scope(resource)?;
+        validate_scope(scopes[0])?;
 
-        // On Windows az is a cmd and it should be called like this.
-        // See https://doc.rust-lang.org/nightly/std/process/struct.Command.html
-        let program = if cfg!(target_os = "windows") {
-            "cmd"
-        } else {
-            "az"
-        };
-        let mut args = Vec::new();
-        if cfg!(target_os = "windows") {
-            args.push("/C");
-            args.push("az");
-        }
-        args.push("account");
-        args.push("get-access-token");
-        args.push("--output");
-        args.push("json");
-        args.push("--resource");
-        args.push(resource);
-
+        let mut command = "az account get-access-token -o json --scope ".to_string();
+        command.push_str(scopes[0]);
         if let Some(ref tenant_id) = self.options.tenant_id {
-            args.push("--tenant");
-            args.push(tenant_id);
+            command.push_str(" --tenant ");
+            command.push_str(tenant_id);
         }
         if let Some(ref subscription) = self.options.subscription {
-            args.push("--subscription");
-            args.push(subscription);
+            command.push_str(r#" --subscription ""#);
+            command.push_str(subscription);
+            command.push('"');
         }
 
-        trace!(
-            "fetching credential via Azure CLI: {program} {}",
-            args.join(" "),
-        );
+        trace!("running Azure CLI command: {command}");
 
-        let args = args.iter().map(|arg| arg.as_ref()).collect::<Vec<&OsStr>>();
-
-        let status = self
-            .options
+        // unwrap() is safe because new() ensures the values are Some
+        self.options
             .executor
             .as_ref()
-            // It's okay to call unwrap() here because new() ensures it's initialized.
             .unwrap()
-            .run(OsStr::new(program), &args)
-            .await;
-        match status {
-            Ok(az_output) if az_output.status.success() => {
-                let output = str::from_utf8(&az_output.stdout)?;
-
-                let access_token = from_json(output)?;
-                Ok(access_token)
-            }
-            Ok(az_output) => {
-                let output = String::from_utf8_lossy(&az_output.stderr);
-                Err(Error::with_message(ErrorKind::Credential, || {
-                    format!("'az account get-access-token' command failed: {output}")
-                }))
-            }
-            Err(e) => match e.kind() {
-                std::io::ErrorKind::NotFound => {
-                    Err(Error::message(ErrorKind::Other, "Azure CLI not installed"))
-                }
-                error_kind => Err(Error::with_message(ErrorKind::Other, || {
-                    format!("Unknown error of kind: {error_kind:?}")
-                })),
-            },
-        }
-    }
-
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        let tr = self.get_access_token(scopes).await?;
-        let expires_on = tr.expires_on()?;
-        Ok(AccessToken::new(tr.access_token, expires_on))
+            .shell_exec(
+                self.options.env.as_ref().unwrap(),
+                &command,
+                PhantomData::<CliTokenResponse>,
+            )
+            .await
     }
 }
 
