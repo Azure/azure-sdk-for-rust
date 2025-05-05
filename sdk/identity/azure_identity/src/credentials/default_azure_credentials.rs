@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(not(target_arch = "wasm32"))]
-use crate::AzureCliCredential;
 use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::{AzureCliCredential, AzureDeveloperCliCredential};
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::error::ResultExt;
 use azure_core::{
@@ -17,6 +17,8 @@ pub struct DefaultAzureCredentialBuilder {
     options: TokenCredentialOptions,
     #[cfg(not(target_arch = "wasm32"))]
     include_azure_cli_credential: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    include_azure_developer_cli_credential: bool,
 }
 
 #[cfg_attr(target_arch = "wasm32", allow(clippy::derivable_impls))]
@@ -26,6 +28,8 @@ impl Default for DefaultAzureCredentialBuilder {
             options: TokenCredentialOptions::default(),
             #[cfg(not(target_arch = "wasm32"))]
             include_azure_cli_credential: true,
+            #[cfg(not(target_arch = "wasm32"))]
+            include_azure_developer_cli_credential: true,
         }
     }
 }
@@ -41,10 +45,17 @@ impl DefaultAzureCredentialBuilder {
         self
     }
 
-    /// Exclude using credential from the cli
+    /// Exclude authenticating using the Azure CLI (az).
     #[cfg(not(target_arch = "wasm32"))]
     pub fn exclude_azure_cli_credential(&mut self) -> &mut Self {
         self.include_azure_cli_credential = false;
+        self
+    }
+
+    /// Exclude authenticating using the Azure Developer CLI (azd).
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn exclude_azure_developer_cli_credential(&mut self) -> &mut Self {
+        self.include_azure_developer_cli_credential = false;
         self
     }
 
@@ -55,6 +66,10 @@ impl DefaultAzureCredentialBuilder {
         #[cfg(not(target_arch = "wasm32"))]
         if self.include_azure_cli_credential {
             sources.push(DefaultAzureCredentialType::AzureCli);
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.include_azure_developer_cli_credential {
+            sources.push(DefaultAzureCredentialType::AzureDeveloperCli);
         }
         sources
     }
@@ -78,6 +93,14 @@ impl DefaultAzureCredentialBuilder {
                         AzureCliCredential::new(Some(self.options.clone().into()))
                     {
                         sources.push(DefaultAzureCredentialKind::AzureCli(credential));
+                    }
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                DefaultAzureCredentialType::AzureDeveloperCli => {
+                    if let Ok(credential) =
+                        AzureDeveloperCliCredential::new(Some(self.options.clone().into()))
+                    {
+                        sources.push(DefaultAzureCredentialKind::AzureDeveloperCli(credential));
                     }
                 }
                 #[cfg(target_arch = "wasm32")]
@@ -112,14 +135,19 @@ impl DefaultAzureCredentialBuilder {
 enum DefaultAzureCredentialType {
     #[cfg(not(target_arch = "wasm32"))]
     AzureCli,
+    #[cfg(not(target_arch = "wasm32"))]
+    AzureDeveloperCli,
 }
 
 /// Types of `TokenCredential` supported by `DefaultAzureCredential`
 #[derive(Debug)]
 pub(crate) enum DefaultAzureCredentialKind {
     #[cfg(not(target_arch = "wasm32"))]
-    /// `TokenCredential` from Azure CLI.
+    /// `TokenCredential` from Azure CLI (az).
     AzureCli(Arc<AzureCliCredential>),
+    #[cfg(not(target_arch = "wasm32"))]
+    /// `TokenCredential` from Azure Developer CLI (azd).
+    AzureDeveloperCli(Arc<AzureDeveloperCliCredential>),
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send), allow(unused_variables))]
@@ -132,6 +160,13 @@ impl TokenCredential for DefaultAzureCredentialKind {
                 credential.get_token(scopes).await.context(
                     ErrorKind::Credential,
                     "error getting token credential from Azure CLI",
+                )
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            DefaultAzureCredentialKind::AzureDeveloperCli(credential) => {
+                credential.get_token(scopes).await.context(
+                    ErrorKind::Credential,
+                    "error getting token credential from Azure Developer CLI",
                 )
             }
             #[cfg(target_arch = "wasm32")]
@@ -240,6 +275,8 @@ mod tests {
         let builder = DefaultAzureCredentialBuilder::new();
         #[cfg(not(target_arch = "wasm32"))]
         assert!(builder.include_azure_cli_credential);
+        #[cfg(not(target_arch = "wasm32"))]
+        assert!(builder.include_azure_developer_cli_credential);
 
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -248,9 +285,18 @@ mod tests {
             assert!(!builder.include_azure_cli_credential);
         }
 
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let mut builder = DefaultAzureCredentialBuilder::new();
+            builder.exclude_azure_developer_cli_credential();
+            assert!(!builder.include_azure_developer_cli_credential);
+        }
+
         let builder = DefaultAzureCredentialBuilder::new();
         #[cfg(not(target_arch = "wasm32"))]
         assert!(builder.include_azure_cli_credential);
+        #[cfg(not(target_arch = "wasm32"))]
+        assert!(builder.include_azure_developer_cli_credential);
     }
 
     #[test]
@@ -259,7 +305,10 @@ mod tests {
         let builder = DefaultAzureCredentialBuilder::new();
         assert_eq!(
             builder.included(),
-            vec![DefaultAzureCredentialType::AzureCli,]
+            vec![
+                DefaultAzureCredentialType::AzureCli,
+                DefaultAzureCredentialType::AzureDeveloperCli
+            ]
         );
     }
 
@@ -268,6 +317,7 @@ mod tests {
     fn test_exclude_azure_cli_credential() {
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_azure_cli_credential();
+        builder.exclude_azure_developer_cli_credential();
         assert!(builder.included().is_empty());
     }
 }
