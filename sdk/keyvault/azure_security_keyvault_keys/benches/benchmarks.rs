@@ -58,7 +58,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
         });
     });
 
-    // Benchmark create key
+    // Benchmark get key
     c.bench_function("get_key", |b| {
         b.to_async(&rt).iter(|| async {
             get_key(KEY_NAME, &client)
