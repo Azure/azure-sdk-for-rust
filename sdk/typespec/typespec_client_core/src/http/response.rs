@@ -35,11 +35,7 @@ impl<F> Response<ResponseBody, F> {
     /// Converts an "untyped" raw response into a typed response, using the specified format.
     ///
     /// This method is intended for use in service clients, to "set" the model type for a raw response receieved from the pipeline.
-    pub fn into_typed<T, F2>(self) -> Response<T, F2>
-    where
-        T: DeserializeWith<F2>,
-        F2: Format,
-    {
+    pub fn into_typed<T, F2>(self) -> Response<T, F2> {
         Response {
             status: self.status,
             headers: self.headers,

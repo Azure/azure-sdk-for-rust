@@ -3,9 +3,11 @@
 
 use crate::http::{
     policies::{CustomHeadersPolicy, Policy, TransportPolicy},
-    ClientOptions, Context, DeserializeWith, Format, Request, Response, RetryOptions,
+    ClientOptions, Context, Request, Response, RetryOptions,
 };
 use std::sync::Arc;
+
+use super::DefaultFormat;
 
 /// Execution pipeline.
 ///
@@ -78,11 +80,11 @@ impl Pipeline {
         &self.pipeline
     }
 
-    pub async fn send<T: DeserializeWith<F>, F: Format>(
+    pub async fn send<T>(
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
-    ) -> crate::Result<Response<T, F>> {
+    ) -> crate::Result<Response<T, DefaultFormat>> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
