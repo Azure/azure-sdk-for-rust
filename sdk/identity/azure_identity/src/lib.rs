@@ -13,6 +13,7 @@ mod credentials;
 mod env;
 mod managed_identity_credential;
 mod oauth2_http_client;
+mod process_ext;
 mod refresh_token;
 
 use azure_core::{
