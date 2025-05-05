@@ -49,7 +49,7 @@ impl TransportOptions {
             I::Custom(s) => s.send(ctx, request, &[]).await,
         };
 
-        raw_response.map(|r| r.into_typed())
+        raw_response.map(|r| r.with_model_type())
     }
 }
 
