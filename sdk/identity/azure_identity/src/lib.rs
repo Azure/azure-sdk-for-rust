@@ -24,15 +24,14 @@ pub use credentials::*;
 pub use managed_identity_credential::*;
 use serde::Deserialize;
 use std::borrow::Cow;
-use typespec_client_core::http::Model;
 
-#[derive(Debug, Default, Deserialize, Model)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 struct EntraIdErrorResponse {
     error_description: String,
 }
 
-#[derive(Debug, Default, Deserialize, Model)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 struct EntraIdTokenResponse {
     token_type: String,
@@ -46,7 +45,8 @@ where
     T: serde::de::DeserializeOwned,
 {
     let t: T = res
-        .into_json_body()
+        .into_raw_body()
+        .json()
         .await
         .with_context(ErrorKind::Credential, || {
             format!(

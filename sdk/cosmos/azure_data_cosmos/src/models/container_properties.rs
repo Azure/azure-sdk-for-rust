@@ -3,7 +3,6 @@
 
 use std::{borrow::Cow, time::Duration};
 
-use azure_core::http::response::Model;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::models::{IndexingPolicy, PartitionKeyDefinition, SystemProperties};
@@ -48,7 +47,7 @@ where
 /// Also, note that the `id` and `partition_key` values are **required** by the server. You will get an error from the server if you omit them.
 ///
 /// [Struct Update]: https://doc.rust-lang.org/stable/book/ch05-01-defining-structs.html?highlight=Struct#creating-instances-from-other-instances-with-struct-update-syntax
-#[derive(Model, Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ContainerProperties {
     /// The ID of the container.

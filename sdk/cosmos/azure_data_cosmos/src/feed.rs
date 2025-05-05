@@ -89,7 +89,7 @@ impl<T: DeserializeOwned> FeedPage<T> {
     pub(crate) async fn from_response(response: Response) -> azure_core::Result<Self> {
         let headers = response.headers().clone();
         let continuation = headers.get_optional_string(&constants::CONTINUATION);
-        let body: FeedBody<T> = response.into_json_body::<FeedBody<T>>().await?;
+        let body: FeedBody<T> = response.into_raw_body().json().await?;
 
         Ok(Self {
             items: body.items,

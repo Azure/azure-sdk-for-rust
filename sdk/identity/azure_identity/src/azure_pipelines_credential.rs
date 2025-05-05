@@ -150,7 +150,7 @@ impl ClientAssertion for Client {
             );
         }
 
-        let assertion: Assertion = resp.into_json_body().await?;
+        let assertion: Assertion = resp.into_raw_body().json().await?;
         Ok(assertion.oidc_token.secret().to_string())
     }
 }
