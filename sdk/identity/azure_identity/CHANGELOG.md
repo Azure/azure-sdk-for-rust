@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- `AzureCliCredential` consistently invokes `az` within a shell
+
 ### Other Changes
 
 ## 0.24.0 (2025-05-06)
