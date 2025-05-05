@@ -34,7 +34,7 @@ pub struct Response<T = ResponseBody, F = DefaultFormat> {
 impl<F> Response<ResponseBody, F> {
     /// Converts an "untyped" raw response into a typed response, using the specified format.
     ///
-    /// This method is intended for use in service clients, to "set" the model type for a raw response receieved from the pipeline.
+    /// This method is intended for use in service clients, to "set" the model type for a raw response received from the pipeline.
     pub fn with_model_type<T, F2>(self) -> Response<T, F2> {
         Response {
             status: self.status,
@@ -91,7 +91,7 @@ impl<T, F> Response<T, F> {
 
     /// Changes the format of the response body to the specified format.
     ///
-    /// This method is intended for use in service clients, to "set" the model type for a raw response receieved from the pipeline.
+    /// This method is intended for use in service clients, to "set" the model type for a raw response received from the pipeline.
     pub fn with_format<F2>(self) -> Response<T, F2> {
         Response {
             status: self.status,
