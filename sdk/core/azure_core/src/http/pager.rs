@@ -162,7 +162,6 @@ enum State<T> {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::http::Model;
     use futures::StreamExt;
     use serde::Deserialize;
 
@@ -173,8 +172,7 @@ mod tests {
 
     #[tokio::test]
     pub async fn standard_pagination() {
-        #[derive(Model, Deserialize, Debug, PartialEq, Eq)]
-        #[typespec(crate = "crate")]
+        #[derive(Deserialize, Debug, PartialEq, Eq)]
         struct Page {
             pub page: usize,
         }
@@ -245,8 +243,7 @@ mod tests {
 
     #[tokio::test]
     pub async fn error_stops_pagination() {
-        #[derive(Model, Deserialize, Debug, PartialEq, Eq)]
-        #[typespec(crate = "crate")]
+        #[derive(Deserialize, Debug, PartialEq, Eq)]
         struct Page {
             pub page: usize,
         }

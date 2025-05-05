@@ -223,7 +223,7 @@ impl ContainerClient {
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
     /// If you want the new item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    /// You can deserialize the returned item using [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -249,7 +249,7 @@ impl ContainerClient {
     /// let created_item = container_client
     ///     .create_item("category1", p, Some(options))
     ///     .await?
-    ///     .into_json_body::<Product>()
+    ///     .into_raw_body().json::<Product>()
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -314,7 +314,7 @@ impl ContainerClient {
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
     /// If you want the replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    /// You can deserialize the returned item using [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -340,7 +340,7 @@ impl ContainerClient {
     /// let updated_product: Product = container_client
     ///     .replace_item("category1", "product1", p, Some(options))
     ///     .await?
-    ///     .into_json_body()
+    ///     .into_raw_body().json::<Product>()
     ///     .await?;
     /// # }
     /// ```
@@ -405,7 +405,7 @@ impl ContainerClient {
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
     /// If you want the created/replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    /// You can deserialize the returned item using [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -431,7 +431,7 @@ impl ContainerClient {
     /// let updated_product = container_client
     ///     .upsert_item("category1", p, Some(options))
     ///     .await?
-    ///     .into_json_body::<Product>()
+    ///     .into_raw_body().json::<Product>()
     ///     .await?;
     /// Ok(())
     /// # }
@@ -487,18 +487,18 @@ impl ContainerClient {
     /// let item: Product = container_client
     ///     .read_item("partition1", "item1", None)
     ///     .await?
-    ///     .into_json_body()
+    ///     .into_body()
     ///     .await?;
     /// println!("Read Item: {:#?}", item);
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn read_item(
+    pub async fn read_item<T>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<T>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
@@ -572,7 +572,7 @@ impl ContainerClient {
     ///
     /// By default, the patched item is *not* returned in the HTTP response.
     /// If you want the patched item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    /// You can deserialize the returned item using [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// For example:
     ///
@@ -596,7 +596,7 @@ impl ContainerClient {
     /// let patched_item = client
     ///     .patch_item("partition1", "item1", patch, Some(options))
     ///     .await?
-    ///     .into_json_body::<Product>()
+    ///     .into_raw_body().json::<Product>()
     ///     .await?;
     /// # Ok(())
     /// # }

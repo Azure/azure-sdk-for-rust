@@ -35,7 +35,7 @@ impl<F> Response<ResponseBody, F> {
     /// Converts an "untyped" raw response into a typed response, using the specified format.
     ///
     /// This method is intended for use in service clients, to "set" the model type for a raw response receieved from the pipeline.
-    pub fn into_typed<T, F2>(self) -> Response<T, F2> {
+    pub fn with_model_type<T, F2>(self) -> Response<T, F2> {
         Response {
             status: self.status,
             headers: self.headers,
@@ -87,6 +87,18 @@ impl<T, F> Response<T, F> {
     /// If you want to parse the body into a type, use [`Response::into_body`] instead.
     pub fn into_raw_body(self) -> ResponseBody {
         self.body
+    }
+
+    /// Changes the format of the response body to the specified format.
+    ///
+    /// This method is intended for use in service clients, to "set" the model type for a raw response receieved from the pipeline.
+    pub fn with_format<F2>(self) -> Response<T, F2> {
+        Response {
+            status: self.status,
+            headers: self.headers,
+            body: self.body,
+            phantom: PhantomData,
+        }
     }
 }
 

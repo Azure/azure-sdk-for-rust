@@ -88,7 +88,18 @@ impl Pipeline {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
-            .map(|r| r.into_typed())
+            .map(|r| r.with_model_type())
+    }
+
+    pub async fn send_format<T, F>(
+        &self,
+        ctx: &Context<'_>,
+        request: &mut Request,
+    ) -> crate::Result<Response<T, F>> {
+        self.pipeline[0]
+            .send(ctx, request, &self.pipeline[1..])
+            .await
+            .map(|r| r.with_model_type())
     }
 }
 
