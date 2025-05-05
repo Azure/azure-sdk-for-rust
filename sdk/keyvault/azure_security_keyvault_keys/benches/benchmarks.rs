@@ -25,9 +25,11 @@ fn key_operations_benchmark(c: &mut Criterion) {
 
     const KEY_NAME: &str = "test-key";
     // prep key in order to run the benchmark in a clean state
-    rt.block_on(async { create_key(KEY_NAME, &client, body.clone()).await }).unwrap();
+    rt.block_on(async { create_key(KEY_NAME, &client, body.clone()).await })
+        .unwrap();
     // Create the key
-    async fn create_key(name:&str,
+    async fn create_key(
+        name: &str,
         client: &KeyClient,
         body: CreateKeyParameters,
     ) -> Result<Key, azure_core::Error> {
@@ -40,10 +42,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
         Ok(key)
     }
 
-    async fn get_key(
-        key_name: &str,
-        client: &KeyClient,
-    ) -> Result<Key, azure_core::Error> {
+    async fn get_key(key_name: &str, client: &KeyClient) -> Result<Key, azure_core::Error> {
         // Get the key
         let key: Key = client
             .get_key(key_name, "", None)
@@ -55,7 +54,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
     // Benchmark create key
     c.bench_function("create_key", |b| {
         b.to_async(&rt).iter(|| async {
-            create_key(KEY_NAME,&client, body.clone())
+            create_key(KEY_NAME, &client, body.clone())
                 .await
                 .unwrap_or_else(|e| panic!("Failed to create key {}", e));
             black_box(());
@@ -65,7 +64,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
     // Benchmark create key
     c.bench_function("get_key", |b| {
         b.to_async(&rt).iter(|| async {
-            get_key(KEY_NAME,&client)
+            get_key(KEY_NAME, &client)
                 .await
                 .unwrap_or_else(|e| panic!("Failed to get key {}", e));
             black_box(());

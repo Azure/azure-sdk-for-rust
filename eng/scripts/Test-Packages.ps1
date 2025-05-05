@@ -58,7 +58,8 @@ foreach ($package in $packagesToTest) {
 
     Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
     Write-Host "`n`n"
-
+    # test individual targets so we can exclude the bench target which in some cases requires
+    #deployed resources
     Invoke-LoggedCommand "cargo test --lib --no-fail-fast" -GroupOutput
     Write-Host "`n`n"
 
