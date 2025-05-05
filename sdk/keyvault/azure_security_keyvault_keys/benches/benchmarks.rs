@@ -6,11 +6,21 @@ use azure_security_keyvault_keys::{
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn key_operations_benchmark(c: &mut Criterion) {
+    const ENV_NAME: &str = "AZURE_KEYVAULT_URL";
+
+    // Check if the environment variable is set thus allowing the benchmarks to run
+    if std::env::var(ENV_NAME).is_err() {
+        println!("Skipping benchmarks. Set {} to run.", ENV_NAME);
+        return;
+    }
+
     let rt = tokio::runtime::Runtime::new().unwrap();
+    const KEY_NAME: &str = "test-key";
+
     // Setup the KeyClient and the CreateKeyParameters
     async fn setup_key_client() -> (KeyClient, CreateKeyParameters) {
-        let keyvault_url: String = std::env::var("AZURE_KEYVAULT_URL")
-            .unwrap_or_else(|e| panic!("AZURE_KEYVAULT_URL not set: {}", e));
+        let keyvault_url: String =
+            std::env::var(ENV_NAME).unwrap_or_else(|e| panic!("{} not set: {}", ENV_NAME, e));
         let credential = DefaultAzureCredential::new().unwrap();
         let client: KeyClient = KeyClient::new(&keyvault_url, credential.clone(), None).unwrap();
         let body = CreateKeyParameters {
@@ -23,7 +33,6 @@ fn key_operations_benchmark(c: &mut Criterion) {
 
     let (client, body) = rt.block_on(async { setup_key_client().await });
 
-    const KEY_NAME: &str = "test-key";
     // prep key in order to run the benchmark in a clean state
     let _ = rt.block_on(async { create_key(KEY_NAME, &client, body.clone()).await });
 
@@ -67,6 +76,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
         });
     });
 }
+
 // Main benchmark configuration
 criterion_group! {
     name = benchmarks;

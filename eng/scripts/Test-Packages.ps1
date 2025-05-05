@@ -58,12 +58,11 @@ foreach ($package in $packagesToTest) {
 
     Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
     Write-Host "`n`n"
-    # test individual targets so we can exclude the bench target which in some cases requires
-    #deployed resources
-    Invoke-LoggedCommand "cargo test --lib --bins --examples --tests --no-fail-fast" -GroupOutput
-    Write-Host "`n`n"
 
     Invoke-LoggedCommand "cargo test --doc --no-fail-fast" -GroupOutput
+    Write-Host "`n`n"
+
+    Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast" -GroupOutput
     Write-Host "`n`n"
 
     $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
