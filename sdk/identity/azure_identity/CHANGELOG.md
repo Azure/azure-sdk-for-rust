@@ -1,9 +1,9 @@
 # Release History
 
-## 0.24.0 (Unreleased)
+## 0.24.0 (2025-05-06)
 
 ### Features Added
-- 'AzureDeveloperCliCredential' authenticates the identity logged in to the [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/overview).
+- `AzureDeveloperCliCredential` authenticates the identity logged in to the [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/overview).
 
 ### Breaking Changes
 
