@@ -18,13 +18,15 @@ pub trait Format {}
 ///
 /// This trait defines the `deserialize_with` method, which takes a [`ResponseBody`] and returns the deserialized value.
 /// The `F` type parameter allows for different implementations of the `deserialize_with` method based on the specific [`Format`] marker type used.
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait DeserializeWith<F: Format>: Sized {
     async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self>;
 }
 
 /// Implements [`DeserializeWith<T>`] for [`ResponseBody`], by simply returning the body stream as is.
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl<T: Format> DeserializeWith<T> for ResponseBody {
     async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
         Ok(body)
@@ -33,7 +35,8 @@ impl<T: Format> DeserializeWith<T> for ResponseBody {
 
 /// Implements [`DeserializeWith<DefaultFormat>`] for an arbitrary type `D`
 /// that implements [`serde::de::DeserializeOwned`] by deserializing the response body to the specified type using [`serde_json`].
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl<D: DeserializeOwned> DeserializeWith<DefaultFormat> for D {
     async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
         body.json().await
@@ -57,7 +60,8 @@ pub struct XmlFormat;
 impl Format for XmlFormat {}
 
 #[cfg(feature = "xml")]
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl<D: DeserializeOwned> DeserializeWith<XmlFormat> for D {
     async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
         body.xml().await
