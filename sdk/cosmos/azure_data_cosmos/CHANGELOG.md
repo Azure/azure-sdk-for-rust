@@ -1,6 +1,6 @@
 # Release History
 
-## 0.23.0 (Unreleased)
+## 0.23.0 (2025-05-06)
 
 ### Features Added
 
@@ -9,10 +9,6 @@
 ### Breaking Changes
 
 * Query APIs (`CosmosClient::query_databases`, `DatabaseClient::query_containers`, `ContainerClient::query_items`) now return a `FeedPager` instead of an `azure_core::Pager`. The `FeedPager` type provides an abstraction over the transport layer, allowing for more flexibility when queries are executed over non-HTTP transports or are decoupled from specific HTTP responses (such as in cross-partition queries). ([#2393](https://github.com/Azure/azure-sdk-for-rust/pull/2393))
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.22.1 (2025-03-05)
 
