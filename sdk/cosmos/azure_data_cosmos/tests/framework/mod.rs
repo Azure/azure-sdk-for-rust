@@ -16,7 +16,7 @@ pub use test_account::TestAccount;
 use serde::{Deserialize, Serialize};
 
 /// Represents a single item in the mock engine.
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct MockItem {
     /// The ID of the item.
