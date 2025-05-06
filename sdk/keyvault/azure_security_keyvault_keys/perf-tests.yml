@@ -1,0 +1,17 @@
+Service: azure_security_keyvault_keys
+
+Project: azure_security_keyvault_keys
+
+PackageVersions:
+  - azure_security_keyvault_keys: source
+
+Tests:
+  - Test: get_key
+    Class: get_key
+    Arguments:
+      - --sync
+
+  - Test: create_key
+    Class: create_key
+    Arguments:
+      - --sync
