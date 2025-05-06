@@ -27,6 +27,7 @@ azure_core_test = { workspace = true, features = [
 ] }
 azure_identity.workspace = true
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
+criterion.workspace = true
 rand.workspace = true
 sha2.workspace = true
 tokio.workspace = true
@@ -36,3 +37,7 @@ rustc_version.workspace = true
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "benchmarks"
+harness = false
