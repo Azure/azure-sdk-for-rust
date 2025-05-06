@@ -40,7 +40,7 @@ impl AmqpDeliveryApis for Fe2o3AmqpDelivery {
     // Return a reference to the message contained in the delivery.
     fn message(&self) -> &AmqpMessage {
         self.message
-            .get_or_init(|| AmqpMessage::from(self.delivery.message().clone()))
+            .get_or_init(|| AmqpMessage::from(self.delivery.message()))
     }
 
     fn delivery_id(&self) -> DeliveryNumber {
@@ -56,8 +56,11 @@ impl AmqpDeliveryApis for Fe2o3AmqpDelivery {
         self.delivery.message_format()
     }
 
-    fn into_message(self) -> crate::messaging::AmqpMessage {
-        self.delivery.into_message().into()
+    fn into_message(mut self) -> crate::messaging::AmqpMessage {
+        self.message();
+        self.message.take().unwrap_or_else(|| {
+            panic!("Message not set. This should never happen. Please report this issue.")
+        })
     }
 }
 

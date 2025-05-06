@@ -7,6 +7,7 @@ use crate::{
     error::AmqpErrorKind,
     management::AmqpManagementApis,
     session::AmqpSession,
+    simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpValue},
     AmqpError,
 };
@@ -92,7 +93,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
     async fn call(
         &self,
         operation_type: String,
-        application_properties: AmqpOrderedMap<String, AmqpValue>,
+        application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
         let mut management = self
             .management
@@ -161,14 +162,14 @@ impl From<fe2o3_amqp_management::error::AttachError> for AmqpError {
 struct WithApplicationPropertiesRequest<'a> {
     entity_type: String,
     access_token: &'a AccessToken,
-    application_properties: AmqpOrderedMap<String, AmqpValue>,
+    application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
 }
 
 impl<'a> WithApplicationPropertiesRequest<'a> {
     pub fn new(
         entity_type: String,
         access_token: &'a AccessToken,
-        application_properties: AmqpOrderedMap<String, AmqpValue>,
+        application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
     ) -> Self {
         Self {
             entity_type,

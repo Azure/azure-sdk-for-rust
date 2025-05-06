@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
+use super::{
+    simple_value::AmqpSimpleValue,
+    value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue},
+};
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 use crate::fe2o3::error::Fe2o3SerializationError;
 #[cfg(feature = "cplusplus")]
@@ -53,8 +56,8 @@ impl From<TerminusExpiryPolicy> for AmqpSymbol {
     }
 }
 
-impl From<AmqpSymbol> for TerminusExpiryPolicy {
-    fn from(symbol: AmqpSymbol) -> Self {
+impl From<&AmqpSymbol> for TerminusExpiryPolicy {
+    fn from(symbol: &AmqpSymbol) -> Self {
         match symbol.0.as_str() {
             "link-detach" => TerminusExpiryPolicy::LinkDetach,
             "session-end" => TerminusExpiryPolicy::SessionEnd,
@@ -80,8 +83,8 @@ impl From<DistributionMode> for AmqpSymbol {
     }
 }
 
-impl From<AmqpSymbol> for DistributionMode {
-    fn from(symbol: AmqpSymbol) -> Self {
+impl From<&AmqpSymbol> for DistributionMode {
+    fn from(symbol: &AmqpSymbol) -> Self {
         match symbol.0.as_str() {
             "move" => DistributionMode::Move,
             "copy" => DistributionMode::Copy,
@@ -156,8 +159,8 @@ impl From<AmqpOutcome> for AmqpSymbol {
     }
 }
 
-impl From<AmqpSymbol> for AmqpOutcome {
-    fn from(symbol: AmqpSymbol) -> Self {
+impl From<&AmqpSymbol> for AmqpOutcome {
+    fn from(symbol: &AmqpSymbol) -> Self {
         match symbol.0.as_str() {
             "amqp:accepted:list" => AmqpOutcome::Accepted,
             "amqp:rejected:list" => AmqpOutcome::Rejected,
@@ -315,7 +318,7 @@ impl From<AmqpList> for AmqpTarget {
         }
         if field_count >= 3 {
             if let Some(AmqpValue::Symbol(expiry_policy)) = list.0.get(2) {
-                builder = builder.with_expiry_policy(expiry_policy.clone().into());
+                builder = builder.with_expiry_policy(expiry_policy.into());
             }
         }
         if field_count >= 4 {
@@ -333,7 +336,7 @@ impl From<AmqpList> for AmqpTarget {
                 let dynamic_node_properties: AmqpOrderedMap<String, AmqpValue> =
                     dynamic_node_properties
                         .iter()
-                        .map(|(k, v)| (k.clone().into(), v.clone()))
+                        .map(|(k, v)| (k.into(), v))
                         .collect();
                 builder = builder.with_dynamic_node_properties(dynamic_node_properties);
             }
@@ -461,7 +464,7 @@ impl From<AmqpList> for AmqpSource {
         }
         if field_count >= 3 {
             if let Some(AmqpValue::Symbol(expiry_policy)) = list.0.get(2) {
-                builder = builder.with_expiry_policy(expiry_policy.clone().into());
+                builder = builder.with_expiry_policy(expiry_policy.into());
             }
         }
         if field_count >= 4 {
@@ -479,40 +482,37 @@ impl From<AmqpList> for AmqpSource {
                 let dynamic_node_properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
                     dynamic_node_properties
                         .iter()
-                        .map(|(k, v)| (k.clone().into(), v.clone()))
+                        .map(|(k, v)| (k.into(), v))
                         .collect();
                 builder = builder.with_dynamic_node_properties(dynamic_node_properties);
             }
         }
         if field_count >= 7 {
             if let Some(AmqpValue::Symbol(distribution_mode)) = list.0.get(6) {
-                builder = builder.with_distribution_mode(distribution_mode.clone().into());
+                builder = builder.with_distribution_mode(distribution_mode.into());
             }
         }
         if field_count >= 8 {
             if let Some(AmqpValue::Map(filter)) = list.0.get(7) {
-                let filter: AmqpOrderedMap<AmqpSymbol, AmqpValue> = filter
-                    .iter()
-                    .map(|(k, v)| (k.clone().into(), v.clone()))
-                    .collect();
+                let filter: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
+                    filter.iter().map(|(k, v)| (k.into(), v)).collect();
                 builder = builder.with_filter(filter);
             }
         }
         if field_count >= 9 {
             if let Some(AmqpValue::Symbol(default_outcome)) = list.0.get(8) {
-                builder = builder.with_default_outcome(default_outcome.clone().into());
+                builder = builder.with_default_outcome(default_outcome.into());
             }
         }
         if field_count >= 10 {
             if let Some(AmqpValue::Array(outcomes)) = list.0.get(9) {
-                builder =
-                    builder.with_outcomes(outcomes.iter().map(|v| v.clone().into()).collect());
+                builder = builder.with_outcomes(outcomes.iter().map(|v| v.into()).collect());
             }
         }
         if field_count >= 11 {
             if let Some(AmqpValue::Array(capabilities)) = list.0.get(10) {
-                builder = builder
-                    .with_capabilities(capabilities.iter().map(|v| v.clone().into()).collect());
+                builder =
+                    builder.with_capabilities(capabilities.iter().map(|v| v.into()).collect());
             }
         }
         builder.build()
@@ -1027,14 +1027,14 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct AmqpApplicationProperties(pub AmqpOrderedMap<String, AmqpValue>);
+pub struct AmqpApplicationProperties(pub AmqpOrderedMap<String, AmqpSimpleValue>);
 
 impl AmqpApplicationProperties {
     pub fn new() -> Self {
         AmqpApplicationProperties(AmqpOrderedMap::new())
     }
 
-    pub fn insert(&mut self, key: String, value: impl Into<AmqpValue>) {
+    pub fn insert(&mut self, key: String, value: impl Into<AmqpSimpleValue>) {
         self.0.insert(key, value.into());
     }
 }
@@ -1244,7 +1244,7 @@ impl Deserializable<AmqpMessage> for AmqpMessage {
                 >,
             >(data)
             .map_err(|e| azure_core::error::Error::new(ErrorKind::Other, e))?;
-            Ok(value.0.into())
+            Ok((&value.0).into())
         }
     }
 }
@@ -1432,7 +1432,7 @@ mod builders {
         pub fn add_application_property(
             mut self,
             key: String,
-            value: impl Into<AmqpValue>,
+            value: impl Into<AmqpSimpleValue>,
         ) -> Self {
             if let Some(application_properties) = &mut self.message.application_properties {
                 application_properties.0.insert(key, value.into());
@@ -1566,7 +1566,7 @@ mod tests {
             .with_body(AmqpMessageBody::Binary(vec![vec![1, 2, 3]]))
             .with_header(AmqpMessageHeader::default())
             .with_application_properties(AmqpApplicationProperties::new())
-            .add_application_property("key".to_string(), AmqpValue::from(123))
+            .add_application_property("key".to_string(), AmqpSimpleValue::from(123))
             .with_message_annotations(AmqpAnnotations::new())
             .with_delivery_annotations(AmqpAnnotations::new())
             .with_properties(AmqpMessageProperties::default())
@@ -1576,7 +1576,7 @@ mod tests {
         assert_eq!(message.body, AmqpMessageBody::Binary(vec![vec![1, 2, 3]]));
         assert_eq!(message.header, Some(AmqpMessageHeader::default()));
         let mut properties = AmqpApplicationProperties::new();
-        properties.insert("key".to_string(), AmqpValue::from(123));
+        properties.insert("key".to_string(), AmqpSimpleValue::from(123));
         assert_eq!(message.application_properties, Some(properties));
         assert_eq!(message.message_annotations, Some(AmqpAnnotations::new()));
         assert_eq!(message.delivery_annotations, Some(AmqpAnnotations::new()));

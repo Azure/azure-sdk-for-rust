@@ -9,6 +9,7 @@ pub(crate) mod messaging_types;
 use crate::{
     messaging::{AmqpMessage, AmqpMessageBody},
     value::AmqpValue,
+    AmqpList, AmqpMessageProperties,
 };
 use azure_core::{error::ErrorKind, Error};
 use fe2o3_amqp_types::messaging::{message::EmptyBody, IntoBody};
@@ -66,122 +67,180 @@ impl TryInto<AmqpValue> for Vec<Vec<serde_amqp::Value>> {
  * and in this case there is an fe2o3 Value Into AmqpValue specialization, which means that the call to convert
  * the T value into an AmqpValue will always succeed.
  */
-fn amqp_message_from_fe2o3_message<T>(
-    message: fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<T>>,
-) -> azure_core::Result<AmqpMessage>
-where
-    T: std::fmt::Debug + Clone + TryInto<AmqpValue>,
-    <T as TryInto<AmqpValue>>::Error: std::error::Error,
-{
-    let mut amqp_message_builder = AmqpMessage::builder();
-
-    if let Some(application_properties) = message.application_properties {
-        amqp_message_builder =
-            amqp_message_builder.with_application_properties(application_properties.into());
-    }
-
-    let body = message.body;
-    if body.is_empty() {
-        let body = AmqpMessageBody::Empty;
-        amqp_message_builder = amqp_message_builder.with_body(body);
-    } else if body.is_data() {
-        let data = body.try_into_data().map_err(|_| {
-            Error::message(
-                ErrorKind::DataConversion,
-                "Could not convert AMQP Message Body to data.",
-            )
-        })?;
-        let body = AmqpMessageBody::Binary(data.map(|x| x.to_vec()).collect());
-        amqp_message_builder = amqp_message_builder.with_body(body);
-    } else if body.is_value() {
-        let value = body.try_into_value().map_err(|_| {
-            Error::message(
-                ErrorKind::DataConversion,
-                "Could not convert AMQP Message Body to value.",
-            )
-        })?;
-        // Because a conversion exists between fe2o3 values and AmqpValue types,
-        // this try_into will always succeed.
-        let value = value.try_into().unwrap();
-        amqp_message_builder = amqp_message_builder.with_body(AmqpMessageBody::Value(value));
-    } else if body.is_sequence() {
-        let sequence = body.try_into_sequence().map_err(|_| {
-            Error::message(
-                ErrorKind::DataConversion,
-                "Could not convert AMQP Message Body to sequence.",
-            )
-        })?;
-
-        let body = AmqpMessageBody::Sequence(
-            sequence
-                .map(|x| {
-                    x.into_iter()
-                        .map(|v| {
-                            // Because a conversion exists between fe2o3 values and AmqpValue types,
-                            // this try_into will always succeed.
-                            TryInto::<AmqpValue>::try_into(v).unwrap()
-                        })
-                        .collect()
-                })
-                .collect(),
-        );
-        amqp_message_builder = amqp_message_builder.with_body(body);
-    }
-
-    if let Some(header) = message.header {
-        amqp_message_builder = amqp_message_builder.with_header(header.into());
-    }
-
-    if let Some(properties) = message.properties {
-        amqp_message_builder = amqp_message_builder.with_properties(properties);
-    }
-
-    if let Some(delivery_annotations) = message.delivery_annotations {
-        amqp_message_builder =
-            amqp_message_builder.with_delivery_annotations(delivery_annotations.0.into());
-    }
-
-    if let Some(message_annotations) = message.message_annotations {
-        amqp_message_builder =
-            amqp_message_builder.with_message_annotations(message_annotations.0.into());
-    }
-
-    if let Some(footer) = message.footer {
-        amqp_message_builder = amqp_message_builder.with_footer(footer.0.into());
-    }
-
-    Ok(amqp_message_builder.build())
-}
-
-impl From<fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<Value>>>
+impl From<&fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<Value>>>
     for AmqpMessage
 {
     fn from(
-        message: fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<Value>>,
+        message: &fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<Value>>,
     ) -> Self {
-        amqp_message_from_fe2o3_message(message).unwrap()
+        let mut amqp_message_builder = AmqpMessage::builder();
+
+        if let Some(application_properties) = &message.application_properties {
+            amqp_message_builder =
+                amqp_message_builder.with_application_properties(application_properties.into());
+        }
+
+        let body = &message.body;
+        if body.is_empty() {
+            let body = AmqpMessageBody::Empty;
+            amqp_message_builder = amqp_message_builder.with_body(body);
+        } else if body.is_data() {
+            let data = body
+                .try_as_data()
+                .map_err(|_| {
+                    Error::message(
+                        ErrorKind::DataConversion,
+                        "Could not convert AMQP Message Body to data.",
+                    )
+                })
+                .unwrap();
+            let body = AmqpMessageBody::Binary(data.map(|x| x.to_vec()).collect());
+            amqp_message_builder = amqp_message_builder.with_body(body);
+        } else if body.is_value() {
+            let value = body
+                .try_as_value()
+                .map_err(|_| {
+                    Error::message(
+                        ErrorKind::DataConversion,
+                        "Could not convert AMQP Message Body to value.",
+                    )
+                })
+                .unwrap();
+            // Because a conversion exists between fe2o3 values and AmqpValue types,
+            // this try_into will always succeed.
+            let value = Into::<AmqpValue>::into(value);
+            amqp_message_builder = amqp_message_builder.with_body(AmqpMessageBody::Value(value));
+        } else if body.is_sequence() {
+            let sequence = body
+                .try_as_sequence()
+                .map_err(|_| {
+                    Error::message(
+                        ErrorKind::DataConversion,
+                        "Could not convert AMQP Message Body to sequence.",
+                    )
+                })
+                .unwrap();
+
+            let body = AmqpMessageBody::Sequence(
+                sequence
+                    .map(|x| {
+                        x.iter()
+                            .map(|v| {
+                                // Because a conversion exists between fe2o3 values and AmqpValue types,
+                                // this into will always succeed.
+                                Into::<AmqpValue>::into(v)
+                            })
+                            .collect()
+                    })
+                    .collect(),
+            );
+            amqp_message_builder = amqp_message_builder.with_body(body);
+        }
+
+        if let Some(header) = &message.header {
+            amqp_message_builder = amqp_message_builder.with_header(header.into());
+        }
+
+        if let Some(properties) = &message.properties {
+            amqp_message_builder =
+                amqp_message_builder.with_properties(AmqpMessageProperties::from(properties));
+        }
+
+        if let Some(delivery_annotations) = &message.delivery_annotations {
+            amqp_message_builder =
+                amqp_message_builder.with_delivery_annotations((&delivery_annotations.0).into());
+        }
+
+        if let Some(message_annotations) = &message.message_annotations {
+            amqp_message_builder =
+                amqp_message_builder.with_message_annotations((&message_annotations.0).into());
+        }
+
+        if let Some(footer) = &message.footer {
+            amqp_message_builder = amqp_message_builder.with_footer((&footer.0).into());
+        }
+
+        amqp_message_builder.build()
     }
 }
 
+// impl From<&fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<Value>>>
+//     for AmqpMessage
+// {
+//     fn from(
+//         message: &fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Body<Value>>,
+//     ) -> Self {
+//         amqp_message_from_fe2o3_message(message).unwrap()
+//     }
+// }
+
 impl
     From<
-        fe2o3_amqp_types::messaging::Message<
+        &fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<TransparentVec<fe2o3_amqp_types::messaging::Data>>,
         >,
     > for AmqpMessage
 {
     fn from(
-        message: fe2o3_amqp_types::messaging::Message<
+        message: &fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<TransparentVec<fe2o3_amqp_types::messaging::Data>>,
         >,
     ) -> Self {
-        amqp_message_from_fe2o3_message(message).unwrap()
+        let mut amqp_message_builder = AmqpMessage::builder();
+
+        if let Some(application_properties) = &message.application_properties {
+            amqp_message_builder =
+                amqp_message_builder.with_application_properties(application_properties.into());
+        }
+
+        let body = &message.body;
+        if body.is_empty() {
+            let body = AmqpMessageBody::Empty;
+            amqp_message_builder = amqp_message_builder.with_body(body);
+        } else if body.is_data() {
+            let data = body
+                .try_as_data()
+                .map_err(|_| {
+                    Error::message(
+                        ErrorKind::DataConversion,
+                        "Could not convert AMQP Message Body to data.",
+                    )
+                })
+                .unwrap();
+            let body = AmqpMessageBody::Binary(data.map(|x| x.to_vec()).collect());
+            amqp_message_builder = amqp_message_builder.with_body(body);
+        }
+
+        if let Some(header) = &message.header {
+            amqp_message_builder = amqp_message_builder.with_header(header.into());
+        }
+
+        if let Some(properties) = &message.properties {
+            amqp_message_builder =
+                amqp_message_builder.with_properties(AmqpMessageProperties::from(properties));
+        }
+
+        if let Some(delivery_annotations) = &message.delivery_annotations {
+            amqp_message_builder =
+                amqp_message_builder.with_delivery_annotations((&delivery_annotations.0).into());
+        }
+
+        if let Some(message_annotations) = &message.message_annotations {
+            amqp_message_builder =
+                amqp_message_builder.with_message_annotations((&message_annotations.0).into());
+        }
+
+        if let Some(footer) = &message.footer {
+            amqp_message_builder = amqp_message_builder.with_footer((&footer.0).into());
+        }
+
+        amqp_message_builder.build()
     }
 }
 
 impl
     From<
-        fe2o3_amqp_types::messaging::Message<
+        &fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<
                 Vec<fe2o3_amqp_types::primitives::List<fe2o3_amqp_types::primitives::Value>>,
             >,
@@ -189,25 +248,96 @@ impl
     > for AmqpMessage
 {
     fn from(
-        message: fe2o3_amqp_types::messaging::Message<
+        message: &fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<
                 Vec<fe2o3_amqp_types::primitives::List<fe2o3_amqp_types::primitives::Value>>,
             >,
         >,
     ) -> Self {
-        amqp_message_from_fe2o3_message(message).unwrap()
+        let mut amqp_message_builder = AmqpMessage::builder();
+
+        if let Some(application_properties) = &message.application_properties {
+            amqp_message_builder =
+                amqp_message_builder.with_application_properties(application_properties.into());
+        }
+
+        let body = &message.body;
+        if body.is_empty() {
+            let body = AmqpMessageBody::Empty;
+            amqp_message_builder = amqp_message_builder.with_body(body);
+        } else if body.is_sequence() {
+            let sequence = body
+                .try_as_sequence()
+                .map_err(|_| {
+                    Error::message(
+                        ErrorKind::DataConversion,
+                        "Could not convert AMQP Message Body to sequence.",
+                    )
+                })
+                .unwrap();
+
+            let body = AmqpMessageBody::Sequence(
+                sequence
+                    .map(|x| {
+                        x.iter()
+                            .map(|v| {
+                                v.iter()
+                                    .map(|v| {
+                                        AmqpList::from(
+                                            v.iter()
+                                                .map(Into::<AmqpValue>::into)
+                                                .collect::<Vec<AmqpValue>>(),
+                                        )
+                                    })
+                                    .collect::<Vec<AmqpList>>()
+                            })
+                            .collect::<Vec<Vec<AmqpList>>>()
+                    })
+                    .collect::<Vec<Vec<Vec<AmqpList>>>>()
+                    .into_iter()
+                    .flatten()
+                    .flatten()
+                    .collect(),
+            );
+            amqp_message_builder = amqp_message_builder.with_body(body);
+        }
+
+        if let Some(header) = &message.header {
+            amqp_message_builder = amqp_message_builder.with_header(header.into());
+        }
+
+        if let Some(properties) = &message.properties {
+            amqp_message_builder =
+                amqp_message_builder.with_properties(AmqpMessageProperties::from(properties));
+        }
+
+        if let Some(delivery_annotations) = &message.delivery_annotations {
+            amqp_message_builder =
+                amqp_message_builder.with_delivery_annotations((&delivery_annotations.0).into());
+        }
+
+        if let Some(message_annotations) = &message.message_annotations {
+            amqp_message_builder =
+                amqp_message_builder.with_message_annotations((&message_annotations.0).into());
+        }
+
+        if let Some(footer) = &message.footer {
+            amqp_message_builder = amqp_message_builder.with_footer((&footer.0).into());
+        }
+
+        amqp_message_builder.build()
     }
 }
 
 impl
     From<
-        fe2o3_amqp_types::messaging::Message<
+        &fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::messaging::message::EmptyBody>,
         >,
     > for AmqpMessage
 {
     fn from(
-        message: fe2o3_amqp_types::messaging::Message<
+        message: &fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::messaging::message::EmptyBody>,
         >,
     ) -> Self {
@@ -215,32 +345,32 @@ impl
 
         amqp_message_builder = amqp_message_builder.with_body(AmqpMessageBody::Empty);
 
-        if let Some(application_properties) = message.application_properties {
+        if let Some(application_properties) = &message.application_properties {
             amqp_message_builder =
                 amqp_message_builder.with_application_properties(application_properties.into());
         }
 
-        if let Some(header) = message.header {
+        if let Some(header) = &message.header {
             amqp_message_builder = amqp_message_builder.with_header(header.into());
         }
 
-        if let Some(properties) = message.properties {
+        if let Some(properties) = &message.properties {
             info!("Converting properties to AmqpMessageProperties");
             amqp_message_builder = amqp_message_builder.with_properties(properties);
         }
 
-        if let Some(delivery_annotations) = message.delivery_annotations {
+        if let Some(delivery_annotations) = &message.delivery_annotations {
             amqp_message_builder =
-                amqp_message_builder.with_delivery_annotations(delivery_annotations.0.into());
+                amqp_message_builder.with_delivery_annotations((&delivery_annotations.0).into());
         }
 
-        if let Some(message_annotations) = message.message_annotations {
+        if let Some(message_annotations) = &message.message_annotations {
             amqp_message_builder =
-                amqp_message_builder.with_message_annotations(message_annotations.0.into());
+                amqp_message_builder.with_message_annotations((&message_annotations.0).into());
         }
 
-        if let Some(footer) = message.footer {
-            amqp_message_builder = amqp_message_builder.with_footer(footer.0.into());
+        if let Some(footer) = &message.footer {
+            amqp_message_builder = amqp_message_builder.with_footer((&footer.0).into());
         }
 
         amqp_message_builder.build()
@@ -253,16 +383,16 @@ fn fe2o3_message_from_amqp_message(
     fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
 > {
     let message_builder = fe2o3_amqp_types::messaging::Message::builder()
-        .application_properties(message.application_properties().map(|x| x.clone().into()))
-        .properties(message.properties().map(|p| p.clone().into()))
-        .header(message.header().map(|x| x.clone().into()))
-        .delivery_annotations(message.delivery_annotations().map(|x| x.clone().into()))
-        .message_annotations(message.message_annotations().map(|x| x.clone().into()))
-        .footer(message.footer().map(|x| x.clone().into()));
+        .application_properties(message.application_properties().map(|x| x.into()))
+        .properties(message.properties().map(|p| p.into()))
+        .header(message.header().map(|x| x.into()))
+        .delivery_annotations(message.delivery_annotations().map(|x| x.into()))
+        .message_annotations(message.message_annotations().map(|x| x.into()))
+        .footer(message.footer().map(|x| x.into()));
 
     match message.body() {
         AmqpMessageBody::Value(value) => {
-            let value: fe2o3_amqp_types::primitives::Value = value.clone().into();
+            let value: fe2o3_amqp_types::primitives::Value = value.into();
             let value = fe2o3_amqp_types::messaging::Body::Value(value.into_body());
             let message_builder = message_builder.body(value);
             message_builder.build()
@@ -288,11 +418,9 @@ fn fe2o3_message_from_amqp_message(
                 .iter()
                 .map(|x| {
                     let mut l = fe2o3_amqp_types::primitives::List::new();
-                    let c = x
-                        .clone()
-                        .0
-                        .into_iter()
-                        .map(|v| Into::<fe2o3_amqp_types::primitives::Value>::into(v.clone()));
+                    let c =
+                        x.0.iter()
+                            .map(|v| Into::<fe2o3_amqp_types::primitives::Value>::into(v.clone()));
                     for v in c {
                         l.push(v);
                     }
@@ -344,14 +472,14 @@ impl From<&AmqpMessage>
     }
 }
 
-impl From<AmqpMessage> for fe2o3_amqp_types::messaging::Message<EmptyBody> {
-    fn from(message: AmqpMessage) -> Self {
+impl From<&AmqpMessage> for fe2o3_amqp_types::messaging::Message<EmptyBody> {
+    fn from(message: &AmqpMessage) -> Self {
         let message_builder = fe2o3_amqp_types::messaging::Message::builder()
-            .application_properties(message.application_properties().map(|x| x.clone().into()))
-            .header(message.header().map(|x| x.clone().into()))
-            .delivery_annotations(message.delivery_annotations().map(|x| x.clone().into()))
-            .message_annotations(message.message_annotations().map(|x| x.clone().into()))
-            .footer(message.footer().map(|x| x.clone().into()));
+            .application_properties(message.application_properties().map(|x| x.into()))
+            .header(message.header().map(|x| x.into()))
+            .delivery_annotations(message.delivery_annotations().map(|x| x.into()))
+            .message_annotations(message.message_annotations().map(|x| x.into()))
+            .footer(message.footer().map(|x| x.into()));
         match message.body() {
             AmqpMessageBody::Empty => message_builder.body(EmptyBody {}).build(),
             _ => panic!("Expected EmptyBody"),
@@ -359,20 +487,20 @@ impl From<AmqpMessage> for fe2o3_amqp_types::messaging::Message<EmptyBody> {
     }
 }
 
-impl From<AmqpMessage>
+impl From<&AmqpMessage>
     for fe2o3_amqp_types::messaging::Message<
         TransparentVec<
             fe2o3_amqp_types::messaging::AmqpSequence<fe2o3_amqp_types::primitives::Value>,
         >,
     >
 {
-    fn from(message: AmqpMessage) -> Self {
+    fn from(message: &AmqpMessage) -> Self {
         let message_builder = fe2o3_amqp_types::messaging::Message::builder()
-            .application_properties(message.application_properties().map(|x| x.clone().into()))
-            .header(message.header().map(|x| x.clone().into()))
-            .delivery_annotations(message.delivery_annotations().map(|x| x.clone().into()))
-            .message_annotations(message.message_annotations().map(|x| x.clone().into()))
-            .footer(message.footer().map(|x| x.clone().into()));
+            .application_properties(message.application_properties().map(|x| x.into()))
+            .header(message.header().map(|x| x.into()))
+            .delivery_annotations(message.delivery_annotations().map(|x| x.into()))
+            .message_annotations(message.message_annotations().map(|x| x.into()))
+            .footer(message.footer().map(|x| x.into()));
 
         match message.body() {
             AmqpMessageBody::Sequence(sequence) => {
@@ -400,23 +528,22 @@ impl From<AmqpMessage>
     }
 }
 
-impl From<AmqpMessage>
+impl From<&AmqpMessage>
     for fe2o3_amqp_types::messaging::Message<TransparentVec<fe2o3_amqp_types::messaging::Data>>
 {
-    fn from(message: AmqpMessage) -> Self {
+    fn from(message: &AmqpMessage) -> Self {
         let message_builder = fe2o3_amqp_types::messaging::Message::builder()
-            .application_properties(message.application_properties().map(|x| x.clone().into()))
-            .header(message.header().map(|x| x.clone().into()))
-            .delivery_annotations(message.delivery_annotations().map(|x| x.clone().into()))
-            .message_annotations(message.message_annotations().map(|x| x.clone().into()))
-            .footer(message.footer().map(|x| x.clone().into()));
+            .application_properties(message.application_properties().map(|x| x.into()))
+            .header(message.header().map(|x| x.into()))
+            .delivery_annotations(message.delivery_annotations().map(|x| x.into()))
+            .message_annotations(message.message_annotations().map(|x| x.into()))
+            .footer(message.footer().map(|x| x.into()));
 
         match message.body() {
             AmqpMessageBody::Binary(data) => {
                 let data: Vec<serde_bytes::ByteBuf> = data
-                    .clone()
-                    .into_iter()
-                    .map(serde_bytes::ByteBuf::from)
+                    .iter()
+                    .map(|b| serde_bytes::ByteBuf::from(b.as_slice()))
                     .collect();
                 message_builder.data_batch(data).build()
             }
@@ -503,10 +630,10 @@ mod tests {
                 ))
                 .build();
 
-            let amqp_message = AmqpMessage::from(fe2o3_message.clone());
+            let amqp_message = AmqpMessage::from(&fe2o3_message);
             let round_trip: fe2o3_amqp_types::messaging::Message<
                 fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-            > = amqp_message.into();
+            > = (&amqp_message).into();
 
             assert_eq!(round_trip, fe2o3_message);
         }
@@ -562,9 +689,9 @@ mod tests {
 
             let fe2o3_message = fe2o3_amqp_types::messaging::Message::<
                 fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-            >::from(amqp_message.clone());
+            >::from(&amqp_message);
 
-            let round_trip = AmqpMessage::from(fe2o3_message.clone());
+            let round_trip = AmqpMessage::from(&fe2o3_message);
             assert_eq!(amqp_message, round_trip);
         }
     }
@@ -577,7 +704,7 @@ mod tests {
             .body(body)
             .build();
 
-        let amqp_message: AmqpMessage = fe2o3_message.into();
+        let amqp_message: AmqpMessage = (&fe2o3_message).into();
         assert_eq!(*amqp_message.body(), AmqpMessageBody::Empty);
         assert!(amqp_message.application_properties().is_none());
         assert!(amqp_message.header().is_none());
@@ -587,7 +714,7 @@ mod tests {
 
         let round_trip: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = amqp_message.into();
+        > = (&amqp_message).into();
 
         assert!(round_trip.body.is_empty());
     }
@@ -608,7 +735,7 @@ mod tests {
                 .body(data)
                 .build();
 
-            let amqp_message: AmqpMessage = fe2o3_message.into();
+            let amqp_message: AmqpMessage = (&fe2o3_message).into();
             assert_eq!(
                 *(amqp_message.body()),
                 AmqpMessageBody::Binary(vec![vec![1, 2, 3]])
@@ -622,7 +749,7 @@ mod tests {
 
             let round_trip: fe2o3_amqp_types::messaging::Message<
                 fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-            > = amqp_message.into();
+            > = (&amqp_message).into();
 
             assert!(round_trip.body.is_data());
         }
@@ -646,7 +773,7 @@ mod tests {
                 ))
                 .build();
 
-            let amqp_message = Into::<AmqpMessage>::into(fe2o3_message);
+            let amqp_message = Into::<AmqpMessage>::into(&fe2o3_message);
             assert_eq!(
                 *(amqp_message.body()),
                 AmqpMessageBody::Binary(vec![vec![1, 2, 3]])
@@ -659,7 +786,7 @@ mod tests {
 
             let round_trip: fe2o3_amqp_types::messaging::Message<
                 fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-            > = amqp_message.into();
+            > = (&amqp_message).into();
 
             assert!(round_trip.body.is_data());
             assert!(round_trip.message_annotations.is_some());
@@ -676,7 +803,7 @@ mod tests {
             .body(body)
             .build();
 
-        let amqp_message: AmqpMessage = fe2o3_message.into();
+        let amqp_message: AmqpMessage = (&fe2o3_message).into();
         assert_eq!(
             *(amqp_message.body()),
             AmqpMessageBody::Value(AmqpValue::String("hello".to_string()))
@@ -728,7 +855,7 @@ mod tests {
             .body(body)
             .build();
 
-        let amqp_message: AmqpMessage = fe2o3_message.into();
+        let amqp_message: AmqpMessage = (&fe2o3_message).into();
 
         // assert_eq!(
         //     *(amqp_message.body()),
