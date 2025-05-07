@@ -168,20 +168,22 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             }
             fe2o3_amqp_types::messaging::Outcome::Released(_) => AmqpSendOutcome::Released,
             fe2o3_amqp_types::messaging::Outcome::Modified(m) => {
-                AmqpSendOutcome::Modified(m.into())
+                AmqpSendOutcome::Modified((&m).into())
             }
         })
     }
 }
 
-impl From<fe2o3_amqp_types::messaging::Modified> for SendModification {
-    fn from(m: fe2o3_amqp_types::messaging::Modified) -> Self {
+impl From<&fe2o3_amqp_types::messaging::Modified> for SendModification {
+    fn from(m: &fe2o3_amqp_types::messaging::Modified) -> Self {
         Self {
             delivery_failed: m.delivery_failed,
             undeliverable_here: m.undeliverable_here,
-            message_annotations: m
-                .message_annotations
-                .map(AmqpOrderedMap::<AmqpSymbol, AmqpValue>::from),
+            message_annotations: m.message_annotations.as_ref().map(|m| {
+                m.iter()
+                    .map(|(k, v)| (k.into(), v.into()))
+                    .collect::<AmqpOrderedMap<AmqpSymbol, AmqpValue>>()
+            }),
         }
     }
 }

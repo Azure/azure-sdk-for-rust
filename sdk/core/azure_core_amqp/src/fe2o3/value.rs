@@ -17,23 +17,11 @@ use typespec::error::ErrorKind;
 
 use super::error::Fe2o3SerializationError;
 
-// impl From<fe2o3_amqp_types::primitives::Symbol> for AmqpSymbol {
-//     fn from(s: fe2o3_amqp_types::primitives::Symbol) -> AmqpSymbol {
-//         AmqpSymbol(s.to_string())
-//     }
-// }
-
 impl From<&fe2o3_amqp_types::primitives::Symbol> for AmqpSymbol {
     fn from(s: &fe2o3_amqp_types::primitives::Symbol) -> AmqpSymbol {
         AmqpSymbol(s.to_string())
     }
 }
-
-// impl From<AmqpSymbol> for fe2o3_amqp_types::primitives::Symbol {
-//     fn from(s: AmqpSymbol) -> fe2o3_amqp_types::primitives::Symbol {
-//         fe2o3_amqp_types::primitives::Symbol(s.0)
-//     }
-// }
 
 impl From<&AmqpSymbol> for fe2o3_amqp_types::primitives::Symbol {
     fn from(s: &AmqpSymbol) -> fe2o3_amqp_types::primitives::Symbol {
@@ -50,21 +38,6 @@ impl PartialEq<AmqpSymbol> for fe2o3_amqp_types::primitives::Symbol {
 // Number of milliseconds between the Unix epoch (1/1/1970) and year 1 CE.
 // This is the lowest value that can be represented by an AMQP timestamp.
 const CE_ZERO_MILLISECONDS: i64 = -62_135_596_800_000;
-
-impl From<fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
-    fn from(timestamp: fe2o3_amqp_types::primitives::Timestamp) -> Self {
-        // The AMQP timestamp is the number of milliseconds since the Unix epoch.
-        // AMQP brokers represent the lowest value as -62_135_596_800_000 (the
-        // number of milliseconds between the Unix epoch (1/1/1970) and year 1 CE) as
-        // a sentinel for a time which is not set.
-        if (timestamp.milliseconds() as u64) == CE_ZERO_MILLISECONDS as u64 {
-            return AmqpTimestamp(None);
-        }
-        AmqpTimestamp(
-            UNIX_EPOCH.checked_add(Duration::from_millis(timestamp.milliseconds() as u64)),
-        )
-    }
-}
 
 impl From<&fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
     fn from(timestamp: &fe2o3_amqp_types::primitives::Timestamp) -> Self {
@@ -182,28 +155,15 @@ impl From<&fe2o3_amqp_types::primitives::SimpleValue> for AmqpSimpleValue {
             fe2o3_amqp_types::primitives::SimpleValue::Binary(b) => {
                 AmqpSimpleValue::Binary(b.to_vec())
             }
-            fe2o3_amqp_types::primitives::SimpleValue::String(s) => {
-                AmqpSimpleValue::String(s.clone())
-            }
-            fe2o3_amqp_types::primitives::SimpleValue::Symbol(s) => {
-                AmqpSimpleValue::Symbol(AmqpSymbol(s.0.clone()))
-            }
-            fe2o3_amqp_types::primitives::SimpleValue::Decimal128(d) => {
-                AmqpSimpleValue::Decimal128(d.clone().into_inner())
-            }
-
-            fe2o3_amqp_types::primitives::SimpleValue::Decimal64(d) => {
-                AmqpSimpleValue::Decimal64(d.clone().into_inner())
-            }
-            fe2o3_amqp_types::primitives::SimpleValue::Decimal32(d) => {
-                AmqpSimpleValue::Decimal32(d.clone().into_inner())
-            }
+            fe2o3_amqp_types::primitives::SimpleValue::String(s) => AmqpValue::String(s),
+            fe2o3_amqp_types::primitives::SimpleValue::Symbol(s) => AmqpValue::Symbol(s.into()),
+            _ => panic!("Expected a simple value."),
         }
     }
 }
 
-impl From<fe2o3_amqp_types::primitives::Value> for AmqpList {
-    fn from(value: fe2o3_amqp_types::primitives::Value) -> Self {
+impl From<&fe2o3_amqp_types::primitives::Value> for AmqpList {
+    fn from(value: &fe2o3_amqp_types::primitives::Value) -> Self {
         match value {
             fe2o3_amqp_types::primitives::Value::List(l) => {
                 AmqpList(l.iter().map(|v| v.into()).collect::<Vec<AmqpValue>>())
@@ -384,7 +344,7 @@ impl From<fe2o3_amqp_types::primitives::Value> for AmqpValue {
             fe2o3_amqp_types::primitives::Value::Float(f) => AmqpValue::Float(f.into()),
             fe2o3_amqp_types::primitives::Value::Double(d) => AmqpValue::Double(d.into()),
             fe2o3_amqp_types::primitives::Value::Char(c) => AmqpValue::Char(c),
-            fe2o3_amqp_types::primitives::Value::Timestamp(t) => AmqpValue::TimeStamp(t.into()),
+            fe2o3_amqp_types::primitives::Value::Timestamp(t) => AmqpValue::TimeStamp((&t).into()),
             fe2o3_amqp_types::primitives::Value::Uuid(u) => {
                 AmqpValue::Uuid(azure_core::Uuid::from_bytes(*u.as_inner()))
             }
@@ -606,8 +566,8 @@ impl PartialEq<fe2o3_amqp_types::primitives::Value> for AmqpValue {
     }
 }
 
-impl From<fe2o3_amqp_types::definitions::Fields> for AmqpOrderedMap<AmqpSymbol, AmqpValue> {
-    fn from(fields: fe2o3_amqp_types::definitions::Fields) -> Self {
+impl From<&fe2o3_amqp_types::definitions::Fields> for AmqpOrderedMap<AmqpSymbol, AmqpValue> {
+    fn from(fields: &fe2o3_amqp_types::definitions::Fields) -> Self {
         let mut map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = AmqpOrderedMap::new();
         for (k, v) in fields.iter() {
             map.insert(k.into(), v.into());
@@ -618,14 +578,14 @@ impl From<fe2o3_amqp_types::definitions::Fields> for AmqpOrderedMap<AmqpSymbol, 
 
 impl
     From<
-        fe2o3_amqp_types::primitives::OrderedMap<
+        &fe2o3_amqp_types::primitives::OrderedMap<
             std::string::String,
             fe2o3_amqp_types::primitives::Value,
         >,
     > for AmqpOrderedMap<std::string::String, AmqpValue>
 {
     fn from(
-        value: fe2o3_amqp_types::primitives::OrderedMap<
+        value: &fe2o3_amqp_types::primitives::OrderedMap<
             std::string::String,
             fe2o3_amqp_types::primitives::Value,
         >,

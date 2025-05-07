@@ -50,35 +50,54 @@ impl From<&fe2o3_amqp_types::definitions::ErrorCondition> for AmqpErrorCondition
     fn from(e: &fe2o3_amqp_types::definitions::ErrorCondition) -> Self {
         match e {
             fe2o3_amqp_types::definitions::ErrorCondition::AmqpError(amqp_error) => {
-                AmqpErrorCondition::from(fe2o3_amqp_types::primitives::Symbol::from(amqp_error))
+                AmqpErrorCondition::from(amqp_error)
             }
             fe2o3_amqp_types::definitions::ErrorCondition::ConnectionError(connection_error) => {
-                AmqpErrorCondition::from(fe2o3_amqp_types::primitives::Symbol::from(
-                    connection_error,
-                ))
+                AmqpErrorCondition::from(connection_error)
             }
             fe2o3_amqp_types::definitions::ErrorCondition::SessionError(session_error) => {
-                AmqpErrorCondition::from(fe2o3_amqp_types::primitives::Symbol::from(session_error))
+                AmqpErrorCondition::from(session_error)
             }
             fe2o3_amqp_types::definitions::ErrorCondition::LinkError(link_error) => {
-                AmqpErrorCondition::from(fe2o3_amqp_types::primitives::Symbol::from(link_error))
+                AmqpErrorCondition::from(link_error)
             }
             fe2o3_amqp_types::definitions::ErrorCondition::Custom(symbol) => {
-                // from_str can never fail because the symbol is guaranteed to be a valid AMQP symbol.
-                AmqpErrorCondition::from_str(symbol.0.as_str()).unwrap()
+                AmqpErrorCondition::from(crate::AmqpSymbol::from(symbol))
             }
         }
     }
 }
 
-impl From<fe2o3_amqp_types::primitives::Symbol> for AmqpErrorCondition {
-    fn from(e: fe2o3_amqp_types::primitives::Symbol) -> Self {
+// Implement specific From traits for the error types we need instead of using a generic implementation
+impl From<&fe2o3_amqp_types::definitions::AmqpError> for AmqpErrorCondition {
+    fn from(e: &fe2o3_amqp_types::definitions::AmqpError) -> Self {
         // Note that the `from_str` implementation from `create_extensible_enum` will
         // never return an error. So the `unwrap` is there to silence the compiler.
-        AmqpErrorCondition::from_str(e.0.as_str()).unwrap()
+        AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
+            .unwrap()
     }
 }
 
+impl From<&fe2o3_amqp_types::definitions::ConnectionError> for AmqpErrorCondition {
+    fn from(e: &fe2o3_amqp_types::definitions::ConnectionError) -> Self {
+        AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
+            .unwrap()
+    }
+}
+
+impl From<&fe2o3_amqp_types::definitions::SessionError> for AmqpErrorCondition {
+    fn from(e: &fe2o3_amqp_types::definitions::SessionError) -> Self {
+        AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
+            .unwrap()
+    }
+}
+
+impl From<&fe2o3_amqp_types::definitions::LinkError> for AmqpErrorCondition {
+    fn from(e: &fe2o3_amqp_types::definitions::LinkError) -> Self {
+        AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
+            .unwrap()
+    }
+}
 impl From<fe2o3_amqp_types::definitions::Error> for AmqpDescribedError {
     fn from(e: fe2o3_amqp_types::definitions::Error) -> Self {
         AmqpDescribedError::new(
