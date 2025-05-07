@@ -9,6 +9,8 @@ the asynchronous runtime used by the Azure SDK.
 
 ### Breaking Changes
 
+- Moved `process::Executor` to `azure_identity`.
+
 ### Bugs Fixed
 
 ### Other Changes
