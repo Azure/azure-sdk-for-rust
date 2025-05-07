@@ -1,6 +1,6 @@
 # Release History
 
-## 0.3.0 (Unreleased)
+## 0.3.0 (2025-05-07)
 
 ### Features Added
 
@@ -10,10 +10,6 @@
 ### Breaking Changes
 
 - The `fully_qualified_domain` parameter to the `open` method on the `ProducerClient` and `ConsumerClient` builder now takes an `&str` instead of a `String` to better follow the Azure SDK for Rust API guidelines.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.2.0 (2025-04-08)
 
