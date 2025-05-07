@@ -10,6 +10,13 @@ pub use azure_core_amqp::AmqpMessage;
 /// An AMQP Value.
 pub use azure_core_amqp::AmqpValue;
 
+/// An AMQP Simple Value.
+///
+/// An AMQP Simple Value is a primitive type in AMQP 1.0.
+/// Simple types are the AMQP primitive types (basically the same as [`AmqpValue`] without
+/// the `Map`, `List`, `Array`, and `Described` types).
+pub use azure_core_amqp::AmqpSimpleValue;
+
 /// An event received from an Event Hub.
 pub use event_data::ReceivedEventData;
 
