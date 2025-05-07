@@ -1,10 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Models and components used to represents and execute queries.
+
 use serde::Serialize;
 
 #[cfg(feature = "query_engine")]
 mod engine;
+
+#[cfg(feature = "query_engine")]
+pub(crate) mod executor;
 
 #[cfg(feature = "query_engine")]
 pub use engine::*;
@@ -61,8 +66,11 @@ pub use engine::*;
 /// ```
 #[derive(Clone, Debug, Serialize)]
 pub struct Query {
-    query: String,
+    /// The query text itself.
+    #[serde(rename = "query")]
+    text: String,
 
+    /// A list of parameters used in the query and their associated value.
     #[serde(skip_serializing_if = "Vec::is_empty")] // Don't serialize an empty array.
     parameters: Vec<QueryParameter>,
 }
@@ -90,7 +98,7 @@ impl<T: Into<String>> From<T> for Query {
     fn from(value: T) -> Self {
         let query = value.into();
         Self {
-            query,
+            text: query,
             parameters: vec![],
         }
     }

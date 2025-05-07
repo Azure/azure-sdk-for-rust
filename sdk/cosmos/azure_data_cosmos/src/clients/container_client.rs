@@ -11,12 +11,18 @@ use crate::{
     ThroughputOptions,
 };
 
-use azure_core::http::{headers, request::Request, response::Response, Method};
+use azure_core::http::{
+    headers,
+    request::{options::ContentType, Request},
+    response::Response,
+    Method,
+};
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
+#[derive(Clone)]
 pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
@@ -109,6 +115,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Put);
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&properties)?;
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
@@ -260,6 +267,7 @@ impl ContainerClient {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_headers(&partition_key.into())?;
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
         self.pipeline
             .send(
@@ -351,6 +359,7 @@ impl ContainerClient {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_headers(&partition_key.into())?;
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
         self.pipeline
             .send(options.method_options.context, &mut req, link)
@@ -440,6 +449,7 @@ impl ContainerClient {
         }
         req.insert_header(constants::IS_UPSERT, "true");
         req.insert_headers(&partition_key.into())?;
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
         self.pipeline
             .send(
@@ -453,7 +463,7 @@ impl ContainerClient {
     /// Reads a specific item from the container.
     ///
     /// # Arguments
-    /// * `partition_key` - The partition key of the item to read.
+    /// * `partition_key` - The partition key of the item to read. See [`PartitionKey`] for more information on how to specify a partition key.
     /// * `item_id` - The id of the item to read.
     /// * `options` - Optional parameters for the request
     ///
@@ -606,6 +616,7 @@ impl ContainerClient {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_headers(&partition_key.into())?;
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&patch)?;
 
         self.pipeline
@@ -672,31 +683,38 @@ impl ContainerClient {
     /// ```
     ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
-    pub fn query_items<T: DeserializeOwned + Send>(
+    pub fn query_items<T: DeserializeOwned + 'static>(
         &self,
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
         options: Option<QueryOptions<'_>>,
     ) -> azure_core::Result<FeedPager<T>> {
-        let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.items_link);
+        #[allow(unused_mut)] // This is used in the #[cfg(feature = "query_engine")] block
+        let mut options = options.unwrap_or_default();
+        let partition_key = partition_key.into();
+        let query = query.into();
 
         #[cfg(feature = "query_engine")]
-        if options.query_engine.is_some() {
-            // If the query engine is enabled, we need to use the query engine to execute the query.
-            // This is a placeholder for future implementation.
-            todo!("Implement query engine support for cross-partition queries");
+        if partition_key.is_empty() {
+            if let Some(query_engine) = options.query_engine.take() {
+                return crate::query::executor::QueryExecutor::new(
+                    self.pipeline.clone(),
+                    self.link.clone(),
+                    query,
+                    options,
+                    query_engine,
+                )?
+                .into_stream();
+            }
         }
 
-        let mut base_request = Request::new(url, Method::Post);
-        let partition_key = partition_key.into();
-        base_request.insert_headers(&partition_key)?;
-
+        let url = self.pipeline.url(&self.items_link);
         self.pipeline.send_query_request(
             options.method_options.context,
-            query.into(),
-            base_request,
+            query,
+            url,
             self.items_link.clone(),
+            |r| r.insert_headers(&partition_key),
         )
     }
 }

@@ -1,8 +1,7 @@
 #![cfg(feature = "key_auth")]
 
-use std::{borrow::Cow, error::Error};
+use std::error::Error;
 
-use azure_core::error::ErrorKind;
 use azure_core::{error::HttpError, http::StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::Query;

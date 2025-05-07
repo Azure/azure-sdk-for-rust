@@ -11,6 +11,7 @@ use crate::constants;
 /// Cosmos DB queries can be executed using non-HTTP transports, depending on the circumstances.
 /// They may also produce results that don't directly correlate to specific HTTP responses (as in the case of cross-partition queries).
 /// Because of this, Cosmos DB query responses use `FeedPage` to represent the results, rather than a more generic type like [`Response`](azure_core::http::Response).
+#[derive(Debug)]
 pub struct FeedPage<T> {
     /// The items in the response.
     items: Vec<T>,
@@ -24,6 +25,16 @@ pub struct FeedPage<T> {
 }
 
 impl<T> FeedPage<T> {
+    /// Creates a new `FeedPage` instance.
+    #[allow(dead_code)] // Used in the query_engine feature
+    pub(crate) fn new(items: Vec<T>, continuation: Option<String>, headers: Headers) -> Self {
+        Self {
+            items,
+            continuation,
+            headers,
+        }
+    }
+
     /// Gets the items in this page of results.
     pub fn items(&self) -> &[T] {
         &self.items

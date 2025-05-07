@@ -35,23 +35,23 @@ use crate::constants;
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
-///     Some(("parent", "child")),
+///     ("parent", "child"),
 ///     None).unwrap();
 /// ```
 ///
 /// Null values can be represented in one of two ways.
-/// First, you can use an empty tuple (`()`) anywhere a `PartitionKey` is expected:
+/// First, you can use the value [`PartitionKey::NULL`]:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::clients::ContainerClient;
+/// # use azure_data_cosmos::{clients::ContainerClient, PartitionKey};
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
-///     Some(()), // A null value in a single-level partition key.
+///     PartitionKey::NULL,
 ///     None).unwrap();
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
-///     Some(("a", (), "b")), // A null value within a hierarchical partition key.
+///     ("a", PartitionKey::NULL, "b"), // A null value within a hierarchical partition key.
 ///     None).unwrap();
 /// ```
 ///
@@ -81,8 +81,8 @@ impl PartitionKey {
     pub const NULL: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Null);
     pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
 
-    pub(crate) fn values(&self) -> &[PartitionKeyValue] {
-        &self.0
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }
 
@@ -371,7 +371,7 @@ mod tests {
     #[test]
     pub fn empty() {
         let partition_key = PartitionKey::from(());
-        assert_eq!(Vec::<PartitionKeyValue>::new(), partition_key.values());
+        assert_eq!(Vec::<PartitionKeyValue>::new(), partition_key.0);
 
         let mut headers_iter = partition_key.as_headers().unwrap();
         let (name, value) = headers_iter.next().unwrap();

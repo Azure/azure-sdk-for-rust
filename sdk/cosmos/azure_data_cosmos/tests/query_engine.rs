@@ -2,16 +2,48 @@
 
 mod framework;
 
-use azure_core_test::{recorded, TestContext};
-use azure_data_cosmos::{
-    clients::{ContainerClient, DatabaseClient},
-    models::{ContainerProperties, ThroughputProperties},
-    CreateContainerOptions, QueryOptions,
-};
-use framework::{query_engine::MockItem, TestAccount};
+use std::sync::Arc;
 
-const RU_COUNT: usize = 40000;
-const ITEMS_PER_PARTITION: usize = 10;
+use azure_core::error::{Error, ErrorKind};
+use azure_core_test::{recorded, TestContext};
+use azure_data_cosmos::{models::ThroughputProperties, QueryOptions};
+use framework::{query_engine::MockQueryEngine, test_data, MockItem, TestAccount};
+use futures::TryStreamExt;
+
+#[recorded::test]
+pub async fn create_errors_in_query_engine_appear_in_first_result(
+    context: TestContext,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let account = TestAccount::from_env(context, None).await?;
+    let cosmos_client = account.connect_with_key(None)?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+    let items = test_data::generate_mock_items(1, 1);
+    let container_client = test_data::create_container_with_items(
+        db_client,
+        items.clone(),
+        Some(ThroughputProperties::manual(40000)), // Force multiple physical partitions
+    )
+    .await?;
+
+    let query_engine = Arc::new(MockQueryEngine::with_error(Error::message(
+        ErrorKind::Other,
+        "Mock error",
+    )));
+
+    let mut results = container_client.query_items::<MockItem>(
+        "select * from c order by c.mergeOrder",
+        (),
+        Some(QueryOptions {
+            query_engine: Some(query_engine),
+            ..Default::default()
+        }),
+    )?;
+    let err = results.try_next().await.unwrap_err();
+    assert_eq!("Mock error", format!("{}", err));
+
+    account.cleanup().await?;
+    Ok(())
+}
 
 #[recorded::test]
 pub async fn query_via_query_engine(
@@ -19,26 +51,32 @@ pub async fn query_via_query_engine(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+    let mut items = test_data::generate_mock_items(10, 10);
+    let container_client = test_data::create_container_with_items(
+        db_client,
+        items.clone(),
+        Some(ThroughputProperties::manual(40000)), // Force multiple physical partitions
+    )
+    .await?;
 
-    let test_db_id = account.unique_db("QueryViaQueryEngine");
+    let query_engine = Arc::new(MockQueryEngine::new());
 
-    // Create a database
-    cosmos_client
-        .create_database(&test_db_id, None)
-        .await?
-        .into_body()
-        .await?;
-    let db_client = cosmos_client.database_client(&test_db_id);
+    let mut results = container_client.query_items(
+        "select * from c order by c.mergeOrder",
+        (),
+        Some(QueryOptions {
+            query_engine: Some(query_engine),
+            ..Default::default()
+        }),
+    )?;
+    let mut result_items: Vec<MockItem> = Vec::new();
+    while let Some(page) = results.try_next().await? {
+        result_items.extend(page.into_items());
+    }
+    items.sort_by_key(|p| p.merge_order); // Sort the expected items by merge order, to match what the results should be
+    assert_eq!(items, result_items);
 
-    // let container = create_test_items(&db_client).await?;
-    // let pager = container.query_items(
-    //     "SELECT * FROM c ORDER BY c.merge_order",
-    //     None,
-    //     Some(QueryOptions {
-    //         query_engine: todo!(),
-    //         ..Default::default()
-    //     }),
-    // )?;
-
-    todo!()
+    account.cleanup().await?;
+    Ok(())
 }

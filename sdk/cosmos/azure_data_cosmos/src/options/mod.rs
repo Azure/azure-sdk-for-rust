@@ -76,7 +76,19 @@ pub struct QueryOptions<'a> {
     /// NOTE: This is an unstable feature and may change in the future.
     /// Specifically, the query engine may be built-in to the SDK in the future, and this option may be removed entirely.
     #[cfg(feature = "query_engine")]
-    pub query_engine: Option<std::sync::Arc<dyn crate::query::QueryEngine>>,
+    pub query_engine: Option<crate::query::QueryEngineRef>,
+}
+
+impl QueryOptions<'_> {
+    pub fn into_owned(self) -> QueryOptions<'static> {
+        QueryOptions {
+            method_options: ClientMethodOptions {
+                context: self.method_options.context.into_owned(),
+            },
+            #[cfg(feature = "query_engine")]
+            query_engine: self.query_engine,
+        }
+    }
 }
 
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
