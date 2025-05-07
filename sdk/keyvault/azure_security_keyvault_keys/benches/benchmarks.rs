@@ -1,9 +1,8 @@
-use azure_identity::DefaultAzureCredential;
+use azure_core_test::credentials;
 use azure_security_keyvault_keys::{
     models::{CreateKeyParameters, CurveName, Key, KeyType},
     KeyClient,
 };
-use azure_core_test::credentials;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn key_operations_benchmark(c: &mut Criterion) {
