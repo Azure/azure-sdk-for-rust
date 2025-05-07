@@ -1,4 +1,4 @@
-use azure_identity::DefaultAzureCredential;
+use azure_core_test::credentials;
 use azure_security_keyvault_keys::{
     models::{CreateKeyParameters, CurveName, Key, KeyType},
     KeyClient,
@@ -21,7 +21,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
     async fn setup_key_client() -> (KeyClient, CreateKeyParameters) {
         let keyvault_url: String =
             std::env::var(ENV_NAME).unwrap_or_else(|e| panic!("{} not set: {}", ENV_NAME, e));
-        let credential = DefaultAzureCredential::new().unwrap();
+        let credential = credentials::from_env(None).unwrap();
         let client: KeyClient = KeyClient::new(&keyvault_url, credential.clone(), None).unwrap();
         let body = CreateKeyParameters {
             kty: Some(KeyType::EC),
@@ -61,7 +61,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             create_key(KEY_NAME, &client, body.clone())
                 .await
-                .unwrap_or_else(|e| panic!("Failed to create key {}", e));
+                .unwrap_or_else(|e| panic!("Failed to create key {:?}", e));
             black_box(());
         });
     });
@@ -71,7 +71,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             get_key(KEY_NAME, &client)
                 .await
-                .unwrap_or_else(|e| panic!("Failed to get key {}", e));
+                .unwrap_or_else(|e| panic!("Failed to get key {:?}", e));
             black_box(());
         });
     });
