@@ -71,7 +71,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             get_key(KEY_NAME, &client)
                 .await
-                .unwrap_or_else(|e| panic!("Failed to create key {:?}", e));
+                .unwrap_or_else(|e| panic!("Failed to get key {:?}", e));
             black_box(());
         });
     });
