@@ -27,7 +27,7 @@ pub struct PipelineResult {
 }
 
 /// Provides an interface to a query pipeline, which aggregates data from multiple single partition queries into a single cross-partition result set.
-pub trait QueryPipeline {
+pub trait QueryPipeline: Send {
     /// The query to be executed, which may have been modified by the gateway when generating a query plan.
     fn query(&self) -> &str;
 
@@ -42,6 +42,11 @@ pub trait QueryPipeline {
 }
 
 /// Provides an interface to a query engine, which constructs query pipelines.
+///
+/// ## Thread Safety
+///
+/// A [`QueryEngine`] must be [`Send`] and [`Sync`], as it may be shared across multiple threads.
+/// However, the individual [`QueryPipeline`] created by the engine do not need to be thread-safe.
 pub trait QueryEngine {
     /// Creates a new query pipeline for the given query, plan, and partition key ranges.
     ///
@@ -49,13 +54,32 @@ pub trait QueryEngine {
     /// * `query` - The query to be executed.
     /// * `plan` - The JSON-encoded query plan describing the query (usually provided by the gateway).
     /// * `pkranges` - The JSON-encoded partition key ranges to be queried (usually provided by the gateway).
+    ///
+    /// ## Shared Access
+    ///
+    /// A [`QueryEngine`] may be shared across multiple Cosmos Clients and multiple threads.
+    /// As a result, this method accepts an immutable reference to the query engine.
+    /// It is the responsibility of the query engine to ensure that the process of creating a query pipeline is thread-safe.
+    /// However, a [`QueryPipeline`] need not be thread-safe, and is owned by a single query execution.
     fn create_pipeline(
         &self,
         query: &str,
         plan: &[u8],
         pkranges: &[u8],
-    ) -> azure_core::Result<Box<dyn QueryPipeline>>;
+    ) -> azure_core::Result<OwnedQueryPipeline>;
 
-    /// Gets a comma-separates list of features supported by this query engine, suitable for use in the 'x-ms-cosmos-supported-query-features' header when requesting a query plan.
+    /// Gets a comma-separates list of features supported by this query engine, suitable for use in the `x-ms-cosmos-supported-query-features` header when requesting a query plan.
     fn supported_features(&self) -> azure_core::Result<&str>;
 }
+
+#[cfg(target_arch = "wasm32")]
+pub(crate) type OwnedQueryPipeline = Box<dyn QueryPipeline>;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) type OwnedQueryPipeline = Box<dyn QueryPipeline + Send>;
+
+#[cfg(target_arch = "wasm32")]
+pub(crate) type QueryEngineRef = std::sync::Arc<dyn QueryEngine>;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) type QueryEngineRef = std::sync::Arc<dyn QueryEngine + Send + Sync>;

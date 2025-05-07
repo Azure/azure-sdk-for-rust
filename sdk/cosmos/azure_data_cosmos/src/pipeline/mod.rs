@@ -7,7 +7,11 @@ mod signature_target;
 use std::sync::Arc;
 
 pub use authorization_policy::AuthorizationPolicy;
-use azure_core::http::{request::Request, response::Response, ClientOptions, Context, Method};
+use azure_core::http::{
+    request::{options::ContentType, Request},
+    response::Response,
+    ClientOptions, Context, Method,
+};
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use url::Url;
@@ -67,12 +71,12 @@ impl CosmosPipeline {
         &self,
         ctx: Context<'_>,
         query: Query,
-        mut base_request: Request,
+        url: Url,
         resource_link: ResourceLink,
+        apply_request_headers: impl Fn(&mut Request) -> azure_core::Result<()>,
     ) -> azure_core::Result<FeedPager<T>> {
-        base_request.insert_header(constants::QUERY, "True");
-        base_request.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
-        base_request.set_json(&query)?;
+        let mut base_request = create_base_query_request(url, &query)?;
+        apply_request_headers(&mut base_request)?;
 
         // We have to double-clone here.
         // First we clone the pipeline to pass it in to the closure
@@ -120,8 +124,9 @@ impl CosmosPipeline {
         let mut results = self.send_query_request(
             context.clone(),
             query,
-            Request::new(self.url(&offers_link), Method::Post),
+            self.url(&offers_link),
             offers_link.clone(),
+            |_| Ok(()),
         )?;
 
         let page = results
@@ -168,8 +173,17 @@ impl CosmosPipeline {
         let offer_link =
             ResourceLink::root(ResourceType::Offers).item(&current_throughput.offer_id);
         let mut req = Request::new(self.url(&offer_link), Method::Put);
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&current_throughput)?;
 
         self.send(context, &mut req, offer_link).await
     }
+}
+
+pub(crate) fn create_base_query_request(url: Url, query: &Query) -> azure_core::Result<Request> {
+    let mut request = Request::new(url, Method::Post);
+    request.insert_header(constants::QUERY, "True");
+    request.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
+    request.set_json(query)?;
+    Ok(request)
 }

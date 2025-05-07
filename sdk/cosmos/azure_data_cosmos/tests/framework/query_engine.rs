@@ -1,4 +1,7 @@
-use std::cell::RefCell;
+// With the optional Send/Sync bounds, it's just easiest to (FOR NOW) have the tests only run on non-wasm32 targets.
+#![cfg(not(target_arch = "wasm32"))]
+
+use std::{collections::VecDeque, sync::Mutex};
 
 use serde::{Deserialize, Serialize};
 
@@ -8,8 +11,6 @@ use azure_data_cosmos::query::{PipelineResult, QueryEngine, QueryPipeline};
 #[serde(rename_all = "camelCase")]
 pub struct PartitionKeyRange {
     pub id: String,
-    pub min_inclusive: String,
-    pub max_exclusive: String,
 }
 
 #[derive(Deserialize)]
@@ -37,9 +38,25 @@ pub struct MockItem {
 }
 
 /// A mock query engine that can be used for testing.
-struct MockQueryEngine {
+pub struct MockQueryEngine {
     /// An error to return when creating a pipeline.
-    pub create_error: RefCell<Option<azure_core::Error>>,
+    pub create_error: Mutex<Option<azure_core::Error>>,
+}
+
+impl MockQueryEngine {
+    /// Creates a new `MockQueryEngine`.
+    pub fn new() -> Self {
+        Self {
+            create_error: Mutex::new(None),
+        }
+    }
+
+    /// Sets an error to be returned when creating a pipeline.
+    pub fn with_error(error: azure_core::Error) -> Self {
+        Self {
+            create_error: Mutex::new(Some(error)),
+        }
+    }
 }
 
 impl QueryEngine for MockQueryEngine {
@@ -48,10 +65,11 @@ impl QueryEngine for MockQueryEngine {
         query: &str,
         _plan: &[u8],
         pkranges: &[u8],
-    ) -> azure_core::Result<Box<dyn QueryPipeline>> {
-        // 'take' might panic if create_error is already borrowed, but that shouldn't happen in these tests.
-        if let Some(err) = self.create_error.take() {
-            return Err(err);
+    ) -> azure_core::Result<Box<dyn QueryPipeline + Send>> {
+        {
+            if let Some(err) = self.create_error.lock().unwrap().take() {
+                return Err(err);
+            }
         }
 
         // Deserialize the partition key ranges.
@@ -71,7 +89,7 @@ impl QueryEngine for MockQueryEngine {
 struct PartitionState {
     range: PartitionKeyRange,
     started: bool,
-    queue: Vec<MockItem>,
+    queue: VecDeque<MockItem>,
     next_continuation: Option<String>,
 }
 
@@ -87,7 +105,7 @@ impl PartitionState {
     }
 
     pub fn pop_item(&mut self) -> azure_core::Result<Option<Vec<u8>>> {
-        match self.queue.pop() {
+        match self.queue.pop_front() {
             Some(item) => {
                 let item = serde_json::to_vec(&item)?;
                 Ok(Some(item))
@@ -110,7 +128,7 @@ impl MockQueryPipeline {
             .map(|range| PartitionState {
                 range,
                 started: false,
-                queue: vec![],
+                queue: VecDeque::new(),
                 next_continuation: None,
             })
             .collect();
@@ -167,14 +185,14 @@ impl QueryPipeline for MockQueryPipeline {
                 }
 
                 // Peek the next item in the partition.
-                let item = partition.queue.first();
+                let item = partition.queue.front();
                 match (item, state) {
                     (Some(item), None) => {
                         state = Some((index, item.merge_order));
                     }
-                    (Some(item), Some((partition, lowest_merge_order))) => {
+                    (Some(item), Some((_, lowest_merge_order))) => {
                         if item.merge_order < lowest_merge_order {
-                            state = Some((partition, item.merge_order));
+                            state = Some((index, item.merge_order));
                         }
                     }
                     _ => panic!("Unexpected state"),
