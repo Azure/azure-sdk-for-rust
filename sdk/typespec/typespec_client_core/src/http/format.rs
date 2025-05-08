@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use serde::de::DeserializeOwned;
 
 use crate::http::response::ResponseBody;
@@ -27,7 +30,7 @@ pub trait DeserializeWith<F: Format>: Sized {
 /// Implements [`DeserializeWith<T>`] for [`ResponseBody`], by simply returning the body stream as is.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl<T: Format> DeserializeWith<T> for ResponseBody {
+impl<F: Format> DeserializeWith<F> for ResponseBody {
     async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
         Ok(body)
     }
