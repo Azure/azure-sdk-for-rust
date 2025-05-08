@@ -15,13 +15,13 @@ use crate::env::Env;
 /// Runs a command in the appropriate platform shell and processes the output
 /// using the specified `OutputProcessor`.
 ///
-/// - Windows: Runs `cmd /C` in the %SYSTEMROOT% directory
-/// - Everywhere else: Runs `/bin/sh -c` in the /bin directory
+/// - Windows: Runs `cmd /C {command}` in %SYSTEMROOT%
+/// - Everywhere else: Runs `/bin/sh -c {command}` in /bin
 pub(crate) async fn shell_exec<T: OutputProcessor>(
     executor: Arc<dyn Executor>,
     env: &Env,
     command: &str,
-    _processor_marker: PhantomData<T>,
+    _: PhantomData<T>,
 ) -> Result<AccessToken> {
     let (workdir, program, c_switch) = if cfg!(target_os = "windows") {
         let system_root = env.var("SYSTEMROOT").map_err(|_| {
