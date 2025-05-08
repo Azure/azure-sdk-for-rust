@@ -3,7 +3,7 @@
 
 //! HTTP responses.
 
-use crate::http::{headers::Headers, DefaultFormat, DeserializeWith, Format, StatusCode};
+use crate::http::{headers::Headers, DeserializeWith, Format, JsonFormat, StatusCode};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
@@ -24,7 +24,7 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 /// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
 /// However, because the type `T` is just a marker type, the user can also deserialize the body into a different type by calling [`Response::into_json_body`] or [`Response::into_xml_body`],
 /// or access the raw body using [`Response::into_raw_body`].
-pub struct Response<T = ResponseBody, F = DefaultFormat> {
+pub struct Response<T = ResponseBody, F = JsonFormat> {
     status: StatusCode,
     headers: Headers,
     body: ResponseBody,

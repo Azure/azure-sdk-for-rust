@@ -7,7 +7,7 @@ use crate::http::{
 };
 use std::sync::Arc;
 
-use super::DefaultFormat;
+use super::JsonFormat;
 
 /// Execution pipeline.
 ///
@@ -84,7 +84,7 @@ impl Pipeline {
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
-    ) -> crate::Result<Response<T, DefaultFormat>> {
+    ) -> crate::Result<Response<T, JsonFormat>> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
