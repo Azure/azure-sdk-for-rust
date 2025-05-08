@@ -17,7 +17,7 @@ pub struct Context<'a> {
 
 impl Context<'static> {
     /// Creates a new [`Context`] that borrows from the current [`Context`].
-    pub fn into_borrowed(&self) -> Context<'_> {
+    pub fn to_borrowed(&self) -> Context<'_> {
         let type_map = self.type_map.as_ref();
         Context {
             type_map: Cow::Borrowed(type_map),
