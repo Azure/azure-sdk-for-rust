@@ -78,10 +78,14 @@ use crate::constants;
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
 impl PartitionKey {
+    /// A single null partition key value, which can be used as the sole partition key or as part of a hierarchical partition key.
     pub const NULL: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Null);
+
+    /// An empty list of partition key values, which is used to signal a cross-partition query, when querying a container.
     pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
 
-    pub fn is_empty(&self) -> bool {
+    #[allow(dead_code)] // Used in the query_engine feature.
+    pub(crate) fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 }
