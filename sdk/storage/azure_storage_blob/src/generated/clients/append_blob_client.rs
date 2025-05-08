@@ -21,12 +21,13 @@ use azure_core::{
     Bytes, Result,
 };
 use std::sync::Arc;
+use typespec_client_core::http::XmlFormat;
 
 pub struct AppendBlobClient {
     pub(crate) blob_name: String,
     pub(crate) container_name: String,
     pub(crate) endpoint: Url,
-    pub(crate) pipeline: Pipeline,
+    pub(crate) pipeline: Pipeline<XmlFormat>,
     pub(crate) version: String,
 }
 
@@ -102,7 +103,7 @@ impl AppendBlobClient {
         body: RequestContent<Bytes>,
         content_length: u64,
         options: Option<AppendBlobClientAppendBlockOptions<'_>>,
-    ) -> Result<Response<AppendBlobClientAppendBlockResult>> {
+    ) -> Result<Response<AppendBlobClientAppendBlockResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -200,7 +201,7 @@ impl AppendBlobClient {
         source_url: String,
         content_length: u64,
         options: Option<AppendBlobClientAppendBlockFromUrlOptions<'_>>,
-    ) -> Result<Response<AppendBlobClientAppendBlockFromUrlResult>> {
+    ) -> Result<Response<AppendBlobClientAppendBlockFromUrlResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -318,7 +319,7 @@ impl AppendBlobClient {
         &self,
         content_length: u64,
         options: Option<AppendBlobClientCreateOptions<'_>>,
-    ) -> Result<Response<AppendBlobClientCreateResult>> {
+    ) -> Result<Response<AppendBlobClientCreateResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -429,7 +430,7 @@ impl AppendBlobClient {
     pub async fn seal(
         &self,
         options: Option<AppendBlobClientSealOptions<'_>>,
-    ) -> Result<Response<AppendBlobClientSealResult>> {
+    ) -> Result<Response<AppendBlobClientSealResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

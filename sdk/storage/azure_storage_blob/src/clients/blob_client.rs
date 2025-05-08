@@ -27,6 +27,7 @@ use azure_core::{
     Bytes, Result,
 };
 use std::sync::Arc;
+use typespec_client_core::http::XmlFormat;
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
@@ -116,7 +117,7 @@ impl BlobClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobClientGetPropertiesResult>> {
+    ) -> Result<Response<BlobClientGetPropertiesResult, XmlFormat>> {
         self.client.get_properties(options).await
     }
 
@@ -128,7 +129,7 @@ impl BlobClient {
     pub async fn set_properties(
         &self,
         options: Option<BlobClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), XmlFormat>> {
         self.client.set_properties(options).await
     }
 
@@ -138,7 +139,7 @@ impl BlobClient {
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<Response<BlobClientDownloadResult>> {
+    ) -> Result<Response<BlobClientDownloadResult, XmlFormat>> {
         self.client.download(options).await
     }
 
@@ -157,7 +158,7 @@ impl BlobClient {
         overwrite: bool,
         content_length: u64,
         options: Option<BlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadResult>> {
+    ) -> Result<Response<BlockBlobClientUploadResult, XmlFormat>> {
         let mut options = options.unwrap_or_default();
 
         if !overwrite {
@@ -181,7 +182,7 @@ impl BlobClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), XmlFormat>> {
         self.client.set_metadata(options).await
     }
 
@@ -193,7 +194,7 @@ impl BlobClient {
     pub async fn delete(
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), XmlFormat>> {
         self.client.delete(options).await
     }
 
@@ -208,7 +209,7 @@ impl BlobClient {
         &self,
         tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), XmlFormat>> {
         self.client.set_tier(tier, options).await
     }
 }
