@@ -1,6 +1,6 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.3.1 (2025-05-08)
 
 ### Features Added
 
@@ -9,6 +9,8 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+- Added `From<&AmqpValue>` converters for fundamental types.
 
 ## 0.3.0 (2025-05-02)
 
