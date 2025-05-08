@@ -21,5 +21,9 @@ pub use response::Response;
 
 pub use typespec_client_core::http::response;
 pub use typespec_client_core::http::{
-    new_http_client, AppendToUrlQuery, Context, HttpClient, Method, StatusCode, Url,
+    new_http_client, AppendToUrlQuery, Context, Format, HttpClient, JsonFormat, Method, StatusCode,
+    Url,
 };
+
+#[cfg(feature = "xml")]
+pub use typespec_client_core::http::XmlFormat;

@@ -105,7 +105,7 @@ impl BlockBlobClient {
         &self,
         blocks: RequestContent<BlockLookupList>,
         options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientCommitBlockListResult>> {
+    ) -> Result<Response<BlockBlobClientCommitBlockListResult, XmlFormat>> {
         self.client.commit_block_list(blocks, options).await
     }
 
@@ -124,7 +124,7 @@ impl BlockBlobClient {
         content_length: u64,
         body: RequestContent<Bytes>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientStageBlockResult>> {
+    ) -> Result<Response<BlockBlobClientStageBlockResult, XmlFormat>> {
         self.client
             .stage_block(block_id, content_length, body, options)
             .await
