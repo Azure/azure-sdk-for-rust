@@ -40,7 +40,7 @@ impl<F: Format> DeserializeWith<F> for ResponseBody {
 /// that implements [`serde::de::DeserializeOwned`] by deserializing the response body to the specified type using [`serde_json`].
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl<D: DeserializeOwned> DeserializeWith<DefaultFormat> for D {
+impl<D: DeserializeOwned> DeserializeWith<JsonFormat> for D {
     async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
         body.json().await
     }
@@ -51,9 +51,9 @@ impl<D: DeserializeOwned> DeserializeWith<DefaultFormat> for D {
 /// This format supports deserializing response bodies to:
 /// * [`ResponseBody`] - The raw response body, without any deserialization.
 /// * Any value implementing [`serde::de::DeserializeOwned`] - Deserializes the response body to the specified type using JSON deserialization.
-pub struct DefaultFormat;
+pub struct JsonFormat;
 
-impl Format for DefaultFormat {}
+impl Format for JsonFormat {}
 
 /// A [`Format`] that deserializes response bodies using XML.
 #[cfg(feature = "xml")]
