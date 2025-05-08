@@ -48,13 +48,6 @@ path = "sdk/typespec/typespec_macros"
 version = "0.25.0"
 path = "sdk/core/azure_core"
 default-features = false
-# Keep these in sync with azure_core. This allows
-# azure_core_amqp and dependents to ignore default features.
-features = [
-  "reqwest",
-  "reqwest_deflate",
-  "reqwest_gzip",
-]
 
 [workspace.dependencies.azure_core_amqp]
 version = "0.4.0"
