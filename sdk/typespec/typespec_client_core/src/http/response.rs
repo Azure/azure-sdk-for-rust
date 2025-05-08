@@ -28,7 +28,7 @@ pub struct Response<T = ResponseBody, F = DefaultFormat> {
     status: StatusCode,
     headers: Headers,
     body: ResponseBody,
-    phantom: PhantomData<(T, F)>,
+    _phantom: PhantomData<(T, F)>,
 }
 
 impl<F> Response<ResponseBody, F> {
@@ -40,7 +40,7 @@ impl<F> Response<ResponseBody, F> {
             status: self.status,
             headers: self.headers,
             body: self.body,
-            phantom: PhantomData,
+            _phantom: PhantomData,
         }
     }
 }
@@ -52,7 +52,7 @@ impl<T, F> Response<T, F> {
             status,
             headers,
             body: ResponseBody::new(stream),
-            phantom: PhantomData,
+            _phantom: PhantomData,
         }
     }
 
@@ -62,7 +62,7 @@ impl<T, F> Response<T, F> {
             status,
             headers,
             body: ResponseBody::from_bytes(bytes),
-            phantom: PhantomData,
+            _phantom: PhantomData,
         }
     }
 
@@ -97,7 +97,7 @@ impl<T, F> Response<T, F> {
             status: self.status,
             headers: self.headers,
             body: self.body,
-            phantom: PhantomData,
+            _phantom: PhantomData,
         }
     }
 }
