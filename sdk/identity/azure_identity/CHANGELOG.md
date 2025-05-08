@@ -8,7 +8,7 @@
 
 ### Bugs Fixed
 
-- `AzureCliCredential` consistently invokes `az` within a shell
+- `AzureCliCredential` didn't invoke `az` within a shell on all platforms
 
 ### Other Changes
 
