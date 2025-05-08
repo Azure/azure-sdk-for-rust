@@ -241,7 +241,7 @@ function SetDeploymentOutputs(
 
             Write-Host "Test environment settings`n$environmentText`nstored into encrypted $outputFile"
         }
-        else {
+        elseif ($templateFile.originalFilePath -and $templateFile.originalFilePath.EndsWith(".bicep")) {
             $bicepTemplateFile = $templateFile.originalFilePath
 
             # Make sure the file would not write secrets to .env file.
