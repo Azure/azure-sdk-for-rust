@@ -3,7 +3,7 @@
 
 use crate::{
     env::Env,
-    process_ext::{ExecutorExt, OutputProcessor},
+    process::{shell_exec, OutputProcessor},
     validate_scope, validate_tenant_id, TokenCredentialOptions,
 };
 use azure_core::{
@@ -122,9 +122,13 @@ impl TokenCredential for AzureDeveloperCliCredential {
             command.push_str(" --tenant-id ");
             command.push_str(tenant_id);
         }
-        self.executor
-            .shell_exec(&self.env, &command, PhantomData::<AzdTokenResponse>)
-            .await
+        shell_exec(
+            self.executor.clone(),
+            &self.env,
+            &command,
+            PhantomData::<AzdTokenResponse>,
+        )
+        .await
     }
 }
 

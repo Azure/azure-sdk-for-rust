@@ -4,7 +4,7 @@
 use crate::{
     credentials::{cache::TokenCache, TokenCredentialOptions},
     env::Env,
-    process_ext::{ExecutorExt, OutputProcessor},
+    process::{shell_exec, OutputProcessor},
     validate_scope, validate_subscription, validate_tenant_id,
 };
 use azure_core::{
@@ -149,17 +149,14 @@ impl AzureCliCredential {
 
         trace!("running Azure CLI command: {command}");
 
-        // unwrap() is safe because new() ensures the values are Some
-        self.options
-            .executor
-            .as_ref()
-            .unwrap()
-            .shell_exec(
-                self.options.env.as_ref().unwrap(),
-                &command,
-                PhantomData::<CliTokenResponse>,
-            )
-            .await
+        shell_exec(
+            // unwrap() is safe because new() ensured the values are Some
+            self.options.executor.clone().unwrap(),
+            self.options.env.as_ref().unwrap(),
+            &command,
+            PhantomData::<CliTokenResponse>,
+        )
+        .await
     }
 }
 
