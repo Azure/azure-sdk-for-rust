@@ -179,9 +179,9 @@ pub enum AmqpMessageId {
     Ulong(u64),
 }
 
-impl From<azure_core::Uuid> for AmqpMessageId {
-    fn from(uuid: Uuid) -> Self {
-        AmqpMessageId::Uuid(uuid)
+impl AsRef<AmqpMessageId> for AmqpMessageId {
+    fn as_ref(&self) -> &AmqpMessageId {
+        self
     }
 }
 
@@ -206,6 +206,12 @@ impl From<Vec<u8>> for AmqpMessageId {
 impl From<u64> for AmqpMessageId {
     fn from(ulong: u64) -> Self {
         AmqpMessageId::Ulong(ulong)
+    }
+}
+
+impl From<azure_core::Uuid> for AmqpMessageId {
+    fn from(uuid: azure_core::Uuid) -> Self {
+        AmqpMessageId::Uuid(uuid)
     }
 }
 
@@ -940,6 +946,12 @@ pub enum AmqpAnnotationKey {
 impl Default for AmqpAnnotationKey {
     fn default() -> Self {
         Self::Ulong(0)
+    }
+}
+
+impl AsRef<AmqpAnnotationKey> for AmqpAnnotationKey {
+    fn as_ref(&self) -> &AmqpAnnotationKey {
+        self
     }
 }
 

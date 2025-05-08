@@ -155,8 +155,12 @@ impl From<&fe2o3_amqp_types::primitives::SimpleValue> for AmqpSimpleValue {
             fe2o3_amqp_types::primitives::SimpleValue::Binary(b) => {
                 AmqpSimpleValue::Binary(b.to_vec())
             }
-            fe2o3_amqp_types::primitives::SimpleValue::String(s) => AmqpValue::String(s),
-            fe2o3_amqp_types::primitives::SimpleValue::Symbol(s) => AmqpValue::Symbol(s.into()),
+            fe2o3_amqp_types::primitives::SimpleValue::String(s) => {
+                AmqpSimpleValue::String(s.clone())
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Symbol(s) => {
+                AmqpSimpleValue::Symbol(s.into())
+            }
             _ => panic!("Expected a simple value."),
         }
     }
@@ -324,63 +328,6 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
                     value: d.value().into(),
                 },
             )),
-        }
-    }
-}
-
-impl From<fe2o3_amqp_types::primitives::Value> for AmqpValue {
-    fn from(value: fe2o3_amqp_types::primitives::Value) -> Self {
-        match value {
-            fe2o3_amqp_types::primitives::Value::Null => AmqpValue::Null,
-            fe2o3_amqp_types::primitives::Value::Bool(b) => AmqpValue::Boolean(b),
-            fe2o3_amqp_types::primitives::Value::Ubyte(b) => AmqpValue::UByte(b),
-            fe2o3_amqp_types::primitives::Value::Ushort(s) => AmqpValue::UShort(s),
-            fe2o3_amqp_types::primitives::Value::Uint(i) => AmqpValue::UInt(i),
-            fe2o3_amqp_types::primitives::Value::Ulong(l) => AmqpValue::ULong(l),
-            fe2o3_amqp_types::primitives::Value::Byte(b) => AmqpValue::Byte(b),
-            fe2o3_amqp_types::primitives::Value::Short(s) => AmqpValue::Short(s),
-            fe2o3_amqp_types::primitives::Value::Int(i) => AmqpValue::Int(i),
-            fe2o3_amqp_types::primitives::Value::Long(l) => AmqpValue::Long(l),
-            fe2o3_amqp_types::primitives::Value::Float(f) => AmqpValue::Float(f.into()),
-            fe2o3_amqp_types::primitives::Value::Double(d) => AmqpValue::Double(d.into()),
-            fe2o3_amqp_types::primitives::Value::Char(c) => AmqpValue::Char(c),
-            fe2o3_amqp_types::primitives::Value::Timestamp(t) => AmqpValue::TimeStamp((&t).into()),
-            fe2o3_amqp_types::primitives::Value::Uuid(u) => {
-                AmqpValue::Uuid(azure_core::Uuid::from_bytes(*u.as_inner()))
-            }
-            fe2o3_amqp_types::primitives::Value::Binary(b) => AmqpValue::Binary(b.to_vec()),
-            fe2o3_amqp_types::primitives::Value::String(s) => AmqpValue::String(s),
-            fe2o3_amqp_types::primitives::Value::Symbol(s) => AmqpValue::Symbol((&s).into()),
-            fe2o3_amqp_types::primitives::Value::Decimal128(d) => {
-                AmqpValue::Decimal128(d.into_inner())
-            }
-            fe2o3_amqp_types::primitives::Value::Decimal32(d) => {
-                AmqpValue::Decimal32(d.into_inner())
-            }
-            fe2o3_amqp_types::primitives::Value::Decimal64(d) => {
-                AmqpValue::Decimal64(d.into_inner())
-            }
-            fe2o3_amqp_types::primitives::Value::List(l) => {
-                let l = l.into_iter().map(|v| v.into()).collect::<Vec<AmqpValue>>();
-                AmqpValue::List(AmqpList(l))
-            }
-            fe2o3_amqp_types::primitives::Value::Map(m) => {
-                AmqpValue::Map(m.iter().map(|(k, v)| (k.into(), v.into())).collect())
-            }
-            fe2o3_amqp_types::primitives::Value::Array(a) => {
-                AmqpValue::Array(a.iter().map(|v| v.into()).collect())
-            }
-            fe2o3_amqp_types::primitives::Value::Described(d) => {
-                //                let descriptor: serde_amqp::descriptor::Descriptor = d.descriptor;
-                //                let value: AmqpValue = d.value.into();
-                let descriptor = match d.descriptor {
-                    serde_amqp::descriptor::Descriptor::Code(code) => AmqpDescriptor::Code(code),
-                    serde_amqp::descriptor::Descriptor::Name(symbol) => {
-                        AmqpDescriptor::Name((&symbol).into())
-                    }
-                };
-                AmqpValue::Described(Box::new(AmqpDescribed::new(descriptor, &d.value)))
-            }
         }
     }
 }
@@ -652,8 +599,8 @@ impl From<crate::SenderSettleMode> for fe2o3_amqp_types::definitions::SenderSett
     }
 }
 
-impl From<fe2o3_amqp_types::definitions::SenderSettleMode> for crate::SenderSettleMode {
-    fn from(mode: fe2o3_amqp_types::definitions::SenderSettleMode) -> crate::SenderSettleMode {
+impl From<&fe2o3_amqp_types::definitions::SenderSettleMode> for crate::SenderSettleMode {
+    fn from(mode: &fe2o3_amqp_types::definitions::SenderSettleMode) -> crate::SenderSettleMode {
         match mode {
             fe2o3_amqp_types::definitions::SenderSettleMode::Mixed => {
                 crate::SenderSettleMode::Mixed
@@ -681,8 +628,8 @@ impl From<crate::ReceiverSettleMode> for fe2o3_amqp_types::definitions::Receiver
     }
 }
 
-impl From<fe2o3_amqp_types::definitions::ReceiverSettleMode> for crate::ReceiverSettleMode {
-    fn from(mode: fe2o3_amqp_types::definitions::ReceiverSettleMode) -> crate::ReceiverSettleMode {
+impl From<&fe2o3_amqp_types::definitions::ReceiverSettleMode> for crate::ReceiverSettleMode {
+    fn from(mode: &fe2o3_amqp_types::definitions::ReceiverSettleMode) -> crate::ReceiverSettleMode {
         match mode {
             fe2o3_amqp_types::definitions::ReceiverSettleMode::First => {
                 crate::ReceiverSettleMode::First
@@ -737,7 +684,7 @@ mod tests {
     #[test]
     fn test_from_fe2o3_amqp_types_primitives_value_to_amqp_value() {
         let value = fe2o3_amqp_types::primitives::Value::String("test".to_string());
-        let value2: AmqpValue = value.into();
+        let value2: AmqpValue = (&value).into();
         assert_eq!(value2, AmqpValue::String("test".to_string()));
     }
 
@@ -745,7 +692,7 @@ mod tests {
     fn test_from_fe2o3_amqp_types_to_amqp_value() {
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Null;
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -754,7 +701,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Bool(true);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -763,7 +710,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Ubyte(1);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -772,7 +719,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Ushort(1);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -781,7 +728,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Uint(1);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -790,7 +737,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Ulong(1);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -799,7 +746,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Byte(1);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -808,7 +755,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Short(1);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -817,7 +764,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Int(1);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -826,7 +773,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Long(1);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -835,7 +782,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Float(1.0f32.into());
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -844,7 +791,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Double(10.0f64.into());
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -853,7 +800,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Char('a');
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -863,7 +810,7 @@ mod tests {
         {
             let fe2o3 =
                 fe2o3_amqp_types::primitives::Value::Timestamp(Timestamp::from_milliseconds(1));
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -873,7 +820,7 @@ mod tests {
         {
             let uuid = Uuid::new_v4();
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Uuid(uuid.into());
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -882,7 +829,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Binary(ByteBuf::from(vec![1]));
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -891,7 +838,7 @@ mod tests {
 
         {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::String("test".to_string());
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -902,7 +849,7 @@ mod tests {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Symbol(
                 fe2o3_amqp_types::primitives::Symbol("test".to_string()),
             );
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -913,7 +860,7 @@ mod tests {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::List(vec![
                 fe2o3_amqp_types::primitives::Value::String("test".to_string()),
             ]);
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -924,7 +871,7 @@ mod tests {
             let fe2o3 = fe2o3_amqp_types::primitives::Value::Map(
                 fe2o3_amqp_types::primitives::OrderedMap::new(),
             );
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -938,7 +885,7 @@ mod tests {
                 )]
                 .into(),
             );
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
@@ -952,34 +899,42 @@ mod tests {
                     value: fe2o3_amqp_types::primitives::Value::String("test".to_string()),
                 },
             ));
-            let amqp: AmqpValue = fe2o3.clone().into();
+            let amqp: AmqpValue = (&fe2o3).into();
             let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.clone().into();
             assert_eq!(fe2o3, fe2o3_2);
             assert_eq!(fe2o3_2, amqp);
             assert_eq!(amqp, fe2o3_2);
         }
 
-        // {
-        //     let fe2o3 = fe2o3_amqp_types::primitives::Value::Decimal128(Decimal128::from(1));
-        //     let amqp: AmqpValue = fe2o3.into();
-        //     let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.into();
+        {
+            let fe2o3 = fe2o3_amqp_types::primitives::Value::Decimal128(
+                fe2o3_amqp_types::primitives::Dec128::from([
+                    1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17,
+                ]),
+            );
+            let amqp: AmqpValue = (&fe2o3).into();
+            let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.into();
 
-        //     assert_eq!(fe2o3, fe2o3_2);
-        // }
+            assert_eq!(fe2o3, fe2o3_2);
+        }
 
-        // {
-        //     let fe2o3 = fe2o3_amqp_types::primitives::Value::Decimal32(Decimal32::from(1));
-        //     let amqp: AmqpValue = fe2o3.into();
-        //     let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.into();
+        {
+            let fe2o3 = fe2o3_amqp_types::primitives::Value::Decimal32(
+                fe2o3_amqp_types::primitives::Dec32::from([1u8, 2, 3, 4]),
+            );
+            let amqp: AmqpValue = (&fe2o3).into();
+            let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.into();
 
-        //     assert_eq!(fe2o3, fe2o3_2);
-        // }
+            assert_eq!(fe2o3, fe2o3_2);
+        }
 
-        // {
-        //     let fe2o3 = fe2o3_amqp_types::primitives::Value::Decimal64(Decimal64::from(1));
-        //     let amqp: AmqpValue = fe2o3.into();
-        //     let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.into();
-        //     assert_eq!(fe2o3, fe2o3_2);
-        // }
+        {
+            let fe2o3 = fe2o3_amqp_types::primitives::Value::Decimal64(
+                fe2o3_amqp_types::primitives::Dec64::from([1u8, 2, 3, 4, 5, 6, 7, 8]),
+            );
+            let amqp: AmqpValue = (&fe2o3).into();
+            let fe2o3_2: fe2o3_amqp_types::primitives::Value = amqp.into();
+            assert_eq!(fe2o3, fe2o3_2);
+        }
     }
 }

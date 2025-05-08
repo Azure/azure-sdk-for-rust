@@ -158,9 +158,7 @@ impl From<&AmqpMessageHeader> for fe2o3_amqp_types::messaging::Header {
     }
 }
 
-impl From<&crate::messaging::AmqpApplicationProperties>
-    for fe2o3_amqp_types::messaging::ApplicationProperties
-{
+impl From<&AmqpApplicationProperties> for fe2o3_amqp_types::messaging::ApplicationProperties {
     fn from(application_properties: &AmqpApplicationProperties) -> Self {
         let mut properties_builder = fe2o3_amqp_types::messaging::ApplicationProperties::builder();
         for (key, value) in application_properties.0.iter() {
@@ -224,7 +222,7 @@ impl From<&AmqpAnnotations> for fe2o3_amqp_types::messaging::Annotations {
     fn from(annotations: &AmqpAnnotations) -> Self {
         let mut message_annotations = fe2o3_amqp_types::messaging::Annotations::new();
         for (key, value) in annotations.0.iter() {
-            message_annotations.insert((&key).into(), value.into());
+            message_annotations.insert(key.as_ref().into(), value.into());
         }
         message_annotations
     }
@@ -236,7 +234,7 @@ impl From<&AmqpAnnotations> for fe2o3_amqp_types::messaging::DeliveryAnnotations
             annotations
                 .0
                 .iter()
-                .map(|(k, v)| ((&k).into(), v.into()))
+                .map(|(k, v)| (k.as_ref().into(), v.into()))
                 .collect(),
         )
     }
@@ -248,7 +246,7 @@ impl From<&AmqpAnnotations> for fe2o3_amqp_types::messaging::MessageAnnotations 
             annotations
                 .0
                 .iter()
-                .map(|(k, v)| ((&k).into(), v.into()))
+                .map(|(k, v)| (k.as_ref().into(), v.into()))
                 .collect(),
         )
     }
@@ -260,7 +258,7 @@ impl From<&AmqpAnnotations> for fe2o3_amqp_types::messaging::Footer {
             annotations
                 .0
                 .iter()
-                .map(|(k, v)| ((&k).into(), v.into()))
+                .map(|(k, v)| (k.as_ref().into(), v.into()))
                 .collect(),
         )
     }

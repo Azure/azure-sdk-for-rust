@@ -60,46 +60,47 @@ impl From<AmqpSource> for fe2o3_amqp_types::messaging::Source {
     }
 }
 
-impl From<fe2o3_amqp_types::messaging::Source> for AmqpSource {
-    fn from(source: fe2o3_amqp_types::messaging::Source) -> Self {
+impl From<&fe2o3_amqp_types::messaging::Source> for AmqpSource {
+    fn from(source: &fe2o3_amqp_types::messaging::Source) -> Self {
         let mut amqp_source_builder = AmqpSource::builder();
 
-        if let Some(address) = source.address {
-            amqp_source_builder = amqp_source_builder.with_address(address);
+        if let Some(address) = &source.address {
+            amqp_source_builder = amqp_source_builder.with_address(address.clone());
         }
         amqp_source_builder = amqp_source_builder
-            .with_durable(source.durable.into())
-            .with_expiry_policy(source.expiry_policy.into())
+            .with_durable((&source.durable).into())
+            .with_expiry_policy((&source.expiry_policy).into())
             .with_timeout(source.timeout)
             .with_dynamic(source.dynamic);
 
-        if let Some(dynamic_node_properties) = source.dynamic_node_properties {
-            let dynamic_node_properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
+        if let Some(dynamic_node_properties) = &source.dynamic_node_properties {
+            amqp_source_builder = amqp_source_builder.with_dynamic_node_properties(
                 dynamic_node_properties
                     .iter()
                     .map(|(k, v)| (k.into(), v.into()))
-                    .collect();
-
-            amqp_source_builder =
-                amqp_source_builder.with_dynamic_node_properties(dynamic_node_properties);
+                    .collect::<AmqpOrderedMap<AmqpSymbol, AmqpValue>>(),
+            );
         }
-        if let Some(distribution_mode) = source.distribution_mode {
+        if let Some(distribution_mode) = &source.distribution_mode {
             amqp_source_builder =
                 amqp_source_builder.with_distribution_mode(distribution_mode.into());
         }
-        if let Some(filter) = source.filter {
-            let filter: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
-                filter.iter().map(|(k, v)| (k.into(), v.into())).collect();
-            amqp_source_builder = amqp_source_builder.with_filter(filter);
+        if let Some(filter) = &source.filter {
+            amqp_source_builder = amqp_source_builder.with_filter(
+                filter
+                    .iter()
+                    .map(|(k, v)| (k.into(), v.into()))
+                    .collect::<AmqpOrderedMap<AmqpSymbol, AmqpValue>>(),
+            );
         }
-        if let Some(default_outcome) = source.default_outcome {
+        if let Some(default_outcome) = &source.default_outcome {
             amqp_source_builder = amqp_source_builder.with_default_outcome(default_outcome.into());
         }
-        if let Some(outcomes) = source.outcomes {
+        if let Some(outcomes) = &source.outcomes {
             amqp_source_builder =
                 amqp_source_builder.with_outcomes(outcomes.iter().map(|o| o.into()).collect());
         }
-        if let Some(capabilities) = source.capabilities {
+        if let Some(capabilities) = &source.capabilities {
             amqp_source_builder = amqp_source_builder
                 .with_capabilities(capabilities.iter().map(|c| c.into()).collect());
         }
@@ -138,7 +139,7 @@ fn message_source_conversion_fe2o3_amqp() {
         )])
         .build();
 
-    let amqp_source = AmqpSource::from(fe2o3_source.clone());
+    let amqp_source = AmqpSource::from(&fe2o3_source);
     let round_trip = fe2o3_amqp_types::messaging::Source::from(amqp_source);
 
     // fe2o3 source does not implement PartialEq
@@ -223,7 +224,7 @@ fn message_source_conversion_amqp_fe2o3() {
 
     let fe2o3_source = fe2o3_amqp_types::messaging::Source::from(amqp_source.clone());
 
-    let round_trip = AmqpSource::from(fe2o3_source);
+    let round_trip = AmqpSource::from(&fe2o3_source);
 
     assert_eq!(amqp_source, round_trip);
 }

@@ -113,7 +113,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             let e = AmqpError::try_from(e)?;
             Err(e.into())
         } else {
-            Ok(response.unwrap().entity_attributes.into())
+            Ok((&response.unwrap().entity_attributes).into())
         }
     }
 }

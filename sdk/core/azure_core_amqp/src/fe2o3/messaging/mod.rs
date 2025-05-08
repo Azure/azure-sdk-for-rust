@@ -453,15 +453,6 @@ fn fe2o3_message_from_amqp_message(
     }
 }
 
-impl From<AmqpMessage>
-    for fe2o3_amqp_types::messaging::Message<
-        fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-    >
-{
-    fn from(message: AmqpMessage) -> Self {
-        fe2o3_message_from_amqp_message(&message)
-    }
-}
 impl From<&AmqpMessage>
     for fe2o3_amqp_types::messaging::Message<
         fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
@@ -816,7 +807,7 @@ mod tests {
 
         let round_trip: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = amqp_message.into();
+        > = (&amqp_message).into();
 
         assert!(round_trip.body.is_value());
     }
@@ -873,7 +864,7 @@ mod tests {
         assert!(amqp_message.footer().is_none());
         let round_trip: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = amqp_message.into();
+        > = (&amqp_message).into();
 
         assert!(round_trip.body.is_sequence());
     }
