@@ -14,7 +14,7 @@ fn collect_matching_items(
     items: &[MockItem],
     predicate: impl Fn(&MockItem) -> bool,
 ) -> Vec<MockItem> {
-    items.iter().filter(|p| predicate(*p)).cloned().collect()
+    items.iter().filter(|p| predicate(p)).cloned().collect()
 }
 
 #[recorded::test]
