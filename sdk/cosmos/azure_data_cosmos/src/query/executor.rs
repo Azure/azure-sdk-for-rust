@@ -76,7 +76,7 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
                 let query_plan = get_query_plan(
                     &self.http_pipeline,
                     &self.items_link,
-                    self.context.into_borrowed(),
+                    self.context.to_borrowed(),
                     &self.query,
                     self.query_engine.supported_features()?,
                 )
@@ -87,7 +87,7 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
                 let pkranges = get_pkranges(
                     &self.http_pipeline,
                     &self.container_link,
-                    self.context.into_borrowed(),
+                    self.context.to_borrowed(),
                 )
                 .await?
                 .into_raw_body()
@@ -134,7 +134,7 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
                 let resp: Response = self
                     .http_pipeline
                     .send(
-                        self.context.into_borrowed(),
+                        self.context.to_borrowed(),
                         &mut query_request,
                         self.items_link.clone(),
                     )
