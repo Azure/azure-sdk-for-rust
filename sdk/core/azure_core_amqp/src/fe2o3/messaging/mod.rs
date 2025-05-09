@@ -85,41 +85,17 @@ impl From<&fe2o3_amqp_types::messaging::Message<fe2o3_amqp_types::messaging::Bod
             let body = AmqpMessageBody::Empty;
             amqp_message_builder = amqp_message_builder.with_body(body);
         } else if body.is_data() {
-            let data = body
-                .try_as_data()
-                .map_err(|_| {
-                    Error::message(
-                        ErrorKind::DataConversion,
-                        "Could not convert AMQP Message Body to data.",
-                    )
-                })
-                .unwrap();
+            let data = body.try_as_data().unwrap();
             let body = AmqpMessageBody::Binary(data.map(|x| x.to_vec()).collect());
             amqp_message_builder = amqp_message_builder.with_body(body);
         } else if body.is_value() {
-            let value = body
-                .try_as_value()
-                .map_err(|_| {
-                    Error::message(
-                        ErrorKind::DataConversion,
-                        "Could not convert AMQP Message Body to value.",
-                    )
-                })
-                .unwrap();
+            let value = body.try_as_value().unwrap();
             // Because a conversion exists between fe2o3 values and AmqpValue types,
             // this try_into will always succeed.
             let value = Into::<AmqpValue>::into(value);
             amqp_message_builder = amqp_message_builder.with_body(AmqpMessageBody::Value(value));
         } else if body.is_sequence() {
-            let sequence = body
-                .try_as_sequence()
-                .map_err(|_| {
-                    Error::message(
-                        ErrorKind::DataConversion,
-                        "Could not convert AMQP Message Body to sequence.",
-                    )
-                })
-                .unwrap();
+            let sequence = body.try_as_sequence().unwrap();
 
             let body = AmqpMessageBody::Sequence(
                 sequence
@@ -262,30 +238,27 @@ impl From<AmqpMessage>
                 message_builder.build()
             }
             AmqpMessageBody::Binary(data) => {
-                let data: Vec<serde_bytes::ByteBuf> = data
-                    .into_iter()
-                    .map(|b| serde_bytes::ByteBuf::from(b.as_slice()))
-                    .collect();
                 let message_builder =
                     message_builder.body(fe2o3_amqp_types::messaging::Body::Data(
-                        data.into_iter().map(|x| x.into()).collect(),
+                        data.into_iter()
+                            .map(fe2o3_amqp_types::messaging::Data::from)
+                            .collect::<TransparentVec<fe2o3_amqp_types::messaging::Data>>(),
                     ));
                 message_builder.build()
             }
             AmqpMessageBody::Sequence(sequence) => {
-                let sequence: TransparentVec<
-                    fe2o3_amqp_types::primitives::List<fe2o3_amqp_types::primitives::Value>,
-                > = sequence
-                    .into_iter()
-                    .map(|x| {
-                        x.0.into_iter()
-                            .map(Into::<fe2o3_amqp_types::primitives::Value>::into)
-                            .collect()
-                    })
-                    .collect();
                 let message_builder =
                     message_builder.body(fe2o3_amqp_types::messaging::Body::Sequence(
-                        sequence.into_iter().map(|v| v.into()).collect(),
+                        sequence
+                            .into_iter()
+                            .map(|x| {
+                                fe2o3_amqp_types::messaging::AmqpSequence(
+                                    x.0.into_iter()
+                                        .map(Into::<fe2o3_amqp_types::primitives::Value>::into)
+                                        .collect(),
+                                )
+                            })
+                            .collect(),
                     ));
                 message_builder.build()
             }
