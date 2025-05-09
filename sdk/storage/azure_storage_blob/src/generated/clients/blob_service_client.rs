@@ -25,10 +25,11 @@ use azure_core::{
     Result,
 };
 use std::sync::Arc;
+use typespec_client_core::http::XmlFormat;
 
 pub struct BlobServiceClient {
     pub(crate) endpoint: Url,
-    pub(crate) pipeline: Pipeline,
+    pub(crate) pipeline: Pipeline<XmlFormat>,
     pub(crate) version: String,
 }
 
@@ -94,7 +95,7 @@ impl BlobServiceClient {
     pub async fn filter_blobs(
         &self,
         options: Option<BlobServiceClientFilterBlobsOptions<'_>>,
-    ) -> Result<Response<FilterBlobSegment>> {
+    ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -141,7 +142,7 @@ impl BlobServiceClient {
     pub async fn get_account_info(
         &self,
         options: Option<BlobServiceClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<BlobServiceClientGetAccountInfoResult>> {
+    ) -> Result<Response<BlobServiceClientGetAccountInfoResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -185,7 +186,7 @@ impl BlobServiceClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServiceProperties>> {
+    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -215,7 +216,7 @@ impl BlobServiceClient {
     pub async fn get_statistics(
         &self,
         options: Option<BlobServiceClientGetStatisticsOptions<'_>>,
-    ) -> Result<Response<StorageServiceStats>> {
+    ) -> Result<Response<StorageServiceStats, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -248,7 +249,7 @@ impl BlobServiceClient {
         start: String,
         expiry: String,
         options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
-    ) -> Result<Response<UserDelegationKey>> {
+    ) -> Result<Response<UserDelegationKey, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -280,7 +281,7 @@ impl BlobServiceClient {
     pub async fn list_containers_segment(
         &self,
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<Response<ListContainersSegmentResponse>> {
+    ) -> Result<Response<ListContainersSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -328,7 +329,7 @@ impl BlobServiceClient {
     pub async fn set_properties(
         &self,
         options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

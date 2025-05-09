@@ -40,25 +40,25 @@ mod client {
     use std::{cmp::min, task::Poll, time::Duration};
     use tracing::debug;
     use typespec_client_core::{
-        http::{headers::Headers, Model, Response, StatusCode},
+        http::{headers::Headers, Response, StatusCode},
         Bytes,
     };
 
-    #[derive(Debug, Model, Deserialize)]
+    #[derive(Debug, Deserialize)]
     pub struct Team {
         pub name: Option<String>,
         #[serde(default)]
         pub members: Vec<Person>,
     }
 
-    #[derive(Debug, Model, Deserialize)]
+    #[derive(Debug, Deserialize)]
     pub struct Person {
         pub id: u32,
         pub name: Option<String>,
     }
 
     #[tracing::instrument]
-    pub fn get_binary_data() -> typespec_client_core::Result<Response<()>> {
+    pub fn get_binary_data() -> typespec_client_core::Result<Response> {
         let bytes = Bytes::from_static(b"Hello, world!");
         let response = SlowResponse {
             bytes: bytes.repeat(5).into(),

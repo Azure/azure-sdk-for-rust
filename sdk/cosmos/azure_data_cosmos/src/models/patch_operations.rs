@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use azure_core::{error::ErrorKind, http::response::Model, Error};
+use azure_core::{error::ErrorKind, Error};
 use serde::{Deserialize, Serialize};
 
 // Cosmos' patch operations are _similar_ to JSON Patch (RFC 6902) in structure, but have different operations.
@@ -37,7 +37,7 @@ use serde::{Deserialize, Serialize};
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Model, Default, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PatchDocument {
     pub operations: Vec<PatchOperation>,
 }

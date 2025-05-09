@@ -9,8 +9,7 @@ use super::{
 use azure_core::{fmt::SafeDebug, http::RequestContent, xml::to_xml, Result};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub(crate) struct GetUserDelegationKeyRequest {
     /// The date-time the key expires.
     #[serde(rename = "Expiry")]
@@ -21,8 +20,7 @@ pub(crate) struct GetUserDelegationKeyRequest {
     pub(crate) start: String,
 }
 
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub(crate) struct SetPropertiesRequest {
     /// The CORS properties.
     #[serde(

@@ -7,6 +7,8 @@ use crate::http::{
 };
 use std::sync::Arc;
 
+use super::{Format, JsonFormat};
+
 /// Execution pipeline.
 ///
 /// A pipeline follows a precise flow:
@@ -30,13 +32,17 @@ use std::sync::Arc;
 /// cannot be enforced by code). All policies except Transport policy can assume there is another following policy (so
 /// `self.pipeline[0]` is always valid).
 #[derive(Debug, Clone)]
-pub struct Pipeline {
+pub struct Pipeline<F: Format> {
     pipeline: Vec<Arc<dyn Policy>>,
+    _phantom: std::marker::PhantomData<F>,
 }
 
-impl Pipeline {
+impl<F: Format> Pipeline<F> {
     /// Creates a new pipeline given the client library crate name and version,
-    /// alone with user-specified and client library-specified policies.
+    /// along with user-specified and client library-specified policies.
+    ///
+    /// In addition, this constructor allows for specifying the response format (e.g. JSON, XML) to be used
+    /// when deserializing the response body.
     pub fn new(
         options: ClientOptions,
         per_call_policies: Vec<Arc<dyn Policy>>,
@@ -67,7 +73,10 @@ impl Pipeline {
 
         pipeline.push(transport);
 
-        Self { pipeline }
+        Self {
+            pipeline,
+            _phantom: std::marker::PhantomData,
+        }
     }
 
     pub fn replace_policy(&mut self, policy: Arc<dyn Policy>, position: usize) -> Arc<dyn Policy> {
@@ -82,11 +91,11 @@ impl Pipeline {
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
-    ) -> crate::Result<Response<T>> {
+    ) -> crate::Result<Response<T, F>> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
-            .map(|resp| resp.with_default_deserialize_type())
+            .map(|r| r.with_model_type())
     }
 }
 
@@ -99,7 +108,6 @@ mod tests {
     };
     use bytes::Bytes;
     use serde::Deserialize;
-    use typespec_macros::Model;
 
     #[tokio::test]
     async fn deserializes_response() {
@@ -122,27 +130,24 @@ mod tests {
             }
         }
 
-        #[derive(Model, Debug, Deserialize)]
-        #[typespec(crate = "crate")]
+        #[derive(Debug, Deserialize)]
         struct Model {
             foo: i32,
             bar: String,
         }
 
-        let options = ClientOptions {
-            transport: Some(TransportOptions::new_custom_policy(Arc::new(Responder {}))),
-            ..Default::default()
-        };
-        let pipeline = Pipeline::new(options, Vec::new(), Vec::new());
+        // Simulated service method
+        async fn service_method() -> crate::Result<Response<Model>> {
+            let options = ClientOptions {
+                transport: Some(TransportOptions::new_custom_policy(Arc::new(Responder {}))),
+                ..Default::default()
+            };
+            let pipeline: Pipeline<JsonFormat> = Pipeline::new(options, Vec::new(), Vec::new());
+            let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
+            pipeline.send(&Context::default(), &mut request).await
+        }
 
-        let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
-        let model: Model = pipeline
-            .send(&Context::default(), &mut request)
-            .await
-            .unwrap()
-            .into_body()
-            .await
-            .unwrap();
+        let model = service_method().await.unwrap().into_body().await.unwrap();
 
         assert_eq!(1, model.foo);
         assert_eq!("baz", &model.bar);

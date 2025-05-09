@@ -97,7 +97,7 @@ impl CreateCommand {
                 println!("Created item successfully");
 
                 if show_updated {
-                    let created = response.into_json_body::<serde_json::Value>().await?;
+                    let created: serde_json::Value = response.into_raw_body().json().await?;
                     println!("Newly created item:");
                     println!("{:#?}", created);
                 }

@@ -61,7 +61,7 @@ impl ReadCommand {
                         println!("Item not found!")
                     }
                     Ok(r) => {
-                        let item: serde_json::Value = r.into_json_body().await?;
+                        let item: serde_json::Value = r.into_body().await?;
                         println!("Found item:");
                         println!("{:#?}", item);
                     }

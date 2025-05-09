@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use time::OffsetDateTime;
 
 /// The backup secret result, containing the backup blob.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct BackupSecretResult {
     /// The backup blob containing the backed up secret.
@@ -24,7 +24,7 @@ pub struct BackupSecretResult {
 }
 
 /// A Deleted Secret consisting of its previous id, attributes and its tags, as well as information on when it will be purged.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct DeletedSecret {
     /// The secret management attributes.
@@ -80,7 +80,7 @@ pub struct DeletedSecret {
 }
 
 /// The deleted secret item containing metadata about the deleted secret.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct DeletedSecretProperties {
     /// The secret management attributes.
@@ -127,7 +127,7 @@ pub struct DeletedSecretProperties {
 }
 
 /// The deleted secret list result
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct ListDeletedSecretPropertiesResult {
     /// The URL to get the next set of deleted secrets.
@@ -141,7 +141,7 @@ pub struct ListDeletedSecretPropertiesResult {
 }
 
 /// The secret list result.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct ListSecretPropertiesResult {
     /// The URL to get the next set of secrets.
@@ -154,7 +154,7 @@ pub struct ListSecretPropertiesResult {
 }
 
 /// The secret restore parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct RestoreSecretParameters {
     /// The backup blob associated with a secret bundle.
     #[serde(
@@ -168,7 +168,7 @@ pub struct RestoreSecretParameters {
 }
 
 /// A secret consisting of a value, id and its attributes.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct Secret {
     /// The secret management attributes.
@@ -202,7 +202,7 @@ pub struct Secret {
 }
 
 /// The secret management attributes.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct SecretAttributes {
     /// Creation time in UTC.
     #[serde(
@@ -254,7 +254,7 @@ pub struct SecretAttributes {
 }
 
 /// The secret item containing secret metadata.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct SecretProperties {
     /// The secret management attributes.
@@ -279,7 +279,7 @@ pub struct SecretProperties {
 }
 
 /// The secret set parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct SetSecretParameters {
     /// Type of the secret value such as a password.
     #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
@@ -299,7 +299,7 @@ pub struct SetSecretParameters {
 }
 
 /// The secret update parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct UpdateSecretPropertiesParameters {
     /// Type of the secret value such as a password.
     #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
