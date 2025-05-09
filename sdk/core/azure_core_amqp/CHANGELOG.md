@@ -2,12 +2,6 @@
 
 ## 0.3.1 (2025-05-08)
 
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
-
 ### Other Changes
 
 - Added `From<&AmqpValue>` converters for fundamental types.
