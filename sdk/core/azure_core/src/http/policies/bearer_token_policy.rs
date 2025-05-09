@@ -13,6 +13,7 @@ use async_lock::RwLock;
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::time::Duration;
+use typespec_client_core::date::OffsetDateTime;
 use typespec_client_core::http::{Context, Request};
 
 /// Authentication policy for a bearer token.
@@ -22,9 +23,6 @@ pub struct BearerTokenCredentialPolicy {
     scopes: Vec<String>,
     access_token: Arc<RwLock<Option<AccessToken>>>,
 }
-
-/// Default timeout in seconds before refreshing a new token.
-const DEFAULT_REFRESH_TIME: Duration = Duration::from_secs(120);
 
 impl BearerTokenCredentialPolicy {
     pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self
@@ -63,16 +61,44 @@ impl Policy for BearerTokenCredentialPolicy {
     ) -> PolicyResult {
         let access_token = self.access_token.read().await;
 
-        if let Some(token) = &(*access_token) {
-            if token.is_expired(Some(DEFAULT_REFRESH_TIME)) {
+        match access_token.as_ref() {
+            None => {
+                // cache is empty. Upgrade the lock and acquire a token, provided another thread hasn't already done so
                 drop(access_token);
                 let mut access_token = self.access_token.write().await;
-                *access_token = Some(self.credential.get_token(&self.scopes()).await?);
+                if access_token.is_none() {
+                    *access_token = Some(self.credential.get_token(&self.scopes()).await?);
+                }
             }
-        } else {
-            drop(access_token);
-            let mut access_token = self.access_token.write().await;
-            *access_token = Some(self.credential.get_token(&self.scopes()).await?);
+            Some(token) if should_refresh(&token.expires_on) => {
+                // token is expired or within its refresh window. Upgrade the lock and
+                // acquire a new token, provided another thread hasn't already done so
+                let expires_on = token.expires_on;
+                drop(access_token);
+                let mut access_token = self.access_token.write().await;
+                // access_token shouldn't be None here, but check anyway to guarantee unwrap won't panic
+                if access_token.is_none() || access_token.as_ref().unwrap().expires_on == expires_on
+                {
+                    match self.credential.get_token(&self.scopes()).await {
+                        Ok(new_token) => {
+                            *access_token = Some(new_token);
+                        }
+                        Err(e)
+                            if access_token.is_none()
+                                || expires_on <= OffsetDateTime::now_utc() =>
+                        {
+                            // propagate this error because we can't proceed without a new token
+                            return Err(e);
+                        }
+                        Err(_) => {
+                            // ignore this error because the cached token is still valid
+                        }
+                    }
+                }
+            }
+            Some(_) => {
+                // do nothing; cached token is valid and not within its refresh window
+            }
         }
 
         let access_token = self.access_token().await.ok_or_else(|| {
@@ -85,4 +111,8 @@ impl Policy for BearerTokenCredentialPolicy {
 
         next[0].send(ctx, request, &next[1..]).await
     }
+}
+
+fn should_refresh(expires_on: &OffsetDateTime) -> bool {
+    *expires_on <= OffsetDateTime::now_utc() + Duration::from_secs(300)
 }

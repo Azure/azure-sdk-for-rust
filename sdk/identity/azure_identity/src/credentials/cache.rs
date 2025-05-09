@@ -5,7 +5,9 @@ use async_lock::RwLock;
 use azure_core::credentials::AccessToken;
 use futures::Future;
 use std::collections::HashMap;
+use std::time::Duration;
 use tracing::trace;
+use typespec_client_core::date::OffsetDateTime;
 
 #[derive(Debug)]
 pub(crate) struct TokenCache(RwLock<HashMap<Vec<String>, AccessToken>>);
@@ -24,7 +26,7 @@ impl TokenCache {
         let token_cache = self.0.read().await;
         let scopes = scopes.iter().map(ToString::to_string).collect::<Vec<_>>();
         if let Some(token) = token_cache.get(&scopes) {
-            if !token.is_expired(None) {
+            if !should_refresh(token) {
                 trace!("returning cached token");
                 return Ok(token.clone());
             }
@@ -37,7 +39,7 @@ impl TokenCache {
         // check again in case another thread refreshed the token while we were
         // waiting on the write lock
         if let Some(token) = token_cache.get(&scopes) {
-            if !token.is_expired(None) {
+            if !should_refresh(token) {
                 trace!("returning token that was updated while waiting on write lock");
                 return Ok(token.clone());
             }
@@ -59,6 +61,10 @@ impl Default for TokenCache {
     fn default() -> Self {
         TokenCache::new()
     }
+}
+
+fn should_refresh(token: &AccessToken) -> bool {
+    token.expires_on <= OffsetDateTime::now_utc() + Duration::from_secs(300)
 }
 
 #[cfg(test)]
@@ -106,7 +112,7 @@ mod tests {
         let resource1 = &[STORAGE_TOKEN_SCOPE];
         let resource2 = &[IOTHUB_TOKEN_SCOPE];
         let secret_string = "test-token";
-        let expires_on = OffsetDateTime::now_utc() + Duration::from_secs(300);
+        let expires_on = OffsetDateTime::now_utc() + Duration::from_secs(3600);
         let access_token = AccessToken::new(Secret::new(secret_string), expires_on);
 
         let mock_credential = MockCredential::new(access_token);
