@@ -3,7 +3,7 @@
 # AMQP Stack for consumption by packages in the Azure SDK.
 [package]
 name = "azure_core_amqp"
-version = "0.3.1"
+version = "0.4.0"
 description = "Rust client library for the AMQP protocol"
 readme = "README.md"
 authors.workspace = true
