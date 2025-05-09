@@ -6,7 +6,11 @@
 
 ### Breaking Changes
 
+- Removed `AccessToken::is_expired()`
+
 ### Bugs Fixed
+
+- `BearerTokenCredentialPolicy` returns an error when a proactive token refresh attempt fails
 
 ### Other Changes
 
