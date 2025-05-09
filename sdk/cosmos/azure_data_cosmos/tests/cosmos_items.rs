@@ -6,9 +6,9 @@ use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{
     clients::ContainerClient,
     models::{ContainerProperties, PatchDocument},
-    CosmosClient, ItemOptions,
+    CosmosClient, ItemOptions, PartitionKey,
 };
-use framework::TestAccount;
+use framework::{test_data, TestAccount};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error};
 
@@ -30,11 +30,8 @@ async fn create_container(
     account: &TestAccount,
     cosmos_client: &CosmosClient,
 ) -> azure_core::Result<ContainerClient> {
-    let test_db_id = account.unique_db("ItemCRUD");
-
     // Create a database and a container
-    cosmos_client.create_database(&test_db_id, None).await?;
-    let db_client = cosmos_client.database_client(&test_db_id);
+    let db_client = test_data::create_database(account, cosmos_client).await?;
     db_client
         .create_container(
             ContainerProperties {
@@ -350,15 +347,19 @@ pub async fn item_null_partition_key(context: TestContext) -> Result<(), Box<dyn
         },
         bool_value: true,
     };
-    container_client.create_item((), &item, None).await?;
+    container_client
+        .create_item(PartitionKey::NULL, &item, None)
+        .await?;
 
     item.value = 24;
     item.nested.nested_value = "Updated".into();
 
-    container_client.upsert_item((), &item, None).await?;
+    container_client
+        .upsert_item(PartitionKey::NULL, &item, None)
+        .await?;
 
     let read_item: TestItem = container_client
-        .read_item((), "Item1", None)
+        .read_item(PartitionKey::NULL, "Item1", None)
         .await?
         .into_json_body()
         .await?;
@@ -366,7 +367,7 @@ pub async fn item_null_partition_key(context: TestContext) -> Result<(), Box<dyn
 
     container_client
         .patch_item(
-            (),
+            PartitionKey::NULL,
             "Item1",
             PatchDocument::default().with_set("/value", 10)?,
             None,
@@ -374,15 +375,19 @@ pub async fn item_null_partition_key(context: TestContext) -> Result<(), Box<dyn
         .await?;
 
     let read_item: TestItem = container_client
-        .read_item((), "Item1", None)
+        .read_item(PartitionKey::NULL, "Item1", None)
         .await?
         .into_json_body()
         .await?;
     assert_eq!(10, read_item.value);
 
-    container_client.delete_item((), "Item1", None).await?;
+    container_client
+        .delete_item(PartitionKey::NULL, "Item1", None)
+        .await?;
 
-    let result = container_client.read_item((), "Item1", None).await;
+    let result = container_client
+        .read_item(PartitionKey::NULL, "Item1", None)
+        .await;
     match result {
         Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),
         Err(err) => {

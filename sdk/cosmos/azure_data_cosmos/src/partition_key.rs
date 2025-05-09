@@ -7,24 +7,6 @@ use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::constants;
 
-/// Describes the partition strategy that will be used when querying.
-///
-/// Currently, the only supported strategy is [`QueryPartitionStrategy::SinglePartition`], which executes the query against a single partition, specified by the [`PartitionKey`] provided.
-///
-/// [`QueryPartitionStrategy`] implements [`From`] for any type that is convertible to a `PartitionKey`.
-/// This allows you to use any of the syntaxes specified in the [`PartitionKey`] docs any place an [`Into<QueryPartitionStrategy>`] is expected.
-#[derive(Debug, Clone)]
-pub enum QueryPartitionStrategy {
-    SinglePartition(PartitionKey),
-}
-
-impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
-    /// Converts the provided value to a [`QueryPartitionStrategy::SinglePartition`], specifying that a query should be executed over only the partition defined by this [`PartitionKey`].
-    fn from(value: T) -> Self {
-        QueryPartitionStrategy::SinglePartition(value.into())
-    }
-}
-
 /// Specifies a partition key value, usually used when querying a specific partition.
 ///
 /// # Specifying a partition key
@@ -58,18 +40,18 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 /// ```
 ///
 /// Null values can be represented in one of two ways.
-/// First, you can use an empty tuple (`()`) anywhere a `PartitionKey` is expected:
+/// First, you can use the value [`PartitionKey::NULL`]:
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::clients::ContainerClient;
+/// # use azure_data_cosmos::{clients::ContainerClient, PartitionKey};
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
-///     (), // A null value in a single-level partition key.
+///     PartitionKey::NULL,
 ///     None).unwrap();
 /// container_client.query_items::<serde_json::Value>(
 ///     "SELECT * FROM c",
-///     ("a", (), "b"), // A null value within a hierarchical partition key.
+///     ("a", PartitionKey::NULL, "b"), // A null value within a hierarchical partition key.
 ///     None).unwrap();
 /// ```
 ///
@@ -95,6 +77,19 @@ impl<T: Into<PartitionKey>> From<T> for QueryPartitionStrategy {
 #[derive(Debug, Clone)]
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
+impl PartitionKey {
+    /// A single null partition key value, which can be used as the sole partition key or as part of a hierarchical partition key.
+    pub const NULL: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Null);
+
+    /// An empty list of partition key values, which is used to signal a cross-partition query, when querying a container.
+    pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
+
+    #[cfg_attr(not(feature = "preview_query_engine"), allow(dead_code))]
+    pub(crate) fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
 impl AsHeaders for PartitionKey {
     type Error = azure_core::Error;
     type Iter = std::iter::Once<(HeaderName, HeaderValue)>;
@@ -104,6 +99,15 @@ impl AsHeaders for PartitionKey {
         // The partition key is sent in an HTTP header, when used to set the partition key for a query.
         // It's not safe to use non-ASCII characters in HTTP headers, and serde_json will not escape non-ASCII characters if they are otherwise valid as UTF-8.
         // So, we do some conversion by hand, with the help of Rust's own `encode_utf16` method which gives us the necessary code points for non-ASCII values, and produces surrogate pairs as needed.
+
+        // Quick shortcut for empty partition keys list, which also prevents a bug when we pop the trailing comma for an empty list.
+        if self.0.is_empty() {
+            // An empty partition key means a cross partition query
+            return Ok(std::iter::once((
+                constants::QUERY_ENABLE_CROSS_PARTITION,
+                HeaderValue::from_static("True"),
+            )));
+        }
 
         let mut json = String::new();
         let mut utf_buf = [0; 2]; // A buffer for encoding UTF-16 characters.
@@ -157,11 +161,11 @@ impl AsHeaders for PartitionKey {
 /// Represents a value for a single partition key.
 ///
 /// You shouldn't need to construct this type directly. The various implementations of [`Into<PartitionKey>`] will handle it for you.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartitionKeyValue(InnerPartitionKeyValue);
 
 // We don't want to expose the implementation details of PartitionKeyValue (specifically the use of serde_json::Number), so we use this inner private enum to store the data.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum InnerPartitionKeyValue {
     Null,
     String(Cow<'static, str>),
@@ -171,12 +175,6 @@ enum InnerPartitionKeyValue {
 impl From<InnerPartitionKeyValue> for PartitionKeyValue {
     fn from(value: InnerPartitionKeyValue) -> Self {
         PartitionKeyValue(value)
-    }
-}
-
-impl From<()> for PartitionKeyValue {
-    fn from(_: ()) -> Self {
-        InnerPartitionKeyValue::Null.into()
     }
 }
 
@@ -265,6 +263,12 @@ impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
     }
 }
 
+impl From<()> for PartitionKey {
+    fn from(_: ()) -> Self {
+        PartitionKey::EMPTY
+    }
+}
+
 impl<T: Into<PartitionKeyValue>> From<T> for PartitionKey {
     fn from(value: T) -> Self {
         PartitionKey(vec![value.into()])
@@ -290,7 +294,7 @@ impl_from_tuple!(0 A 1 B 2 C);
 
 #[cfg(test)]
 mod tests {
-    use crate::{constants, PartitionKey, QueryPartitionStrategy};
+    use crate::{constants, PartitionKey, PartitionKeyValue};
     use typespec_client_core::http::headers::AsHeaders;
 
     fn key_to_string(v: impl Into<PartitionKey>) -> String {
@@ -302,18 +306,16 @@ mod tests {
     }
 
     /// Validates that a given value is `impl Into<QueryPartitionStrategy>` and works as-expected.
-    fn key_to_single_partition_strategy_string(v: impl Into<QueryPartitionStrategy>) -> String {
-        let strategy = v.into();
-        let QueryPartitionStrategy::SinglePartition(key) = strategy;
-        key_to_string(key)
+    fn key_to_single_string_partition_key(v: Option<impl Into<PartitionKey>>) -> Option<String> {
+        v.map(|k| key_to_string(k))
     }
 
     #[test]
     pub fn static_str() {
         assert_eq!(key_to_string("my_partition_key"), r#"["my_partition_key"]"#);
         assert_eq!(
-            key_to_single_partition_strategy_string("my_partition_key"),
-            r#"["my_partition_key"]"#
+            key_to_single_string_partition_key(Some("my_partition_key")).as_deref(),
+            Some(r#"["my_partition_key"]"#)
         );
     }
 
@@ -349,7 +351,11 @@ mod tests {
 
     #[test]
     pub fn null_value() {
-        assert_eq!(key_to_string(()), r#"[null]"#);
+        assert_eq!(key_to_string(PartitionKey::NULL), r#"[null]"#);
+        assert_eq!(
+            key_to_string((PartitionKey::NULL, PartitionKey::NULL, PartitionKey::NULL)),
+            r#"[null,null,null]"#
+        );
     }
 
     #[test]
@@ -361,8 +367,19 @@ mod tests {
     #[test]
     pub fn tuple() {
         assert_eq!(
-            key_to_string((42u8, "my_partition_key", ())),
+            key_to_string((42u8, "my_partition_key", PartitionKey::NULL)),
             r#"[42,"my_partition_key",null]"#
         );
+    }
+
+    #[test]
+    pub fn empty() {
+        let partition_key = PartitionKey::from(());
+        assert_eq!(Vec::<PartitionKeyValue>::new(), partition_key.0);
+
+        let mut headers_iter = partition_key.as_headers().unwrap();
+        let (name, value) = headers_iter.next().unwrap();
+        assert_eq!(constants::QUERY_ENABLE_CROSS_PARTITION, name);
+        assert_eq!("True", value.as_str());
     }
 }

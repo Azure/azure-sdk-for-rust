@@ -120,6 +120,18 @@ impl<T> PageStream<T> {
             stream: Box::pin(stream),
         }
     }
+
+    /// Creates a [`Pager<T>`] from a raw stream of [`Result<T>`](typespec::Result<T>) values.
+    ///
+    /// This constructor is used when you are implementing a completely custom stream and want to use it as a pager.
+    pub fn from_stream<S>(stream: S) -> Self
+    where
+        S: Stream<Item = Result<T, Error>> + Send + 'static,
+    {
+        Self {
+            stream: Box::pin(stream),
+        }
+    }
 }
 
 impl<T> futures::Stream for PageStream<T> {

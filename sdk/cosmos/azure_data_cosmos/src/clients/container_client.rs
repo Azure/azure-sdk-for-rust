@@ -7,16 +7,22 @@ use crate::{
     options::{QueryOptions, ReadContainerOptions},
     pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
-    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, QueryPartitionStrategy,
-    ReplaceContainerOptions, ThroughputOptions,
+    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
+    ThroughputOptions,
 };
 
-use azure_core::http::{headers, request::Request, response::Response, Method};
+use azure_core::http::{
+    headers,
+    request::{options::ContentType, Request},
+    response::Response,
+    Method,
+};
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
+#[derive(Clone)]
 pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
@@ -109,6 +115,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Put);
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&properties)?;
         self.pipeline
             .send(options.method_options.context, &mut req, self.link.clone())
@@ -260,6 +267,7 @@ impl ContainerClient {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_headers(&partition_key.into())?;
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
         self.pipeline
             .send(
@@ -351,6 +359,7 @@ impl ContainerClient {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_headers(&partition_key.into())?;
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
         self.pipeline
             .send(options.method_options.context, &mut req, link)
@@ -440,6 +449,7 @@ impl ContainerClient {
         }
         req.insert_header(constants::IS_UPSERT, "true");
         req.insert_headers(&partition_key.into())?;
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
         self.pipeline
             .send(
@@ -453,7 +463,7 @@ impl ContainerClient {
     /// Reads a specific item from the container.
     ///
     /// # Arguments
-    /// * `partition_key` - The partition key of the item to read.
+    /// * `partition_key` - The partition key of the item to read. See [`PartitionKey`] for more information on how to specify a partition key.
     /// * `item_id` - The id of the item to read.
     /// * `options` - Optional parameters for the request
     ///
@@ -606,6 +616,7 @@ impl ContainerClient {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         req.insert_headers(&partition_key.into())?;
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&patch)?;
 
         self.pipeline
@@ -625,12 +636,18 @@ impl ContainerClient {
     /// # Arguments
     ///
     /// * `query` - The query to execute.
-    /// * `partition_key_strategy` - The partition key to scope the query on.
+    /// * `partition_key` - The partition key to scope the query on, or specify an empty key (`()`) to perform a cross-partition query.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Cross Partition Queries
+    ///
+    /// Cross-partition queries are significantly limited in the current version of the Cosmos DB SDK.
+    /// They are run on the gateway and limited to simple projections (`SELECT`) and filtering (`WHERE`).
+    /// For more details, see [the Cosmos DB documentation page on cross-partition queries](https://learn.microsoft.com/en-us/rest/api/cosmos-db/querying-cosmosdb-resources-using-the-rest-api#queries-that-cannot-be-served-by-gateway).
     ///
     /// # Examples
     ///
-    /// The `query` and `partition_key_strategy` parameters accept anything that can be transformed [`Into`] their relevant types.
+    /// The `query` and `partition_key` parameters accept anything that can be transformed [`Into`] their relevant types.
     /// This allows simple queries without parameters to be expressed easily:
     ///
     /// ```rust,no_run
@@ -666,23 +683,38 @@ impl ContainerClient {
     /// ```
     ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
-    pub fn query_items<T: DeserializeOwned + Send>(
+    pub fn query_items<T: DeserializeOwned + 'static>(
         &self,
         query: impl Into<Query>,
-        partition_key: impl Into<QueryPartitionStrategy>,
+        partition_key: impl Into<PartitionKey>,
         options: Option<QueryOptions<'_>>,
     ) -> azure_core::Result<FeedPager<T>> {
-        let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.items_link);
-        let mut base_request = Request::new(url, Method::Post);
-        let QueryPartitionStrategy::SinglePartition(partition_key) = partition_key.into();
-        base_request.insert_headers(&partition_key)?;
+        #[cfg_attr(not(feature = "preview_query_engine"), allow(unused_mut))]
+        let mut options = options.unwrap_or_default();
+        let partition_key = partition_key.into();
+        let query = query.into();
 
+        #[cfg(feature = "preview_query_engine")]
+        if partition_key.is_empty() {
+            if let Some(query_engine) = options.query_engine.take() {
+                return crate::query::executor::QueryExecutor::new(
+                    self.pipeline.clone(),
+                    self.link.clone(),
+                    query,
+                    options,
+                    query_engine,
+                )?
+                .into_stream();
+            }
+        }
+
+        let url = self.pipeline.url(&self.items_link);
         self.pipeline.send_query_request(
             options.method_options.context,
-            query.into(),
-            base_request,
+            query,
+            url,
             self.items_link.clone(),
+            |r| r.insert_headers(&partition_key),
         )
     }
 }

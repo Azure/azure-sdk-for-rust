@@ -2,6 +2,7 @@ bindgen
 cfg
 cfgs
 consts
+deque
 impls
 newtype
 oneshot
