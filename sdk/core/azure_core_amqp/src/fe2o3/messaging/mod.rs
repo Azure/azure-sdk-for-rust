@@ -252,6 +252,9 @@ impl From<AmqpMessage>
             .footer(message.footer.map(|x| x.into()));
 
         match message.body {
+            AmqpMessageBody::Empty => message_builder
+                .body(fe2o3_amqp_types::messaging::Body::Empty)
+                .build(),
             AmqpMessageBody::Value(value) => {
                 let value: fe2o3_amqp_types::primitives::Value = value.into();
                 let value = fe2o3_amqp_types::messaging::Body::Value(value.into_body());
@@ -260,9 +263,8 @@ impl From<AmqpMessage>
             }
             AmqpMessageBody::Binary(data) => {
                 let data: Vec<serde_bytes::ByteBuf> = data
-                    .clone()
                     .into_iter()
-                    .map(serde_bytes::ByteBuf::from)
+                    .map(|b| serde_bytes::ByteBuf::from(b.as_slice()))
                     .collect();
                 let message_builder =
                     message_builder.body(fe2o3_amqp_types::messaging::Body::Data(
@@ -270,47 +272,21 @@ impl From<AmqpMessage>
                     ));
                 message_builder.build()
             }
-            AmqpMessageBody::Empty => message_builder
-                .body(fe2o3_amqp_types::messaging::Body::Empty)
-                .build(),
             AmqpMessageBody::Sequence(sequence) => {
                 let sequence: TransparentVec<
                     fe2o3_amqp_types::primitives::List<fe2o3_amqp_types::primitives::Value>,
                 > = sequence
-                    .iter()
+                    .into_iter()
                     .map(|x| {
-                        let mut l = fe2o3_amqp_types::primitives::List::new();
-                        let c = x
-                            .0
-                            .iter()
-                            .map(|v| Into::<fe2o3_amqp_types::primitives::Value>::into(v.clone()));
-                        for v in c {
-                            l.push(v);
-                        }
-                        l
+                        x.0.into_iter()
+                            .map(Into::<fe2o3_amqp_types::primitives::Value>::into)
+                            .collect()
                     })
                     .collect();
-                let amqp_sequence = TransparentVec::<
-                    fe2o3_amqp_types::messaging::AmqpSequence<fe2o3_amqp_types::primitives::Value>,
-                >::new(
-                    sequence
-                        .into_iter()
-                        .map(|x| {
-                            x.into_iter()
-                                .collect::<fe2o3_amqp_types::primitives::List<
-                                    fe2o3_amqp_types::primitives::Value,
-                                >>()
-                                .into()
-                        })
-                        .collect::<Vec<
-                            fe2o3_amqp_types::messaging::AmqpSequence<
-                                fe2o3_amqp_types::primitives::Value,
-                            >,
-                        >>(),
-                );
-
-                let message_builder = message_builder
-                    .body(fe2o3_amqp_types::messaging::Body::Sequence(amqp_sequence));
+                let message_builder =
+                    message_builder.body(fe2o3_amqp_types::messaging::Body::Sequence(
+                        sequence.into_iter().map(|v| v.into()).collect(),
+                    ));
                 message_builder.build()
             }
         }
