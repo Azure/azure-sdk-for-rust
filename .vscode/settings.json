@@ -7,10 +7,6 @@
   },
   "rust-analyzer.cargo.features": "all",
   "rust-analyzer.check.command": "clippy",
-  "rust-analyzer.runnables.extraEnv": {
-    "AZURE_TEST_MODE": "live",
-    "AZURE_COSMOS_CONNECTION_STRING": "emulator"
-  },
   "yaml.format.printWidth": 240,
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",

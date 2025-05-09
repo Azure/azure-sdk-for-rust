@@ -689,12 +689,12 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         options: Option<QueryOptions<'_>>,
     ) -> azure_core::Result<FeedPager<T>> {
-        #[allow(unused_mut)] // This is used in the #[cfg(feature = "query_engine")] block
+        #[cfg_attr(not(feature = "preview_query_engine"), allow(unused_mut))]
         let mut options = options.unwrap_or_default();
         let partition_key = partition_key.into();
         let query = query.into();
 
-        #[cfg(feature = "query_engine")]
+        #[cfg(feature = "preview_query_engine")]
         if partition_key.is_empty() {
             if let Some(query_engine) = options.query_engine.take() {
                 return crate::query::executor::QueryExecutor::new(

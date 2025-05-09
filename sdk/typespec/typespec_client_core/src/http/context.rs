@@ -15,16 +15,6 @@ pub struct Context<'a> {
     type_map: Cow<'a, HashMap<TypeId, Arc<dyn Any + Send + Sync>>>,
 }
 
-impl Context<'static> {
-    /// Creates a new [`Context`] that borrows from the current [`Context`].
-    pub fn to_borrowed(&self) -> Context<'_> {
-        let type_map = self.type_map.as_ref();
-        Context {
-            type_map: Cow::Borrowed(type_map),
-        }
-    }
-}
-
 impl<'a> Context<'a> {
     /// Creates a new, empty `Context`.
     pub fn new() -> Self {

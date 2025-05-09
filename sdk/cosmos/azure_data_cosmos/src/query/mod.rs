@@ -5,13 +5,13 @@
 
 use serde::Serialize;
 
-#[cfg(feature = "query_engine")]
+#[cfg(feature = "preview_query_engine")]
 mod engine;
 
-#[cfg(feature = "query_engine")]
+#[cfg(feature = "preview_query_engine")]
 pub(crate) mod executor;
 
-#[cfg(feature = "query_engine")]
+#[cfg(feature = "preview_query_engine")]
 pub use engine::*;
 
 /// Represents a Cosmos DB Query, with optional parameters.

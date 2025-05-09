@@ -1,4 +1,4 @@
-#![cfg(feature = "query_engine")]
+#![cfg(feature = "preview_query_engine")]
 
 mod framework;
 
