@@ -1,4 +1,4 @@
-use crate::models::{AmqpMessage, AmqpValue, MessageId};
+use crate::models::{AmqpMessage, AmqpSimpleValue, AmqpValue, MessageId};
 use azure_core_amqp::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
 use std::{
     collections::HashMap,
@@ -35,7 +35,7 @@ pub struct EventData {
     content_type: Option<String>,
     correlation_id: Option<MessageId>,
     message_id: Option<MessageId>,
-    properties: Option<HashMap<String, AmqpValue>>,
+    properties: Option<HashMap<String, AmqpSimpleValue>>,
 }
 
 impl EventData {
@@ -45,7 +45,7 @@ impl EventData {
     }
 
     /// The properties of the event.
-    pub fn properties(&self) -> Option<&HashMap<String, AmqpValue>> {
+    pub fn properties(&self) -> Option<&HashMap<String, AmqpSimpleValue>> {
         self.properties.as_ref()
     }
 
@@ -84,8 +84,7 @@ impl EventData {
 
         if let Some(properties) = message.properties() {
             if let Some(content_type) = &properties.content_type {
-                event_data_builder =
-                    event_data_builder.with_content_type(content_type.clone().into());
+                event_data_builder = event_data_builder.with_content_type(content_type.into());
             }
             if let Some(correlation_id) = &properties.correlation_id {
                 event_data_builder = event_data_builder.with_correlation_id(correlation_id.clone());
@@ -392,7 +391,7 @@ pub mod builders {
         ///
         /// A reference to the updated builder.
         ///
-        pub fn add_property(mut self, key: String, value: impl Into<AmqpValue>) -> Self {
+        pub fn add_property(mut self, key: String, value: impl Into<AmqpSimpleValue>) -> Self {
             if let Some(mut properties) = self.event_data.properties {
                 properties.insert(key, value.into());
                 self.event_data.properties = Some(properties);
@@ -461,7 +460,7 @@ mod tests {
     #[test]
     fn test_event_data_builder_add_property() {
         let key = "key".to_string();
-        let value: AmqpValue = "value".into();
+        let value: AmqpSimpleValue = "value".into();
         let event_data = EventData::builder()
             .add_property(key.clone(), value.clone())
             .build();
@@ -476,7 +475,7 @@ mod tests {
         let correlation_id = MessageId::String("correlation-id".to_string());
         let message_id = MessageId::String("message-id".to_string());
         let key = "key".to_string();
-        let value: AmqpValue = "value".into();
+        let value: AmqpSimpleValue = "value".into();
 
         let event_data = EventData::builder()
             .with_body(body.clone())

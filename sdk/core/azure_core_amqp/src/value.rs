@@ -57,9 +57,16 @@ impl From<String> for AmqpSymbol {
         AmqpSymbol(s)
     }
 }
+
 impl From<AmqpSymbol> for String {
     fn from(s: AmqpSymbol) -> Self {
         s.0
+    }
+}
+
+impl From<&AmqpSymbol> for String {
+    fn from(s: &AmqpSymbol) -> Self {
+        s.0.clone()
     }
 }
 
@@ -256,6 +263,13 @@ pub enum AmqpValue {
     /// An AMQP Symbol.
     Symbol(AmqpSymbol),
 
+    /// An IEEE 754-2008 Decimal128 value.
+    Decimal128([u8; 16]),
+    /// An IEEE 754-2008 Decimal64 value.
+    Decimal64([u8; 8]),
+    /// An IEEE 754-2008 Decimal32 value.
+    Decimal32([u8; 4]),
+
     /// An ordered list of AMQP values.
     List(AmqpList),
     /// An ordered map of AMQP values.
@@ -266,7 +280,6 @@ pub enum AmqpValue {
     Described(Box<AmqpDescribed>),
     #[cfg(feature = "cplusplus")]
     Composite(Box<AmqpComposite>),
-    Unknown,
 }
 
 #[cfg(feature = "cplusplus")]
@@ -313,7 +326,7 @@ impl Deserializable<AmqpValue> for AmqpValue {
                 .map_err(|e| {
                     azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
                 })?;
-            Ok(fe2o3_value.into())
+            Ok((&fe2o3_value).into())
         }
         #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
         {
@@ -574,7 +587,6 @@ mod tests {
             descriptor: AmqpDescriptor::Name(AmqpSymbol("name".to_string())),
             value: AmqpValue::Int(2),
         }));
-        let v23 = AmqpValue::Unknown;
 
         assert_eq!(v1, AmqpValue::Boolean(true));
         assert_eq!(v2, AmqpValue::UByte(1));
@@ -616,7 +628,6 @@ mod tests {
                 value: AmqpValue::Int(2)
             }))
         );
-        assert_eq!(v23, AmqpValue::Unknown);
     }
 
     /// Simple conversion tests for the AmqpValue enum
@@ -688,11 +699,6 @@ mod tests {
             assert_eq!(v, AmqpValue::Null);
             assert_eq!(AmqpValue::Null, v);
             let _: () = v.into();
-        }
-
-        {
-            let v: AmqpValue = AmqpValue::Unknown;
-            assert_eq!(v, AmqpValue::Unknown);
         }
     }
 
@@ -914,11 +920,6 @@ mod tests {
         );
         let described_val: Box<AmqpDescribed> = described_value.into();
         assert_eq!(*described_val, AmqpDescribed::new(23, 2i32));
-
-        // Test AmqpValue::Unknown
-        let unknown_value: AmqpValue = AmqpValue::Unknown;
-        assert_eq!(unknown_value, AmqpValue::Unknown);
-        assert_eq!(AmqpValue::Unknown, unknown_value);
     }
 
     #[test]

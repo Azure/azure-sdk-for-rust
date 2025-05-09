@@ -7,6 +7,7 @@
 //! and sends them to Event Hubs asynchronously.
 
 use azure_identity::DefaultAzureCredential;
+use azure_messaging_eventhubs::SendEventOptions;
 use azure_messaging_eventhubs::{models::EventData, ProducerClient};
 use std::error::Error;
 use std::fmt::Debug;
@@ -50,7 +51,17 @@ impl EventHubsLayer {
         // Spawn a task that receives log messages and sends them to EventHubs
         tokio::spawn(async move {
             while let Some(event) = receiver.recv().await {
-                if let Err(err) = producer_clone.send_event(event, None).await {
+                // When we send the event, specify partition 0 so we can receive
+                // all the events - otherwise they will be distributed across all partitions.
+                if let Err(err) = producer_clone
+                    .send_event(
+                        event,
+                        Some(SendEventOptions {
+                            partition_id: Some("0".to_string()),
+                        }),
+                    )
+                    .await
+                {
                     eprintln!("Failed to send event to EventHubs: {err}");
                 }
             }
@@ -154,7 +165,7 @@ where
         // This method is called when a span is closed.
         let event_data = EventData::builder()
             .add_property(EVENT_TYPE_PROPERTY.into(), SPAN_CLOSE)
-            .add_property(NAME_PROPERTY.into(), id.into_u64())
+            .add_property(SPAN_ID_PROPERTY.into(), id.into_u64())
             .add_property(
                 TIMESTAMP_PROPERTY.to_string(),
                 SystemTime::now()

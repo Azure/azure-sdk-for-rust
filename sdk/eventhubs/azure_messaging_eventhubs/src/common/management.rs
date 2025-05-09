@@ -9,7 +9,8 @@ use crate::{
 use azure_core::error::{ErrorKind as AzureErrorKind, Result};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
-    AmqpError, AmqpManagement, AmqpManagementApis, AmqpOrderedMap, AmqpTimestamp, AmqpValue,
+    AmqpError, AmqpManagement, AmqpManagementApis, AmqpOrderedMap, AmqpSimpleValue, AmqpTimestamp,
+    AmqpValue,
 };
 use std::{error::Error, time::SystemTime};
 use tracing::{debug, warn};
@@ -107,7 +108,7 @@ impl ManagementInstance {
     pub async fn get_eventhub_properties(&self, eventhub: &str) -> Result<EventHubProperties> {
         let response = retry_azure_operation(
             || async move {
-                let mut application_properties: AmqpOrderedMap<String, AmqpValue> =
+                let mut application_properties: AmqpOrderedMap<String, AmqpSimpleValue> =
                     AmqpOrderedMap::new();
                 application_properties.insert(EVENTHUB_PROPERTY_NAME.to_string(), eventhub.into());
                 let response = self
@@ -164,7 +165,7 @@ impl ManagementInstance {
     ) -> Result<EventHubPartitionProperties> {
         let response = retry_azure_operation(
             || async move {
-                let mut application_properties: AmqpOrderedMap<String, AmqpValue> =
+                let mut application_properties: AmqpOrderedMap<String, AmqpSimpleValue> =
                     AmqpOrderedMap::new();
                 application_properties.insert(EVENTHUB_PROPERTY_NAME.to_string(), eventhub.into());
                 application_properties

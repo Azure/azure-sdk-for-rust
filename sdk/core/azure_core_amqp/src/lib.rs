@@ -18,6 +18,7 @@ pub(crate) mod messaging;
 pub(crate) mod receiver;
 pub(crate) mod sender;
 pub(crate) mod session;
+pub(crate) mod simple_value;
 pub(crate) mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
@@ -32,6 +33,7 @@ pub use messaging::{
 pub use receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
 pub use sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSender, AmqpSenderApis, AmqpSenderOptions};
 pub use session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions};
+pub use simple_value::AmqpSimpleValue;
 use std::fmt::Debug;
 pub use value::{AmqpDescribed, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
 

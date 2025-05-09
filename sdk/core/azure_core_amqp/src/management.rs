@@ -3,6 +3,7 @@
 
 use super::{
     session::AmqpSession,
+    simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpValue},
 };
 use async_trait::async_trait;
@@ -23,7 +24,7 @@ pub trait AmqpManagementApis {
     async fn call(
         &self,
         operation_type: String,
-        application_properties: AmqpOrderedMap<String, AmqpValue>,
+        application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>>;
 }
 
@@ -42,7 +43,7 @@ impl AmqpManagementApis for AmqpManagement {
     async fn call(
         &self,
         operation_type: String,
-        application_properties: AmqpOrderedMap<String, AmqpValue>,
+        application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
         self.implementation
             .call(operation_type, application_properties)
