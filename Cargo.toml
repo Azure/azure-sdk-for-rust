@@ -50,7 +50,7 @@ path = "sdk/core/azure_core"
 default-features = false
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.3.1"
+version = "0.4.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_core_test]
