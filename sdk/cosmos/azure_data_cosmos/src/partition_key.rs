@@ -84,7 +84,7 @@ impl PartitionKey {
     /// An empty list of partition key values, which is used to signal a cross-partition query, when querying a container.
     pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
 
-    #[allow(dead_code)] // Used in the query_engine feature.
+    #[cfg_attr(not(feature = "preview_query_engine"), allow(dead_code))]
     pub(crate) fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

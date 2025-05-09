@@ -11,7 +11,7 @@
 mod test_account;
 pub mod test_data;
 
-#[cfg(feature = "query_engine")]
+#[cfg(feature = "preview_query_engine")]
 pub mod query_engine;
 
 pub use test_account::TestAccount;
