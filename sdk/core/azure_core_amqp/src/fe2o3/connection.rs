@@ -93,7 +93,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             if let Some(offered_capabilities) = options.offered_capabilities {
                 builder = builder.set_offered_capabilities(
                     offered_capabilities
-                        .iter()
+                        .into_iter()
                         .map(|capability| capability.into())
                         .collect(),
                 );
@@ -101,7 +101,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             if let Some(desired_capabilities) = options.desired_capabilities {
                 builder = builder.set_desired_capabilities(
                     desired_capabilities
-                        .iter()
+                        .into_iter()
                         .map(|capability| capability.into())
                         .collect(),
                 );
@@ -110,7 +110,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 builder = builder.properties(
                     properties
                         .iter()
-                        .map(|(k, v)| ((&k).into(), v.into()))
+                        .map(|(k, v)| (k.into(), v.into()))
                         .collect(),
                 );
             }
@@ -163,7 +163,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             .borrow_mut()
             .close_with_error(fe2o3_amqp::types::definitions::Error::new(
                 fe2o3_amqp::types::definitions::ErrorCondition::Custom(
-                    fe2o3_amqp_types::primitives::Symbol::from(&condition),
+                    fe2o3_amqp_types::primitives::Symbol::from(condition),
                 ),
                 description,
                 info.map(|i| i.into()),

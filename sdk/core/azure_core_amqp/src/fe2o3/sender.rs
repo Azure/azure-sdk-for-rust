@@ -67,12 +67,12 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             }
             if let Some(offered_capabilities) = options.offered_capabilities {
                 session_builder = session_builder.set_offered_capabilities(
-                    offered_capabilities.iter().map(|c| c.into()).collect(),
+                    offered_capabilities.into_iter().map(|c| c.into()).collect(),
                 );
             }
             if let Some(desired_capabilities) = options.desired_capabilities {
                 session_builder = session_builder.set_desired_capabilities(
-                    desired_capabilities.iter().map(|c| c.into()).collect(),
+                    desired_capabilities.into_iter().map(|c| c.into()).collect(),
                 );
             }
             if let Some(properties) = options.properties {
@@ -137,7 +137,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         let message: AmqpMessage = message.into();
         let message: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = (&message).into();
+        > = message.into();
         let mut sendable = fe2o3_amqp::link::delivery::Sendable {
             message,
             message_format: 0,

@@ -1060,13 +1060,13 @@ impl AmqpApplicationProperties {
 ///
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpMessage {
-    body: AmqpMessageBody,
-    header: Option<AmqpMessageHeader>,
-    application_properties: Option<AmqpApplicationProperties>,
-    message_annotations: Option<AmqpAnnotations>,
-    delivery_annotations: Option<AmqpAnnotations>,
-    properties: Option<AmqpMessageProperties>,
-    footer: Option<AmqpAnnotations>,
+    pub(crate) body: AmqpMessageBody,
+    pub(crate) header: Option<AmqpMessageHeader>,
+    pub(crate) application_properties: Option<AmqpApplicationProperties>,
+    pub(crate) message_annotations: Option<AmqpAnnotations>,
+    pub(crate) delivery_annotations: Option<AmqpAnnotations>,
+    pub(crate) properties: Option<AmqpMessageProperties>,
+    pub(crate) footer: Option<AmqpAnnotations>,
 }
 
 impl AmqpMessage {
@@ -1123,7 +1123,6 @@ impl AmqpMessage {
     pub fn set_message_id(&mut self, message_id: impl Into<AmqpMessageId>) {
         if let Some(properties) = self.properties.as_mut() {
             properties.message_id = Some(message_id.into());
-            self.properties = Some(properties.clone());
         } else {
             self.properties = Some(AmqpMessageProperties {
                 message_id: Some(message_id.into()),
@@ -1151,7 +1150,6 @@ impl AmqpMessage {
     pub fn add_message_annotation(&mut self, name: AmqpSymbol, value: impl Into<AmqpValue>) {
         if let Some(annotations) = self.message_annotations.as_mut() {
             annotations.insert(name, value.into());
-            self.message_annotations = Some(annotations.clone());
         } else {
             let mut annotations = AmqpAnnotations::new();
             annotations.insert(name, value.into());
@@ -1182,13 +1180,12 @@ impl AmqpMessage {
         self.body = body.into();
     }
 
-    #[allow(unused_variables)]
     pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
             let amqp_message: fe2o3_amqp_types::messaging::Message<
                 fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-            > = message.into();
+            > = message.clone().into();
             let res = serde_amqp::ser::to_vec(
                 &fe2o3_amqp_types::messaging::message::__private::Serializable(amqp_message),
             )
@@ -1202,6 +1199,65 @@ impl AmqpMessage {
     }
 }
 
+#[test]
+fn test_set_message_id() {
+    let mut message = AmqpMessage::default();
+    {
+        let uuid = azure_core::Uuid::new_v4();
+        message.set_message_id(uuid);
+        assert!(message.properties.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id == Some(AmqpMessageId::Uuid(uuid)));
+    }
+    {
+        let string = "test message ID.";
+        message.set_message_id(string);
+        assert!(message.properties.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id.is_some());
+        assert!(
+            message.properties.as_ref().unwrap().message_id
+                == Some(AmqpMessageId::String(string.to_string()))
+        );
+    }
+    {
+        let long = 27;
+        message.set_message_id(long);
+        assert!(message.properties.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id.is_some());
+        assert!(
+            message.properties.as_ref().unwrap().message_id == Some(AmqpMessageId::Ulong(long))
+        );
+    }
+    {
+        let binary = &[12u8, 34u8, 56u8, 78u8];
+        message.set_message_id(binary.to_vec());
+        assert!(message.properties.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id.is_some());
+        assert!(
+            message.properties.as_ref().unwrap().message_id
+                == Some(AmqpMessageId::Binary(binary.to_vec()))
+        );
+    }
+}
+
+#[test]
+fn test_message_add_annotation() {
+    let mut message = AmqpMessage::default();
+    {
+        message.add_message_annotation(AmqpSymbol::from("key"), "value");
+        assert!(message.message_annotations.is_some());
+        assert_eq!(
+            message
+                .message_annotations
+                .as_ref()
+                .unwrap()
+                .0
+                .get(&AmqpAnnotationKey::Symbol(AmqpSymbol::from("key")))
+                .unwrap(),
+            &AmqpValue::String("value".to_string())
+        );
+    }
+}
 impl From<Vec<u8>> for AmqpMessage {
     fn from(body: Vec<u8>) -> Self {
         AmqpMessage {

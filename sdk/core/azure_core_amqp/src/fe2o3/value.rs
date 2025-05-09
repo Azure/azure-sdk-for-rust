@@ -22,6 +22,17 @@ impl From<&fe2o3_amqp_types::primitives::Symbol> for AmqpSymbol {
         AmqpSymbol(s.to_string())
     }
 }
+impl From<fe2o3_amqp_types::primitives::Symbol> for AmqpSymbol {
+    fn from(s: fe2o3_amqp_types::primitives::Symbol) -> AmqpSymbol {
+        AmqpSymbol(s.0)
+    }
+}
+
+impl From<AmqpSymbol> for fe2o3_amqp_types::primitives::Symbol {
+    fn from(s: AmqpSymbol) -> fe2o3_amqp_types::primitives::Symbol {
+        fe2o3_amqp_types::primitives::Symbol(s.0)
+    }
+}
 
 impl From<&AmqpSymbol> for fe2o3_amqp_types::primitives::Symbol {
     fn from(s: &AmqpSymbol) -> fe2o3_amqp_types::primitives::Symbol {
@@ -51,6 +62,12 @@ impl From<&fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
         AmqpTimestamp(
             UNIX_EPOCH.checked_add(Duration::from_millis(timestamp.milliseconds() as u64)),
         )
+    }
+}
+
+impl From<fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
+    fn from(timestamp: fe2o3_amqp_types::primitives::Timestamp) -> Self {
+        Self::from(&timestamp)
     }
 }
 
@@ -166,6 +183,44 @@ impl From<&fe2o3_amqp_types::primitives::SimpleValue> for AmqpSimpleValue {
     }
 }
 
+impl From<fe2o3_amqp_types::primitives::SimpleValue> for AmqpSimpleValue {
+    fn from(v: fe2o3_amqp_types::primitives::SimpleValue) -> Self {
+        match v {
+            fe2o3_amqp_types::primitives::SimpleValue::Null => AmqpSimpleValue::Null,
+            fe2o3_amqp_types::primitives::SimpleValue::Bool(b) => AmqpSimpleValue::Boolean(b),
+            fe2o3_amqp_types::primitives::SimpleValue::Ubyte(b) => AmqpSimpleValue::UByte(b),
+            fe2o3_amqp_types::primitives::SimpleValue::Ushort(s) => AmqpSimpleValue::UShort(s),
+            fe2o3_amqp_types::primitives::SimpleValue::Uint(i) => AmqpSimpleValue::UInt(i),
+            fe2o3_amqp_types::primitives::SimpleValue::Ulong(l) => AmqpSimpleValue::ULong(l),
+            fe2o3_amqp_types::primitives::SimpleValue::Byte(b) => AmqpSimpleValue::Byte(b),
+            fe2o3_amqp_types::primitives::SimpleValue::Short(s) => AmqpSimpleValue::Short(s),
+            fe2o3_amqp_types::primitives::SimpleValue::Int(i) => AmqpSimpleValue::Int(i),
+            fe2o3_amqp_types::primitives::SimpleValue::Long(l) => AmqpSimpleValue::Long(l),
+            fe2o3_amqp_types::primitives::SimpleValue::Float(f) => AmqpSimpleValue::Float(f.into()),
+            fe2o3_amqp_types::primitives::SimpleValue::Double(d) => {
+                AmqpSimpleValue::Double(d.into())
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Char(c) => AmqpSimpleValue::Char(c),
+            fe2o3_amqp_types::primitives::SimpleValue::Timestamp(t) => {
+                AmqpSimpleValue::TimeStamp(AmqpTimestamp::from(t))
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Uuid(u) => {
+                AmqpSimpleValue::Uuid(azure_core::Uuid::from_bytes(*u.as_inner()))
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Binary(b) => {
+                AmqpSimpleValue::Binary(b.to_vec())
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::String(s) => {
+                AmqpSimpleValue::String(s.clone())
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Symbol(s) => {
+                AmqpSimpleValue::Symbol(s.0.into())
+            }
+            _ => panic!("Expected a simple value."),
+        }
+    }
+}
+
 impl From<&fe2o3_amqp_types::primitives::Value> for AmqpList {
     fn from(value: &fe2o3_amqp_types::primitives::Value) -> Self {
         match value {
@@ -177,12 +232,12 @@ impl From<&fe2o3_amqp_types::primitives::Value> for AmqpList {
     }
 }
 
-impl From<AmqpList> for fe2o3_amqp_types::primitives::Value {
-    fn from(value: AmqpList) -> Self {
+impl From<&AmqpList> for fe2o3_amqp_types::primitives::Value {
+    fn from(value: &AmqpList) -> Self {
         fe2o3_amqp_types::primitives::Value::List(
             value
                 .0
-                .into_iter()
+                .iter()
                 .map(|v| v.into())
                 .collect::<Vec<fe2o3_amqp_types::primitives::Value>>(),
         )
@@ -242,36 +297,6 @@ impl From<&AmqpValue> for fe2o3_amqp_types::primitives::Value {
             AmqpValue::Array(amqp_values) => fe2o3_amqp_types::primitives::Value::Array(
                 amqp_values.iter().map(|v| v.into()).collect(),
             ),
-        }
-    }
-}
-
-impl From<&AmqpList> for fe2o3_amqp_types::primitives::Value {
-    fn from(value: &AmqpList) -> Self {
-        fe2o3_amqp_types::primitives::Value::List(
-            value
-                .0
-                .iter()
-                .map(|v| v.into())
-                .collect::<Vec<fe2o3_amqp_types::primitives::Value>>(),
-        )
-    }
-}
-
-impl From<&AmqpDescriptor> for serde_amqp::descriptor::Descriptor {
-    fn from(descriptor: &AmqpDescriptor) -> Self {
-        match descriptor {
-            AmqpDescriptor::Code(code) => serde_amqp::descriptor::Descriptor::Code(*code),
-            AmqpDescriptor::Name(symbol) => serde_amqp::descriptor::Descriptor::Name(symbol.into()),
-        }
-    }
-}
-
-impl From<&serde_amqp::descriptor::Descriptor> for AmqpDescriptor {
-    fn from(descriptor: &serde_amqp::descriptor::Descriptor) -> Self {
-        match descriptor {
-            serde_amqp::descriptor::Descriptor::Code(code) => AmqpDescriptor::Code(*code),
-            serde_amqp::descriptor::Descriptor::Name(symbol) => AmqpDescriptor::Name(symbol.into()),
         }
     }
 }
@@ -383,6 +408,79 @@ impl From<&fe2o3_amqp_types::primitives::Value> for AmqpValue {
                 };
                 AmqpValue::Described(Box::new(AmqpDescribed::new(descriptor, &d.value)))
             }
+        }
+    }
+}
+
+impl From<fe2o3_amqp_types::primitives::Value> for AmqpValue {
+    fn from(value: fe2o3_amqp_types::primitives::Value) -> Self {
+        match value {
+            fe2o3_amqp_types::primitives::Value::Null => AmqpValue::Null,
+            fe2o3_amqp_types::primitives::Value::Bool(b) => AmqpValue::Boolean(b),
+            fe2o3_amqp_types::primitives::Value::Ubyte(b) => AmqpValue::UByte(b),
+            fe2o3_amqp_types::primitives::Value::Ushort(s) => AmqpValue::UShort(s),
+            fe2o3_amqp_types::primitives::Value::Uint(i) => AmqpValue::UInt(i),
+            fe2o3_amqp_types::primitives::Value::Ulong(l) => AmqpValue::ULong(l),
+            fe2o3_amqp_types::primitives::Value::Byte(b) => AmqpValue::Byte(b),
+            fe2o3_amqp_types::primitives::Value::Short(s) => AmqpValue::Short(s),
+            fe2o3_amqp_types::primitives::Value::Int(i) => AmqpValue::Int(i),
+            fe2o3_amqp_types::primitives::Value::Long(l) => AmqpValue::Long(l),
+            fe2o3_amqp_types::primitives::Value::Float(f) => AmqpValue::Float(f.into()),
+            fe2o3_amqp_types::primitives::Value::Double(d) => AmqpValue::Double(d.into()),
+            fe2o3_amqp_types::primitives::Value::Char(c) => AmqpValue::Char(c),
+            fe2o3_amqp_types::primitives::Value::Timestamp(t) => AmqpValue::TimeStamp(t.into()),
+            fe2o3_amqp_types::primitives::Value::Uuid(u) => {
+                AmqpValue::Uuid(azure_core::Uuid::from_bytes(*u.as_inner()))
+            }
+            fe2o3_amqp_types::primitives::Value::Binary(b) => AmqpValue::Binary(b.to_vec()),
+            fe2o3_amqp_types::primitives::Value::String(s) => AmqpValue::String(s.clone()),
+            fe2o3_amqp_types::primitives::Value::Symbol(s) => AmqpValue::Symbol(s.0.into()),
+            fe2o3_amqp_types::primitives::Value::Decimal128(d) => {
+                AmqpValue::Decimal128(d.clone().into_inner())
+            }
+            fe2o3_amqp_types::primitives::Value::Decimal32(d) => {
+                AmqpValue::Decimal32(d.clone().into_inner())
+            }
+            fe2o3_amqp_types::primitives::Value::Decimal64(d) => {
+                AmqpValue::Decimal64(d.clone().into_inner())
+            }
+            fe2o3_amqp_types::primitives::Value::List(l) => {
+                let l = l.iter().map(|v| v.into()).collect::<Vec<AmqpValue>>();
+                AmqpValue::List(AmqpList(l))
+            }
+            fe2o3_amqp_types::primitives::Value::Map(m) => {
+                AmqpValue::Map(m.iter().map(|(k, v)| (k.into(), v.into())).collect())
+            }
+            fe2o3_amqp_types::primitives::Value::Array(a) => {
+                AmqpValue::Array(a.iter().map(|v| v.into()).collect())
+            }
+            fe2o3_amqp_types::primitives::Value::Described(d) => {
+                let descriptor = match &d.descriptor {
+                    serde_amqp::descriptor::Descriptor::Code(code) => AmqpDescriptor::Code(*code),
+                    serde_amqp::descriptor::Descriptor::Name(symbol) => {
+                        AmqpDescriptor::Name(symbol.into())
+                    }
+                };
+                AmqpValue::Described(Box::new(AmqpDescribed::new(descriptor, &d.value)))
+            }
+        }
+    }
+}
+
+impl From<&AmqpDescriptor> for serde_amqp::descriptor::Descriptor {
+    fn from(descriptor: &AmqpDescriptor) -> Self {
+        match descriptor {
+            AmqpDescriptor::Code(code) => serde_amqp::descriptor::Descriptor::Code(*code),
+            AmqpDescriptor::Name(symbol) => serde_amqp::descriptor::Descriptor::Name(symbol.into()),
+        }
+    }
+}
+
+impl From<&serde_amqp::descriptor::Descriptor> for AmqpDescriptor {
+    fn from(descriptor: &serde_amqp::descriptor::Descriptor) -> Self {
+        match descriptor {
+            serde_amqp::descriptor::Descriptor::Code(code) => AmqpDescriptor::Code(*code),
+            serde_amqp::descriptor::Descriptor::Name(symbol) => AmqpDescriptor::Name(symbol.into()),
         }
     }
 }
@@ -667,7 +765,7 @@ mod tests {
     fn test_from_fe2o3_amqp_types_primitives_symbol() {
         let symbol = fe2o3_amqp_types::primitives::Symbol::from("test");
         let amqp_symbol = AmqpSymbol::from(symbol.0.clone());
-        let symbol2: fe2o3_amqp_types::primitives::Symbol = (&amqp_symbol).into();
+        let symbol2: fe2o3_amqp_types::primitives::Symbol = amqp_symbol.into();
         assert_eq!(symbol, symbol2);
     }
 

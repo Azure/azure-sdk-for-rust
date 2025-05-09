@@ -57,10 +57,10 @@ impl AmqpDeliveryApis for Fe2o3AmqpDelivery {
     }
 
     fn into_message(mut self) -> crate::messaging::AmqpMessage {
-        self.message();
-        self.message.take().unwrap_or_else(|| {
-            panic!("Message not set. This should never happen. Please report this issue.")
-        })
+        self.message
+            .take()
+            .unwrap_or_else(|| AmqpMessage::from(self.delivery.into_message()))
+        //        AmqpMessage::from(self.delivery.into_message())
     }
 }
 
