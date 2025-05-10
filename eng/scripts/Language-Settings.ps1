@@ -5,6 +5,7 @@ $packagePattern = "Cargo.toml"
 #$MetadataUri = "https://raw.githubusercontent.com/Azure/azure-sdk/main/_data/releases/latest/rust-packages.csv"
 $GithubUri = "https://github.com/Azure/azure-sdk-for-rust"
 $PackageRepositoryUri = "https://crates.io/crates"
+$SupportsDotenv = $true
 
 . (Join-Path $EngCommonScriptsDir "Helpers" "PSModule-Helpers.ps1")
 
