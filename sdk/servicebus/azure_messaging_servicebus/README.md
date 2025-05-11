@@ -23,8 +23,8 @@ cargo add azure_messaging_eventhubs
 * A Rust Compiler. See [here](https://www.rust-lang.org/tools/install) for installation instructions.
 * An [Azure subscription]
 * The [Azure CLI]
-* An [Service Bus namespace](https://learn.microsoft.com/en-us/azure/service-bus-messaging/)
-* An Service Bus instance. You can create an Service Bus instance in your Service Bus Namespace using the [Azure Portal](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quickstart-portal), or the [Azure CLI](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quickstart-cli).
+* An [Service Bus namespace](https://learn.microsoft.com/azure/service-bus-messaging/)
+* An Service Bus instance. You can create an Service Bus instance in your Service Bus Namespace using the [Azure Portal](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-quickstart-portal), or the [Azure CLI](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-quickstart-cli).
 
 If you use the Azure CLI, replace `<your-resource-group-name>`, `<your-service-bus-namespace-name>`, and `<your-service-bus-queue-name>` with your own, unique names:
 
@@ -89,7 +89,7 @@ Messages are received from queues or subscriptions using a **Receiver**. Receive
 - Peek-lock: Messages are received and locked, allowing the consumer to process and explicitly complete or abandon them.
 - Receive: Messages are received and deleted immediately upon reception.
 
-More information about Service Bus features and terminology can be found here: [link](https://learn.microsoft.com/en-us/azure/service-bus-messaging/advanced-features-overview)
+More information about Service Bus features and terminology can be found here: [link](https://learn.microsoft.com/azure/service-bus-messaging/advanced-features-overview)
 
 # Examples
 
@@ -130,7 +130,7 @@ Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sd
 [Azure subscription]: https://azure.microsoft.com/free/
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[Product documentation]: https://learn.microsoft.com/en-us/azure/service-bus-messaging/
+[Product documentation]: https://learn.microsoft.com/azure/service-bus-messaging/
 [Cargo]: https://crates.io/
 [Package (crates.io)]: https://crates.io/crates/azure_messaging_servicebus
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/servicebus/azure_messaging_servicebus/src
