@@ -1180,12 +1180,13 @@ impl AmqpMessage {
         self.body = body.into();
     }
 
+    #[allow(unused_variables)]
     pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
             let amqp_message: fe2o3_amqp_types::messaging::Message<
                 fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-            > = message.clone().into();
+            > = message.into();
             let res = serde_amqp::ser::to_vec(
                 &fe2o3_amqp_types::messaging::message::__private::Serializable(amqp_message),
             )

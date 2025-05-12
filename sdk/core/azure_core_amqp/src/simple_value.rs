@@ -6,7 +6,7 @@
 //! and are used to represent simple values such as integers, strings, and booleans.
 //!
 
-use crate::value::{AmqpSymbol, AmqpTimestamp};
+use crate::value::{AmqpSymbol, AmqpTimestamp, AmqpValue};
 use azure_core::Uuid;
 
 /// A simple value type in AMQP 1.0.

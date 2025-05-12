@@ -326,7 +326,7 @@ impl Deserializable<AmqpValue> for AmqpValue {
                 .map_err(|e| {
                     azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e)
                 })?;
-            Ok((&fe2o3_value).into())
+            Ok(fe2o3_value.into())
         }
         #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
         {

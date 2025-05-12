@@ -1,16 +1,14 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use std::time::Duration;
-
 use crate::{
     messaging::{
         AmqpAnnotationKey, AmqpAnnotations, AmqpApplicationProperties, AmqpMessageHeader,
         AmqpMessageId, AmqpMessageProperties,
     },
-    simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpValue},
 };
+use std::time::Duration;
 
 impl From<&fe2o3_amqp_types::messaging::MessageId> for AmqpMessageId {
     fn from(message_id: &fe2o3_amqp_types::messaging::MessageId) -> Self {
@@ -64,6 +62,25 @@ impl From<AmqpMessageId> for fe2o3_amqp_types::messaging::MessageId {
             ),
             AmqpMessageId::Ulong(message_id) => {
                 fe2o3_amqp_types::messaging::MessageId::Ulong(message_id)
+            }
+        }
+    }
+}
+
+impl From<&AmqpMessageId> for fe2o3_amqp_types::messaging::MessageId {
+    fn from(message_id: &AmqpMessageId) -> Self {
+        match message_id {
+            AmqpMessageId::String(message_id) => {
+                fe2o3_amqp_types::messaging::MessageId::String(message_id.clone())
+            }
+            AmqpMessageId::Uuid(message_id) => fe2o3_amqp_types::messaging::MessageId::Uuid(
+                fe2o3_amqp_types::primitives::Uuid::from(*message_id),
+            ),
+            AmqpMessageId::Binary(message_id) => fe2o3_amqp_types::messaging::MessageId::Binary(
+                serde_bytes::ByteBuf::from(message_id.as_slice()),
+            ),
+            AmqpMessageId::Ulong(message_id) => {
+                fe2o3_amqp_types::messaging::MessageId::Ulong(*message_id)
             }
         }
     }
@@ -143,21 +160,22 @@ fn test_message_id_conversion() {
 
 impl From<&fe2o3_amqp_types::messaging::ApplicationProperties> for AmqpApplicationProperties {
     fn from(application_properties: &fe2o3_amqp_types::messaging::ApplicationProperties) -> Self {
-        let mut properties = AmqpOrderedMap::<String, AmqpSimpleValue>::new();
-        for (key, value) in application_properties.0.iter() {
-            properties.insert(key.clone(), value.into());
-        }
-        AmqpApplicationProperties(properties)
+        Self(
+            application_properties
+                .iter()
+                .map(|(k, v)| (k.clone(), v.into()))
+                .collect(),
+        )
     }
 }
 
 impl From<fe2o3_amqp_types::messaging::ApplicationProperties> for AmqpApplicationProperties {
     fn from(application_properties: fe2o3_amqp_types::messaging::ApplicationProperties) -> Self {
-        AmqpApplicationProperties(
+        Self(
             application_properties
                 .0
                 .into_iter()
-                .map(|(k, v)| (k.clone(), v.into()))
+                .map(|(k, v)| (k, v.into()))
                 .collect(),
         )
     }
@@ -165,11 +183,25 @@ impl From<fe2o3_amqp_types::messaging::ApplicationProperties> for AmqpApplicatio
 
 impl From<AmqpApplicationProperties> for fe2o3_amqp_types::messaging::ApplicationProperties {
     fn from(application_properties: AmqpApplicationProperties) -> Self {
-        let mut properties_builder = fe2o3_amqp_types::messaging::ApplicationProperties::builder();
-        for (key, value) in application_properties.0.iter() {
-            properties_builder = properties_builder.insert(key, value);
-        }
-        properties_builder.build()
+        Self(
+            application_properties
+                .0
+                .into_iter()
+                .map(|(k, v)| (k, v.into()))
+                .collect(),
+        )
+    }
+}
+
+impl From<&AmqpApplicationProperties> for fe2o3_amqp_types::messaging::ApplicationProperties {
+    fn from(application_properties: &AmqpApplicationProperties) -> Self {
+        Self(
+            application_properties
+                .0
+                .iter()
+                .map(|(k, v)| (k, v.into()))
+                .collect(),
+        )
     }
 }
 
@@ -184,6 +216,18 @@ impl From<&fe2o3_amqp_types::messaging::Header> for AmqpMessageHeader {
         }
     }
 }
+impl From<&AmqpMessageHeader> for fe2o3_amqp_types::messaging::Header {
+    fn from(header: &AmqpMessageHeader) -> Self {
+        fe2o3_amqp_types::messaging::Header {
+            durable: header.durable,
+            priority: fe2o3_amqp_types::messaging::Priority(header.priority),
+            ttl: header.time_to_live.map(|t| t.as_millis() as u32),
+            first_acquirer: header.first_acquirer,
+            delivery_count: header.delivery_count,
+        }
+    }
+}
+
 impl From<fe2o3_amqp_types::messaging::Header> for AmqpMessageHeader {
     fn from(header: fe2o3_amqp_types::messaging::Header) -> Self {
         Self::from(&header)
@@ -192,13 +236,7 @@ impl From<fe2o3_amqp_types::messaging::Header> for AmqpMessageHeader {
 
 impl From<AmqpMessageHeader> for fe2o3_amqp_types::messaging::Header {
     fn from(header: AmqpMessageHeader) -> Self {
-        fe2o3_amqp_types::messaging::Header {
-            durable: header.durable,
-            priority: fe2o3_amqp_types::messaging::Priority(header.priority),
-            ttl: header.time_to_live.map(|t| t.as_millis() as u32),
-            first_acquirer: header.first_acquirer,
-            delivery_count: header.delivery_count,
-        }
+        Self::from(&header)
     }
 }
 
@@ -256,11 +294,22 @@ impl From<AmqpAnnotations> for fe2o3_amqp_types::messaging::Annotations {
     fn from(annotations: AmqpAnnotations) -> Self {
         annotations
             .0
+            .into_iter()
+            .map(|(k, v)| (k.into(), v.into()))
+            .collect::<fe2o3_amqp_types::messaging::Annotations>()
+    }
+}
+
+impl From<&AmqpAnnotations> for fe2o3_amqp_types::messaging::Annotations {
+    fn from(annotations: &AmqpAnnotations) -> Self {
+        annotations
+            .0
             .iter()
             .map(|(k, v)| (k.into(), v.into()))
             .collect::<fe2o3_amqp_types::messaging::Annotations>()
     }
 }
+
 impl From<&fe2o3_amqp_types::messaging::Annotations> for AmqpAnnotations {
     fn from(annotations: &fe2o3_amqp_types::messaging::Annotations) -> Self {
         AmqpAnnotations(
@@ -288,6 +337,11 @@ impl From<AmqpAnnotations> for fe2o3_amqp_types::messaging::DeliveryAnnotations 
         fe2o3_amqp_types::messaging::DeliveryAnnotations(annotations.into())
     }
 }
+impl From<&AmqpAnnotations> for fe2o3_amqp_types::messaging::DeliveryAnnotations {
+    fn from(annotations: &AmqpAnnotations) -> Self {
+        fe2o3_amqp_types::messaging::DeliveryAnnotations(annotations.into())
+    }
+}
 
 impl From<AmqpAnnotations> for fe2o3_amqp_types::messaging::MessageAnnotations {
     fn from(annotations: AmqpAnnotations) -> Self {
@@ -295,8 +349,20 @@ impl From<AmqpAnnotations> for fe2o3_amqp_types::messaging::MessageAnnotations {
     }
 }
 
+impl From<&AmqpAnnotations> for fe2o3_amqp_types::messaging::MessageAnnotations {
+    fn from(annotations: &AmqpAnnotations) -> Self {
+        fe2o3_amqp_types::messaging::MessageAnnotations(annotations.into())
+    }
+}
+
 impl From<AmqpAnnotations> for fe2o3_amqp_types::messaging::Footer {
     fn from(annotations: AmqpAnnotations) -> Self {
+        fe2o3_amqp_types::messaging::Footer(annotations.into())
+    }
+}
+
+impl From<&AmqpAnnotations> for fe2o3_amqp_types::messaging::Footer {
+    fn from(annotations: &AmqpAnnotations) -> Self {
         fe2o3_amqp_types::messaging::Footer(annotations.into())
     }
 }
@@ -354,47 +420,21 @@ fn test_message_annotation_conversion() {
 
 impl From<&fe2o3_amqp_types::messaging::Properties> for AmqpMessageProperties {
     fn from(properties: &fe2o3_amqp_types::messaging::Properties) -> Self {
-        let mut amqp_message_properties = AmqpMessageProperties::default();
-
-        if let Some(message_id) = &properties.message_id {
-            amqp_message_properties.message_id = Some(message_id.into());
-        }
-        if let Some(user_id) = &properties.user_id {
-            amqp_message_properties.user_id = Some(user_id.to_vec());
-        }
-        if let Some(to) = &properties.to {
-            amqp_message_properties.to = Some(to.clone());
-        }
-        if let Some(subject) = &properties.subject {
-            amqp_message_properties.subject = Some(subject.clone());
-        }
-        if let Some(reply_to) = &properties.reply_to {
-            amqp_message_properties.reply_to = Some(reply_to.clone());
-        }
-        if let Some(correlation_id) = &properties.correlation_id {
-            amqp_message_properties.correlation_id = Some(correlation_id.into());
-        }
-        if let Some(content_type) = &properties.content_type {
-            amqp_message_properties.content_type = Some(content_type.into());
-        }
-        if let Some(content_encoding) = &properties.content_encoding {
-            amqp_message_properties.content_encoding = Some(content_encoding.into());
-        }
-        if let Some(absolute_expiry_time) = &properties.absolute_expiry_time {
-            amqp_message_properties.absolute_expiry_time = Some(absolute_expiry_time.into());
-        }
-        if let Some(creation_time) = &properties.creation_time {
-            amqp_message_properties.creation_time = Some(creation_time.into());
-        }
-        if let Some(group_id) = &properties.group_id {
-            amqp_message_properties.group_id = Some(group_id.clone());
-        }
-        if let Some(group_sequence) = properties.group_sequence {
-            amqp_message_properties.group_sequence = Some(group_sequence);
-        }
-        if let Some(reply_to_group_id) = &properties.reply_to_group_id {
-            amqp_message_properties.reply_to_group_id = Some(reply_to_group_id.clone());
-        }
+        let amqp_message_properties = AmqpMessageProperties {
+            message_id: properties.message_id.as_ref().map(|m| m.into()),
+            user_id: properties.user_id.as_ref().map(|u| u.to_vec()),
+            to: properties.to.clone(),
+            subject: properties.subject.clone(),
+            reply_to: properties.reply_to.clone(),
+            correlation_id: properties.correlation_id.as_ref().map(|c| c.into()),
+            content_type: properties.content_type.as_ref().map(|c| c.into()),
+            content_encoding: properties.content_encoding.as_ref().map(|c| c.into()),
+            absolute_expiry_time: properties.absolute_expiry_time.as_ref().map(|t| t.into()),
+            creation_time: properties.creation_time.as_ref().map(|t| t.into()),
+            group_id: properties.group_id.clone(),
+            group_sequence: properties.group_sequence,
+            reply_to_group_id: properties.reply_to_group_id.clone(),
+        };
         amqp_message_properties
     }
 }
@@ -421,43 +461,44 @@ impl From<fe2o3_amqp_types::messaging::Properties> for AmqpMessageProperties {
 
 impl From<AmqpMessageProperties> for fe2o3_amqp_types::messaging::Properties {
     fn from(properties: AmqpMessageProperties) -> Self {
-        let mut properties_builder = fe2o3_amqp_types::messaging::Properties::builder()
-            .group_id(properties.group_id)
-            .group_sequence(properties.group_sequence)
-            .reply_to_group_id(properties.reply_to_group_id);
+        Self {
+            message_id: properties.message_id.map(|m| m.into()),
+            user_id: properties.user_id.map(|u| u.into()),
+            to: properties.to,
+            subject: properties.subject,
+            reply_to: properties.reply_to,
+            correlation_id: properties.correlation_id.map(|c| c.into()),
+            content_type: properties.content_type.map(|c| c.into()),
+            content_encoding: properties.content_encoding.map(|c| c.into()),
+            absolute_expiry_time: properties.absolute_expiry_time.map(|t| t.into()),
+            creation_time: properties.creation_time.map(|t| t.into()),
+            group_id: properties.group_id,
+            group_sequence: properties.group_sequence,
+            reply_to_group_id: properties.reply_to_group_id,
+        }
+    }
+}
 
-        if let Some(message_id) = properties.message_id {
-            properties_builder = properties_builder.message_id(message_id);
+impl From<&AmqpMessageProperties> for fe2o3_amqp_types::messaging::Properties {
+    fn from(properties: &AmqpMessageProperties) -> Self {
+        Self {
+            message_id: properties.message_id.as_ref().map(|m| m.into()),
+            user_id: properties
+                .user_id
+                .as_ref()
+                .map(|u| serde_bytes::ByteBuf::from(u.clone())),
+            to: properties.to.clone(),
+            subject: properties.subject.clone(),
+            reply_to: properties.reply_to.clone(),
+            correlation_id: properties.correlation_id.as_ref().map(|c| c.into()),
+            content_type: properties.content_type.as_ref().map(|c| c.into()),
+            content_encoding: properties.content_encoding.as_ref().map(|c| c.into()),
+            absolute_expiry_time: properties.absolute_expiry_time.as_ref().map(|t| t.into()),
+            creation_time: properties.creation_time.as_ref().map(|t| t.into()),
+            group_id: properties.group_id.clone(),
+            group_sequence: properties.group_sequence,
+            reply_to_group_id: properties.reply_to_group_id.clone(),
         }
-        if let Some(user_id) = properties.user_id {
-            properties_builder = properties_builder.user_id(user_id);
-        }
-        if let Some(to) = properties.to {
-            properties_builder = properties_builder.to(to);
-        }
-        if let Some(subject) = properties.subject {
-            properties_builder = properties_builder.subject(subject);
-        }
-        if let Some(reply_to) = properties.reply_to {
-            properties_builder = properties_builder.reply_to(reply_to);
-        }
-        if let Some(correlation_id) = properties.correlation_id {
-            properties_builder = properties_builder.correlation_id(correlation_id);
-        }
-        if let Some(content_type) = properties.content_type {
-            properties_builder = properties_builder.content_type(content_type);
-        }
-        if let Some(content_encoding) = properties.content_encoding {
-            properties_builder = properties_builder.content_encoding(content_encoding);
-        }
-        if let Some(absolute_expiry_time) = properties.absolute_expiry_time {
-            properties_builder =
-                properties_builder.absolute_expiry_time(Some(absolute_expiry_time.into()));
-        }
-        if let Some(creation_time) = properties.creation_time {
-            properties_builder = properties_builder.creation_time(Some(creation_time.into()));
-        }
-        properties_builder.build()
     }
 }
 

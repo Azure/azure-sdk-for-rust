@@ -178,7 +178,15 @@ impl From<&fe2o3_amqp_types::primitives::SimpleValue> for AmqpSimpleValue {
             fe2o3_amqp_types::primitives::SimpleValue::Symbol(s) => {
                 AmqpSimpleValue::Symbol(s.into())
             }
-            _ => panic!("Expected a simple value."),
+            fe2o3_amqp_types::primitives::SimpleValue::Decimal32(dec32) => {
+                AmqpSimpleValue::Decimal32(dec32.clone().into_inner())
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Decimal64(dec64) => {
+                AmqpSimpleValue::Decimal64(dec64.clone().into_inner())
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Decimal128(dec128) => {
+                AmqpSimpleValue::Decimal128(dec128.clone().into_inner())
+            }
         }
     }
 }
@@ -216,7 +224,15 @@ impl From<fe2o3_amqp_types::primitives::SimpleValue> for AmqpSimpleValue {
             fe2o3_amqp_types::primitives::SimpleValue::Symbol(s) => {
                 AmqpSimpleValue::Symbol(s.0.into())
             }
-            _ => panic!("Expected a simple value."),
+            fe2o3_amqp_types::primitives::SimpleValue::Decimal32(dec32) => {
+                AmqpSimpleValue::Decimal32(dec32.into_inner())
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Decimal64(dec64) => {
+                AmqpSimpleValue::Decimal64(dec64.into_inner())
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Decimal128(dec128) => {
+                AmqpSimpleValue::Decimal128(dec128.into_inner())
+            }
         }
     }
 }
@@ -560,21 +576,19 @@ impl PartialEq<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             }
             AmqpValue::Uuid(u) => self == &fe2o3_amqp_types::primitives::Value::Uuid((*u).into()),
             AmqpValue::Binary(b) => {
-                self == &fe2o3_amqp_types::primitives::Value::Binary(ByteBuf::from(b.clone()))
+                self == &fe2o3_amqp_types::primitives::Value::Binary(ByteBuf::from(b.as_slice()))
             }
             AmqpValue::String(s) => self == &fe2o3_amqp_types::primitives::Value::String(s.clone()),
             AmqpValue::Symbol(s) => self == &fe2o3_amqp_types::primitives::Value::Symbol(s.into()),
             AmqpValue::List(l) => {
-                let l: Vec<fe2o3_amqp_types::primitives::Value> =
-                    l.0.iter().map(|v| v.into()).collect();
-                self == &fe2o3_amqp_types::primitives::Value::List(l)
+                self == &fe2o3_amqp_types::primitives::Value::List(
+                    l.0.iter().map(|v| v.into()).collect(),
+                )
             }
             AmqpValue::Map(m) => {
-                let m: fe2o3_amqp_types::primitives::OrderedMap<
-                    fe2o3_amqp_types::primitives::Value,
-                    fe2o3_amqp_types::primitives::Value,
-                > = m.iter().map(|(k, v)| (k.into(), v.into())).collect();
-                self == &fe2o3_amqp_types::primitives::Value::Map(m)
+                self == &fe2o3_amqp_types::primitives::Value::Map(
+                    m.iter().map(|(k, v)| (k.into(), v.into())).collect(),
+                )
             }
             AmqpValue::Array(a) => match self {
                 fe2o3_amqp_types::primitives::Value::Array(b) => {
@@ -613,11 +627,7 @@ impl PartialEq<fe2o3_amqp_types::primitives::Value> for AmqpValue {
 
 impl From<&fe2o3_amqp_types::definitions::Fields> for AmqpOrderedMap<AmqpSymbol, AmqpValue> {
     fn from(fields: &fe2o3_amqp_types::definitions::Fields) -> Self {
-        let mut map: AmqpOrderedMap<AmqpSymbol, AmqpValue> = AmqpOrderedMap::new();
-        for (k, v) in fields.iter() {
-            map.insert(k.into(), v.into());
-        }
-        map
+        fields.iter().map(|(k, v)| (k.into(), v.into())).collect()
     }
 }
 
@@ -636,11 +646,10 @@ impl
         >,
     ) -> Self {
         // Convert the OrderedMap to AmqpOrderedMap
-        let mut amqp_ordered_map: AmqpOrderedMap<String, AmqpValue> = AmqpOrderedMap::new();
-        for (key, value) in value.iter() {
-            amqp_ordered_map.insert(key.clone(), value.into());
-        }
-        amqp_ordered_map
+        value
+            .iter()
+            .map(|(key, value)| (key.clone(), value.into()))
+            .collect()
     }
 }
 
@@ -652,11 +661,10 @@ impl From<AmqpOrderedMap<AmqpValue, AmqpValue>>
 {
     fn from(value: AmqpOrderedMap<AmqpValue, AmqpValue>) -> Self {
         // Convert the AmqpOrderedMap to OrderedMap
-        let mut ordered_map = fe2o3_amqp_types::primitives::OrderedMap::new();
-        for (key, value) in value.into_iter() {
-            ordered_map.insert(key.into(), value.into());
-        }
-        ordered_map
+        value
+            .into_iter()
+            .map(|(key, value)| (key.into(), value.into()))
+            .collect()
     }
 }
 
@@ -670,7 +678,7 @@ impl From<AmqpOrderedMap<AmqpSymbol, AmqpValue>>
         // Convert the AmqpOrderedMap to OrderedMap
 
         value
-            .iter()
+            .into_iter()
             .map(|(key, value)| {
                 (
                     fe2o3_amqp_types::primitives::Symbol(key.into()),
