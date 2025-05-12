@@ -6,13 +6,21 @@
 //! and are used to represent simple values such as integers, strings, and booleans.
 //!
 
-use crate::value::{AmqpSymbol, AmqpTimestamp, AmqpValue};
+// AmqpValue is used in the doccomment for AmqpSimpleValue.
+#[allow(unused_imports)]
+use crate::value::{AmqpSymbol, AmqpTimestamp};
 use azure_core::Uuid;
 
 /// A simple value type in AMQP 1.0.
 ///
-/// Simple types are the AMQP primitive types (basically the same as [`AmqpValue`] without
-/// the `Map`, `List`, `Array`, and `Described` types).
+/// Simple types are the AMQP primitive types (basically the same as [`azure_core_amqp::AmqpValue`] without
+/// the `Map`, `List`, and `Array` types).
+///
+/// They are used to represent the `Value` of an Amqp Message's `ApplicationProperties` field.
+///
+/// See the [AMQP specification](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-application-properties) for
+/// more information.
+///
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum AmqpSimpleValue {
     /// A null value.
