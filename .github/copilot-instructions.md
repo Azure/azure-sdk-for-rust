@@ -17,3 +17,28 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 * Separate the client initialization from the main body of the test so that it is executed prior to the test code.
 * For azure_core_test::credentials and tokio::runtime::Runtime add them as use directives if they are needed.
 * For the use directives include items explicitly, do not use *.
+
+## Create perf pipeline for package named name
+
+* In the package folder create new pipeline definition file named perf.yml.
+* Copy the file contents from https://raw.githubusercontent.com/Azure/azure-sdk-for-rust/refs/heads/main/sdk/core/perf.yml .
+* Update the ServiceDirectory to the correct directory for the package.
+* In the package folder create a perf-tests.yml file.
+* The perf-tests.yml should contain the following, do not add extra lines or comments or nodes:
+```yaml
+Service: package name
+
+Project: package name
+
+PackageVersions:
+  - package name: source
+
+Tests:
+```
+* Under the Tests node add a new test following the format, do not add extra lines or comments or nodes:
+```yaml
+  - Test: get the test name from benches/benchmark.rs
+    Class: same name as the test name
+    Arguments:
+      - --sync
+```
