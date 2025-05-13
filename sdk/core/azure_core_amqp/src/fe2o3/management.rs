@@ -118,14 +118,6 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
     }
 }
 
-// impl TryFrom<Fe2o3ManagementError> for azure_core::Error {
-//     type Error = azure_core::Error;
-//     fn try_from(e: Fe2o3ManagementError) -> std::result::Result<Self, Self::Error> {
-//         let e = AmqpError::try_from(e.0)?;
-//         Ok(e.into())
-//     }
-// }
-
 impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpError {
     type Error = azure_core::Error;
     fn try_from(e: fe2o3_amqp_management::error::Error) -> std::result::Result<Self, Self::Error> {

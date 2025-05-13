@@ -220,12 +220,12 @@ impl From<AmqpMessage>
 {
     fn from(message: AmqpMessage) -> Self {
         let message_builder = fe2o3_amqp_types::messaging::Message::builder()
-            .application_properties(message.application_properties.map(|x| x.into()))
-            .properties(message.properties.map(|p| p.into()))
-            .header(message.header.map(|x| x.into()))
-            .delivery_annotations(message.delivery_annotations.map(|x| x.into()))
-            .message_annotations(message.message_annotations.map(|x| x.into()))
-            .footer(message.footer.map(|x| x.into()));
+            .application_properties(message.application_properties.map(Into::into))
+            .properties(message.properties.map(Into::into))
+            .header(message.header.map(Into::into))
+            .delivery_annotations(message.delivery_annotations.map(Into::into))
+            .message_annotations(message.message_annotations.map(Into::into))
+            .footer(message.footer.map(Into::into));
 
         match message.body {
             AmqpMessageBody::Empty => message_builder
@@ -273,12 +273,12 @@ impl From<&AmqpMessage>
 {
     fn from(message: &AmqpMessage) -> Self {
         let message_builder = fe2o3_amqp_types::messaging::Message::builder()
-            .application_properties(message.application_properties.as_ref().map(|x| x.into()))
-            .properties(message.properties.as_ref().map(|p| p.into()))
-            .header(message.header.as_ref().map(|x| x.into()))
-            .delivery_annotations(message.delivery_annotations.as_ref().map(|x| x.into()))
-            .message_annotations(message.message_annotations.as_ref().map(|x| x.into()))
-            .footer(message.footer.as_ref().map(|x| x.into()));
+            .application_properties(message.application_properties.as_ref().map(Into::into))
+            .properties(message.properties.as_ref().map(Into::into))
+            .header(message.header.as_ref().map(Into::into))
+            .delivery_annotations(message.delivery_annotations.as_ref().map(Into::into))
+            .message_annotations(message.message_annotations.as_ref().map(Into::into))
+            .footer(message.footer.as_ref().map(Into::into));
 
         match &(message.body) {
             AmqpMessageBody::Empty => message_builder
@@ -434,11 +434,11 @@ impl
 impl From<AmqpMessage> for fe2o3_amqp_types::messaging::Message<EmptyBody> {
     fn from(message: AmqpMessage) -> Self {
         let message_builder = fe2o3_amqp_types::messaging::Message::builder()
-            .application_properties(message.application_properties.map(|x| x.into()))
-            .header(message.header.map(|x| x.into()))
-            .delivery_annotations(message.delivery_annotations.map(|x| x.into()))
-            .message_annotations(message.message_annotations.map(|x| x.into()))
-            .footer(message.footer.map(|x| x.into()));
+            .application_properties(message.application_properties.map(Into::into))
+            .header(message.header.map(Into::into))
+            .delivery_annotations(message.delivery_annotations.map(Into::into))
+            .message_annotations(message.message_annotations.map(Into::into))
+            .footer(message.footer.map(Into::into));
         match message.body {
             AmqpMessageBody::Empty => message_builder.body(EmptyBody {}).build(),
             _ => panic!("Expected EmptyBody"),
@@ -455,11 +455,11 @@ impl From<AmqpMessage>
 {
     fn from(message: AmqpMessage) -> Self {
         let message_builder = fe2o3_amqp_types::messaging::Message::builder()
-            .application_properties(message.application_properties.map(|x| x.into()))
-            .header(message.header.map(|x| x.into()))
-            .delivery_annotations(message.delivery_annotations.map(|x| x.into()))
-            .message_annotations(message.message_annotations.map(|x| x.into()))
-            .footer(message.footer.map(|x| x.into()));
+            .application_properties(message.application_properties.map(Into::into))
+            .header(message.header.map(Into::into))
+            .delivery_annotations(message.delivery_annotations.map(Into::into))
+            .message_annotations(message.message_annotations.map(Into::into))
+            .footer(message.footer.map(Into::into));
 
         match message.body {
             AmqpMessageBody::Sequence(sequence) => {
@@ -486,11 +486,11 @@ impl From<AmqpMessage>
 {
     fn from(message: AmqpMessage) -> Self {
         let message_builder = fe2o3_amqp_types::messaging::Message::builder()
-            .application_properties(message.application_properties.map(|x| x.into()))
-            .header(message.header.map(|x| x.into()))
-            .delivery_annotations(message.delivery_annotations.map(|x| x.into()))
-            .message_annotations(message.message_annotations.map(|x| x.into()))
-            .footer(message.footer.map(|x| x.into()));
+            .application_properties(message.application_properties.map(Into::into))
+            .header(message.header.map(Into::into))
+            .delivery_annotations(message.delivery_annotations.map(Into::into))
+            .message_annotations(message.message_annotations.map(Into::into))
+            .footer(message.footer.map(Into::into));
 
         match message.body {
             AmqpMessageBody::Binary(data) => {

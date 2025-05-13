@@ -92,18 +92,12 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             }
             if let Some(offered_capabilities) = options.offered_capabilities() {
                 session_builder = session_builder.set_offered_capabilities(
-                    offered_capabilities
-                        .iter()
-                        .map(|capability| capability.into())
-                        .collect(),
+                    offered_capabilities.iter().map(Into::into).collect(),
                 );
             }
             if let Some(desired_capabilities) = options.desired_capabilities() {
                 session_builder = session_builder.set_desired_capabilities(
-                    desired_capabilities
-                        .iter()
-                        .map(|capability| capability.into())
-                        .collect(),
+                    desired_capabilities.iter().map(Into::into).collect(),
                 );
             }
             if let Some(properties) = options.properties() {

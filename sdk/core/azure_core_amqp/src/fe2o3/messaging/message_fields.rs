@@ -199,7 +199,7 @@ impl From<&AmqpApplicationProperties> for fe2o3_amqp_types::messaging::Applicati
             application_properties
                 .0
                 .iter()
-                .map(|(k, v)| (k, v.into()))
+                .map(|(k, v)| (k.clone(), v.into()))
                 .collect(),
         )
     }
@@ -421,16 +421,16 @@ fn test_message_annotation_conversion() {
 impl From<&fe2o3_amqp_types::messaging::Properties> for AmqpMessageProperties {
     fn from(properties: &fe2o3_amqp_types::messaging::Properties) -> Self {
         let amqp_message_properties = AmqpMessageProperties {
-            message_id: properties.message_id.as_ref().map(|m| m.into()),
+            message_id: properties.message_id.as_ref().map(Into::into),
             user_id: properties.user_id.as_ref().map(|u| u.to_vec()),
             to: properties.to.clone(),
             subject: properties.subject.clone(),
             reply_to: properties.reply_to.clone(),
-            correlation_id: properties.correlation_id.as_ref().map(|c| c.into()),
-            content_type: properties.content_type.as_ref().map(|c| c.into()),
-            content_encoding: properties.content_encoding.as_ref().map(|c| c.into()),
-            absolute_expiry_time: properties.absolute_expiry_time.as_ref().map(|t| t.into()),
-            creation_time: properties.creation_time.as_ref().map(|t| t.into()),
+            correlation_id: properties.correlation_id.as_ref().map(Into::into),
+            content_type: properties.content_type.as_ref().map(Into::into),
+            content_encoding: properties.content_encoding.as_ref().map(Into::into),
+            absolute_expiry_time: properties.absolute_expiry_time.as_ref().map(Into::into),
+            creation_time: properties.creation_time.as_ref().map(Into::into),
             group_id: properties.group_id.clone(),
             group_sequence: properties.group_sequence,
             reply_to_group_id: properties.reply_to_group_id.clone(),
@@ -442,16 +442,16 @@ impl From<&fe2o3_amqp_types::messaging::Properties> for AmqpMessageProperties {
 impl From<fe2o3_amqp_types::messaging::Properties> for AmqpMessageProperties {
     fn from(properties: fe2o3_amqp_types::messaging::Properties) -> Self {
         AmqpMessageProperties {
-            message_id: properties.message_id.map(|m| m.into()),
+            message_id: properties.message_id.map(Into::into),
             user_id: properties.user_id.map(|u| u.to_vec()),
             to: properties.to,
             subject: properties.subject,
             reply_to: properties.reply_to,
-            correlation_id: properties.correlation_id.map(|c| c.into()),
-            content_type: properties.content_type.map(|c| c.into()),
-            content_encoding: properties.content_encoding.map(|c| c.into()),
-            absolute_expiry_time: properties.absolute_expiry_time.map(|t| t.into()),
-            creation_time: properties.creation_time.map(|t| t.into()),
+            correlation_id: properties.correlation_id.map(Into::into),
+            content_type: properties.content_type.map(Into::into),
+            content_encoding: properties.content_encoding.map(Into::into),
+            absolute_expiry_time: properties.absolute_expiry_time.map(Into::into),
+            creation_time: properties.creation_time.map(Into::into),
             group_id: properties.group_id,
             group_sequence: properties.group_sequence,
             reply_to_group_id: properties.reply_to_group_id,
@@ -462,16 +462,16 @@ impl From<fe2o3_amqp_types::messaging::Properties> for AmqpMessageProperties {
 impl From<AmqpMessageProperties> for fe2o3_amqp_types::messaging::Properties {
     fn from(properties: AmqpMessageProperties) -> Self {
         Self {
-            message_id: properties.message_id.map(|m| m.into()),
-            user_id: properties.user_id.map(|u| u.into()),
+            message_id: properties.message_id.map(Into::into),
+            user_id: properties.user_id.map(Into::into),
             to: properties.to,
             subject: properties.subject,
             reply_to: properties.reply_to,
-            correlation_id: properties.correlation_id.map(|c| c.into()),
-            content_type: properties.content_type.map(|c| c.into()),
-            content_encoding: properties.content_encoding.map(|c| c.into()),
-            absolute_expiry_time: properties.absolute_expiry_time.map(|t| t.into()),
-            creation_time: properties.creation_time.map(|t| t.into()),
+            correlation_id: properties.correlation_id.map(Into::into),
+            content_type: properties.content_type.map(Into::into),
+            content_encoding: properties.content_encoding.map(Into::into),
+            absolute_expiry_time: properties.absolute_expiry_time.map(Into::into),
+            creation_time: properties.creation_time.map(Into::into),
             group_id: properties.group_id,
             group_sequence: properties.group_sequence,
             reply_to_group_id: properties.reply_to_group_id,
@@ -482,7 +482,7 @@ impl From<AmqpMessageProperties> for fe2o3_amqp_types::messaging::Properties {
 impl From<&AmqpMessageProperties> for fe2o3_amqp_types::messaging::Properties {
     fn from(properties: &AmqpMessageProperties) -> Self {
         Self {
-            message_id: properties.message_id.as_ref().map(|m| m.into()),
+            message_id: properties.message_id.as_ref().map(Into::into),
             user_id: properties
                 .user_id
                 .as_ref()
@@ -490,11 +490,11 @@ impl From<&AmqpMessageProperties> for fe2o3_amqp_types::messaging::Properties {
             to: properties.to.clone(),
             subject: properties.subject.clone(),
             reply_to: properties.reply_to.clone(),
-            correlation_id: properties.correlation_id.as_ref().map(|c| c.into()),
-            content_type: properties.content_type.as_ref().map(|c| c.into()),
-            content_encoding: properties.content_encoding.as_ref().map(|c| c.into()),
-            absolute_expiry_time: properties.absolute_expiry_time.as_ref().map(|t| t.into()),
-            creation_time: properties.creation_time.as_ref().map(|t| t.into()),
+            correlation_id: properties.correlation_id.as_ref().map(Into::into),
+            content_type: properties.content_type.as_ref().map(Into::into),
+            content_encoding: properties.content_encoding.as_ref().map(Into::into),
+            absolute_expiry_time: properties.absolute_expiry_time.as_ref().map(Into::into),
+            creation_time: properties.creation_time.as_ref().map(Into::into),
             group_id: properties.group_id.clone(),
             group_sequence: properties.group_sequence,
             reply_to_group_id: properties.reply_to_group_id.clone(),

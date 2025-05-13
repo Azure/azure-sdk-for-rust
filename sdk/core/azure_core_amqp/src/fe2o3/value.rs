@@ -73,15 +73,7 @@ impl From<fe2o3_amqp_types::primitives::Timestamp> for AmqpTimestamp {
 
 impl From<AmqpTimestamp> for fe2o3_amqp_types::primitives::Timestamp {
     fn from(timestamp: AmqpTimestamp) -> Self {
-        if let Some(t) = timestamp.0 {
-            let t = t
-                .duration_since(UNIX_EPOCH)
-                .expect("Could not convert timestamp to time since unix epoch")
-                .as_millis();
-            fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(t as i64)
-        } else {
-            fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(CE_ZERO_MILLISECONDS)
-        }
+        Self::from(&timestamp)
     }
 }
 
@@ -90,7 +82,7 @@ impl From<&AmqpTimestamp> for fe2o3_amqp_types::primitives::Timestamp {
         if let Some(t) = timestamp.0 {
             let t = t
                 .duration_since(UNIX_EPOCH)
-                .expect("Could not convert timestamp to time since unix epoch")
+                .expect("Could not convert timestamp to time since unix epoch. This likely means that the timestamp is before the Unix epoch.")
                 .as_millis();
             fe2o3_amqp_types::primitives::Timestamp::from_milliseconds(t as i64)
         } else {
@@ -241,7 +233,7 @@ impl From<&fe2o3_amqp_types::primitives::Value> for AmqpList {
     fn from(value: &fe2o3_amqp_types::primitives::Value) -> Self {
         match value {
             fe2o3_amqp_types::primitives::Value::List(l) => {
-                AmqpList(l.iter().map(|v| v.into()).collect::<Vec<AmqpValue>>())
+                AmqpList(l.iter().map(Into::into).collect::<Vec<AmqpValue>>())
             }
             _ => panic!("Expected a list"),
         }
@@ -254,7 +246,7 @@ impl From<&AmqpList> for fe2o3_amqp_types::primitives::Value {
             value
                 .0
                 .iter()
-                .map(|v| v.into())
+                .map(Into::into)
                 .collect::<Vec<fe2o3_amqp_types::primitives::Value>>(),
         )
     }
@@ -289,7 +281,7 @@ impl From<&AmqpValue> for fe2o3_amqp_types::primitives::Value {
                 fe2o3_amqp_types::primitives::Value::Decimal128((*d).into())
             }
             AmqpValue::List(amqp_list) => fe2o3_amqp_types::primitives::Value::List(
-                amqp_list.0.iter().map(|v| v.into()).collect(),
+                amqp_list.0.iter().map(Into::into).collect(),
             ),
             AmqpValue::Map(amqp_ordered_map) => fe2o3_amqp_types::primitives::Value::Map(
                 amqp_ordered_map
@@ -311,7 +303,7 @@ impl From<&AmqpValue> for fe2o3_amqp_types::primitives::Value {
                 }),
             ),
             AmqpValue::Array(amqp_values) => fe2o3_amqp_types::primitives::Value::Array(
-                amqp_values.iter().map(|v| v.into()).collect(),
+                amqp_values.iter().map(Into::into).collect(),
             ),
         }
     }
@@ -341,15 +333,15 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             AmqpValue::Decimal32(d) => fe2o3_amqp_types::primitives::Value::Decimal32(d.into()),
             AmqpValue::Decimal64(d) => fe2o3_amqp_types::primitives::Value::Decimal64(d.into()),
             AmqpValue::Decimal128(d) => fe2o3_amqp_types::primitives::Value::Decimal128(d.into()),
-            AmqpValue::List(l) => fe2o3_amqp_types::primitives::Value::List(
-                l.0.into_iter().map(|v| v.into()).collect(),
-            ),
+            AmqpValue::List(l) => {
+                fe2o3_amqp_types::primitives::Value::List(l.0.into_iter().map(Into::into).collect())
+            }
             AmqpValue::Map(m) => fe2o3_amqp_types::primitives::Value::Map(
                 m.into_iter().map(|(k, v)| (k.into(), v.into())).collect(),
             ),
-            AmqpValue::Array(a) => fe2o3_amqp_types::primitives::Value::Array(
-                a.into_iter().map(|v| v.into()).collect(),
-            ),
+            AmqpValue::Array(a) => {
+                fe2o3_amqp_types::primitives::Value::Array(a.into_iter().map(Into::into).collect())
+            }
 
             // An AMQP Composite type is essentially a Described type with a specific descriptor which
             // indicates which AMQP performative it is.
@@ -406,14 +398,14 @@ impl From<&fe2o3_amqp_types::primitives::Value> for AmqpValue {
                 AmqpValue::Decimal64(d.clone().into_inner())
             }
             fe2o3_amqp_types::primitives::Value::List(l) => {
-                let l = l.iter().map(|v| v.into()).collect::<Vec<AmqpValue>>();
+                let l = l.iter().map(Into::into).collect::<Vec<AmqpValue>>();
                 AmqpValue::List(AmqpList(l))
             }
             fe2o3_amqp_types::primitives::Value::Map(m) => {
                 AmqpValue::Map(m.iter().map(|(k, v)| (k.into(), v.into())).collect())
             }
             fe2o3_amqp_types::primitives::Value::Array(a) => {
-                AmqpValue::Array(a.iter().map(|v| v.into()).collect())
+                AmqpValue::Array(a.iter().map(Into::into).collect())
             }
             fe2o3_amqp_types::primitives::Value::Described(d) => {
                 let descriptor = match &d.descriptor {
@@ -461,14 +453,14 @@ impl From<fe2o3_amqp_types::primitives::Value> for AmqpValue {
                 AmqpValue::Decimal64(d.clone().into_inner())
             }
             fe2o3_amqp_types::primitives::Value::List(l) => {
-                let l = l.iter().map(|v| v.into()).collect::<Vec<AmqpValue>>();
+                let l = l.iter().map(Into::into).collect::<Vec<AmqpValue>>();
                 AmqpValue::List(AmqpList(l))
             }
             fe2o3_amqp_types::primitives::Value::Map(m) => {
                 AmqpValue::Map(m.iter().map(|(k, v)| (k.into(), v.into())).collect())
             }
             fe2o3_amqp_types::primitives::Value::Array(a) => {
-                AmqpValue::Array(a.iter().map(|v| v.into()).collect())
+                AmqpValue::Array(a.iter().map(Into::into).collect())
             }
             fe2o3_amqp_types::primitives::Value::Described(d) => {
                 let descriptor = match &d.descriptor {
@@ -582,7 +574,7 @@ impl PartialEq<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             AmqpValue::Symbol(s) => self == &fe2o3_amqp_types::primitives::Value::Symbol(s.into()),
             AmqpValue::List(l) => {
                 self == &fe2o3_amqp_types::primitives::Value::List(
-                    l.0.iter().map(|v| v.into()).collect(),
+                    l.0.iter().map(Into::into).collect(),
                 )
             }
             AmqpValue::Map(m) => {

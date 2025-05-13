@@ -92,18 +92,12 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             }
             if let Some(offered_capabilities) = options.offered_capabilities {
                 builder = builder.set_offered_capabilities(
-                    offered_capabilities
-                        .into_iter()
-                        .map(|capability| capability.into())
-                        .collect(),
+                    offered_capabilities.into_iter().map(Into::into).collect(),
                 );
             }
             if let Some(desired_capabilities) = options.desired_capabilities {
                 builder = builder.set_desired_capabilities(
-                    desired_capabilities
-                        .into_iter()
-                        .map(|capability| capability.into())
-                        .collect(),
+                    desired_capabilities.into_iter().map(Into::into).collect(),
                 );
             }
             if let Some(properties) = options.properties {
@@ -166,7 +160,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                     fe2o3_amqp_types::primitives::Symbol::from(condition),
                 ),
                 description,
-                info.map(|i| i.into()),
+                info.map(Into::into),
             ))
             .await
             .map_err(|e| azure_core::Error::from(Fe2o3ConnectionError(e)));

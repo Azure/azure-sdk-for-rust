@@ -51,10 +51,10 @@ impl From<AmqpSource> for fe2o3_amqp_types::messaging::Source {
             builder = builder.default_outcome(default_outcome.into());
         }
         if let Some(outcomes) = source.outcomes {
-            builder = builder.outcomes(outcomes.into_iter().map(|o| o.into()).collect::<fe2o3_amqp_types::primitives::Array<fe2o3_amqp_types::primitives::Symbol>>());
+            builder = builder.outcomes(outcomes.into_iter().map(Into::into).collect::<fe2o3_amqp_types::primitives::Array<fe2o3_amqp_types::primitives::Symbol>>());
         }
         if let Some(capabilities) = source.capabilities {
-            builder = builder.capabilities(capabilities.into_iter().map(|o| o.into()).collect::<fe2o3_amqp_types::primitives::Array<fe2o3_amqp_types::primitives::Symbol>>());
+            builder = builder.capabilities(capabilities.into_iter().map(Into::into).collect::<fe2o3_amqp_types::primitives::Array<fe2o3_amqp_types::primitives::Symbol>>());
         }
         builder.build()
     }
@@ -97,11 +97,11 @@ impl From<fe2o3_amqp_types::messaging::Source> for AmqpSource {
         }
         if let Some(outcomes) = source.outcomes {
             amqp_source_builder =
-                amqp_source_builder.with_outcomes(outcomes.iter().map(|o| o.into()).collect());
+                amqp_source_builder.with_outcomes(outcomes.iter().map(Into::into).collect());
         }
         if let Some(capabilities) = source.capabilities {
             amqp_source_builder = amqp_source_builder
-                .with_capabilities(capabilities.iter().map(|c| c.into()).collect());
+                .with_capabilities(capabilities.iter().map(Into::into).collect());
         }
         amqp_source_builder.build()
     }

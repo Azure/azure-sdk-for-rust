@@ -67,12 +67,12 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             }
             if let Some(offered_capabilities) = options.offered_capabilities {
                 session_builder = session_builder.set_offered_capabilities(
-                    offered_capabilities.into_iter().map(|c| c.into()).collect(),
+                    offered_capabilities.into_iter().map(Into::into).collect(),
                 );
             }
             if let Some(desired_capabilities) = options.desired_capabilities {
                 session_builder = session_builder.set_desired_capabilities(
-                    desired_capabilities.into_iter().map(|c| c.into()).collect(),
+                    desired_capabilities.into_iter().map(Into::into).collect(),
                 );
             }
             if let Some(properties) = options.properties {
@@ -167,8 +167,8 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
                 AmqpSendOutcome::Rejected(rejected.error.map(AmqpDescribedError::from))
             }
             fe2o3_amqp_types::messaging::Outcome::Released(_) => AmqpSendOutcome::Released,
-            fe2o3_amqp_types::messaging::Outcome::Modified(m) => {
-                AmqpSendOutcome::Modified((&m).into())
+            fe2o3_amqp_types::messaging::Outcome::Modified(ref m) => {
+                AmqpSendOutcome::Modified(m.into())
             }
         })
     }
