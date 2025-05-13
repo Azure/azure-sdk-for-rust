@@ -18,6 +18,7 @@ categories = ["api-bindings"]
 [dependencies]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
+futures.workspace = true
 serde.workspace = true
 time.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }

@@ -12,3 +12,7 @@ pub use blob_client::BlobClient;
 pub use blob_container_client::BlobContainerClient;
 pub use blob_service_client::BlobServiceClient;
 pub use block_blob_client::BlockBlobClient;
+
+pub use crate::generated::clients::{
+    BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions, BlockBlobClientOptions,
+};
