@@ -15,13 +15,6 @@ impl TokenCache {
         Self(RwLock::new(HashMap::new()))
     }
 
-    #[allow(dead_code)]
-    pub(crate) async fn clear(&self) -> azure_core::Result<()> {
-        let mut token_cache = self.0.write().await;
-        token_cache.clear();
-        Ok(())
-    }
-
     pub(crate) async fn get_token(
         &self,
         scopes: &[&str],
