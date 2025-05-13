@@ -11,7 +11,11 @@ use crate::{
     ThroughputOptions,
 };
 
-use azure_core::http::{request::Request, response::Response, Method};
+use azure_core::http::{
+    request::{options::ContentType, Request},
+    response::Response,
+    Method,
+};
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -110,13 +114,13 @@ impl DatabaseClient {
     ) -> azure_core::Result<FeedPager<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.containers_link);
-        let base_request = Request::new(url, Method::Post);
 
         self.pipeline.send_query_request(
             options.method_options.context,
             query.into(),
-            base_request,
+            url,
             self.containers_link.clone(),
+            |_| Ok(()),
         )
     }
 
@@ -136,6 +140,7 @@ impl DatabaseClient {
         let url = self.pipeline.url(&self.containers_link);
         let mut req = Request::new(url, Method::Post);
         req.insert_headers(&options.throughput)?;
+        req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&properties)?;
 
         self.pipeline
