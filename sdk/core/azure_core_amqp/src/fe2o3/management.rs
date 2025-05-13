@@ -7,6 +7,7 @@ use crate::{
     error::AmqpErrorKind,
     management::AmqpManagementApis,
     session::AmqpSession,
+    simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpValue},
     AmqpError,
 };
@@ -92,7 +93,7 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
     async fn call(
         &self,
         operation_type: String,
-        application_properties: AmqpOrderedMap<String, AmqpValue>,
+        application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
         let mut management = self
             .management
@@ -112,18 +113,10 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             let e = AmqpError::try_from(e)?;
             Err(e.into())
         } else {
-            Ok(response.unwrap().entity_attributes.into())
+            Ok((&response.unwrap().entity_attributes).into())
         }
     }
 }
-
-// impl TryFrom<Fe2o3ManagementError> for azure_core::Error {
-//     type Error = azure_core::Error;
-//     fn try_from(e: Fe2o3ManagementError) -> std::result::Result<Self, Self::Error> {
-//         let e = AmqpError::try_from(e.0)?;
-//         Ok(e.into())
-//     }
-// }
 
 impl TryFrom<fe2o3_amqp_management::error::Error> for AmqpError {
     type Error = azure_core::Error;
@@ -161,14 +154,14 @@ impl From<fe2o3_amqp_management::error::AttachError> for AmqpError {
 struct WithApplicationPropertiesRequest<'a> {
     entity_type: String,
     access_token: &'a AccessToken,
-    application_properties: AmqpOrderedMap<String, AmqpValue>,
+    application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
 }
 
 impl<'a> WithApplicationPropertiesRequest<'a> {
     pub fn new(
         entity_type: String,
         access_token: &'a AccessToken,
-        application_properties: AmqpOrderedMap<String, AmqpValue>,
+        application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
     ) -> Self {
         Self {
             entity_type,

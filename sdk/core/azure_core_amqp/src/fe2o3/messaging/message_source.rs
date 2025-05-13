@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use fe2o3_amqp_types::definitions::Fields;
-
 use crate::{
     messaging::AmqpSource,
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
@@ -31,15 +29,12 @@ impl From<AmqpSource> for fe2o3_amqp_types::messaging::Source {
             builder = builder.dynamic(dynamic);
         }
         if let Some(dynamic_node_properties) = source.dynamic_node_properties {
-            let fields: Fields = Fields::new();
-            let fields = dynamic_node_properties
-                .into_iter()
-                .fold(fields, |mut fields, (k, v)| {
-                    fields.insert(k.into(), v.into());
-                    fields
-                });
-
-            builder = builder.dynamic_node_properties(fields);
+            builder = builder.dynamic_node_properties(
+                dynamic_node_properties
+                    .iter()
+                    .map(|(k, v)| (k.0.into(), v.into()))
+                    .collect::<fe2o3_amqp_types::definitions::Fields>(),
+            );
         }
         if let Some(distribution_mode) = source.distribution_mode {
             builder = builder.distribution_mode(distribution_mode.into());
@@ -47,25 +42,19 @@ impl From<AmqpSource> for fe2o3_amqp_types::messaging::Source {
         if let Some(filter) = source.filter {
             builder = builder.filter(
                 filter
-                    .into_iter()
-                    .map(|(k, v)| (k.into(), v.into()))
-                    .collect(),
+                    .iter()
+                    .map(|(k, v)| (k.0.into(), v.into()))
+                    .collect::<fe2o3_amqp_types::messaging::FilterSet>(),
             );
         }
         if let Some(default_outcome) = source.default_outcome {
             builder = builder.default_outcome(default_outcome.into());
         }
         if let Some(outcomes) = source.outcomes {
-            let outcomes: fe2o3_amqp_types::primitives::Array<
-                fe2o3_amqp_types::primitives::Symbol,
-            > = outcomes.into_iter().map(|o| o.into()).collect();
-            builder = builder.outcomes(outcomes);
+            builder = builder.outcomes(outcomes.into_iter().map(Into::into).collect::<fe2o3_amqp_types::primitives::Array<fe2o3_amqp_types::primitives::Symbol>>());
         }
         if let Some(capabilities) = source.capabilities {
-            let capabilities: fe2o3_amqp_types::primitives::Array<
-                fe2o3_amqp_types::primitives::Symbol,
-            > = capabilities.into_iter().map(|c| c.into()).collect();
-            builder = builder.capabilities(capabilities);
+            builder = builder.capabilities(capabilities.into_iter().map(Into::into).collect::<fe2o3_amqp_types::primitives::Array<fe2o3_amqp_types::primitives::Symbol>>());
         }
         builder.build()
     }
@@ -73,48 +62,46 @@ impl From<AmqpSource> for fe2o3_amqp_types::messaging::Source {
 
 impl From<fe2o3_amqp_types::messaging::Source> for AmqpSource {
     fn from(source: fe2o3_amqp_types::messaging::Source) -> Self {
-        let mut amqp_source_builder = AmqpSource::builder();
-
-        if let Some(address) = source.address {
-            amqp_source_builder = amqp_source_builder.with_address(address);
-        }
-        amqp_source_builder = amqp_source_builder
+        let mut amqp_source_builder = AmqpSource::builder()
             .with_durable(source.durable.into())
             .with_expiry_policy(source.expiry_policy.into())
             .with_timeout(source.timeout)
             .with_dynamic(source.dynamic);
 
-        if let Some(dynamic_node_properties) = source.dynamic_node_properties {
-            let dynamic_node_properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
-                dynamic_node_properties
-                    .into_iter()
-                    .map(|(k, v)| (k.into(), v.into()))
-                    .collect();
+        if let Some(address) = source.address {
+            amqp_source_builder = amqp_source_builder.with_address(address);
+        }
 
-            amqp_source_builder =
-                amqp_source_builder.with_dynamic_node_properties(dynamic_node_properties);
+        if let Some(dynamic_node_properties) = source.dynamic_node_properties {
+            amqp_source_builder = amqp_source_builder.with_dynamic_node_properties(
+                dynamic_node_properties
+                    .iter()
+                    .map(|(k, v)| (k.into(), v.into()))
+                    .collect::<AmqpOrderedMap<AmqpSymbol, AmqpValue>>(),
+            );
         }
         if let Some(distribution_mode) = source.distribution_mode {
             amqp_source_builder =
                 amqp_source_builder.with_distribution_mode(distribution_mode.into());
         }
         if let Some(filter) = source.filter {
-            let filter: AmqpOrderedMap<AmqpSymbol, AmqpValue> = filter
-                .into_iter()
-                .map(|(k, v)| (k.into(), v.into()))
-                .collect();
-            amqp_source_builder = amqp_source_builder.with_filter(filter);
+            amqp_source_builder = amqp_source_builder.with_filter(
+                filter
+                    .iter()
+                    .map(|(k, v)| (k.into(), v.into()))
+                    .collect::<AmqpOrderedMap<AmqpSymbol, AmqpValue>>(),
+            );
         }
         if let Some(default_outcome) = source.default_outcome {
             amqp_source_builder = amqp_source_builder.with_default_outcome(default_outcome.into());
         }
         if let Some(outcomes) = source.outcomes {
             amqp_source_builder =
-                amqp_source_builder.with_outcomes(outcomes.into_iter().map(|o| o.into()).collect());
+                amqp_source_builder.with_outcomes(outcomes.iter().map(Into::into).collect());
         }
         if let Some(capabilities) = source.capabilities {
             amqp_source_builder = amqp_source_builder
-                .with_capabilities(capabilities.into_iter().map(|c| c.into()).collect());
+                .with_capabilities(capabilities.iter().map(Into::into).collect());
         }
         amqp_source_builder.build()
     }

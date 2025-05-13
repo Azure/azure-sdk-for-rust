@@ -5,6 +5,7 @@ use crate::{
     error::{AmqpDescribedError, AmqpErrorCondition, AmqpErrorKind},
     AmqpError,
 };
+use std::str::FromStr;
 
 // newtype implementations for fe2o3_amqp errors. These should only be used if the transform of the
 // fe2o3_amqp error directly to an AmqpError is not possible. This is the case for errors which end up
@@ -45,28 +46,20 @@ impl From<fe2o3_amqp::transport::Error> for Fe2o3TransportError {
 }
 
 // Specializations of From for common AMQP types.
-impl From<fe2o3_amqp_types::definitions::ErrorCondition> for AmqpErrorCondition {
-    fn from(e: fe2o3_amqp_types::definitions::ErrorCondition) -> Self {
+impl From<&fe2o3_amqp_types::definitions::ErrorCondition> for AmqpErrorCondition {
+    fn from(e: &fe2o3_amqp_types::definitions::ErrorCondition) -> Self {
         match e {
             fe2o3_amqp_types::definitions::ErrorCondition::AmqpError(amqp_error) => {
-                AmqpErrorCondition::from(crate::AmqpSymbol::from(
-                    fe2o3_amqp_types::primitives::Symbol::from(&amqp_error),
-                ))
+                AmqpErrorCondition::from(amqp_error)
             }
             fe2o3_amqp_types::definitions::ErrorCondition::ConnectionError(connection_error) => {
-                AmqpErrorCondition::from(crate::AmqpSymbol::from(
-                    fe2o3_amqp_types::primitives::Symbol::from(&connection_error),
-                ))
+                AmqpErrorCondition::from(connection_error)
             }
             fe2o3_amqp_types::definitions::ErrorCondition::SessionError(session_error) => {
-                AmqpErrorCondition::from(crate::AmqpSymbol::from(
-                    fe2o3_amqp_types::primitives::Symbol::from(&session_error),
-                ))
+                AmqpErrorCondition::from(session_error)
             }
             fe2o3_amqp_types::definitions::ErrorCondition::LinkError(link_error) => {
-                AmqpErrorCondition::from(crate::AmqpSymbol::from(
-                    fe2o3_amqp_types::primitives::Symbol::from(&link_error),
-                ))
+                AmqpErrorCondition::from(link_error)
             }
             fe2o3_amqp_types::definitions::ErrorCondition::Custom(symbol) => {
                 AmqpErrorCondition::from(crate::AmqpSymbol::from(symbol))
@@ -75,12 +68,42 @@ impl From<fe2o3_amqp_types::definitions::ErrorCondition> for AmqpErrorCondition 
     }
 }
 
+// Implement specific From traits for the error types we need instead of using a generic implementation
+impl From<&fe2o3_amqp_types::definitions::AmqpError> for AmqpErrorCondition {
+    fn from(e: &fe2o3_amqp_types::definitions::AmqpError) -> Self {
+        // Note that the `from_str` implementation from `create_extensible_enum` will
+        // never return an error. So the `unwrap` is there to silence the compiler.
+        AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
+            .unwrap()
+    }
+}
+
+impl From<&fe2o3_amqp_types::definitions::ConnectionError> for AmqpErrorCondition {
+    fn from(e: &fe2o3_amqp_types::definitions::ConnectionError) -> Self {
+        AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
+            .unwrap()
+    }
+}
+
+impl From<&fe2o3_amqp_types::definitions::SessionError> for AmqpErrorCondition {
+    fn from(e: &fe2o3_amqp_types::definitions::SessionError) -> Self {
+        AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
+            .unwrap()
+    }
+}
+
+impl From<&fe2o3_amqp_types::definitions::LinkError> for AmqpErrorCondition {
+    fn from(e: &fe2o3_amqp_types::definitions::LinkError) -> Self {
+        AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
+            .unwrap()
+    }
+}
 impl From<fe2o3_amqp_types::definitions::Error> for AmqpDescribedError {
     fn from(e: fe2o3_amqp_types::definitions::Error) -> Self {
         AmqpDescribedError::new(
-            e.condition.into(),
+            (&e.condition).into(),
             e.description,
-            e.info.unwrap_or_default().into(),
+            (&e.info.unwrap_or_default()).into(),
         )
     }
 }
@@ -162,7 +185,7 @@ mod tests {
                 let error = fe2o3_amqp_types::definitions::ErrorCondition::$fe2o3_type(
                     fe2o3_amqp_types::definitions::$fe2o3_type::$variant,
                 );
-                let amqp_error = AmqpErrorCondition::from(error);
+                let amqp_error = AmqpErrorCondition::from(&error);
                 assert_eq!(amqp_error, AmqpErrorCondition::$amqp_variant);
             }
         };

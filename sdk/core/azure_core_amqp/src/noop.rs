@@ -13,6 +13,7 @@ use super::{
     receiver::{AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode},
     sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis, AmqpSenderOptions},
     session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions},
+    simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
 use async_trait::async_trait;
@@ -138,7 +139,7 @@ impl AmqpManagementApis for NoopAmqpManagement {
     async fn call(
         &self,
         operation_type: String,
-        application_properties: AmqpOrderedMap<String, AmqpValue>,
+        application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
     ) -> Result<AmqpOrderedMap<String, AmqpValue>> {
         unimplemented!();
     }
