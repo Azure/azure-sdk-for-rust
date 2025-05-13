@@ -24,12 +24,13 @@ use azure_core::{
     Bytes, Result,
 };
 use std::sync::Arc;
+use typespec_client_core::http::XmlFormat;
 
 pub struct BlockBlobClient {
     pub(crate) blob_name: String,
     pub(crate) container_name: String,
     pub(crate) endpoint: Url,
-    pub(crate) pipeline: Pipeline,
+    pub(crate) pipeline: Pipeline<XmlFormat>,
     pub(crate) version: String,
 }
 
@@ -108,7 +109,7 @@ impl BlockBlobClient {
         &self,
         blocks: RequestContent<BlockLookupList>,
         options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientCommitBlockListResult>> {
+    ) -> Result<Response<BlockBlobClientCommitBlockListResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -229,7 +230,7 @@ impl BlockBlobClient {
         &self,
         list_type: BlockListType,
         options: Option<BlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockList>> {
+    ) -> Result<Response<BlockList, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -280,7 +281,7 @@ impl BlockBlobClient {
         content_length: u64,
         copy_source: String,
         options: Option<BlockBlobClientPutBlobFromUrlOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientPutBlobFromUrlResult>> {
+    ) -> Result<Response<BlockBlobClientPutBlobFromUrlResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -422,7 +423,7 @@ impl BlockBlobClient {
         &self,
         query_request: RequestContent<QueryRequest>,
         options: Option<BlockBlobClientQueryOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientQueryResult>> {
+    ) -> Result<Response<BlockBlobClientQueryResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -498,7 +499,7 @@ impl BlockBlobClient {
         content_length: u64,
         body: RequestContent<Bytes>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientStageBlockResult>> {
+    ) -> Result<Response<BlockBlobClientStageBlockResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -566,7 +567,7 @@ impl BlockBlobClient {
         content_length: u64,
         source_url: String,
         options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientStageBlockFromUrlResult>> {
+    ) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -661,7 +662,7 @@ impl BlockBlobClient {
         body: RequestContent<Bytes>,
         content_length: u64,
         options: Option<BlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadResult>> {
+    ) -> Result<Response<BlockBlobClientUploadResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

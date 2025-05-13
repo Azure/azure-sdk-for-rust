@@ -115,7 +115,7 @@ impl Client {
             .send::<PlaybackStartResult>(&ctx, &mut request)
             .await?;
         let recording_id = resp.headers().get_str(&RECORDING_ID)?.to_string();
-        let mut result: PlaybackStartResult = resp.into_json_body().await?;
+        let mut result: PlaybackStartResult = resp.into_body().await?;
         result.recording_id = recording_id;
         Ok(result)
     }
@@ -212,7 +212,7 @@ impl Client {
         self.pipeline
             .send::<RemovedSanitizers>(&ctx, &mut request)
             .await?
-            .into_json_body()
+            .into_body()
             .await
     }
 

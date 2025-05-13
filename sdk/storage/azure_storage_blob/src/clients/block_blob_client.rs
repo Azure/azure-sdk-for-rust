@@ -25,6 +25,7 @@ use azure_core::{
     Bytes, Result,
 };
 use std::sync::Arc;
+use typespec_client_core::http::XmlFormat;
 
 /// A client to interact with a specific Azure storage Block blob, although that blob may not yet exist.
 pub struct BlockBlobClient {
@@ -104,7 +105,7 @@ impl BlockBlobClient {
         &self,
         blocks: RequestContent<BlockLookupList>,
         options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientCommitBlockListResult>> {
+    ) -> Result<Response<BlockBlobClientCommitBlockListResult, XmlFormat>> {
         self.client.commit_block_list(blocks, options).await
     }
 
@@ -123,7 +124,7 @@ impl BlockBlobClient {
         content_length: u64,
         body: RequestContent<Bytes>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientStageBlockResult>> {
+    ) -> Result<Response<BlockBlobClientStageBlockResult, XmlFormat>> {
         self.client
             .stage_block(block_id, content_length, body, options)
             .await
@@ -139,7 +140,7 @@ impl BlockBlobClient {
         &self,
         list_type: BlockListType,
         options: Option<BlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockList>> {
+    ) -> Result<Response<BlockList, XmlFormat>> {
         self.client.get_block_list(list_type, options).await
     }
 }
