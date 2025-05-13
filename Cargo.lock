@@ -317,6 +317,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity",
  "azure_messaging_eventhubs",
+ "criterion",
  "futures",
  "rand",
  "rand_chacha",
