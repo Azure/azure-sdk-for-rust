@@ -116,3 +116,151 @@ impl Policy for BearerTokenCredentialPolicy {
 fn should_refresh(expires_on: &OffsetDateTime) -> bool {
     *expires_on <= OffsetDateTime::now_utc() + Duration::from_secs(300)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        credentials::{Secret, TokenCredential},
+        http::{
+            headers::{Headers, AUTHORIZATION},
+            policies::Policy,
+            Request, Response, StatusCode,
+        },
+        Bytes, Result,
+    };
+    use async_trait::async_trait;
+    use azure_core_test::http::MockHttpClient;
+    use futures::FutureExt;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    use std::time::Duration;
+    use time::OffsetDateTime;
+    use typespec_client_core::http::{policies::TransportPolicy, Method, TransportOptions};
+
+    #[derive(Debug, Clone)]
+    struct MockCredential {
+        calls: Arc<AtomicUsize>,
+        tokens: Arc<[AccessToken]>,
+    }
+
+    impl MockCredential {
+        fn new(tokens: &[AccessToken]) -> Self {
+            Self {
+                tokens: tokens.into(),
+                calls: Arc::new(AtomicUsize::new(0)),
+            }
+        }
+
+        fn get_token_calls(&self) -> usize {
+            self.calls.load(Ordering::SeqCst).saturating_sub(1)
+        }
+    }
+
+    #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+    impl TokenCredential for MockCredential {
+        async fn get_token(&self, _scopes: &[&str]) -> Result<AccessToken> {
+            let i = self.calls.fetch_add(1, Ordering::SeqCst);
+            self.tokens
+                .get(i)
+                .ok_or_else(|| Error::message(ErrorKind::Credential, "no more mock tokens"))
+                .cloned()
+        }
+    }
+
+    #[tokio::test]
+    async fn authn_error() {
+        // this mock's get_token() will return an error because it has no tokens
+        let credential = MockCredential::new(&[]);
+        let policy = BearerTokenCredentialPolicy::new(Arc::new(credential), ["scope"]);
+        let client = MockHttpClient::new(|_| panic!("expected an error from get_token"));
+        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(Arc::new(
+            client,
+        ))));
+        let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
+
+        let err = policy
+            .send(&Context::default(), &mut req, &[transport.clone()])
+            .await
+            .expect_err("request should fail");
+
+        assert_eq!(ErrorKind::Credential, *err.kind());
+    }
+
+    #[tokio::test]
+    async fn caches_token() {
+        let credential = MockCredential::new(&[AccessToken {
+            token: Secret::new("fake".to_string()),
+            expires_on: OffsetDateTime::now_utc() + Duration::from_secs(3600),
+        }]);
+        let policy = BearerTokenCredentialPolicy::new(Arc::new(credential), ["scope"]);
+        let client = Arc::new(MockHttpClient::new(|actual| {
+            async move {
+                let authz = actual.headers().get_str(&AUTHORIZATION)?;
+
+                assert_eq!("Bearer fake", authz);
+
+                Ok(Response::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    Bytes::new(),
+                ))
+            }
+            .boxed()
+        }));
+        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(client)));
+
+        for _ in 0..3 {
+            let ctx = Context::default();
+            let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
+            policy
+                .send(&ctx, &mut req, &[transport.clone()])
+                .await
+                .unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn refreshes_token() {
+        let credential = Arc::new(MockCredential::new(&[
+            AccessToken {
+                token: Secret::new("1".to_string()),
+                expires_on: OffsetDateTime::now_utc() - Duration::from_secs(1),
+            },
+            AccessToken {
+                token: Secret::new("2".to_string()),
+                expires_on: OffsetDateTime::now_utc() + Duration::from_secs(3600),
+            },
+        ]));
+        let policy = BearerTokenCredentialPolicy::new(credential.clone(), ["scope"]);
+        let client = Arc::new(MockHttpClient::new(move |actual| {
+            let credential = credential.clone();
+            async move {
+                let authz = actual.headers().get_str(&AUTHORIZATION)?;
+
+                let expected = &credential.tokens[credential.get_token_calls()];
+                assert_eq!(format!("Bearer {}", expected.token.secret()), authz);
+
+                Ok(Response::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    Bytes::new(),
+                ))
+            }
+            .boxed()
+        }));
+        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(client)));
+
+        for _ in 0..3 {
+            let ctx = Context::default();
+            let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
+            policy
+                .send(&ctx, &mut req, &[transport.clone()])
+                .await
+                .unwrap();
+        }
+    }
+}
