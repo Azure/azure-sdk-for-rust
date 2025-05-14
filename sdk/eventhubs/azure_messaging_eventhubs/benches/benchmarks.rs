@@ -27,7 +27,9 @@ fn send_batch_benchmark(c: &mut Criterion) {
     setup();
 
     // Check if the environment variable is set thus allowing the benchmarks to run
-    if azure_core_test::TestMode::current().unwrap() != azure_core_test::TestMode::Live {
+    if azure_core_test::TestMode::current().unwrap_or(azure_core_test::TestMode::Playback)
+        != azure_core_test::TestMode::Live
+    {
         println!("Skipping benchmarks. Set AZURE_TEST_MODE to run.");
         return;
     }
@@ -73,7 +75,10 @@ fn send_batch_benchmark(c: &mut Criterion) {
 
 criterion_group!(
     name = send_batch_benchmarks;
-    config = Criterion::default().sample_size(100).warm_up_time(std::time::Duration::new(1, 0));
+    config = Criterion::default()
+        .sample_size(100)
+        .warm_up_time(std::time::Duration::new(1, 0))
+        .measurement_time(std::time::Duration::new(250, 0));
     targets = send_batch_benchmark
 );
 
@@ -81,7 +86,9 @@ fn send_benchmark(c: &mut Criterion) {
     setup();
 
     // Check if the environment variable is set thus allowing the benchmarks to run
-    if azure_core_test::TestMode::current().unwrap() != azure_core_test::TestMode::Live {
+    if azure_core_test::TestMode::current().unwrap_or(azure_core_test::TestMode::Playback)
+        != azure_core_test::TestMode::Live
+    {
         println!("Skipping benchmarks. Set AZURE_TEST_MODE to run.");
         return;
     }
@@ -132,7 +139,10 @@ fn send_benchmark(c: &mut Criterion) {
 
 criterion_group!(
     name = send_benchmarks;
-    config = Criterion::default().sample_size(1000).warm_up_time(std::time::Duration::new(1, 0)).measurement_time(std::time::Duration::new(205, 0));
+    config = Criterion::default()
+        .sample_size(1000)
+        .warm_up_time(std::time::Duration::new(1, 0))
+        .measurement_time(std::time::Duration::new(2200, 0));
     targets =  send_benchmark
 );
 

@@ -222,6 +222,10 @@ impl AmqpComposite {
     pub fn value(&self) -> &AmqpList {
         &self.value
     }
+
+    pub fn value_mut(&mut self) -> &mut AmqpList {
+        &mut self.value
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]

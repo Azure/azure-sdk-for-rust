@@ -30,7 +30,7 @@ pub mod builders {
 pub use event_data::EventData;
 
 use azure_core::Uuid;
-use azure_core_amqp::AmqpMessageId;
+use azure_core_amqp::message::AmqpMessageId;
 use std::fmt::Debug;
 use std::time::SystemTime;
 
@@ -259,7 +259,7 @@ pub(crate) struct ConsumerClientDetails {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core_amqp::AmqpMessageId;
+    use azure_core_amqp::message::AmqpMessageId;
 
     #[test]
     fn test_message_id_from_u64() {

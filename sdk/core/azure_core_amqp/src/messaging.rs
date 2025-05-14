@@ -1318,7 +1318,7 @@ impl Deserializable<AmqpMessage> for AmqpMessage {
     }
 }
 
-mod builders {
+pub(crate) mod builders {
     use super::*;
 
     pub struct AmqpSourceBuilder {
