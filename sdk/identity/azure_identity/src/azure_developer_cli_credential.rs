@@ -14,7 +14,7 @@ use azure_core::{
 };
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
-use std::{fmt::Debug, marker::PhantomData, str, sync::Arc};
+use std::sync::Arc;
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
@@ -122,13 +122,7 @@ impl TokenCredential for AzureDeveloperCliCredential {
             command.push_str(" --tenant-id ");
             command.push_str(tenant_id);
         }
-        shell_exec(
-            self.executor.clone(),
-            &self.env,
-            &command,
-            PhantomData::<AzdTokenResponse>,
-        )
-        .await
+        shell_exec::<AzdTokenResponse>(self.executor.clone(), &self.env, &command).await
     }
 }
 

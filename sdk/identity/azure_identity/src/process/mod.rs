@@ -8,7 +8,7 @@ use azure_core::{
     error::{Error, ErrorKind, Result},
     process::Executor,
 };
-use std::{ffi::OsStr, marker::PhantomData, sync::Arc};
+use std::{ffi::OsStr, sync::Arc};
 
 use crate::env::Env;
 
@@ -21,7 +21,6 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
     executor: Arc<dyn Executor>,
     env: &Env,
     command: &str,
-    _: PhantomData<T>,
 ) -> Result<AccessToken> {
     let (workdir, program, c_switch) = if cfg!(target_os = "windows") {
         let system_root = env.var("SYSTEMROOT").map_err(|_| {

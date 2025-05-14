@@ -14,7 +14,7 @@ use azure_core::{
     process::{new_executor, Executor},
 };
 use serde::Deserialize;
-use std::{fmt::Debug, marker::PhantomData, str, sync::Arc};
+use std::sync::Arc;
 use time::OffsetDateTime;
 use tracing::trace;
 
@@ -149,12 +149,11 @@ impl AzureCliCredential {
 
         trace!("running Azure CLI command: {command}");
 
-        shell_exec(
+        shell_exec::<CliTokenResponse>(
             // unwrap() is safe because new() ensured the values are Some
             self.options.executor.clone().unwrap(),
             self.options.env.as_ref().unwrap(),
             &command,
-            PhantomData::<CliTokenResponse>,
         )
         .await
     }
