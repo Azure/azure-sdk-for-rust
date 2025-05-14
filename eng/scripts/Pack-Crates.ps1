@@ -8,7 +8,7 @@ param(
   [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
-  [switch]$NoVerify
+  [switch]$Verify
 )
 
 $ErrorActionPreference = 'Stop'
@@ -80,8 +80,8 @@ function Get-CargoPackages() {
 }
 
 function Get-PackagesToBuild() {
-  $packages = Get-CargoPackages
-  $outputPackageNames = Get-OutputPackageNames $packages
+  [array]$packages = Get-CargoPackages
+  [array]$outputPackageNames = Get-OutputPackageNames $packages
 
   # We start with output packages, then recursively add unreleased dependencies to the list of packages that need to be built
   [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
@@ -126,25 +126,64 @@ function Get-PackagesToBuild() {
   return $buildOrder
 }
 
-function Initialize-VendorDirectory() {
-  $path = "$RepoRoot/target/vendor"
-  Invoke-LoggedCommand "cargo vendor $path" -GroupOutput | Out-Host
-  return $path
+# https://doc.rust-lang.org/cargo/reference/registry-web-api.html#publish
+# https://github.com/rust-lang/cargo/blob/5c87c14f9a162daf10d4133fdaab35c72d67b018/crates/crates-io/lib.rs#L42
+function Get-ApiMetadata($package) {
+  $packagePath = Split-Path -Path $package.manifest_path -Parent
+  $readmePath = $package.readme ? (Join-Path -Path $packagePath -ChildPath $package.readme) : $null
+
+  $jsonBody = [ordered]@{
+    'name'          = $package.name
+    'vers'          = $package.version
+    'deps'          = @()
+    'features'      = $package.features
+    'authors'       = $package.authors
+    'description'   = $package.description
+    'documentation' = $package.documentation
+    'homepage'      = $package.homepage
+    'readme'        = if ($readmePath -and (Test-Path -Path $readmePath)) {
+      Get-Content -Path $readmePath -Raw
+    }
+    else {
+      $null
+    }
+    'readme_file'   = $package.readme
+    'keywords'      = $package.keywords
+    'categories'    = $package.categories
+    'license'       = $package.license
+    'license_file'  = $package.license_file
+    'repository'    = $package.repository
+    'links'         = $package.links
+    'rust_version'  = $package.rust_version
+  }
+
+  foreach ($dependency in $package.dependencies) {
+    $jsonBody.deps += @{
+      'name'                  = $dependency.name
+      'version_req'           = $dependency.req
+      'features'              = $dependency.features
+      'optional'              = $dependency.optional
+      'default_features'      = $dependency.default_features
+      'target'                = $dependency.target
+      'kind'                  = $dependency.kind
+      'explicit_name_in_toml' = $dependency.rename
+    }
+  }
+
+  return $jsonBody
 }
 
-function Add-CrateToLocalRegistry($LocalRegistryPath, $Package) {
-  $packageName = $Package.name
-  $packageVersion = $Package.version
+function New-ApiPutFile($crateMetadata, $crateFilePath) {
+  $metadataBytes = [Text.Encoding]::Utf8.GetBytes($crateMetadata)
+  $metadataLengthBytes = [BitConverter]::GetBytes([UInt32]$metadataBytes.Length)
+  $crateBytes = [IO.File]::ReadAllBytes($crateFilePath)
+  $crateLengthBytes = [BitConverter]::GetBytes([UInt32]$crateBytes.Length)
 
-  # create an index entry for the package
-  $packagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
+  $bytes += $metadataLengthBytes + $metadataBytes + $crateLengthBytes + $crateBytes
 
-  Write-Host "Copying package '$packageName' to vendor directory '$LocalRegistryPath'"
-  Copy-Item -Path $packagePath -Destination $LocalRegistryPath -Recurse
-
-  #write an empty checksum file
-  '{"files":{}}' | Out-File -FilePath "$LocalRegistryPath/$packageName-$packageVersion/.cargo-checksum.json" -Encoding utf8
+  return $bytes
 }
+
 
 function Create-ApiViewFile($package) {
   $packageName = $package.name
@@ -158,51 +197,70 @@ function Create-ApiViewFile($package) {
 
 Push-Location $RepoRoot
 try {
-  $localRegistryPath = Initialize-VendorDirectory
-
   [array]$packages = Get-PackagesToBuild
 
-  Write-Host "Building packages in the following order:"
+  $command = "cargo +nightly -Zpackage-workspace package --allow-dirty --locked"
+
+  Write-Host "Building packages:"
   foreach ($package in $packages) {
     $packageName = $package.name
     $type = if ($package.OutputPackage) { "output" } else { "dependency" }
     Write-Host "  $packageName ($type)"
+    $command += " --package $packageName"
   }
 
-  foreach ($package in $packages) {
-    Write-Host ""
+  if (!$Verify) {
+    $command += " --no-verify"
+  }
 
-    $packageName = $package.name
-    $packageVersion = $package.version
+  if ($env:SYSTEM_DEBUG -eq 'true') {
+    Write-Host "##[group] $RepoRoot/Cargo.lock"
+    Get-Content "$RepoRoot/Cargo.lock"
+    Write-Host "##[endgroup]"
+  }
 
-    $command = "cargo publish --locked --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
+  Invoke-LoggedCommand -Command $command -GroupOutput
 
-    if ($NoVerify) {
-      $command += " --no-verify"
-    }
+  if ($env:SYSTEM_DEBUG -eq 'true') {
+    Write-Host "##[group] $RepoRoot/Cargo.lock"
+    Get-Content "$RepoRoot/Cargo.lock"
+    Write-Host "##[endgroup]"
+  }
 
-    Invoke-LoggedCommand -Command $command -GroupOutput
+  if ($OutputPath) {
+    foreach ($package in $packages | Where-Object { $_.OutputPackage }) {
+      $packageName = $package.name
+      $packageVersion = $package.version
+      
+      Write-Host "`nProcessing package '$packageName'"
 
-
-    # copy the package to the local registry
-    Add-CrateToLocalRegistry `
-      -LocalRegistryPath $localRegistryPath `
-      -Package $package
-
-    if ($OutputPath -and $package.OutputPackage) {
-      $sourcePath = "$RepoRoot/target/package/$packageName-$packageVersion"
+      $sourcePath = "$RepoRoot/target/package/$packageName-$packageVersion.crate"
       $targetPath = "$OutputPath/$packageName"
       $targetContentsPath = "$targetPath/contents"
       $targetApiReviewFile = "$targetPath/$packageName.rust.json"
+      $targetCrateFile = "$targetPath/$packageName-$packageVersion.crate"
+      $targetJsonFile = "$targetPath/$packageName-$packageVersion.json"
+      $targetBinFile = "$targetPath/$packageName.bin"
 
-      if (Test-Path -Path $targetContentsPath) {
-        Remove-Item -Path $targetContentsPath -Recurse -Force
-      }
-
-      Write-Host "Copying package '$packageName' to '$targetContentsPath'"
+      Remove-Item -Path $targetPath -Recurse -Force -ErrorAction SilentlyContinue
       New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
-      Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse -Exclude "Cargo.toml.orig"
 
+      Write-Host "Copying crate file to '$targetCrateFile'"
+      Copy-Item -Path $sourcePath -Destination $targetCrateFile -Force
+
+      $crateMetadata = Get-ApiMetadata $package | ConvertTo-Json -Depth 10
+
+      Write-Host "Writing crates.io request metadata to '$targetJsonFile'"
+      $crateMetadata | Out-File -FilePath "$targetJsonFile" -Encoding utf8
+
+      $uploadBytes = New-ApiPutFile $crateMetadata $sourcePath
+      Write-Host "Writing crates.io request bundle to '$targetBinFile'"
+      [IO.File]::WriteAllBytes($targetBinFile, $uploadBytes)
+
+      Write-Host "Exctracting crate file to '$targetContentsPath'"
+      New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
+      tar -xf $sourcePath --directory $targetContentsPath --strip-components=1 | Out-Null
+      
       Write-Host "Creating API review file"
       $apiReviewFile = Create-ApiViewFile $package
       
@@ -210,9 +268,6 @@ try {
       Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
     }
   }
-
-  Write-Host "Removing local registry"
-  Remove-Item -Path $localRegistryPath -Recurse -Force | Out-Null
 }
 finally {
   Pop-Location

@@ -31,6 +31,4 @@ foreach ($crateName in $crateNames) {
   }
 }
 
-if ($hasErrors) {
-  exit 1
-}
+exit $hasErrors ? 1 : 0
