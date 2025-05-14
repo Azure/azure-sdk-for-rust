@@ -7,24 +7,31 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use std::{env, sync::Arc};
 use tokio::runtime::Runtime;
 
-static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
+//static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
 
 fn setup() {
-    INIT_LOGGING.call_once(|| {
-        println!("Setting up test logger...");
+    // INIT_LOGGING.call_once(|| {
+    //     println!("Setting up test logger...");
 
-        use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
-        tracing_subscriber::fmt()
-            .with_env_filter(EnvFilter::from_default_env())
-            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
-            .with_ansi(std::env::var("NO_COLOR").map_or(true, |v| v.is_empty()))
-            .with_writer(std::io::stderr)
-            .init();
-    });
+    //     use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
+    //     tracing_subscriber::fmt()
+    //         .with_env_filter(EnvFilter::from_default_env())
+    //         .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+    //         .with_ansi(std::env::var("NO_COLOR").map_or(true, |v| v.is_empty()))
+    //         .with_writer(std::io::stderr)
+    //         .init();
+    // });
 }
 
 fn send_batch_benchmark(c: &mut Criterion) {
     setup();
+
+    // Check if the environment variable is set thus allowing the benchmarks to run
+    if azure_core_test::TestMode::current().unwrap() != azure_core_test::TestMode::Live {
+        println!("Skipping benchmarks. Set AZURE_TEST_MODE to run.");
+        return;
+    }
+
     let rt = Runtime::new().unwrap();
 
     let namespace = env::var("EVENTHUBS_HOST")
@@ -45,21 +52,20 @@ fn send_batch_benchmark(c: &mut Criterion) {
 
     let num_events = 1000;
     let payload = b"perf-test-payload";
-    let batch = rt.block_on(client.create_batch(None)).unwrap();
 
     let client = client.clone();
     c.bench_function("eventhubs_send_batch", |b| {
         let client = client.clone();
-        let batch = &batch;
         b.to_async(&rt).iter(move || {
             let client = client.clone();
-            for _ in 0..num_events {
-                batch
-                    .try_add_event_data(EventData::from(payload.as_ref()), None)
-                    .unwrap();
-            }
             async move {
-                let _ = client.send_batch(batch, None).await;
+                let batch = client.create_batch(None).await.unwrap();
+                for _ in 0..num_events {
+                    batch
+                        .try_add_event_data(EventData::from(payload.as_ref()), None)
+                        .unwrap();
+                }
+                let _ = client.send_batch(&batch, None).await;
             }
         });
     });
@@ -73,6 +79,13 @@ criterion_group!(
 
 fn send_benchmark(c: &mut Criterion) {
     setup();
+
+    // Check if the environment variable is set thus allowing the benchmarks to run
+    if azure_core_test::TestMode::current().unwrap() != azure_core_test::TestMode::Live {
+        println!("Skipping benchmarks. Set AZURE_TEST_MODE to run.");
+        return;
+    }
+
     let rt = Runtime::new().unwrap();
 
     let namespace = env::var("EVENTHUBS_HOST")
