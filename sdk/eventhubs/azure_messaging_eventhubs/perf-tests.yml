@@ -1,0 +1,17 @@
+Service: azure_messaging_eventhubs
+
+Project: azure_messaging_eventhubs
+
+PackageVersions:
+  - azure_messaging_eventhubs: source
+
+Tests:
+  - Test: eventhubs_send_batch
+    Class: eventhubs_send_batch
+    Arguments:
+      - --sync
+
+  - Test: eventhubs_send
+    Class: eventhubs_send
+    Arguments:
+      - --sync
