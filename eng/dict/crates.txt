@@ -35,7 +35,6 @@ getrandom
 hmac
 litemap
 log
-oauth2
 openssl
 pin-project
 proc-macro2
