@@ -53,7 +53,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
             let message = if let Some(error_message) = T::get_error_message(&stderr) {
                 error_message.to_string()
             } else if output.status.code() == Some(127) || stderr.contains("' is not recognized") {
-                format!("{} not found on path", T::tool_name())
+                format!("{} not found on PATH", T::tool_name())
             } else {
                 stderr.to_string()
             };
@@ -83,6 +83,6 @@ pub trait OutputProcessor: Send + Sized + Sync + 'static {
     /// When this method returns None, the error message will include stderr verbatim.
     fn get_error_message(stderr: &str) -> Option<&str>;
 
-    /// Friendly name of the tool used to get the token e.g. "Azure CLI"
+    /// Name of the tool used to get the token e.g. "azd"
     fn tool_name() -> &'static str;
 }

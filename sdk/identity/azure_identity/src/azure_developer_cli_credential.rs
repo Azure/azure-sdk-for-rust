@@ -54,7 +54,7 @@ impl OutputProcessor for AzdTokenResponse {
     }
 
     fn tool_name() -> &'static str {
-        "Azure Developer CLI"
+        "azd"
     }
 }
 

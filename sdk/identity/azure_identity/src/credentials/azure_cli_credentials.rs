@@ -64,7 +64,7 @@ impl OutputProcessor for CliTokenResponse {
     }
 
     fn tool_name() -> &'static str {
-        "Azure CLI"
+        "az"
     }
 }
 
