@@ -109,7 +109,7 @@ pub fn derive_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 ///     assert_eq!(format!("{model:?}"), "MyModel { .. }");
 /// }
 /// ```
-#[proc_macro_derive(SafeDebug)]
+#[proc_macro_derive(SafeDebug, attributes(safe))]
 pub fn derive_safe_debug(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     run_derive_macro(input, safe_debug::derive_safe_debug_impl)
 }
