@@ -74,7 +74,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
                 T::credential_name(),
                 e.kind()
             );
-            Err(Error::with_message(ErrorKind::Credential, || message))
+            Err(Error::full(ErrorKind::Credential, e, message))
         }
     }
 }
