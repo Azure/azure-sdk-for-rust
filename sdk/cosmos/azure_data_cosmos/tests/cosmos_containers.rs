@@ -12,19 +12,15 @@ use azure_data_cosmos::{
     },
     CreateContainerOptions, Query,
 };
+use futures::TryStreamExt;
 
-use framework::TestAccount;
+use framework::{test_data, TestAccount};
 
 #[recorded::test]
 pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
-    use azure_data_cosmos::models::PartitionKeyKind;
-    use futures::TryStreamExt;
-
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
-    let test_db_id = account.unique_db("DatabaseCRUD");
-    cosmos_client.create_database(&test_db_id, None).await?;
-    let db_client = cosmos_client.database_client(&test_db_id);
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
 
     // Create the container
     let properties = ContainerProperties {
@@ -161,9 +157,7 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
 pub async fn container_crud_autoscale(context: TestContext) -> Result<(), Box<dyn Error>> {
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
-    let test_db_id = account.unique_db("DatabaseCRUD");
-    cosmos_client.create_database(&test_db_id, None).await?;
-    let db_client = cosmos_client.database_client(&test_db_id);
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
 
     // Create the container
     let properties = ContainerProperties {
@@ -214,9 +208,7 @@ pub async fn container_crud_autoscale(context: TestContext) -> Result<(), Box<dy
 pub async fn container_crud_hierarchical_pk(context: TestContext) -> Result<(), Box<dyn Error>> {
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
-    let test_db_id = account.unique_db("DatabaseCRUD");
-    cosmos_client.create_database(&test_db_id, None).await?;
-    let db_client = cosmos_client.database_client(&test_db_id);
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
 
     // Create the container
     let properties = ContainerProperties {

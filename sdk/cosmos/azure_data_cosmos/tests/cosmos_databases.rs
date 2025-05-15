@@ -7,11 +7,10 @@ use std::error::Error;
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{models::ThroughputProperties, CreateDatabaseOptions, Query};
 use framework::TestAccount;
+use futures::TryStreamExt;
 
 #[recorded::test]
 pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
-    use futures::TryStreamExt;
-
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
 

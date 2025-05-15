@@ -1,0 +1,35 @@
+parameters:
+- name: PackageVersions
+  displayName: PackageVersions (regex of package versions to run)
+  type: string
+  default: 'source'
+- name: Tests
+  displayName: Tests (regex of tests to run)
+  type: string
+  default: '.*'
+- name: Arguments
+  displayName: Arguments (regex of arguments to run)
+  type: string
+  default: '.*'
+- name: Iterations
+  displayName: Iterations (times to run each test)
+  type: number
+  default: 1
+- name: Profile
+  type: boolean
+  default: false
+- name: AdditionalArguments
+  displayName: AdditionalArguments (passed to PerfAutomation)
+  type: string
+  default: ''
+
+extends:
+  template: /eng/pipelines/templates/jobs/perf.yml@self
+  parameters:
+    ServiceDirectory: eventhubs
+    PackageVersions: ${{ parameters.PackageVersions }}
+    Tests: ${{ parameters.Tests }}
+    Arguments: ${{ parameters.Arguments }}
+    Iterations: ${{ parameters.Iterations }}
+    AdditionalArguments: ${{ parameters.AdditionalArguments }}
+    Profile: ${{ parameters.Profile }}

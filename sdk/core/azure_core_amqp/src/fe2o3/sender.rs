@@ -66,12 +66,14 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
                 session_builder = session_builder.source(source);
             }
             if let Some(offered_capabilities) = options.offered_capabilities {
-                let capabilities = offered_capabilities.into_iter().map(|c| c.into()).collect();
-                session_builder = session_builder.set_offered_capabilities(capabilities);
+                session_builder = session_builder.set_offered_capabilities(
+                    offered_capabilities.into_iter().map(Into::into).collect(),
+                );
             }
             if let Some(desired_capabilities) = options.desired_capabilities {
-                let capabilities = desired_capabilities.into_iter().map(|c| c.into()).collect();
-                session_builder = session_builder.set_desired_capabilities(capabilities);
+                session_builder = session_builder.set_desired_capabilities(
+                    desired_capabilities.into_iter().map(Into::into).collect(),
+                );
             }
             if let Some(properties) = options.properties {
                 session_builder = session_builder.properties(properties.into());
@@ -165,21 +167,23 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
                 AmqpSendOutcome::Rejected(rejected.error.map(AmqpDescribedError::from))
             }
             fe2o3_amqp_types::messaging::Outcome::Released(_) => AmqpSendOutcome::Released,
-            fe2o3_amqp_types::messaging::Outcome::Modified(m) => {
+            fe2o3_amqp_types::messaging::Outcome::Modified(ref m) => {
                 AmqpSendOutcome::Modified(m.into())
             }
         })
     }
 }
 
-impl From<fe2o3_amqp_types::messaging::Modified> for SendModification {
-    fn from(m: fe2o3_amqp_types::messaging::Modified) -> Self {
+impl From<&fe2o3_amqp_types::messaging::Modified> for SendModification {
+    fn from(m: &fe2o3_amqp_types::messaging::Modified) -> Self {
         Self {
             delivery_failed: m.delivery_failed,
             undeliverable_here: m.undeliverable_here,
-            message_annotations: m
-                .message_annotations
-                .map(AmqpOrderedMap::<AmqpSymbol, AmqpValue>::from),
+            message_annotations: m.message_annotations.as_ref().map(|m| {
+                m.iter()
+                    .map(|(k, v)| (k.into(), v.into()))
+                    .collect::<AmqpOrderedMap<AmqpSymbol, AmqpValue>>()
+            }),
         }
     }
 }

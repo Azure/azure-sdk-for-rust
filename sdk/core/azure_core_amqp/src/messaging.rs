@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
+use super::{
+    simple_value::AmqpSimpleValue,
+    value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue},
+};
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 use crate::fe2o3::error::Fe2o3SerializationError;
 #[cfg(feature = "cplusplus")]
@@ -53,8 +56,8 @@ impl From<TerminusExpiryPolicy> for AmqpSymbol {
     }
 }
 
-impl From<AmqpSymbol> for TerminusExpiryPolicy {
-    fn from(symbol: AmqpSymbol) -> Self {
+impl From<&AmqpSymbol> for TerminusExpiryPolicy {
+    fn from(symbol: &AmqpSymbol) -> Self {
         match symbol.0.as_str() {
             "link-detach" => TerminusExpiryPolicy::LinkDetach,
             "session-end" => TerminusExpiryPolicy::SessionEnd,
@@ -80,8 +83,8 @@ impl From<DistributionMode> for AmqpSymbol {
     }
 }
 
-impl From<AmqpSymbol> for DistributionMode {
-    fn from(symbol: AmqpSymbol) -> Self {
+impl From<&AmqpSymbol> for DistributionMode {
+    fn from(symbol: &AmqpSymbol) -> Self {
         match symbol.0.as_str() {
             "move" => DistributionMode::Move,
             "copy" => DistributionMode::Copy,
@@ -156,8 +159,8 @@ impl From<AmqpOutcome> for AmqpSymbol {
     }
 }
 
-impl From<AmqpSymbol> for AmqpOutcome {
-    fn from(symbol: AmqpSymbol) -> Self {
+impl From<&AmqpSymbol> for AmqpOutcome {
+    fn from(symbol: &AmqpSymbol) -> Self {
         match symbol.0.as_str() {
             "amqp:accepted:list" => AmqpOutcome::Accepted,
             "amqp:rejected:list" => AmqpOutcome::Rejected,
@@ -176,9 +179,9 @@ pub enum AmqpMessageId {
     Ulong(u64),
 }
 
-impl From<azure_core::Uuid> for AmqpMessageId {
-    fn from(uuid: Uuid) -> Self {
-        AmqpMessageId::Uuid(uuid)
+impl AsRef<AmqpMessageId> for AmqpMessageId {
+    fn as_ref(&self) -> &AmqpMessageId {
+        self
     }
 }
 
@@ -203,6 +206,12 @@ impl From<Vec<u8>> for AmqpMessageId {
 impl From<u64> for AmqpMessageId {
     fn from(ulong: u64) -> Self {
         AmqpMessageId::Ulong(ulong)
+    }
+}
+
+impl From<azure_core::Uuid> for AmqpMessageId {
+    fn from(uuid: azure_core::Uuid) -> Self {
+        AmqpMessageId::Uuid(uuid)
     }
 }
 
@@ -315,7 +324,7 @@ impl From<AmqpList> for AmqpTarget {
         }
         if field_count >= 3 {
             if let Some(AmqpValue::Symbol(expiry_policy)) = list.0.get(2) {
-                builder = builder.with_expiry_policy(expiry_policy.clone().into());
+                builder = builder.with_expiry_policy(expiry_policy.into());
             }
         }
         if field_count >= 4 {
@@ -333,7 +342,7 @@ impl From<AmqpList> for AmqpTarget {
                 let dynamic_node_properties: AmqpOrderedMap<String, AmqpValue> =
                     dynamic_node_properties
                         .iter()
-                        .map(|(k, v)| (k.clone().into(), v.clone()))
+                        .map(|(k, v)| (k.into(), v))
                         .collect();
                 builder = builder.with_dynamic_node_properties(dynamic_node_properties);
             }
@@ -461,7 +470,7 @@ impl From<AmqpList> for AmqpSource {
         }
         if field_count >= 3 {
             if let Some(AmqpValue::Symbol(expiry_policy)) = list.0.get(2) {
-                builder = builder.with_expiry_policy(expiry_policy.clone().into());
+                builder = builder.with_expiry_policy(expiry_policy.into());
             }
         }
         if field_count >= 4 {
@@ -479,40 +488,37 @@ impl From<AmqpList> for AmqpSource {
                 let dynamic_node_properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
                     dynamic_node_properties
                         .iter()
-                        .map(|(k, v)| (k.clone().into(), v.clone()))
+                        .map(|(k, v)| (k.into(), v))
                         .collect();
                 builder = builder.with_dynamic_node_properties(dynamic_node_properties);
             }
         }
         if field_count >= 7 {
             if let Some(AmqpValue::Symbol(distribution_mode)) = list.0.get(6) {
-                builder = builder.with_distribution_mode(distribution_mode.clone().into());
+                builder = builder.with_distribution_mode(distribution_mode.into());
             }
         }
         if field_count >= 8 {
             if let Some(AmqpValue::Map(filter)) = list.0.get(7) {
-                let filter: AmqpOrderedMap<AmqpSymbol, AmqpValue> = filter
-                    .iter()
-                    .map(|(k, v)| (k.clone().into(), v.clone()))
-                    .collect();
+                let filter: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
+                    filter.iter().map(|(k, v)| (k.into(), v)).collect();
                 builder = builder.with_filter(filter);
             }
         }
         if field_count >= 9 {
             if let Some(AmqpValue::Symbol(default_outcome)) = list.0.get(8) {
-                builder = builder.with_default_outcome(default_outcome.clone().into());
+                builder = builder.with_default_outcome(default_outcome.into());
             }
         }
         if field_count >= 10 {
             if let Some(AmqpValue::Array(outcomes)) = list.0.get(9) {
-                builder =
-                    builder.with_outcomes(outcomes.iter().map(|v| v.clone().into()).collect());
+                builder = builder.with_outcomes(outcomes.iter().map(|v| v.into()).collect());
             }
         }
         if field_count >= 11 {
             if let Some(AmqpValue::Array(capabilities)) = list.0.get(10) {
-                builder = builder
-                    .with_capabilities(capabilities.iter().map(|v| v.clone().into()).collect());
+                builder =
+                    builder.with_capabilities(capabilities.iter().map(|v| v.into()).collect());
             }
         }
         builder.build()
@@ -943,6 +949,12 @@ impl Default for AmqpAnnotationKey {
     }
 }
 
+impl AsRef<AmqpAnnotationKey> for AmqpAnnotationKey {
+    fn as_ref(&self) -> &AmqpAnnotationKey {
+        self
+    }
+}
+
 // Implementing From for AmqpValue to AmqpAnnotationKey
 // Note that this is a lossy conversion as AmqpValue can contain other types.
 // See also: https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-annotations
@@ -1027,14 +1039,14 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct AmqpApplicationProperties(pub AmqpOrderedMap<String, AmqpValue>);
+pub struct AmqpApplicationProperties(pub AmqpOrderedMap<String, AmqpSimpleValue>);
 
 impl AmqpApplicationProperties {
     pub fn new() -> Self {
         AmqpApplicationProperties(AmqpOrderedMap::new())
     }
 
-    pub fn insert(&mut self, key: String, value: impl Into<AmqpValue>) {
+    pub fn insert(&mut self, key: String, value: impl Into<AmqpSimpleValue>) {
         self.0.insert(key, value.into());
     }
 }
@@ -1048,13 +1060,13 @@ impl AmqpApplicationProperties {
 ///
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpMessage {
-    body: AmqpMessageBody,
-    header: Option<AmqpMessageHeader>,
-    application_properties: Option<AmqpApplicationProperties>,
-    message_annotations: Option<AmqpAnnotations>,
-    delivery_annotations: Option<AmqpAnnotations>,
-    properties: Option<AmqpMessageProperties>,
-    footer: Option<AmqpAnnotations>,
+    pub(crate) body: AmqpMessageBody,
+    pub(crate) header: Option<AmqpMessageHeader>,
+    pub(crate) application_properties: Option<AmqpApplicationProperties>,
+    pub(crate) message_annotations: Option<AmqpAnnotations>,
+    pub(crate) delivery_annotations: Option<AmqpAnnotations>,
+    pub(crate) properties: Option<AmqpMessageProperties>,
+    pub(crate) footer: Option<AmqpAnnotations>,
 }
 
 impl AmqpMessage {
@@ -1111,7 +1123,6 @@ impl AmqpMessage {
     pub fn set_message_id(&mut self, message_id: impl Into<AmqpMessageId>) {
         if let Some(properties) = self.properties.as_mut() {
             properties.message_id = Some(message_id.into());
-            self.properties = Some(properties.clone());
         } else {
             self.properties = Some(AmqpMessageProperties {
                 message_id: Some(message_id.into()),
@@ -1139,7 +1150,6 @@ impl AmqpMessage {
     pub fn add_message_annotation(&mut self, name: AmqpSymbol, value: impl Into<AmqpValue>) {
         if let Some(annotations) = self.message_annotations.as_mut() {
             annotations.insert(name, value.into());
-            self.message_annotations = Some(annotations.clone());
         } else {
             let mut annotations = AmqpAnnotations::new();
             annotations.insert(name, value.into());
@@ -1190,6 +1200,65 @@ impl AmqpMessage {
     }
 }
 
+#[test]
+fn test_set_message_id() {
+    let mut message = AmqpMessage::default();
+    {
+        let uuid = azure_core::Uuid::new_v4();
+        message.set_message_id(uuid);
+        assert!(message.properties.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id == Some(AmqpMessageId::Uuid(uuid)));
+    }
+    {
+        let string = "test message ID.";
+        message.set_message_id(string);
+        assert!(message.properties.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id.is_some());
+        assert!(
+            message.properties.as_ref().unwrap().message_id
+                == Some(AmqpMessageId::String(string.to_string()))
+        );
+    }
+    {
+        let long = 27;
+        message.set_message_id(long);
+        assert!(message.properties.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id.is_some());
+        assert!(
+            message.properties.as_ref().unwrap().message_id == Some(AmqpMessageId::Ulong(long))
+        );
+    }
+    {
+        let binary = &[12u8, 34u8, 56u8, 78u8];
+        message.set_message_id(binary.to_vec());
+        assert!(message.properties.is_some());
+        assert!(message.properties.as_ref().unwrap().message_id.is_some());
+        assert!(
+            message.properties.as_ref().unwrap().message_id
+                == Some(AmqpMessageId::Binary(binary.to_vec()))
+        );
+    }
+}
+
+#[test]
+fn test_message_add_annotation() {
+    let mut message = AmqpMessage::default();
+    {
+        message.add_message_annotation(AmqpSymbol::from("key"), "value");
+        assert!(message.message_annotations.is_some());
+        assert_eq!(
+            message
+                .message_annotations
+                .as_ref()
+                .unwrap()
+                .0
+                .get(&AmqpAnnotationKey::Symbol(AmqpSymbol::from("key")))
+                .unwrap(),
+            &AmqpValue::String("value".to_string())
+        );
+    }
+}
 impl From<Vec<u8>> for AmqpMessage {
     fn from(body: Vec<u8>) -> Self {
         AmqpMessage {
@@ -1244,7 +1313,7 @@ impl Deserializable<AmqpMessage> for AmqpMessage {
                 >,
             >(data)
             .map_err(|e| azure_core::error::Error::new(ErrorKind::Other, e))?;
-            Ok(value.0.into())
+            Ok((&value.0).into())
         }
     }
 }
@@ -1432,7 +1501,7 @@ mod builders {
         pub fn add_application_property(
             mut self,
             key: String,
-            value: impl Into<AmqpValue>,
+            value: impl Into<AmqpSimpleValue>,
         ) -> Self {
             if let Some(application_properties) = &mut self.message.application_properties {
                 application_properties.0.insert(key, value.into());
@@ -1566,7 +1635,7 @@ mod tests {
             .with_body(AmqpMessageBody::Binary(vec![vec![1, 2, 3]]))
             .with_header(AmqpMessageHeader::default())
             .with_application_properties(AmqpApplicationProperties::new())
-            .add_application_property("key".to_string(), AmqpValue::from(123))
+            .add_application_property("key".to_string(), AmqpSimpleValue::from(123))
             .with_message_annotations(AmqpAnnotations::new())
             .with_delivery_annotations(AmqpAnnotations::new())
             .with_properties(AmqpMessageProperties::default())
@@ -1576,7 +1645,7 @@ mod tests {
         assert_eq!(message.body, AmqpMessageBody::Binary(vec![vec![1, 2, 3]]));
         assert_eq!(message.header, Some(AmqpMessageHeader::default()));
         let mut properties = AmqpApplicationProperties::new();
-        properties.insert("key".to_string(), AmqpValue::from(123));
+        properties.insert("key".to_string(), AmqpSimpleValue::from(123));
         assert_eq!(message.application_properties, Some(properties));
         assert_eq!(message.message_annotations, Some(AmqpAnnotations::new()));
         assert_eq!(message.delivery_annotations, Some(AmqpAnnotations::new()));

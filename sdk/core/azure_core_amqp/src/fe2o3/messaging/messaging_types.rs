@@ -40,7 +40,7 @@ impl AmqpDeliveryApis for Fe2o3AmqpDelivery {
     // Return a reference to the message contained in the delivery.
     fn message(&self) -> &AmqpMessage {
         self.message
-            .get_or_init(|| AmqpMessage::from(self.delivery.message().clone()))
+            .get_or_init(|| AmqpMessage::from(self.delivery.message()))
     }
 
     fn delivery_id(&self) -> DeliveryNumber {
@@ -56,8 +56,11 @@ impl AmqpDeliveryApis for Fe2o3AmqpDelivery {
         self.delivery.message_format()
     }
 
-    fn into_message(self) -> crate::messaging::AmqpMessage {
-        self.delivery.into_message().into()
+    fn into_message(mut self) -> crate::messaging::AmqpMessage {
+        match self.message.take() {
+            Some(msg) => msg,
+            None => AmqpMessage::from(self.delivery.into_message()),
+        }
     }
 }
 
@@ -106,7 +109,7 @@ fn test_outcome_round_trip() {
 
     for outcome in outcomes {
         let fe2o3_outcome: fe2o3_amqp_types::messaging::Outcome = outcome.clone().into();
-        let amqp_outcome: AmqpOutcome = fe2o3_outcome.into();
+        let amqp_outcome: AmqpOutcome = (fe2o3_outcome).into();
         assert_eq!(outcome, amqp_outcome);
     }
 }
@@ -219,7 +222,7 @@ impl From<fe2o3_amqp_types::messaging::DistributionMode> for DistributionMode {
     }
 }
 
-impl From<crate::messaging::DistributionMode> for fe2o3_amqp_types::messaging::DistributionMode {
+impl From<DistributionMode> for fe2o3_amqp_types::messaging::DistributionMode {
     fn from(distribution_mode: crate::messaging::DistributionMode) -> Self {
         match distribution_mode {
             DistributionMode::Move => fe2o3_amqp_types::messaging::DistributionMode::Move,

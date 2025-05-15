@@ -1,88 +1,40 @@
 #![cfg(feature = "key_auth")]
 
-use std::{borrow::Cow, error::Error};
+use std::error::Error;
 
+use azure_core::{error::HttpError, http::StatusCode};
 use azure_core_test::{recorded, TestContext};
-use azure_data_cosmos::{
-    clients::ContainerClient, models::ContainerProperties, CosmosClient, Query,
-};
-use framework::TestAccount;
+use azure_data_cosmos::Query;
+use framework::{test_data, MockItem, TestAccount};
 use futures::TryStreamExt;
-use serde::{Deserialize, Serialize};
 
 mod framework;
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-struct TestItem {
-    id: Cow<'static, str>,
-    partition_key: Option<Cow<'static, str>>,
-    some_value: usize,
-}
-
-const TEST_DATA: [TestItem; 4] = [
-    TestItem {
-        id: Cow::Borrowed("Item1"),
-        partition_key: Some(Cow::Borrowed("Partition1")),
-        some_value: 1,
-    },
-    TestItem {
-        id: Cow::Borrowed("Item2"),
-        partition_key: Some(Cow::Borrowed("Partition1")),
-        some_value: 2,
-    },
-    TestItem {
-        id: Cow::Borrowed("Item3"),
-        partition_key: Some(Cow::Borrowed("Partition2")),
-        some_value: 3,
-    },
-    TestItem {
-        id: Cow::Borrowed("Item4"),
-        partition_key: Some(Cow::Borrowed("Partition2")),
-        some_value: 4,
-    },
-];
-
-async fn create_container(
-    account: &TestAccount,
-    cosmos_client: &CosmosClient,
-) -> azure_core::Result<ContainerClient> {
-    let test_db_id = account.unique_db("ItemCRUD");
-
-    // Create a database and a container
-    cosmos_client.create_database(&test_db_id, None).await?;
-    let db_client = cosmos_client.database_client(&test_db_id);
-    db_client
-        .create_container(
-            ContainerProperties {
-                id: "Container".into(),
-                partition_key: "/partition_key".into(),
-                ..Default::default()
-            },
-            None,
-        )
-        .await?;
-    let container_client = db_client.container_client("Container");
-    // Create some items
-    for item in TEST_DATA.iter() {
-        let pk = item.partition_key.clone().unwrap();
-        container_client.create_item(pk, &item, None).await?;
-    }
-
-    Ok(container_client)
+fn collect_matching_items(
+    items: &[MockItem],
+    predicate: impl Fn(&MockItem) -> bool,
+) -> Vec<MockItem> {
+    items.iter().filter(|p| predicate(p)).cloned().collect()
 }
 
 #[recorded::test]
 pub async fn single_partition_query(context: TestContext) -> Result<(), Box<dyn Error>> {
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
-    let container_client = create_container(&account, &cosmos_client).await?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+    let items = test_data::generate_mock_items(10, 10);
+    let container_client =
+        test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-    let mut results = container_client.query_items("select * from docs c", "Partition1", None)?;
-    let mut items: Vec<TestItem> = Vec::new();
+    let mut results = container_client.query_items("select * from docs c", "partition0", None)?;
+    let mut result_items: Vec<MockItem> = Vec::new();
     while let Some(page) = results.try_next().await? {
-        items.extend(page.into_items());
+        result_items.extend(page.into_items());
     }
-    assert_eq!(TEST_DATA[0..2].to_vec(), items);
+    assert_eq!(
+        collect_matching_items(&items, |p| p.partition_key == "partition0"),
+        result_items
+    );
 
     account.cleanup().await?;
     Ok(())
@@ -94,16 +46,30 @@ pub async fn single_partition_query_with_parameters(
 ) -> Result<(), Box<dyn Error>> {
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
-    let container_client = create_container(&account, &cosmos_client).await?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+    let items = test_data::generate_mock_items(10, 10);
+    let container_client =
+        test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-    let query = Query::from("select * from c where c.some_value = @some_value")
-        .with_parameter("@some_value", 2)?;
-    let mut results = container_client.query_items(query, "Partition1", None)?;
-    let mut items: Vec<TestItem> = Vec::new();
+    // Find a merge order value in partition1's items
+    let merge_order = items
+        .iter()
+        .find(|p| p.partition_key == "partition1")
+        .expect("No items in partition1")
+        .merge_order;
+
+    // Query for items with that merge order
+    let query = Query::from("select * from c where c.mergeOrder = @some_value")
+        .with_parameter("@some_value", merge_order)?;
+    let mut results = container_client.query_items(query, "partition1", None)?;
+    let mut result_items: Vec<MockItem> = Vec::new();
     while let Some(page) = results.try_next().await? {
-        items.extend(page.into_items());
+        result_items.extend(page.into_items());
     }
-    assert_eq!(TEST_DATA[1..2].to_vec(), items);
+    assert_eq!(
+        collect_matching_items(&items, |p| p.merge_order == merge_order),
+        result_items
+    );
 
     account.cleanup().await?;
     Ok(())
@@ -115,21 +81,91 @@ pub async fn single_partition_query_with_projection(
 ) -> Result<(), Box<dyn Error>> {
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
-    let container_client = create_container(&account, &cosmos_client).await?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+    let items = test_data::generate_mock_items(10, 10);
+    let container_client =
+        test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
     let mut results =
-        container_client.query_items("select value c.id from c", "Partition1", None)?;
-    let mut items: Vec<Cow<'static, str>> = Vec::new();
+        container_client.query_items("select value c.id from c", "partition1", None)?;
+    let mut result_items: Vec<String> = Vec::new();
     while let Some(page) = results.try_next().await? {
-        items.extend(page.into_items());
+        result_items.extend(page.into_items());
     }
     assert_eq!(
-        TEST_DATA[0..2]
-            .iter()
-            .map(|t| t.id.clone())
-            .collect::<Vec<_>>(),
         items
+            .iter()
+            .filter(|p| p.partition_key == "partition1")
+            .map(|p| p.id.to_string())
+            .collect::<Vec<_>>(),
+        result_items
     );
+
+    account.cleanup().await?;
+    Ok(())
+}
+
+#[recorded::test]
+pub async fn cross_partition_query_with_projection_and_filter(
+    context: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    let account = TestAccount::from_env(context, None).await?;
+    let cosmos_client = account.connect_with_key(None)?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+    let items = test_data::generate_mock_items(10, 10);
+    let container_client =
+        test_data::create_container_with_items(db_client, items.clone(), None).await?;
+
+    let mut results = container_client.query_items(
+        "select value c.id from c where c.mergeOrder between 40 and 60",
+        (),
+        None,
+    )?;
+    let mut result_items: Vec<String> = Vec::new();
+    while let Some(page) = results.try_next().await? {
+        result_items.extend(page.into_items());
+    }
+    assert_eq!(
+        items
+            .iter()
+            .filter(|p| p.merge_order >= 40 && p.merge_order <= 60)
+            .map(|p| p.id.to_string())
+            .collect::<Vec<_>>(),
+        result_items
+    );
+
+    account.cleanup().await?;
+    Ok(())
+}
+
+#[recorded::test]
+pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
+    context: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    let account = TestAccount::from_env(context, None).await?;
+    let cosmos_client = account.connect_with_key(None)?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+    let items = test_data::generate_mock_items(10, 10);
+    let container_client =
+        test_data::create_container_with_items(db_client, items.clone(), None).await?;
+
+    let mut pager = container_client.query_items::<String>(
+        "select value c.id from c order by c.mergeOrder",
+        (),
+        None,
+    )?;
+    let result = pager.try_next().await;
+
+    let Err(err) = result else {
+        panic!("expected an error but got a successful result");
+    };
+    assert_eq!(Some(StatusCode::BadRequest), err.http_status());
+
+    let http_err: HttpError = err.into_downcast().expect("expected an HttpError");
+    let message = http_err.error_message().expect("message should be present");
+    assert!(message.starts_with(
+        "The provided cross partition query can not be directly served by the gateway."
+    ));
 
     account.cleanup().await?;
     Ok(())

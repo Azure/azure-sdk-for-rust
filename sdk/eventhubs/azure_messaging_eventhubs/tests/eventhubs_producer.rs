@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use azure_core::http::StatusCode;
-use azure_core_amqp::{AmqpError, AmqpList, AmqpMessageProperties};
+use azure_core_amqp::{AmqpError, AmqpList, AmqpMessageProperties, AmqpSimpleValue};
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
 use std::{env, error::Error};
@@ -233,7 +233,7 @@ async fn send_message(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         let data = b"hello world";
         let em1 = AmqpMessage::builder()
             .with_body(AmqpValue::Binary(data.to_vec()))
-            .add_application_property("key".to_string(), AmqpValue::from("value"))
+            .add_application_property("key".to_string(), AmqpSimpleValue::from("value"))
             .with_properties(AmqpMessageProperties {
                 message_id: Some(35u64.into()),
                 content_type: Some("text/plain".into()),

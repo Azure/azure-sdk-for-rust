@@ -70,6 +70,25 @@ pub struct QueryDatabasesOptions<'a> {
 #[derive(Clone, Default)]
 pub struct QueryOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
+
+    /// An external query engine to use for executing the query.
+    ///
+    /// NOTE: This is an unstable feature and may change in the future.
+    /// Specifically, the query engine may be built-in to the SDK in the future, and this option may be removed entirely.
+    #[cfg(feature = "preview_query_engine")]
+    pub query_engine: Option<crate::query::QueryEngineRef>,
+}
+
+impl QueryOptions<'_> {
+    pub fn into_owned(self) -> QueryOptions<'static> {
+        QueryOptions {
+            method_options: ClientMethodOptions {
+                context: self.method_options.context.into_owned(),
+            },
+            #[cfg(feature = "preview_query_engine")]
+            query_engine: self.query_engine,
+        }
+    }
 }
 
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).

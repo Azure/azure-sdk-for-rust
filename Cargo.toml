@@ -33,31 +33,23 @@ rust-version = "1.81"
 [workspace.dependencies.typespec]
 default-features = false
 path = "sdk/typespec"
-version = "0.4.0"
+version = "0.5.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/typespec/typespec_client_core"
-version = "0.3.0"
+version = "0.4.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.3.0"
+version = "0.4.0"
 path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]
-version = "0.24.0"
+version = "0.25.0"
 path = "sdk/core/azure_core"
-default-features = false
-# Keep these in sync with azure_core. This allows
-# azure_core_amqp and dependents to ignore default features.
-features = [
-  "reqwest",
-  "reqwest_deflate",
-  "reqwest_gzip",
-]
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.3.0"
+version = "0.4.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_core_test]
@@ -93,7 +85,6 @@ getrandom = { version = "0.2", features = ["js"] }
 hmac = { version = "0.12" }
 litemap = "0.7.4"
 log = "0.4"
-oauth2 = { version = "5.0.0", default-features = false }
 openssl = { version = "0.10.72" }
 pin-project = "1.0"
 proc-macro2 = "1.0.86"

@@ -25,7 +25,7 @@ url.workspace = true
 
 [dev-dependencies]
 azure_identity.workspace = true
-azure_core_test.workspace = true
+azure_core_test = { workspace = true, features = ["tracing"] }
 clap.workspace = true
 reqwest.workspace = true
 time.workspace = true
@@ -38,6 +38,7 @@ workspace = true
 [features]
 default = ["hmac_rust"]
 key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
+preview_query_engine = [] # Enables support for the PREVIEW external query engine
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 
