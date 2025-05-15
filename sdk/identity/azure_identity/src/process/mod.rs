@@ -19,19 +19,24 @@ use crate::env::Env;
 /// - Everywhere else: Runs `/bin/sh -c {command}` in /bin
 pub(crate) async fn shell_exec<T: OutputProcessor>(
     executor: Arc<dyn Executor>,
-    env: &Env,
+    #[cfg_attr(not(windows), allow(unused_variables))] env: &Env,
     command: &str,
 ) -> Result<AccessToken> {
-    let (workdir, program, c_switch) = if cfg!(target_os = "windows") {
-        let system_root = env.var("SYSTEMROOT").map_err(|_| {
-            Error::message(
-                ErrorKind::Credential,
-                "SYSTEMROOT environment variable not set",
-            )
-        })?;
-        (system_root, "cmd", "/C")
-    } else {
-        ("/bin".to_string(), "/bin/sh", "-c")
+    let (workdir, program, c_switch) = {
+        #[cfg(windows)]
+        {
+            let system_root = env.var("SYSTEMROOT").map_err(|_| {
+                Error::message(
+                    ErrorKind::Credential,
+                    "SYSTEMROOT environment variable not set",
+                )
+            })?;
+            (system_root, "cmd", "/C")
+        }
+        #[cfg(not(windows))]
+        {
+            ("/bin".to_string(), "/bin/sh", "-c")
+        }
     };
 
     let command_string = format!("cd {workdir} && {command}");
