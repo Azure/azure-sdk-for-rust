@@ -1169,7 +1169,7 @@ impl AmqpMessage {
     ///
     /// ```
     /// use azure_core_amqp::AmqpMessage;
-    /// use azure_core_amqp::AmqpMessageBody;
+    /// use azure_core_amqp::message::AmqpMessageBody;
     ///
     /// let mut message = AmqpMessage::default();
     /// message.set_message_body(AmqpMessageBody::Value("Hello, world!".into()));

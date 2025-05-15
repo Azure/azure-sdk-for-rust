@@ -27,9 +27,7 @@ fn send_batch_benchmark(c: &mut Criterion) {
     setup();
 
     // Check if the environment variable is set thus allowing the benchmarks to run
-    if azure_core_test::TestMode::current().unwrap_or(azure_core_test::TestMode::Playback)
-        != azure_core_test::TestMode::Live
-    {
+    if azure_core_test::TestMode::current().unwrap_or_default() != azure_core_test::TestMode::Live {
         println!("Skipping benchmarks. Set AZURE_TEST_MODE to run.");
         return;
     }
@@ -86,9 +84,7 @@ fn send_benchmark(c: &mut Criterion) {
     setup();
 
     // Check if the environment variable is set thus allowing the benchmarks to run
-    if azure_core_test::TestMode::current().unwrap_or(azure_core_test::TestMode::Playback)
-        != azure_core_test::TestMode::Live
-    {
+    if azure_core_test::TestMode::current().unwrap_or_default() != azure_core_test::TestMode::Live {
         println!("Skipping benchmarks. Set AZURE_TEST_MODE to run.");
         return;
     }
