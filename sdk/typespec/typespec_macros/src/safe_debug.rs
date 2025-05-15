@@ -6,7 +6,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{
     punctuated::Punctuated, spanned::Spanned, token::Comma, Attribute, Data, DataEnum, DataStruct,
-    DeriveInput, Error, Field, Fields, FieldsNamed, FieldsUnnamed, Ident, Meta, Path,
+    DeriveInput, Error, Field, Fields, FieldsNamed, FieldsUnnamed, Ident, Path,
 };
 
 pub fn derive_safe_debug_impl(ast: DeriveInput) -> Result<TokenStream> {
@@ -27,18 +27,20 @@ fn generate_body(ast: DeriveInput) -> Result<TokenStream> {
     let name = &ast.ident;
 
     let type_attrs = Attrs::from_attrs(&ast.attrs)?;
-
     let body = match &ast.data {
         Data::Enum(DataEnum { variants, .. }) => {
-            let variants = variants.iter().map(|v| {
-                let variant_name = &v.ident;
-                let path = to_path(&[name, variant_name]);
+            let variants = variants
+                .iter()
+                .map(|v| -> Result<TokenStream> {
+                    let variant_name = &v.ident;
+                    let path = to_path(&[name, variant_name]);
 
-                let mut enum_attrs = Attrs::from_attrs(&v.attrs).unwrap_or_default();
-                enum_attrs.combine(&type_attrs);
+                    let mut enum_attrs = Attrs::from_attrs(&v.attrs)?;
+                    enum_attrs.and(&type_attrs);
 
-                generate_fields(&path, &enum_attrs, &v.fields)
-            });
+                    generate_fields(&path, &enum_attrs, &v.fields)
+                })
+                .collect::<Result<Vec<_>>>()?;
 
             quote! {
                 match self {
@@ -48,7 +50,7 @@ fn generate_body(ast: DeriveInput) -> Result<TokenStream> {
         }
         Data::Struct(DataStruct { fields, .. }) => {
             let path = to_path(&[name]);
-            let fields = generate_fields(&path, &type_attrs, fields);
+            let fields = generate_fields(&path, &type_attrs, fields)?;
 
             quote! {
                 match self {
@@ -69,7 +71,7 @@ fn generate_body(ast: DeriveInput) -> Result<TokenStream> {
     })
 }
 
-fn generate_fields(path: &Path, type_attrs: &Attrs, fields: &Fields) -> TokenStream {
+fn generate_fields(path: &Path, type_attrs: &Attrs, fields: &Fields) -> Result<TokenStream> {
     let name = &path.segments.last().expect("expected identifier").ident;
     let name_str = name.to_string();
 
@@ -77,16 +79,20 @@ fn generate_fields(path: &Path, type_attrs: &Attrs, fields: &Fields) -> TokenStr
         Fields::Named(FieldsNamed { ref named, .. }) => {
             let names: Vec<&Ident> = named
                 .iter()
-                .filter(|f| {
+                .filter_map(|f| -> Option<Result<&Ident>> {
                     if cfg!(feature = "debug") {
-                        return true;
+                        return Some(Ok(f.ident.as_ref().expect("expected named field")));
                     }
 
-                    let attrs = Attrs::from_attrs(&f.attrs).unwrap_or_default();
-                    type_attrs.and(&attrs)
+                    match Attrs::from_attrs(&f.attrs) {
+                        Err(err) => Some(Err(err)),
+                        Ok(attrs) if type_attrs.is_safe_and(&attrs) => {
+                            Some(Ok(f.ident.as_ref().expect("expected named field")))
+                        }
+                        Ok(_) => None,
+                    }
                 })
-                .map(|f| f.ident.as_ref().expect("expected named field"))
-                .collect();
+                .collect::<Result<Vec<_>>>()?;
             let fields: Vec<TokenStream> = names
                 .iter()
                 .map(|field_name| {
@@ -97,37 +103,45 @@ fn generate_fields(path: &Path, type_attrs: &Attrs, fields: &Fields) -> TokenStr
 
             // Use an "and the rest" matcher as needed, along with the appropriate `DebugStruct` finisher.
             let (matcher, finisher) = finish(&fields, named, false);
-            quote! {
+            Ok(quote! {
                 #path { #(#names),* #matcher } => f
                     .debug_struct(#name_str)
                         #(#fields)*
                         #finisher
-            }
+            })
         }
-        Fields::Unit => quote! {#path => f.write_str(#name_str)},
+        Fields::Unit => Ok(quote! {#path => f.write_str(#name_str)}),
         Fields::Unnamed(FieldsUnnamed { ref unnamed, .. }) => {
             let indices: Vec<TokenStream> = unnamed
                 .iter()
                 .enumerate()
-                .filter(|(_, f)| {
+                .filter_map(|(i, f)| {
                     if cfg!(feature = "debug") {
-                        return true;
+                        return Some(Ok(
+                            Ident::new(&format!("f{i}"), Span::call_site()).into_token_stream()
+                        ));
                     }
 
-                    let attrs = Attrs::from_attrs(&f.attrs).unwrap_or_default();
-                    type_attrs.and(&attrs)
+                    match Attrs::from_attrs(&f.attrs) {
+                        Err(err) => Some(Err(err)),
+                        Ok(attrs) if type_attrs.is_safe_and(&attrs) => {
+                            Some(Ok(
+                                Ident::new(&format!("f{i}"), Span::call_site()).into_token_stream()
+                            ))
+                        }
+                        Ok(_) => None,
+                    }
                 })
-                .map(|(i, _)| Ident::new(&format!("f{i}"), Span::call_site()).into_token_stream())
-                .collect();
+                .collect::<Result<Vec<_>>>()?;
 
             // Use an "and the rest" matcher as needed, along with the appropriate `DebugTuple` finisher.
             let (matcher, finisher) = finish(&indices, unnamed, true);
-            quote! {
+            Ok(quote! {
                 #path(#(#indices),* #matcher) => f
                     .debug_tuple(#name_str)
                         #(.field(&#indices))*
                         #finisher
-            }
+            })
         }
     }
 }
@@ -174,7 +188,7 @@ fn to_path(idents: &[&Ident]) -> Path {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct Attrs {
     safe: Option<bool>,
 }
@@ -182,7 +196,6 @@ struct Attrs {
 impl Attrs {
     fn from_attrs(attributes: &[Attribute]) -> Result<Attrs> {
         let mut attrs = Attrs::default();
-
         let mut result = Ok(());
         for attribute in attributes.iter().filter(|a| a.path().is_ident("safe")) {
             result = match (result, parse_attr(attribute, &mut attrs)) {
@@ -198,7 +211,7 @@ impl Attrs {
         result.map(|_| attrs)
     }
 
-    fn and(&self, other: &Attrs) -> bool {
+    fn is_safe_and(&self, other: &Attrs) -> bool {
         match (self.safe, other.safe) {
             (Some(safe), Some(other)) => safe && other,
             (None, Some(other)) => other,
@@ -207,7 +220,7 @@ impl Attrs {
         }
     }
 
-    fn combine(&mut self, other: &Attrs) {
+    fn and(&mut self, other: &Attrs) {
         match (self.safe, other.safe) {
             (None, Some(other)) => self.safe = Some(other),
             (Some(safe), Some(other)) => self.safe = Some(safe && other),
@@ -217,13 +230,13 @@ impl Attrs {
 }
 
 const INVALID_SAFE_ATTRIBUTE_MESSAGE: &str =
-    "invalid safe attribute, expected attribute in form #[safe(true)]";
+    "invalid safe attribute, expected attribute in form #[safe(false)] or #[safe(true)]";
 
 fn parse_attr(attribute: &Attribute, attrs: &mut Attrs) -> Result<()> {
-    let Meta::List(meta_list) = &attribute.meta else {
-        return Err(Error::new(attribute.span(), INVALID_SAFE_ATTRIBUTE_MESSAGE));
-    };
-
+    let meta_list = attribute
+        .meta
+        .require_list()
+        .map_err(|_| Error::new(attribute.span(), INVALID_SAFE_ATTRIBUTE_MESSAGE))?;
     let lit: syn::LitBool = meta_list
         .parse_args()
         .map_err(|_| Error::new(meta_list.span(), INVALID_SAFE_ATTRIBUTE_MESSAGE))?;
@@ -232,33 +245,135 @@ fn parse_attr(attribute: &Attribute, attrs: &mut Attrs) -> Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_attrs_and() {
-    let mut type_attrs = Attrs::default();
-    let mut field_attrs = Attrs::default();
-    assert!(!type_attrs.and(&field_attrs));
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    field_attrs.safe = Some(false);
-    assert!(!type_attrs.and(&field_attrs));
+    #[test]
+    fn attrs_safe_requires_arg() {
+        let attr: Attribute = syn::parse_quote! {
+            #[safe]
+        };
+        assert!(
+            matches!(Attrs::from_attrs(&[attr]), Err(err) if err.to_string() == INVALID_SAFE_ATTRIBUTE_MESSAGE)
+        );
+    }
 
-    field_attrs.safe = Some(true);
-    assert!(type_attrs.and(&field_attrs));
+    #[test]
+    fn attrs_safe_requires_bool() {
+        let attr: Attribute = syn::parse_quote! {
+            #[safe(false)]
+        };
+        assert!(!Attrs::from_attrs(&[attr]).unwrap().safe.unwrap());
 
-    type_attrs.safe = Some(false);
-    assert!(!type_attrs.and(&field_attrs));
+        let attr: Attribute = syn::parse_quote! {
+            #[safe(true)]
+        };
+        assert!(Attrs::from_attrs(&[attr]).unwrap().safe.unwrap());
 
-    field_attrs.safe = Some(false);
-    assert!(!type_attrs.and(&field_attrs));
+        let attr: Attribute = syn::parse_quote! {
+            #[safe(other)]
+        };
+        assert!(
+            matches!(Attrs::from_attrs(&[attr]), Err(err) if err.to_string() == INVALID_SAFE_ATTRIBUTE_MESSAGE)
+        );
+    }
 
-    type_attrs.safe = Some(true);
-    assert!(!type_attrs.and(&field_attrs));
+    #[test]
+    fn attrs_is_safe_and() {
+        let mut type_attrs = Attrs::default();
+        let mut field_attrs = Attrs::default();
 
-    field_attrs.safe = Some(true);
-    assert!(type_attrs.and(&field_attrs));
+        // Both None
+        assert!(!type_attrs.is_safe_and(&field_attrs));
 
-    field_attrs.safe = None;
-    assert!(type_attrs.and(&field_attrs));
+        // None, Some(false)
+        field_attrs.safe = Some(false);
+        assert!(!type_attrs.is_safe_and(&field_attrs));
 
-    type_attrs.safe = Some(false);
-    assert!(!type_attrs.and(&field_attrs));
+        // None, Some(true)
+        field_attrs.safe = Some(true);
+        assert!(type_attrs.is_safe_and(&field_attrs));
+
+        // Some(false), Some(true)
+        type_attrs.safe = Some(false);
+        assert!(!type_attrs.is_safe_and(&field_attrs));
+
+        // Some(false), Some(false)
+        field_attrs.safe = Some(false);
+        assert!(!type_attrs.is_safe_and(&field_attrs));
+
+        // Some(true), Some(false)
+        type_attrs.safe = Some(true);
+        assert!(!type_attrs.is_safe_and(&field_attrs));
+
+        // Some(true), Some(true)
+        field_attrs.safe = Some(true);
+        assert!(type_attrs.is_safe_and(&field_attrs));
+
+        // Some(true), None
+        field_attrs.safe = None;
+        assert!(type_attrs.is_safe_and(&field_attrs));
+
+        // Some(false), None
+        type_attrs.safe = Some(false);
+        assert!(!type_attrs.is_safe_and(&field_attrs));
+    }
+
+    #[test]
+    fn attrs_and() {
+        let mut type_attrs = Attrs::default();
+        let mut enum_attrs = Attrs::default();
+
+        // Both None
+        type_attrs.and(&enum_attrs);
+        assert!(type_attrs.safe.is_none());
+
+        // None, Some(false)
+        enum_attrs.safe = Some(false);
+        type_attrs.and(&enum_attrs);
+        assert!(!type_attrs.safe.unwrap());
+
+        // None, Some(true)
+        type_attrs.safe = None;
+        enum_attrs.safe = Some(true);
+        type_attrs.and(&enum_attrs);
+        assert!(type_attrs.safe.unwrap());
+
+        // Some(false), Some(true)
+        type_attrs.safe = Some(false);
+        enum_attrs.safe = Some(true);
+        type_attrs.and(&enum_attrs);
+        assert!(!type_attrs.safe.unwrap());
+
+        // Some(true), Some(false)
+        type_attrs.safe = Some(true);
+        enum_attrs.safe = Some(false);
+        type_attrs.and(&enum_attrs);
+        assert!(!type_attrs.safe.unwrap());
+
+        // Some(true), Some(true)
+        type_attrs.safe = Some(true);
+        enum_attrs.safe = Some(true);
+        type_attrs.and(&enum_attrs);
+        assert!(type_attrs.safe.unwrap());
+
+        // Some(false), Some(false)
+        type_attrs.safe = Some(false);
+        enum_attrs.safe = Some(false);
+        type_attrs.and(&enum_attrs);
+        assert!(!type_attrs.safe.unwrap());
+
+        // Some(true), None
+        type_attrs.safe = Some(true);
+        enum_attrs.safe = None;
+        type_attrs.and(&enum_attrs);
+        assert!(type_attrs.safe.unwrap());
+
+        // Some(false), None
+        type_attrs.safe = Some(false);
+        enum_attrs.safe = None;
+        type_attrs.and(&enum_attrs);
+        assert!(!type_attrs.safe.unwrap());
+    }
 }
