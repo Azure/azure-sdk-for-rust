@@ -47,7 +47,7 @@ impl OutputProcessor for AzdTokenResponse {
     fn get_error_message(stderr: &str) -> Option<&str> {
         // azd embeds its "you need to log in" error message in JSON, so in that case we can provide a clearer one
         if stderr.contains("azd auth login") {
-            Some("please run 'azd auth login' from a command prompt before using this credential")
+            Some("please run `azd auth login` from a command prompt before using this credential")
         } else {
             None
         }
