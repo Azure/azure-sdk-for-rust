@@ -61,6 +61,13 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
                 format!("{} authentication failed: {message}", T::credential_name())
             }))
         }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            let message = format!(
+                "{} authentication failed: {program} wasn't found on PATH",
+                T::credential_name(),
+            );
+            Err(Error::full(ErrorKind::Credential, e, message))
+        }
         Err(e) => {
             let message = format!(
                 "{} failed due to {} error: {e}",
