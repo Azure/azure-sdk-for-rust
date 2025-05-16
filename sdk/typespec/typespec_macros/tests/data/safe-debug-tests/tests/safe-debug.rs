@@ -16,7 +16,7 @@ static RUSTC_VERSION: LazyLock<Version> =
 fn safe_debug_tuple() {
     let x = Tuple(1, "foo");
     if *RUSTC_VERSION < MIN {
-        assert_eq!(format!("{x:?}"), r#"Tuple"#);
+        assert_eq!(format!("{x:?}"), r#"Tuple(1)"#);
     } else {
         assert_eq!(format!("{x:?}"), r#"Tuple(1, ..)"#);
     }
