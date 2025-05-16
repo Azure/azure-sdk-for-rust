@@ -163,8 +163,8 @@ mod tests {
     // in a test case i.e., that the policy called get_token() as expected
     impl Drop for MockCredential {
         fn drop(&mut self) {
-            if self.tokens.len() > 0 {
-                assert_eq!(self.calls.load(Ordering::SeqCst), self.tokens.len());
+            if !self.tokens.is_empty() {
+                assert_eq!(self.tokens.len(), self.calls.load(Ordering::SeqCst));
             }
         }
     }
