@@ -20,7 +20,7 @@ pub struct PipelineResult {
     pub is_completed: bool,
 
     /// The items yielded by the pipeline.
-    pub items: Vec<Vec<u8>>,
+    pub items: Vec<Box<serde_json::value::RawValue>>,
 
     /// Additional requests that must be made before the pipeline can continue.
     pub requests: Vec<QueryRequest>,

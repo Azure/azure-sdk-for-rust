@@ -68,7 +68,7 @@ pub use engine::*;
 pub struct Query {
     /// The query text itself.
     #[serde(rename = "query")]
-    text: String,
+    pub(crate) text: String,
 
     /// A list of parameters used in the query and their associated value.
     #[serde(skip_serializing_if = "Vec::is_empty")] // Don't serialize an empty array.
