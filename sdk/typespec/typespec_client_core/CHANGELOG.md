@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
+
 ### Breaking Changes
 
 ### Bugs Fixed
