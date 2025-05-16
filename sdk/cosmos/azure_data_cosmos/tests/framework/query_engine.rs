@@ -6,6 +6,7 @@ use std::{collections::VecDeque, sync::Mutex};
 use serde::{Deserialize, Serialize};
 
 use azure_data_cosmos::query::{PipelineResult, QueryEngine, QueryPipeline};
+use serde_json::value::RawValue;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -104,10 +105,10 @@ impl PartitionState {
         self.next_continuation = continuation;
     }
 
-    pub fn pop_item(&mut self) -> azure_core::Result<Option<Vec<u8>>> {
+    pub fn pop_item(&mut self) -> azure_core::Result<Option<Box<RawValue>>> {
         match self.queue.pop_front() {
             Some(item) => {
-                let item = serde_json::to_vec(&item)?;
+                let item = serde_json::value::to_raw_value(&item)?;
                 Ok(Some(item))
             }
             None => Ok(None),
