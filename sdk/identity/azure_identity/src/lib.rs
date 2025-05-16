@@ -10,6 +10,7 @@ mod client_secret_credential;
 mod credentials;
 mod env;
 mod managed_identity_credential;
+mod process;
 
 use azure_core::{
     error::{ErrorKind, ResultExt},
