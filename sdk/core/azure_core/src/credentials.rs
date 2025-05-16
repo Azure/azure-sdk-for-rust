@@ -4,7 +4,7 @@
 //! Azure authentication and authorization.
 
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, fmt::Debug, time::Duration};
+use std::{borrow::Cow, fmt::Debug};
 use typespec_client_core::date::OffsetDateTime;
 
 /// Default Azure authorization scope.
@@ -84,13 +84,6 @@ impl AccessToken {
             token: token.into(),
             expires_on,
         }
-    }
-
-    /// Check if the token is expired within a given duration.
-    ///
-    /// If no duration is provided, then the default duration of 30 seconds is used.
-    pub fn is_expired(&self, window: Option<Duration>) -> bool {
-        self.expires_on < OffsetDateTime::now_utc() + window.unwrap_or(Duration::from_secs(30))
     }
 }
 
