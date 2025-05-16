@@ -149,13 +149,23 @@ mod tests {
     impl MockCredential {
         fn new(tokens: &[AccessToken]) -> Self {
             Self {
-                tokens: tokens.into(),
                 calls: Arc::new(AtomicUsize::new(0)),
+                tokens: tokens.into(),
             }
         }
 
         fn get_token_calls(&self) -> usize {
-            self.calls.load(Ordering::SeqCst).saturating_sub(1)
+            self.calls.load(Ordering::SeqCst)
+        }
+    }
+
+    // ensure the number of get_token() calls matches the number of tokens
+    // in a test case i.e., that the policy called get_token() as expected
+    impl Drop for MockCredential {
+        fn drop(&mut self) {
+            if self.tokens.len() > 0 {
+                assert_eq!(self.calls.load(Ordering::SeqCst), self.tokens.len());
+            }
         }
     }
 
@@ -190,58 +200,17 @@ mod tests {
         assert_eq!(ErrorKind::Credential, *err.kind());
     }
 
-    #[tokio::test]
-    async fn caches_token() {
-        let credential = MockCredential::new(&[AccessToken {
-            token: Secret::new("fake".to_string()),
-            expires_on: OffsetDateTime::now_utc() + Duration::from_secs(3600),
-        }]);
-        let policy = BearerTokenCredentialPolicy::new(Arc::new(credential), ["scope"]);
-        let client = Arc::new(MockHttpClient::new(|actual| {
-            async move {
-                let authz = actual.headers().get_str(&AUTHORIZATION)?;
-
-                assert_eq!("Bearer fake", authz);
-
-                Ok(Response::from_bytes(
-                    StatusCode::Ok,
-                    Headers::new(),
-                    Bytes::new(),
-                ))
-            }
-            .boxed()
-        }));
-        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(client)));
-
-        for _ in 0..3 {
-            let ctx = Context::default();
-            let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
-            policy
-                .send(&ctx, &mut req, &[transport.clone()])
-                .await
-                .unwrap();
-        }
-    }
-
-    #[tokio::test]
-    async fn refreshes_token() {
-        let credential = Arc::new(MockCredential::new(&[
-            AccessToken {
-                token: Secret::new("1".to_string()),
-                expires_on: OffsetDateTime::now_utc() - Duration::from_secs(1),
-            },
-            AccessToken {
-                token: Secret::new("2".to_string()),
-                expires_on: OffsetDateTime::now_utc() + Duration::from_secs(3600),
-            },
-        ]));
+    async fn run_test(tokens: &[AccessToken]) {
+        let credential = Arc::new(MockCredential::new(tokens));
         let policy = BearerTokenCredentialPolicy::new(credential.clone(), ["scope"]);
         let client = Arc::new(MockHttpClient::new(move |actual| {
             let credential = credential.clone();
             async move {
                 let authz = actual.headers().get_str(&AUTHORIZATION)?;
+                // e.g. if this is the first request, we expect 1 get_token call and tokens[0] in the header
+                let i = credential.get_token_calls().saturating_sub(1);
+                let expected = &credential.tokens[i];
 
-                let expected = &credential.tokens[credential.get_token_calls()];
                 assert_eq!(format!("Bearer {}", expected.token.secret()), authz);
 
                 Ok(Response::from_bytes(
@@ -254,13 +223,50 @@ mod tests {
         }));
         let transport = Arc::new(TransportPolicy::new(TransportOptions::new(client)));
 
-        for _ in 0..3 {
-            let ctx = Context::default();
-            let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
-            policy
-                .send(&ctx, &mut req, &[transport.clone()])
-                .await
-                .unwrap();
+        let mut handles = vec![];
+        for _ in 0..4 {
+            let policy = policy.clone();
+            let transport = transport.clone();
+            let handle = tokio::spawn(async move {
+                let ctx = Context::default();
+                let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
+                policy
+                    .send(&ctx, &mut req, &[transport.clone()])
+                    .await
+                    .expect("successful request");
+            });
+            handles.push(handle);
         }
+
+        for handle in handles {
+            tokio::time::timeout(Duration::from_secs(2), handle)
+                .await
+                .expect("task timed out after 2 seconds")
+                .expect("completed task");
+        }
+    }
+
+    #[tokio::test]
+    async fn caches_token() {
+        run_test(&[AccessToken {
+            token: Secret::new("fake".to_string()),
+            expires_on: OffsetDateTime::now_utc() + Duration::from_secs(3600),
+        }])
+        .await;
+    }
+
+    #[tokio::test]
+    async fn refreshes_token() {
+        run_test(&[
+            AccessToken {
+                token: Secret::new("1".to_string()),
+                expires_on: OffsetDateTime::now_utc() - Duration::from_secs(1),
+            },
+            AccessToken {
+                token: Secret::new("2".to_string()),
+                expires_on: OffsetDateTime::now_utc() + Duration::from_secs(3600),
+            },
+        ])
+        .await;
     }
 }
