@@ -37,8 +37,6 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
     ) -> azure_core::Result<Self> {
         let items_link = container_link.feed(ResourceType::Items);
         let context = options.method_options.context.into_owned();
-        let base_request =
-            pipeline::create_base_query_request(http_pipeline.url(&items_link), &query)?;
         Ok(Self {
             http_pipeline,
             container_link,
