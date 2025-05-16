@@ -36,3 +36,11 @@ pub enum Enum {
     },
     EmptyStruct {},
 }
+
+#[derive(SafeDebug)]
+#[safe(true)]
+pub struct MostlySafeStruct {
+    #[safe(false)]
+    pub name: &'static str,
+    pub title: &'static str,
+}

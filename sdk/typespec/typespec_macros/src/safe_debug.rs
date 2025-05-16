@@ -36,7 +36,7 @@ fn generate_body(ast: DeriveInput) -> Result<TokenStream> {
                     let path = to_path(&[name, variant_name]);
 
                     let mut enum_attrs = Attrs::from_attrs(&v.attrs)?;
-                    enum_attrs.and(&type_attrs);
+                    enum_attrs.update(&type_attrs);
 
                     generate_fields(&path, &enum_attrs, &v.fields)
                 })
@@ -86,7 +86,7 @@ fn generate_fields(path: &Path, type_attrs: &Attrs, fields: &Fields) -> Result<T
 
                     match Attrs::from_attrs(&f.attrs) {
                         Err(err) => Some(Err(err)),
-                        Ok(attrs) if type_attrs.is_safe_and(&attrs) => {
+                        Ok(attrs) if type_attrs.is_safe(&attrs) => {
                             Some(Ok(f.ident.as_ref().expect("expected named field")))
                         }
                         Ok(_) => None,
@@ -124,7 +124,7 @@ fn generate_fields(path: &Path, type_attrs: &Attrs, fields: &Fields) -> Result<T
 
                     match Attrs::from_attrs(&f.attrs) {
                         Err(err) => Some(Err(err)),
-                        Ok(attrs) if type_attrs.is_safe_and(&attrs) => {
+                        Ok(attrs) if type_attrs.is_safe(&attrs) => {
                             Some(Ok(
                                 Ident::new(&format!("f{i}"), Span::call_site()).into_token_stream()
                             ))
@@ -207,24 +207,19 @@ impl Attrs {
                 (e, Ok(())) => e,
             };
         }
-
         result.map(|_| attrs)
     }
 
-    fn is_safe_and(&self, other: &Attrs) -> bool {
-        match (self.safe, other.safe) {
-            (Some(safe), Some(other)) => safe && other,
-            (None, Some(other)) => other,
-            (Some(safe), None) => safe,
-            (None, None) => false,
+    fn is_safe(&self, other: &Attrs) -> bool {
+        match other.safe {
+            Some(val) => val,
+            None => self.safe.unwrap_or(false),
         }
     }
 
-    fn and(&mut self, other: &Attrs) {
-        match (self.safe, other.safe) {
-            (None, Some(other)) => self.safe = Some(other),
-            (Some(safe), Some(other)) => self.safe = Some(safe && other),
-            _ => {}
+    fn update(&mut self, other: &Attrs) {
+        if let Some(val) = other.safe {
+            self.safe = Some(val);
         }
     }
 }
@@ -241,7 +236,6 @@ fn parse_attr(attribute: &Attribute, attrs: &mut Attrs) -> Result<()> {
         .parse_args()
         .map_err(|_| Error::new(meta_list.span(), INVALID_SAFE_ATTRIBUTE_MESSAGE))?;
     attrs.safe = Some(lit.value);
-
     Ok(())
 }
 
@@ -264,12 +258,12 @@ mod tests {
         let attr: Attribute = syn::parse_quote! {
             #[safe(false)]
         };
-        assert!(!Attrs::from_attrs(&[attr]).unwrap().safe.unwrap());
+        assert_eq!(Attrs::from_attrs(&[attr]).unwrap().safe, Some(false));
 
         let attr: Attribute = syn::parse_quote! {
             #[safe(true)]
         };
-        assert!(Attrs::from_attrs(&[attr]).unwrap().safe.unwrap());
+        assert_eq!(Attrs::from_attrs(&[attr]).unwrap().safe, Some(true));
 
         let attr: Attribute = syn::parse_quote! {
             #[safe(other)]
@@ -280,100 +274,107 @@ mod tests {
     }
 
     #[test]
-    fn attrs_is_safe_and() {
+    fn attrs_is_safe() {
         let mut type_attrs = Attrs::default();
         let mut field_attrs = Attrs::default();
 
         // Both None
-        assert!(!type_attrs.is_safe_and(&field_attrs));
+        assert!(!type_attrs.is_safe(&field_attrs));
 
         // None, Some(false)
         field_attrs.safe = Some(false);
-        assert!(!type_attrs.is_safe_and(&field_attrs));
+        assert!(!type_attrs.is_safe(&field_attrs));
 
         // None, Some(true)
         field_attrs.safe = Some(true);
-        assert!(type_attrs.is_safe_and(&field_attrs));
-
-        // Some(false), Some(true)
-        type_attrs.safe = Some(false);
-        assert!(!type_attrs.is_safe_and(&field_attrs));
-
-        // Some(false), Some(false)
-        field_attrs.safe = Some(false);
-        assert!(!type_attrs.is_safe_and(&field_attrs));
-
-        // Some(true), Some(false)
-        type_attrs.safe = Some(true);
-        assert!(!type_attrs.is_safe_and(&field_attrs));
-
-        // Some(true), Some(true)
-        field_attrs.safe = Some(true);
-        assert!(type_attrs.is_safe_and(&field_attrs));
-
-        // Some(true), None
-        field_attrs.safe = None;
-        assert!(type_attrs.is_safe_and(&field_attrs));
+        assert!(type_attrs.is_safe(&field_attrs));
 
         // Some(false), None
         type_attrs.safe = Some(false);
-        assert!(!type_attrs.is_safe_and(&field_attrs));
+        field_attrs.safe = None;
+        assert!(!type_attrs.is_safe(&field_attrs));
+
+        // Some(true), None
+        type_attrs.safe = Some(true);
+        field_attrs.safe = None;
+        assert!(type_attrs.is_safe(&field_attrs));
+
+        // Some(false), Some(false)
+        type_attrs.safe = Some(false);
+        field_attrs.safe = Some(false);
+        assert!(!type_attrs.is_safe(&field_attrs));
+
+        // Some(true), Some(false)
+        type_attrs.safe = Some(true);
+        field_attrs.safe = Some(false);
+        assert!(!type_attrs.is_safe(&field_attrs));
+
+        // Some(false), Some(true)
+        type_attrs.safe = Some(false);
+        field_attrs.safe = Some(true);
+        assert!(type_attrs.is_safe(&field_attrs));
+
+        // Some(true), Some(true)
+        type_attrs.safe = Some(true);
+        field_attrs.safe = Some(true);
+        assert!(type_attrs.is_safe(&field_attrs));
     }
 
     #[test]
-    fn attrs_and() {
+    fn attrs_update() {
         let mut type_attrs = Attrs::default();
         let mut enum_attrs = Attrs::default();
 
         // Both None
-        type_attrs.and(&enum_attrs);
-        assert!(type_attrs.safe.is_none());
+        type_attrs.update(&enum_attrs);
+        assert_eq!(type_attrs.safe, None);
 
         // None, Some(false)
+        type_attrs.safe = None;
         enum_attrs.safe = Some(false);
-        type_attrs.and(&enum_attrs);
-        assert!(!type_attrs.safe.unwrap());
+        type_attrs.update(&enum_attrs);
+        assert_eq!(type_attrs.safe, Some(false));
 
         // None, Some(true)
         type_attrs.safe = None;
         enum_attrs.safe = Some(true);
-        type_attrs.and(&enum_attrs);
-        assert!(type_attrs.safe.unwrap());
-
-        // Some(false), Some(true)
-        type_attrs.safe = Some(false);
-        enum_attrs.safe = Some(true);
-        type_attrs.and(&enum_attrs);
-        assert!(!type_attrs.safe.unwrap());
-
-        // Some(true), Some(false)
-        type_attrs.safe = Some(true);
-        enum_attrs.safe = Some(false);
-        type_attrs.and(&enum_attrs);
-        assert!(!type_attrs.safe.unwrap());
-
-        // Some(true), Some(true)
-        type_attrs.safe = Some(true);
-        enum_attrs.safe = Some(true);
-        type_attrs.and(&enum_attrs);
-        assert!(type_attrs.safe.unwrap());
-
-        // Some(false), Some(false)
-        type_attrs.safe = Some(false);
-        enum_attrs.safe = Some(false);
-        type_attrs.and(&enum_attrs);
-        assert!(!type_attrs.safe.unwrap());
-
-        // Some(true), None
-        type_attrs.safe = Some(true);
-        enum_attrs.safe = None;
-        type_attrs.and(&enum_attrs);
-        assert!(type_attrs.safe.unwrap());
+        type_attrs.update(&enum_attrs);
+        assert_eq!(type_attrs.safe, Some(true));
 
         // Some(false), None
         type_attrs.safe = Some(false);
         enum_attrs.safe = None;
-        type_attrs.and(&enum_attrs);
-        assert!(!type_attrs.safe.unwrap());
+        type_attrs.update(&enum_attrs);
+        assert_eq!(type_attrs.safe, Some(false));
+
+        // Some(true), None
+        type_attrs.safe = Some(true);
+        enum_attrs.safe = None;
+        type_attrs.update(&enum_attrs);
+        assert_eq!(type_attrs.safe, Some(true));
+
+        // Some(false), Some(false)
+        type_attrs.safe = Some(false);
+        enum_attrs.safe = Some(false);
+        type_attrs.update(&enum_attrs);
+        assert_eq!(type_attrs.safe, Some(false));
+
+        // Some(true), Some(false)
+        type_attrs.safe = Some(true);
+        enum_attrs.safe = Some(false);
+        type_attrs.update(&enum_attrs);
+        assert_eq!(type_attrs.safe, Some(false));
+
+        // Some(false), Some(true)
+        type_attrs.safe = Some(false);
+        enum_attrs.safe = Some(true);
+        type_attrs.update(&enum_attrs);
+        assert_eq!(type_attrs.safe, Some(true));
+
+        // Some(true), Some(true)
+        type_attrs.safe = Some(true);
+        enum_attrs.safe = Some(true);
+        type_attrs.update(&enum_attrs);
+        assert_eq!(type_attrs.safe, Some(true));
     }
 }

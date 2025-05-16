@@ -18,7 +18,7 @@ fn safe_debug_tuple() {
     if *RUSTC_VERSION < MIN {
         assert_eq!(format!("{x:?}"), r#"Tuple"#);
     } else {
-        assert_eq!(format!("{x:?}"), r#"Tuple(..)"#);
+        assert_eq!(format!("{x:?}"), r#"Tuple(1, ..)"#);
     }
 }
 
@@ -78,4 +78,16 @@ fn safe_debug_enum_struct() {
 fn safe_debug_enum_empty_struct() {
     let x = Enum::EmptyStruct {};
     assert_eq!(format!("{x:?}"), r#"EmptyStruct"#);
+}
+
+#[test]
+fn safe_debug_mostly_safe_struct() {
+    let x = MostlySafeStruct {
+        name: "Kelly Smith",
+        title: "Staff Engineer",
+    };
+    assert_eq!(
+        format!("{x:?}"),
+        r#"MostlySafeStruct { title: "Staff Engineer", .. }"#
+    );
 }
