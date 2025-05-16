@@ -3,6 +3,7 @@
 
 use crate::{
     error::{AmqpDescribedError, AmqpErrorCondition, AmqpErrorKind},
+    value::AmqpSymbol,
     AmqpError,
 };
 use std::str::FromStr;
@@ -62,7 +63,7 @@ impl From<&fe2o3_amqp_types::definitions::ErrorCondition> for AmqpErrorCondition
                 AmqpErrorCondition::from(link_error)
             }
             fe2o3_amqp_types::definitions::ErrorCondition::Custom(symbol) => {
-                AmqpErrorCondition::from(crate::AmqpSymbol::from(symbol))
+                AmqpErrorCondition::from(AmqpSymbol::from(symbol))
             }
         }
     }

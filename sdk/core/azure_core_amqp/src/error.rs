@@ -5,7 +5,6 @@ use std::str::FromStr;
 
 use azure_core::{create_enum, create_extensible_enum};
 
-//pub use crate::sender::error::AmqpSenderError;
 use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 
 /// Type of AMQP error.

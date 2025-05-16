@@ -196,6 +196,7 @@ impl AmqpDescribed {
 }
 
 /// An AMQP Composite type.
+///
 /// This is a complex type that is composed of a descriptor and a value.
 /// The descriptor is used to identify the type of the value.
 /// The value is the actual value.
@@ -208,6 +209,12 @@ pub struct AmqpComposite {
 
 #[cfg(feature = "cplusplus")]
 impl AmqpComposite {
+    /// Creates a new AMQP Composite type.
+    ///
+    /// # Arguments
+    ///
+    /// * `descriptor` - The descriptor of the composite type.
+    /// * `value` - The value of the composite type.
     pub fn new(descriptor: impl Into<AmqpDescriptor>, value: impl Into<AmqpList>) -> Self {
         Self {
             descriptor: descriptor.into(),
@@ -215,12 +222,19 @@ impl AmqpComposite {
         }
     }
 
+    /// Returns a reference to the descriptor.
     pub fn descriptor(&self) -> &AmqpDescriptor {
         &self.descriptor
     }
 
+    /// Returns a reference to the value.
     pub fn value(&self) -> &AmqpList {
         &self.value
+    }
+
+    /// Returns a mutable reference to the value.
+    pub fn value_mut(&mut self) -> &mut AmqpList {
+        &mut self.value
     }
 }
 

@@ -10,32 +10,42 @@ mod fe2o3;
 #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
 mod noop;
 
-pub(crate) mod cbs;
-pub(crate) mod connection;
+mod cbs;
+mod connection;
 pub mod error;
-pub(crate) mod management;
-pub(crate) mod messaging;
-pub(crate) mod receiver;
-pub(crate) mod sender;
-pub(crate) mod session;
-pub(crate) mod simple_value;
-pub(crate) mod value;
+mod management;
+mod messaging;
+mod receiver;
+mod sender;
+mod session;
+mod simple_value;
+mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
 pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions};
 pub use error::{AmqpDescribedError, AmqpError};
 pub use management::{AmqpManagement, AmqpManagementApis};
-pub use messaging::{
-    AmqpAnnotationKey, AmqpAnnotations, AmqpDelivery, AmqpDeliveryApis, AmqpMessage,
-    AmqpMessageBody, AmqpMessageHeader, AmqpMessageId, AmqpMessageProperties, AmqpSource,
-    AmqpSourceFilter, AmqpTarget,
-};
+pub use messaging::{AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpSource, AmqpTarget};
 pub use receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
 pub use sender::{AmqpSendOptions, AmqpSendOutcome, AmqpSender, AmqpSenderApis, AmqpSenderOptions};
 pub use session::{AmqpSession, AmqpSessionApis, AmqpSessionOptions};
 pub use simple_value::AmqpSimpleValue;
 use std::fmt::Debug;
 pub use value::{AmqpDescribed, AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue};
+
+pub mod builder {
+    pub use crate::messaging::builders::{
+        AmqpMessageBuilder, AmqpSourceBuilder, AmqpTargetBuilder,
+    };
+}
+
+pub mod message {
+    pub use crate::messaging::{
+        AmqpAnnotationKey, AmqpAnnotations, AmqpApplicationProperties, AmqpMessageBody,
+        AmqpMessageHeader, AmqpMessageId, AmqpMessageProperties, AmqpOutcome, AmqpSourceFilter,
+        DistributionMode, TerminusDurability, TerminusExpiryPolicy,
+    };
+}
 
 // AMQP Settle mode:
 // https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-sender-settle-mode
@@ -73,3 +83,6 @@ pub trait Serializable {
 pub trait Deserializable<T> {
     fn decode(data: &[u8]) -> azure_core::Result<T>;
 }
+
+#[cfg(feature = "cplusplus")]
+pub use value::{AmqpComposite, AmqpDescriptor};

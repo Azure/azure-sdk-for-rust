@@ -19,9 +19,9 @@ use azure_core::{
     Uuid,
 };
 use azure_core_amqp::{
-    AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap, AmqpReceiver,
-    AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSessionApis, AmqpSource,
-    AmqpSourceFilter, AmqpSymbol, AmqpValue, ReceiverCreditMode,
+    message::AmqpSourceFilter, AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap,
+    AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSessionApis, AmqpSource,
+    AmqpSymbol, AmqpValue, ReceiverCreditMode,
 };
 pub use event_receiver::EventReceiver;
 use std::{

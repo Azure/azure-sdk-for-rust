@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use azure_core_amqp::{AmqpList, AmqpMessageProperties};
+use azure_core_amqp::{message::AmqpMessageProperties, AmqpList};
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{
     models::{AmqpMessage, AmqpValue, EventData, MessageId},

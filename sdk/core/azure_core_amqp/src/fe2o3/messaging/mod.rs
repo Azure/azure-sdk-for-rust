@@ -7,10 +7,10 @@ pub(crate) mod message_target;
 pub(crate) mod messaging_types;
 
 use crate::{
-    messaging::{AmqpMessage, AmqpMessageBody},
+    messaging::{AmqpMessage, AmqpMessageBody, AmqpMessageProperties},
     value::AmqpValue,
-    AmqpMessageProperties,
 };
+
 use azure_core::{error::ErrorKind, Error};
 use fe2o3_amqp_types::messaging::{message::EmptyBody, IntoBody};
 use serde_amqp::{extensions::TransparentVec, Value};

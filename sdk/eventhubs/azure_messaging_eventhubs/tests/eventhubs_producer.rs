@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use azure_core::http::StatusCode;
-use azure_core_amqp::{AmqpError, AmqpList, AmqpMessageProperties, AmqpSimpleValue};
+use azure_core_amqp::{message::AmqpMessageProperties, AmqpError, AmqpList, AmqpSimpleValue};
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
 use std::{env, error::Error};

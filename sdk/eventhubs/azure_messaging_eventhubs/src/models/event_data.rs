@@ -1,5 +1,8 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 use crate::models::{AmqpMessage, AmqpSimpleValue, AmqpValue, MessageId};
-use azure_core_amqp::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
+use azure_core_amqp::message::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
 use std::{
     collections::HashMap,
     fmt::{Debug, Formatter},
