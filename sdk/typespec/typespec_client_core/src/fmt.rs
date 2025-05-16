@@ -5,31 +5,6 @@
 
 use std::borrow::Cow;
 
-/// Derive to help prevent leaking personally identifiable information (PII) that deriving [`Debug`](std::fmt::Debug) might otherwise.
-///
-/// `SafeDebug` is not a trait and cannot be implemented, nor should you derive `Debug` explicitly.
-/// Only when you derive `SafeDebug` will types help prevent leaking PII because, by default, only the type name is printed.
-/// Only when you import `typespec_client_core` with feature `debug` will it derive `Debug` normally.
-///
-/// # Examples
-///
-/// ```
-/// use typespec_client_core::fmt::SafeDebug;
-///
-/// #[derive(SafeDebug)]
-/// struct MyModel {
-///     name: Option<String>,
-/// }
-///
-/// let model = MyModel {
-///     name: Some("Kelly Smith".to_string()),
-/// };
-/// if cfg!(feature = "debug") {
-///     assert_eq!(format!("{model:?}"), r#"MyModel { name: Some("Kelly Smith") }"#);
-/// } else {
-///     assert_eq!(format!("{model:?}"), "MyModel { .. }");
-/// }
-/// ```
 #[cfg(feature = "derive")]
 pub use typespec_macros::SafeDebug;
 

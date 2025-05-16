@@ -16,9 +16,9 @@ static RUSTC_VERSION: LazyLock<Version> =
 fn safe_debug_tuple() {
     let x = Tuple(1, "foo");
     if *RUSTC_VERSION < MIN {
-        assert_eq!(format!("{x:?}"), r#"Tuple"#);
+        assert_eq!(format!("{x:?}"), r#"Tuple(1)"#);
     } else {
-        assert_eq!(format!("{x:?}"), r#"Tuple(..)"#);
+        assert_eq!(format!("{x:?}"), r#"Tuple(1, ..)"#);
     }
 }
 
@@ -31,7 +31,7 @@ fn safe_debug_empty_tuple() {
 #[cfg_attr(not(feature = "debug"), test)]
 fn safe_debug_struct() {
     let x = Struct { a: 1, b: "foo" };
-    assert_eq!(format!("{x:?}"), r#"Struct { .. }"#);
+    assert_eq!(format!("{x:?}"), r#"Struct { a: 1, .. }"#);
 }
 
 #[test]
@@ -71,11 +71,23 @@ fn safe_debug_enum_empty_tuple() {
 #[cfg_attr(not(feature = "debug"), test)]
 fn safe_debug_enum_struct() {
     let x = Enum::Struct { a: 1, b: "foo" };
-    assert_eq!(format!("{x:?}"), r#"Struct { .. }"#);
+    assert_eq!(format!("{x:?}"), r#"Struct { a: 1, .. }"#);
 }
 
 #[test]
 fn safe_debug_enum_empty_struct() {
     let x = Enum::EmptyStruct {};
     assert_eq!(format!("{x:?}"), r#"EmptyStruct"#);
+}
+
+#[test]
+fn safe_debug_mostly_safe_struct() {
+    let x = MostlySafeStruct {
+        name: "Kelly Smith",
+        title: "Staff Engineer",
+    };
+    assert_eq!(
+        format!("{x:?}"),
+        r#"MostlySafeStruct { title: "Staff Engineer", .. }"#
+    );
 }

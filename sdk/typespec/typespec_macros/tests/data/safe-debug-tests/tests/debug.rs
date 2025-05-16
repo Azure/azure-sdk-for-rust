@@ -62,3 +62,15 @@ fn debug_enum_empty_struct() {
     let x = Enum::EmptyStruct {};
     assert_eq!(format!("{x:?}"), r#"EmptyStruct"#);
 }
+
+#[test]
+fn debug_mostly_safe_struct() {
+    let x = MostlySafeStruct {
+        name: "Kelly Smith",
+        title: "Staff Engineer",
+    };
+    assert_eq!(
+        format!("{x:?}"),
+        r#"MostlySafeStruct { name: "Kelly Smith", title: "Staff Engineer" }"#
+    );
+}

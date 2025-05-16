@@ -4,13 +4,15 @@
 use typespec_client_core::fmt::SafeDebug;
 
 #[derive(SafeDebug)]
-pub struct Tuple(pub i32, pub &'static str);
+#[safe(false)]
+pub struct Tuple(#[safe(true)] pub i32, pub &'static str);
 
 #[derive(SafeDebug)]
 pub struct EmptyTuple();
 
 #[derive(SafeDebug)]
 pub struct Struct {
+    #[safe(true)]
     pub a: i32,
     pub b: &'static str,
 }
@@ -26,6 +28,19 @@ pub enum Enum {
     Unit,
     Tuple(i32, &'static str),
     EmptyTuple(),
-    Struct { a: i32, b: &'static str },
+    #[safe(true)]
+    Struct {
+        a: i32,
+        #[safe(false)]
+        b: &'static str,
+    },
     EmptyStruct {},
+}
+
+#[derive(SafeDebug)]
+#[safe(true)]
+pub struct MostlySafeStruct {
+    #[safe(false)]
+    pub name: &'static str,
+    pub title: &'static str,
 }

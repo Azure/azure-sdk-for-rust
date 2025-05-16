@@ -91,25 +91,66 @@ pub fn derive_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 /// Only when you derive `SafeDebug` will types help prevent leaking PII because, by default, only the type name is printed.
 /// Only when you enable the `debug` feature will it derive `Debug` normally.
 ///
+/// You can attribute types, fields, and variants with `#[safe(true)]` or `#[safe(false)]` to optionally show or hide members.
+/// The default is that no members are shown. The inner most `#[safe(..)]` attribute determines whether to show or hide a member.
+///
 /// # Examples
 ///
 /// ```
 /// # use typespec_macros::SafeDebug;
 /// #[derive(SafeDebug)]
-/// struct MyModel {
-///     name: Option<String>,
+/// struct Person {
+///     name: String,
 /// }
 ///
-/// let model = MyModel {
-///     name: Some("Kelly Smith".to_string()),
+/// let person = Person {
+///     name: "Kelly Smith".to_string(),
 /// };
 /// if cfg!(feature = "debug") {
-///     assert_eq!(format!("{model:?}"), r#"MyModel { name: Some("Kelly Smith") }"#);
+///     assert_eq!(format!("{person:?}"), r#"Person { name: "Kelly Smith" }"#);
 /// } else {
-///     assert_eq!(format!("{model:?}"), "MyModel { .. }");
+///     assert_eq!(format!("{person:?}"), "Person { .. }");
 /// }
 /// ```
-#[proc_macro_derive(SafeDebug)]
+///
+/// Using the `#[safe(..)]` attribute, you can selectively show or hide members.
+/// The default, when not present or inherited, is to always hide members unless the `debug` feature is enabled.
+///
+/// ```
+/// # use typespec_macros::SafeDebug;
+/// use std::ops::Range;
+///
+/// #[derive(SafeDebug)]
+/// struct Employee {
+///     name: String,
+///     #[safe(true)]
+///     position: Position,
+/// }
+///
+/// #[derive(SafeDebug)]
+/// #[safe(true)]
+/// struct Position {
+///     id: i32,
+///     title: String,
+///     #[safe(false)]
+///     salary: Range<i32>,
+/// }
+///
+/// let employee = Employee {
+///     name: "Kelly Smith".to_string(),
+///     position: Position {
+///         id: 12,
+///         title: "Staff Engineer".to_string(),
+///         salary: 200_000..250_000,
+///     },
+/// };
+/// if cfg!(feature = "debug") {
+///     assert_eq!(format!("{employee:?}"), r#"Employee { name: "Kelly Smith", position: Position { id: 12, title: "Staff Engineer", salary: 200000..250000 } }"#);
+/// } else {
+///     assert_eq!(format!("{employee:?}"), r#"Employee { position: Position { id: 12, title: "Staff Engineer", .. }, .. }"#);
+/// }
+/// ```
+#[proc_macro_derive(SafeDebug, attributes(safe))]
 pub fn derive_safe_debug(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     run_derive_macro(input, safe_debug::derive_safe_debug_impl)
 }
