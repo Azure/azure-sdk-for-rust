@@ -14,7 +14,7 @@ use azure_core::{
 };
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
-use std::sync::Arc;
+use std::{ffi::OsString, sync::Arc};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
@@ -112,15 +112,15 @@ impl TokenCredential for AzureDeveloperCliCredential {
                 "at least one scope required",
             ));
         }
-        let mut command = "azd auth token -o json".to_string();
+        let mut command = OsString::from("azd auth token -o json");
         for scope in scopes {
             validate_scope(scope)?;
-            command.push_str(" --scope ");
-            command.push_str(scope);
+            command.push(" --scope ");
+            command.push(scope);
         }
         if let Some(ref tenant_id) = self.tenant_id {
-            command.push_str(" --tenant-id ");
-            command.push_str(tenant_id);
+            command.push(" --tenant-id ");
+            command.push(tenant_id);
         }
         shell_exec::<AzdTokenResponse>(self.executor.clone(), &self.env, &command).await
     }

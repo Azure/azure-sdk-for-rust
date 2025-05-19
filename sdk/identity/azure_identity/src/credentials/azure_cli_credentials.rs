@@ -14,7 +14,7 @@ use azure_core::{
     process::{new_executor, Executor},
 };
 use serde::Deserialize;
-use std::sync::Arc;
+use std::{ffi::OsString, sync::Arc};
 use time::OffsetDateTime;
 use tracing::trace;
 
@@ -135,19 +135,19 @@ impl AzureCliCredential {
         }
         validate_scope(scopes[0])?;
 
-        let mut command = "az account get-access-token -o json --scope ".to_string();
-        command.push_str(scopes[0]);
+        let mut command = OsString::from("az account get-access-token -o json --scope ");
+        command.push(scopes[0]);
         if let Some(ref tenant_id) = self.options.tenant_id {
-            command.push_str(" --tenant ");
-            command.push_str(tenant_id);
+            command.push(" --tenant ");
+            command.push(tenant_id);
         }
         if let Some(ref subscription) = self.options.subscription {
-            command.push_str(r#" --subscription ""#);
-            command.push_str(subscription);
-            command.push('"');
+            command.push(r#" --subscription ""#);
+            command.push(subscription);
+            command.push("\"");
         }
 
-        trace!("running Azure CLI command: {command}");
+        trace!("running Azure CLI command: {command:?}");
 
         shell_exec::<CliTokenResponse>(
             // unwrap() is safe because new() ensured the values are Some

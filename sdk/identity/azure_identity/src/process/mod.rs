@@ -8,7 +8,10 @@ use azure_core::{
     error::{Error, ErrorKind, Result},
     process::Executor,
 };
-use std::{ffi::OsStr, sync::Arc};
+use std::{
+    ffi::{OsStr, OsString},
+    sync::Arc,
+};
 
 use crate::env::Env;
 
@@ -20,29 +23,36 @@ use crate::env::Env;
 pub(crate) async fn shell_exec<T: OutputProcessor>(
     executor: Arc<dyn Executor>,
     #[cfg_attr(not(windows), allow(unused_variables))] env: &Env,
-    command: &str,
+    command: &OsStr,
 ) -> Result<AccessToken> {
     let (workdir, program, c_switch) = {
         #[cfg(windows)]
         {
-            let system_root = env.var("SYSTEMROOT").map_err(|_| {
+            let system_root = env.var_os("SYSTEMROOT").map_err(|_| {
                 Error::message(
                     ErrorKind::Credential,
                     "SYSTEMROOT environment variable not set",
                 )
             })?;
-            (system_root, "cmd", "/C")
+            (system_root, OsStr::new("cmd"), OsStr::new("/C"))
         }
         #[cfg(not(windows))]
         {
-            ("/bin".to_string(), "/bin/sh", "-c")
+            (
+                OsString::from("/bin"),
+                OsStr::new("/bin/sh"),
+                OsStr::new("-c"),
+            )
         }
     };
 
-    let command_string = format!("cd {workdir} && {command}");
-    let args = vec![OsStr::new(c_switch), OsStr::new(&command_string)];
+    let mut command_string = OsString::from("cd ");
+    command_string.push(workdir);
+    command_string.push(" && ");
+    command_string.push(command);
+    let args = &[c_switch, &command_string];
 
-    let status = executor.run(OsStr::new(program), &args).await;
+    let status = executor.run(program, args).await;
 
     match status {
         Ok(output) if output.status.success() => {
@@ -63,7 +73,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             let message = format!(
-                "{} authentication failed: {program} wasn't found on PATH",
+                "{} authentication failed: {program:?} wasn't found on PATH",
                 T::credential_name(),
             );
             Err(Error::full(ErrorKind::Credential, e, message))
