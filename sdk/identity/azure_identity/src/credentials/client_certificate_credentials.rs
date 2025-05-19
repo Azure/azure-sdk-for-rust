@@ -4,7 +4,7 @@
 use crate::{credentials::cache::TokenCache, EntraIdTokenResponse, TokenCredentialOptions};
 use azure_core::{
     base64,
-    credentials::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind},
     http::{
         headers::{self, content_type},
@@ -142,7 +142,11 @@ impl ClientCertificateCredential {
         base64::encode_url_safe(part)
     }
 
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        _: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
         if scopes.len() != 1 {
             return Err(Error::message(
                 ErrorKind::Credential,
@@ -276,7 +280,13 @@ fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ClientCertificateCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(scopes, options, |s, o| self.get_token(s, o))
+            .await
     }
 }

@@ -3,7 +3,7 @@
 
 use crate::{credentials::cache::TokenCache, env::Env, TokenCredentialOptions, UserAssignedId};
 use azure_core::{
-    credentials::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
     error::{http_response_from_body, Error, ErrorKind},
     http::{headers::HeaderName, request::Request, HttpClient, Method, StatusCode, Url},
     json::from_json,
@@ -80,7 +80,11 @@ impl ImdsManagedIdentityCredential {
         }
     }
 
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        _: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
         let resource = scopes_to_resource(scopes)?;
 
         let mut query_items = vec![
@@ -143,8 +147,14 @@ impl ImdsManagedIdentityCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ImdsManagedIdentityCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(scopes, options, |s, o| self.get_token(s, o))
+            .await
     }
 }
 

@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let url = url::Url::parse(&format!("https://management.azure.com/subscriptions/{subscription_id}/providers/Microsoft.Storage/storageAccounts?api-version=2019-06-01"))?;
 
     let access_token = credential
-        .get_token(&["https://management.azure.com/.default"])
+        .get_token(&["https://management.azure.com/.default"], None)
         .await?;
 
     let response = reqwest::Client::new()

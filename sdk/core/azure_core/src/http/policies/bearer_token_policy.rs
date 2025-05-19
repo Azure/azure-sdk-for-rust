@@ -67,7 +67,7 @@ impl Policy for BearerTokenCredentialPolicy {
                 drop(access_token);
                 let mut access_token = self.access_token.write().await;
                 if access_token.is_none() {
-                    *access_token = Some(self.credential.get_token(&self.scopes()).await?);
+                    *access_token = Some(self.credential.get_token(&self.scopes(), None).await?);
                 }
             }
             Some(token) if should_refresh(&token.expires_on) => {
@@ -79,7 +79,7 @@ impl Policy for BearerTokenCredentialPolicy {
                 // access_token shouldn't be None here, but check anyway to guarantee unwrap won't panic
                 if access_token.is_none() || access_token.as_ref().unwrap().expires_on == expires_on
                 {
-                    match self.credential.get_token(&self.scopes()).await {
+                    match self.credential.get_token(&self.scopes(), None).await {
                         Ok(new_token) => {
                             *access_token = Some(new_token);
                         }
@@ -121,7 +121,7 @@ fn should_refresh(expires_on: &OffsetDateTime) -> bool {
 mod tests {
     use super::*;
     use crate::{
-        credentials::{Secret, TokenCredential},
+        credentials::{GetTokenOptions, Secret, TokenCredential},
         http::{
             headers::{Headers, AUTHORIZATION},
             policies::Policy,
@@ -172,7 +172,7 @@ mod tests {
     #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
     #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
     impl TokenCredential for MockCredential {
-        async fn get_token(&self, _scopes: &[&str]) -> Result<AccessToken> {
+        async fn get_token(&self, _: &[&str], _: Option<GetTokenOptions>) -> Result<AccessToken> {
             let i = self.calls.fetch_add(1, Ordering::SeqCst);
             self.tokens
                 .get(i)

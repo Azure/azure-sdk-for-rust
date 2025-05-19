@@ -3,7 +3,7 @@
 
 //! Credentials for live and recorded tests.
 use azure_core::{
-    credentials::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
     date::OffsetDateTime,
     error::ErrorKind,
 };
@@ -17,7 +17,11 @@ pub struct MockCredential;
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for MockCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        _: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
         let token: Secret = format!("TEST TOKEN {}", scopes.join(" ")).into();
         let expires_on = OffsetDateTime::now_utc().saturating_add(
             Duration::from_secs(60 * 5).try_into().map_err(|err| {
