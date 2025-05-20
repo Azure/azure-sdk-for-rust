@@ -15,7 +15,7 @@ pub struct QueryExecutor<T: DeserializeOwned> {
     items_link: ResourceLink,
     context: Context<'static>,
     query_engine: QueryEngineRef,
-    base_request: Request,
+    base_request: Option<Request>,
     query: Query,
     pipeline: Option<OwnedQueryPipeline>,
 
@@ -37,15 +37,13 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
     ) -> azure_core::Result<Self> {
         let items_link = container_link.feed(ResourceType::Items);
         let context = options.method_options.context.into_owned();
-        let base_request =
-            pipeline::create_base_query_request(http_pipeline.url(&items_link), &query)?;
         Ok(Self {
             http_pipeline,
             container_link,
             items_link,
             context,
             query_engine,
-            base_request,
+            base_request: None,
             query,
             pipeline: None,
             phantom: std::marker::PhantomData,
@@ -69,8 +67,13 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
     /// An item to yield, or None if execution is complete.
     #[tracing::instrument(skip_all)]
     async fn step(&mut self) -> azure_core::Result<Option<FeedPage<T>>> {
-        let pipeline = match self.pipeline.as_mut() {
-            Some(pipeline) => pipeline,
+        let (pipeline, base_request) = match self.pipeline.as_mut() {
+            Some(pipeline) => (
+                pipeline,
+                self.base_request
+                    .as_ref()
+                    .expect("base_request should be set when pipeline is set"),
+            ),
             None => {
                 // Initialize the pipeline.
                 let query_plan = get_query_plan(
@@ -97,8 +100,16 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
                 let pipeline =
                     self.query_engine
                         .create_pipeline(&self.query.text, &query_plan, &pkranges)?;
+                self.query.text = pipeline.query().into();
+                self.base_request = Some(crate::pipeline::create_base_query_request(
+                    self.http_pipeline.url(&self.items_link),
+                    &self.query,
+                )?);
                 self.pipeline = Some(pipeline);
-                self.pipeline.as_mut().expect("we just set it")
+                (
+                    self.pipeline.as_mut().unwrap(),
+                    self.base_request.as_ref().unwrap(),
+                )
             }
         };
 
@@ -113,7 +124,7 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
                 let items = results
                     .items
                     .into_iter()
-                    .map(|item| serde_json::from_slice::<T>(&item))
+                    .map(|item| serde_json::from_str::<T>(item.get()))
                     .collect::<Result<Vec<_>, _>>()?;
 
                 // TODO: Provide a continuation token.
@@ -122,7 +133,7 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
 
             // No items, so make any requests we need to make and provide them to the pipeline.
             for request in results.requests {
-                let mut query_request = self.base_request.clone();
+                let mut query_request = base_request.clone();
                 query_request.insert_header(
                     constants::PARTITION_KEY_RANGE_ID,
                     request.partition_key_range_id.clone(),
