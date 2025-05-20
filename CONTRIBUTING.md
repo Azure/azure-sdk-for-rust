@@ -8,6 +8,18 @@
 
 - (Recommended) If you use [Visual Studio Code], install recommended extensions to improve your development experience.
 
+## Contributing to Issues
+
+If you'd like to contribute to the Azure SDK for Rust, we recommend looking for issues with the following labels:
+
+- [design-discussion](https://github.com/Azure/azure-sdk-for-rust/issues?q=is%3Aopen+is%3Aissue+label%3Adesign-discussion) - These issues involve discussions about the design of features or APIs and are a great way to influence the future direction of the SDK.
+
+- [good first issue](https://github.com/Azure/azure-sdk-for-rust/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) - These issues are a good starting point for new contributors, as they should be relatively straightforward to address.
+
+- [help wanted](https://github.com/Azure/azure-sdk-for-rust/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) - These issues are areas where we're actively seeking community contributions.
+
+Your input on these issues is highly valued, and we encourage you to participate in the discussions or take on the tasks described in these issues.
+
 ## Generated code
 
 If you want to contribute to a file that is generated (the file is located in a `generated` subdirectory), the best approach is to open a PR on the TypeSpec specification since we cannot replace generated code that will be replaced when regenerated.
