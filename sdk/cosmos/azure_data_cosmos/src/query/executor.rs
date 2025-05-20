@@ -107,8 +107,8 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
                 )?);
                 self.pipeline = Some(pipeline);
                 (
-                    self.pipeline.as_mut().expect("we just set it"),
-                    self.base_request.as_ref().expect("we just set it"),
+                    self.pipeline.as_mut().unwrap(),
+                    self.base_request.as_ref().unwrap(),
                 )
             }
         };
