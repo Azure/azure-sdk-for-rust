@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore SYSTEMROOT workdir
-
-use crate::{env::Env, validate_scope, validate_tenant_id, TokenCredentialOptions};
+use crate::{
+    env::Env,
+    process::{shell_exec, OutputProcessor},
+    validate_scope, validate_tenant_id, TokenCredentialOptions,
+};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind},
@@ -12,11 +14,9 @@ use azure_core::{
 };
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
-use std::{ffi::OsStr, fmt::Debug, str, sync::Arc};
+use std::{ffi::OsString, sync::Arc};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
-
-const AZURE_DEVELOPER_CLI_CREDENTIAL: &str = "AzureDeveloperCliCredential";
 
 #[derive(Clone, Debug, Deserialize)]
 struct AzdTokenResponse {
@@ -32,6 +32,30 @@ where
 {
     let s: &str = Deserialize::deserialize(deserializer)?;
     OffsetDateTime::parse(s, &Rfc3339).map_err(de::Error::custom)
+}
+
+impl OutputProcessor for AzdTokenResponse {
+    fn credential_name() -> &'static str {
+        "AzureDeveloperCliCredential"
+    }
+
+    fn deserialize_token(stdout: &str) -> azure_core::Result<AccessToken> {
+        let response: Self = from_json(stdout)?;
+        Ok(AccessToken::new(response.access_token, response.expires_on))
+    }
+
+    fn get_error_message(stderr: &str) -> Option<&str> {
+        // azd embeds its "you need to log in" error message in JSON, so in that case we can provide a clearer one
+        if stderr.contains("azd auth login") {
+            Some("please run `azd auth login` from a command prompt before using this credential")
+        } else {
+            None
+        }
+    }
+
+    fn tool_name() -> &'static str {
+        "azd"
+    }
 }
 
 /// Authenticates the identity logged in to the [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/overview).
@@ -88,61 +112,17 @@ impl TokenCredential for AzureDeveloperCliCredential {
                 "at least one scope required",
             ));
         }
-        let mut command = "azd auth token -o json".to_string();
+        let mut command = OsString::from("azd auth token -o json");
         for scope in scopes {
             validate_scope(scope)?;
-            command.push_str(" --scope ");
-            command.push_str(scope);
+            command.push(" --scope ");
+            command.push(scope);
         }
         if let Some(ref tenant_id) = self.tenant_id {
-            command.push_str(" --tenant-id ");
-            command.push_str(tenant_id);
+            command.push(" --tenant-id ");
+            command.push(tenant_id);
         }
-        let (workdir, program, c_switch) = if cfg!(target_os = "windows") {
-            let system_root = self.env.var("SYSTEMROOT").map_err(|_| {
-                Error::message(
-                    ErrorKind::Credential,
-                    "SYSTEMROOT environment variable not set",
-                )
-            })?;
-            (system_root, "cmd", "/C")
-        } else {
-            ("/bin".to_string(), "/bin/sh", "-c")
-        };
-        let command_string = format!("cd {workdir} && {command}");
-        let args = vec![OsStr::new(c_switch), OsStr::new(command_string.as_str())];
-
-        let status = self.executor.run(OsStr::new(program), &args).await;
-
-        match status {
-            Ok(azd_output) if azd_output.status.success() => {
-                let output = str::from_utf8(&azd_output.stdout)?;
-                let response: AzdTokenResponse = from_json(output)?;
-                Ok(AccessToken::new(response.access_token, response.expires_on))
-            }
-            Ok(azd_output) => {
-                let stderr = String::from_utf8_lossy(&azd_output.stderr);
-                let message = if stderr.contains("azd auth login") {
-                    "please run 'azd auth login' from a command prompt before using this credential"
-                } else if azd_output.status.code() == Some(127)
-                    || stderr.contains("'azd' is not recognized")
-                {
-                    "Azure Developer CLI not found on path"
-                } else {
-                    &stderr
-                };
-                Err(Error::with_message(ErrorKind::Credential, || {
-                    format!("{AZURE_DEVELOPER_CLI_CREDENTIAL} authentication failed: {message}")
-                }))
-            }
-            Err(e) => {
-                let message = format!(
-                    "{AZURE_DEVELOPER_CLI_CREDENTIAL} authentication failed due to {} error: {e}",
-                    e.kind()
-                );
-                Err(Error::with_message(ErrorKind::Credential, || message))
-            }
-        }
+        shell_exec::<AzdTokenResponse>(self.executor.clone(), &self.env, &command).await
     }
 }
 
@@ -159,6 +139,7 @@ impl From<TokenCredentialOptions> for AzureDeveloperCliCredentialOptions {
 mod tests {
     use super::*;
     use crate::tests::{MockExecutor, FAKE_TENANT_ID, FAKE_TOKEN, LIVE_TEST_SCOPES};
+    use std::ffi::OsStr;
     use time::UtcOffset;
 
     async fn run_test(

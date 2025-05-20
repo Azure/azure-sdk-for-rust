@@ -5,7 +5,7 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     Error,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, ffi::OsString};
 
 /// Read environment variables.
 #[derive(Debug, Clone)]
@@ -26,6 +26,15 @@ impl Env {
         match self {
             Env::Process(env) => env.var(key),
             Env::Mem(env) => env.var(key),
+        }
+    }
+
+    #[cfg_attr(not(windows), allow(dead_code))]
+    pub fn var_os(&self, key: &str) -> azure_core::Result<OsString> {
+        match self {
+            Env::Process(env) => env.var_os(key),
+            // Mem doesn't need a real implementation because it's used only in tests
+            Env::Mem(env) => env.var(key).map(OsString::from),
         }
     }
 }
@@ -50,6 +59,14 @@ impl ProcessEnv {
     fn var(&self, key: &str) -> azure_core::Result<String> {
         std::env::var(key).with_context(ErrorKind::Io, || {
             format!("environment variable {} not set", key)
+        })
+    }
+
+    fn var_os(&self, key: &str) -> Result<OsString, Error> {
+        std::env::var_os(key).ok_or_else(|| {
+            Error::with_message(ErrorKind::Io, || {
+                format!("environment variable {key} not set")
+            })
         })
     }
 }
