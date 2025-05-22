@@ -5,7 +5,7 @@
 ### Features Added
 
 - Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
-- Added module `serde` to contains various helpers.
+- Added module `serde` which contains various helpers.
   - Added module `as_string` which is used to (de)serialize types in string format.
 
 ### Breaking Changes
