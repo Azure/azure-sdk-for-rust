@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
+- Added module `fmt::as_string` which is used to (de)serialize types in string format.
 
 ### Breaking Changes
 
