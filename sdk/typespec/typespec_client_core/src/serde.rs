@@ -86,11 +86,11 @@ mod tests {
 
     #[test]
     fn test_deserialize_all() -> crate::Result<()> {
-        let json_body = r#"{"a_bool":"true","json_number":"123456789","some_float":"3.1415926","some_int":"42"}"#;
+        let json_body = r#"{"a_bool":"true","json_number":"123456789","some_float":"9.87654321","some_int":"42"}"#;
         let test_type: TestType = from_json(json_body)?;
         assert_eq!(test_type.a_bool, Some(true));
         assert_eq!(test_type.json_number, Number::from_i128(123456789));
-        assert_eq!(test_type.some_float, Some(3.1415926));
+        assert_eq!(test_type.some_float, Some(9.87654321));
         assert_eq!(test_type.some_int, Some(42));
         Ok(())
     }
@@ -108,13 +108,13 @@ mod tests {
         let test_type = TestType {
             a_bool: Some(true),
             json_number: Number::from_i128(123456789),
-            some_float: Some(3.1415926),
+            some_float: Some(9.87654321),
             some_int: Some(42),
         };
         let json_body = to_json(&test_type)?;
         assert_eq!(
             json_body,
-            r#"{"a_bool":"true","json_number":"123456789","some_float":"3.1415926","some_int":"42"}"#
+            r#"{"a_bool":"true","json_number":"123456789","some_float":"9.87654321","some_int":"42"}"#
         );
         Ok(())
     }
