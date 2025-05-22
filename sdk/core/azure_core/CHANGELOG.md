@@ -5,7 +5,6 @@
 ### Features Added
 
 - Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
-- Expose module `serde` from `typespec_client_core`.
 
 ### Breaking Changes
 

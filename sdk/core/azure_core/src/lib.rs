@@ -26,7 +26,7 @@ pub use constants::*;
 pub use typespec_client_core::{
     base64, create_enum, create_extensible_enum, date,
     error::{self, Error, Result},
-    fmt, json, serde, sleep, stream, Bytes, Uuid,
+    fmt, json, sleep, stream, Bytes, Uuid,
 };
 
 #[cfg(feature = "xml")]

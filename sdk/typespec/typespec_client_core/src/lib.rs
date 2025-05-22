@@ -15,7 +15,6 @@ pub mod fs;
 pub mod http;
 #[cfg(feature = "json")]
 pub mod json;
-pub mod serde;
 pub mod sleep;
 pub mod stream;
 #[cfg(feature = "xml")]
