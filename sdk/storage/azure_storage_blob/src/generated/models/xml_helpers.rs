@@ -16,21 +16,18 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[serde(rename = "BlobItems")]
 pub(crate) struct Blob_itemsBlob {
     #[serde(default)]
-    Blob: Option<Vec<BlobItemInternal>>,
+    Blob: Vec<BlobItemInternal>,
 }
 
 impl Blob_itemsBlob {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<BlobItemInternal>>, D::Error>
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<BlobItemInternal>, D::Error>
     where
         D: Deserializer<'de>,
     {
         Ok(Blob_itemsBlob::deserialize(deserializer)?.Blob)
     }
 
-    pub fn wrap<S>(
-        to_serialize: &Option<Vec<BlobItemInternal>>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
+    pub fn wrap<S>(to_serialize: &Vec<BlobItemInternal>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -178,21 +175,18 @@ impl Committed_blocksBlock {
 #[serde(rename = "Containers")]
 pub(crate) struct Container_itemsContainer {
     #[serde(default)]
-    Container: Option<Vec<ContainerItem>>,
+    Container: Vec<ContainerItem>,
 }
 
 impl Container_itemsContainer {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<ContainerItem>>, D::Error>
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<ContainerItem>, D::Error>
     where
         D: Deserializer<'de>,
     {
         Ok(Container_itemsContainer::deserialize(deserializer)?.Container)
     }
 
-    pub fn wrap<S>(
-        to_serialize: &Option<Vec<ContainerItem>>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
+    pub fn wrap<S>(to_serialize: &Vec<ContainerItem>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
