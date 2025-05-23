@@ -2,30 +2,44 @@
 // Licensed under the MIT License.
 
 use async_lock::RwLock;
-use azure_core::credentials::AccessToken;
-use futures::Future;
+use azure_core::credentials::{AccessToken, GetTokenOptions};
 use std::collections::HashMap;
+use std::future::Future;
 use std::time::Duration;
+use time::OffsetDateTime;
 use tracing::trace;
-use typespec_client_core::date::OffsetDateTime;
 
 #[derive(Debug)]
 pub(crate) struct TokenCache(RwLock<HashMap<Vec<String>, AccessToken>>);
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) trait MaybeSend: Send {}
+#[cfg(not(target_arch = "wasm32"))]
+impl<T: Send> MaybeSend for T {}
+
+#[cfg(target_arch = "wasm32")]
+pub(crate) trait MaybeSend {}
+#[cfg(target_arch = "wasm32")]
+impl<T> MaybeSend for T {}
 
 impl TokenCache {
     pub(crate) fn new() -> Self {
         Self(RwLock::new(HashMap::new()))
     }
 
-    pub(crate) async fn get_token(
+    pub(crate) async fn get_token<'a, C, F>(
         &self,
-        scopes: &[&str],
-        callback: impl Future<Output = azure_core::Result<AccessToken>>,
-    ) -> azure_core::Result<AccessToken> {
-        // if the current cached token for this resource is good, return it.
+        scopes: &'a [&'a str],
+        options: Option<GetTokenOptions>,
+        callback: C,
+    ) -> azure_core::Result<AccessToken>
+    where
+        C: FnOnce(&'a [&'a str], Option<GetTokenOptions>) -> F + MaybeSend,
+        F: Future<Output = azure_core::Result<AccessToken>> + MaybeSend,
+    {
         let token_cache = self.0.read().await;
-        let scopes = scopes.iter().map(ToString::to_string).collect::<Vec<_>>();
-        if let Some(token) = token_cache.get(&scopes) {
+        let scopes_owned = scopes.iter().map(ToString::to_string).collect::<Vec<_>>();
+        if let Some(token) = token_cache.get(&scopes_owned) {
             if !should_refresh(token) {
                 trace!("returning cached token");
                 return Ok(token.clone());
@@ -38,21 +52,16 @@ impl TokenCache {
 
         // check again in case another thread refreshed the token while we were
         // waiting on the write lock
-        if let Some(token) = token_cache.get(&scopes) {
+        if let Some(token) = token_cache.get(&scopes_owned) {
             if !should_refresh(token) {
                 trace!("returning token that was updated while waiting on write lock");
                 return Ok(token.clone());
             }
         }
 
-        trace!("falling back to callback");
-        let token = callback.await?;
-
-        // NOTE: we do not check to see if the token is expired here, as at
-        // least one credential, `AzureCliCredential`, specifies the token is
-        // immediately expired after it is returned, which indicates the token
-        // should always be refreshed upon use.
-        token_cache.insert(scopes, token.clone());
+        trace!("token cache miss");
+        let token = callback(scopes, options).await?;
+        token_cache.insert(scopes_owned, token.clone());
         Ok(token)
     }
 }
@@ -88,7 +97,11 @@ mod tests {
             }
         }
 
-        async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        async fn get_token(
+            &self,
+            scopes: &[&str],
+            _: Option<GetTokenOptions>,
+        ) -> azure_core::Result<AccessToken> {
             // Include an incrementing counter in the token to track how many times the token has been refreshed
             let mut call_count = self.get_token_call_count.lock().unwrap();
             *call_count += 1;
@@ -121,10 +134,10 @@ mod tests {
 
         // Test that querying a token for the same resource twice returns the same (cached) token on the second call
         let token1 = cache
-            .get_token(resource1, mock_credential.get_token(resource1))
+            .get_token(resource1, None, |s, o| mock_credential.get_token(s, o))
             .await?;
         let token2 = cache
-            .get_token(resource1, mock_credential.get_token(resource1))
+            .get_token(resource1, None, |s, o| mock_credential.get_token(s, o))
             .await?;
 
         let expected_token = format!("{}-{}:1", resource1.join(" "), secret_string);
@@ -134,10 +147,10 @@ mod tests {
         // Test that querying a token for a second resource returns a different token, as the cache is per-resource.
         // Also test that the same token is the returned (cached) on a second call.
         let token3 = cache
-            .get_token(resource2, mock_credential.get_token(resource2))
+            .get_token(resource2, None, |s, o| mock_credential.get_token(s, o))
             .await?;
         let token4 = cache
-            .get_token(resource2, mock_credential.get_token(resource2))
+            .get_token(resource2, None, |s, o| mock_credential.get_token(s, o))
             .await?;
         let expected_token = format!("{}-{}:2", resource2.join(" "), secret_string);
         assert_eq!(token3.token.secret(), expected_token);
@@ -160,7 +173,7 @@ mod tests {
         // Test that querying an expired token returns a new token
         for i in 1..5 {
             let token = cache
-                .get_token(resource, mock_credential.get_token(resource))
+                .get_token(resource, None, |s, o| mock_credential.get_token(s, o))
                 .await?;
             assert_eq!(
                 token.token.secret(),

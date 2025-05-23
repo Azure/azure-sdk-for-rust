@@ -5,6 +5,7 @@ use crate::{
     credentials::cache::TokenCache, deserialize, EntraIdErrorResponse, EntraIdTokenResponse,
     TokenCredentialOptions,
 };
+use azure_core::credentials::GetTokenOptions;
 use azure_core::http::StatusCode;
 use azure_core::Result;
 use azure_core::{
@@ -69,7 +70,11 @@ impl ClientSecretCredential {
         }))
     }
 
-    async fn get_token_impl(&self, scopes: &[&str]) -> Result<AccessToken> {
+    async fn get_token_impl(
+        &self,
+        scopes: &[&str],
+        _: Option<GetTokenOptions>,
+    ) -> Result<AccessToken> {
         let mut req = Request::new(self.endpoint.clone(), Method::Post);
         req.insert_header(
             headers::CONTENT_TYPE,
@@ -114,12 +119,16 @@ impl ClientSecretCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ClientSecretCredential {
-    async fn get_token(&self, scopes: &[&str]) -> Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<GetTokenOptions>,
+    ) -> Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::message(ErrorKind::Credential, "no scopes specified"));
         }
         self.cache
-            .get_token(scopes, self.get_token_impl(scopes))
+            .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
             .await
     }
 }
@@ -181,7 +190,7 @@ mod tests {
         .expect("valid credential");
 
         let err = cred
-            .get_token(LIVE_TEST_SCOPES)
+            .get_token(LIVE_TEST_SCOPES, None)
             .await
             .expect_err("expected error");
         assert!(matches!(err.kind(), ErrorKind::Credential));
@@ -221,7 +230,7 @@ mod tests {
             }),
         )
         .expect("valid credential");
-        let token = cred.get_token(LIVE_TEST_SCOPES).await.expect("token");
+        let token = cred.get_token(LIVE_TEST_SCOPES, None).await.expect("token");
 
         assert_eq!(FAKE_TOKEN, token.token.secret());
 
@@ -239,7 +248,7 @@ mod tests {
 
         // sts will return an error if the credential sends another request
         let cached_token = cred
-            .get_token(LIVE_TEST_SCOPES)
+            .get_token(LIVE_TEST_SCOPES, None)
             .await
             .expect("cached token");
         assert_eq!(token.token.secret(), cached_token.token.secret());
@@ -266,7 +275,7 @@ mod tests {
             None,
         )
         .expect("valid credential")
-        .get_token(&[])
+        .get_token(&[], None)
         .await
         .expect_err("no scopes specified");
     }

@@ -3,7 +3,7 @@
 
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use azure_core::{
-    credentials::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
     Error,
 };
@@ -90,11 +90,15 @@ impl WorkloadIdentityCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for WorkloadIdentityCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::message(ErrorKind::Credential, "no scopes specified"));
         }
-        self.0.get_token(scopes).await
+        self.0.get_token(scopes, options).await
     }
 }
 
@@ -259,7 +263,7 @@ mod tests {
         }))
         .expect("valid credential");
 
-        let token = cred.get_token(LIVE_TEST_SCOPES).await.expect("token");
+        let token = cred.get_token(LIVE_TEST_SCOPES, None).await.expect("token");
         assert_eq!(FAKE_TOKEN, token.token.secret());
         assert!(token.expires_on > SystemTime::now());
     }
@@ -291,7 +295,7 @@ mod tests {
             ..Default::default()
         }))
         .expect("valid credential")
-        .get_token(&[])
+        .get_token(&[], None)
         .await
         .expect_err("no scopes specified");
     }
@@ -335,7 +339,7 @@ mod tests {
         }))
         .expect("valid credential");
 
-        let token = cred.get_token(LIVE_TEST_SCOPES).await.expect("token");
+        let token = cred.get_token(LIVE_TEST_SCOPES, None).await.expect("token");
         assert_eq!(FAKE_TOKEN, token.token.secret());
         assert!(token.expires_on > SystemTime::now());
     }

@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let credentials = AzureCliCredential::new(None)?;
     let res = credentials
-        .get_token(&["https://management.azure.com/.default"])
+        .get_token(&["https://management.azure.com/.default"], None)
         .await?;
     eprintln!("Azure CLI response == {res:?}");
 

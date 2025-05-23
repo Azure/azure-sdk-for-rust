@@ -6,7 +6,7 @@ use crate::{
     TokenCredentialOptions,
 };
 use azure_core::{
-    credentials::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
     error::ErrorKind,
     http::{
         headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
@@ -108,8 +108,12 @@ impl AzurePipelinesCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AzurePipelinesCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.0.get_token(scopes).await
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
+        self.0.get_token(scopes, options).await
     }
 }
 
@@ -258,7 +262,7 @@ mod tests {
             AzurePipelinesCredential::new("a".into(), "b".into(), "c", "d", Some(options))
                 .expect("valid AzurePipelinesCredential");
         assert!(matches!(
-            credential.get_token(&["default"]).await,
+            credential.get_token(&["default"], None).await,
             Err(err) if matches!(
                 err.kind(),
                 ErrorKind::HttpResponse { status, .. }
@@ -323,7 +327,7 @@ mod tests {
             AzurePipelinesCredential::new("a".into(), "b".into(), "c", "d", Some(options))
                 .expect("valid AzurePipelinesCredential");
         let secret = credential
-            .get_token(&["default"])
+            .get_token(&["default"], None)
             .await
             .expect("valid response");
         assert_eq!(secret.token.secret(), "qux");

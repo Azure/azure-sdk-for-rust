@@ -7,7 +7,7 @@ use crate::{
     validate_scope, validate_tenant_id, TokenCredentialOptions,
 };
 use azure_core::{
-    credentials::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
     error::{Error, ErrorKind},
     json::from_json,
     process::{new_executor, Executor},
@@ -105,7 +105,11 @@ impl AzureDeveloperCliCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AzureDeveloperCliCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        _: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::new(
                 ErrorKind::Credential,
@@ -184,7 +188,7 @@ mod tests {
             tenant_id,
         };
         let cred = AzureDeveloperCliCredential::new(Some(options))?;
-        return cred.get_token(LIVE_TEST_SCOPES).await;
+        return cred.get_token(LIVE_TEST_SCOPES, None).await;
     }
 
     #[tokio::test]
@@ -227,7 +231,7 @@ mod tests {
         };
         let cred = AzureDeveloperCliCredential::new(Some(options)).expect("valid credential");
         let err = cred
-            .get_token(LIVE_TEST_SCOPES)
+            .get_token(LIVE_TEST_SCOPES, None)
             .await
             .expect_err("expected error");
         assert!(matches!(err.kind(), ErrorKind::Credential));

@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug};
-use typespec_client_core::date::OffsetDateTime;
+use typespec_client_core::{date::OffsetDateTime, fmt::SafeDebug};
 
 /// Default Azure authorization scope.
 pub static DEFAULT_SCOPE_SUFFIX: &str = "/.default";
@@ -87,10 +87,18 @@ impl AccessToken {
     }
 }
 
+/// Options for getting a token from a [`TokenCredential`]
+#[derive(Clone, Default, SafeDebug)]
+pub struct GetTokenOptions;
+
 /// Represents a credential capable of providing an OAuth token.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait TokenCredential: Send + Sync + Debug {
-    /// Gets a `AccessToken` for the specified resource
-    async fn get_token(&self, scopes: &[&str]) -> crate::Result<AccessToken>;
+    /// Gets an [`AccessToken`] for the specified scopes
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<GetTokenOptions>,
+    ) -> crate::Result<AccessToken>;
 }

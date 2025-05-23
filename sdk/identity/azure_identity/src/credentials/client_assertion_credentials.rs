@@ -6,7 +6,7 @@ use crate::{
     EntraIdErrorResponse, EntraIdTokenResponse, TokenCredentialOptions,
 };
 use azure_core::{
-    credentials::{AccessToken, TokenCredential},
+    credentials::{AccessToken, GetTokenOptions, TokenCredential},
     error::{ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
@@ -98,7 +98,11 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         })
     }
 
-    async fn get_token_impl(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token_impl(
+        &self,
+        scopes: &[&str],
+        _: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
         let mut req = Request::new(self.endpoint.clone(), Method::Post);
         req.insert_header(
             headers::CONTENT_TYPE,
@@ -145,9 +149,13 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<GetTokenOptions>,
+    ) -> azure_core::Result<AccessToken> {
         self.cache
-            .get_token(scopes, self.get_token_impl(scopes))
+            .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
             .await
     }
 }
@@ -249,7 +257,7 @@ pub(crate) mod tests {
         .expect("valid credential");
 
         let error = credential
-            .get_token(LIVE_TEST_SCOPES)
+            .get_token(LIVE_TEST_SCOPES, None)
             .await
             .expect_err("authentication error");
         assert!(matches!(error.kind(), ErrorKind::Credential));
@@ -287,14 +295,17 @@ pub(crate) mod tests {
         )
         .expect("valid credential");
 
-        let token = credential.get_token(LIVE_TEST_SCOPES).await.expect("token");
+        let token = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect("token");
         assert_eq!(FAKE_TOKEN, token.token.secret());
         assert!(token.expires_on > SystemTime::now());
         assert_eq!(UtcOffset::UTC, token.expires_on.offset());
 
         // MockSts will return an error if the credential sends another request
         let cached_token = credential
-            .get_token(LIVE_TEST_SCOPES)
+            .get_token(LIVE_TEST_SCOPES, None)
             .await
             .expect("cached token");
         assert_eq!(token.token.secret(), cached_token.token.secret());
