@@ -397,8 +397,8 @@ where
         self.inner.iter().any(|(k, _)| key.eq(k))
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (K, V)> + '_ {
-        self.inner.iter().map(|(k, v)| (k.clone(), v.clone()))
+    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> + '_ {
+        self.inner.iter().map(|(k, v)| (k, v))
     }
 }
 

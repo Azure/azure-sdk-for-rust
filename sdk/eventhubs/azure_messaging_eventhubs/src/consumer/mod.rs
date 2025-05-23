@@ -6,7 +6,7 @@
 pub(crate) mod event_receiver;
 
 use crate::{
-    common::{connection_manager::ConnectionManager, ManagementInstance},
+    common::{recoverable_connection::RecoverableConnection, ManagementInstance},
     error::{ErrorKind, EventHubsError},
     models::{ConsumerClientDetails, EventHubPartitionProperties, EventHubProperties},
     RetryOptions,
@@ -19,16 +19,16 @@ use azure_core::{
     Uuid,
 };
 use azure_core_amqp::{
-    message::AmqpSourceFilter, AmqpDescribed, AmqpManagement, AmqpManagementApis, AmqpOrderedMap,
-    AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSessionApis, AmqpSource,
-    AmqpSymbol, AmqpValue, ReceiverCreditMode,
+    message::AmqpSourceFilter, AmqpDescribed, AmqpOrderedMap, AmqpReceiver, AmqpReceiverApis,
+    AmqpReceiverOptions, AmqpSession, AmqpSessionApis, AmqpSource, AmqpSymbol, AmqpValue,
+    ReceiverCreditMode,
 };
 pub use event_receiver::EventReceiver;
 use std::{
     collections::HashMap,
     default::Default,
     fmt::Debug,
-    sync::{Arc, OnceLock},
+    sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tracing::{debug, trace};
@@ -36,8 +36,7 @@ use tracing::{debug, trace};
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
     session_instances: AsyncMutex<HashMap<String, Arc<AmqpSession>>>,
-    mgmt_client: AsyncMutex<OnceLock<ManagementInstance>>,
-    connection_manager: Arc<ConnectionManager>,
+    connection_manager: Arc<RecoverableConnection>,
     consumer_group: String,
     eventhub: String,
     endpoint: Url,
@@ -105,8 +104,7 @@ impl ConsumerClient {
             instance_id: options.instance_id,
             retry_options: retry_options.clone(),
             session_instances: AsyncMutex::new(HashMap::new()),
-            mgmt_client: AsyncMutex::new(OnceLock::new()),
-            connection_manager: ConnectionManager::new(
+            connection_manager: RecoverableConnection::new(
                 url.clone(),
                 options.application_id.clone(),
                 options.custom_endpoint.clone(),
@@ -340,13 +338,8 @@ impl ConsumerClient {
     /// }
     /// ```
     pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties> {
-        self.ensure_management_client().await?;
-
-        self.mgmt_client
-            .lock()
-            .await
-            .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
+        self.get_management_instance()
+            .await?
             .get_eventhub_properties(&self.eventhub)
             .await
     }
@@ -395,58 +388,15 @@ impl ConsumerClient {
         &self,
         partition_id: &str,
     ) -> Result<EventHubPartitionProperties> {
-        self.ensure_management_client().await?;
-
-        self.mgmt_client
-            .lock()
-            .await
-            .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
+        self.get_management_instance()
+            .await?
             .get_eventhub_partition_properties(&self.eventhub, partition_id)
             .await
     }
 
-    async fn ensure_management_client(&self) -> Result<()> {
-        trace!("Ensure management client.");
-
-        let mgmt_client = self.mgmt_client.lock().await;
-
-        if mgmt_client.get().is_some() {
-            trace!("Management client already exists.");
-            return Ok(());
-        }
-
-        // Clients must call ensure_connection before calling ensure_management_client.
-
-        trace!("Create management session.");
-        let connection = self.connection_manager.get_connection()?;
-        let session = AmqpSession::new();
-        session.begin(connection.as_ref(), None).await?;
-        trace!("Session created.");
-
-        let management_path = self.endpoint.to_string() + "/$management";
-        let management_path = Url::parse(&management_path)?;
-
-        let access_token = self
-            .connection_manager
-            .authorize_path(&connection, &management_path)
-            .await?;
-
-        trace!("Create management client.");
-        let management = AmqpManagement::new(
-            session,
-            "eventhubs_consumer_management".to_string(),
-            access_token,
-        )?;
-        management.attach().await?;
-        mgmt_client
-            .set(ManagementInstance::new(
-                management,
-                self.retry_options.clone(),
-            ))
-            .map_err(|_| EventHubsError::from(ErrorKind::MissingManagementClient))?;
-        trace!("Management client created.");
-        Ok(())
+    async fn get_management_instance(&self) -> Result<Arc<ManagementInstance>> {
+        self.connection_manager.ensure_connection().await?;
+        Ok(ManagementInstance::new(self.connection_manager.clone()))
     }
 
     async fn ensure_connection(&self) -> Result<()> {

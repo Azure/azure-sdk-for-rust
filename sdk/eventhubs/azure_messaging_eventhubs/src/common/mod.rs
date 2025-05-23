@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-pub(crate) mod connection_manager;
 pub(crate) mod management;
+pub(crate) mod recoverable_connection;
 pub mod retry;
 pub(crate) mod user_agent;
 

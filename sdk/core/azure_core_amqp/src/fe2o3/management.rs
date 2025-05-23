@@ -14,7 +14,6 @@ use crate::{
 use async_trait::async_trait;
 use azure_core::{credentials::AccessToken, Result};
 use fe2o3_amqp_management::operations::ReadResponse;
-use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::SimpleValue};
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 use tracing::debug;
@@ -185,21 +184,24 @@ impl fe2o3_amqp_management::Request for WithApplicationPropertiesRequest<'_> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        let builder = ApplicationProperties::builder();
-        let builder = self
+        let mut fe2o3_application_properties = self
             .application_properties
             .iter()
-            .fold(builder, |builder, (key, value)| {
-                builder.insert(
+            .map(|(key, value)| {
+                (
                     key.clone(),
                     Into::<fe2o3_amqp_types::primitives::SimpleValue>::into(value),
                 )
             })
-            .insert(
-                "security_token",
-                Into::<SimpleValue>::into(self.access_token.token.secret()),
-            );
-        Some(builder.build())
+            .collect::<fe2o3_amqp_types::primitives::OrderedMap<_, _>>();
+        fe2o3_application_properties.insert(
+            "security_token".to_string(),
+            fe2o3_amqp_types::primitives::SimpleValue::from(self.access_token.token.secret()),
+        );
+
+        Some(fe2o3_amqp_types::messaging::ApplicationProperties(
+            fe2o3_application_properties,
+        ))
     }
     fn encode_body(self) -> Self::Body {}
 }

@@ -104,7 +104,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
                 session_builder = session_builder.properties(
                     properties
                         .iter()
-                        .map(|(k, v)| (k.0.into(), v.into()))
+                        .map(|(k, v)| (k.into(), v.into()))
                         .collect(),
                 );
             }

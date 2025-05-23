@@ -2,12 +2,14 @@
 // Licensed under the MIT license.
 
 use crate::{
-    common::{connection_manager::ConnectionManager, retry_azure_operation, ManagementInstance},
+    common::{
+        recoverable_connection::RecoverableConnection, retry_azure_operation, ManagementInstance,
+    },
     error::{ErrorKind, EventHubsError},
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
     RetryOptions,
 };
-use async_lock::Mutex;
+use async_lock::Mutex as AsyncMutex;
 use azure_core::{
     error::{ErrorKind as AzureErrorKind, Result},
     http::Url,
@@ -15,16 +17,16 @@ use azure_core::{
 };
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
-    AmqpError, AmqpManagement, AmqpManagementApis, AmqpSendOptions, AmqpSender, AmqpSenderApis,
-    AmqpSession, AmqpSessionApis, AmqpSessionOptions,
+    AmqpError, AmqpSendOptions, AmqpSender, AmqpSenderApis, AmqpSession, AmqpSessionApis,
+    AmqpSessionOptions,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::{
     error::Error,
-    sync::{Arc, OnceLock},
+    sync::Arc,
     {collections::HashMap, fmt::Debug},
 };
-use tracing::{debug, trace, warn};
+use tracing::{debug, warn};
 
 /// Types used to collect messages into a "batch" before submitting them to an Event Hub.
 pub(crate) mod batch;
@@ -34,7 +36,7 @@ const DEFAULT_EVENTHUBS_APPLICATION: &str = "DefaultApplicationName";
 struct SenderInstance {
     #[allow(dead_code)]
     session: AmqpSession,
-    sender: Arc<Mutex<AmqpSender>>,
+    sender: Arc<AmqpSender>,
 }
 
 #[derive(Default, Debug, Clone)]
@@ -68,9 +70,8 @@ pub struct SendBatchOptions {}
 /// }
 /// ```
 pub struct ProducerClient {
-    sender_instances: Mutex<HashMap<Url, SenderInstance>>,
-    mgmt_client: Mutex<OnceLock<ManagementInstance>>,
-    connection_manager: Arc<ConnectionManager>,
+    sender_instances: AsyncMutex<HashMap<Url, SenderInstance>>,
+    connection: Arc<RecoverableConnection>,
     eventhub: String,
     endpoint: Url,
     application_id: Option<String>,
@@ -117,9 +118,8 @@ impl ProducerClient {
         custom_endpoint: Option<Url>,
     ) -> Self {
         Self {
-            sender_instances: Mutex::new(HashMap::new()),
-            mgmt_client: Mutex::new(OnceLock::new()),
-            connection_manager: ConnectionManager::new(
+            sender_instances: AsyncMutex::new(HashMap::new()),
+            connection: RecoverableConnection::new(
                 endpoint.clone(),
                 application_id.clone(),
                 custom_endpoint.clone(),
@@ -155,7 +155,7 @@ impl ProducerClient {
     ///
     /// Note that dropping the ProducerClient will also close the connection.
     pub async fn close(self) -> Result<()> {
-        self.connection_manager.close_connection().await
+        self.connection.close_connection().await
     }
 
     fn should_retry_send_operation(e: &azure_core::Error) -> bool {
@@ -276,8 +276,7 @@ impl ProducerClient {
                 let sender = sender.clone();
                 let message = message.clone();
                 async move {
-                    let sender_guard = sender.lock().await;
-                    sender_guard
+                    sender
                         .send(
                             message.clone(),
                             Some(AmqpSendOptions {
@@ -396,7 +395,6 @@ impl ProducerClient {
                 let sender = sender.clone();
                 async move {
                     let messages = batch.get_messages();
-                    let sender = sender.lock().await;
 
                     sender
                         .send(
@@ -453,15 +451,15 @@ impl ProducerClient {
     /// }
     /// ```
     pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties> {
-        self.ensure_management_client().await?;
-
-        self.mgmt_client
-            .lock()
-            .await
-            .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
+        self.get_management_instance()
+            .await?
             .get_eventhub_properties(&self.eventhub)
             .await
+    }
+
+    async fn get_management_instance(&self) -> Result<Arc<ManagementInstance>> {
+        self.ensure_connection().await?;
+        Ok(ManagementInstance::new(self.connection.clone()))
     }
 
     /// Gets the properties of a partition of the Event Hub.
@@ -494,13 +492,8 @@ impl ProducerClient {
         &self,
         partition_id: &str,
     ) -> Result<EventHubPartitionProperties> {
-        self.ensure_management_client().await?;
-
-        self.mgmt_client
-            .lock()
-            .await
-            .get()
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingManagementClient))?
+        self.get_management_instance()
+            .await?
             .get_eventhub_partition_properties(&self.eventhub, partition_id)
             .await
     }
@@ -510,56 +503,18 @@ impl ProducerClient {
     }
 
     async fn ensure_connection(&self) -> Result<()> {
-        self.connection_manager.ensure_connection().await?;
-        Ok(())
-    }
-    async fn ensure_management_client(&self) -> Result<()> {
-        let mgmt_client = self.mgmt_client.lock().await;
-
-        if mgmt_client.get().is_some() {
-            return Ok(());
-        }
-
-        // Clients must call ensure_connection before calling ensure_management_client.
-
-        trace!("Create management session.");
-        let connection = self.connection_manager.get_connection()?;
-
-        let session = AmqpSession::new();
-        session.begin(connection.as_ref(), None).await?;
-        trace!("Session created.");
-
-        let management_path = self.endpoint.to_string() + "/$management";
-        let management_path = Url::parse(&management_path)?;
-        let access_token = self
-            .connection_manager
-            .authorize_path(&connection, &management_path)
-            .await?;
-
-        trace!("Create management client.");
-        let management =
-            AmqpManagement::new(session, "eventhubs_management".to_string(), access_token)?;
-        management.attach().await?;
-        mgmt_client
-            .set(ManagementInstance::new(
-                management,
-                self.retry_options.clone(),
-            ))
-            .map_err(|_| EventHubsError::from(ErrorKind::MissingManagementClient))?;
-        trace!("Management client created.");
+        self.connection.ensure_connection().await?;
         Ok(())
     }
 
-    async fn ensure_sender(&self, path: &Url) -> Result<Arc<Mutex<AmqpSender>>> {
+    async fn ensure_sender(&self, path: &Url) -> Result<Arc<AmqpSender>> {
         let mut sender_instances = self.sender_instances.lock().await;
         if !sender_instances.contains_key(path) {
-            self.connection_manager.ensure_connection().await?;
+            self.connection.ensure_connection().await?;
 
-            let connection = self.connection_manager.get_connection()?;
+            let connection = self.connection.get_connection()?;
 
-            self.connection_manager
-                .authorize_path(&connection, path)
-                .await?;
+            self.connection.authorize_path(&connection, path).await?;
             let session = AmqpSession::new();
             session
                 .begin(
@@ -589,7 +544,7 @@ impl ProducerClient {
                 path.clone(),
                 SenderInstance {
                     session,
-                    sender: Arc::new(Mutex::new(sender)),
+                    sender: Arc::new(sender),
                 },
             );
         }
