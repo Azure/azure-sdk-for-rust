@@ -21,7 +21,7 @@ Further discussion on or pull requests for these issues is highly valued, and we
 ## Using Copilot
 
 This repository is [configured](https://code.visualstudio.com/docs/copilot/copilot-customization) to facilitate Copilot.
-In addition to [general instructions](.github/copilot-instructions.md), you can find additional prompts in [.github/prompts] or type `#prompt` in Copilot.
+In addition to [general instructions]<!--(.github/copilot-instructions.md)-->, you can find additional prompts in [.github/prompts] or type `#prompt` in Copilot.
 
 To generate a new performance test, for example, you might prompt with:
 
