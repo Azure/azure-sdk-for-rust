@@ -12,12 +12,22 @@
 
 If you'd like to contribute to the Azure SDK for Rust, we recommend looking for issues with the following labels:
 
-
 - [good first issue](https://github.com/Azure/azure-sdk-for-rust/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) - These issues are a good starting point for new contributors since they should be relatively straightforward to address.
 
 - [help wanted](https://github.com/Azure/azure-sdk-for-rust/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) - These issues are areas where we're actively seeking community contributions.
 
 Further discussion on or pull requests for these issues is highly valued, and we encourage you to participate in the discussions or take on the tasks described in these issues.
+
+## Using Copilot
+
+This repository is [configured](https://code.visualstudio.com/docs/copilot/copilot-customization) to facilitate Copilot.
+In addition to [general instructions](.github/copilot-instructions.md), you can find additional prompts in [.github/prompts] or type `#prompt` in Copilot.
+
+To generate a new performance test, for example, you might prompt with:
+
+```text
+Using #perf-test.prompt.md generate a perf test for SecretClient::get_secret.
+```
 
 ## Generated code
 

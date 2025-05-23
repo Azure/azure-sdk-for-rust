@@ -57,7 +57,6 @@ fn http_transport_test(c: &mut Criterion) {
 criterion_group! {
     name = benchmarks;
     config = Criterion::default();
-    targets =url_parsing_benchmark,
-        http_transport_test
+    targets = url_parsing_benchmark, http_transport_test
 }
 criterion_main!(benchmarks);
