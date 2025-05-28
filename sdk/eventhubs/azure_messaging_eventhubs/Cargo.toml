@@ -40,7 +40,6 @@ azure_messaging_eventhubs = { path = ".", features = [
   "test",
 ] }
 criterion.workspace = true
-dotenvy = "0.15.7"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 

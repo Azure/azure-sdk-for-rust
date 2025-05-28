@@ -39,6 +39,7 @@
     "devicecode",
     "docsrs",
     "doctest",
+    "dotenv",
     "downcasted",
     "downcasting",
     "entra",

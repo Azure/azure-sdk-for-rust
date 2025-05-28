@@ -4,10 +4,10 @@
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{models::EventData, ProducerClient, SendEventOptions};
 use criterion::{criterion_group, criterion_main, Criterion};
-use std::{env, path::Path, sync::Arc};
+use std::{env, sync::Arc};
 use tokio::runtime::Runtime;
 
-//static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
+// static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
 
 fn setup() {
     // INIT_LOGGING.call_once(|| {
@@ -22,14 +22,7 @@ fn setup() {
     //         .init();
     // });
 
-    let env_file = Path::new(env!("CARGO_MANIFEST_DIR")).join(".env");
-    dotenvy::from_filename(env_file)
-        // .with_context(azure_core::error::ErrorKind::Io, || {
-        //     format!(
-        //         "failed to load environment variables from {}",
-        //         env_file.display()
-        //     )
-        // })
+    azure_core_test::load_dotenv_file(env!("CARGO_MANIFEST_DIR"))
         .expect("Failed to load environment variables from .env file");
 }
 

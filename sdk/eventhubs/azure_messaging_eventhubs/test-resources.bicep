@@ -5,8 +5,10 @@ param baseName string = resourceGroup().name
 @description('The location where the resources will be created.')
 param location string = resourceGroup().location
 
+@description('The suffix for the storage endpoint, typically based on the Azure environment.')
 param storageEndpointSuffix string = environment().suffixes.storage
 
+@description('Indicates if the tenant is a TME tenant. If true, local (SAS) authentication is enabled.')
 param tenantIsTME bool = false
 
 @description('The client OID to grant access to test resources.')
@@ -15,6 +17,10 @@ param testApplicationOid string
 var eventhubNamespaceName = 'eh-${baseName}'
 var storageAccountName = 'blb${baseName}'
 var eventHubName = 'testeventhub'
+
+var eventHubsDataOwnerRoleId = 'f526a384-b230-433a-b45c-95f59c4a2dec'
+var blobDataOwnerRoleId = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+var azureContributorRoleId = 'b24988ac-6180-42a0-ab88-20f7382dd24c'
 
 resource eventhubNamespace 'Microsoft.EventHub/namespaces@2024-05-01-preview' = {
   name: eventhubNamespaceName
@@ -80,11 +86,7 @@ resource roleAssignments_ehDataOwner 'Microsoft.Authorization/roleAssignments@20
   name: guid(eventhubNamespace.id, 'Azure Event Hubs Data Owner')
 
   properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      'f526a384-b230-433a-b45c-95f59c4a2dec'
-    ) // Azure Event Hubs Data Owner
-    principalType: 'User'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', eventHubsDataOwnerRoleId) // Azure Event Hubs Data Owner
     principalId: testApplicationOid
   }
   dependsOn: [
@@ -94,14 +96,10 @@ resource roleAssignments_ehDataOwner 'Microsoft.Authorization/roleAssignments@20
 }
 
 resource roleAssignments_Contributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(eventhubNamespace.id, 'Azure Event Hubs Contributor')
+  name: guid(eventhubNamespace.id, 'Azure Contributor')
 
   properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      'b24988ac-6180-42a0-ab88-20f7382dd24c'
-    ) // Azure Event Hubs Data Owner
-    principalType: 'User'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', azureContributorRoleId) // Azure Contributor
     principalId: testApplicationOid
   }
   dependsOn: [
@@ -114,11 +112,7 @@ resource roleAssignments_storageDataOwner 'Microsoft.Authorization/roleAssignmen
   name: guid(eventhubNamespace.id, 'Storage Blob Data Owner')
 
   properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
-    ) // Storage Blob Data Owner
-    principalType: 'User'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', blobDataOwnerRoleId) // Storage Blob Data Owner
     principalId: testApplicationOid
   }
   dependsOn: [
@@ -164,7 +158,7 @@ resource consumerGroup 'Microsoft.EventHub/namespaces/eventhubs/consumergroups@2
 
 resource defaultGroup 'Microsoft.EventHub/namespaces/eventhubs/consumergroups@2024-05-01-preview' = {
   parent: eventHub
-  name: 'defaultgroup'
+  name: 'defaultGroup'
   properties: {}
 }
 
@@ -227,7 +221,12 @@ resource storageAccount_blobContainer 'Microsoft.Storage/storageAccounts/blobSer
 // Outputs
 output EVENTHUB_NAME string = eventHub.name
 output EVENTHUBS_NAMESPACE string = eventhubNamespace.name
-output EVENTHUBS_HOST string = '${eventhubNamespace.name}.servicebus.windows.net'
+
+output EVENTHUBS_HOST string = replace(
+  replace(eventhubNamespace.properties.serviceBusEndpoint, ':443/', ''),
+  'https://',
+  ''
+)
 //output EVENTHUBS_CONNECTION_STRING string = listKeys(eventHubAuthRule.id, eventHubAuthRule.apiVersion).primaryConnectionString
 output AZURE_STORAGE_ACCOUNT_NAME string = storageAccount.name
 //output AZURE_STORAGE_ACCOUNT_KEY string = listKeys(storage.id, storage.apiVersion).keys[0].value
