@@ -73,3 +73,52 @@ impl Debug for ConnectionString {
         f.write_str(&debug_string)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::ConnectionString;
+    use azure_core::credentials::Secret;
+
+    #[test]
+    pub fn test_regular_connection_string() {
+        let connection_string =
+            "AccountEndpoint=https://accountname.documents.azure.com:443/;AccountKey=accountkey";
+        let secret = Secret::new(connection_string);
+        let connection_str = ConnectionString::from_secret(&secret).unwrap();
+
+        assert_eq!(
+            "https://accountname.documents.azure.com:443/",
+            connection_str.account_endpoint
+        );
+
+        assert_eq!("accountkey", connection_str.account_key.secret());
+    }
+
+    #[test]
+    pub fn test_empty_connection_string() {
+        test_bad_connection_string("")
+    }
+
+    #[test]
+    pub fn test_malformed_connection_string() {
+        test_bad_connection_string(
+            "AccountEndpointhttps://accountname.documents.azure.com:443/AccountKey=accountkey",
+        );
+    }
+
+    #[test]
+    pub fn test_connection_string_missing_account_endpoint() {
+        test_bad_connection_string("AccountKey=accountkey");
+    }
+
+    #[test]
+    pub fn test_connection_string_missing_account_key() {
+        test_bad_connection_string("AccountEndpoint=https://accountname.documents.azure.com:443/;");
+    }
+
+    fn test_bad_connection_string(connection_string: &str) {
+        let secret = Secret::new(connection_string.to_owned());
+        let connection_str = ConnectionString::from_secret(&secret);
+        assert!(connection_str.is_err());
+    }
+}
