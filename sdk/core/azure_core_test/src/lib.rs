@@ -205,7 +205,6 @@ fn parent_of<'a>(dir: &'a str, name: &'static str) -> Option<&'a str> {
 /// Finds `name` under `dir` and returns the path to the named entry.
 ///
 /// This function does check the file system.
-#[cfg(not(target_arch = "wasm32"))]
 fn find_ancestor_file(dir: impl AsRef<Path>, name: &str) -> azure_core::Result<PathBuf> {
     for dir in dir.as_ref().ancestors() {
         let path = dir.join(name);
