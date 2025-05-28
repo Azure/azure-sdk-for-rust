@@ -6,9 +6,9 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_itemsBlob, Blob_prefixesBlobPrefix, Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange,
-        Committed_blocksBlock, Container_itemsContainer, CorsCorsRule, Page_rangePageRange,
-        SchemaField, Uncommitted_blocksBlock,
+        Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange, Committed_blocksBlock,
+        Container_itemsContainer, CorsCorsRule, Page_rangePageRange, SchemaField,
+        Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobImmutabilityPolicyMode, BlobType, CopyStatus,
     GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
@@ -214,42 +214,24 @@ pub struct BlobContainerClientSetAccessPolicyResult;
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
-#[serde(rename = "Blobs")]
 #[typespec(format = "xml")]
 pub struct BlobFlatListSegment {
     /// The blob items.
-    #[serde(
-        default,
-        deserialize_with = "Blob_itemsBlob::unwrap",
-        rename = "BlobItems",
-        serialize_with = "Blob_itemsBlob::wrap"
-    )]
+    #[serde(default, rename = "Blob")]
     pub blob_items: Vec<BlobItemInternal>,
 }
 
 /// Represents an array of blobs.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
 #[non_exhaustive]
-#[serde(rename = "Blobs")]
 #[typespec(format = "xml")]
 pub struct BlobHierarchyListSegment {
     /// The blob items
-    #[serde(
-        default,
-        deserialize_with = "Blob_itemsBlob::unwrap",
-        rename = "BlobItems",
-        serialize_with = "Blob_itemsBlob::wrap"
-    )]
+    #[serde(default, rename = "Blob")]
     pub blob_items: Vec<BlobItemInternal>,
 
     /// The blob prefixes.
-    #[serde(
-        default,
-        deserialize_with = "Blob_prefixesBlobPrefix::unwrap",
-        rename = "BlobPrefixes",
-        serialize_with = "Blob_prefixesBlobPrefix::wrap",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "BlobPrefix", skip_serializing_if = "Option::is_none")]
     pub blob_prefixes: Option<Vec<BlobPrefix>>,
 }
 
@@ -1009,7 +991,7 @@ pub struct ListBlobsFlatSegmentResponse {
     pub prefix: Option<String>,
 
     /// The blob segment.
-    #[serde(default)]
+    #[serde(default, rename = "Blobs")]
     pub segment: BlobFlatListSegment,
 
     /// The service endpoint.
@@ -1048,7 +1030,7 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub prefix: Option<String>,
 
     /// The blob segment.
-    #[serde(default)]
+    #[serde(default, rename = "Blobs")]
     pub segment: BlobHierarchyListSegment,
 
     /// The service endpoint.

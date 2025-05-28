@@ -334,7 +334,7 @@ impl AppendBlobClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
         request.insert_header("content-length", content_length.to_string());
-        request.insert_header("content-type", "application/octet-stream");
+        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }

@@ -7,62 +7,9 @@
 #![allow(non_snake_case)]
 
 use super::{
-    ArrowField, BlobItemInternal, BlobPrefix, BlobTag, Block, ClearRange, ContainerItem, CorsRule,
-    FilterBlobItem, PageRange,
+    ArrowField, BlobTag, Block, ClearRange, ContainerItem, CorsRule, FilterBlobItem, PageRange,
 };
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-#[derive(Deserialize, Serialize)]
-#[serde(rename = "BlobItems")]
-pub(crate) struct Blob_itemsBlob {
-    #[serde(default)]
-    Blob: Vec<BlobItemInternal>,
-}
-
-impl Blob_itemsBlob {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<BlobItemInternal>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(Blob_itemsBlob::deserialize(deserializer)?.Blob)
-    }
-
-    pub fn wrap<S>(to_serialize: &Vec<BlobItemInternal>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        Blob_itemsBlob {
-            Blob: to_serialize.to_owned(),
-        }
-        .serialize(serializer)
-    }
-}
-
-#[derive(Deserialize, Serialize)]
-#[serde(rename = "BlobPrefixes")]
-pub(crate) struct Blob_prefixesBlobPrefix {
-    #[serde(default)]
-    BlobPrefix: Option<Vec<BlobPrefix>>,
-}
-
-impl Blob_prefixesBlobPrefix {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<BlobPrefix>>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(Blob_prefixesBlobPrefix::deserialize(deserializer)?.BlobPrefix)
-    }
-
-    pub fn wrap<S>(to_serialize: &Option<Vec<BlobPrefix>>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        Blob_prefixesBlobPrefix {
-            BlobPrefix: to_serialize.to_owned(),
-        }
-        .serialize(serializer)
-    }
-}
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename = "TagSet")]

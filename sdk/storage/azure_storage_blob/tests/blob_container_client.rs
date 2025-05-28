@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{Pager, PagerResult, RequestContent, StatusCode};
+use azure_core::http::StatusCode;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientSetMetadataOptions,
-    LeaseState, ListBlobsFlatSegmentResponse,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
+    BlobContainerClientSetMetadataOptions, BlobType, LeaseState,
 };
-use azure_storage_blob_test::get_container_client;
+use azure_storage_blob_test::{create_test_blob, get_container_client};
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error};
 
@@ -89,36 +89,22 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, false).await?;
-    let blob_client_1 = container_client.blob_client("testblob1".to_string());
-    let blob_client_2 = container_client.blob_client("testblob2".to_string());
+    let blob_names = ["testblob1".to_string(), "testblob2".to_string()];
 
     container_client.create_container(None).await?;
-    let data = b"hello rusty world";
-    blob_client_1
-        .upload(
-            RequestContent::from(data.to_vec()),
-            false,
-            u64::try_from(data.len())?,
-            None,
-        )
-        .await?;
-    blob_client_2
-        .upload(
-            RequestContent::from(data.to_vec()),
-            false,
-            u64::try_from(data.len())?,
-            None,
-        )
-        .await?;
+    create_test_blob(&container_client.blob_client(blob_names[0].clone())).await?;
+    create_test_blob(&container_client.blob_client(blob_names[1].clone())).await?;
 
     let mut list_blobs_response = container_client.list_blobs(None).await?;
 
-    while let Some(page) = list_blobs_response.try_next().await? {
-        let list_blob_segment_response = page.into_body().await?;
-        let blob_list = list_blob_segment_response.segment.blob_items;
-        for blob in blob_list {
-            println!("{}", blob.name.unwrap().content.unwrap())
-        }
+    let page = list_blobs_response.try_next().await?;
+    let list_blob_segment_response = page.unwrap().into_body().await?;
+    let blob_list = list_blob_segment_response.segment.blob_items;
+    for blob in blob_list {
+        let blob_name = blob.name.unwrap().content.unwrap();
+        let blob_type = blob.properties.unwrap().blob_type.unwrap();
+        assert!(blob_names.contains(&blob_name));
+        assert_eq!(BlobType::BlockBlob, blob_type);
     }
 
     container_client.delete_container(None).await?;
@@ -126,50 +112,62 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-async fn test_list_blobs_2(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, false).await?;
-    let blob_client_1 = container_client.blob_client("testblob1".to_string());
-    let blob_client_2 = container_client.blob_client("testblob2".to_string());
+    let blob_names = [
+        "testblob1".to_string(),
+        "testblob2".to_string(),
+        "testblob3".to_string(),
+        "testblob4".to_string(),
+    ];
 
     container_client.create_container(None).await?;
-    let data = b"hello rusty world";
-    blob_client_1
-        .upload(
-            RequestContent::from(data.to_vec()),
-            false,
-            u64::try_from(data.len())?,
-            None,
-        )
+    create_test_blob(&container_client.blob_client(blob_names[0].clone())).await?;
+    create_test_blob(&container_client.blob_client(blob_names[1].clone())).await?;
+    create_test_blob(&container_client.blob_client(blob_names[2].clone())).await?;
+    create_test_blob(&container_client.blob_client(blob_names[3].clone())).await?;
+
+    // First Page
+    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+        maxresults: Some(2),
+        ..Default::default()
+    };
+    let mut list_blobs_response = container_client
+        .list_blobs(Some(list_blobs_options))
         .await?;
-    blob_client_2
-        .upload(
-            RequestContent::from(data.to_vec()),
-            false,
-            u64::try_from(data.len())?,
-            None,
-        )
+    let first_page = list_blobs_response.try_next().await?;
+    let list_blob_segment_response = first_page.unwrap().into_body().await?;
+    let continuation_token = list_blob_segment_response.next_marker;
+    let blob_list = list_blob_segment_response.segment.blob_items;
+    assert_eq!(2, blob_list.len());
+    for blob in blob_list {
+        let blob_name = blob.name.unwrap().content.unwrap();
+        println!("1st page: {}", blob_name.clone());
+        let blob_type = blob.properties.unwrap().blob_type.unwrap();
+        assert!(blob_names.contains(&blob_name));
+        assert_eq!(BlobType::BlockBlob, blob_type);
+    }
+
+    // Second Page
+    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+        marker: continuation_token,
+        ..Default::default()
+    };
+    let mut list_blobs_response = container_client
+        .list_blobs(Some(list_blobs_options))
         .await?;
-
-    let mut list_blobs_response = container_client.list_blobs(None).await?;
-    let mut count = 0;
-
-    while let Some(page) = list_blobs_response.try_next().await? {
-        println!("while: {}", count);
-        count += 1;
-        let list_blob_segment_response = page.into_body().await?;
-        let blob_list = list_blob_segment_response.segment.blob_items;
-
-        // for blob in blob_list {
-        //     println!("inside of inner for-loop");
-        //     println!("{}", blob.name.unwrap().content.unwrap())
-        // }
-
-        let first_slice = blob_list.first();
-        println!("Is this some? {}", first_slice.is_some());
-
-        println!("bottom of outer while-loop reached")
+    let second_page = list_blobs_response.try_next().await?;
+    let list_blob_segment_response = second_page.unwrap().into_body().await?;
+    let blob_list = list_blob_segment_response.segment.blob_items;
+    assert_eq!(2, blob_list.len());
+    for blob in blob_list {
+        let blob_name = blob.name.unwrap().content.unwrap();
+        println!("2nd page: {}", blob_name.clone());
+        let blob_type = blob.properties.unwrap().blob_type.unwrap();
+        assert!(blob_names.contains(&blob_name));
+        assert_eq!(BlobType::BlockBlob, blob_type);
     }
 
     container_client.delete_container(None).await?;
