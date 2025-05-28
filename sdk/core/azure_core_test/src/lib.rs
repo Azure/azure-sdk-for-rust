@@ -162,6 +162,31 @@ impl TestContext {
     }
 }
 
+/// Imports the contents of a `.env` file if it exists.
+///
+/// This function searches for a `.env` file starting from the current crate directory and going up to the repository root.
+/// It loads the environment variables defined in that file, which can be useful for tests that require specific configurations or secrets.
+///
+/// Note that if no `.env` file is found, this function does nothing and returns `Ok(())`.
+///
+/// # Arguments
+///
+/// * `cargo_dir` - The directory of the Cargo package, typically the value of the `CARGO_MANIFEST_DIR` environment variable.
+pub fn load_dotenv_file(cargo_dir: impl AsRef<Path>) -> azure_core::Result<()> {
+    if let Ok(path) = find_ancestor_file(cargo_dir, ".env") {
+        tracing::debug!("loading environment variables from {}", path.display());
+
+        use azure_core::error::ResultExt as _;
+        dotenvy::from_filename(&path).with_context(azure_core::error::ErrorKind::Io, || {
+            format!(
+                "failed to load environment variables from {}",
+                path.display()
+            )
+        })?;
+    }
+    Ok(())
+}
+
 /// Finds `name` under `dir` and returns the path to the parent `dir`.
 ///
 /// This function does *not* check the file system.
@@ -182,7 +207,6 @@ fn parent_of<'a>(dir: &'a str, name: &'static str) -> Option<&'a str> {
 /// Finds `name` under `dir` and returns the path to the named entry.
 ///
 /// This function does check the file system.
-#[cfg(not(target_arch = "wasm32"))]
 fn find_ancestor_file(dir: impl AsRef<Path>, name: &str) -> azure_core::Result<PathBuf> {
     for dir in dir.as_ref().ancestors() {
         let path = dir.join(name);

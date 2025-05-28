@@ -7,7 +7,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use std::{env, sync::Arc};
 use tokio::runtime::Runtime;
 
-//static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
+// static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
 
 fn setup() {
     // INIT_LOGGING.call_once(|| {
@@ -21,6 +21,9 @@ fn setup() {
     //         .with_writer(std::io::stderr)
     //         .init();
     // });
+
+    azure_core_test::load_dotenv_file(env!("CARGO_MANIFEST_DIR"))
+        .expect("Failed to load environment variables from .env file");
 }
 
 fn send_batch_benchmark(c: &mut Criterion) {

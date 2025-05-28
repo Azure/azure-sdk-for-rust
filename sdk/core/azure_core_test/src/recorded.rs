@@ -70,18 +70,7 @@ pub async fn start(
     );
 
     // Attempt to read any .env file up to the repo root.
-    #[cfg(not(target_arch = "wasm32"))]
-    if let Ok(path) = crate::find_ancestor_file(ctx.crate_dir, ".env") {
-        tracing::debug!("loading environment variables from {}", path.display());
-
-        use azure_core::error::ResultExt as _;
-        dotenvy::from_filename(&path).with_context(azure_core::error::ErrorKind::Io, || {
-            format!(
-                "failed to load environment variables from {}",
-                path.display()
-            )
-        })?;
-    };
+    crate::load_dotenv_file(ctx.crate_dir)?;
 
     recording.start().await?;
 
