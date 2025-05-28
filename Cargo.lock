@@ -302,6 +302,7 @@ dependencies = [
  "azure_identity",
  "azure_messaging_eventhubs",
  "criterion",
+ "dotenvy",
  "futures",
  "rand",
  "rand_chacha",
