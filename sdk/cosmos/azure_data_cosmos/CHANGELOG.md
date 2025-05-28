@@ -4,6 +4,8 @@
 
 ### Features Added
 
+* Added a function `CosmosClient::with_connection_string` to enable `CosmosClient` creation via connection string. (pr link)
+
 ### Breaking Changes
 
 ### Bugs Fixed

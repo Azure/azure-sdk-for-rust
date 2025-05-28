@@ -3,7 +3,7 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::DatabaseProperties,
+    models::{ConnectionString, DatabaseProperties},
     pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
@@ -17,7 +17,7 @@ use azure_core::{
     },
 };
 use serde::Serialize;
-use std::sync::Arc;
+use std::{fmt::Debug, sync::Arc};
 
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
@@ -100,7 +100,7 @@ impl CosmosClient {
     ///
     /// # Arguments
     ///
-    /// * `connection_string` - the connection string to use for the client. E.g.: AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey
+    /// * `connection_string` - the connection string to use for the client, e.g. AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey
     /// * `options` - Optional configuration for the client.
     ///
     /// # Examples
@@ -109,17 +109,19 @@ impl CosmosClient {
     /// use azure_data_cosmos::CosmosClient;
     /// use azure_core::credentials::Secret;
     ///
-    /// let client = CosmosClient::with_key("https://myaccount.documents.azure.com/", Secret::from("my_key"), None).unwrap();
+    /// let client = CosmosClient::with_connection_string(
+    ///     "AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey",
+    ///     None)
+    ///     .unwrap();
     /// ```
     #[cfg(feature = "key_auth")]
     pub fn with_connection_string(
         connection_string: Secret,
         options: Option<CosmosClientOptions>,
-    ) -> azure_core::Result<Self> {
-        use azure_core::credentials::CosmosConnectionString;
+    ) -> Result<Self, azure_core::Error> {
         let options = options.unwrap_or_default();
-        let connection_str = CosmosConnectionString::from_secret(&connection_string)?;
-        let key = Secret::new(connection_str.account_key);
+        let connection_str = ConnectionString::from_secret(&connection_string)?;
+        let key = connection_str.account_key;
 
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
