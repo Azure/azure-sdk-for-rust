@@ -3,7 +3,6 @@
 
 //! Azure authentication and authorization.
 
-use crate::error::ErrorKind;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug};
 use typespec_client_core::date::OffsetDateTime;
@@ -27,46 +26,6 @@ impl Secret {
 
     pub fn secret(&self) -> &str {
         &self.0
-    }
-}
-
-/// Represents a Cosmos DB connection string.
-///
-/// The [`Debug`] implementation will not print the secret.
-#[derive(Clone, Deserialize, Serialize)]
-pub struct CosmosConnectionString {
-    pub account_endpoint: Cow<'static, str>,
-    pub account_key: Cow<'static, str>,
-}
-
-impl CosmosConnectionString {
-    pub fn from_secret(secret: &Secret) -> crate::Result<Self> {
-        let split = secret.secret().split(";");
-        let collection = split.collect::<Vec<&str>>();
-
-        match collection.len() {
-            2 => {
-                if (collection[0].contains("AccountEndpoint=")
-                    && collection[1].contains("AccountKey="))
-                {
-                    Ok(Self {
-                        account_endpoint: collection[0][16..collection[0].len() - 1]
-                            .to_owned()
-                            .into(),
-                        account_key: collection[0][11..collection[0].len() - 1].to_owned().into(),
-                    })
-                } else {
-                    Err(crate::Error::message(
-                        ErrorKind::Other,
-                        "Invalid Cosmos connection string",
-                    ))
-                }
-            }
-            _ => Err(crate::Error::message(
-                ErrorKind::Other,
-                "Invalid Cosmos connection string",
-            )),
-        }
     }
 }
 
@@ -103,17 +62,6 @@ impl From<&'static str> for Secret {
 impl Debug for Secret {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("Secret")
-    }
-}
-
-impl Debug for CosmosConnectionString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let debug_string = format!(
-            "AccountEndpoint={};AccountKey=Secret;",
-            self.account_endpoint
-        );
-
-        f.write_str(&debug_string)
     }
 }
 
