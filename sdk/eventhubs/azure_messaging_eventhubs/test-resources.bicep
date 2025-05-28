@@ -48,37 +48,67 @@ resource eventhubNamespace 'Microsoft.EventHub/namespaces@2024-05-01-preview' = 
     maximumThroughputUnits: 0
     kafkaEnabled: true
   }
-}
-
-resource authorization 'Microsoft.EventHub/namespaces/authorizationrules@2024-05-01-preview' = {
-  parent: eventhubNamespace
-  name: 'RootManageSharedAccessKey'
-  properties: {
-    rights: [
-      'Listen'
-      'Manage'
-      'Send'
-    ]
+  resource authorization 'authorizationrules@2024-05-01-preview' = {
+    name: 'RootManageSharedAccessKey'
+    properties: {
+      rights: [
+        'Listen'
+        'Manage'
+        'Send'
+      ]
+    }
   }
-}
-
-resource authorizedListenOnly 'Microsoft.EventHub/namespaces/AuthorizationRules@2017-04-01' = {
-  name: 'ListenOnly'
-  parent: eventhubNamespace
-  properties: {
-    rights: [
-      'Listen'
-    ]
+  resource authorizedListenOnly 'AuthorizationRules@2017-04-01' = {
+    name: 'ListenOnly'
+    properties: {
+      rights: [
+        'Listen'
+      ]
+    }
   }
-}
 
-resource authorizedSendOnly 'Microsoft.EventHub/namespaces/AuthorizationRules@2017-04-01' = {
-  name: 'SendOnly'
-  parent: eventhubNamespace
-  properties: {
-    rights: [
-      'Send'
-    ]
+  resource authorizedSendOnly 'AuthorizationRules@2017-04-01' = {
+    name: 'SendOnly'
+    properties: {
+      rights: [
+        'Send'
+      ]
+    }
+  }
+  resource eventHub 'eventhubs@2024-05-01-preview' = {
+    name: eventHubName
+    properties: {
+      messageTimestampDescription: {
+        timestampType: 'LogAppend'
+      }
+      retentionDescription: {
+        cleanupPolicy: 'Delete'
+        retentionTimeInHours: 24
+      }
+      messageRetentionInDays: 1
+      partitionCount: 4
+      status: 'Active'
+    }
+    resource consumerGroup 'consumergroups@2024-05-01-preview' = {
+      name: '$Default'
+      properties: {}
+    }
+
+    resource defaultGroup 'consumergroups@2024-05-01-preview' = {
+      name: 'defaultGroup'
+      properties: {}
+    }
+  }
+
+  resource eventhubNamespace_networkruleset_default 'networkrulesets@2024-05-01-preview' = {
+    name: 'default'
+    properties: {
+      publicNetworkAccess: 'Enabled'
+      defaultAction: 'Allow'
+      virtualNetworkRules: []
+      ipRules: []
+      trustedServiceAccessEnabled: false
+    }
   }
 }
 
@@ -90,12 +120,12 @@ resource roleAssignments_ehDataOwner 'Microsoft.Authorization/roleAssignments@20
     principalId: testApplicationOid
   }
   dependsOn: [
-    eventHub
+    eventhubNamespace::eventHub
     storageAccount
   ]
 }
 
-resource roleAssignments_Contributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource roleAssignments_contributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(eventhubNamespace.id, 'Azure Contributor')
 
   properties: {
@@ -103,7 +133,7 @@ resource roleAssignments_Contributor 'Microsoft.Authorization/roleAssignments@20
     principalId: testApplicationOid
   }
   dependsOn: [
-    eventHub
+    eventhubNamespace::eventHub
     storageAccount
   ]
 }
@@ -116,50 +146,9 @@ resource roleAssignments_storageDataOwner 'Microsoft.Authorization/roleAssignmen
     principalId: testApplicationOid
   }
   dependsOn: [
-    eventHub
+    eventhubNamespace::eventHub
     storageAccount
   ]
-}
-
-resource eventHub 'Microsoft.EventHub/namespaces/eventhubs@2024-05-01-preview' = {
-  parent: eventhubNamespace
-  name: eventHubName
-  properties: {
-    messageTimestampDescription: {
-      timestampType: 'LogAppend'
-    }
-    retentionDescription: {
-      cleanupPolicy: 'Delete'
-      retentionTimeInHours: 24
-    }
-    messageRetentionInDays: 1
-    partitionCount: 4
-    status: 'Active'
-  }
-}
-
-resource eventhubNamespace_networkruleset_default 'Microsoft.EventHub/namespaces/networkrulesets@2024-05-01-preview' = {
-  parent: eventhubNamespace
-  name: 'default'
-  properties: {
-    publicNetworkAccess: 'Enabled'
-    defaultAction: 'Allow'
-    virtualNetworkRules: []
-    ipRules: []
-    trustedServiceAccessEnabled: false
-  }
-}
-
-resource consumerGroup 'Microsoft.EventHub/namespaces/eventhubs/consumergroups@2024-05-01-preview' = {
-  parent: eventHub
-  name: '$Default'
-  properties: {}
-}
-
-resource defaultGroup 'Microsoft.EventHub/namespaces/eventhubs/consumergroups@2024-05-01-preview' = {
-  parent: eventHub
-  name: 'defaultGroup'
-  properties: {}
 }
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' = {
@@ -196,30 +185,26 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' = {
     }
     accessTier: 'Hot'
   }
-}
-
-resource storageAccount_default 'Microsoft.Storage/storageAccounts/blobServices@2024-01-01' = {
-  parent: storageAccount
-  name: 'default'
-  properties: {
-    cors: {
-      corsRules: []
+  resource storageAccount_default 'blobServices@2024-01-01' = {
+    name: 'default'
+    properties: {
+      cors: {
+        corsRules: []
+      }
+      deleteRetentionPolicy: {
+        allowPermanentDelete: false
+        enabled: false
+      }
     }
-    deleteRetentionPolicy: {
-      allowPermanentDelete: false
-      enabled: false
+    resource storageAccount_blobContainer 'containers@2019-04-01' = {
+      name: 'container'
+      properties: {}
     }
   }
 }
 
-resource storageAccount_blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2019-04-01' = {
-  name: 'container'
-  parent: storageAccount_default
-  properties: {}
-}
-
 // Outputs
-output EVENTHUB_NAME string = eventHub.name
+output EVENTHUB_NAME string = eventhubNamespace::eventHub.name
 output EVENTHUBS_NAMESPACE string = eventhubNamespace.name
 
 output EVENTHUBS_HOST string = replace(
