@@ -271,12 +271,12 @@ impl ProducerClient {
         let sender = self.ensure_sender(&target).await?;
 
         let message = message.into();
-        let outcome = retry_azure_operation(
+        retry_azure_operation(
             || {
                 let sender = sender.clone();
                 let message = message.clone();
                 async move {
-                    sender
+                    let outcome = sender
                         .send(
                             message.clone(),
                             Some(AmqpSendOptions {
@@ -284,26 +284,34 @@ impl ProducerClient {
                                 ..Default::default()
                             }),
                         )
-                        .await
+                        .await?;
+                    // We treat all outcomes other than "rejected" as successful.
+                    match outcome {
+                        azure_core_amqp::AmqpSendOutcome::Rejected(error) => {
+                            if let Some(described) = error {
+                                warn!("Send rejected: {:?}", described);
+                                return Err(azure_core::Error::new(
+                                    azure_core::error::ErrorKind::Amqp,
+                                    AmqpError::from(AmqpErrorKind::AmqpDescribedError(described)),
+                                ));
+                            }
+                            Err(azure_core::Error::new(
+                                azure_core::error::ErrorKind::Amqp,
+                                EventHubsError {
+                                    kind: ErrorKind::SendRejected(error),
+                                },
+                            ))
+                        }
+                        azure_core_amqp::AmqpSendOutcome::Accepted => Ok(()),
+                        azure_core_amqp::AmqpSendOutcome::Released => Ok(()),
+                        azure_core_amqp::AmqpSendOutcome::Modified(_) => Ok(()),
+                    }
                 }
             },
             &self.retry_options,
             Some(Self::should_retry_send_operation),
         )
-        .await?;
-
-        // We treat all outcomes other than "rejected" as successful.
-        match outcome {
-            azure_core_amqp::AmqpSendOutcome::Rejected(error) => Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                EventHubsError {
-                    kind: ErrorKind::SendRejected(error),
-                },
-            )),
-            azure_core_amqp::AmqpSendOutcome::Accepted => Ok(()),
-            azure_core_amqp::AmqpSendOutcome::Released => Ok(()),
-            azure_core_amqp::AmqpSendOutcome::Modified(_) => Ok(()),
-        }
+        .await
     }
 
     const BATCH_MESSAGE_FORMAT: u32 = 0x80013700;
