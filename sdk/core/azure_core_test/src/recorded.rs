@@ -70,7 +70,7 @@ pub async fn start(
     );
 
     // Attempt to read any .env file up to the repo root.
-    crate::load_dotenv_file(env!("CARGO_MANIFEST_DIR"))?;
+    crate::load_dotenv_file(ctx.crate_dir)?;
 
     recording.start().await?;
 

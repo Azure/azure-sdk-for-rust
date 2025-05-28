@@ -172,8 +172,10 @@ impl TestContext {
 /// # Arguments
 ///
 /// * `cargo_dir` - The directory of the Cargo package, typically the value of the `CARGO_MANIFEST_DIR` environment variable.
-pub fn load_dotenv_file(cargo_dir: &str) -> azure_core::Result<()> {
-    if let Ok(path) = find_ancestor_file(Path::new(cargo_dir), ".env") {
+pub fn load_dotenv_file(cargo_dir: impl AsRef<Path>) -> azure_core::Result<()> {
+    if let Ok(path) = find_ancestor_file(cargo_dir, ".env") {
+        tracing::debug!("loading environment variables from {}", path.display());
+
         use azure_core::error::ResultExt as _;
         dotenvy::from_filename(&path).with_context(azure_core::error::ErrorKind::Io, || {
             format!(
