@@ -196,8 +196,11 @@ mod tests {
         env,
         fs::File,
         io::Write,
-        time::{SystemTime, UNIX_EPOCH},
+        sync::atomic::{AtomicUsize, Ordering},
+        time::SystemTime,
     };
+
+    static TEMP_FILE_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
     pub struct TempFile {
         pub path: PathBuf,
@@ -205,11 +208,7 @@ mod tests {
 
     impl TempFile {
         pub fn new(content: &str) -> Self {
-            let n = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                // cspell:disable-next-line
-                .subsec_nanos();
+            let n = TEMP_FILE_COUNTER.fetch_add(1, Ordering::SeqCst);
             let path = env::temp_dir().join(format!("azure_identity_test_{}", n));
             File::create(&path)
                 .expect("create temp file")
@@ -262,6 +261,28 @@ mod tests {
         let token = cred.get_token(LIVE_TEST_SCOPES).await.expect("token");
         assert_eq!(FAKE_TOKEN, token.token.secret());
         assert!(token.expires_on > SystemTime::now());
+    }
+
+    #[test]
+    fn temp_file_unique_names() {
+        // Test that multiple TempFile instances get unique names
+        let temp1 = TempFile::new("content1");
+        let temp2 = TempFile::new("content2");
+        let temp3 = TempFile::new("content3");
+        
+        // File names should be different
+        assert_ne!(temp1.path, temp2.path);
+        assert_ne!(temp2.path, temp3.path);
+        assert_ne!(temp1.path, temp3.path);
+        
+        // All files should exist and have correct content
+        assert!(temp1.path.exists());
+        assert!(temp2.path.exists());
+        assert!(temp3.path.exists());
+        
+        assert_eq!(std::fs::read_to_string(&temp1.path).unwrap(), "content1");
+        assert_eq!(std::fs::read_to_string(&temp2.path).unwrap(), "content2");
+        assert_eq!(std::fs::read_to_string(&temp3.path).unwrap(), "content3");
     }
 
     #[test]
