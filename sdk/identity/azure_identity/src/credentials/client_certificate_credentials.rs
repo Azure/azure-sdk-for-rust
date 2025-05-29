@@ -4,7 +4,7 @@
 use crate::{credentials::cache::TokenCache, EntraIdTokenResponse, TokenCredentialOptions};
 use azure_core::{
     base64,
-    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{http_response_from_body, Error, ErrorKind},
     http::{
         headers::{self, content_type},
@@ -145,7 +145,7 @@ impl ClientCertificateCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<GetTokenOptions>,
+        _: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.len() != 1 {
             return Err(Error::message(
@@ -283,7 +283,7 @@ impl TokenCredential for ClientCertificateCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token(s, o))

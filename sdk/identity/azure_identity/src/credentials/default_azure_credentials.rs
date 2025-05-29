@@ -7,7 +7,7 @@ use crate::{AzureCliCredential, AzureDeveloperCliCredential};
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::error::ResultExt;
 use azure_core::{
-    credentials::{AccessToken, GetTokenOptions, TokenCredential},
+    credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
 };
 use std::sync::Arc;
@@ -156,7 +156,7 @@ impl TokenCredential for DefaultAzureCredentialKind {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<GetTokenOptions>,
+        _: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         match self {
             #[cfg(not(target_arch = "wasm32"))]
@@ -229,7 +229,7 @@ impl DefaultAzureCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         let mut errors = Vec::new();
         for source in &self.sources {
@@ -255,7 +255,7 @@ impl TokenCredential for DefaultAzureCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token(s, o))

@@ -6,7 +6,7 @@ use crate::{
     EntraIdErrorResponse, EntraIdTokenResponse, TokenCredentialOptions,
 };
 use azure_core::{
-    credentials::{AccessToken, GetTokenOptions, TokenCredential},
+    credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
@@ -101,7 +101,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
     async fn get_token_impl(
         &self,
         scopes: &[&str],
-        _: Option<GetTokenOptions>,
+        _: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         let mut req = Request::new(self.endpoint.clone(), Method::Post);
         req.insert_header(
@@ -152,7 +152,7 @@ impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))

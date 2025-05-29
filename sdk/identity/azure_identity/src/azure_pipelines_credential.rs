@@ -6,7 +6,7 @@ use crate::{
     TokenCredentialOptions,
 };
 use azure_core::{
-    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::ErrorKind,
     http::{
         headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
@@ -111,7 +111,7 @@ impl TokenCredential for AzurePipelinesCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         self.0.get_token(scopes, options).await
     }

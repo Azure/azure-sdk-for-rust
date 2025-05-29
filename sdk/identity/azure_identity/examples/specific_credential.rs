@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    credentials::{AccessToken, GetTokenOptions, TokenCredential},
+    credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{ErrorKind, ResultExt},
     Error,
 };
@@ -66,7 +66,7 @@ impl TokenCredential for SpecificAzureCredentialKind {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         match self {
             #[cfg(not(target_arch = "wasm32"))]
@@ -142,7 +142,7 @@ impl TokenCredential for SpecificAzureCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         self.source.get_token(scopes, options).await
     }

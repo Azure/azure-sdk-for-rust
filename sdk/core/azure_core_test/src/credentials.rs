@@ -3,7 +3,7 @@
 
 //! Credentials for live and recorded tests.
 use azure_core::{
-    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     date::OffsetDateTime,
     error::ErrorKind,
 };
@@ -20,7 +20,7 @@ impl TokenCredential for MockCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<GetTokenOptions>,
+        _: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         let token: Secret = format!("TEST TOKEN {}", scopes.join(" ")).into();
         let expires_on = OffsetDateTime::now_utc().saturating_add(

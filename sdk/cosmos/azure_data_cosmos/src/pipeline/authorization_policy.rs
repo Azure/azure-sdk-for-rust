@@ -146,7 +146,7 @@ mod tests {
     use std::sync::Arc;
 
     use azure_core::{
-        credentials::{AccessToken, GetTokenOptions, TokenCredential},
+        credentials::{AccessToken, TokenCredential, TokenRequestOptions},
         date,
         http::Method,
     };
@@ -171,7 +171,7 @@ mod tests {
         async fn get_token(
             &self,
             scopes: &[&str],
-            _: Option<GetTokenOptions>,
+            _: Option<TokenRequestOptions>,
         ) -> azure_core::Result<AccessToken> {
             let token = format!("{}+{}", self.0, scopes.join(","));
             Ok(AccessToken::new(

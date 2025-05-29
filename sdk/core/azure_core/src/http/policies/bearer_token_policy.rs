@@ -121,7 +121,7 @@ fn should_refresh(expires_on: &OffsetDateTime) -> bool {
 mod tests {
     use super::*;
     use crate::{
-        credentials::{GetTokenOptions, Secret, TokenCredential},
+        credentials::{Secret, TokenCredential, TokenRequestOptions},
         http::{
             headers::{Headers, AUTHORIZATION},
             policies::Policy,
@@ -172,7 +172,11 @@ mod tests {
     #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
     #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
     impl TokenCredential for MockCredential {
-        async fn get_token(&self, _: &[&str], _: Option<GetTokenOptions>) -> Result<AccessToken> {
+        async fn get_token(
+            &self,
+            _: &[&str],
+            _: Option<TokenRequestOptions>,
+        ) -> Result<AccessToken> {
             let i = self.calls.fetch_add(1, Ordering::SeqCst);
             self.tokens
                 .get(i)

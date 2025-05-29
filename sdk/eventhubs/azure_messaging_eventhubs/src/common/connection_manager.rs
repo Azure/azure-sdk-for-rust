@@ -510,7 +510,7 @@ impl ConnectionManager {
 mod tests {
     use super::*;
     use async_trait::async_trait;
-    use azure_core::{credentials::GetTokenOptions, http::Url, Result};
+    use azure_core::{credentials::TokenRequestOptions, http::Url, Result};
     use std::sync::Arc;
     use time::OffsetDateTime;
     use tracing::info;
@@ -554,7 +554,7 @@ mod tests {
         async fn get_token(
             &self,
             _scopes: &[&str],
-            _options: Option<GetTokenOptions>,
+            _options: Option<TokenRequestOptions>,
         ) -> Result<AccessToken> {
             // Simulate a token refresh by incrementing the token get count
             // and updating the token expiration time

@@ -3,7 +3,7 @@
 
 use crate::{credentials::cache::TokenCache, env::Env, TokenCredentialOptions, UserAssignedId};
 use azure_core::{
-    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{http_response_from_body, Error, ErrorKind},
     http::{headers::HeaderName, request::Request, HttpClient, Method, StatusCode, Url},
     json::from_json,
@@ -83,7 +83,7 @@ impl ImdsManagedIdentityCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<GetTokenOptions>,
+        _: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         let resource = scopes_to_resource(scopes)?;
 
@@ -150,7 +150,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token(s, o))

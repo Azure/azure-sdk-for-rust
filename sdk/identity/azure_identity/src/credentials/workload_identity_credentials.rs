@@ -3,7 +3,7 @@
 
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use azure_core::{
-    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{ErrorKind, ResultExt},
     Error,
 };
@@ -93,7 +93,7 @@ impl TokenCredential for WorkloadIdentityCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::message(ErrorKind::Credential, "no scopes specified"));

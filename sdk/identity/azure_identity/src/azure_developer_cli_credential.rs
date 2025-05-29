@@ -7,7 +7,7 @@ use crate::{
     validate_scope, validate_tenant_id, TokenCredentialOptions,
 };
 use azure_core::{
-    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
     json::from_json,
     process::{new_executor, Executor},
@@ -108,7 +108,7 @@ impl TokenCredential for AzureDeveloperCliCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<GetTokenOptions>,
+        _: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::new(

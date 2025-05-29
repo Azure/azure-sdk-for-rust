@@ -5,7 +5,7 @@ use crate::{
     credentials::cache::TokenCache, deserialize, EntraIdErrorResponse, EntraIdTokenResponse,
     TokenCredentialOptions,
 };
-use azure_core::credentials::GetTokenOptions;
+use azure_core::credentials::TokenRequestOptions;
 use azure_core::http::StatusCode;
 use azure_core::Result;
 use azure_core::{
@@ -73,7 +73,7 @@ impl ClientSecretCredential {
     async fn get_token_impl(
         &self,
         scopes: &[&str],
-        _: Option<GetTokenOptions>,
+        _: Option<TokenRequestOptions>,
     ) -> Result<AccessToken> {
         let mut req = Request::new(self.endpoint.clone(), Method::Post);
         req.insert_header(
@@ -122,7 +122,7 @@ impl TokenCredential for ClientSecretCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::message(ErrorKind::Credential, "no scopes specified"));

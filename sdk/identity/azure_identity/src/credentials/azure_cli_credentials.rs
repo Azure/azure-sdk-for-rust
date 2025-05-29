@@ -8,7 +8,7 @@ use crate::{
     validate_scope, validate_subscription, validate_tenant_id,
 };
 use azure_core::{
-    credentials::{AccessToken, GetTokenOptions, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind, ResultExt},
     json::from_json,
     process::{new_executor, Executor},
@@ -129,7 +129,7 @@ impl AzureCliCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<GetTokenOptions>,
+        _: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::new(
@@ -169,7 +169,7 @@ impl TokenCredential for AzureCliCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<GetTokenOptions>,
+        _: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
             .get_token(scopes, None, |s, o| self.get_token(s, o))

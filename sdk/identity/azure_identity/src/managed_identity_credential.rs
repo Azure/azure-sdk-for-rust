@@ -5,7 +5,7 @@ use crate::{
     env::Env, AppServiceManagedIdentityCredential, ImdsId, TokenCredentialOptions,
     VirtualMachineManagedIdentityCredential,
 };
-use azure_core::credentials::{AccessToken, GetTokenOptions, TokenCredential};
+use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
 use std::sync::Arc;
 use tracing::info;
 
@@ -85,7 +85,7 @@ impl TokenCredential for ManagedIdentityCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.len() != 1 {
             return Err(azure_core::Error::with_message(

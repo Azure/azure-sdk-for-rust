@@ -89,7 +89,7 @@ impl AccessToken {
 
 /// Options for getting a token from a [`TokenCredential`]
 #[derive(Clone, Default, SafeDebug)]
-pub struct GetTokenOptions;
+pub struct TokenRequestOptions;
 
 /// Represents a credential capable of providing an OAuth token.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -99,6 +99,6 @@ pub trait TokenCredential: Send + Sync + Debug {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<GetTokenOptions>,
+        options: Option<TokenRequestOptions>,
     ) -> crate::Result<AccessToken>;
 }
