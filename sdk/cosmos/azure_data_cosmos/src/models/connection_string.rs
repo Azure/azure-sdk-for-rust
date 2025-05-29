@@ -3,14 +3,13 @@
 
 use std::borrow::Cow;
 
-use azure_core::{credentials::Secret, http::Model, Error};
+use azure_core::{credentials::Secret, fmt::SafeDebug, Error};
 use serde::Deserialize;
-use std::fmt::Debug;
 
 /// Represents a Cosmos DB connection string.
 ///
 /// The [`Debug`] implementation will not print the account key.
-#[derive(Model, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Deserialize, PartialEq, Eq, SafeDebug)]
 pub struct ConnectionString {
     pub account_endpoint: Cow<'static, str>,
     pub account_key: Secret,
@@ -60,17 +59,6 @@ impl ConnectionString {
 
     pub fn from_secret(secret: &Secret) -> azure_core::Result<Self> {
         ConnectionString::from_connection_string(secret.secret())
-    }
-}
-
-impl Debug for ConnectionString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let debug_string = format!(
-            "AccountEndpoint={};AccountKey=Secret;",
-            self.account_endpoint
-        );
-
-        f.write_str(&debug_string)
     }
 }
 
