@@ -1,17 +1,19 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::recoverable_connection::RecoverableConnection;
+use super::recoverable_connection::AmqpManagementClient;
 use crate::{
     error::{ErrorKind, EventHubsError},
     models::{EventHubPartitionProperties, EventHubProperties},
 };
 use azure_core::error::Result;
-use azure_core_amqp::{AmqpOrderedMap, AmqpSimpleValue, AmqpTimestamp, AmqpValue};
+use azure_core_amqp::{
+    AmqpManagementApis, AmqpOrderedMap, AmqpSimpleValue, AmqpTimestamp, AmqpValue,
+};
 use std::{sync::Arc, time::SystemTime};
 
 pub(crate) struct ManagementInstance {
-    connection: Arc<RecoverableConnection>,
+    management_client: Arc<AmqpManagementClient>,
 }
 
 const EVENTHUB_ENTITY_TYPE: &str = "com.microsoft:eventhub";
@@ -34,8 +36,10 @@ const EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_TIME_UTC: &str = "last_enqueue
 const EVENTHUB_PARTITION_PROPERTIES_IS_EMPTY: &str = "is_partition_empty";
 
 impl ManagementInstance {
-    pub fn new(connection: Arc<RecoverableConnection>) -> Arc<Self> {
-        Arc::new(Self { connection })
+    pub fn new(management: Arc<AmqpManagementClient>) -> Arc<Self> {
+        Arc::new(Self {
+            management_client: management,
+        })
     }
 
     pub async fn get_eventhub_properties(&self, eventhub: &str) -> Result<EventHubProperties> {
@@ -44,8 +48,8 @@ impl ManagementInstance {
         application_properties.insert(EVENTHUB_PROPERTY_NAME.to_string(), eventhub.into());
 
         let response = self
-            .connection
-            .call_amqp_management(EVENTHUB_ENTITY_TYPE.to_string(), application_properties)
+            .management_client
+            .call(EVENTHUB_ENTITY_TYPE.to_string(), application_properties)
             .await?;
 
         if !response.contains_key(EVENTHUB_PROPERTY_PARTITION_COUNT) {
@@ -95,8 +99,8 @@ impl ManagementInstance {
         application_properties.insert(EVENTHUB_PROPERTY_PARTITION.to_string(), partition_id.into());
 
         let response = self
-            .connection
-            .call_amqp_management(PARTITION_ENTITY_TYPE.to_string(), application_properties)
+            .management_client
+            .call(PARTITION_ENTITY_TYPE.to_string(), application_properties)
             .await?;
 
         // Look for the required response properties

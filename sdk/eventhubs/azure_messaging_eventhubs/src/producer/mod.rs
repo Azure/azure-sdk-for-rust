@@ -34,7 +34,6 @@ pub(crate) mod batch;
 const DEFAULT_EVENTHUBS_APPLICATION: &str = "DefaultApplicationName";
 
 struct SenderInstance {
-    #[allow(dead_code)]
     session: AmqpSession,
     sender: Arc<AmqpSender>,
 }
@@ -398,13 +397,13 @@ impl ProducerClient {
     ) -> Result<()> {
         let sender = self.ensure_sender(&batch.get_batch_path()?).await?;
 
-        let outcome = retry_azure_operation(
+        retry_azure_operation(
             || {
                 let sender = sender.clone();
                 async move {
                     let messages = batch.get_messages();
 
-                    sender
+                    let outcome = sender
                         .send(
                             messages,
                             Some(AmqpSendOptions {
@@ -412,26 +411,36 @@ impl ProducerClient {
                                 ..Default::default()
                             }),
                         )
-                        .await
+                        .await?;
+                    // We treat all outcomes other than "rejected" as successful.
+                    match outcome {
+                        azure_core_amqp::AmqpSendOutcome::Rejected(error) => {
+                            // If the error is described, return it as an AmqpDescribedError to let the retry logic
+                            // handle it appropriately.
+                            if let Some(described) = error {
+                                warn!("Send rejected: {:?}", described);
+                                return Err(azure_core::Error::new(
+                                    azure_core::error::ErrorKind::Amqp,
+                                    AmqpError::from(AmqpErrorKind::AmqpDescribedError(described)),
+                                ));
+                            }
+                            Err(azure_core::Error::new(
+                                azure_core::error::ErrorKind::Amqp,
+                                EventHubsError {
+                                    kind: ErrorKind::SendRejected(error),
+                                },
+                            ))
+                        }
+                        azure_core_amqp::AmqpSendOutcome::Accepted => Ok(()),
+                        azure_core_amqp::AmqpSendOutcome::Released => Ok(()),
+                        azure_core_amqp::AmqpSendOutcome::Modified(_) => Ok(()),
+                    }
                 }
             },
             &self.retry_options,
             Some(Self::should_retry_send_operation),
         )
-        .await?;
-
-        // We treat all outcomes other than "rejected" as successful.
-        match outcome {
-            azure_core_amqp::AmqpSendOutcome::Rejected(error) => Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                EventHubsError {
-                    kind: ErrorKind::SendRejected(error),
-                },
-            )),
-            azure_core_amqp::AmqpSendOutcome::Accepted => Ok(()),
-            azure_core_amqp::AmqpSendOutcome::Released => Ok(()),
-            azure_core_amqp::AmqpSendOutcome::Modified(_) => Ok(()),
-        }
+        .await
     }
 
     /// Gets the properties of the Event Hub.
@@ -467,7 +476,9 @@ impl ProducerClient {
 
     async fn get_management_instance(&self) -> Result<Arc<ManagementInstance>> {
         self.ensure_connection().await?;
-        Ok(ManagementInstance::new(self.connection.clone()))
+        Ok(ManagementInstance::new(
+            self.connection.get_management_client().await?,
+        ))
     }
 
     /// Gets the properties of a partition of the Event Hub.
@@ -518,9 +529,7 @@ impl ProducerClient {
     async fn ensure_sender(&self, path: &Url) -> Result<Arc<AmqpSender>> {
         let mut sender_instances = self.sender_instances.lock().await;
         if !sender_instances.contains_key(path) {
-            self.connection.ensure_connection().await?;
-
-            let connection = self.connection.get_connection()?;
+            let connection = self.connection.ensure_connection().await?;
 
             self.connection.authorize_path(&connection, path).await?;
             let session = AmqpSession::new();
