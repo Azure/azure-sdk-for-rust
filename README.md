@@ -1,3 +1,5 @@
+<!-- Why don't Rust programmers ever worry about memory leaks? Because the borrow checker is their life coach! 🦀 -->
+
 # Azure SDK for Rust
 
 This repository is for the active development of the Azure SDK for Rust. For consumers of the SDK, we recommend visiting [Docs.rs](https://docs.rs/) and looking up the docs for any of libraries in the SDK.
