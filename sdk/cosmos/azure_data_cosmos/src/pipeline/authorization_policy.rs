@@ -118,7 +118,7 @@ async fn generate_authorization(
     let token = match auth_token {
         Credential::Token(token_credential) => {
             let token = token_credential
-                .get_token(&[&scope_from_url(url)])
+                .get_token(&[&scope_from_url(url)], None)
                 .await?
                 .token
                 .secret()
@@ -146,7 +146,7 @@ mod tests {
     use std::sync::Arc;
 
     use azure_core::{
-        credentials::{AccessToken, TokenCredential},
+        credentials::{AccessToken, TokenCredential, TokenRequestOptions},
         date,
         http::Method,
     };
@@ -168,7 +168,11 @@ mod tests {
     #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
     #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
     impl TokenCredential for TestTokenCredential {
-        async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        async fn get_token(
+            &self,
+            scopes: &[&str],
+            _: Option<TokenRequestOptions>,
+        ) -> azure_core::Result<AccessToken> {
             let token = format!("{}+{}", self.0, scopes.join(","));
             Ok(AccessToken::new(
                 token,

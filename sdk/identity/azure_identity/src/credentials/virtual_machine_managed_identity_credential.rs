@@ -3,7 +3,7 @@
 
 use crate::{ImdsId, ImdsManagedIdentityCredential, TokenCredentialOptions};
 use azure_core::{
-    credentials::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     http::{headers::HeaderName, Url},
 };
 use std::sync::Arc;
@@ -40,7 +40,11 @@ impl VirtualMachineManagedIdentityCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for VirtualMachineManagedIdentityCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.credential.get_token(scopes).await
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
+        self.credential.get_token(scopes, options).await
     }
 }

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    credentials::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{ErrorKind, ResultExt},
     Error,
 };
@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let url = url::Url::parse(&format!("https://management.azure.com/subscriptions/{subscription_id}/providers/Microsoft.Storage/storageAccounts?api-version=2019-06-01"))?;
 
     let access_token = credential
-        .get_token(&["https://management.azure.com/.default"])
+        .get_token(&["https://management.azure.com/.default"], None)
         .await?;
 
     let response = reqwest::Client::new()
@@ -63,15 +63,21 @@ enum SpecificAzureCredentialKind {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for SpecificAzureCredentialKind {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
         match self {
             #[cfg(not(target_arch = "wasm32"))]
-            SpecificAzureCredentialKind::AzureCli(credential) => credential.get_token(scopes).await,
+            SpecificAzureCredentialKind::AzureCli(credential) => {
+                credential.get_token(scopes, options).await
+            }
             SpecificAzureCredentialKind::ManagedIdentity(credential) => {
-                credential.get_token(scopes).await
+                credential.get_token(scopes, options).await
             }
             SpecificAzureCredentialKind::WorkloadIdentity(credential) => {
-                credential.get_token(scopes).await
+                credential.get_token(scopes, options).await
             }
         }
     }
@@ -133,7 +139,11 @@ impl SpecificAzureCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for SpecificAzureCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.source.get_token(scopes).await
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
+        self.source.get_token(scopes, options).await
     }
 }

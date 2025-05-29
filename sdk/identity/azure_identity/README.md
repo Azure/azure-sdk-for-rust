@@ -93,7 +93,7 @@ impl ClientAssertion for VmClientAssertion {
     async fn secret(&self) -> azure_core::Result<String> {
         Ok(self
             .credential
-            .get_token(&[&self.scope])
+            .get_token(&[&self.scope], None)
             .await?
             .token
             .secret()
@@ -116,7 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let fic_scope = String::from("your-service-app.com/scope");
-    let fic_token = client_assertion_credential.get_token(&[&fic_scope]).await?;
+    let fic_token = client_assertion_credential.get_token(&[&fic_scope], None).await?;
     Ok(())
 }
 

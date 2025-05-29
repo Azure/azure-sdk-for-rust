@@ -5,7 +5,7 @@ use crate::{
     env::Env, AppServiceManagedIdentityCredential, ImdsId, TokenCredentialOptions,
     VirtualMachineManagedIdentityCredential,
 };
-use azure_core::credentials::{AccessToken, TokenCredential};
+use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
 use std::sync::Arc;
 use tracing::info;
 
@@ -82,14 +82,18 @@ impl ManagedIdentityCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ManagedIdentityCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
         if scopes.len() != 1 {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Credential,
                 || "ManagedIdentityCredential requires exactly one scope".to_string(),
             ));
         }
-        self.credential.get_token(scopes).await
+        self.credential.get_token(scopes, options).await
     }
 }
 
@@ -226,7 +230,7 @@ mod tests {
         };
         let cred = ManagedIdentityCredential::new(Some(options)).expect("credential");
         for _ in 0..4 {
-            let token = cred.get_token(LIVE_TEST_SCOPES).await.expect("token");
+            let token = cred.get_token(LIVE_TEST_SCOPES, None).await.expect("token");
             assert_eq!(token.expires_on.unix_timestamp(), expires_on as i64);
             assert_eq!(token.token.secret(), "*");
             assert_eq!(token_requests.load(Ordering::SeqCst), 1);
@@ -443,7 +447,7 @@ mod tests {
         let credential = ManagedIdentityCredential::new(None).expect("valid credential");
         for scopes in [&[][..], &["A", "B"][..]].iter() {
             credential
-                .get_token(scopes)
+                .get_token(scopes, None)
                 .await
                 .expect_err("expected an error, got");
         }

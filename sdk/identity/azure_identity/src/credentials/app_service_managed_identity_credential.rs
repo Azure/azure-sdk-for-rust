@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{ImdsId, ImdsManagedIdentityCredential, TokenCredentialOptions};
-use azure_core::credentials::{AccessToken, TokenCredential};
+use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::http::headers::HeaderName;
 use azure_core::http::Url;
@@ -55,7 +55,11 @@ impl AppServiceManagedIdentityCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AppServiceManagedIdentityCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.credential.get_token(scopes).await
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
+        self.credential.get_token(scopes, options).await
     }
 }

@@ -193,7 +193,7 @@ impl ConnectionManager {
             debug!("Get Token.");
             let token = self
                 .credential
-                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
+                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
                 .await?;
 
             debug!("Token for path {path} expires at {}", token.expires_on);
@@ -368,7 +368,7 @@ impl ConnectionManager {
 
                     let new_token = self
                         .credential
-                        .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
+                        .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
                         .await?;
 
                     // Create an ephemeral session to host the authentication.
@@ -510,7 +510,7 @@ impl ConnectionManager {
 mod tests {
     use super::*;
     use async_trait::async_trait;
-    use azure_core::{http::Url, Result};
+    use azure_core::{credentials::TokenRequestOptions, http::Url, Result};
     use std::sync::Arc;
     use time::OffsetDateTime;
     use tracing::info;
@@ -551,7 +551,11 @@ mod tests {
 
     #[async_trait]
     impl TokenCredential for MockTokenCredential {
-        async fn get_token(&self, _scopes: &[&str]) -> Result<AccessToken> {
+        async fn get_token(
+            &self,
+            _scopes: &[&str],
+            _options: Option<TokenRequestOptions>,
+        ) -> Result<AccessToken> {
             // Simulate a token refresh by incrementing the token get count
             // and updating the token expiration time
             {

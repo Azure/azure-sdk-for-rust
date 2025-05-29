@@ -7,7 +7,7 @@ use crate::{AzureCliCredential, AzureDeveloperCliCredential};
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::error::ResultExt;
 use azure_core::{
-    credentials::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
 };
 use std::sync::Arc;
@@ -153,18 +153,22 @@ pub(crate) enum DefaultAzureCredentialKind {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send), allow(unused_variables))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredentialKind {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        _: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
         match self {
             #[cfg(not(target_arch = "wasm32"))]
             DefaultAzureCredentialKind::AzureCli(credential) => {
-                credential.get_token(scopes).await.context(
+                credential.get_token(scopes, None).await.context(
                     ErrorKind::Credential,
                     "error getting token credential from Azure CLI",
                 )
             }
             #[cfg(not(target_arch = "wasm32"))]
             DefaultAzureCredentialKind::AzureDeveloperCli(credential) => {
-                credential.get_token(scopes).await.context(
+                credential.get_token(scopes, None).await.context(
                     ErrorKind::Credential,
                     "error getting token credential from Azure Developer CLI",
                 )
@@ -222,10 +226,14 @@ impl DefaultAzureCredential {
     }
 
     /// Try to fetch a token using each of the credential sources until one succeeds
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
         let mut errors = Vec::new();
         for source in &self.sources {
-            let token_res = source.get_token(scopes).await;
+            let token_res = source.get_token(scopes, options.clone()).await;
 
             match token_res {
                 Ok(token) => return Ok(token),
@@ -244,8 +252,14 @@ impl DefaultAzureCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        options: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(scopes, options, |s, o| self.get_token(s, o))
+            .await
     }
 }
 

@@ -8,7 +8,7 @@ use crate::{
     validate_scope, validate_subscription, validate_tenant_id,
 };
 use azure_core::{
-    credentials::{AccessToken, Secret, TokenCredential},
+    credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind, ResultExt},
     json::from_json,
     process::{new_executor, Executor},
@@ -126,7 +126,11 @@ impl AzureCliCredential {
         }))
     }
 
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        _: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::new(
                 ErrorKind::Credential,
@@ -162,8 +166,14 @@ impl AzureCliCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AzureCliCredential {
-    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        self.cache.get_token(scopes, self.get_token(scopes)).await
+    async fn get_token(
+        &self,
+        scopes: &[&str],
+        _: Option<TokenRequestOptions>,
+    ) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(scopes, None, |s, o| self.get_token(s, o))
+            .await
     }
 }
 
@@ -238,7 +248,7 @@ mod tests {
                 ..Default::default()
             };
         let cred = AzureCliCredential::new(Some(options))?;
-        return cred.get_token(LIVE_TEST_SCOPES).await;
+        return cred.get_token(LIVE_TEST_SCOPES, None).await;
     }
 
     #[tokio::test]
@@ -290,7 +300,7 @@ mod tests {
 
         let err = AzureCliCredential::new(Some(options))
             .expect("valid credential")
-            .get_token(LIVE_TEST_SCOPES)
+            .get_token(LIVE_TEST_SCOPES, None)
             .await
             .expect_err("expected error");
 
