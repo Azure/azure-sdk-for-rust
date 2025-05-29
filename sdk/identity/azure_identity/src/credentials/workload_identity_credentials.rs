@@ -263,7 +263,6 @@ mod tests {
         assert!(token.expires_on > SystemTime::now());
     }
 
-
     #[test]
     fn invalid_tenant_id() {
         let temp_file = TempFile::new(FAKE_ASSERTION);
