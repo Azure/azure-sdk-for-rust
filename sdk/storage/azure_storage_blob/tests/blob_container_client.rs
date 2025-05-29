@@ -100,7 +100,10 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_body().await?;
     let blob_list = list_blob_segment_response.segment.blob_items;
+    let mut counter = 0;
     for blob in blob_list {
+        counter += 1;
+        println!("Entered the loop: {} times", counter);
         let blob_name = blob.name.unwrap().content.unwrap();
         let blob_type = blob.properties.unwrap().blob_type.unwrap();
         assert!(blob_names.contains(&blob_name));
@@ -112,9 +115,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-async fn test_list_blobs_with_continuation_try_next(
-    ctx: TestContext,
-) -> Result<(), Box<dyn Error>> {
+async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, false).await?;
@@ -131,7 +132,7 @@ async fn test_list_blobs_with_continuation_try_next(
     create_test_blob(&container_client.blob_client(blob_names[2].clone())).await?;
     create_test_blob(&container_client.blob_client(blob_names[3].clone())).await?;
 
-    // First Page
+    // Continuation Token with Token Provided
     let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
         maxresults: Some(2),
         ..Default::default()
@@ -144,57 +145,27 @@ async fn test_list_blobs_with_continuation_try_next(
     assert_eq!(2, blob_list.len());
     for blob in blob_list {
         let blob_name = blob.name.unwrap().content.unwrap();
-        println!("1st page: {}", blob_name.clone());
         let blob_type = blob.properties.unwrap().blob_type.unwrap();
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
     }
-
-    // Second Page
     let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
         marker: continuation_token,
         ..Default::default()
     };
-    let mut list_blobs_response = container_client.list_blobs(Some(list_blobs_options))?;
+    let mut list_blobs_response = container_client.list_blobs(Some(list_blobs_options.clone()))?;
     let second_page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = second_page.unwrap().into_body().await?;
     let blob_list = list_blob_segment_response.segment.blob_items;
     assert_eq!(2, blob_list.len());
     for blob in blob_list {
         let blob_name = blob.name.unwrap().content.unwrap();
-        println!("2nd page: {}", blob_name.clone());
         let blob_type = blob.properties.unwrap().blob_type.unwrap();
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
     }
 
-    container_client.delete_container(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_list_blobs_with_continuation_next(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-
-    let recording = ctx.recording();
-    let container_client = get_container_client(recording, false).await?;
-    let blob_names = [
-        "testblob1".to_string(),
-        "testblob2".to_string(),
-        "testblob3".to_string(),
-        "testblob4".to_string(),
-    ];
-
-    container_client.create_container(None).await?;
-    create_test_blob(&container_client.blob_client(blob_names[0].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[1].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[2].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[3].clone())).await?;
-
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
-        maxresults: Some(2),
-        ..Default::default()
-    };
+    // Continuation Token, Automatic Paging
     let mut pager_response = container_client.list_blobs(Some(list_blobs_options))?;
     let mut page_count = 0;
 
@@ -206,10 +177,7 @@ async fn test_list_blobs_with_continuation_next(ctx: TestContext) -> Result<(), 
                 let blob_list = current_page.segment.blob_items;
                 assert_eq!(2, blob_list.len());
 
-                let mut first_loop_counter = 0;
                 for blob in blob_list {
-                    first_loop_counter += 1;
-                    println!("First loop: {}", first_loop_counter);
                     let blob_name = blob.name.unwrap().content.unwrap();
                     let blob_type = blob.properties.unwrap().blob_type.unwrap();
                     assert!(blob_names.contains(&blob_name));
@@ -220,10 +188,7 @@ async fn test_list_blobs_with_continuation_next(ctx: TestContext) -> Result<(), 
                 let blob_list = current_page.segment.blob_items;
                 assert_eq!(2, blob_list.len());
 
-                let mut second_loop_counter = 0;
                 for blob in blob_list {
-                    second_loop_counter += 1;
-                    println!("Second loop loop: {}", second_loop_counter);
                     let blob_name = blob.name.unwrap().content.unwrap();
                     let blob_type = blob.properties.unwrap().blob_type.unwrap();
                     assert!(blob_names.contains(&blob_name));
