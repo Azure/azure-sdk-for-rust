@@ -196,8 +196,11 @@ mod tests {
         env,
         fs::File,
         io::Write,
-        time::{SystemTime, UNIX_EPOCH},
+        sync::atomic::{AtomicUsize, Ordering},
+        time::SystemTime,
     };
+
+    static TEMP_FILE_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
     pub struct TempFile {
         pub path: PathBuf,
@@ -205,11 +208,7 @@ mod tests {
 
     impl TempFile {
         pub fn new(content: &str) -> Self {
-            let n = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                // cspell:disable-next-line
-                .subsec_nanos();
+            let n = TEMP_FILE_COUNTER.fetch_add(1, Ordering::SeqCst);
             let path = env::temp_dir().join(format!("azure_identity_test_{}", n));
             File::create(&path)
                 .expect("create temp file")
