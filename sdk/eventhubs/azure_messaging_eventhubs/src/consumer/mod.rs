@@ -252,11 +252,7 @@ impl ConsumerClient {
         let source_url = format!("{}/Partitions/{}", &self.endpoint, &partition_id);
         let source_url = Url::parse(&source_url)?;
 
-        let connection = self.connection_manager.ensure_connection().await?;
-
-        self.connection_manager
-            .authorize_path(&connection, &source_url)
-            .await?;
+        self.connection_manager.authorize_path(&source_url).await?;
 
         let session = self.get_session(&partition_id).await?;
         let message_source = AmqpSource::builder()

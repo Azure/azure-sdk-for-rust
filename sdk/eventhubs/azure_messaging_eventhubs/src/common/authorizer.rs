@@ -1,11 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::{recoverable_connection::RecoverableConnection, RetryOptions};
-use crate::{
-    common::retry_azure_operation,
-    error::{ErrorKind, EventHubsError},
-};
+use super::recoverable_connection::RecoverableConnection;
+use crate::error::{ErrorKind, EventHubsError};
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
@@ -14,16 +11,12 @@ use azure_core::{
     task::{new_task_spawner, SpawnedTask},
     Result,
 };
-use azure_core_amqp::{
-    error::{AmqpErrorCondition, AmqpErrorKind},
-    AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis as _, AmqpConnection, AmqpError,
-    AmqpSession, AmqpSessionApis,
-};
+use azure_core_amqp::AmqpClaimsBasedSecurityApis as _;
 use rand::{thread_rng, Rng};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex as SyncMutex, OnceLock, Weak};
-use std::{collections::HashMap, error::Error as _};
 use time::{Duration, OffsetDateTime};
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, trace};
 
 // The number of seconds before token expiration that we wake up to refresh the token.
 const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we refresh tokens 6 minutes before they expire.
@@ -55,7 +48,6 @@ pub(crate) struct Authorizer {
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
     credential: Arc<dyn TokenCredential>,
-    retry_options: RetryOptions,
     recoverable_connection: Weak<RecoverableConnection>,
     /// This is used to disable authorization for testing purposes.
     #[cfg(test)]
@@ -75,16 +67,24 @@ impl Authorizer {
             authorization_scopes: AsyncMutex::new(HashMap::new()),
             token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             credential,
-            retry_options: RetryOptions::default(),
             recoverable_connection,
             #[cfg(test)]
             disable_authorization: SyncMutex::new(false),
         }
     }
 
+    #[cfg(test)]
+    fn disable_authorization(&self) -> Result<()> {
+        let mut disable_authorization = self.disable_authorization.lock().map_err(|e| {
+            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+        })?;
+        *disable_authorization = true;
+        Ok(())
+    }
+
     pub(crate) async fn authorize_path(
         self: &Arc<Self>,
-        connection: &Arc<AmqpConnection>,
+        connection: &Arc<RecoverableConnection>,
         path: &Url,
     ) -> Result<AccessToken> {
         debug!("Authorizing path: {path}");
@@ -125,15 +125,6 @@ impl Authorizer {
             .clone())
     }
 
-    #[cfg(test)]
-    fn disable_authorization(&self) -> Result<()> {
-        let mut disable_authorization = self.disable_authorization.lock().map_err(|e| {
-            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
-        })?;
-        *disable_authorization = true;
-        Ok(())
-    }
-
     /// Actually perform an authorization against the Event Hubs service.
     ///
     /// This method establishes a connection to the Event Hubs service and
@@ -147,7 +138,7 @@ impl Authorizer {
     ///
     async fn perform_authorization(
         self: &Arc<Self>,
-        connection: &Arc<AmqpConnection>,
+        connection: &Arc<RecoverableConnection>,
         url: &Url,
         new_token: &AccessToken,
     ) -> Result<()> {
@@ -168,26 +159,36 @@ impl Authorizer {
 
         debug!("Performing authorization for {url}");
 
-        retry_azure_operation(
-            || async {
-                let connection = connection.clone();
-                let path = url.to_string();
-                let token = new_token.token.secret().to_string();
-                let expires_at = new_token.expires_on;
+        let cbs = connection.get_cbs_client().await?;
 
-                let session = AmqpSession::new();
-                session.begin(connection.as_ref(), None).await?;
-                let cbs = AmqpClaimsBasedSecurity::new(&session)?;
-                cbs.attach().await?;
-
-                cbs.authorize_path(path, None, token, expires_at).await?;
-                Ok(())
-            },
-            &self.retry_options,
-            Some(Self::should_retry_cbs_response),
+        cbs.authorize_path(
+            url.to_string(),
+            None,
+            new_token.token.secret().to_string(),
+            new_token.expires_on,
         )
-        .await?;
-        Ok(())
+        .await
+
+        // retry_azure_operation(
+        //     || async {
+        //         let connection = connection.clone();
+        //         let path = url.to_string();
+        //         let token = new_token.token.secret().to_string();
+        //         let expires_at = new_token.expires_on;
+
+        //         let session = AmqpSession::new();
+        //         session.begin(connection.as_ref(), None).await?;
+        //         let cbs = AmqpClaimsBasedSecurity::new(&session)?;
+        //         cbs.attach().await?;
+
+        //         cbs.authorize_path(path, None, token, expires_at).await?;
+        //         Ok(())
+        //     },
+        //     &self.retry_options,
+        //     Some(Self::should_retry_cbs_response),
+        // )
+        // .await?;
+        // Ok(())
     }
 
     async fn refresh_tokens_task(self: Arc<Self>) {
@@ -345,17 +346,12 @@ impl Authorizer {
                     .await?;
 
                 // Create an ephemeral connection to host the authentication.
-                let connection = self
-                    .recoverable_connection
-                    .upgrade()
-                    .ok_or_else(|| {
-                        azure_core::Error::message(
-                            AzureErrorKind::Other,
-                            "Recoverable connection has been dropped",
-                        )
-                    })?
-                    .ensure_connection()
-                    .await?;
+                let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
+                    azure_core::Error::message(
+                        AzureErrorKind::Other,
+                        "Recoverable connection has been dropped",
+                    )
+                })?;
                 self.perform_authorization(&connection, &url, &new_token)
                     .await?;
 
@@ -384,63 +380,6 @@ impl Authorizer {
         })?;
         *token_refresh_bias = refresh_times;
         Ok(())
-    }
-
-    fn should_retry_cbs_response(e: &azure_core::Error) -> bool {
-        match e.kind() {
-            AzureErrorKind::Amqp => {
-                warn!("Amqp operation failed: {:?}", e.source());
-                if let Some(e) = e.source() {
-                    debug!("Error: {}", e);
-
-                    if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
-                        Self::should_retry_amqp_error(amqp_error)
-                    } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
-                        Self::should_retry_amqp_error(amqp_error)
-                    } else {
-                        debug!("Non AMQP error: {}", e);
-                        false
-                    }
-                } else {
-                    debug!("No source error found");
-                    false
-                }
-            }
-            _ => {
-                debug!("Non AMQP error: {}", e);
-                false
-            }
-        }
-    }
-
-    fn should_retry_amqp_error(amqp_error: &AmqpError) -> bool {
-        match amqp_error.kind() {
-            AmqpErrorKind::ManagementStatusCode(code, _) => {
-                debug!("Management operation error: {}", code);
-                matches!(
-                    code,
-                    azure_core::http::StatusCode::RequestTimeout
-                        | azure_core::http::StatusCode::TooManyRequests
-                        | azure_core::http::StatusCode::InternalServerError
-                        | azure_core::http::StatusCode::BadGateway
-                        | azure_core::http::StatusCode::ServiceUnavailable
-                        | azure_core::http::StatusCode::GatewayTimeout
-                )
-            }
-            AmqpErrorKind::AmqpDescribedError(described_error) => {
-                debug!("AMQP described error: {:?}", described_error);
-                matches!(
-                    described_error.condition(),
-                    AmqpErrorCondition::ResourceLimitExceeded
-                        | AmqpErrorCondition::ConnectionFramingError
-                        | AmqpErrorCondition::LinkStolen
-                )
-            }
-            _ => {
-                debug!("Other AMQP error: {}", amqp_error);
-                false
-            }
-        }
     }
 }
 
@@ -553,11 +492,8 @@ mod tests {
             })
             .unwrap();
 
-        // Get access to the connection
-        let connection = connection_manager.ensure_connection().await.unwrap();
-
         // This should succeed and store the token in the authorization scopes
-        let result = authorizer.authorize_path(&connection, &path).await;
+        let result = authorizer.authorize_path(&connection_manager, &path).await;
         println!("Result: {:?}", result);
         assert!(result.is_ok());
 
@@ -627,11 +563,11 @@ mod tests {
             })
             .unwrap();
 
-        // Get access to the connection
-        let connection = connection_manager.ensure_connection().await.unwrap();
-
         // Authorize the path, which will store the token
-        authorizer.authorize_path(&connection, &path).await.unwrap();
+        authorizer
+            .authorize_path(&connection_manager, &path)
+            .await
+            .unwrap();
 
         // Verify initial token retrieval count - we will only have authorized the token once.
         let current_count = mock_credential.get_token_get_count();
@@ -695,14 +631,12 @@ mod tests {
             })
             .unwrap();
 
-        let connection = recoverable_connection.ensure_connection().await.unwrap();
-
         // Authorize the path, which will store the token
         let path1 = Url::parse("amqps://example.com/test_token_refresh_1").unwrap();
         // Get access to the connection
         //let connection = connection_manager.ensure_connection().await.unwrap();
         authorizer
-            .authorize_path(&connection, &path1)
+            .authorize_path(&recoverable_connection, &path1)
             .await
             .unwrap();
 
@@ -716,7 +650,7 @@ mod tests {
         // Authorize the second path, which will store the token
         let path2 = Url::parse("amqps://example.com/test_token_refresh_2").unwrap();
         authorizer
-            .authorize_path(&connection, &path2)
+            .authorize_path(&recoverable_connection, &path2)
             .await
             .unwrap();
 

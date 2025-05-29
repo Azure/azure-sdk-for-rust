@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::models::{AmqpMessage, AmqpSimpleValue, AmqpValue, MessageId};
+use azure_core::fmt::SafeDebug;
 use azure_core_amqp::message::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
 use std::{
     collections::HashMap,
@@ -32,12 +33,15 @@ use std::{
 /// println!("{:?}", event_data);
 /// ```
 ///
-#[derive(Default, PartialEq, Clone, Debug)]
+#[derive(Default, PartialEq, Clone, SafeDebug)]
+#[safe(true)]
 pub struct EventData {
+    #[safe(false)]
     body: Option<Vec<u8>>,
     content_type: Option<String>,
     correlation_id: Option<MessageId>,
     message_id: Option<MessageId>,
+    #[safe(false)]
     properties: Option<HashMap<String, AmqpSimpleValue>>,
 }
 

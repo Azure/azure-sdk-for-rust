@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::common::retry_azure_operation;
-use crate::common::user_agent::get_package_version;
 use crate::{
-    common::user_agent::{get_package_name, get_platform_info, get_user_agent},
+    common::{
+        retry_azure_operation,
+        user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
+    },
     models::AmqpValue,
 };
 use async_lock::{Mutex as AsyncMutex, OnceCell};
@@ -17,9 +18,9 @@ use azure_core::{
 };
 use azure_core_amqp::error::{AmqpErrorCondition, AmqpErrorKind};
 use azure_core_amqp::{
-    AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError, AmqpManagement,
-    AmqpManagementApis, AmqpOrderedMap, AmqpSender, AmqpSession, AmqpSessionApis as _,
-    AmqpSimpleValue, AmqpSymbol,
+    AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpConnectionApis,
+    AmqpConnectionOptions, AmqpError, AmqpManagement, AmqpManagementApis, AmqpOrderedMap,
+    AmqpSender, AmqpSession, AmqpSessionApis as _, AmqpSimpleValue, AmqpSymbol,
 };
 use std::{collections::HashMap, error::Error, sync::Arc};
 use tracing::{debug, trace, warn};
@@ -119,15 +120,11 @@ impl RecoverableConnection {
         Ok(connection)
     }
 
-    pub(crate) async fn authorize_path(
-        &self,
-        connection: &Arc<AmqpConnection>,
-        path: &Url,
-    ) -> Result<AccessToken> {
+    pub(crate) async fn authorize_path(self: &Arc<Self>, path: &Url) -> Result<AccessToken> {
         self.authorizer
             .as_ref()
             .unwrap()
-            .authorize_path(connection, path)
+            .authorize_path(self, path)
             .await
     }
 
@@ -163,7 +160,7 @@ impl RecoverableConnection {
             .authorizer
             .as_ref()
             .unwrap()
-            .authorize_path(&connection, &management_path)
+            .authorize_path(self, &management_path)
             .await?;
 
         trace!("Create management client.");
@@ -203,12 +200,53 @@ impl RecoverableConnection {
         }
     }
 
+    /// Creates a new management client for the Event Hubs service.
+    ///
+    /// This client is used to perform management operations such as querying the status of the Event Hubs service.
     pub(crate) async fn get_management_client(
         self: &Arc<Self>,
     ) -> Result<Arc<AmqpManagementClient>> {
         Ok(Arc::new(AmqpManagementClient {
             management_client: self.ensure_amqp_management().await?,
             recoverable_connection: self.clone(),
+        }))
+    }
+
+    /// Creates a new Claims-Based Security (CBS) client for the Event Hubs service.
+    ///
+    /// This client is used to perform authorization operations such as acquiring tokens for accessing Event Hubs resources.
+    ///
+    /// Note: The Cbs client returned integrates retry operations into the authorization call.
+    pub(crate) async fn get_cbs_client(
+        self: &Arc<Self>,
+    ) -> Result<Arc<AmqpClaimsBasedSecurityClient>> {
+        trace!(
+            "Creating CBS client for connection: {}",
+            self.connection_name
+        );
+        let connection = self.ensure_connection().await?;
+        let cbs_client = retry_azure_operation(
+            || async {
+                let session = AmqpSession::new();
+                session.begin(connection.as_ref(), None).await?;
+
+                let cbs = Arc::new(AmqpClaimsBasedSecurity::new(session)?);
+                // Attach the CBS client to the session.
+                cbs.attach().await?;
+                Ok(cbs)
+            },
+            &self.retry_options,
+            Some(Self::should_retry_cbs_response),
+        )
+        .await?;
+
+        trace!(
+            "CBS client created for connection: {}",
+            self.connection_name
+        );
+        Ok(Arc::new(AmqpClaimsBasedSecurityClient {
+            recoverable_connection: self.clone(),
+            cbs_client,
         }))
     }
 
@@ -280,7 +318,7 @@ impl RecoverableConnection {
     fn should_retry_cbs_response(e: &azure_core::Error) -> bool {
         match e.kind() {
             AzureErrorKind::Amqp => {
-                warn!("Amqp operation failed: {}", e.source().unwrap());
+                warn!("Amqp operation failed: {:?}", e.source());
                 if let Some(e) = e.source() {
                     debug!("Error: {}", e);
 
@@ -373,6 +411,49 @@ impl AmqpManagementApis for AmqpManagementClient {
 
     async fn detach(self) -> azure_core::Result<()> {
         unimplemented!("AmqpManagementClient does not support detach operation");
+    }
+}
+
+pub(crate) struct AmqpClaimsBasedSecurityClient {
+    recoverable_connection: Arc<RecoverableConnection>,
+    cbs_client: Arc<AmqpClaimsBasedSecurity>,
+}
+
+#[async_trait]
+impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurityClient {
+    async fn authorize_path(
+        &self,
+        path: String,
+        token_type: Option<String>,
+        secret: String,
+        expires_on: time::OffsetDateTime,
+    ) -> Result<()> {
+        let result = retry_azure_operation(
+            || {
+                let cbs_client = self.cbs_client.clone();
+                let path = path.clone();
+                let token_type = token_type.clone();
+                let secret = secret.clone();
+
+                async move {
+                    cbs_client
+                        .authorize_path(path, token_type, secret, expires_on)
+                        .await
+                }
+            },
+            &self.recoverable_connection.retry_options,
+            Some(RecoverableConnection::should_retry_cbs_response),
+        )
+        .await?;
+        Ok(result)
+    }
+
+    async fn attach(&self) -> azure_core::Result<()> {
+        unimplemented!("AmqpClaimsBasedSecurityClient does not support attach operation");
+    }
+
+    async fn detach(self) -> azure_core::Result<()> {
+        unimplemented!("AmqpClaimsBasedSecurityClient does not support detach operation");
     }
 }
 

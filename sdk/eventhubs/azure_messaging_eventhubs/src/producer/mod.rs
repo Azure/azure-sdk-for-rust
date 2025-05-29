@@ -187,17 +187,16 @@ impl ProducerClient {
     fn should_retry_amqp_error(amqp_error: &AmqpError) -> bool {
         match amqp_error.kind() {
             AmqpErrorKind::ManagementStatusCode(code, _) => {
-                debug!("Management operation error: {}", code);
-                match code {
-                    // Retry on 408 (Request Timeout) and 429 (Too Many Requests)
+                debug!("AMQP operation error: {}", code);
+                matches!(
+                    code,
                     azure_core::http::StatusCode::RequestTimeout
-                    | azure_core::http::StatusCode::TooManyRequests
-                    | azure_core::http::StatusCode::InternalServerError
-                    | azure_core::http::StatusCode::BadGateway
-                    | azure_core::http::StatusCode::ServiceUnavailable
-                    | azure_core::http::StatusCode::GatewayTimeout => true,
-                    _ => false,
-                }
+                        | azure_core::http::StatusCode::TooManyRequests
+                        | azure_core::http::StatusCode::InternalServerError
+                        | azure_core::http::StatusCode::BadGateway
+                        | azure_core::http::StatusCode::ServiceUnavailable
+                        | azure_core::http::StatusCode::GatewayTimeout
+                )
             }
             AmqpErrorKind::AmqpDescribedError(described_error) => {
                 debug!("AMQP described error: {:?}", described_error);
@@ -206,6 +205,7 @@ impl ProducerClient {
                     AmqpErrorCondition::ResourceLimitExceeded
                         | AmqpErrorCondition::ConnectionFramingError
                         | AmqpErrorCondition::LinkStolen
+                        | AmqpErrorCondition::ServerBusyError
                 )
             }
             _ => {
@@ -531,7 +531,7 @@ impl ProducerClient {
         if !sender_instances.contains_key(path) {
             let connection = self.connection.ensure_connection().await?;
 
-            self.connection.authorize_path(&connection, path).await?;
+            self.connection.authorize_path(path).await?;
             let session = AmqpSession::new();
             session
                 .begin(
