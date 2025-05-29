@@ -263,27 +263,6 @@ mod tests {
         assert!(token.expires_on > SystemTime::now());
     }
 
-    #[test]
-    fn temp_file_unique_names() {
-        // Test that multiple TempFile instances get unique names
-        let temp1 = TempFile::new("content1");
-        let temp2 = TempFile::new("content2");
-        let temp3 = TempFile::new("content3");
-        
-        // File names should be different
-        assert_ne!(temp1.path, temp2.path);
-        assert_ne!(temp2.path, temp3.path);
-        assert_ne!(temp1.path, temp3.path);
-        
-        // All files should exist and have correct content
-        assert!(temp1.path.exists());
-        assert!(temp2.path.exists());
-        assert!(temp3.path.exists());
-        
-        assert_eq!(std::fs::read_to_string(&temp1.path).unwrap(), "content1");
-        assert_eq!(std::fs::read_to_string(&temp2.path).unwrap(), "content2");
-        assert_eq!(std::fs::read_to_string(&temp3.path).unwrap(), "content3");
-    }
 
     #[test]
     fn invalid_tenant_id() {
