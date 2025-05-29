@@ -6,10 +6,11 @@
 
 ### Breaking Changes
 
+- AmqpClaimsBasedSecurity now takes ownership of the associated session rather than simply referencing the associated session. This means that all CBS authentication operations should be performed on dedicated AmqpSession objects.
+
 ### Bugs Fixed
 
 ### Other Changes
-
 
 ## 0.3.1 (2025-05-08)
 
