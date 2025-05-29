@@ -12,13 +12,13 @@ use std::sync::OnceLock;
 use tokio::sync::Mutex;
 use tracing::{debug, trace};
 
-pub(crate) struct Fe2o3ClaimsBasedSecurity<'a> {
+pub(crate) struct Fe2o3ClaimsBasedSecurity {
     cbs: OnceLock<Mutex<fe2o3_amqp_cbs::client::CbsClient>>,
-    session: &'a AmqpSession,
+    session: AmqpSession,
 }
 
-impl<'a> Fe2o3ClaimsBasedSecurity<'a> {
-    pub fn new(session: &'a AmqpSession) -> Result<Self> {
+impl Fe2o3ClaimsBasedSecurity {
+    pub fn new(session: AmqpSession) -> Result<Self> {
         Ok(Self {
             cbs: OnceLock::new(),
             session,
@@ -45,16 +45,16 @@ impl<'a> Fe2o3ClaimsBasedSecurity<'a> {
     }
 }
 
-impl Fe2o3ClaimsBasedSecurity<'_> {}
+impl Fe2o3ClaimsBasedSecurity {}
 
-impl Drop for Fe2o3ClaimsBasedSecurity<'_> {
+impl Drop for Fe2o3ClaimsBasedSecurity {
     fn drop(&mut self) {
         debug!("Dropping Fe2o3ClaimsBasedSecurity.");
     }
 }
 
 #[async_trait]
-impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
+impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         let session = self.session.implementation.get()?;
         let mut session = session.lock().await;
