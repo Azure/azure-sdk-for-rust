@@ -151,7 +151,7 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
-    pub async fn list_blobs(
+    pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
     ) -> Result<Pager<ListBlobsFlatSegmentResponse>> {
