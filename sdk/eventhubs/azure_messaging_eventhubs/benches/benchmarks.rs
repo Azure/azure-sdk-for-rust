@@ -57,7 +57,7 @@ fn send_batch_benchmark(c: &mut Criterion) {
     let payload = b"perf-test-payload";
 
     let client = client.clone();
-    c.bench_function("eventhubs_send_batch", |b| {
+    c.bench_function("eventhubs_batch_send", |b| {
         let client = client.clone();
         b.to_async(&rt).iter(move || {
             let client = client.clone();

@@ -29,7 +29,6 @@ pub struct AmqpSenderOptions {
 }
 impl AmqpSenderOptions {}
 
-#[allow(unused_variables)]
 #[async_trait]
 pub trait AmqpSenderApis {
     async fn attach(
@@ -113,6 +112,7 @@ pub enum AmqpSendOutcome {
 }
 
 /// If the message was modified in transit, this struct contains the details of the modification.
+#[derive(Debug, Default)]
 pub struct SendModification {
     /// The message was not delivered to the receiver.
     pub delivery_failed: Option<bool>,

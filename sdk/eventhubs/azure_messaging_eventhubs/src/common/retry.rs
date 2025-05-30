@@ -70,6 +70,9 @@ where
     loop {
         match operation().await {
             Ok(result) => {
+                if current_retry > 0 {
+                    info!("Operation succeeded after {} retries", current_retry);
+                }
                 return Ok(result);
             }
             Err(err) => {

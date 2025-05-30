@@ -13,7 +13,7 @@ use azure_core_amqp::{
 use std::{sync::Arc, time::SystemTime};
 
 pub(crate) struct ManagementInstance {
-    management_client: Arc<AmqpManagementClient>,
+    management_client: AmqpManagementClient,
 }
 
 const EVENTHUB_ENTITY_TYPE: &str = "com.microsoft:eventhub";
@@ -36,7 +36,7 @@ const EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_TIME_UTC: &str = "last_enqueue
 const EVENTHUB_PARTITION_PROPERTIES_IS_EMPTY: &str = "is_partition_empty";
 
 impl ManagementInstance {
-    pub fn new(management: Arc<AmqpManagementClient>) -> Arc<Self> {
+    pub fn new(management: AmqpManagementClient) -> Arc<Self> {
         Arc::new(Self {
             management_client: management,
         })
