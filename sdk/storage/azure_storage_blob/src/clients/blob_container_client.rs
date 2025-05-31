@@ -3,16 +3,20 @@
 
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
-    generated::models::BlobContainerClientGetPropertiesResult, pipeline::StorageHeadersPolicy,
-    BlobClient, BlobClientOptions, BlobContainerClientCreateOptions,
-    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
-    BlobContainerClientOptions, BlobContainerClientSetMetadataOptions,
+    generated::models::BlobContainerClientGetPropertiesResult,
+    models::{
+        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
+        BlobContainerClientSetMetadataOptions, ListBlobsFlatSegmentResponse,
+    },
+    pipeline::StorageHeadersPolicy,
+    BlobClient, BlobContainerClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        Response, Url,
+        Pager, Response, Url,
     },
     Result,
 };
@@ -140,5 +144,17 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {
         self.client.get_properties(options).await
+    }
+
+    /// Returns a list of the blobs under the specified container.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub fn list_blobs(
+        &self,
+        options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
+    ) -> Result<Pager<ListBlobsFlatSegmentResponse>> {
+        self.client.list_blob_flat_segment(options)
     }
 }
