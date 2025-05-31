@@ -18,7 +18,6 @@ categories = ["api-bindings"]
 [dependencies]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
-futures.workspace = true
 serde.workspace = true
 time.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
@@ -32,4 +31,5 @@ workspace = true
 azure_core_test.workspace = true
 azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
+futures.workspace = true
 tokio = { workspace = true, features = ["macros"] }
