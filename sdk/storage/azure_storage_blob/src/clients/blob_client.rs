@@ -10,9 +10,9 @@ use crate::{
     },
     models::{
         AccessTier, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetPropertiesOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
+        BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+        BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
@@ -210,5 +210,31 @@ impl BlobClient {
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client.set_tier(tier, options).await
+    }
+
+    /// Sets tags on a blob. Note that each call to this operation replaces all existing tags. To remove
+    /// all tags from the blob, call this operation with no tags specified.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_tags(
+        &self,
+        tags: RequestContent<BlobTags>,
+        options: Option<BlobClientSetTagsOptions<'_>>,
+    ) -> Result<Response<()>> {
+        self.client.set_tags(tags, options).await
+    }
+
+    /// Gets the tags on a blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_tags(
+        &self,
+        options: Option<BlobClientGetTagsOptions<'_>>,
+    ) -> Result<Response<BlobTags>> {
+        self.client.get_tags(options).await
     }
 }
