@@ -1,22 +1,34 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::borrow::Cow;
-
 use azure_core::{credentials::Secret, fmt::SafeDebug, Error};
-use serde::Deserialize;
 
 /// Represents a Cosmos DB connection string.
 ///
 /// The [`Debug`] implementation will not print the account key.
-#[derive(Clone, Deserialize, PartialEq, Eq, SafeDebug)]
+#[derive(Clone, PartialEq, Eq, SafeDebug)]
 pub struct ConnectionString {
-    pub account_endpoint: Cow<'static, str>,
+    pub account_endpoint: String,
     pub account_key: Secret,
 }
 
-impl ConnectionString {
-    pub fn from_connection_string(connection_string: &str) -> Result<Self, Error> {
+impl TryFrom<&Secret> for ConnectionString {
+    type Error = azure_core::Error;
+    fn try_from(secret: &Secret) -> Result<Self, Self::Error> {
+        secret.secret().try_into()
+    }
+}
+
+impl TryFrom<&str> for ConnectionString {
+    type Error = azure_core::Error;
+    fn try_from(connection_string: &str) -> Result<Self, Self::Error> {
+        if connection_string.is_empty() {
+            return Err(Error::new(
+                azure_core::error::ErrorKind::Other,
+                "connection string cannot be empty",
+            ));
+        }
+
         let splat = connection_string.split(';');
         let mut account_endpoint = None;
         let mut account_key = None;
@@ -52,13 +64,9 @@ impl ConnectionString {
         };
 
         Ok(Self {
-            account_endpoint: Cow::Owned(endpoint),
+            account_endpoint: endpoint,
             account_key: key,
         })
-    }
-
-    pub fn from_secret(secret: &Secret) -> azure_core::Result<Self> {
-        ConnectionString::from_connection_string(secret.secret())
     }
 }
 
@@ -72,7 +80,7 @@ mod tests {
         let connection_string =
             "AccountEndpoint=https://accountname.documents.azure.com:443/;AccountKey=accountkey";
         let secret = Secret::new(connection_string);
-        let connection_str = ConnectionString::from_secret(&secret).unwrap();
+        let connection_str = ConnectionString::try_from(&secret).unwrap();
 
         assert_eq!(
             "https://accountname.documents.azure.com:443/",
@@ -84,29 +92,46 @@ mod tests {
 
     #[test]
     pub fn test_empty_connection_string() {
-        test_bad_connection_string("")
+        test_bad_connection_string("", "connection string cannot be empty")
     }
 
     #[test]
     pub fn test_malformed_connection_string() {
         test_bad_connection_string(
+            "AccountEndpointhttps://accountname.documents.azure.com:443AccountKeyaccountkey",
+            "invalid connection string",
+        );
+    }
+
+    #[test]
+    pub fn test_partially_malformed_connection_string() {
+        test_bad_connection_string(
             "AccountEndpointhttps://accountname.documents.azure.com:443/AccountKey=accountkey",
+            "invalid connection string, missing 'AccountEndpoint",
         );
     }
 
     #[test]
     pub fn test_connection_string_missing_account_endpoint() {
-        test_bad_connection_string("AccountKey=accountkey");
+        test_bad_connection_string(
+            "AccountKey=accountkey",
+            "invalid connection string, missing 'AccountEndpoint",
+        );
     }
 
     #[test]
     pub fn test_connection_string_missing_account_key() {
-        test_bad_connection_string("AccountEndpoint=https://accountname.documents.azure.com:443/;");
+        test_bad_connection_string(
+            "AccountEndpoint=https://accountname.documents.azure.com:443/;",
+            "invalid connection string, missing 'AccountKey",
+        );
     }
 
-    fn test_bad_connection_string(connection_string: &str) {
+    fn test_bad_connection_string(connection_string: &str, expected_error_message: &str) {
         let secret = Secret::new(connection_string.to_owned());
-        let connection_str = ConnectionString::from_secret(&secret);
-        assert!(connection_str.is_err());
+        let connection_str = ConnectionString::try_from(&secret);
+        let err = connection_str.unwrap_err();
+        let actual_error_message = format!("{}", err);
+        assert_eq!(expected_error_message, actual_error_message.as_str())
     }
 }

@@ -3,7 +3,7 @@
 
 use crate::{
     clients::DatabaseClient,
-    models::{ConnectionString, DatabaseProperties},
+    models::DatabaseProperties,
     pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
@@ -119,18 +119,11 @@ impl CosmosClient {
         connection_string: Secret,
         options: Option<CosmosClientOptions>,
     ) -> Result<Self, azure_core::Error> {
-        let options = options.unwrap_or_default();
-        let connection_str = ConnectionString::from_secret(&connection_string)?;
+        let connection_str = crate::ConnectionString::try_from(&connection_string)?;
+        let endpoint = connection_str.account_endpoint;
         let key = connection_str.account_key;
 
-        Ok(Self {
-            databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline: CosmosPipeline::new(
-                connection_str.account_endpoint.parse()?,
-                AuthorizationPolicy::from_shared_key(key),
-                options.client_options,
-            ),
-        })
+        Self::with_key(endpoint.as_str(), key, options)
     }
 
     /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.

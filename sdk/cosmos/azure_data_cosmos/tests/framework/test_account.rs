@@ -6,7 +6,7 @@ use std::{borrow::Cow, sync::Arc};
 
 use azure_core::{credentials::Secret, http::TransportOptions, test::TestMode};
 use azure_core_test::TestContext;
-use azure_data_cosmos::{models::ConnectionString, CosmosClientOptions, Query};
+use azure_data_cosmos::{ConnectionString, CosmosClientOptions, Query};
 use reqwest::ClientBuilder;
 
 /// Represents a Cosmos DB account for testing purposes.
@@ -74,7 +74,7 @@ impl TestAccount {
         options: Option<TestAccountOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let options = options.unwrap_or_default();
-        let connection_str = ConnectionString::from_connection_string(connection_string)?;
+        let connection_str = ConnectionString::try_from(connection_string)?;
 
         // We need the context_id to be constant, so that record/replay work.
         let context_id = context.name().to_string();

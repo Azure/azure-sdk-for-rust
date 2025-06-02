@@ -11,6 +11,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg_hide))]
 
 pub mod clients;
+mod connection_string;
 pub mod constants;
 mod feed;
 mod options;
@@ -25,6 +26,7 @@ pub mod models;
 #[doc(inline)]
 pub use clients::CosmosClient;
 
+pub use connection_string::*;
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
