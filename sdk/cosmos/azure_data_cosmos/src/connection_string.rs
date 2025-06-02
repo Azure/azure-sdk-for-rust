@@ -4,8 +4,6 @@
 use azure_core::{credentials::Secret, fmt::SafeDebug, Error};
 
 /// Represents a Cosmos DB connection string.
-///
-/// The [`Debug`] implementation will not print the account key.
 #[derive(Clone, PartialEq, Eq, SafeDebug)]
 pub struct ConnectionString {
     pub account_endpoint: String,
