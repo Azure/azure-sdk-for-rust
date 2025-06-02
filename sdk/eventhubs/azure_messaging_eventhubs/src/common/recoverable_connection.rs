@@ -790,6 +790,7 @@ mod tests {
     use super::*;
     use crate::{consumer, ErrorKind, EventHubsError};
     use async_trait::async_trait;
+    use azure_core::credentials::TokenRequestOptions;
     use azure_core::{http::Url, Result};
     use azure_core_amqp::AmqpError;
     use std::sync::{Arc, Mutex as SyncMutex};
@@ -821,7 +822,11 @@ mod tests {
 
     #[async_trait]
     impl TokenCredential for MockTokenCredential {
-        async fn get_token(&self, _scopes: &[&str]) -> Result<AccessToken> {
+        async fn get_token(
+            &self,
+            _scopes: &[&str],
+            _options: Option<TokenRequestOptions>,
+        ) -> Result<AccessToken> {
             // Simulate a token refresh by incrementing the token get count
             // and updating the token expiration time
 

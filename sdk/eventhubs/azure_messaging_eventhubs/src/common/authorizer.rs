@@ -96,7 +96,7 @@ impl Authorizer {
             debug!("Get Token.");
             let token = self
                 .credential
-                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
+                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
                 .await?;
 
             debug!("Token for path {path} expires at {}", token.expires_on);
@@ -322,7 +322,7 @@ impl Authorizer {
             for url in tokens_to_refresh {
                 let new_token = self
                     .credential
-                    .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE])
+                    .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
                     .await?;
 
                 // Create an ephemeral connection to host the authentication.
@@ -367,6 +367,7 @@ impl Authorizer {
 mod tests {
     use super::*;
     use async_trait::async_trait;
+    use azure_core::credentials::TokenRequestOptions;
     use azure_core::{http::Url, Result};
     use std::sync::Arc;
     use time::OffsetDateTime;
@@ -408,7 +409,11 @@ mod tests {
 
     #[async_trait]
     impl TokenCredential for MockTokenCredential {
-        async fn get_token(&self, _scopes: &[&str]) -> Result<AccessToken> {
+        async fn get_token(
+            &self,
+            _scopes: &[&str],
+            _options: Option<TokenRequestOptions>,
+        ) -> Result<AccessToken> {
             // Simulate a token refresh by incrementing the token get count
             // and updating the token expiration time
             {
