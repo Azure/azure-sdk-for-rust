@@ -74,6 +74,7 @@ mod tests {
     use azure_core::credentials::Secret;
 
     #[test]
+    #[allow(rustdoc::bare_urls)]
     pub fn test_regular_connection_string() {
         let connection_string =
             "AccountEndpoint=https://accountname.documents.azure.com:443/;AccountKey=accountkey";
