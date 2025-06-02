@@ -93,6 +93,7 @@ impl From<&AmqpSymbol> for DistributionMode {
     }
 }
 
+#[derive(Debug)]
 pub struct AmqpDelivery(pub(crate) DeliveryImplementation);
 
 impl AmqpDelivery {

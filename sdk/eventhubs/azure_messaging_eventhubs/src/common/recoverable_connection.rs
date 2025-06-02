@@ -360,21 +360,11 @@ impl RecoverableConnection {
     async fn ensure_sender(self: &Arc<Self>, path: &Url) -> Result<Arc<AmqpSender>> {
         let mut sender_instances = self.sender_instances.lock().await;
         if !sender_instances.contains_key(path) {
-            let connection = self.ensure_connection().await?;
-
+            // Ensure that we are authorized to access the senders path.
             self.authorizer.authorize_path(self, path).await?;
 
+            // Retrieve a session for the sender from the session cache.
             let session = self.get_session(path).await?;
-            session
-                .begin(
-                    connection.as_ref(),
-                    Some(AmqpSessionOptions {
-                        incoming_window: Some(u32::MAX),
-                        outgoing_window: Some(u32::MAX),
-                        ..Default::default()
-                    }),
-                )
-                .await?;
             let sender = AmqpSender::new();
             sender
                 .attach(
