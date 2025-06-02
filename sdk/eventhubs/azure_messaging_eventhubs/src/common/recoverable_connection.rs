@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use super::authorizer::Authorizer;
+use super::RetryOptions;
 use crate::{
     common::{
         retry_azure_operation,
@@ -20,7 +22,8 @@ use azure_core::{
 };
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
-    AmqpMessage, AmqpSendOptions, AmqpSendOutcome, AmqpSessionOptions,
+    AmqpMessage, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSendOptions,
+    AmqpSendOutcome, AmqpSessionOptions, AmqpSource,
 };
 use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpConnectionApis,
@@ -28,17 +31,9 @@ use azure_core_amqp::{
     AmqpSender, AmqpSenderApis, AmqpSenderOptions, AmqpSession, AmqpSessionApis, AmqpSimpleValue,
     AmqpSymbol, AmqpTarget,
 };
-use std::{collections::HashMap, error::Error, sync::Arc};
+use futures::{select, FutureExt};
+use std::{collections::HashMap, error::Error, sync::Arc, time::Duration};
 use tracing::{debug, trace, warn};
-
-use super::authorizer::Authorizer;
-use super::RetryOptions;
-
-struct SenderInstance {
-    #[allow(dead_code)]
-    session: AmqpSession,
-    sender: Arc<AmqpSender>,
-}
 
 /// The recoverable connection is responsible for managing the connection to the Event Hubs service.
 /// It also handles authorization and connection recovery.
@@ -51,10 +46,10 @@ pub(crate) struct RecoverableConnection {
     custom_endpoint: Option<Url>,
     connections: OnceCell<Arc<AmqpConnection>>,
     mgmt_client: OnceCell<Arc<AmqpManagement>>,
-    sender_instances: AsyncMutex<HashMap<Url, SenderInstance>>,
-
+    session_instances: AsyncMutex<HashMap<Url, Arc<AmqpSession>>>,
+    receiver_instances: AsyncMutex<HashMap<Url, Arc<AmqpReceiver>>>,
+    sender_instances: AsyncMutex<HashMap<Url, Arc<AmqpSender>>>,
     authorizer: Arc<Authorizer>,
-
     connection_name: String,
     retry_options: RetryOptions,
 }
@@ -84,7 +79,9 @@ impl RecoverableConnection {
                 custom_endpoint,
                 retry_options,
                 connections: OnceCell::new(),
+                session_instances: AsyncMutex::new(HashMap::new()),
                 sender_instances: AsyncMutex::new(HashMap::new()),
+                receiver_instances: AsyncMutex::new(HashMap::new()),
                 mgmt_client: OnceCell::new(),
                 authorizer,
             }
@@ -247,16 +244,108 @@ impl RecoverableConnection {
         })
     }
 
-    pub(crate) async fn get_sender(self: &Arc<Self>, path: &Url) -> Result<AmqpSenderClient> {
+    pub(crate) async fn get_sender(self: &Arc<Self>, path: Url) -> Result<AmqpSenderClient> {
         self.ensure_connection().await?;
 
-        // Create a sender for the Event Hub.
-        let sender = self.ensure_sender(path).await?;
+        // Ensure we can create a sender for the Event Hub.
+        self.ensure_sender(&path).await?;
 
         Ok(AmqpSenderClient {
             recoverable_connection: self.clone(),
-            sender,
+            path,
         })
+    }
+
+    pub(crate) async fn get_receiver(
+        self: &Arc<Self>,
+        source_url: &Url,
+        message_source: AmqpSource,
+        receiver_options: AmqpReceiverOptions,
+        timeout: Option<Duration>,
+    ) -> Result<AmqpReceiverClient> {
+        self.ensure_receiver(source_url, &message_source, &receiver_options)
+            .await?;
+
+        Ok(AmqpReceiverClient {
+            recoverable_connection: self.clone(),
+            source_url: source_url.clone(),
+            message_source,
+            receiver_options,
+            timeout,
+        })
+    }
+
+    pub(crate) async fn close_receiver(self: &Arc<Self>, source_url: &Url) -> Result<()> {
+        let mut receiver_instances = self.receiver_instances.lock().await;
+        if let Some(receiver) = receiver_instances.remove(source_url) {
+            let r = Arc::try_unwrap(receiver);
+            if let Ok(receiver) = r {
+                trace!("Detaching receiver: {:?}", source_url);
+                receiver.detach().await?;
+            } else {
+                warn!("Failed to detach receiver: {:?}", source_url);
+            }
+        }
+        Ok(())
+    }
+
+    async fn get_session(self: &Arc<Self>, source_url: &Url) -> Result<Arc<AmqpSession>> {
+        let mut session_instances = self.session_instances.lock().await;
+        if !session_instances.contains_key(source_url) {
+            debug!("Creating session for partition: {:?}", source_url);
+            let connection = self.ensure_connection().await?;
+
+            let session = AmqpSession::new();
+            session
+                .begin(
+                    connection.as_ref(),
+                    Some(AmqpSessionOptions {
+                        incoming_window: Some(u32::MAX),
+                        outgoing_window: Some(u32::MAX),
+                        ..Default::default()
+                    }),
+                )
+                .await?;
+            session_instances.insert(source_url.clone(), Arc::new(session));
+        }
+        let rv = session_instances
+            .get(source_url)
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingSession))?
+            .clone();
+        debug!("Cloning session for partition {:?}", source_url);
+        Ok(rv)
+    }
+
+    async fn ensure_receiver(
+        self: &Arc<Self>,
+        source_url: &Url,
+        message_source: &AmqpSource,
+        receiver_options: &AmqpReceiverOptions,
+    ) -> Result<Arc<AmqpReceiver>> {
+        let mut receiver_instances = self.receiver_instances.lock().await;
+        if !receiver_instances.contains_key(source_url) {
+            self.ensure_connection().await?;
+            self.authorize_path(source_url).await?;
+
+            let session = self.get_session(source_url).await?;
+
+            debug!("Create receiver on partition {source_url}.");
+            let receiver = AmqpReceiver::new();
+            receiver
+                .attach(
+                    &session,
+                    message_source.clone(),
+                    Some(receiver_options.clone()),
+                )
+                .await?;
+
+            receiver_instances.insert(source_url.clone(), Arc::new(receiver));
+        }
+
+        Ok(receiver_instances
+            .get(source_url)
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingMessageReceiver))?
+            .clone())
     }
 
     pub(crate) fn get_connection_id(&self) -> &str {
@@ -275,7 +364,8 @@ impl RecoverableConnection {
             let connection = self.ensure_connection().await?;
 
             self.authorizer.authorize_path(self, path).await?;
-            let session = AmqpSession::new();
+
+            let session = self.get_session(path).await?;
             session
                 .begin(
                     connection.as_ref(),
@@ -300,19 +390,12 @@ impl RecoverableConnection {
                     None,
                 )
                 .await?;
-            sender_instances.insert(
-                path.clone(),
-                SenderInstance {
-                    session,
-                    sender: Arc::new(sender),
-                },
-            );
+            sender_instances.insert(path.clone(), Arc::new(sender));
         }
 
         Ok(sender_instances
             .get(path)
             .ok_or_else(|| EventHubsError::from(ErrorKind::MissingMessageSender))?
-            .sender
             .clone())
     }
 
@@ -344,6 +427,33 @@ impl RecoverableConnection {
     }
 
     fn should_retry_send_operation(e: &azure_core::Error) -> bool {
+        match e.kind() {
+            AzureErrorKind::Amqp => {
+                warn!("Amqp operation failed: {}", e.source().unwrap());
+                if let Some(e) = e.source() {
+                    debug!("Error: {}", e);
+
+                    if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
+                        Self::should_retry_amqp_error(amqp_error)
+                    } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
+                        Self::should_retry_amqp_error(amqp_error)
+                    } else {
+                        debug!("Non AMQP error: {}", e);
+                        false
+                    }
+                } else {
+                    debug!("No source error found");
+                    false
+                }
+            }
+            _ => {
+                debug!("Non AMQP error: {}", e);
+                false
+            }
+        }
+    }
+
+    fn should_retry_receive_operation(e: &azure_core::Error) -> bool {
         match e.kind() {
             AzureErrorKind::Amqp => {
                 warn!("Amqp operation failed: {}", e.source().unwrap());
@@ -443,6 +553,11 @@ impl AmqpManagementApis for AmqpManagementClient {
     }
 }
 
+/// Thin wrapper around the [`AmqpClaimsBasedSecurityApis`] trait that implements the retry functionality.
+///
+/// An AmqpClaimsBasedSecurityClient is a thin wrapper around the [`AmqpClaimsBasedSecurityApis`] trait which implements
+/// the retry functionality. That allows implementations which call into the authorize_path API to not have
+/// to worry about retrying the operation themselves.
 pub(crate) struct AmqpClaimsBasedSecurityClient {
     recoverable_connection: Arc<RecoverableConnection>,
     cbs_client: Arc<AmqpClaimsBasedSecurity>,
@@ -486,26 +601,36 @@ impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurityClient {
     }
 }
 
+/// Thin wrapper around the [`AmqpSenderApis`] trait that implements the retry functionality.
+///
+/// An AmqpSenderClient is a thin wrapper around the [`AmqpSenderApis`] trait which implements
+/// the retry functionality. That allows implementations which call into the Send API to not have
+/// to worry about retrying the operation themselves.
 pub(crate) struct AmqpSenderClient {
     recoverable_connection: Arc<RecoverableConnection>,
-    sender: Arc<AmqpSender>,
+    path: Url,
 }
 
 #[async_trait]
 impl AmqpSenderApis for AmqpSenderClient {
-    async fn send(
+    async fn send<M>(
         &self,
-        message: impl Into<AmqpMessage> + std::fmt::Debug + Send,
+        message: M,
         options: Option<AmqpSendOptions>,
-    ) -> azure_core::Result<AmqpSendOutcome> {
-        let message = Arc::new(message.into());
+    ) -> azure_core::Result<AmqpSendOutcome>
+    where
+        M: Into<AmqpMessage> + std::fmt::Debug + Send,
+    {
+        let message_arc = Arc::new(message.into());
         let outcome = retry_azure_operation(
             move || {
-                let sender = self.sender.clone();
+                //                let sender = self.sender.clone();
                 let options = options.clone();
-                let message = message.clone(); // This clones the Arc, not the message
+                let path = self.path.clone();
+                let message_clone = message_arc.clone();
                 async move {
-                    let outcome = sender.send((*message).clone(), options).await?;
+                    let sender = self.recoverable_connection.ensure_sender(&path).await?;
+                    let outcome = sender.send_ref(message_clone.as_ref(), options).await?;
                     // We treat all outcomes other than "rejected" as successful.
                     match outcome {
                         azure_core_amqp::AmqpSendOutcome::Rejected(error) => {
@@ -536,6 +661,20 @@ impl AmqpSenderApis for AmqpSenderClient {
         Ok(outcome)
     }
 
+    /// Sends a message reference to the Event Hubs service.
+    ///
+    /// Note: We do not implement this method because none of the callers of AmqpSenderClient call send_ref.
+    async fn send_ref<M>(
+        &self,
+        _message: M,
+        _options: Option<AmqpSendOptions>,
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: AsRef<AmqpMessage> + std::fmt::Debug + Send,
+    {
+        unimplemented!("AmqpSenderClient does not support send_ref operation");
+    }
+
     async fn attach(
         &self,
         _session: &AmqpSession,
@@ -551,7 +690,98 @@ impl AmqpSenderApis for AmqpSenderClient {
     }
 
     async fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
-        self.sender.max_message_size().await
+        self.recoverable_connection
+            .ensure_sender(&self.path)
+            .await?
+            .max_message_size()
+            .await
+    }
+}
+
+pub(crate) struct AmqpReceiverClient {
+    recoverable_connection: Arc<RecoverableConnection>,
+    source_url: Url,
+    message_source: AmqpSource,
+    receiver_options: AmqpReceiverOptions,
+    timeout: Option<Duration>,
+}
+
+#[async_trait]
+impl AmqpReceiverApis for AmqpReceiverClient {
+    async fn attach(
+        &self,
+        _session: &AmqpSession,
+        _source: impl Into<AmqpSource> + Send,
+        _options: Option<AmqpReceiverOptions>,
+    ) -> Result<()> {
+        unimplemented!("AmqpReceiverClient does not support attach operation");
+    }
+
+    async fn detach(self) -> azure_core::Result<()> {
+        unimplemented!("AmqpReceiverClient does not support detach operation");
+    }
+
+    async fn set_credit_mode(
+        &self,
+        _mode: azure_core_amqp::ReceiverCreditMode,
+    ) -> azure_core::Result<()> {
+        unimplemented!("AmqpReceiverClient does not support set_credit_mode operation");
+    }
+
+    async fn credit_mode(&self) -> azure_core::Result<azure_core_amqp::ReceiverCreditMode> {
+        unimplemented!("AmqpReceiverClient does not support credit_mode operation");
+    }
+
+    async fn receive_delivery(&self) -> azure_core::Result<azure_core_amqp::AmqpDelivery> {
+        let delivery = retry_azure_operation(
+            || async move {
+                let receiver = self
+                    .recoverable_connection
+                    .ensure_receiver(
+                        &self.source_url,
+                        &self.message_source,
+                        &self.receiver_options,
+                    )
+                    .await?;
+                if let Some(delivery_timeout) = self.timeout {
+                    select! {
+                        delivery = receiver.receive_delivery().fuse() => Ok(delivery),
+                        _ = azure_core::sleep::sleep(delivery_timeout).fuse() => {
+                             Err(azure_core::Error::new(
+                                AzureErrorKind::Io,
+                                Box::new(std::io::Error::from(std::io::ErrorKind::TimedOut))))
+                        },
+                    }?
+                } else {
+                    receiver.receive_delivery().await
+                }
+            },
+            &self.recoverable_connection.retry_options,
+            Some(RecoverableConnection::should_retry_receive_operation),
+        )
+        .await?;
+        Ok(delivery)
+    }
+
+    async fn accept_delivery(
+        &self,
+        _delivery: &azure_core_amqp::AmqpDelivery,
+    ) -> azure_core::Result<()> {
+        unimplemented!("AmqpReceiverClient does not support accept_delivery operation");
+    }
+
+    async fn reject_delivery(
+        &self,
+        _delivery: &azure_core_amqp::AmqpDelivery,
+    ) -> azure_core::Result<()> {
+        unimplemented!("AmqpReceiverClient does not support reject_delivery operation");
+    }
+
+    async fn release_delivery(
+        &self,
+        _delivery: &azure_core_amqp::AmqpDelivery,
+    ) -> azure_core::Result<()> {
+        unimplemented!("AmqpReceiverClient does not support release_delivery operation");
     }
 }
 

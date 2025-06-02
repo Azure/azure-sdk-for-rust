@@ -225,7 +225,7 @@ criterion_group!(
     config = Criterion::default()
         .sample_size(1000)
         .warm_up_time(std::time::Duration::new(1, 0))
-        .measurement_time(std::time::Duration::new(2200, 0));
+        .measurement_time(std::time::Duration::new(2500, 0));
     targets =  send_benchmark
 );
 

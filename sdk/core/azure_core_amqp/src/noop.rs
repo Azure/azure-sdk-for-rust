@@ -169,11 +169,21 @@ impl AmqpSenderApis for NoopAmqpSender {
         unimplemented!();
     }
 
-    async fn send(
+    async fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome>
+    where
+        M: Into<AmqpMessage> + std::fmt::Debug + Send,
+    {
+        unimplemented!();
+    }
+
+    async fn send_ref<M>(
         &self,
-        message: impl Into<AmqpMessage> + Send,
+        message: M,
         options: Option<AmqpSendOptions>,
-    ) -> Result<AmqpSendOutcome> {
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: AsRef<AmqpMessage> + std::fmt::Debug + Send,
+    {
         unimplemented!();
     }
 }

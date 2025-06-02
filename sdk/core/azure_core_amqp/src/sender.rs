@@ -40,11 +40,21 @@ pub trait AmqpSenderApis {
     ) -> Result<()>;
     async fn detach(self) -> Result<()>;
     async fn max_message_size(&self) -> Result<Option<u64>>;
-    async fn send(
+    async fn send<M>(
         &self,
-        message: impl Into<AmqpMessage> + std::fmt::Debug + Send,
+        message: M,
         options: Option<AmqpSendOptions>,
-    ) -> Result<AmqpSendOutcome>;
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: Into<AmqpMessage> + std::fmt::Debug + Send;
+
+    async fn send_ref<M>(
+        &self,
+        message: M,
+        options: Option<AmqpSendOptions>,
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: AsRef<AmqpMessage> + std::fmt::Debug + Send;
 }
 
 /// Possible outcomes from a Send operation.
@@ -146,12 +156,22 @@ impl AmqpSenderApis for AmqpSender {
     async fn max_message_size(&self) -> Result<Option<u64>> {
         self.implementation.max_message_size().await
     }
-    async fn send(
-        &self,
-        message: impl Into<AmqpMessage> + std::fmt::Debug + Send,
-        options: Option<AmqpSendOptions>,
-    ) -> Result<AmqpSendOutcome> {
+    async fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome>
+    where
+        M: Into<AmqpMessage> + std::fmt::Debug + Send,
+    {
         self.implementation.send(message, options).await
+    }
+
+    async fn send_ref<M>(
+        &self,
+        message: M,
+        options: Option<AmqpSendOptions>,
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: AsRef<AmqpMessage> + std::fmt::Debug + Send,
+    {
+        self.implementation.send_ref(message, options).await
     }
 }
 

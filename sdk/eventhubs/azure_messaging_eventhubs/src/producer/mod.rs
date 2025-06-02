@@ -174,18 +174,21 @@ impl ProducerClient {
     /// Note:
     /// - The message is sent to the service unmodified.
     ///
-    pub async fn send_message(
+    pub async fn send_message<M>(
         &self,
-        message: impl Into<AmqpMessage> + Debug + Send,
-        #[allow(unused_variables)] options: Option<SendMessageOptions>,
-    ) -> Result<()> {
+        message: M,
+        options: Option<SendMessageOptions>,
+    ) -> Result<()>
+    where
+        M: Into<AmqpMessage> + Debug + Send,
+    {
         let options = options.unwrap_or_default();
         let mut target = self.endpoint.clone();
         if let Some(partition_id) = options.partition_id {
             let target_url = format!("{}/Partitions/{}", self.base_url(), partition_id);
             target = Url::parse(&target_url).map_err(azure_core::Error::from)?;
         }
-        let sender = self.connection.get_sender(&target).await?;
+        let sender = self.connection.get_sender(target).await?;
 
         let outcome = sender
             .send(
@@ -301,7 +304,7 @@ impl ProducerClient {
         batch: &EventDataBatch<'_>,
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
-        let sender = self.connection.get_sender(&batch.get_batch_path()?).await?;
+        let sender = self.connection.get_sender(batch.get_batch_path()?).await?;
 
         let messages = batch.get_messages();
         let outcome = sender
@@ -368,10 +371,7 @@ impl ProducerClient {
     }
 
     async fn get_management_instance(&self) -> Result<Arc<ManagementInstance>> {
-        self.ensure_connection().await?;
-        Ok(ManagementInstance::new(
-            self.connection.get_management_client().await?,
-        ))
+        Ok(ManagementInstance::new(self.connection.clone()))
     }
 
     /// Gets the properties of a partition of the Event Hub.
@@ -414,7 +414,7 @@ impl ProducerClient {
         &self.endpoint
     }
 
-    async fn ensure_sender(&self, target: &Url) -> Result<AmqpSenderClient> {
+    async fn ensure_sender(&self, target: Url) -> Result<AmqpSenderClient> {
         self.connection.get_sender(target).await
     }
 
@@ -545,6 +545,7 @@ pub mod builders {
                 custom_endpoint,
             );
 
+            // Open a connection to the Event Hub to ensure that the client is ready to send messages.
             client.ensure_connection().await?;
             Ok(client)
         }

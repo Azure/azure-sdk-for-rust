@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::recoverable_connection::AmqpManagementClient;
+use super::recoverable_connection::RecoverableConnection;
 use crate::{
     error::{ErrorKind, EventHubsError},
     models::{EventHubPartitionProperties, EventHubProperties},
@@ -12,8 +12,20 @@ use azure_core_amqp::{
 };
 use std::{sync::Arc, time::SystemTime};
 
+/// Represents an instance of the Event Hubs management client.
+///
+/// Implementation Note: The [`ManagementInstance`] leverages a [`RecoverableConnection`]
+/// to manage the connection to the Event Hubs service. This allows for automatic reconnection
+/// and error handling, ensuring that management operations can be performed reliably even in the
+/// face of transient network issues or service interruptions.
+///
+/// What that means in practice is that the `ManagementInstance` retrieves the actual
+/// AMQP management client from the `RecoverableConnection` when needed, which means that
+/// the `RecoverableConnection` can replace the management client if it becomes unavailable
+/// (for instance, if the connection or session is disconnected).
+///
 pub(crate) struct ManagementInstance {
-    management_client: AmqpManagementClient,
+    recoverable_connection: Arc<RecoverableConnection>,
 }
 
 const EVENTHUB_ENTITY_TYPE: &str = "com.microsoft:eventhub";
@@ -36,9 +48,9 @@ const EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_TIME_UTC: &str = "last_enqueue
 const EVENTHUB_PARTITION_PROPERTIES_IS_EMPTY: &str = "is_partition_empty";
 
 impl ManagementInstance {
-    pub fn new(management: AmqpManagementClient) -> Arc<Self> {
+    pub fn new(recoverable_connection: Arc<RecoverableConnection>) -> Arc<Self> {
         Arc::new(Self {
-            management_client: management,
+            recoverable_connection,
         })
     }
 
@@ -48,7 +60,9 @@ impl ManagementInstance {
         application_properties.insert(EVENTHUB_PROPERTY_NAME.to_string(), eventhub.into());
 
         let response = self
-            .management_client
+            .recoverable_connection
+            .get_management_client()
+            .await?
             .call(EVENTHUB_ENTITY_TYPE.to_string(), application_properties)
             .await?;
 
@@ -99,7 +113,9 @@ impl ManagementInstance {
         application_properties.insert(EVENTHUB_PROPERTY_PARTITION.to_string(), partition_id.into());
 
         let response = self
-            .management_client
+            .recoverable_connection
+            .get_management_client()
+            .await?
             .call(PARTITION_ENTITY_TYPE.to_string(), application_properties)
             .await?;
 

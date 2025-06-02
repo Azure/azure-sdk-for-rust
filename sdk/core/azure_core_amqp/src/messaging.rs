@@ -1069,6 +1069,12 @@ pub struct AmqpMessage {
     pub(crate) footer: Option<AmqpAnnotations>,
 }
 
+impl AsRef<AmqpMessage> for AmqpMessage {
+    fn as_ref(&self) -> &AmqpMessage {
+        self
+    }
+}
+
 impl AmqpMessage {
     pub fn builder() -> builders::AmqpMessageBuilder {
         builders::AmqpMessageBuilder::new()
