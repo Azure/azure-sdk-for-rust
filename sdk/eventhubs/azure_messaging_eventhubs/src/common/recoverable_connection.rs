@@ -13,7 +13,6 @@ use crate::{
     ErrorKind, EventHubsError,
 };
 use async_lock::{Mutex as AsyncMutex, OnceCell};
-use async_trait::async_trait;
 use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::ErrorKind as AzureErrorKind,
@@ -517,7 +516,8 @@ pub(crate) struct AmqpManagementClient {
     recoverable_connection: Arc<RecoverableConnection>,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpManagementApis for AmqpManagementClient {
     async fn call(
         &self,
@@ -563,7 +563,8 @@ pub(crate) struct AmqpClaimsBasedSecurityClient {
     cbs_client: Arc<AmqpClaimsBasedSecurity>,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurityClient {
     async fn authorize_path(
         &self,
@@ -611,7 +612,8 @@ pub(crate) struct AmqpSenderClient {
     path: Url,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSenderApis for AmqpSenderClient {
     async fn send<M>(
         &self,
@@ -706,7 +708,8 @@ pub(crate) struct AmqpReceiverClient {
     timeout: Option<Duration>,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpReceiverApis for AmqpReceiverClient {
     async fn attach(
         &self,
@@ -789,7 +792,6 @@ impl AmqpReceiverApis for AmqpReceiverClient {
 mod tests {
     use super::*;
     use crate::{consumer, ErrorKind, EventHubsError};
-    use async_trait::async_trait;
     use azure_core::credentials::TokenRequestOptions;
     use azure_core::{http::Url, Result};
     use azure_core_amqp::AmqpError;
@@ -820,7 +822,8 @@ mod tests {
         }
     }
 
-    #[async_trait]
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
     impl TokenCredential for MockTokenCredential {
         async fn get_token(
             &self,

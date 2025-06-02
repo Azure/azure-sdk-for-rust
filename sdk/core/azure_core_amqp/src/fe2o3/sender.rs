@@ -10,7 +10,6 @@ use crate::{
     session::AmqpSession,
     AmqpOrderedMap, AmqpSymbol, AmqpValue,
 };
-use async_trait::async_trait;
 use azure_core::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
@@ -37,7 +36,8 @@ impl Fe2o3AmqpSender {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSenderApis for Fe2o3AmqpSender {
     async fn attach(
         &self,

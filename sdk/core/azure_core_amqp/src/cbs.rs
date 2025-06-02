@@ -1,10 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use async_trait::async_trait;
-use azure_core::error::Result;
-
 use super::session::AmqpSession;
+use azure_core::error::Result;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
@@ -12,7 +10,8 @@ type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
 #[cfg(any(not(any(feature = "fe2o3_amqp")), target_arch = "wasm32"))]
 type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpClaimsBasedSecurityApis {
     /// Asynchronously attaches the Claims-Based Security (CBS) node to the AMQP session.
     ///
@@ -69,7 +68,8 @@ impl AmqpClaimsBasedSecurity {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
     async fn authorize_path(
         &self,

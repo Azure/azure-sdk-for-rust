@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::error::AmqpDescribedError;
-
 use super::messaging::{AmqpMessage, AmqpSource, AmqpTarget};
 use super::session::AmqpSession;
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::{ReceiverSettleMode, SenderSettleMode};
-use async_trait::async_trait;
+use crate::error::AmqpDescribedError;
 use azure_core::error::Result;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -29,7 +27,8 @@ pub struct AmqpSenderOptions {
 }
 impl AmqpSenderOptions {}
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpSenderApis {
     async fn attach(
         &self,
@@ -138,7 +137,8 @@ pub struct AmqpSender {
     implementation: SenderImplementation,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSenderApis for AmqpSender {
     async fn attach(
         &self,

@@ -7,7 +7,7 @@ use azure_core::{error::Result, http::Url};
 use azure_core_amqp::{
     AmqpDeliveryApis as _, AmqpReceiverApis as _, AmqpReceiverOptions, AmqpSource,
 };
-use futures::{Stream, StreamExt};
+use futures::Stream;
 use std::{sync::Arc, time::Duration};
 use tracing::trace;
 
@@ -119,7 +119,7 @@ impl EventReceiver {
     ///
     pub fn stream_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
         // Use async_stream to create a stream that yields messages from the receiver.
-        try_stream! {
+        Box::pin(try_stream! {
             loop {
                 let receiver = self.connection.get_receiver(&self.source_url, self.message_source.clone(), self.receiver_options.clone(), self.timeout).await?;
 
@@ -132,8 +132,7 @@ impl EventReceiver {
                  trace!("Received message: {:?}", message);
                  yield message;
             }
-        }
-        .boxed()
+        })
     }
 
     /// Closes the event receiver, detaching from the remote.

@@ -11,7 +11,6 @@ use crate::{
     value::{AmqpOrderedMap, AmqpValue},
     AmqpError,
 };
-use async_trait::async_trait;
 use azure_core::{credentials::AccessToken, Result};
 use fe2o3_amqp_management::operations::ReadResponse;
 use std::sync::{Arc, OnceLock};
@@ -63,7 +62,8 @@ impl Fe2o3AmqpManagement {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpManagementApis for Fe2o3AmqpManagement {
     async fn attach(&self) -> Result<()> {
         let management = fe2o3_amqp_management::client::MgmtClient::builder()

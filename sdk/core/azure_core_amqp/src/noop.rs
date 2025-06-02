@@ -16,7 +16,6 @@ use super::{
     simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use async_trait::async_trait;
 use azure_core::{credentials::AccessToken, error::Result};
 
 #[derive(Default)]
@@ -45,7 +44,8 @@ impl NoopAmqpConnection {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpConnectionApis for NoopAmqpConnection {
     async fn open(
         &self,
@@ -75,7 +75,8 @@ impl NoopAmqpSession {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSessionApis for NoopAmqpSession {
     async fn begin(
         &self,
@@ -96,7 +97,8 @@ impl NoopAmqpClaimsBasedSecurity {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
@@ -121,7 +123,8 @@ impl NoopAmqpManagement {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpManagementApis for NoopAmqpManagement {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
@@ -146,7 +149,8 @@ impl NoopAmqpSender {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSenderApis for NoopAmqpSender {
     async fn attach(
         &self,
@@ -189,7 +193,8 @@ impl NoopAmqpReceiver {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpReceiverApis for NoopAmqpReceiver {
     async fn attach(
         &self,

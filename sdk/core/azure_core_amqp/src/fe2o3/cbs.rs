@@ -3,7 +3,6 @@
 // cspell:: words amqp servicebus sastoken
 
 use crate::{cbs::AmqpClaimsBasedSecurityApis, session::AmqpSession, AmqpError};
-use async_trait::async_trait;
 use azure_core::error::Result;
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
@@ -53,7 +52,8 @@ impl Drop for Fe2o3ClaimsBasedSecurity {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         let session = self.session.implementation.get()?;

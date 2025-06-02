@@ -10,10 +10,10 @@ use crate::{
     },
     AmqpError,
 };
+use azure_core::error::ErrorKind;
 use serde_amqp::primitives::Timestamp;
 use serde_bytes::ByteBuf;
 use std::time::{Duration, UNIX_EPOCH};
-use typespec::error::ErrorKind;
 
 use super::error::Fe2o3SerializationError;
 
