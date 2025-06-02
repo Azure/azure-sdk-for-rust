@@ -4,24 +4,48 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
+mod app_service_managed_identity_credential;
+#[cfg(not(target_arch = "wasm32"))]
+mod azure_cli_credential;
 mod azure_developer_cli_credential;
 mod azure_pipelines_credential;
+mod cache;
+mod client_assertion_credential;
+#[cfg(feature = "client_certificate")]
+mod client_certificate_credential;
 mod client_secret_credential;
-mod credentials;
+mod default_azure_credential;
 mod env;
+mod imds_managed_identity_credential;
 mod managed_identity_credential;
+mod options;
 mod process;
+mod virtual_machine_managed_identity_credential;
+mod workload_identity_credential;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use azure_cli_credential::*;
+pub use azure_developer_cli_credential::*;
+pub use azure_pipelines_credential::*;
+pub use client_assertion_credential::*;
+#[cfg(feature = "client_certificate")]
+pub use client_certificate_credential::*;
+pub use client_secret_credential::*;
+pub use default_azure_credential::*;
+pub use managed_identity_credential::*;
+pub use options::TokenCredentialOptions;
+pub use workload_identity_credential::*;
+
+pub(crate) use app_service_managed_identity_credential::*;
+pub(crate) use cache::TokenCache;
+pub(crate) use imds_managed_identity_credential::*;
+pub(crate) use virtual_machine_managed_identity_credential::*;
 
 use azure_core::{
     error::{ErrorKind, ResultExt},
     http::Response,
     Error, Result,
 };
-pub use azure_developer_cli_credential::*;
-pub use azure_pipelines_credential::*;
-pub use client_secret_credential::*;
-pub use credentials::*;
-pub use managed_identity_credential::*;
 use serde::Deserialize;
 use std::borrow::Cow;
 use typespec_client_core::http::Model;

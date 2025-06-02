@@ -14,7 +14,7 @@ const SECRET_HEADER: HeaderName = HeaderName::from_static("x-identity-header");
 const SECRET_ENV: &str = "IDENTITY_HEADER";
 
 #[derive(Debug)]
-pub struct AppServiceManagedIdentityCredential {
+pub(crate) struct AppServiceManagedIdentityCredential {
     credential: ImdsManagedIdentityCredential,
 }
 

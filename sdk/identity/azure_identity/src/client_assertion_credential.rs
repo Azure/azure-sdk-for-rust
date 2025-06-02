@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    credentials::cache::TokenCache, deserialize, validate_not_empty, validate_tenant_id,
-    EntraIdErrorResponse, EntraIdTokenResponse, TokenCredentialOptions,
+    deserialize, validate_not_empty, validate_tenant_id, EntraIdErrorResponse,
+    EntraIdTokenResponse, TokenCache, TokenCredentialOptions,
 };
 use azure_core::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},

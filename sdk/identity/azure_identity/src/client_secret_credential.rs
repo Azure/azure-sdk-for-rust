@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    credentials::cache::TokenCache, deserialize, EntraIdErrorResponse, EntraIdTokenResponse,
-    TokenCredentialOptions,
+    deserialize, EntraIdErrorResponse, EntraIdTokenResponse, TokenCache, TokenCredentialOptions,
 };
 use azure_core::credentials::TokenRequestOptions;
 use azure_core::http::StatusCode;

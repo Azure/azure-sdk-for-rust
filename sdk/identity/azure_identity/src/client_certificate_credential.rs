@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, EntraIdTokenResponse, TokenCredentialOptions};
+use crate::{EntraIdTokenResponse, TokenCache, TokenCredentialOptions};
 use azure_core::{
     base64,
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
