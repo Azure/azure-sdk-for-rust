@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    credentials::{cache::TokenCache, TokenCredentialOptions},
+    credentials::TokenCredentialOptions,
     env::Env,
     process::{shell_exec, OutputProcessor},
     validate_scope, validate_subscription, validate_tenant_id,
@@ -68,10 +68,9 @@ impl OutputProcessor for CliTokenResponse {
     }
 }
 
-/// Enables authentication to Azure Active Directory using Azure CLI to obtain an access token.
+/// Authenticates the identity logged in to the [Azure CLI](https://learn.microsoft.com/cli/azure/what-is-azure-cli).
 #[derive(Debug)]
 pub struct AzureCliCredential {
-    cache: TokenCache,
     options: AzureCliCredentialOptions,
 }
 
@@ -120,12 +119,14 @@ impl AzureCliCredential {
             options.executor = Some(new_executor());
         }
 
-        Ok(Arc::new(Self {
-            cache: TokenCache::new(),
-            options,
-        }))
+        Ok(Arc::new(Self { options }))
     }
+}
 
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl TokenCredential for AzureCliCredential {
+    /// Requests a token from the Azure CLI. This credential doesn't cache tokens, so every call invokes the CLI.
     async fn get_token(
         &self,
         scopes: &[&str],
@@ -160,20 +161,6 @@ impl AzureCliCredential {
             &command,
         )
         .await
-    }
-}
-
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for AzureCliCredential {
-    async fn get_token(
-        &self,
-        scopes: &[&str],
-        _: Option<TokenRequestOptions>,
-    ) -> azure_core::Result<AccessToken> {
-        self.cache
-            .get_token(scopes, None, |s, o| self.get_token(s, o))
-            .await
     }
 }
 

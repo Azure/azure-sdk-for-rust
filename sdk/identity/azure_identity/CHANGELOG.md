@@ -12,6 +12,8 @@
 
 ### Other Changes
 
+- `AzureCliCredential::get_token()` always invokes the Azure CLI
+
 ## 0.24.0 (2025-05-06)
 
 ### Features Added
