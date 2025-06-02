@@ -27,12 +27,22 @@ fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     (client_options, endpoint)
 }
 
+/// Takes in a Recording instance and returns a randomized blob name with prefix "blob" of length 16.
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
 pub fn get_blob_name(recording: &Recording) -> String {
     recording
         .random_string::<12>(Some("blob"))
         .to_ascii_lowercase()
 }
 
+/// Takes in a Recording instance and returns a randomized container name with prefix "container" of length 16.
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
 pub fn get_container_name(recording: &Recording) -> String {
     recording
         .random_string::<17>(Some("container"))

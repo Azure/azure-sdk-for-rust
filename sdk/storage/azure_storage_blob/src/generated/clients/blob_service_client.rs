@@ -6,12 +6,11 @@
 use crate::generated::{
     clients::BlobContainerClient,
     models::{
-        crate_models::{GetUserDelegationKeyRequest, SetPropertiesRequest},
         BlobServiceClientFilterBlobsOptions, BlobServiceClientGetAccountInfoOptions,
         BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
         BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
         BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
-        FilterBlobSegment, ListContainersSegmentResponse, StorageServiceProperties,
+        FilterBlobSegment, KeyInfo, ListContainersSegmentResponse, StorageServiceProperties,
         StorageServiceStats, UserDelegationKey,
     },
 };
@@ -20,9 +19,10 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
+        ClientOptions, Context, Method, Pager, PagerResult, Pipeline, Request, RequestContent,
+        Response, Url,
     },
-    Result,
+    xml, Result,
 };
 use std::sync::Arc;
 
@@ -240,13 +240,11 @@ impl BlobServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `start` - The date-time the key is active.
-    /// * `expiry` - The date-time the key expires.
+    /// * `key_info` - Key information provided in the request
     /// * `options` - Optional parameters for the request.
     pub async fn get_user_delegation_key(
         &self,
-        start: String,
-        expiry: String,
+        key_info: RequestContent<KeyInfo>,
         options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
     ) -> Result<Response<UserDelegationKey>> {
         let options = options.unwrap_or_default();
@@ -266,9 +264,7 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let body: RequestContent<GetUserDelegationKeyRequest> =
-            GetUserDelegationKeyRequest { start, expiry }.try_into()?;
-        request.set_body(body);
+        request.set_body(key_info);
         self.pipeline.send(&ctx, &mut request).await
     }
 
@@ -277,16 +273,16 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    pub async fn list_containers_segment(
+    pub fn list_containers_segment(
         &self,
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<Response<ListContainersSegmentResponse>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        url.query_pairs_mut().append_pair("comp", "list");
+    ) -> Result<Pager<ListContainersSegmentResponse>> {
+        let options = options.unwrap_or_default().into_owned();
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        first_url.query_pairs_mut().append_pair("comp", "list");
         if let Some(include) = options.include {
-            url.query_pairs_mut().append_pair(
+            first_url.query_pairs_mut().append_pair(
                 "include",
                 &include
                     .iter()
@@ -296,27 +292,62 @@ impl BlobServiceClient {
             );
         }
         if let Some(marker) = options.marker {
-            url.query_pairs_mut().append_pair("marker", &marker);
+            first_url.query_pairs_mut().append_pair("marker", &marker);
         }
         if let Some(maxresults) = options.maxresults {
-            url.query_pairs_mut()
+            first_url
+                .query_pairs_mut()
                 .append_pair("maxresults", &maxresults.to_string());
         }
         if let Some(prefix) = options.prefix {
-            url.query_pairs_mut().append_pair("prefix", &prefix);
+            first_url.query_pairs_mut().append_pair("prefix", &prefix);
         }
         if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
+            first_url
+                .query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        let version = self.version.clone();
+        Ok(Pager::from_callback(move |marker: Option<String>| {
+            let mut url = first_url.clone();
+            if let Some(marker) = marker {
+                if url.query_pairs().any(|(name, _)| name.eq("marker")) {
+                    let mut new_url = url.clone();
+                    new_url
+                        .query_pairs_mut()
+                        .clear()
+                        .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
+                    url = new_url;
+                }
+                url.query_pairs_mut().append_pair("marker", &marker);
+            }
+            let mut request = Request::new(url, Method::Get);
+            request.insert_header("accept", "application/xml");
+            request.insert_header("content-type", "application/xml");
+            if let Some(client_request_id) = &options.client_request_id {
+                request.insert_header("x-ms-client-request-id", client_request_id);
+            }
+            request.insert_header("x-ms-version", &version);
+            let ctx = options.method_options.context.clone();
+            let pipeline = pipeline.clone();
+            async move {
+                let rsp: Response<ListContainersSegmentResponse> =
+                    pipeline.send(&ctx, &mut request).await?;
+                let (status, headers, body) = rsp.deconstruct();
+                let bytes = body.collect().await?;
+                let res: ListContainersSegmentResponse = xml::read_xml(&bytes)?;
+                let rsp = Response::from_bytes(status, headers, bytes);
+                let next_marker = res.next_marker.unwrap_or_default();
+                Ok(if next_marker.is_empty() {
+                    PagerResult::Complete { response: rsp }
+                } else {
+                    PagerResult::Continue {
+                        response: rsp,
+                        continuation: next_marker,
+                    }
+                })
+            }
+        }))
     }
 
     /// Sets properties for a storage account's Blob service endpoint, including properties for Storage Analytics and CORS (Cross-Origin
@@ -324,9 +355,11 @@ impl BlobServiceClient {
     ///
     /// # Arguments
     ///
+    /// * `storage_service_properties` - The storage service properties to set.
     /// * `options` - Optional parameters for the request.
     pub async fn set_properties(
         &self,
+        storage_service_properties: RequestContent<StorageServiceProperties>,
         options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
@@ -346,17 +379,7 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let body: RequestContent<SetPropertiesRequest> = SetPropertiesRequest {
-            logging: options.logging,
-            hour_metrics: options.hour_metrics,
-            minute_metrics: options.minute_metrics,
-            cors: options.cors,
-            default_service_version: options.default_service_version,
-            delete_retention_policy: options.delete_retention_policy,
-            static_website: options.static_website,
-        }
-        .try_into()?;
-        request.set_body(body);
+        request.set_body(storage_service_properties);
         self.pipeline.send(&ctx, &mut request).await
     }
 }
