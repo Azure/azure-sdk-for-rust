@@ -115,6 +115,7 @@ impl CosmosClient {
     ///     .unwrap();
     /// ```
     #[cfg(feature = "key_auth")]
+    #[allow(rustdoc::bare_urls)]
     pub fn with_connection_string(
         connection_string: Secret,
         options: Option<CosmosClientOptions>,
