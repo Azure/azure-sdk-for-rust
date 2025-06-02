@@ -233,8 +233,6 @@ impl ConsumerClient {
             .unwrap_or_else(|| Uuid::new_v4().to_string());
         let start_expression = StartPosition::start_expression(&options.start_position);
 
-        self.connection_manager.ensure_connection().await?;
-
         trace!(
             "Opening receiver on url {} partition {partition_id}.",
             self.endpoint
@@ -375,7 +373,6 @@ impl ConsumerClient {
     }
 
     async fn get_management_instance(&self) -> Result<Arc<ManagementInstance>> {
-        self.connection_manager.ensure_connection().await?;
         Ok(ManagementInstance::new(self.connection_manager.clone()))
     }
 
