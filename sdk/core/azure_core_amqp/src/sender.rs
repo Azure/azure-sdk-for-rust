@@ -132,6 +132,8 @@ pub struct SendModification {
     pub message_annotations: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
 }
 
+unsafe impl Send for AmqpSendOutcome {}
+
 pub struct AmqpSender {
     implementation: SenderImplementation,
 }

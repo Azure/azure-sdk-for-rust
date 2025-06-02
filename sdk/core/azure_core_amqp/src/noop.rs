@@ -18,7 +18,6 @@ use super::{
 };
 use async_trait::async_trait;
 use azure_core::{credentials::AccessToken, error::Result};
-use std::marker::PhantomData;
 
 #[derive(Default)]
 pub(crate) struct NoopAmqpConnection {}
@@ -38,9 +37,7 @@ pub(crate) struct NoopAmqpSession {}
 pub(crate) struct NoopAmqpDelivery {}
 
 #[derive(Default)]
-pub(crate) struct NoopAmqpClaimsBasedSecurity<'a> {
-    phantom: PhantomData<&'a AmqpSession>,
-}
+pub(crate) struct NoopAmqpClaimsBasedSecurity {}
 
 impl NoopAmqpConnection {
     pub fn new() -> Self {
@@ -93,16 +90,14 @@ impl AmqpSessionApis for NoopAmqpSession {
     }
 }
 
-impl<'a> NoopAmqpClaimsBasedSecurity<'a> {
-    pub fn new(session: &'a AmqpSession) -> Result<Self> {
-        Ok(Self {
-            phantom: PhantomData,
-        })
+impl NoopAmqpClaimsBasedSecurity {
+    pub fn new(session: AmqpSession) -> Result<Self> {
+        Ok(Self {})
     }
 }
 
 #[async_trait]
-impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity<'_> {
+impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
     }

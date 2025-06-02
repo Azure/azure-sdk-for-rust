@@ -159,36 +159,16 @@ impl Authorizer {
 
         debug!("Performing authorization for {url}");
 
-        let cbs = connection.get_cbs_client().await?;
-
-        cbs.authorize_path(
-            url.to_string(),
-            None,
-            new_token.token.secret().to_string(),
-            new_token.expires_on,
-        )
-        .await
-
-        // retry_azure_operation(
-        //     || async {
-        //         let connection = connection.clone();
-        //         let path = url.to_string();
-        //         let token = new_token.token.secret().to_string();
-        //         let expires_at = new_token.expires_on;
-
-        //         let session = AmqpSession::new();
-        //         session.begin(connection.as_ref(), None).await?;
-        //         let cbs = AmqpClaimsBasedSecurity::new(&session)?;
-        //         cbs.attach().await?;
-
-        //         cbs.authorize_path(path, None, token, expires_at).await?;
-        //         Ok(())
-        //     },
-        //     &self.retry_options,
-        //     Some(Self::should_retry_cbs_response),
-        // )
-        // .await?;
-        // Ok(())
+        connection
+            .get_cbs_client()
+            .await?
+            .authorize_path(
+                url.to_string(),
+                None,
+                new_token.token.secret().to_string(),
+                new_token.expires_on,
+            )
+            .await
     }
 
     async fn refresh_tokens_task(self: Arc<Self>) {
