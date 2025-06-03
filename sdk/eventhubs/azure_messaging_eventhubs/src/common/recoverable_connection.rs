@@ -14,7 +14,10 @@ use crate::{
 };
 use async_lock::{Mutex as AsyncMutex, OnceCell};
 use azure_core::{
-    credentials::TokenCredential, error::ErrorKind as AzureErrorKind, http::Url, Result, Uuid,
+    credentials::{Secret, TokenCredential},
+    error::ErrorKind as AzureErrorKind,
+    http::Url,
+    Result, Uuid,
 };
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
@@ -36,16 +39,15 @@ use tracing::{debug, trace, warn};
 ///
 /// * Notes
 ///
-/// The way a client uses a RecoverableConnection is as follows:
-///   1. Create a new instance of the RecoverableConnection.
-///   2. Retrieve an interim object from the RecoverableConnection. Supported
+/// The way a client uses a `RecoverableConnection` is as follows:
+///   1. Create a new instance of the `RecoverableConnection`.
+///   2. Retrieve an interim object from the `RecoverableConnection`. Supported
 ///      interim objects are:
-///
 ///    - `AmqpManagement`: Used for management operations.
 ///    - `AmqpSender`: Used for sending messages to the Event Hubs service.
 ///    - `AmqpReceiver`: Used for receiving messages from the Event Hubs service.
 ///    - `AmqpClaimsBasedSecurity`: Used for authorization operations (should not be used directly)
-/// * 3. Use the interim object to perform operations on the Event Hubs service.
+///   3. Use the interim object to perform operations on the Event Hubs service.
 ///
 /// Under the covers, the interim objects contain a reference back to the [`RecoverableConnection`],
 /// and enough information to recreate the underlying AMQP connection, session, management, cbs, or sender/receiver
@@ -59,7 +61,7 @@ use tracing::{debug, trace, warn};
 ///   - `get_*` methods: These methods are used to retrieve a wrapper around the underlying session, management client, cbs client, sender, or receiver.
 ///   - `create_*` methods: These methods are used to create a new underlying connection, session, management client, cbs client, sender, or receiver.
 ///
-/// In general, the `ensure_*` and `create_*` methods are private to the ` RecoverableConnection`
+/// In general, the `ensure_*` and `create_*` methods are private to the `RecoverableConnection`
 /// struct, while the `get_*` methods are public(crate) to allow clients to retrieve the underlying objects.
 ///
 pub(crate) struct RecoverableConnection {
@@ -404,16 +406,16 @@ impl RecoverableConnection {
     fn should_retry_management_response(e: &azure_core::Error) -> bool {
         match e.kind() {
             AzureErrorKind::Amqp => {
-                warn!("Amqp operation failed: {}", e.source().unwrap());
+                warn!("Amqp operation failed: {:?}", e.source());
                 if let Some(e) = e.source() {
-                    debug!("Error: {}", e);
+                    debug!(err = ?e, "Error: {e}");
 
                     if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
                         Self::should_retry_amqp_error(amqp_error)
                     } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
                         Self::should_retry_amqp_error(amqp_error)
                     } else {
-                        debug!("Non AMQP error: {}", e);
+                        debug!(err=?e, "Non AMQP error: {e}");
                         false
                     }
                 } else {
@@ -422,7 +424,7 @@ impl RecoverableConnection {
                 }
             }
             _ => {
-                debug!("Non AMQP error: {}", e);
+                debug!(err=?e, "Non AMQP error: {e}");
                 false
             }
         }
@@ -431,16 +433,16 @@ impl RecoverableConnection {
     fn should_retry_cbs_response(e: &azure_core::Error) -> bool {
         match e.kind() {
             AzureErrorKind::Amqp => {
-                warn!("Amqp operation failed: {:?}", e.source());
+                warn!(err=?e, "Amqp operation failed: {:?}", e.source());
                 if let Some(e) = e.source() {
-                    debug!("Error: {}", e);
+                    debug!(err=?e, "Error: {e}");
 
                     if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
                         Self::should_retry_amqp_error(amqp_error)
                     } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
                         Self::should_retry_amqp_error(amqp_error)
                     } else {
-                        debug!("Non AMQP error: {}", e);
+                        debug!(err=?e, "Non AMQP error: {e}");
                         false
                     }
                 } else {
@@ -449,7 +451,7 @@ impl RecoverableConnection {
                 }
             }
             _ => {
-                debug!("Non AMQP error: {}", e);
+                debug!(err=?e, "Non AMQP error: {e}");
                 false
             }
         }
@@ -458,16 +460,16 @@ impl RecoverableConnection {
     fn should_retry_send_operation(e: &azure_core::Error) -> bool {
         match e.kind() {
             AzureErrorKind::Amqp => {
-                warn!("Amqp operation failed: {}", e.source().unwrap());
+                warn!(err=?e, "Amqp operation failed: {e}");
                 if let Some(e) = e.source() {
-                    debug!("Error: {}", e);
+                    debug!(err=?e, "Error: {e}");
 
                     if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
                         Self::should_retry_amqp_error(amqp_error)
                     } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
                         Self::should_retry_amqp_error(amqp_error)
                     } else {
-                        debug!("Non AMQP error: {}", e);
+                        debug!(err=?e, "Non AMQP error: {e}");
                         false
                     }
                 } else {
@@ -476,7 +478,7 @@ impl RecoverableConnection {
                 }
             }
             _ => {
-                debug!("Non AMQP error: {}", e);
+                debug!(err=?e, "Non AMQP error: {e}");
                 false
             }
         }
@@ -485,16 +487,16 @@ impl RecoverableConnection {
     fn should_retry_receive_operation(e: &azure_core::Error) -> bool {
         match e.kind() {
             AzureErrorKind::Amqp => {
-                warn!("Amqp operation failed: {}", e.source().unwrap());
+                warn!(err=?e, "Amqp operation failed: {e}");
                 if let Some(e) = e.source() {
-                    debug!("Error: {}", e);
+                    debug!(err=?e, "Error: {e}");
 
                     if let Some(amqp_error) = e.downcast_ref::<Box<AmqpError>>() {
                         Self::should_retry_amqp_error(amqp_error)
                     } else if let Some(amqp_error) = e.downcast_ref::<AmqpError>() {
                         Self::should_retry_amqp_error(amqp_error)
                     } else {
-                        debug!("Non AMQP error: {}", e);
+                        debug!(err=?e, "Non AMQP error: {e}");
                         false
                     }
                 } else {
@@ -503,7 +505,7 @@ impl RecoverableConnection {
                 }
             }
             _ => {
-                debug!("Non AMQP error: {}", e);
+                debug!(err=?e, "Non AMQP error: {e}");
                 false
             }
         }
@@ -534,7 +536,7 @@ impl RecoverableConnection {
                 )
             }
             _ => {
-                debug!("Other AMQP error: {}", amqp_error);
+                debug!(err=?amqp_error, "Other AMQP error: {amqp_error}");
                 false
             }
         }
@@ -600,7 +602,7 @@ impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurityClient {
         &self,
         path: String,
         token_type: Option<String>,
-        secret: String,
+        secret: &Secret,
         expires_on: time::OffsetDateTime,
     ) -> Result<()> {
         let result = retry_azure_operation(
@@ -612,7 +614,7 @@ impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurityClient {
                 async move {
                     let cbs_client = self.recoverable_connection.ensure_amqp_cbs().await?;
                     cbs_client
-                        .authorize_path(path, token_type, secret, expires_on)
+                        .authorize_path(path, token_type, &secret, expires_on)
                         .await
                 }
             },
@@ -693,6 +695,7 @@ impl AmqpSenderApis for AmqpSenderClient {
         Ok(outcome)
     }
 
+    #[doc(hidden)]
     /// Sends a message reference to the Event Hubs service.
     ///
     /// Note: We do not implement this method because none of the callers of AmqpSenderClient call send_ref.
@@ -822,58 +825,10 @@ impl AmqpReceiverApis for AmqpReceiverClient {
 mod tests {
     use super::*;
     use crate::{consumer, ErrorKind, EventHubsError};
-    use azure_core::credentials::TokenRequestOptions;
-    use azure_core::{credentials::AccessToken, http::Url, Result};
+    use azure_core::http::Url;
     use azure_core_amqp::AmqpError;
-    use std::sync::{Arc, Mutex as SyncMutex};
-    use time::{Duration, OffsetDateTime};
-
-    // Helper struct to mock token credential
-    #[derive(Debug)]
-    struct MockTokenCredential {
-        /// Duration in seconds until the token expires
-        token_duration: i64,
-
-        /// The token itself
-        /// This is a mock token, so we don't need to worry about the actual value
-        token: SyncMutex<AccessToken>,
-    }
-
-    impl MockTokenCredential {
-        fn new(expires_in_seconds: i64) -> Arc<Self> {
-            let expires_on = OffsetDateTime::now_utc() + Duration::seconds(expires_in_seconds);
-            Arc::new(Self {
-                token_duration: expires_in_seconds,
-                token: SyncMutex::new(AccessToken::new(
-                    azure_core::credentials::Secret::new("mock_token"),
-                    expires_on,
-                )),
-            })
-        }
-    }
-
-    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-    impl TokenCredential for MockTokenCredential {
-        async fn get_token(
-            &self,
-            _scopes: &[&str],
-            _options: Option<TokenRequestOptions>,
-        ) -> Result<AccessToken> {
-            // Simulate a token refresh by incrementing the token get count
-            // and updating the token expiration time
-
-            let expires_on = OffsetDateTime::now_utc() + Duration::seconds(self.token_duration);
-            {
-                let mut token = self.token.lock().unwrap();
-                *token = AccessToken::new(
-                    azure_core::credentials::Secret::new("mock_token"),
-                    expires_on,
-                );
-                Ok(token.clone())
-            }
-        }
-    }
+    use azure_core_test::credentials::MockCredential;
+    use std::sync::Arc;
 
     // The RecoverableConnection implementation uses a UUID to identify connections unless an application ID is provided.
     // This test verifies that a new recoverable connection uses a UUID for its connection ID when no application ID is specified.
@@ -885,7 +840,7 @@ mod tests {
             url,
             None,
             None,
-            MockTokenCredential::new(15),
+            Arc::new(MockCredential),
             Default::default(),
         );
         assert!(!connection_manager.connections.is_initialized());
@@ -907,7 +862,7 @@ mod tests {
             url,
             Some(app_id.clone()),
             None,
-            MockTokenCredential::new(15),
+            Arc::new(MockCredential),
             Default::default(),
         );
         assert!(!connection_manager.connections.is_initialized());
@@ -926,7 +881,7 @@ mod tests {
             url.clone(),
             None,
             None,
-            MockTokenCredential::new(15),
+            Arc::new(MockCredential),
             Default::default(),
         ));
 
@@ -943,7 +898,7 @@ mod tests {
             url,
             None,
             Some(custom_endpoint.clone()),
-            MockTokenCredential::new(15),
+            Arc::new(MockCredential),
             Default::default(),
         );
 

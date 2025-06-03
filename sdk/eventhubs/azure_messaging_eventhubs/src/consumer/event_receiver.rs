@@ -121,7 +121,11 @@ impl EventReceiver {
         // Use async_stream to create a stream that yields messages from the receiver.
         Box::pin(try_stream! {
             loop {
-                let receiver = self.connection.get_receiver(&self.source_url, self.message_source.clone(), self.receiver_options.clone(), self.timeout).await?;
+                let receiver = self.connection.get_receiver(&self.source_url,
+                    self.message_source.clone(),
+                    self.receiver_options.clone(),
+                    self.timeout
+                ).await?;
 
                 let delivery = receiver.receive_delivery().await?;
 

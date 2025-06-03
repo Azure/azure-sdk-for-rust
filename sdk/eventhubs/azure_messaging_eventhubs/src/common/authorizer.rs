@@ -165,7 +165,7 @@ impl Authorizer {
             .authorize_path(
                 url.to_string(),
                 None,
-                new_token.token.secret().to_string(),
+                &new_token.token,
                 new_token.expires_on,
             )
             .await

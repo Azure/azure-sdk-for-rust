@@ -16,7 +16,10 @@ use super::{
     simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use azure_core::{credentials::AccessToken, error::Result};
+use azure_core::{
+    credentials::{AccessToken, Secret},
+    error::Result,
+};
 
 #[derive(Default)]
 pub(crate) struct NoopAmqpConnection {}
@@ -111,7 +114,7 @@ impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity {
         &self,
         path: String,
         token_type: Option<String>,
-        secret: String,
+        secret: &Secret,
         expires_on: time::OffsetDateTime,
     ) -> Result<()> {
         unimplemented!()
