@@ -16,10 +16,6 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send +
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
 /// A raw HTTP response with status, headers, and body.
-///
-/// This is the non-generic representation of an HTTP response that contains
-/// the fundamental components without any type-level information about
-/// how the body should be deserialized.
 #[derive(Debug)]
 pub struct RawResponse {
     status: StatusCode,
@@ -74,8 +70,7 @@ impl RawResponse {
 /// For example, a service client method that returns a list of secrets should return `Response<ListSecretsResponse>`.
 ///
 /// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
-/// However, because the type `T` is just a marker type, the user can also deserialize the body into a different type by calling [`Response::into_json_body`] or [`Response::into_xml_body`],
-/// or access the raw body using [`Response::into_raw_body`].
+/// However, because the type `T` is just a marker type, you can also access the raw body using [`Response::into_raw_body`].
 pub struct Response<T, F = JsonFormat> {
     raw: RawResponse,
     _phantom: PhantomData<(T, F)>,
