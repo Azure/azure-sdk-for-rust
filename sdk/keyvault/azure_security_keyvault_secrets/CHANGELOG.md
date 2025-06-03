@@ -6,6 +6,11 @@
 
 ### Breaking Changes
 
+- `Pager<T>` now asynchronously iterates items of type `T` instead of pages containing items of type `T`. Call `Pager::into_pages()` to get a `PageIterator` to asynchronously iterate over all pages. This affects:
+  - `SecretClient::list_deleted_secret_properties`
+  - `SecretClient::list_secret_properties`
+  - `SecretClient::list_secret_properties_versions`
+
 ### Bugs Fixed
 
 ### Other Changes

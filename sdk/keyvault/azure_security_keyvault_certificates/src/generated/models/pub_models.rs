@@ -6,7 +6,8 @@
 use super::{
     models_serde, CertificatePolicyAction, CurveName, DeletionRecoveryLevel, KeyType, KeyUsageType,
 };
-use azure_core::{base64, fmt::SafeDebug};
+use async_trait::async_trait;
+use azure_core::{base64, fmt::SafeDebug, http::Page, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use time::OffsetDateTime;
@@ -648,6 +649,16 @@ pub struct ListCertificatePropertiesResult {
     pub value: Vec<CertificateProperties>,
 }
 
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+impl Page for ListCertificatePropertiesResult {
+    type Item = CertificateProperties;
+    type IntoIter = <Vec<CertificateProperties> as IntoIterator>::IntoIter;
+    async fn into_items(self) -> Result<Self::IntoIter> {
+        Ok(self.value.into_iter())
+    }
+}
+
 /// A list of certificates that have been deleted in this vault.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -662,6 +673,16 @@ pub struct ListDeletedCertificatePropertiesResult {
     pub value: Vec<DeletedCertificateProperties>,
 }
 
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+impl Page for ListDeletedCertificatePropertiesResult {
+    type Item = DeletedCertificateProperties;
+    type IntoIter = <Vec<DeletedCertificateProperties> as IntoIterator>::IntoIter;
+    async fn into_items(self) -> Result<Self::IntoIter> {
+        Ok(self.value.into_iter())
+    }
+}
+
 /// The certificate issuer list result.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -674,6 +695,16 @@ pub struct ListIssuerPropertiesResult {
     /// issuers.
     #[serde(default)]
     pub value: Vec<IssuerProperties>,
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+impl Page for ListIssuerPropertiesResult {
+    type Item = IssuerProperties;
+    type IntoIter = <Vec<IssuerProperties> as IntoIterator>::IntoIter;
+    async fn into_items(self) -> Result<Self::IntoIter> {
+        Ok(self.value.into_iter())
+    }
 }
 
 /// The certificate merge parameters

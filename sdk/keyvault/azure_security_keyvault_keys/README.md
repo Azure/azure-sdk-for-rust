@@ -254,13 +254,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let mut pager = client.list_key_properties(None)?.into_stream();
-    while let Some(keys) = pager.try_next().await? {
-        let keys = keys.into_body().await?.value;
-        for key in keys {
-            // Get the key name from the ID.
-            let name = key.resource_id()?.name;
-            println!("Found Key with Name: {}", name);
-        }
+    while let Some(key) = pager.try_next().await? {
+        // Get the key name from the ID.
+        let name = key.resource_id()?.name;
+        println!("Found Key with Name: {}", name);
     }
 
     Ok(())

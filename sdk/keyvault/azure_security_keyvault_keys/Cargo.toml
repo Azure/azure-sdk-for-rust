@@ -14,6 +14,7 @@ keywords = ["sdk", "azure", "keyvault", "security", "keys"]
 categories = ["api-bindings"]
 
 [dependencies]
+async-trait = { workspace = true }
 azure_core = { workspace = true }
 futures = { workspace = true }
 serde = { workspace = true }

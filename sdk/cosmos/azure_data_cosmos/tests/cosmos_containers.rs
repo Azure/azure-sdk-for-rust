@@ -82,10 +82,8 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
         None,
     )?;
     let mut ids = vec![];
-    while let Some(page) = query_pager.try_next().await? {
-        for db in page.into_items() {
-            ids.push(db.id);
-        }
+    while let Some(db) = query_pager.try_next().await? {
+        ids.push(db.id);
     }
     assert_eq!(vec![properties.id.clone()], ids);
 
@@ -141,10 +139,8 @@ pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> 
         None,
     )?;
     let mut ids = vec![];
-    while let Some(page) = query_pager.try_next().await? {
-        for db in page.into_items() {
-            ids.push(db.id);
-        }
+    while let Some(db) = query_pager.try_next().await? {
+        ids.push(db.id);
     }
     assert!(ids.is_empty());
 

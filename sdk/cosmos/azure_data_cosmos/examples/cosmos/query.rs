@@ -60,24 +60,18 @@ impl QueryCommand {
                 let mut items =
                     container_client.query_items::<serde_json::Value>(&query, pk, None)?;
 
-                while let Some(page) = items.try_next().await? {
-                    println!("Results Page");
-                    println!("  Items:");
-                    for item in page.into_items() {
-                        println!("    * {:#?}", item);
-                    }
+                println!("Items:");
+                while let Some(item) = items.try_next().await? {
+                    println!("  * {:#?}", item);
                 }
                 Ok(())
             }
             Subcommands::Databases { query } => {
                 let mut dbs = client.query_databases(query, None)?;
 
-                while let Some(page) = dbs.try_next().await? {
-                    println!("Results Page");
-                    println!("  Databases:");
-                    for item in page.into_items() {
-                        println!("    * {:#?}", item);
-                    }
+                println!("Databases:");
+                while let Some(item) = dbs.try_next().await? {
+                    println!("  * {:#?}", item);
                 }
                 Ok(())
             }
@@ -85,12 +79,9 @@ impl QueryCommand {
                 let db_client = client.database_client(&database);
                 let mut dbs = db_client.query_containers(query, None)?;
 
-                while let Some(page) = dbs.try_next().await? {
-                    println!("Results Page");
-                    println!("  Containers:");
-                    for item in page.into_items() {
-                        println!("    * {:#?}", item);
-                    }
+                println!("Containers:");
+                while let Some(item) = dbs.try_next().await? {
+                    println!("  * {:#?}", item);
                 }
                 Ok(())
             }

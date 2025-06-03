@@ -277,13 +277,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let mut pager = client.list_secret_properties(None)?.into_stream();
-    while let Some(secrets) = pager.try_next().await? {
-        let secrets = secrets.into_body().await?.value;
-        for secret in secrets {
-            // Get the secret name from the ID.
-            let name = secret.resource_id()?.name;
-            println!("Found Secret with Name: {}", name);
-        }
+    while let Some(secret) = pager.try_next().await? {
+        // Get the secret name from the ID.
+        let name = secret.resource_id()?.name;
+        println!("Found Secret with Name: {}", name);
     }
 
     Ok(())

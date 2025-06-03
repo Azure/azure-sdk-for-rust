@@ -26,11 +26,10 @@ pub async fn single_partition_query(context: TestContext) -> Result<(), Box<dyn 
     let container_client =
         test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-    let mut results = container_client.query_items("select * from docs c", "partition0", None)?;
-    let mut result_items: Vec<MockItem> = Vec::new();
-    while let Some(page) = results.try_next().await? {
-        result_items.extend(page.into_items());
-    }
+    let result_items: Vec<MockItem> = container_client
+        .query_items("select * from docs c", "partition0", None)?
+        .try_collect()
+        .await?;
     assert_eq!(
         collect_matching_items(&items, |p| p.partition_key == "partition0"),
         result_items
@@ -61,11 +60,10 @@ pub async fn single_partition_query_with_parameters(
     // Query for items with that merge order
     let query = Query::from("select * from c where c.mergeOrder = @some_value")
         .with_parameter("@some_value", merge_order)?;
-    let mut results = container_client.query_items(query, "partition1", None)?;
-    let mut result_items: Vec<MockItem> = Vec::new();
-    while let Some(page) = results.try_next().await? {
-        result_items.extend(page.into_items());
-    }
+    let result_items: Vec<MockItem> = container_client
+        .query_items(query, "partition1", None)?
+        .try_collect()
+        .await?;
     assert_eq!(
         collect_matching_items(&items, |p| p.merge_order == merge_order),
         result_items
@@ -86,12 +84,10 @@ pub async fn single_partition_query_with_projection(
     let container_client =
         test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-    let mut results =
-        container_client.query_items("select value c.id from c", "partition1", None)?;
-    let mut result_items: Vec<String> = Vec::new();
-    while let Some(page) = results.try_next().await? {
-        result_items.extend(page.into_items());
-    }
+    let result_items: Vec<String> = container_client
+        .query_items("select value c.id from c", "partition1", None)?
+        .try_collect()
+        .await?;
     assert_eq!(
         items
             .iter()
@@ -116,15 +112,14 @@ pub async fn cross_partition_query_with_projection_and_filter(
     let container_client =
         test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-    let mut results = container_client.query_items(
-        "select value c.id from c where c.mergeOrder between 40 and 60",
-        (),
-        None,
-    )?;
-    let mut result_items: Vec<String> = Vec::new();
-    while let Some(page) = results.try_next().await? {
-        result_items.extend(page.into_items());
-    }
+    let result_items: Vec<String> = container_client
+        .query_items(
+            "select value c.id from c where c.mergeOrder between 40 and 60",
+            (),
+            None,
+        )?
+        .try_collect()
+        .await?;
     assert_eq!(
         items
             .iter()
