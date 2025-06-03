@@ -64,6 +64,7 @@
     "reqwest",
     "runtimes",
     "rustup",
+    "rustdoc",
     "seekable",
     "servicebus",
     "stylesheet",

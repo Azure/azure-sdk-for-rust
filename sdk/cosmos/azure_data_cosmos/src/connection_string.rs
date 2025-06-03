@@ -77,7 +77,7 @@ mod tests {
     #[allow(rustdoc::bare_urls)]
     pub fn test_regular_connection_string() {
         let connection_string =
-            "AccountEndpoint=https://accountname.documents.azure.com:443/;AccountKey=accountkey";
+            "AccountEndpoint=https://accountname.documents.azure.com:443/;AccountKey=key";
         let secret = Secret::new(connection_string);
         let connection_str = ConnectionString::try_from(&secret).unwrap();
 
@@ -86,7 +86,7 @@ mod tests {
             connection_str.account_endpoint
         );
 
-        assert_eq!("accountkey", connection_str.account_key.secret());
+        assert_eq!("key", connection_str.account_key.secret());
     }
 
     #[test]
@@ -113,7 +113,7 @@ mod tests {
     #[test]
     pub fn test_connection_string_missing_account_endpoint() {
         test_bad_connection_string(
-            "AccountKey=accountkey",
+            "AccountKey=key",
             "invalid connection string, missing 'AccountEndpoint",
         );
     }
