@@ -8,7 +8,7 @@ use std::{
     ops::Deref,
     sync::Arc,
 };
-use typespec_client_core::http::{self, policies::Policy, Format, JsonFormat};
+use typespec_client_core::http::{self, policies::Policy};
 
 /// Execution pipeline.
 ///
@@ -34,17 +34,14 @@ use typespec_client_core::http::{self, policies::Policy, Format, JsonFormat};
 /// cannot be enforced by code). All policies except Transport policy can assume there is another following policy (so
 /// `self.pipeline[0]` is always valid).
 #[derive(Debug, Clone)]
-pub struct Pipeline<F: Format = JsonFormat>(http::Pipeline<F>);
+pub struct Pipeline(http::Pipeline);
 
-impl<F: Format> Pipeline<F> {
+impl Pipeline {
     /// Creates a new pipeline given the client library crate name and version,
     /// alone with user-specified and client library-specified policies.
     ///
     /// Crates can simply pass `option_env!("CARGO_PKG_NAME")` and `option_env!("CARGO_PKG_VERSION")` for the
     /// `crate_name` and `crate_version` arguments respectively.
-    ///
-    /// In addition, this constructor allows for specifying the response format (e.g. JSON, XML) to be used
-    /// when deserializing the response body.
     pub fn new(
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
@@ -78,8 +75,8 @@ impl<F: Format> Pipeline<F> {
 }
 
 // TODO: Should we instead use the newtype pattern?
-impl<F: Format> Deref for Pipeline<F> {
-    type Target = http::Pipeline<F>;
+impl Deref for Pipeline {
+    type Target = http::Pipeline;
     fn deref(&self) -> &Self::Target {
         &self.0
     }

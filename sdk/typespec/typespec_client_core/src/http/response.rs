@@ -65,14 +65,6 @@ impl RawResponse {
     pub fn into_body(self) -> ResponseBody {
         self.body
     }
-
-    /// Convert this raw response into a typed response with specified model and format types.
-    pub fn into_model_response<T, F>(self) -> Response<T, F> {
-        Response {
-            raw: self,
-            _phantom: PhantomData,
-        }
-    }
 }
 
 /// A typed HTTP response.
@@ -84,28 +76,12 @@ impl RawResponse {
 /// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
 /// However, because the type `T` is just a marker type, the user can also deserialize the body into a different type by calling [`Response::into_json_body`] or [`Response::into_xml_body`],
 /// or access the raw body using [`Response::into_raw_body`].
-pub struct Response<T = ResponseBody, F = JsonFormat> {
+pub struct Response<T, F = JsonFormat> {
     raw: RawResponse,
     _phantom: PhantomData<(T, F)>,
 }
 
 impl<T, F> Response<T, F> {
-    /// Create an HTTP response from an asynchronous stream of bytes.
-    pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
-        Self {
-            raw: RawResponse::new(status, headers, stream),
-            _phantom: PhantomData,
-        }
-    }
-
-    /// Create an HTTP response from raw bytes.
-    pub fn from_bytes(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self {
-        Self {
-            raw: RawResponse::from_bytes(status, headers, bytes),
-            _phantom: PhantomData,
-        }
-    }
-
     /// Get the status code from the response.
     pub fn status(&self) -> StatusCode {
         self.raw.status()
@@ -180,6 +156,15 @@ impl<T, F> fmt::Debug for Response<T, F> {
             .field("status", &self.raw.status())
             // TODO: Sanitize headers and emit body as "(body)".
             .finish_non_exhaustive()
+    }
+}
+
+impl<T, F> From<RawResponse> for Response<T, F> {
+    fn from(raw: RawResponse) -> Self {
+        Self {
+            raw,
+            _phantom: PhantomData,
+        }
     }
 }
 
@@ -272,20 +257,12 @@ mod tests {
     use crate::http::{RawResponse, Response, StatusCode};
 
     #[tokio::test]
-    pub async fn can_extract_raw_body_regardless_of_t_or_f(
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {
         pub struct MyModel;
 
         {
-            let response_raw: Response =
-                Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice());
-            let body = response_raw.into_raw_body();
-            assert_eq!(b"Hello", &*body.collect().await?);
-        }
-
-        {
             let response_t: Response<MyModel> =
-                Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice());
+                RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice()).into();
             let body = response_t.into_raw_body();
             assert_eq!(b"Hello", &*body.collect().await?);
         }
@@ -299,7 +276,8 @@ mod tests {
 
         // Test converting a typed Response to RawResponse using Into
         let typed_response: Response<MyModel> =
-            Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello World".as_slice());
+            RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"Hello World".as_slice())
+                .into();
 
         // Convert using Into trait
         let raw_response: RawResponse = typed_response.into();
@@ -314,6 +292,7 @@ mod tests {
 
     mod json {
         use crate::http::headers::Headers;
+        use crate::http::RawResponse;
         use crate::http::Response;
         use crate::http::StatusCode;
         use serde::Deserialize;
@@ -335,20 +314,22 @@ mod tests {
 
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
-            Response::from_bytes(
+            RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 r#"{"name":"my_secret","value":"my_value"}"#,
             )
+            .into()
         }
 
         /// A sample service client function to return a list of secrets.
         fn list_secrets() -> Response<GetSecretListResponse> {
-            Response::from_bytes(
+            RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 r#"{"value":[{"name":"my_secret","value":"my_value"}],"nextLink":"?page=2"}"#,
             )
+            .into()
         }
 
         #[tokio::test]
@@ -388,7 +369,7 @@ mod tests {
             assert_eq!(model.next_link, Some("?page=2".to_string()));
 
             let response: Response<GetSecretListResponse> =
-                Response::from_bytes(status, headers, bytes);
+                RawResponse::from_bytes(status, headers, bytes).into();
             assert_eq!(response.status(), StatusCode::Ok);
             let model = response
                 .into_body()
@@ -401,6 +382,7 @@ mod tests {
     #[cfg(feature = "xml")]
     mod xml {
         use crate::http::headers::Headers;
+        use crate::http::RawResponse;
         use crate::http::Response;
         use crate::http::StatusCode;
         use crate::http::XmlFormat;
@@ -415,11 +397,11 @@ mod tests {
 
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse, XmlFormat> {
-            Response::from_bytes(
+            RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 "<GetSecretResponse><name>my_secret</name><value>my_value</value></GetSecretResponse>",
-            )
+            ).into()
         }
 
         #[tokio::test]

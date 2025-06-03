@@ -24,8 +24,7 @@ impl HttpError {
     /// Create an error from an HTTP response.
     ///
     /// This does not check whether the response was successful and should only be used with unsuccessful responses.
-    pub async fn new(response: impl Into<RawResponse>) -> Self {
-        let response = response.into();
+    pub async fn new(response: RawResponse) -> Self {
         let status = response.status();
         let headers: HashMap<String, String> = response
             .headers()

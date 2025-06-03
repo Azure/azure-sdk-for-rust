@@ -64,7 +64,7 @@ impl CosmosPipeline {
         resource_link: ResourceLink,
     ) -> azure_core::Result<Response<T>> {
         let ctx = ctx.with_value(resource_link);
-        self.pipeline.send(&ctx, request).await
+        Ok(self.pipeline.send(&ctx, request).await?.into())
     }
 
     pub fn send_query_request<T: DeserializeOwned>(

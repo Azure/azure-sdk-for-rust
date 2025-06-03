@@ -3,11 +3,9 @@
 
 use crate::http::{
     policies::{CustomHeadersPolicy, Policy, TransportPolicy},
-    ClientOptions, Context, Request, Response, RetryOptions,
+    ClientOptions, Context, RawResponse, Request, RetryOptions,
 };
 use std::sync::Arc;
-
-use super::Format;
 
 /// Execution pipeline.
 ///
@@ -32,17 +30,13 @@ use super::Format;
 /// cannot be enforced by code). All policies except Transport policy can assume there is another following policy (so
 /// `self.pipeline[0]` is always valid).
 #[derive(Debug, Clone)]
-pub struct Pipeline<F: Format> {
+pub struct Pipeline {
     pipeline: Vec<Arc<dyn Policy>>,
-    _phantom: std::marker::PhantomData<F>,
 }
 
-impl<F: Format> Pipeline<F> {
+impl Pipeline {
     /// Creates a new pipeline given the client library crate name and version,
     /// along with user-specified and client library-specified policies.
-    ///
-    /// In addition, this constructor allows for specifying the response format (e.g. JSON, XML) to be used
-    /// when deserializing the response body.
     pub fn new(
         options: ClientOptions,
         per_call_policies: Vec<Arc<dyn Policy>>,
@@ -73,10 +67,7 @@ impl<F: Format> Pipeline<F> {
 
         pipeline.push(transport);
 
-        Self {
-            pipeline,
-            _phantom: std::marker::PhantomData,
-        }
+        Self { pipeline }
     }
 
     pub fn replace_policy(&mut self, policy: Arc<dyn Policy>, position: usize) -> Arc<dyn Policy> {
@@ -87,15 +78,14 @@ impl<F: Format> Pipeline<F> {
         &self.pipeline
     }
 
-    pub async fn send<T>(
+    pub async fn send(
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
-    ) -> crate::Result<Response<T, F>> {
+    ) -> crate::Result<RawResponse> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
-            .map(|r| r.into_model_response())
     }
 }
 
@@ -104,8 +94,8 @@ mod tests {
     use super::*;
     use crate::{
         http::{
-            headers::Headers, policies::PolicyResult, JsonFormat, Method, RawResponse, StatusCode,
-            TransportOptions,
+            headers::Headers, policies::PolicyResult, JsonFormat, Method, RawResponse, Response,
+            StatusCode, TransportOptions,
         },
         stream::BytesStream,
     };
@@ -140,14 +130,15 @@ mod tests {
         }
 
         // Simulated service method
-        async fn service_method() -> crate::Result<Response<Model>> {
+        async fn service_method() -> crate::Result<Response<Model, JsonFormat>> {
             let options = ClientOptions {
                 transport: Some(TransportOptions::new_custom_policy(Arc::new(Responder {}))),
                 ..Default::default()
             };
-            let pipeline: Pipeline<JsonFormat> = Pipeline::new(options, Vec::new(), Vec::new());
+            let pipeline = Pipeline::new(options, Vec::new(), Vec::new());
             let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
-            pipeline.send(&Context::default(), &mut request).await
+            let raw_response = pipeline.send(&Context::default(), &mut request).await?;
+            Ok(raw_response.into())
         }
 
         let model = service_method().await.unwrap().into_body().await.unwrap();

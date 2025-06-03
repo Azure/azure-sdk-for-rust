@@ -27,15 +27,6 @@ pub trait DeserializeWith<F: Format>: Sized {
     async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self>;
 }
 
-/// Implements [`DeserializeWith<T>`] for [`ResponseBody`], by simply returning the body stream as is.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl<F: Format> DeserializeWith<F> for ResponseBody {
-    async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
-        Ok(body)
-    }
-}
-
 /// Implements [`DeserializeWith<DefaultFormat>`] for an arbitrary type `D`
 /// that implements [`serde::de::DeserializeOwned`] by deserializing the response body to the specified type using [`serde_json`].
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
