@@ -13,6 +13,7 @@ use crate::Deserializable;
 use azure_core::error::ErrorKind;
 use azure_core::{Result, Uuid};
 use std::time::Duration;
+use typespec_macros::SafeDebug;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type DeliveryImplementation = super::fe2o3::messaging::messaging_types::Fe2o3AmqpDelivery;
@@ -893,7 +894,7 @@ fn test_size_of_serialized_timestamp() {
     assert!(size_result.is_ok());
 }
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(SafeDebug, Clone, PartialEq, Default)]
 pub enum AmqpMessageBody {
     Binary(Vec<Vec<u8>>),
     Sequence(Vec<AmqpList>),
@@ -1039,7 +1040,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(SafeDebug, Clone, PartialEq, Default)]
 pub struct AmqpApplicationProperties(pub AmqpOrderedMap<String, AmqpSimpleValue>);
 
 impl AmqpApplicationProperties {
@@ -1053,16 +1054,17 @@ impl AmqpApplicationProperties {
 }
 /// An AMQP message.
 ///
-/// This is a simplified version of the AMQP message
-/// that is used in the Azure SDK for Event Hubs
-/// and is not a complete implementation of the AMQP message
-/// as defined in the AMQP specification
-/// <https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html>
+/// An AMQP message is a composite type that contains various fields
+/// that describe the message, its body, and its properties.
+///
+/// It is defined in the following specification:
+/// <https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#section-message-format>
 ///
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpMessage {
     pub(crate) body: AmqpMessageBody,
     pub(crate) header: Option<AmqpMessageHeader>,
+    // Application properties may potentially contain PII.
     pub(crate) application_properties: Option<AmqpApplicationProperties>,
     pub(crate) message_annotations: Option<AmqpAnnotations>,
     pub(crate) delivery_annotations: Option<AmqpAnnotations>,

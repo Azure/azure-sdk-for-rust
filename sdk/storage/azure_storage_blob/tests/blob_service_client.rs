@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::BlobServiceClientGetPropertiesOptions;
+use azure_storage_blob::models::BlobServiceClientGetPropertiesOptions;
 use azure_storage_blob_test::get_blob_service_client;
 use std::error::Error;
 

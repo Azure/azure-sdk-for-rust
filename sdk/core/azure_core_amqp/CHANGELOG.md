@@ -14,6 +14,8 @@
 
 ### Other Changes
 
+- Use the `SafeDebug` macro to hide potential PII from trace logs. The SafeDebug macro currently applies to the `AmqpApplicationProperties` and `AmqpMessageBody` types.
+
 ## 0.3.1 (2025-05-08)
 
 ### Other Changes

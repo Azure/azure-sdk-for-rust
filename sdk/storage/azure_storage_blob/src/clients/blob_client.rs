@@ -8,13 +8,15 @@ use crate::{
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
-    models::{AccessTier, BlockList, BlockListType, BlockLookupList},
+    models::{
+        AccessTier, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        BlobClientGetPropertiesOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
+        BlockListType, BlockLookupList,
+    },
     pipeline::StorageHeadersPolicy,
-    BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
-    BlobClientOptions, BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions,
-    BlobClientSetTierOptions, BlockBlobClient, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-    BlockBlobClientUploadOptions,
+    BlobClientOptions, BlockBlobClient,
 };
 use azure_core::{
     credentials::TokenCredential,

@@ -20,3 +20,7 @@ uncommittedblobs
 policyid
 ruleid
 westus
+testblob1
+testblob2
+testblob3
+testblob4

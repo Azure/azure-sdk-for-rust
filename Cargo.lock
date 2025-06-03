@@ -386,6 +386,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity",
  "azure_storage_blob_test",
+ "futures",
  "serde",
  "time",
  "tokio",
