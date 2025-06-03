@@ -118,10 +118,17 @@ impl RecoverableConnection {
         Ok(())
     }
 
+    /// Returns the name of the connection as specified by the client.
     pub(crate) fn get_connection_id(&self) -> &str {
         &self.connection_name
     }
 
+    /// Closes the connection to the Event Hubs service.
+    ///
+    /// # Notes
+    /// This method will close the underlying AMQP connection, if it exists. It will also cause all outstanding sends and receives
+    /// to complete with an error.
+    ///
     pub(crate) async fn close_connection(&self) -> Result<()> {
         let connection = self.ensure_connection().await?;
 
@@ -163,40 +170,18 @@ impl RecoverableConnection {
     ///
     /// Note: The Cbs client returned integrates retry operations into the authorization call.
     pub(crate) async fn get_cbs_client(self: &Arc<Self>) -> Result<AmqpClaimsBasedSecurityClient> {
-        trace!(
-            "Creating CBS client for connection: {}",
-            self.connection_name
-        );
-        let connection = self.ensure_connection().await?;
-        let cbs_client = retry_azure_operation(
-            || async {
-                let session = AmqpSession::new();
-                session.begin(connection.as_ref(), None).await?;
-
-                let cbs = Arc::new(AmqpClaimsBasedSecurity::new(session)?);
-                // Attach the CBS client to the session.
-                cbs.attach().await?;
-                Ok(cbs)
-            },
-            &self.retry_options,
-            Some(Self::should_retry_cbs_response),
-        )
-        .await?;
-
-        trace!(
-            "CBS client created for connection: {}",
-            self.connection_name
-        );
         Ok(AmqpClaimsBasedSecurityClient {
             recoverable_connection: self.clone(),
-            cbs_client,
         })
     }
 
+    /// Creates a new sender for the Event Hubs service.
+    ///
+    /// # Notes
+    ///
+    /// This sender integrates retry operations into the send operation.
     pub(crate) async fn get_sender(self: &Arc<Self>, path: Url) -> Result<AmqpSenderClient> {
-        self.ensure_connection().await?;
-
-        // Ensure we can create a sender for the Event Hub.
+        // Ensure we can create a sender for the Event Hub path.
         self.ensure_sender(&path).await?;
 
         Ok(AmqpSenderClient {
@@ -265,15 +250,6 @@ impl RecoverableConnection {
         Ok(rv)
     }
 
-    async fn ensure_amqp_management(self: &Arc<Self>) -> Result<Arc<AmqpManagement>> {
-        let management_client = self
-            .mgmt_client
-            .get_or_try_init(|| self.create_management_client())
-            .await?;
-
-        Ok(management_client.clone())
-    }
-
     async fn create_connection(&self) -> Result<Arc<AmqpConnection>> {
         trace!("Creating connection for {}.", self.url);
         let connection = Arc::new(AmqpConnection::new());
@@ -302,6 +278,15 @@ impl RecoverableConnection {
         Ok(connection)
     }
 
+    async fn ensure_amqp_management(self: &Arc<Self>) -> Result<Arc<AmqpManagement>> {
+        let management_client = self
+            .mgmt_client
+            .get_or_try_init(|| self.create_management_client())
+            .await?;
+
+        Ok(management_client.clone())
+    }
+
     async fn create_management_client(self: &Arc<Self>) -> Result<Arc<AmqpManagement>> {
         // Clients must call ensure_connection before calling ensure_management_client.
 
@@ -327,6 +312,30 @@ impl RecoverableConnection {
         )?);
         management.attach().await?;
         Ok(management)
+    }
+
+    /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
+    async fn ensure_amqp_cbs(self: &Arc<Self>) -> Result<Arc<AmqpClaimsBasedSecurity>> {
+        debug!("Ensuring AMQP Claims-Based Security (CBS) client.");
+
+        let connection = self.ensure_connection().await?;
+        let cbs_client = retry_azure_operation(
+            || async {
+                let session = AmqpSession::new();
+                session.begin(connection.as_ref(), None).await?;
+
+                let cbs = Arc::new(AmqpClaimsBasedSecurity::new(session)?);
+
+                // Attach the CBS client to the session.
+                cbs.attach().await?;
+                Ok(cbs)
+            },
+            &self.retry_options,
+            Some(Self::should_retry_cbs_response),
+        )
+        .await?;
+        debug!("AMQP Claims-Based Security (CBS) client ensured.");
+        Ok(cbs_client)
     }
 
     async fn ensure_receiver(
@@ -582,7 +591,6 @@ impl AmqpManagementApis for AmqpManagementClient {
 /// to worry about retrying the operation themselves.
 pub(crate) struct AmqpClaimsBasedSecurityClient {
     recoverable_connection: Arc<RecoverableConnection>,
-    cbs_client: Arc<AmqpClaimsBasedSecurity>,
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -597,12 +605,12 @@ impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurityClient {
     ) -> Result<()> {
         let result = retry_azure_operation(
             || {
-                let cbs_client = self.cbs_client.clone();
                 let path = path.clone();
                 let token_type = token_type.clone();
                 let secret = secret.clone();
 
                 async move {
+                    let cbs_client = self.recoverable_connection.ensure_amqp_cbs().await?;
                     cbs_client
                         .authorize_path(path, token_type, secret, expires_on)
                         .await
