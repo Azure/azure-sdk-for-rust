@@ -36,12 +36,11 @@ use azure_core::{
     xml, Result,
 };
 use std::sync::Arc;
-use typespec_client_core::http::XmlFormat;
 
 pub struct BlobContainerClient {
     pub(crate) container_name: String,
     pub(crate) endpoint: Url,
-    pub(crate) pipeline: Pipeline<XmlFormat>,
+    pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
 }
 
@@ -111,7 +110,7 @@ impl BlobContainerClient {
     pub async fn acquire_lease(
         &self,
         options: Option<BlobContainerClientAcquireLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientAcquireLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientAcquireLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -158,7 +157,7 @@ impl BlobContainerClient {
     pub async fn break_lease(
         &self,
         options: Option<BlobContainerClientBreakLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientBreakLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientBreakLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -206,7 +205,7 @@ impl BlobContainerClient {
         lease_id: String,
         proposed_lease_id: String,
         options: Option<BlobContainerClientChangeLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientChangeLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientChangeLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -249,7 +248,7 @@ impl BlobContainerClient {
     pub async fn create(
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
-    ) -> Result<Response<(), XmlFormat>> {
+    ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -295,7 +294,7 @@ impl BlobContainerClient {
     pub async fn delete(
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
-    ) -> Result<Response<(), XmlFormat>> {
+    ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -336,7 +335,7 @@ impl BlobContainerClient {
     pub async fn filter_blobs(
         &self,
         options: Option<BlobContainerClientFilterBlobsOptions<'_>>,
-    ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
+    ) -> Result<Response<FilterBlobSegment>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -386,7 +385,7 @@ impl BlobContainerClient {
     pub async fn get_access_policy(
         &self,
         options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<Vec<SignedIdentifier>, XmlFormat>> {
+    ) -> Result<Response<Vec<SignedIdentifier>>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -419,7 +418,7 @@ impl BlobContainerClient {
     pub async fn get_account_info(
         &self,
         options: Option<BlobContainerClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientGetAccountInfoResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientGetAccountInfoResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -465,7 +464,7 @@ impl BlobContainerClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientGetPropertiesResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -496,12 +495,13 @@ impl BlobContainerClient {
     pub fn list_blob_flat_segment(
         &self,
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
-    ) -> Result<Response<ListBlobsFlatSegmentResponse, XmlFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        url = url.join(&self.container_name)?;
-        url.query_pairs_mut()
+    ) -> Result<Pager<ListBlobsFlatSegmentResponse>> {
+        let options = options.unwrap_or_default().into_owned();
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        first_url = first_url.join(&self.container_name)?;
+        first_url
+            .query_pairs_mut()
             .append_pair("comp", "list")
             .append_key_only("flat")
             .append_pair("restype", "container");
@@ -587,12 +587,13 @@ impl BlobContainerClient {
         &self,
         delimiter: &str,
         options: Option<BlobContainerClientListBlobHierarchySegmentOptions<'_>>,
-    ) -> Result<Response<ListBlobsHierarchySegmentResponse, XmlFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        url = url.join(&self.container_name)?;
-        url.query_pairs_mut()
+    ) -> Result<Pager<ListBlobsHierarchySegmentResponse>> {
+        let options = options.unwrap_or_default().into_owned();
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        first_url = first_url.join(&self.container_name)?;
+        first_url
+            .query_pairs_mut()
             .append_pair("comp", "list")
             .append_key_only("hierarchy")
             .append_pair("restype", "container");
@@ -680,7 +681,7 @@ impl BlobContainerClient {
         &self,
         lease_id: String,
         options: Option<BlobContainerClientReleaseLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientReleaseLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientReleaseLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -723,7 +724,7 @@ impl BlobContainerClient {
         &self,
         source_container_name: String,
         options: Option<BlobContainerClientRenameOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRenameResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientRenameResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -760,7 +761,7 @@ impl BlobContainerClient {
         &self,
         lease_id: String,
         options: Option<BlobContainerClientRenewLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRenewLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientRenewLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -801,7 +802,7 @@ impl BlobContainerClient {
     pub async fn restore(
         &self,
         options: Option<BlobContainerClientRestoreOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRestoreResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientRestoreResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -840,7 +841,7 @@ impl BlobContainerClient {
         &self,
         container_acl: RequestContent<Vec<SignedIdentifier>>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientSetAccessPolicyResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -886,7 +887,7 @@ impl BlobContainerClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<(), XmlFormat>> {
+    ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

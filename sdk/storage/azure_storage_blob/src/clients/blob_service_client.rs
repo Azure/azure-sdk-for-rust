@@ -16,7 +16,6 @@ use azure_core::{
     Result,
 };
 use std::sync::Arc;
-use typespec_client_core::http::XmlFormat;
 
 /// A client to interact with an Azure storage account.
 pub struct BlobServiceClient {
@@ -87,7 +86,7 @@ impl BlobServiceClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
-        Ok(self.client.get_properties(options).await?.with_format())
+    ) -> Result<Response<StorageServiceProperties>> {
+        self.client.get_properties(options).await
     }
 }
