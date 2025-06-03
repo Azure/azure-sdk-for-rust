@@ -100,7 +100,7 @@ impl CosmosClient {
     ///
     /// # Arguments
     ///
-    /// * `connection_string` - the connection string to use for the client, e.g. AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey
+    /// * `connection_string` - the connection string to use for the client, e.g. `AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey`
     /// * `options` - Optional configuration for the client.
     ///
     /// # Examples
@@ -115,7 +115,6 @@ impl CosmosClient {
     ///     .unwrap();
     /// ```
     #[cfg(feature = "key_auth")]
-    #[allow(rustdoc::bare_urls)]
     pub fn with_connection_string(
         connection_string: Secret,
         options: Option<CosmosClientOptions>,
