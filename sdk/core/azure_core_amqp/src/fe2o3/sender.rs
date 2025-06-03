@@ -10,7 +10,6 @@ use crate::{
     session::AmqpSession,
     AmqpOrderedMap, AmqpSymbol, AmqpValue,
 };
-use async_trait::async_trait;
 use azure_core::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
@@ -37,7 +36,8 @@ impl Fe2o3AmqpSender {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSenderApis for Fe2o3AmqpSender {
     async fn attach(
         &self,
@@ -129,26 +129,35 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
             .max_message_size())
     }
 
-    async fn send(
-        &self,
-        message: impl Into<AmqpMessage> + std::fmt::Debug + Send,
-        options: Option<AmqpSendOptions>,
-    ) -> Result<AmqpSendOutcome> {
+    async fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome>
+    where
+        M: Into<AmqpMessage> + std::fmt::Debug + Send,
+    {
         let message: AmqpMessage = message.into();
-        let message: fe2o3_amqp_types::messaging::Message<
+        self.send_ref(&message, options).await
+    }
+
+    async fn send_ref<M>(
+        &self,
+        message: M,
+        options: Option<AmqpSendOptions>,
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: AsRef<AmqpMessage> + std::fmt::Debug + Send,
+    {
+        let message = message.as_ref();
+        let message = fe2o3_amqp_types::messaging::Message::<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
-        > = message.into();
-        let mut sendable = fe2o3_amqp::link::delivery::Sendable {
+        >::from(message);
+
+        let sendable = fe2o3_amqp::link::delivery::Sendable {
             message,
-            message_format: 0,
-            settled: Default::default(),
+            message_format: options
+                .as_ref()
+                .and_then(|opt| opt.message_format)
+                .unwrap_or(0),
+            settled: options.as_ref().and_then(|opt| opt.settled),
         };
-        if let Some(options) = options {
-            if let Some(message_format) = options.message_format {
-                sendable.message_format = message_format;
-            }
-            sendable.settled = options.settled;
-        }
 
         let outcome = self
             .sender

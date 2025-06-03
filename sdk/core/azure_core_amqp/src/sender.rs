@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::error::AmqpDescribedError;
-
 use super::messaging::{AmqpMessage, AmqpSource, AmqpTarget};
 use super::session::AmqpSession;
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::{ReceiverSettleMode, SenderSettleMode};
-use async_trait::async_trait;
+use crate::error::AmqpDescribedError;
 use azure_core::error::Result;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -29,8 +27,8 @@ pub struct AmqpSenderOptions {
 }
 impl AmqpSenderOptions {}
 
-#[allow(unused_variables)]
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpSenderApis {
     async fn attach(
         &self,
@@ -41,11 +39,21 @@ pub trait AmqpSenderApis {
     ) -> Result<()>;
     async fn detach(self) -> Result<()>;
     async fn max_message_size(&self) -> Result<Option<u64>>;
-    async fn send(
+    async fn send<M>(
         &self,
-        message: impl Into<AmqpMessage> + std::fmt::Debug + Send,
+        message: M,
         options: Option<AmqpSendOptions>,
-    ) -> Result<AmqpSendOutcome>;
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: Into<AmqpMessage> + std::fmt::Debug + Send;
+
+    async fn send_ref<M>(
+        &self,
+        message: M,
+        options: Option<AmqpSendOptions>,
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: AsRef<AmqpMessage> + std::fmt::Debug + Send;
 }
 
 /// Possible outcomes from a Send operation.
@@ -113,6 +121,7 @@ pub enum AmqpSendOutcome {
 }
 
 /// If the message was modified in transit, this struct contains the details of the modification.
+#[derive(Debug, Default)]
 pub struct SendModification {
     /// The message was not delivered to the receiver.
     pub delivery_failed: Option<bool>,
@@ -122,11 +131,14 @@ pub struct SendModification {
     pub message_annotations: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
 }
 
+unsafe impl Send for AmqpSendOutcome {}
+
 pub struct AmqpSender {
     implementation: SenderImplementation,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSenderApis for AmqpSender {
     async fn attach(
         &self,
@@ -146,12 +158,22 @@ impl AmqpSenderApis for AmqpSender {
     async fn max_message_size(&self) -> Result<Option<u64>> {
         self.implementation.max_message_size().await
     }
-    async fn send(
-        &self,
-        message: impl Into<AmqpMessage> + std::fmt::Debug + Send,
-        options: Option<AmqpSendOptions>,
-    ) -> Result<AmqpSendOutcome> {
+    async fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome>
+    where
+        M: Into<AmqpMessage> + std::fmt::Debug + Send,
+    {
         self.implementation.send(message, options).await
+    }
+
+    async fn send_ref<M>(
+        &self,
+        message: M,
+        options: Option<AmqpSendOptions>,
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: AsRef<AmqpMessage> + std::fmt::Debug + Send,
+    {
+        self.implementation.send_ref(message, options).await
     }
 }
 

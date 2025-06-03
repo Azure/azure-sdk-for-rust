@@ -16,6 +16,9 @@ pub enum ErrorKind {
     /// Missing Message Sender
     MissingMessageSender,
 
+    /// Missing Message Receiver
+    MissingMessageReceiver,
+
     /// The connection is not yet open.
     MissingConnection,
 
@@ -60,6 +63,7 @@ impl std::fmt::Display for EventHubsError {
         match &self.kind {
             ErrorKind::UnableToAddConnection => f.write_str("Unable to add connection."),
             ErrorKind::MissingMessageSender => f.write_str("Missing message sender."),
+            ErrorKind::MissingMessageReceiver => f.write_str("Missing message receiver."),
             ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
             ErrorKind::InvalidManagementResponse => f.write_str("Invalid management response"),
             ErrorKind::UnableToAddAuthenticationToken => {

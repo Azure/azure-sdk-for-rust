@@ -25,6 +25,7 @@ async fn get_lots_of_properties_one_thread(ctx: TestContext) -> Result<(), Box<d
     }
 
     let properties = futures::future::join_all(property_futures).await;
+    assert_eq!(properties.len(), 600);
     for result in properties {
         match result {
             Ok(_properties) => {
@@ -46,6 +47,7 @@ async fn get_lots_of_properties_multiple_threads(ctx: TestContext) -> Result<(),
     let eventhub = env::var("EVENTHUB_NAME")?;
 
     const THREAD_COUNT: usize = 100;
+    const OPERATION_COUNT: usize = 10;
 
     let credential = recording.credential();
 
@@ -60,7 +62,11 @@ async fn get_lots_of_properties_multiple_threads(ctx: TestContext) -> Result<(),
     for _ in 0..THREAD_COUNT {
         let client = client.clone();
         property_futures.push(tokio::task::spawn(async move {
-            client.get_eventhub_properties().await
+            let mut results = Vec::new();
+            for _ in 0..OPERATION_COUNT {
+                results.push(client.get_eventhub_properties().await);
+            }
+            Ok::<_, Box<dyn Error + Send + Sync>>(results)
         }));
     }
 

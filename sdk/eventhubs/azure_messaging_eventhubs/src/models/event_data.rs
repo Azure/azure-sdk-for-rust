@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::models::{AmqpMessage, AmqpSimpleValue, AmqpValue, MessageId};
+use azure_core::fmt::SafeDebug;
 use azure_core_amqp::message::{AmqpAnnotationKey, AmqpMessageBody, AmqpMessageProperties};
 use std::{
     collections::HashMap,
@@ -32,12 +33,15 @@ use std::{
 /// println!("{:?}", event_data);
 /// ```
 ///
-#[derive(Default, PartialEq, Clone, Debug)]
+#[derive(Default, PartialEq, Clone, SafeDebug)]
+#[safe(true)]
 pub struct EventData {
+    #[safe(false)]
     body: Option<Vec<u8>>,
     content_type: Option<String>,
     correlation_id: Option<MessageId>,
     message_id: Option<MessageId>,
+    #[safe(false)]
     properties: Option<HashMap<String, AmqpSimpleValue>>,
 }
 
@@ -198,7 +202,7 @@ impl ReceivedEventData {
 
             for (key, value) in annotations.0.iter() {
                 if let AmqpAnnotationKey::Symbol(symbol) = key {
-                    if symbol == ENQUEUED_TIME_UTC {
+                    if *symbol == ENQUEUED_TIME_UTC {
                         if let AmqpValue::TimeStamp(timestamp) = value {
                             return timestamp.0;
                         }
@@ -216,9 +220,9 @@ impl ReceivedEventData {
             let annotations = self.message.message_annotations()?;
             for (key, value) in annotations.0.iter() {
                 if let AmqpAnnotationKey::Symbol(symbol) = key {
-                    if symbol == OFFSET {
+                    if *symbol == OFFSET {
                         if let AmqpValue::String(offset_value) = value {
-                            return Some(offset_value);
+                            return Some(offset_value.clone());
                         }
                     }
                 }
@@ -233,9 +237,9 @@ impl ReceivedEventData {
             let annotations = self.message.message_annotations()?;
             for (key, value) in annotations.0.iter() {
                 if let AmqpAnnotationKey::Symbol(symbol) = key {
-                    if symbol == SEQUENCE_NUMBER {
+                    if *symbol == SEQUENCE_NUMBER {
                         if let AmqpValue::Long(sequence_number_value) = value {
-                            return Some(sequence_number_value);
+                            return Some(*sequence_number_value);
                         }
                     }
                 }
@@ -252,9 +256,9 @@ impl ReceivedEventData {
             let annotations = self.message.message_annotations()?;
             for (key, value) in annotations.0.iter() {
                 if let AmqpAnnotationKey::Symbol(symbol) = key {
-                    if symbol == PARTITION_KEY {
+                    if *symbol == PARTITION_KEY {
                         if let AmqpValue::String(partition_key_value) = value {
-                            return Some(partition_key_value);
+                            return Some(partition_key_value.clone());
                         }
                     }
                 }
@@ -273,10 +277,10 @@ impl ReceivedEventData {
             if let Some(annotations) = self.message.message_annotations() {
                 for (key, value) in annotations.0.iter() {
                     if let AmqpAnnotationKey::Symbol(symbol) = key {
-                        if symbol != ENQUEUED_TIME_UTC
-                            && symbol != OFFSET
-                            && symbol != SEQUENCE_NUMBER
-                            && symbol != PARTITION_KEY
+                        if *symbol != ENQUEUED_TIME_UTC
+                            && *symbol != OFFSET
+                            && *symbol != SEQUENCE_NUMBER
+                            && *symbol != PARTITION_KEY
                         {
                             system_properties.insert(symbol.0.clone(), value.clone());
                         }

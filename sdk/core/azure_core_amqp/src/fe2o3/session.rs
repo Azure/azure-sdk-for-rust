@@ -7,7 +7,6 @@ use crate::{
     session::{AmqpSessionApis, AmqpSessionOptions},
     AmqpError,
 };
-use async_trait::async_trait;
 use azure_core::Result;
 use std::{
     borrow::BorrowMut,
@@ -63,7 +62,8 @@ impl Fe2o3AmqpSession {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSessionApis for Fe2o3AmqpSession {
     async fn begin(
         &self,
@@ -104,7 +104,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
                 session_builder = session_builder.properties(
                     properties
                         .iter()
-                        .map(|(k, v)| (k.0.into(), v.into()))
+                        .map(|(k, v)| (k.into(), v.into()))
                         .collect(),
                 );
             }

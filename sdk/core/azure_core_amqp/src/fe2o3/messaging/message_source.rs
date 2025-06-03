@@ -32,7 +32,7 @@ impl From<AmqpSource> for fe2o3_amqp_types::messaging::Source {
             builder = builder.dynamic_node_properties(
                 dynamic_node_properties
                     .iter()
-                    .map(|(k, v)| (k.0.into(), v.into()))
+                    .map(|(k, v)| (k.into(), v.into()))
                     .collect::<fe2o3_amqp_types::definitions::Fields>(),
             );
         }
@@ -43,7 +43,7 @@ impl From<AmqpSource> for fe2o3_amqp_types::messaging::Source {
             builder = builder.filter(
                 filter
                     .iter()
-                    .map(|(k, v)| (k.0.into(), v.into()))
+                    .map(|(k, v)| (k.into(), v.into()))
                     .collect::<fe2o3_amqp_types::messaging::FilterSet>(),
             );
         }

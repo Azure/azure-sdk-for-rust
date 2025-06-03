@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
-use async_trait::async_trait;
 use azure_core::{error::Result, http::Url};
 use std::fmt::Debug;
 use time::Duration;
@@ -40,7 +39,8 @@ pub struct AmqpConnectionOptions {
 
 impl AmqpConnectionOptions {}
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpConnectionApis {
     async fn open(
         &self,
@@ -62,7 +62,8 @@ pub struct AmqpConnection {
     pub(crate) implementation: ConnectionImplementation,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpConnectionApis for AmqpConnection {
     async fn open(
         &self,

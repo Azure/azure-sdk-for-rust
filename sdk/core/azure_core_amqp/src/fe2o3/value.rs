@@ -10,10 +10,10 @@ use crate::{
     },
     AmqpError,
 };
+use azure_core::error::ErrorKind;
 use serde_amqp::primitives::Timestamp;
 use serde_bytes::ByteBuf;
 use std::time::{Duration, UNIX_EPOCH};
-use typespec::error::ErrorKind;
 
 use super::error::Fe2o3SerializationError;
 
@@ -91,6 +91,55 @@ impl From<&AmqpTimestamp> for fe2o3_amqp_types::primitives::Timestamp {
     }
 }
 
+impl From<&AmqpSimpleValue> for fe2o3_amqp_types::primitives::SimpleValue {
+    fn from(v: &AmqpSimpleValue) -> Self {
+        match v {
+            AmqpSimpleValue::Boolean(b) => fe2o3_amqp_types::primitives::SimpleValue::Bool(*b),
+            AmqpSimpleValue::UByte(b) => fe2o3_amqp_types::primitives::SimpleValue::Ubyte(*b),
+            AmqpSimpleValue::UShort(s) => fe2o3_amqp_types::primitives::SimpleValue::Ushort(*s),
+            AmqpSimpleValue::UInt(i) => fe2o3_amqp_types::primitives::SimpleValue::Uint(*i),
+            AmqpSimpleValue::ULong(l) => fe2o3_amqp_types::primitives::SimpleValue::Ulong(*l),
+            AmqpSimpleValue::Byte(b) => fe2o3_amqp_types::primitives::SimpleValue::Byte(*b),
+            AmqpSimpleValue::Short(s) => fe2o3_amqp_types::primitives::SimpleValue::Short(*s),
+            AmqpSimpleValue::Int(i) => fe2o3_amqp_types::primitives::SimpleValue::Int(*i),
+            AmqpSimpleValue::Long(l) => fe2o3_amqp_types::primitives::SimpleValue::Long(*l),
+            AmqpSimpleValue::Float(f) => {
+                fe2o3_amqp_types::primitives::SimpleValue::Float((*f).into())
+            }
+            AmqpSimpleValue::Double(d) => {
+                fe2o3_amqp_types::primitives::SimpleValue::Double((*d).into())
+            }
+            AmqpSimpleValue::Char(c) => fe2o3_amqp_types::primitives::SimpleValue::Char(*c),
+            AmqpSimpleValue::TimeStamp(t) => {
+                fe2o3_amqp_types::primitives::SimpleValue::Timestamp(t.into())
+            }
+            AmqpSimpleValue::Uuid(u) => fe2o3_amqp_types::primitives::SimpleValue::Uuid(
+                fe2o3_amqp_types::primitives::Uuid::from(*(*u).as_bytes()),
+            ),
+            AmqpSimpleValue::Binary(b) => {
+                fe2o3_amqp_types::primitives::SimpleValue::Binary(ByteBuf::from(b.clone()))
+            }
+            AmqpSimpleValue::String(s) => {
+                fe2o3_amqp_types::primitives::SimpleValue::String(s.clone())
+            }
+            AmqpSimpleValue::Symbol(s) => {
+                fe2o3_amqp_types::primitives::SimpleValue::Symbol(s.into())
+            }
+            AmqpSimpleValue::Null => fe2o3_amqp_types::primitives::SimpleValue::Null,
+            AmqpSimpleValue::Decimal128(d) => {
+                fe2o3_amqp_types::primitives::SimpleValue::Decimal128(
+                    serde_amqp::primitives::Dec128::from(*d),
+                )
+            }
+            AmqpSimpleValue::Decimal64(d) => fe2o3_amqp_types::primitives::SimpleValue::Decimal64(
+                serde_amqp::primitives::Dec64::from(*d),
+            ),
+            AmqpSimpleValue::Decimal32(d) => fe2o3_amqp_types::primitives::SimpleValue::Decimal32(
+                serde_amqp::primitives::Dec32::from(*d),
+            ),
+        }
+    }
+}
 impl From<AmqpSimpleValue> for fe2o3_amqp_types::primitives::SimpleValue {
     fn from(v: AmqpSimpleValue) -> Self {
         match v {
@@ -111,7 +160,9 @@ impl From<AmqpSimpleValue> for fe2o3_amqp_types::primitives::SimpleValue {
             AmqpSimpleValue::TimeStamp(t) => {
                 fe2o3_amqp_types::primitives::SimpleValue::Timestamp(t.into())
             }
-            AmqpSimpleValue::Uuid(u) => fe2o3_amqp_types::primitives::SimpleValue::Uuid(u.into()),
+            AmqpSimpleValue::Uuid(u) => fe2o3_amqp_types::primitives::SimpleValue::Uuid(
+                fe2o3_amqp_types::primitives::Uuid::from(*u.as_bytes()),
+            ),
             AmqpSimpleValue::Binary(b) => {
                 fe2o3_amqp_types::primitives::SimpleValue::Binary(ByteBuf::from(b))
             }
