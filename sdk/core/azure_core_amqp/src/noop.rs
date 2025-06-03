@@ -33,6 +33,7 @@ pub(crate) struct NoopAmqpReceiver {}
 #[derive(Default, Clone)]
 pub(crate) struct NoopAmqpSession {}
 
+#[derive(Debug)]
 pub(crate) struct NoopAmqpDelivery {}
 
 #[derive(Default)]
