@@ -7,7 +7,7 @@ use crate::http::{
 };
 use std::sync::Arc;
 
-use super::{Format, JsonFormat};
+use super::Format;
 
 /// Execution pipeline.
 ///
@@ -95,7 +95,7 @@ impl<F: Format> Pipeline<F> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
-            .map(|r| r.with_model_type())
+            .map(|r| r.into_model_response())
     }
 }
 
@@ -103,7 +103,10 @@ impl<F: Format> Pipeline<F> {
 mod tests {
     use super::*;
     use crate::{
-        http::{headers::Headers, policies::PolicyResult, Method, StatusCode, TransportOptions},
+        http::{
+            headers::Headers, policies::PolicyResult, JsonFormat, Method, RawResponse, StatusCode,
+            TransportOptions,
+        },
         stream::BytesStream,
     };
     use bytes::Bytes;
@@ -125,7 +128,7 @@ mod tests {
             ) -> PolicyResult {
                 let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
                 let stream: BytesStream = buffer.into();
-                let response = Response::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
+                let response = RawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
                 Ok(std::future::ready(response).await)
             }
         }

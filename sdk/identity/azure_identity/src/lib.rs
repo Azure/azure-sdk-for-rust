@@ -14,7 +14,7 @@ mod process;
 
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    http::Response,
+    http::RawResponse,
     Error, Result,
 };
 pub use azure_developer_cli_credential::*;
@@ -40,12 +40,12 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-async fn deserialize<T>(credential_name: &str, res: Response) -> Result<T>
+async fn deserialize<T>(credential_name: &str, res: RawResponse) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
     let t: T = res
-        .into_raw_body()
+        .into_body()
         .json()
         .await
         .with_context(ErrorKind::Credential, || {

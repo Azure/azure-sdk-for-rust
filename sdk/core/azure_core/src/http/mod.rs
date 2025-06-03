@@ -17,7 +17,7 @@ pub use options::*;
 pub use pager::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
-pub use response::Response;
+pub use response::{RawResponse, Response};
 
 pub use typespec_client_core::http::response;
 pub use typespec_client_core::http::{

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::http::{
-    clients, policies::Policy, Context, DeserializeWith, Format, HttpClient, Request, Response,
+    clients, policies::Policy, Context, HttpClient, RawResponse, Request,
 };
 use std::sync::Arc;
 use typespec::error::Result;
@@ -38,18 +38,16 @@ impl TransportOptions {
     }
 
     /// Use these options to send a request.
-    pub async fn send<T: DeserializeWith<F>, F: Format>(
+    pub async fn send(
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
-    ) -> Result<Response<T, F>> {
+    ) -> Result<RawResponse> {
         use TransportOptionsImpl as I;
-        let raw_response = match &self.inner {
+        match &self.inner {
             I::Http { http_client } => http_client.execute_request(request).await,
             I::Custom(s) => s.send(ctx, request, &[]).await,
-        };
-
-        raw_response.map(|r| r.with_model_type())
+        }
     }
 }
 

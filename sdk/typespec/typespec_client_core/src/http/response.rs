@@ -15,54 +15,34 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send +
 #[cfg(target_arch = "wasm32")]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
-/// An HTTP response.
+/// A raw HTTP response with status, headers, and body.
 ///
-/// The type parameter `T` is a marker type that indicates what the caller should expect to be able to deserialize the body into.
-/// Service client methods should return a `Response<SomeModel>` where `SomeModel` is the service-specific response type.
-/// For example, a service client method that returns a list of secrets should return `Response<ListSecretsResponse>`.
-///
-/// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
-/// However, because the type `T` is just a marker type, the user can also deserialize the body into a different type by calling [`Response::into_json_body`] or [`Response::into_xml_body`],
-/// or access the raw body using [`Response::into_raw_body`].
-pub struct Response<T = ResponseBody, F = JsonFormat> {
+/// This is the non-generic representation of an HTTP response that contains
+/// the fundamental components without any type-level information about
+/// how the body should be deserialized.
+#[derive(Debug)]
+pub struct RawResponse {
     status: StatusCode,
     headers: Headers,
     body: ResponseBody,
-    _phantom: PhantomData<(T, F)>,
 }
 
-impl<F> Response<ResponseBody, F> {
-    /// Converts an "untyped" raw response into a typed response, using the specified format.
-    ///
-    /// This method is intended for use in service clients, to "set" the model type for a raw response received from the pipeline.
-    pub fn with_model_type<T, F2>(self) -> Response<T, F2> {
-        Response {
-            status: self.status,
-            headers: self.headers,
-            body: self.body,
-            _phantom: PhantomData,
-        }
-    }
-}
-
-impl<T, F> Response<T, F> {
-    /// Create an HTTP response from an asynchronous stream of bytes.
+impl RawResponse {
+    /// Create a raw HTTP response from an asynchronous stream of bytes.
     pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
         Self {
             status,
             headers,
             body: ResponseBody::new(stream),
-            _phantom: PhantomData,
         }
     }
 
-    /// Create an HTTP response from raw bytes.
+    /// Create a raw HTTP response from raw bytes.
     pub fn from_bytes(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self {
         Self {
             status,
             headers,
             body: ResponseBody::from_bytes(bytes),
-            _phantom: PhantomData,
         }
     }
 
@@ -76,9 +56,69 @@ impl<T, F> Response<T, F> {
         &self.headers
     }
 
-    /// Deconstruct the HTTP response into its components.
+    /// Deconstruct the raw HTTP response into its components.
     pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
         (self.status, self.headers, self.body)
+    }
+
+    /// Get the raw response body.
+    pub fn into_body(self) -> ResponseBody {
+        self.body
+    }
+
+    /// Convert this raw response into a typed response with specified model and format types.
+    pub fn into_model_response<T, F>(self) -> Response<T, F> {
+        Response {
+            raw: self,
+            _phantom: PhantomData,
+        }
+    }
+}
+
+/// A typed HTTP response.
+///
+/// The type parameter `T` is a marker type that indicates what the caller should expect to be able to deserialize the body into.
+/// Service client methods should return a `Response<SomeModel>` where `SomeModel` is the service-specific response type.
+/// For example, a service client method that returns a list of secrets should return `Response<ListSecretsResponse>`.
+///
+/// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
+/// However, because the type `T` is just a marker type, the user can also deserialize the body into a different type by calling [`Response::into_json_body`] or [`Response::into_xml_body`],
+/// or access the raw body using [`Response::into_raw_body`].
+pub struct Response<T = ResponseBody, F = JsonFormat> {
+    raw: RawResponse,
+    _phantom: PhantomData<(T, F)>,
+}
+
+impl<T, F> Response<T, F> {
+    /// Create an HTTP response from an asynchronous stream of bytes.
+    pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
+        Self {
+            raw: RawResponse::new(status, headers, stream),
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Create an HTTP response from raw bytes.
+    pub fn from_bytes(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self {
+        Self {
+            raw: RawResponse::from_bytes(status, headers, bytes),
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Get the status code from the response.
+    pub fn status(&self) -> StatusCode {
+        self.raw.status()
+    }
+
+    /// Get the headers from the response.
+    pub fn headers(&self) -> &Headers {
+        self.raw.headers()
+    }
+
+    /// Deconstruct the HTTP response into its components.
+    pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
+        self.raw.deconstruct()
     }
 
     /// Fetches the entire body and returns it as a raw stream of bytes.
@@ -86,19 +126,7 @@ impl<T, F> Response<T, F> {
     /// This method will force the entire body to be downloaded from the server and consume the response.
     /// If you want to parse the body into a type, use [`Response::into_body`] instead.
     pub fn into_raw_body(self) -> ResponseBody {
-        self.body
-    }
-
-    /// Changes the format of the response body to the specified format.
-    ///
-    /// This method is intended for use in service clients, to "set" the model type for a raw response received from the pipeline.
-    pub fn with_format<F2>(self) -> Response<T, F2> {
-        Response {
-            status: self.status,
-            headers: self.headers,
-            body: self.body,
-            _phantom: PhantomData,
-        }
+        self.raw.into_body()
     }
 }
 
@@ -141,16 +169,23 @@ impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
     /// # }
     /// ```
     pub async fn into_body(self) -> crate::Result<T> {
-        T::deserialize_with(self.body).await
+        let body = self.raw.into_body();
+        T::deserialize_with(body).await
     }
 }
 
 impl<T, F> fmt::Debug for Response<T, F> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Response")
-            .field("status", &self.status)
+            .field("status", &self.raw.status())
             // TODO: Sanitize headers and emit body as "(body)".
             .finish_non_exhaustive()
+    }
+}
+
+impl<T, F> From<Response<T, F>> for RawResponse {
+    fn from(val: Response<T, F>) -> Self {
+        val.raw
     }
 }
 
@@ -234,7 +269,7 @@ impl fmt::Debug for ResponseBody {
 #[cfg(test)]
 mod tests {
     use crate::http::headers::Headers;
-    use crate::http::{Response, StatusCode};
+    use crate::http::{RawResponse, Response, StatusCode};
 
     #[tokio::test]
     pub async fn can_extract_raw_body_regardless_of_t_or_f(
@@ -254,6 +289,25 @@ mod tests {
             let body = response_t.into_raw_body();
             assert_eq!(b"Hello", &*body.collect().await?);
         }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn can_convert_response_to_raw_response() -> Result<(), Box<dyn std::error::Error>> {
+        pub struct MyModel;
+
+        // Test converting a typed Response to RawResponse using Into
+        let typed_response: Response<MyModel> =
+            Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello World".as_slice());
+
+        // Convert using Into trait
+        let raw_response: RawResponse = typed_response.into();
+
+        // Verify the raw response has the same data
+        assert_eq!(raw_response.status(), StatusCode::Ok);
+        let body = raw_response.into_body().collect().await?;
+        assert_eq!(b"Hello World", &*body);
 
         Ok(())
     }
