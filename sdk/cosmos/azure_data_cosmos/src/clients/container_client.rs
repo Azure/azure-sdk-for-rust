@@ -179,7 +179,7 @@ impl ContainerClient {
     pub async fn delete(
         &self,
         options: Option<DeleteContainerOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
@@ -259,7 +259,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
@@ -350,7 +350,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
@@ -440,7 +440,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
@@ -534,7 +534,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
@@ -607,7 +607,7 @@ impl ContainerClient {
         item_id: &str,
         patch: PatchDocument,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);

@@ -1,4 +1,4 @@
-use azure_core::http::{headers::Headers, PageStream, PagerResult, RawResponse, Response};
+use azure_core::http::{headers::Headers, PageStream, PagerResult, RawResponse};
 use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::constants;
