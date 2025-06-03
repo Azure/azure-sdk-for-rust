@@ -17,7 +17,7 @@ use azure_core::{
     },
 };
 use serde::Serialize;
-use std::{fmt::Debug, sync::Arc};
+use std::sync::Arc;
 
 #[cfg(feature = "key_auth")]
 use azure_core::credentials::Secret;
