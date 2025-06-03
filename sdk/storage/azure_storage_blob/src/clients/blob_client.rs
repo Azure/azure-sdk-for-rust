@@ -4,16 +4,16 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
+        BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetPropertiesOptions, BlobClientGetTagsOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
-        BlockListType, BlockLookupList,
+        BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
+        BlobClientSetTierOptions, BlobTags, BlockBlobClientCommitBlockListOptions,
+        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions, BlockBlobClient,
@@ -236,5 +236,18 @@ impl BlobClient {
         options: Option<BlobClientGetTagsOptions<'_>>,
     ) -> Result<Response<BlobTags>> {
         self.client.get_tags(options).await
+    }
+
+    /// Gets information related to the Storage account in which the blob resides.
+    /// This includes the `sku_name` and `account_kind`.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_account_info(
+        &self,
+        options: Option<BlobClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobClientGetAccountInfoResult>> {
+        self.client.get_account_info(options).await
     }
 }

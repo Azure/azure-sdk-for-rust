@@ -3,11 +3,14 @@
 
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
-    generated::models::BlobContainerClientGetPropertiesResult,
+    generated::models::{
+        BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
+    },
     models::{
         BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
-        BlobContainerClientSetMetadataOptions, ListBlobsFlatSegmentResponse,
+        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetPropertiesOptions,
+        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientSetMetadataOptions,
+        ListBlobsFlatSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -156,5 +159,18 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
     ) -> Result<Pager<ListBlobsFlatSegmentResponse>> {
         self.client.list_blob_flat_segment(options)
+    }
+
+    /// Gets information related to the Storage account in which the container resides.
+    /// This includes the `sku_name` and `account_kind`.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_account_info(
+        &self,
+        options: Option<BlobContainerClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientGetAccountInfoResult>> {
+        self.client.get_account_info(options).await
     }
 }

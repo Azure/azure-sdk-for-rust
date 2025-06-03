@@ -7,7 +7,8 @@ use azure_core::{
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AccessTier, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
+    AccessTier, AccountKind, BlobClientDownloadResultHeaders,
+    BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesResultHeaders,
     BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobTag, BlobTags,
     BlockBlobClientUploadOptions, LeaseState,
 };
@@ -326,47 +327,21 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-async fn test_blob_tags2(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
-    create_test_blob(&blob_client).await?;
 
-    // Set Tags with Tags Specified
-    let blob_tag_1 = BlobTag {
-        key: Some("hello".to_string()),
-        value: Some("world".to_string()),
-    };
-    let blob_tag_2 = BlobTag {
-        key: Some("ferris".to_string()),
-        value: Some("crab".to_string()),
-    };
-    let blob_tags = BlobTags {
-        blob_tag_set: Some(vec![blob_tag_1, blob_tag_2]),
-    };
-    blob_client
-        .set_tags(RequestContent::try_from(blob_tags.clone())?, None)
-        .await?;
+    // Act
+    let response = blob_client.get_account_info(None).await?;
 
     // Assert
-    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
-    assert!(test_blob_tag_equality(blob_tags, response_tags));
+    let sku_name = response.sku_name()?;
+    let account_kind = response.account_kind()?;
 
-    // Set Tags with No Tags (Clear Tags)
-    blob_client
-        .set_tags(
-            RequestContent::try_from(BlobTags {
-                blob_tag_set: Some(vec![]),
-            })?,
-            None,
-        )
-        .await?;
+    assert!(sku_name.is_some());
+    assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
 
-    // Assert
-    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
-    assert!(response_tags.blob_tag_set.is_none());
-
-    container_client.delete_container(None).await?;
     Ok(())
 }
