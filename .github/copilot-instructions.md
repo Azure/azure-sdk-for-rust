@@ -40,9 +40,3 @@ Use these instructions for test generation as well.
 -   The `tests` module should be conditioned on `#[cfg(test)]`.
 -   The `tests` module should always import APIs from `super`.
 -   Do not begin test function names with "test" unless necessary to disambiguate from the function being tested.
-
-## Validating and Linting
-
--   Always use `cargo test` to validate that the generated code compiles and passes all tests.
--   Use `cargo clippy` to validate that the generated code does not contain lint errors.
--   Combine commands to save time and reduce user interactions. For example, run `cargo clippy` and `cargo test` together, so that if `cargo clippy` succeeds, the tests will also be run without waiting.
