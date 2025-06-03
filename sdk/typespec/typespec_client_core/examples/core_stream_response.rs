@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Normally you'd deserialize into a type or `collect()` the body,
     // but this better simulates fetching multiple chunks from a slow response.
-    let mut body = response.into_raw_body();
+    let mut body = response.into_body();
     while let Some(data) = body.next().await {
         // Assume bytes are a string in this example.
         let page = String::from_utf8(data?.into())?;
@@ -40,7 +40,7 @@ mod client {
     use std::{cmp::min, task::Poll, time::Duration};
     use tracing::debug;
     use typespec_client_core::{
-        http::{headers::Headers, Response, StatusCode},
+        http::{headers::Headers, RawResponse, Response, StatusCode},
         Bytes,
     };
 
@@ -58,7 +58,7 @@ mod client {
     }
 
     #[tracing::instrument]
-    pub fn get_binary_data() -> typespec_client_core::Result<Response> {
+    pub fn get_binary_data() -> typespec_client_core::Result<RawResponse> {
         let bytes = Bytes::from_static(b"Hello, world!");
         let response = SlowResponse {
             bytes: bytes.repeat(5).into(),
@@ -66,7 +66,7 @@ mod client {
             bytes_read: 0,
         };
 
-        Ok(Response::new(
+        Ok(RawResponse::new(
             StatusCode::Ok,
             Headers::new(),
             Box::pin(response),
@@ -94,11 +94,7 @@ mod client {
             bytes_read: 0,
         };
 
-        Ok(Response::new(
-            StatusCode::Ok,
-            Headers::new(),
-            Box::pin(response),
-        ))
+        Ok(RawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response)).into())
     }
 
     struct SlowResponse {
