@@ -241,14 +241,29 @@ fn test_get_runtime() {
     let _runtime = get_async_runtime();
 }
 
+struct DummyRuntime;
+
+impl AsyncRuntime for DummyRuntime {
+    fn spawn(&self, _f: TaskFuture) -> SpawnedTask {
+        unimplemented!("DummyRuntime does not support spawning tasks");
+    }
+
+    fn sleep(
+        &self,
+        _duration: std::time::Duration,
+    ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
+        unimplemented!("DummyRuntime does not support sleeping");
+    }
+}
+
 // This test is ignored because by default, cargo test runs all tests in parallel, but
 // this test sets the runtime, which will fail if run in parallel with other tests that
 // get the runtime.
 #[test]
 #[ignore = "Skipping the runtime set test to avoid conflicts with parallel test execution"]
 fn test_set_runtime() {
+    let runtime = Arc::new(DummyRuntime);
     // Ensure that the runtime can be set without panicking
-    let runtime = Arc::new(standard_runtime::StdRuntime);
     set_async_runtime(runtime.clone()).unwrap();
 
     // Ensure that setting the runtime again fails

@@ -150,6 +150,8 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 /// Sets the current [`AsyncRuntime`] to enable running operations which need to interact with an
 /// asynchronous runtime.
 ///
+/// # Arguments
+/// * `runtime` - An instance of a type that implements the [`AsyncRuntime`] trait.
 ///
 /// # Returns
 ///  Ok if the async runtime was set successfully, or an error if it has already been set.
@@ -167,17 +169,10 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 ///
 /// impl AsyncRuntime for CustomRuntime {
 ///    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
-///        // Custom implementation for spawning tasks
-///        Box::pin(async move {
-///            f.await;
-///            Ok(())
-///         })
+///      unimplemented!("Custom spawn not implemented");
 ///    }
 ///    fn sleep(&self, duration: std::time::Duration) -> TaskFuture {
-///       // Custom implementation for sleeping
-///       Box::pin(async move {
-///            std::thread::sleep(duration);
-///         })
+///      unimplemented!("Custom sleep not implemented");
 ///    }
 ///  }
 ///
