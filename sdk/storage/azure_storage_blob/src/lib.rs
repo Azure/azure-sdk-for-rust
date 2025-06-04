@@ -19,6 +19,7 @@ pub mod models {
         BlobClientDownloadResult, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+        BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResultHeaders,
         BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
         BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
         BlobContainerClientGetPropertiesResultHeaders,
