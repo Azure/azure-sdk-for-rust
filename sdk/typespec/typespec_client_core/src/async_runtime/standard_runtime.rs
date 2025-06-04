@@ -11,12 +11,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(not(target_arch = "wasm32"))]
 use std::{
     future,
-    future::Future,
-    pin::Pin,
     sync::{Arc, Mutex},
     task::{Context, Poll, Waker},
     thread,
 };
+use std::{future::Future, pin::Pin};
 #[cfg(not(target_arch = "wasm32"))]
 use tracing::debug;
 
@@ -152,7 +151,10 @@ impl AsyncRuntime for StdRuntime {
     /// Uses a simple thread based implementation for sleep. A more efficient
     /// implementation is available by using the `tokio` crate feature.
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
-    fn sleep(&self, duration: std::time::Duration) -> TaskFuture {
+    fn sleep(
+        &self,
+        duration: std::time::Duration,
+    ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
         #[cfg(target_arch = "wasm32")]
         {
             panic!("std::thread::spawn is not supported on wasm32")

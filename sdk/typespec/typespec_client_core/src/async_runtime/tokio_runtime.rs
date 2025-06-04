@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{AsyncRuntime, SpawnedTask, TaskFuture};
+use std::pin::Pin;
 
 /// An [`AsyncRuntime`] using `tokio` based APIs.
 pub(crate) struct TokioRuntime;
@@ -16,7 +17,10 @@ impl AsyncRuntime for TokioRuntime {
         })
     }
 
-    fn sleep(&self, duration: std::time::Duration) -> TaskFuture {
+    fn sleep(
+        &self,
+        duration: std::time::Duration,
+    ) -> Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
         Box::pin(::tokio::time::sleep(duration))
     }
 }
