@@ -3,17 +3,15 @@
 
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
-    generated::models::{
-        BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadResult,
-    },
     models::{
-        AccessTier, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
+        AccessTier, BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientDownloadResult,
+        BlobClientGetAccountInfoOptions, BlobClientGetAccountInfoResult,
+        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResult, BlobClientGetTagsOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTagsOptions,
         BlobClientSetTierOptions, BlobTags, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockList, BlockListType,
+        BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions, BlockBlobClient,

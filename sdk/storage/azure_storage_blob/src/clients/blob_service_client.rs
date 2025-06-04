@@ -3,10 +3,9 @@
 
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
-    generated::models::BlobServiceClientGetAccountInfoResult,
     models::{
-        BlobServiceClientGetAccountInfoOptions, BlobServiceClientGetPropertiesOptions,
-        StorageServiceProperties,
+        BlobServiceClientGetAccountInfoOptions, BlobServiceClientGetAccountInfoResult,
+        BlobServiceClientGetPropertiesOptions, StorageServiceProperties,
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,

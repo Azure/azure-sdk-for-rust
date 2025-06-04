@@ -3,12 +3,10 @@
 
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
-    generated::models::{
-        BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
-    },
     models::{
         BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetPropertiesOptions,
+        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
         BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientSetMetadataOptions,
         ListBlobsFlatSegmentResponse,
     },
