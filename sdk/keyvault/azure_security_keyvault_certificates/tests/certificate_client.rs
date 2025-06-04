@@ -172,14 +172,11 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
 
     // List certificates.
     let mut pager = client.list_certificate_properties(None)?.into_stream();
-    while let Some(certificates) = pager.try_next().await? {
-        let certificates = certificates.into_body().await?.value;
-        for certificate in certificates {
-            // Get the certificate name from the ID.
-            let name = certificate.resource_id()?.name;
-            if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
-                names.remove(idx);
-            }
+    while let Some(certificate) = pager.try_next().await? {
+        // Get the certificate name from the ID.
+        let name = certificate.resource_id()?.name;
+        if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
+            names.remove(idx);
         }
     }
     assert!(names.is_empty());

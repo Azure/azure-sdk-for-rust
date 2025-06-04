@@ -271,13 +271,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let mut pager = client.list_certificate_properties(None)?.into_stream();
-    while let Some(certificates) = pager.try_next().await? {
-        let certificates = certificates.into_body().await?.value;
-        for certificate in certificates {
-            // Get the certificate name from the ID.
-            let name = certificate.resource_id()?.name;
-            println!("Found Certificate with Name: {}", name);
-        }
+    while let Some(certificate) = pager.try_next().await? {
+        // Get the certificate name from the ID.
+        let name = certificate.resource_id()?.name;
+        println!("Found Certificate with Name: {}", name);
     }
 
     Ok(())

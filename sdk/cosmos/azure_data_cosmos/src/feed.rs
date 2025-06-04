@@ -1,4 +1,5 @@
-use azure_core::http::{headers::Headers, PageStream, PagerResult, RawResponse};
+use async_trait::async_trait;
+use azure_core::http::{headers::Headers, ItemIterator, Page, PagerResult, RawResponse};
 use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::constants;
@@ -67,11 +68,11 @@ impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>, String> {
     fn from(value: FeedPage<T>) -> Self {
         let continuation = value.continuation.clone();
         match continuation {
-            Some(continuation) => PagerResult::Continue {
+            Some(continuation) => PagerResult::More {
                 response: value,
-                continuation,
+                next: continuation,
             },
-            None => PagerResult::Complete { response: value },
+            None => PagerResult::Done { response: value },
         }
     }
 }
@@ -99,7 +100,17 @@ impl<T: DeserializeOwned> FeedPage<T> {
     }
 }
 
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+impl<T: DeserializeOwned + Send> Page for FeedPage<T> {
+    type Item = T;
+    type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
+    async fn into_items(self) -> azure_core::Result<Self::IntoIter> {
+        Ok(self.items.into_iter())
+    }
+}
+
 /// Represents a stream of pages from a Cosmos DB feed.
 ///
 /// See [`FeedPage`] for more details on Cosmos DB feeds.
-pub type FeedPager<T> = PageStream<FeedPage<T>>;
+pub type FeedPager<T> = ItemIterator<FeedPage<T>>;
