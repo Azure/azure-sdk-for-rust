@@ -2,10 +2,9 @@
 // Licensed under the MIT License.
 
 use crate::{
-    credentials::TokenCredentialOptions,
     env::Env,
     process::{shell_exec, OutputProcessor},
-    validate_scope, validate_subscription, validate_tenant_id,
+    validate_scope, validate_subscription, validate_tenant_id, TokenCredentialOptions,
 };
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},

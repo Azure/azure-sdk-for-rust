@@ -18,8 +18,8 @@ use std::{
 };
 
 use super::{
-    client_assertion_credentials::{ClientAssertion, ClientAssertionCredential},
-    ClientAssertionCredentialOptions, TokenCredentialOptions,
+    ClientAssertion, ClientAssertionCredential, ClientAssertionCredentialOptions,
+    TokenCredentialOptions,
 };
 
 const AZURE_CLIENT_ID: &str = "AZURE_CLIENT_ID";
@@ -188,7 +188,7 @@ impl ClientAssertion for Token {
 mod tests {
     use super::*;
     use crate::{
-        credentials::client_assertion_credentials::tests::{is_valid_request, FAKE_ASSERTION},
+        client_assertion_credential::tests::{is_valid_request, FAKE_ASSERTION},
         env::Env,
         tests::*,
     };
