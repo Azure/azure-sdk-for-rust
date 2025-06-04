@@ -211,11 +211,7 @@ impl<P: Page> ItemIterator<P> {
     >(
         make_request: F,
     ) -> Self {
-        let stream = iter_from_callback(make_request);
-        Self {
-            stream,
-            current: None,
-        }
+        Self::from_stream(iter_from_callback(make_request))
     }
 
     /// Creates a [`ItemIterator<P>`] from a raw stream of [`Result<P>`](typespec::Result<P>) values.
@@ -394,8 +390,7 @@ impl<P> PageIterator<P> {
     >(
         make_request: F,
     ) -> Self {
-        let stream = iter_from_callback(make_request);
-        Self { stream }
+        Self::from_stream(iter_from_callback(make_request))
     }
 
     /// Creates a [`PageIterator<P>`] from a raw stream of [`Result<P>`](typespec::Result<P>) values.
@@ -446,8 +441,8 @@ fn iter_from_callback<
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, N>, typespec::Error>> + 'static,
 >(
     make_request: F,
-) -> Pin<BoxedStream<P>> {
-    Box::pin(unfold(
+) -> impl Stream<Item = Result<P, Error>> + 'static {
+    unfold(
         // We flow the `make_request` callback through the state value so that we can avoid cloning.
         (State::Init, make_request),
         |(state, make_request)| async move {
@@ -468,7 +463,7 @@ fn iter_from_callback<
             // Flow 'make_request' through to avoid cloning
             Some((item, (next_state, make_request)))
         },
-    ))
+    )
 }
 
 #[cfg(test)]
@@ -546,8 +541,8 @@ mod tests {
                 }
             }
         });
-        let pages: Vec<i32> = pager.try_collect().await.unwrap();
-        assert_eq!(vec![1, 2, 3], pages.as_slice())
+        let items: Vec<i32> = pager.try_collect().await.unwrap();
+        assert_eq!(vec![1, 2, 3], items.as_slice())
     }
 
     #[tokio::test]
