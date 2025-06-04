@@ -157,7 +157,7 @@ impl AsyncRuntime for StdRuntime {
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
         #[cfg(target_arch = "wasm32")]
         {
-            panic!("std::thread::spawn is not supported on wasm32")
+            panic!("sleep is not supported on wasm32")
         }
         #[cfg(not(target_arch = "wasm32"))]
         Box::pin(Sleep {
