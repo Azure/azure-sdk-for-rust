@@ -90,7 +90,7 @@ mod tests {
             headers::{self, HeaderName, Headers},
             policies::Policy,
             request::options::ClientRequestId,
-            Context, Method, Request, Response, StatusCode, TransportOptions,
+            Context, Method, Request, StatusCode, TransportOptions,
         },
         Bytes,
     };

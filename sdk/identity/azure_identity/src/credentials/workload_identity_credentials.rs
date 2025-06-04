@@ -193,7 +193,7 @@ mod tests {
         tests::*,
     };
     use azure_core::{
-        http::{headers::Headers, RawResponse, Response, StatusCode},
+        http::{headers::Headers, RawResponse, StatusCode},
         Bytes,
     };
     use std::{

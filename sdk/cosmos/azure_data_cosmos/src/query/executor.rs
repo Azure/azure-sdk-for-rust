@@ -1,4 +1,4 @@
-use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request, Response};
+use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
 
 use crate::{

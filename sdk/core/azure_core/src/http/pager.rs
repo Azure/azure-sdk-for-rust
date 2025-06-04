@@ -168,7 +168,7 @@ mod tests {
 
     use crate::http::{
         headers::{HeaderName, HeaderValue},
-        Pager, PagerResult, Response, StatusCode,
+        Pager, PagerResult, StatusCode,
     };
 
     #[tokio::test]

@@ -7,7 +7,7 @@ use crate::http::response::ResponseBody;
 
 /// A marker trait used to indicate the serialization format used for a response body.
 ///
-/// The [`Response<T, F>`] type uses this trait, in the `F` parameter, to determine how to deserialize the body in to the `T` model when using [`Response::into_body`].
+/// The [`Response`](crate::http::Response) type uses this trait, in the `F` parameter, to determine how to deserialize the body in to the `T` model when using [`Response::into_body`](crate::http::Response::into_body).
 ///
 /// ## How this trait works
 ///

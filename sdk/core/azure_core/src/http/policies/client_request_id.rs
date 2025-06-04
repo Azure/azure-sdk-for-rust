@@ -78,9 +78,7 @@ mod tests {
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
     use std::sync::Arc;
-    use typespec_client_core::http::{
-        policies::TransportPolicy, RawResponse, Response, TransportOptions,
-    };
+    use typespec_client_core::http::{policies::TransportPolicy, RawResponse, TransportOptions};
 
     #[tokio::test]
     async fn header_already_present() {

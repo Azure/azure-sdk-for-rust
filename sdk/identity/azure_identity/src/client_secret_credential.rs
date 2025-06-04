@@ -139,7 +139,7 @@ mod tests {
     use crate::tests::*;
     use azure_core::{
         authority_hosts::AZURE_PUBLIC_CLOUD,
-        http::{headers::Headers, RawResponse, Response, StatusCode},
+        http::{headers::Headers, RawResponse, StatusCode},
         Bytes, Result,
     };
     use std::vec;

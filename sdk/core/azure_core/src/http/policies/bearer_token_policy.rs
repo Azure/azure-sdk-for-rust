@@ -125,7 +125,7 @@ mod tests {
         http::{
             headers::{Headers, AUTHORIZATION},
             policies::Policy,
-            Request, Response, StatusCode,
+            Request, StatusCode,
         },
         Bytes, Result,
     };

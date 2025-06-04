@@ -151,7 +151,7 @@ mod tests {
     use async_trait::async_trait;
     use azure_core::{
         error::ErrorKind,
-        http::{RawResponse, Request, Response},
+        http::{RawResponse, Request},
         process::Executor,
         Error, Result,
     };
