@@ -15,7 +15,6 @@ pub mod fs;
 pub mod hmac;
 pub mod http;
 pub mod process;
-pub mod task;
 
 #[cfg(feature = "test")]
 pub mod test;
@@ -31,3 +30,10 @@ pub use typespec_client_core::{
 
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
+
+pub use typespec_client_core::get_async_runtime;
+pub use typespec_client_core::set_async_runtime;
+
+pub mod async_runtime {
+    pub use typespec_client_core::async_runtime::SpawnedTask;
+}

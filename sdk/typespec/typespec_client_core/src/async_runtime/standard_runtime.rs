@@ -1,18 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{SpawnedTask, TaskFuture, TaskSpawner};
+use super::{AsyncRuntime, SpawnedTask, TaskFuture};
+
 #[cfg(not(target_arch = "wasm32"))]
 use futures::{executor::LocalPool, task::SpawnExt};
+
+use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(not(target_arch = "wasm32"))]
 use std::{
     future,
     future::Future,
     pin::Pin,
     sync::{Arc, Mutex},
-    task::Waker,
-    task::{Context, Poll},
+    task::{Context, Poll, Waker},
     thread,
+    time::Duration,
 };
 #[cfg(not(target_arch = "wasm32"))]
 use tracing::debug;
@@ -78,11 +81,11 @@ impl Future for ThreadJoinFuture {
     }
 }
 
-/// A [`TaskSpawner`] using [`std::thread::spawn`].
+/// An [`AsyncRuntime`] using [`std::thread::spawn`].
 #[derive(Debug)]
-pub struct StdSpawner;
+pub struct StdRuntime;
 
-impl TaskSpawner for StdSpawner {
+impl AsyncRuntime for StdRuntime {
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {
         #[cfg(target_arch = "wasm32")]
@@ -141,6 +144,48 @@ impl TaskSpawner for StdSpawner {
             // Create a future that will complete when the thread joins
             let join_future = ThreadJoinFuture { join_state };
             Box::pin(join_future)
+        }
+    }
+
+    /// Creates a future that resolves after a specified duration of time.
+    ///
+    /// Uses a simple thread based implementation for sleep. A more efficient
+    /// implementation is available by using the `tokio` crate feature.
+    fn sleep(&self, duration: Duration) -> TaskFuture {
+        Box::pin(Sleep {
+            signal: None,
+            duration,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct Sleep {
+    signal: Option<Arc<AtomicBool>>,
+    duration: Duration,
+}
+
+impl Future for Sleep {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if let Some(signal) = &self.signal {
+            if signal.load(Ordering::Acquire) {
+                Poll::Ready(())
+            } else {
+                Poll::Pending
+            }
+        } else {
+            let signal = Arc::new(AtomicBool::new(false));
+            let waker = cx.waker().clone();
+            let duration = self.duration;
+            self.get_mut().signal = Some(signal.clone());
+            thread::spawn(move || {
+                thread::sleep(duration);
+                signal.store(true, Ordering::Release);
+                waker.wake();
+            });
+            Poll::Pending
         }
     }
 }

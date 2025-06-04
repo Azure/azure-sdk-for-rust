@@ -29,12 +29,17 @@
 //! ```
 //!
 //!
-use std::{fmt::Debug, future::Future, pin::Pin, sync::Arc};
+use std::{
+    fmt::Debug,
+    future::Future,
+    pin::Pin,
+    sync::{Arc, OnceLock},
+};
 
-mod standard_spawn;
+mod standard_runtime;
 
 #[cfg(feature = "tokio")]
-mod tokio_spawn;
+mod tokio_runtime;
 
 #[cfg(test)]
 mod tests;
@@ -61,9 +66,11 @@ pub type SpawnedTask = Pin<
 pub type SpawnedTask =
     Pin<Box<dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error>>> + 'static>>;
 
-/// An async command runner.
+/// An Asynchronous Runtime.
 ///
-pub trait TaskSpawner: Send + Sync + Debug {
+/// This trait defines the various
+///
+pub trait AsyncRuntime: Send + Sync + Debug {
     /// Spawn a task that executes a given future and returns the output.
     ///
     /// # Arguments
@@ -76,13 +83,13 @@ pub trait TaskSpawner: Send + Sync + Debug {
     ///
     /// # Example
     /// ```
-    /// use azure_core::task::{new_task_spawner, TaskSpawner};
+    /// use azure_core::async_runtime::{get_async_runtime, TaskSpawner};
     /// use futures::FutureExt;
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///   let spawner = new_task_spawner();
-    ///   let future = spawner.spawn(async {
+    ///   let async_runtime = get_async_runtime();
+    ///   let future = async_runtime.spawn(async {
     ///     // Simulate some work
     ///     std::thread::sleep(std::time::Duration::from_secs(1));
     ///   }.boxed());
@@ -99,41 +106,86 @@ pub trait TaskSpawner: Send + Sync + Debug {
     /// that can be awaited.
     ///
     fn spawn(&self, f: TaskFuture) -> SpawnedTask;
+
+    fn sleep(&self, duration: std::time::Duration) -> TaskFuture;
 }
 
-/// Creates a new [`TaskSpawner`] to enable running tasks asynchronously.
+static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock::new();
+
+/// Returns an [`AsyncRuntime`] to enable running operations which need to interact with an
+/// asynchronous runtime.
 ///
 ///
 /// The implementation depends on the target architecture and the features enabled:
-/// - If the `tokio` feature is enabled, it uses a tokio based spawner.
-/// - If the `tokio` feature is not enabled and the target architecture is not `wasm32`, it uses a std::thread based spawner.
+/// - If the `tokio` feature is enabled, it uses a tokio based spawner and timer.
+/// - If the `tokio` feature is not enabled and the target architecture is not `wasm32`, it uses a std::thread based spawner and timer.
 ///
 /// # Returns
-///  A new instance of a [`TaskSpawner`] which can be used to spawn background tasks.
+///  A new instance of a [`AsyncRuntime`] which can be used to spawn background tasks.
 ///
 /// # Example
 ///
 /// ```
-/// use azure_core::task::{new_task_spawner, TaskSpawner};
+/// use azure_core::get_async_runtime;
 /// use futures::FutureExt;
 ///
 /// #[tokio::main]
 /// async fn main() {
-///   let spawner = new_task_spawner();
-///   let handle = spawner.spawn(async {
+///   let async_runtime = get_async_runtime();
+///   let handle = async_runtime.spawn(async {
 ///     // Simulate some work
 ///     std::thread::sleep(std::time::Duration::from_secs(1));
 ///   }.boxed());
 /// }
 /// ```
 ///
-pub fn new_task_spawner() -> Arc<dyn TaskSpawner> {
+pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
+    ASYNC_RUNTIME_IMPLEMENTATION
+        .get_or_init(|| create_async_runtime())
+        .clone()
+}
+
+/// Sets the current [`AsyncRuntime`] to enable running operations which need to interact with an
+/// asynchronous runtime.
+///
+///
+/// # Returns
+///  Ok if the async runtime was set successfully, or an error if it has already been set.
+///
+/// # Example
+///
+/// ```
+/// use azure_core::async_runtime::{get_async_runtime, AsyncRuntime};
+/// use futures::FutureExt;
+///
+/// async fn main() {
+///   let async_runtime = set_async_runtime();
+///   let handle = async_runtime.spawn(async {
+///     // Simulate some work
+///     std::thread::sleep(std::time::Duration::from_secs(1));
+///   }.boxed());
+/// }
+/// ```
+///
+pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
+    let result = ASYNC_RUNTIME_IMPLEMENTATION.set(runtime);
+    if result.is_err() {
+        Err(crate::Error::message(
+            crate::error::ErrorKind::Other,
+            "Async runtime has already been set.",
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
     #[cfg(not(feature = "tokio"))]
     {
-        Arc::new(standard_spawn::StdSpawner)
+        Arc::new(standard_runtime::StdRuntime)
     }
     #[cfg(feature = "tokio")]
     {
-        Arc::new(tokio_spawn::TokioSpawner) as Arc<dyn TaskSpawner>
+        Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>
     }
 }
