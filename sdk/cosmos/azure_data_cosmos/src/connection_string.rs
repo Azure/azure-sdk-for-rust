@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::str::FromStr;
+
 use azure_core::{credentials::Secret, fmt::SafeDebug, Error};
 
 /// Represents a Cosmos DB connection string.
@@ -13,13 +15,13 @@ pub struct ConnectionString {
 impl TryFrom<&Secret> for ConnectionString {
     type Error = azure_core::Error;
     fn try_from(secret: &Secret) -> Result<Self, Self::Error> {
-        secret.secret().try_into()
+        secret.secret().parse()
     }
 }
 
-impl TryFrom<&str> for ConnectionString {
-    type Error = azure_core::Error;
-    fn try_from(connection_string: &str) -> Result<Self, Self::Error> {
+impl FromStr for ConnectionString {
+    type Err = azure_core::Error;
+    fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
             return Err(Error::new(
                 azure_core::error::ErrorKind::Other,
@@ -40,24 +42,27 @@ impl TryFrom<&str> for ConnectionString {
                 azure_core::error::ErrorKind::Other,
                 "invalid connection string",
             ))?;
-            match key {
-                "AccountEndpoint" => account_endpoint = Some(value.to_string()),
-                "AccountKey" => account_key = Some(Secret::new(value.to_string())),
-                _ => {}
+
+            if key.eq_ignore_ascii_case("AccountEndpoint") {
+                account_endpoint = Some(value.to_string())
+            }
+
+            if key.eq_ignore_ascii_case("AccountKey") {
+                account_key = Some(Secret::new(value.to_string()))
             }
         }
 
         let Some(endpoint) = account_endpoint else {
             return Err(Error::new(
                 azure_core::error::ErrorKind::Other,
-                "invalid connection string, missing 'AccountEndpoint",
+                "invalid connection string, missing 'AccountEndpoint'",
             ));
         };
 
         let Some(key) = account_key else {
             return Err(Error::new(
                 azure_core::error::ErrorKind::Other,
-                "invalid connection string, missing 'AccountKey",
+                "invalid connection string, missing 'AccountKey'",
             ));
         };
 
@@ -74,12 +79,28 @@ mod tests {
     use azure_core::credentials::Secret;
 
     #[test]
-    pub fn test_regular_connection_string() {
+    pub fn test_valid_connection_string() {
         let connection_string =
             "AccountEndpoint=https://accountname.documents.azure.com:443/;AccountKey=key";
         let secret = Secret::new(connection_string);
         let connection_str = ConnectionString::try_from(&secret).unwrap();
 
+        assert_eq!(
+            "https://accountname.documents.azure.com:443/",
+            connection_str.account_endpoint
+        );
+
+        assert_eq!("key", connection_str.account_key.secret());
+    }
+
+    #[test]
+    pub fn test_valid_connection_string_mismatched_case() {
+        let connection_string =
+            "accountendpoint=https://accountname.documents.azure.com:443/;accountkey=key";
+        let secret = Secret::new(connection_string);
+        let connection_str = ConnectionString::try_from(&secret).unwrap();
+
+        // should pass, we don't expect connection string keys to be case sensitive
         assert_eq!(
             "https://accountname.documents.azure.com:443/",
             connection_str.account_endpoint
@@ -105,7 +126,7 @@ mod tests {
     pub fn test_partially_malformed_connection_string() {
         test_bad_connection_string(
             "AccountEndpointhttps://accountname.documents.azure.com:443/AccountKey=accountkey",
-            "invalid connection string, missing 'AccountEndpoint",
+            "invalid connection string, missing 'AccountEndpoint'",
         );
     }
 
@@ -113,7 +134,7 @@ mod tests {
     pub fn test_connection_string_missing_account_endpoint() {
         test_bad_connection_string(
             "AccountKey=key",
-            "invalid connection string, missing 'AccountEndpoint",
+            "invalid connection string, missing 'AccountEndpoint'",
         );
     }
 
@@ -121,7 +142,7 @@ mod tests {
     pub fn test_connection_string_missing_account_key() {
         test_bad_connection_string(
             "AccountEndpoint=https://accountname.documents.azure.com:443/;",
-            "invalid connection string, missing 'AccountKey",
+            "invalid connection string, missing 'AccountKey'",
         );
     }
 

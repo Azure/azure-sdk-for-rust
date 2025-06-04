@@ -2,7 +2,7 @@
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, str::FromStr, sync::Arc};
 
 use azure_core::{credentials::Secret, http::TransportOptions, test::TestMode};
 use azure_core_test::TestContext;
@@ -74,7 +74,7 @@ impl TestAccount {
         options: Option<TestAccountOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let options = options.unwrap_or_default();
-        let connection_str = ConnectionString::try_from(connection_string)?;
+        let connection_str = ConnectionString::from_str(connection_string)?;
 
         // We need the context_id to be constant, so that record/replay work.
         let context_id = context.name().to_string();
