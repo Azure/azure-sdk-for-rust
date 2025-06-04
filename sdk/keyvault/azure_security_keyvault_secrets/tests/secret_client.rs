@@ -129,14 +129,11 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
 
     // List secrets.
     let mut pager = client.list_secret_properties(None)?.into_stream();
-    while let Some(secrets) = pager.try_next().await? {
-        let secrets = secrets.into_body().await?.value;
-        for secret in secrets {
-            // Get the secret name from the ID.
-            let name = secret.resource_id()?.name;
-            if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
-                names.remove(idx);
-            }
+    while let Some(secret) = pager.try_next().await? {
+        // Get the secret name from the ID.
+        let name = secret.resource_id()?.name;
+        if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
+            names.remove(idx);
         }
     }
     assert!(names.is_empty());

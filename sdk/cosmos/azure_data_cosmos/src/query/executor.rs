@@ -27,7 +27,7 @@ pub struct QueryExecutor<T: DeserializeOwned> {
     phantom: std::marker::PhantomData<fn() -> T>,
 }
 
-impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
+impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     pub fn new(
         http_pipeline: CosmosPipeline,
         container_link: ResourceLink,

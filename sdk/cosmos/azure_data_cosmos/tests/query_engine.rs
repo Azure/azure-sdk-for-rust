@@ -62,18 +62,17 @@ pub async fn query_via_query_engine(
 
     let query_engine = Arc::new(MockQueryEngine::new());
 
-    let mut results = container_client.query_items(
-        "select * from c order by c.mergeOrder",
-        (),
-        Some(QueryOptions {
-            query_engine: Some(query_engine),
-            ..Default::default()
-        }),
-    )?;
-    let mut result_items: Vec<MockItem> = Vec::new();
-    while let Some(page) = results.try_next().await? {
-        result_items.extend(page.into_items());
-    }
+    let result_items: Vec<MockItem> = container_client
+        .query_items(
+            "select * from c order by c.mergeOrder",
+            (),
+            Some(QueryOptions {
+                query_engine: Some(query_engine),
+                ..Default::default()
+            }),
+        )?
+        .try_collect()
+        .await?;
     items.sort_by_key(|p| p.merge_order); // Sort the expected items by merge order, to match what the results should be
     assert_eq!(items, result_items);
 
