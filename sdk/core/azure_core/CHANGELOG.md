@@ -12,6 +12,8 @@
 
 - A `Pager` now asynchronously iterates over items across all pages. Call `Pager::into_pages()` to get a `PageIterator` to asynchronously iterate over all pages.
 - Removed `AccessToken::is_expired()`.
+- Renamed `PagerResult::Continue` to `More` and its `continuation` field to `next`.
+- Renamed `PagerResult::Complete` to `Done`.
 - Renamed `PageStream` to `ItemIterator`.
 
 ### Bugs Fixed
