@@ -78,7 +78,8 @@ impl<T> PageStream<T> {
     ///         }
     ///         let resp: Response<MyModel> = pipeline
     ///           .send(&Context::new(), &mut req)
-    ///           .await?;
+    ///           .await?
+    ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-next-continuation")))
     ///     }
     /// });
