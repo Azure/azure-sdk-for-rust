@@ -11,7 +11,7 @@
 //! Example usage:
 //!
 //! ```
-//! use typespec_client_core::get_async_runtime;
+//! use typespec_client_core::async_runtime::get_async_runtime;
 //! use futures::FutureExt;
 //!
 //! #[tokio::main]
@@ -82,7 +82,7 @@ pub trait AsyncRuntime: Send + Sync {
     ///
     /// # Example
     /// ```
-    /// use typespec_client_core::get_async_runtime;
+    /// use typespec_client_core::async_runtime::get_async_runtime;
     /// use futures::FutureExt;
     ///
     /// #[tokio::main]
@@ -128,7 +128,7 @@ static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock:
 /// # Example
 ///
 /// ```
-/// use typespec_client_core::get_async_runtime;
+/// use typespec_client_core::async_runtime::get_async_runtime;
 /// use futures::FutureExt;
 ///
 /// #[tokio::main]
@@ -159,9 +159,8 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 /// # Example
 ///
 /// ```
-/// use typespec_client_core::{
-///     set_async_runtime,
-///     async_runtime::{AsyncRuntime, TaskFuture, SpawnedTask}};
+/// use typespec_client_core::async_runtime::{
+///     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask};
 /// use std::sync::Arc;
 /// use futures::FutureExt;
 ///
