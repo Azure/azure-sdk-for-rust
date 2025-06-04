@@ -90,14 +90,14 @@ mod tests {
             headers::{self, HeaderName, Headers},
             policies::Policy,
             request::options::ClientRequestId,
-            Context, Method, Request, Response, StatusCode, TransportOptions,
+            Context, Method, Request, StatusCode, TransportOptions,
         },
         Bytes,
     };
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt as _;
     use std::sync::Arc;
-    use typespec_client_core::http::ClientOptions;
+    use typespec_client_core::http::{ClientOptions, RawResponse};
 
     #[tokio::test]
     async fn pipeline_with_custom_client_request_id_policy() {
@@ -121,7 +121,7 @@ mod tests {
                     "Custom header value should match the client request ID"
                 );
 
-                Ok(Response::from_bytes(
+                Ok(RawResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),
@@ -153,7 +153,7 @@ mod tests {
 
         // Act
         pipeline
-            .send::<()>(&ctx, &mut request)
+            .send(&ctx, &mut request)
             .await
             .expect("Pipeline execution failed");
     }
@@ -178,7 +178,7 @@ mod tests {
                     "Default header value should match the client request ID"
                 );
 
-                Ok(Response::from_bytes(
+                Ok(RawResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),
@@ -206,7 +206,7 @@ mod tests {
 
         // Act
         pipeline
-            .send::<()>(&ctx, &mut request)
+            .send(&ctx, &mut request)
             .await
             .expect("Pipeline execution failed");
     }

@@ -16,7 +16,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        Pager, Response, Url,
+        Pager, Response, Url, XmlFormat,
     },
     Result,
 };
@@ -142,7 +142,7 @@ impl BlobContainerClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {
+    ) -> Result<Response<BlobContainerClientGetPropertiesResult, XmlFormat>> {
         self.client.get_properties(options).await
     }
 
@@ -154,7 +154,7 @@ impl BlobContainerClient {
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
-    ) -> Result<Pager<ListBlobsFlatSegmentResponse>> {
+    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat>> {
         self.client.list_blob_flat_segment(options)
     }
 }

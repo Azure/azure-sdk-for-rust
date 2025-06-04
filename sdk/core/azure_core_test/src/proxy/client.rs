@@ -14,7 +14,7 @@ use azure_core::{
     http::{
         headers::{AsHeaders, ACCEPT, CONTENT_TYPE},
         request::{Request, RequestContent},
-        ClientMethodOptions, ClientOptions, Context, Method, Pipeline, Url,
+        ClientMethodOptions, ClientOptions, Context, Method, Pipeline, Response, Url,
     },
     Bytes, Result,
 };
@@ -63,10 +63,8 @@ impl Client {
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.set_body(body);
-        let resp = self
-            .pipeline
-            .send::<RecordStartResult>(&ctx, &mut request)
-            .await?;
+        let resp: Response<RecordStartResult> =
+            self.pipeline.send(&ctx, &mut request).await?.into();
         let recording_id = resp.headers().get_str(&RECORDING_ID)?.to_string();
         Ok(RecordStartResult { recording_id })
     }
@@ -87,7 +85,7 @@ impl Client {
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_header(RECORDING_ID, recording_id.to_string());
         request.set_body(body);
-        self.pipeline.send::<()>(&ctx, &mut request).await?;
+        self.pipeline.send(&ctx, &mut request).await?;
         Ok(())
     }
 
@@ -110,12 +108,10 @@ impl Client {
         request.insert_header(CONTENT_TYPE, "application/json");
         request.add_optional_header(&options.recording_id);
         request.set_body(body);
-        let resp = self
-            .pipeline
-            .send::<PlaybackStartResult>(&ctx, &mut request)
-            .await?;
+        let resp: Response<PlaybackStartResult> =
+            self.pipeline.send(&ctx, &mut request).await?.into();
         let recording_id = resp.headers().get_str(&RECORDING_ID)?.to_string();
-        let mut result: PlaybackStartResult = resp.into_json_body().await?;
+        let mut result: PlaybackStartResult = resp.into_body().await?;
         result.recording_id = recording_id;
         Ok(result)
     }
@@ -134,7 +130,7 @@ impl Client {
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_header(RECORDING_ID, recording_id.to_string());
-        self.pipeline.send::<()>(&ctx, &mut request).await?;
+        self.pipeline.send(&ctx, &mut request).await?;
         Ok(())
     }
 
@@ -159,7 +155,7 @@ impl Client {
         request.add_optional_header(&options.recording_id);
         let body: Bytes = matcher.try_into()?;
         request.set_body(body);
-        self.pipeline.send::<()>(&ctx, &mut request).await?;
+        self.pipeline.send(&ctx, &mut request).await?;
         Ok(())
     }
 
@@ -186,7 +182,7 @@ impl Client {
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_headers(&sanitizer)?;
         request.add_optional_header(&options.recording_id);
-        self.pipeline.send::<()>(&ctx, &mut request).await?;
+        self.pipeline.send(&ctx, &mut request).await?;
         Ok(())
     }
 
@@ -210,9 +206,10 @@ impl Client {
         request.add_optional_header(&options.recording_id);
         request.set_body(body);
         self.pipeline
-            .send::<RemovedSanitizers>(&ctx, &mut request)
+            .send(&ctx, &mut request)
             .await?
-            .into_json_body()
+            .into_body()
+            .json()
             .await
     }
 
@@ -230,7 +227,7 @@ impl Client {
         request.insert_header(ACCEPT, "application/json");
         request.insert_header(CONTENT_TYPE, "application/json");
         request.add_optional_header(&options.recording_id);
-        self.pipeline.send::<()>(&ctx, &mut request).await?;
+        self.pipeline.send(&ctx, &mut request).await?;
         Ok(())
     }
 }
