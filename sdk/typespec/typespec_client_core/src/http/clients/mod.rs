@@ -13,7 +13,7 @@ use self::noop::new_noop_client;
 #[cfg(any(feature = "reqwest", feature = "reqwest_rustls"))]
 use self::reqwest::new_reqwest_client;
 
-use crate::http::{Request, Response};
+use crate::http::{RawResponse, Request};
 use async_trait::async_trait;
 use std::sync::Arc;
 use typespec::error::Result;
@@ -38,5 +38,5 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     ///
     /// It does not consume the request. Implementors are expected to clone the necessary parts
     /// of the request and pass them to the underlying transport.
-    async fn execute_request(&self, request: &Request) -> Result<Response>;
+    async fn execute_request(&self, request: &Request) -> Result<RawResponse>;
 }

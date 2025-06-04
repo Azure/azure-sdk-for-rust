@@ -22,7 +22,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        RequestContent, Response, Url,
+        RequestContent, Response, Url, XmlFormat,
     },
     Bytes, Result,
 };
@@ -116,7 +116,7 @@ impl BlobClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobClientGetPropertiesResult>> {
+    ) -> Result<Response<BlobClientGetPropertiesResult, XmlFormat>> {
         self.client.get_properties(options).await
     }
 
@@ -138,7 +138,7 @@ impl BlobClient {
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<Response<BlobClientDownloadResult>> {
+    ) -> Result<Response<BlobClientDownloadResult, XmlFormat>> {
         self.client.download(options).await
     }
 
@@ -157,7 +157,7 @@ impl BlobClient {
         overwrite: bool,
         content_length: u64,
         options: Option<BlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadResult>> {
+    ) -> Result<Response<BlockBlobClientUploadResult, XmlFormat>> {
         let mut options = options.unwrap_or_default();
 
         if !overwrite {

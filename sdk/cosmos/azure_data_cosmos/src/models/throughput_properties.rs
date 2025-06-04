@@ -3,17 +3,14 @@
 
 use std::borrow::Cow;
 
-use azure_core::http::{
-    headers::{AsHeaders, HeaderName, HeaderValue},
-    response::Model,
-};
+use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
 
 use crate::{constants, models::SystemProperties};
 
 const OFFER_VERSION_2: &str = "V2";
 
-#[derive(Model, Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ThroughputProperties {
     resource: String,

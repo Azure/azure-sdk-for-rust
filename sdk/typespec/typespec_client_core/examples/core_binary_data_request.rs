@@ -37,7 +37,7 @@ mod client {
     use futures::StreamExt;
     use tracing::debug;
     use typespec_client_core::{
-        http::{headers::Headers, Body, RequestContent, Response, StatusCode},
+        http::{headers::Headers, Body, RawResponse, RequestContent, Response, StatusCode},
         stream::BytesStream,
     };
 
@@ -70,10 +70,11 @@ mod client {
         let content = String::from_utf8(content.into())?;
         println!("{content}");
 
-        Ok(Response::new(
+        Ok(RawResponse::new(
             StatusCode::NoContent,
             Headers::new(),
             Box::pin(BytesStream::new_empty()),
-        ))
+        )
+        .into())
     }
 }

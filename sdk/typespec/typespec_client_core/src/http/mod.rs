@@ -5,6 +5,7 @@
 
 mod clients;
 mod context;
+mod format;
 pub mod headers;
 mod method;
 mod models;
@@ -16,12 +17,13 @@ pub mod response;
 
 pub use clients::*;
 pub use context::*;
+pub use format::*;
 pub use method::Method;
 pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
-pub use response::{Model, Response};
+pub use response::{RawResponse, Response};
 
 // Re-export important types.
 pub use typespec::http::StatusCode;
