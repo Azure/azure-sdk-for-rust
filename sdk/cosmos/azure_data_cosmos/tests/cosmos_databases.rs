@@ -34,10 +34,8 @@ pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
         Query::from("SELECT * FROM root r WHERE r.id = @id").with_parameter("@id", &test_db_id)?;
     let mut pager = cosmos_client.query_databases(query.clone(), None)?;
     let mut ids = Vec::new();
-    while let Some(page) = pager.try_next().await? {
-        for db in page.into_items() {
-            ids.push(db.id);
-        }
+    while let Some(db) = pager.try_next().await? {
+        ids.push(db.id);
     }
     assert_eq!(vec![test_db_id.clone()], ids);
 
@@ -49,10 +47,8 @@ pub async fn database_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
 
     let mut pager = cosmos_client.query_databases(query, None)?;
     let mut ids = Vec::new();
-    while let Some(page) = pager.try_next().await? {
-        for db in page.into_items() {
-            ids.push(db.id);
-        }
+    while let Some(db) = pager.try_next().await? {
+        ids.push(db.id);
     }
     assert!(ids.is_empty());
 

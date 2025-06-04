@@ -78,7 +78,7 @@ impl CosmosPipeline {
             .map(|r| r.into())
     }
 
-    pub fn send_query_request<T: DeserializeOwned>(
+    pub fn send_query_request<T: DeserializeOwned + Send>(
         &self,
         ctx: Context<'_>,
         query: Query,
@@ -132,7 +132,7 @@ impl CosmosPipeline {
         let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
             .with_parameter("@rid", resource_id)?;
         let offers_link = ResourceLink::root(ResourceType::Offers);
-        let mut results = self.send_query_request(
+        let mut results = self.send_query_request::<ThroughputProperties>(
             context.clone(),
             query,
             self.url(&offers_link),
@@ -140,18 +140,11 @@ impl CosmosPipeline {
             |_| Ok(()),
         )?;
 
-        let page = results
-            .try_next()
-            .await?
-            .expect("the first pager result should always be Some, even when there's an error");
-        let offers: &[ThroughputProperties] = page.items();
-
-        if offers.is_empty() {
-            // No offers found for this resource.
+        let Some(offer) = results.try_next().await? else {
             return Ok(None);
-        }
+        };
 
-        let offer_link = offers_link.item(&offers[0].offer_id);
+        let offer_link = offers_link.item(&offer.offer_id);
         let offer_url = self.url(&offer_link);
 
         // Now we can read the offer itself

@@ -251,11 +251,11 @@ impl SecretClient {
                 let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
                 Ok(match res.next_link {
-                    Some(next_link) => PagerResult::Continue {
+                    Some(next_link) => PagerResult::More {
                         response: rsp,
-                        continuation: next_link.parse()?,
+                        next: next_link.parse()?,
                     },
-                    None => PagerResult::Complete { response: rsp },
+                    None => PagerResult::Done { response: rsp },
                 })
             }
         }))
@@ -315,11 +315,11 @@ impl SecretClient {
                 let res: ListSecretPropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
                 Ok(match res.next_link {
-                    Some(next_link) => PagerResult::Continue {
+                    Some(next_link) => PagerResult::More {
                         response: rsp,
-                        continuation: next_link.parse()?,
+                        next: next_link.parse()?,
                     },
-                    None => PagerResult::Complete { response: rsp },
+                    None => PagerResult::Done { response: rsp },
                 })
             }
         }))
@@ -382,11 +382,11 @@ impl SecretClient {
                 let res: ListSecretPropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
                 Ok(match res.next_link {
-                    Some(next_link) => PagerResult::Continue {
+                    Some(next_link) => PagerResult::More {
                         response: rsp,
-                        continuation: next_link.parse()?,
+                        next: next_link.parse()?,
                     },
-                    None => PagerResult::Complete { response: rsp },
+                    None => PagerResult::Done { response: rsp },
                 })
             }
         }))
