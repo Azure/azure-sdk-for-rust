@@ -9,7 +9,7 @@ use azure_core::{
 use futures::{future::BoxFuture, lock::Mutex};
 use std::fmt;
 
-/// An [`HttpClient`] from which you can assert [`Request`]s and return mock [`Response`]s.
+/// An [`HttpClient`] from which you can assert [`Request`]s and return mock [`RawResponse`]s.
 ///
 /// # Examples
 ///

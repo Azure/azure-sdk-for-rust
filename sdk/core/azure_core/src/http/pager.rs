@@ -5,6 +5,7 @@ use crate::http::{headers::HeaderName, response::Response};
 use futures::{stream::unfold, Stream};
 use std::{future::Future, pin::Pin};
 use typespec::Error;
+use typespec_client_core::http::JsonFormat;
 
 /// The result of fetching a single page from a [`Pager`], whether the `Pager` should continue or is complete.
 #[derive(Debug)]
@@ -15,12 +16,12 @@ pub enum PagerResult<T, C> {
     Complete { response: T },
 }
 
-impl<T> PagerResult<Response<T>, String> {
+impl<T, F> PagerResult<Response<T, F>, String> {
     /// Creates a [`PagerResult<T, C>`] from the provided response, extracting the continuation value from the provided header.
     ///
     /// If the provided response has a header with the matching name, this returns [`PagerResult::Continue`], using the value from the header as the continuation.
     /// If the provided response does not have a header with the matching name, this returns [`PagerResult::Complete`].
-    pub fn from_response_header(response: Response<T>, header_name: &HeaderName) -> Self {
+    pub fn from_response_header(response: Response<T, F>, header_name: &HeaderName) -> Self {
         match response.headers().get_optional_string(header_name) {
             Some(continuation) => PagerResult::Continue {
                 response,
@@ -34,7 +35,7 @@ impl<T> PagerResult<Response<T>, String> {
 /// Represents a paginated stream of results generated through HTTP requests to a service.
 ///
 /// Specifically, this is a [`PageStream`] that yields [`Response<T>`] values.
-pub type Pager<T> = PageStream<Response<T>>;
+pub type Pager<T, F = JsonFormat> = PageStream<Response<T, F>>;
 
 /// Represents a paginated stream of results from a service.
 #[pin_project::pin_project]

@@ -495,7 +495,7 @@ impl BlobContainerClient {
     pub fn list_blob_flat_segment(
         &self,
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
-    ) -> Result<Pager<ListBlobsFlatSegmentResponse>> {
+    ) -> Result<Pager<ListBlobsFlatSegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -587,7 +587,7 @@ impl BlobContainerClient {
         &self,
         delimiter: &str,
         options: Option<BlobContainerClientListBlobHierarchySegmentOptions<'_>>,
-    ) -> Result<Pager<ListBlobsHierarchySegmentResponse>> {
+    ) -> Result<Pager<ListBlobsHierarchySegmentResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();

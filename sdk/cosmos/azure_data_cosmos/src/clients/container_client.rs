@@ -223,7 +223,7 @@ impl ContainerClient {
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
     /// If you want the new item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`] using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -314,7 +314,7 @@ impl ContainerClient {
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
     /// If you want the replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`] using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -405,7 +405,7 @@ impl ContainerClient {
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
     /// If you want the created/replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`] using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -570,7 +570,7 @@ impl ContainerClient {
     ///
     /// By default, the patched item is *not* returned in the HTTP response.
     /// If you want the patched item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`] using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// For example:
     ///
