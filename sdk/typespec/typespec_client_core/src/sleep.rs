@@ -3,7 +3,7 @@
 
 //! Sleep functions.
 
-use crate::get_async_runtime;
+use crate::async_runtime::get_async_runtime;
 
 /// Sleeps for the specified duration using the configured async runtime.
 ///

@@ -23,14 +23,10 @@ pub use constants::*;
 
 // Re-export modules in typespec_client_core such that azure_core-based crates don't need to reference it directly.
 pub use typespec_client_core::{
-    base64, create_enum, create_extensible_enum, date,
+    async_runtime, base64, create_enum, create_extensible_enum, date,
     error::{self, Error, Result},
     fmt, json, sleep, stream, Bytes, Uuid,
 };
 
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
-
-pub mod async_runtime {
-    pub use typespec_client_core::async_runtime;
-}

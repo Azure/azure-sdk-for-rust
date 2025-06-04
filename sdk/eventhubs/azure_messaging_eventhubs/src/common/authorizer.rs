@@ -5,10 +5,9 @@ use super::recoverable_connection::RecoverableConnection;
 use crate::error::{ErrorKind, EventHubsError};
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
-    async_runtime::SpawnedTask,
+    async_runtime::{get_async_runtime, SpawnedTask},
     credentials::{AccessToken, TokenCredential},
     error::ErrorKind as AzureErrorKind,
-    get_async_runtime,
     http::Url,
     Result,
 };
