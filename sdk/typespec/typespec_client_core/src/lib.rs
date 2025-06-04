@@ -25,5 +25,4 @@ pub use crate::error::{Error, Result};
 pub use bytes::Bytes;
 pub use uuid::Uuid;
 
-pub use async_runtime::{get_async_runtime, set_async_runtime};
 pub use sleep::sleep;

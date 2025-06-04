@@ -31,9 +31,6 @@ pub use typespec_client_core::{
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
 
-pub use typespec_client_core::get_async_runtime;
-pub use typespec_client_core::set_async_runtime;
-
 pub mod async_runtime {
-    pub use typespec_client_core::async_runtime::{AsyncRuntime, SpawnedTask, TaskFuture};
+    pub use typespec_client_core::async_runtime;
 }
