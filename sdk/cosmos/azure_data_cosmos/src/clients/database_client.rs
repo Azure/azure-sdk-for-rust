@@ -161,7 +161,7 @@ impl DatabaseClient {
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);

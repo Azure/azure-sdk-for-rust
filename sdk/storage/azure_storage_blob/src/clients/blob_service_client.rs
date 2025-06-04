@@ -11,7 +11,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        Response, Url,
+        Response, Url, XmlFormat,
     },
     Result,
 };
@@ -86,7 +86,7 @@ impl BlobServiceClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServiceProperties>> {
+    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
         self.client.get_properties(options).await
     }
 }

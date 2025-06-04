@@ -125,7 +125,7 @@ mod tests {
         http::{
             headers::{Headers, AUTHORIZATION},
             policies::Policy,
-            Request, Response, StatusCode,
+            Request, StatusCode,
         },
         Bytes, Result,
     };
@@ -138,7 +138,9 @@ mod tests {
     };
     use std::time::Duration;
     use time::OffsetDateTime;
-    use typespec_client_core::http::{policies::TransportPolicy, Method, TransportOptions};
+    use typespec_client_core::http::{
+        policies::TransportPolicy, Method, RawResponse, TransportOptions,
+    };
 
     #[derive(Debug, Clone)]
     struct MockCredential {
@@ -217,7 +219,7 @@ mod tests {
 
                 assert_eq!(format!("Bearer {}", expected.token.secret()), authz);
 
-                Ok(Response::from_bytes(
+                Ok(RawResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),

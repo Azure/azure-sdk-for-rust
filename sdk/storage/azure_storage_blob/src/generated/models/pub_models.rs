@@ -20,8 +20,7 @@ use std::collections::HashMap;
 use time::OffsetDateTime;
 
 /// Represents an access policy.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct AccessPolicy {
     /// The date-time the policy expires.
     #[serde(
@@ -63,8 +62,7 @@ pub struct AppendBlobClientCreateResult;
 pub struct AppendBlobClientSealResult;
 
 /// Represents the Apache Arrow configuration.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct ArrowConfiguration {
     /// The Apache Arrow schema
     #[serde(
@@ -78,9 +76,8 @@ pub struct ArrowConfiguration {
 }
 
 /// Represents an Apache Arrow field.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "Field")]
-#[typespec(format = "xml")]
 pub struct ArrowField {
     /// The arrow field name.
     #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
@@ -212,9 +209,8 @@ pub struct BlobContainerClientRestoreResult;
 pub struct BlobContainerClientSetAccessPolicyResult;
 
 /// The blob flat list segment.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct BlobFlatListSegment {
     /// The blob items.
     #[serde(default, rename = "Blob")]
@@ -222,9 +218,8 @@ pub struct BlobFlatListSegment {
 }
 
 /// Represents an array of blobs.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct BlobHierarchyListSegment {
     /// The blob items
     #[serde(default, rename = "Blob")]
@@ -236,10 +231,9 @@ pub struct BlobHierarchyListSegment {
 }
 
 /// An Azure Storage Blob
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Blob")]
-#[typespec(format = "xml")]
 pub struct BlobItemInternal {
     /// The tags of the blob.
     #[serde(rename = "BlobTags", skip_serializing_if = "Option::is_none")]
@@ -286,9 +280,8 @@ pub struct BlobItemInternal {
 }
 
 /// The blob metadata.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct BlobMetadata {
     /// Whether the blob metadata is encrypted.
     #[serde(rename = "@Encrypted", skip_serializing_if = "Option::is_none")]
@@ -296,9 +289,8 @@ pub struct BlobMetadata {
 }
 
 /// Represents a blob name.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct BlobName {
     /// The blob name.
     #[serde(rename = "$text", skip_serializing_if = "Option::is_none")]
@@ -310,9 +302,8 @@ pub struct BlobName {
 }
 
 /// Represents a blob prefix.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct BlobPrefix {
     /// The blob name.
     #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
@@ -320,10 +311,9 @@ pub struct BlobPrefix {
 }
 
 /// The properties of a blob.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Properties")]
-#[typespec(format = "xml")]
 pub struct BlobPropertiesInternal {
     /// The access tier of the blob.
     #[serde(rename = "AccessTier", skip_serializing_if = "Option::is_none")]
@@ -558,9 +548,8 @@ pub struct BlobPropertiesInternal {
 pub struct BlobServiceClientGetAccountInfoResult;
 
 /// The blob tags.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "Tag")]
-#[typespec(format = "xml")]
 pub struct BlobTag {
     /// The key of the tag.
     #[serde(rename = "Key", skip_serializing_if = "Option::is_none")]
@@ -572,9 +561,8 @@ pub struct BlobTag {
 }
 
 /// Represents blob tags.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "Tags")]
-#[typespec(format = "xml")]
 pub struct BlobTags {
     /// Represents the blob tags.
     #[serde(
@@ -588,9 +576,8 @@ pub struct BlobTags {
 }
 
 /// Represents a single block in a block blob. It describes the block's ID and size.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct Block {
     /// The base64 encoded block ID.
     #[serde(
@@ -632,9 +619,8 @@ pub struct BlockBlobClientStageBlockResult;
 pub struct BlockBlobClientUploadResult;
 
 /// Contains the committed and uncommitted blocks in a block blob.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct BlockList {
     /// The list of committed blocks.
     #[serde(
@@ -658,9 +644,8 @@ pub struct BlockList {
 }
 
 /// The Block lookup list.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "BlockList")]
-#[typespec(format = "xml")]
 pub struct BlockLookupList {
     /// The committed blocks
     #[serde(
@@ -691,9 +676,8 @@ pub struct BlockLookupList {
 }
 
 /// The clear range.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct ClearRange {
     /// The end of the byte range.
     #[serde(rename = "End", skip_serializing_if = "Option::is_none")]
@@ -705,10 +689,9 @@ pub struct ClearRange {
 }
 
 /// An Azure Storage container.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Container")]
-#[typespec(format = "xml")]
 pub struct ContainerItem {
     /// Whether the container is deleted.
     #[serde(rename = "Deleted", skip_serializing_if = "Option::is_none")]
@@ -732,9 +715,8 @@ pub struct ContainerItem {
 }
 
 /// The properties of a container.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct ContainerProperties {
     /// The default encryption scope of the container.
     #[serde(
@@ -817,8 +799,7 @@ pub struct ContainerProperties {
 /// CORS is an HTTP feature that enables a web application running under one domain to access resources in another domain.
 /// Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in
 /// a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct CorsRule {
     /// The allowed headers.
     #[serde(rename = "AllowedHeaders", skip_serializing_if = "Option::is_none")]
@@ -842,8 +823,7 @@ pub struct CorsRule {
 }
 
 /// Represents the delimited text configuration.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct DelimitedTextConfiguration {
     /// The string used to separate columns.
     #[serde(rename = "ColumnSeparator", skip_serializing_if = "Option::is_none")]
@@ -867,10 +847,9 @@ pub struct DelimitedTextConfiguration {
 }
 
 /// The filter blob item.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Blob")]
-#[typespec(format = "xml")]
 pub struct FilterBlobItem {
     /// The properties of the blob.
     #[serde(rename = "ContainerName", skip_serializing_if = "Option::is_none")]
@@ -894,10 +873,9 @@ pub struct FilterBlobItem {
 }
 
 /// The result of a Filter Blobs API call
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-#[typespec(format = "xml")]
 pub struct FilterBlobSegment {
     /// The blob segment.
     #[serde(
@@ -923,9 +901,8 @@ pub struct FilterBlobSegment {
 }
 
 /// Geo-Replication information for the Secondary Storage Service
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct GeoReplication {
     /// A GMT date/time value, to the second. All primary writes preceding this value are guaranteed to be available for read
     /// operations at the secondary. Primary writes after this point in time may or may not be available for reads.
@@ -943,8 +920,7 @@ pub struct GeoReplication {
 }
 
 /// Represents the JSON text configuration.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct JsonTextConfiguration {
     /// The string used to separate records.
     #[serde(rename = "RecordSeparator", skip_serializing_if = "Option::is_none")]
@@ -952,8 +928,7 @@ pub struct JsonTextConfiguration {
 }
 
 /// Key information
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyInfo {
     /// The date-time the key expires.
     #[serde(rename = "Expiry", skip_serializing_if = "Option::is_none")]
@@ -965,10 +940,9 @@ pub struct KeyInfo {
 }
 
 /// An enumeration of blobs.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-#[typespec(format = "xml")]
 pub struct ListBlobsFlatSegmentResponse {
     /// The container name.
     #[serde(rename = "@ContainerName", skip_serializing_if = "Option::is_none")]
@@ -1000,10 +974,9 @@ pub struct ListBlobsFlatSegmentResponse {
 }
 
 /// An enumeration of blobs
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-#[typespec(format = "xml")]
 pub struct ListBlobsHierarchySegmentResponse {
     /// The container name.
     #[serde(rename = "@ContainerName", skip_serializing_if = "Option::is_none")]
@@ -1039,10 +1012,9 @@ pub struct ListBlobsHierarchySegmentResponse {
 }
 
 /// The list container segment response
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-#[typespec(format = "xml")]
 pub struct ListContainersSegmentResponse {
     /// The container segment.
     #[serde(
@@ -1075,8 +1047,7 @@ pub struct ListContainersSegmentResponse {
 }
 
 /// Azure Analytics Logging settings.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct Logging {
     /// Whether delete operation is logged.
     #[serde(rename = "Delete", skip_serializing_if = "Option::is_none")]
@@ -1100,8 +1071,7 @@ pub struct Logging {
 }
 
 /// The metrics properties.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct Metrics {
     /// Whether it is enabled.
     #[serde(rename = "Enabled", skip_serializing_if = "Option::is_none")]
@@ -1121,10 +1091,9 @@ pub struct Metrics {
 }
 
 /// The object replication metadata.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "OrMetadata")]
-#[typespec(format = "xml")]
 pub struct ObjectReplicationMetadata {}
 
 /// Contains results for `PageBlobClient::clear_pages()`
@@ -1156,9 +1125,8 @@ pub struct PageBlobClientUploadPagesFromUrlResult;
 pub struct PageBlobClientUploadPagesResult;
 
 /// Represents a page list.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct PageList {
     /// The clear ranges.
     #[serde(
@@ -1186,9 +1154,8 @@ pub struct PageList {
 }
 
 /// The page range.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct PageRange {
     /// The end of the byte range.
     #[serde(rename = "End", skip_serializing_if = "Option::is_none")]
@@ -1200,13 +1167,11 @@ pub struct PageRange {
 }
 
 /// Represents the Parquet configuration.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct ParquetConfiguration {}
 
 /// The query format settings.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct QueryFormat {
     /// The Apache Arrow configuration.
     #[serde(rename = "ArrowConfiguration", skip_serializing_if = "Option::is_none")]
@@ -1239,8 +1204,7 @@ pub struct QueryFormat {
 }
 
 /// Groups the set of query request settings.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct QueryRequest {
     /// The query expression in SQL. The maximum size of the query expression is 256KiB.
     #[serde(rename = "Expression", skip_serializing_if = "Option::is_none")]
@@ -1263,8 +1227,7 @@ pub struct QueryRequest {
 }
 
 /// The query serialization settings.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct QuerySerialization {
     /// The query format.
     #[serde(rename = "Format", skip_serializing_if = "Option::is_none")]
@@ -1272,8 +1235,7 @@ pub struct QuerySerialization {
 }
 
 /// The retention policy.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct RetentionPolicy {
     /// Whether to allow permanent delete.
     #[serde(
@@ -1292,9 +1254,8 @@ pub struct RetentionPolicy {
 }
 
 /// The signed identifier.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "SignedIdentifier")]
-#[typespec(format = "xml")]
 pub struct SignedIdentifier {
     /// The access policy for the signed identifier.
     #[serde(rename = "AccessPolicy", skip_serializing_if = "Option::is_none")]
@@ -1306,8 +1267,7 @@ pub struct SignedIdentifier {
 }
 
 /// The properties that enable an account to host a static website
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct StaticWebsite {
     /// Absolute path of the default index page
     #[serde(
@@ -1333,8 +1293,7 @@ pub struct StaticWebsite {
 }
 
 /// The service properties.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[typespec(format = "xml")]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct StorageServiceProperties {
     /// The CORS properties.
     #[serde(
@@ -1378,9 +1337,8 @@ pub struct StorageServiceProperties {
 }
 
 /// Stats for the storage service.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct StorageServiceStats {
     /// The geo replication stats.
     #[serde(rename = "GeoReplication", skip_serializing_if = "Option::is_none")]
@@ -1388,9 +1346,8 @@ pub struct StorageServiceStats {
 }
 
 /// A user delegation key.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[typespec(format = "xml")]
 pub struct UserDelegationKey {
     /// The date-time the key expires.
     #[serde(rename = "SignedExpiry", skip_serializing_if = "Option::is_none")]

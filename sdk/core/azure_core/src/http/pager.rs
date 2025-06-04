@@ -5,6 +5,7 @@ use crate::http::{headers::HeaderName, response::Response};
 use futures::{stream::unfold, Stream};
 use std::{future::Future, pin::Pin};
 use typespec::Error;
+use typespec_client_core::http::JsonFormat;
 
 /// The result of fetching a single page from a [`Pager`], whether the `Pager` should continue or is complete.
 #[derive(Debug)]
@@ -15,12 +16,12 @@ pub enum PagerResult<T, C> {
     Complete { response: T },
 }
 
-impl<T> PagerResult<Response<T>, String> {
+impl<T, F> PagerResult<Response<T, F>, String> {
     /// Creates a [`PagerResult<T, C>`] from the provided response, extracting the continuation value from the provided header.
     ///
     /// If the provided response has a header with the matching name, this returns [`PagerResult::Continue`], using the value from the header as the continuation.
     /// If the provided response does not have a header with the matching name, this returns [`PagerResult::Complete`].
-    pub fn from_response_header(response: Response<T>, header_name: &HeaderName) -> Self {
+    pub fn from_response_header(response: Response<T, F>, header_name: &HeaderName) -> Self {
         match response.headers().get_optional_string(header_name) {
             Some(continuation) => PagerResult::Continue {
                 response,
@@ -34,7 +35,7 @@ impl<T> PagerResult<Response<T>, String> {
 /// Represents a paginated stream of results generated through HTTP requests to a service.
 ///
 /// Specifically, this is a [`PageStream`] that yields [`Response<T>`] values.
-pub type Pager<T> = PageStream<Response<T>>;
+pub type Pager<T, F = JsonFormat> = PageStream<Response<T, F>>;
 
 /// Represents a paginated stream of results from a service.
 #[pin_project::pin_project]
@@ -78,7 +79,8 @@ impl<T> PageStream<T> {
     ///         }
     ///         let resp: Response<MyModel> = pipeline
     ///           .send(&Context::new(), &mut req)
-    ///           .await?;
+    ///           .await?
+    ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-next-continuation")))
     ///     }
     /// });
@@ -162,19 +164,17 @@ enum State<T> {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::http::Model;
     use futures::StreamExt;
     use serde::Deserialize;
 
     use crate::http::{
         headers::{HeaderName, HeaderValue},
-        Pager, PagerResult, Response, StatusCode,
+        Pager, PagerResult, RawResponse, StatusCode,
     };
 
     #[tokio::test]
     pub async fn standard_pagination() {
-        #[derive(Model, Deserialize, Debug, PartialEq, Eq)]
-        #[typespec(crate = "crate")]
+        #[derive(Deserialize, Debug, PartialEq, Eq)]
         struct Page {
             pub page: usize,
         }
@@ -182,7 +182,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 None => Ok(PagerResult::Continue {
-                    response: Response::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -190,11 +190,12 @@ mod tests {
                         )])
                         .into(),
                         r#"{"page":1}"#,
-                    ),
+                    )
+                    .into(),
                     continuation: "1",
                 }),
                 Some("1") => Ok(PagerResult::Continue {
-                    response: Response::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -202,11 +203,12 @@ mod tests {
                         )])
                         .into(),
                         r#"{"page":2}"#,
-                    ),
+                    )
+                    .into(),
                     continuation: "2",
                 }),
                 Some("2") => Ok(PagerResult::Complete {
-                    response: Response::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -214,7 +216,8 @@ mod tests {
                         )])
                         .into(),
                         r#"{"page":3}"#,
-                    ),
+                    )
+                    .into(),
                 }),
                 _ => {
                     panic!("Unexpected continuation value")
@@ -245,8 +248,7 @@ mod tests {
 
     #[tokio::test]
     pub async fn error_stops_pagination() {
-        #[derive(Model, Deserialize, Debug, PartialEq, Eq)]
-        #[typespec(crate = "crate")]
+        #[derive(Deserialize, Debug, PartialEq, Eq)]
         struct Page {
             pub page: usize,
         }
@@ -254,7 +256,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 None => Ok(PagerResult::Continue {
-                    response: Response::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -262,7 +264,8 @@ mod tests {
                         )])
                         .into(),
                         r#"{"page":1}"#,
-                    ),
+                    )
+                    .into(),
                     continuation: "1",
                 }),
                 Some("1") => Err(typespec::Error::message(

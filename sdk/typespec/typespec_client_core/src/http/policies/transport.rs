@@ -67,7 +67,7 @@ impl Header for EmptyContentLength {
 #[cfg(all(test, not(target_family = "wasm")))]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, Response, StatusCode};
+    use crate::http::{headers::Headers, RawResponse, StatusCode};
 
     #[derive(Debug)]
     struct MockTransport;
@@ -80,7 +80,7 @@ mod tests {
             _request: &mut Request,
             _next: &[Arc<dyn Policy>],
         ) -> PolicyResult {
-            PolicyResult::Ok(Response::from_bytes(
+            PolicyResult::Ok(RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 Vec::new(),

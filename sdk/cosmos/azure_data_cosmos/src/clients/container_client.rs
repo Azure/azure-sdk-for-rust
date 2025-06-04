@@ -179,7 +179,7 @@ impl ContainerClient {
     pub async fn delete(
         &self,
         options: Option<DeleteContainerOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
@@ -223,7 +223,7 @@ impl ContainerClient {
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
     /// If you want the new item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -249,7 +249,7 @@ impl ContainerClient {
     /// let created_item = container_client
     ///     .create_item("category1", p, Some(options))
     ///     .await?
-    ///     .into_json_body::<Product>()
+    ///     .into_raw_body().json::<Product>()
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -259,7 +259,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
@@ -314,7 +314,7 @@ impl ContainerClient {
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
     /// If you want the replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -340,7 +340,7 @@ impl ContainerClient {
     /// let updated_product: Product = container_client
     ///     .replace_item("category1", "product1", p, Some(options))
     ///     .await?
-    ///     .into_json_body()
+    ///     .into_raw_body().json::<Product>()
     ///     .await?;
     /// # }
     /// ```
@@ -350,7 +350,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
@@ -405,7 +405,7 @@ impl ContainerClient {
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
     /// If you want the created/replaced item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::ItemOptions;
@@ -431,7 +431,7 @@ impl ContainerClient {
     /// let updated_product = container_client
     ///     .upsert_item("category1", p, Some(options))
     ///     .await?
-    ///     .into_json_body::<Product>()
+    ///     .into_raw_body().json::<Product>()
     ///     .await?;
     /// Ok(())
     /// # }
@@ -440,7 +440,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item: T,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
@@ -469,8 +469,6 @@ impl ContainerClient {
     ///
     /// NOTE: The read item is always returned, so the [`ItemOptions::enable_content_response_on_write`] option is ignored.
     ///
-    /// Use the [`Response::into_json_body`] method to deserialize the body into your own type.
-    ///
     /// # Examples
     ///
     /// ```rust,no_run
@@ -487,18 +485,18 @@ impl ContainerClient {
     /// let item: Product = container_client
     ///     .read_item("partition1", "item1", None)
     ///     .await?
-    ///     .into_json_body()
+    ///     .into_body()
     ///     .await?;
     /// println!("Read Item: {:#?}", item);
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn read_item(
+    pub async fn read_item<T>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<T>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
@@ -534,7 +532,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
@@ -572,7 +570,7 @@ impl ContainerClient {
     ///
     /// By default, the patched item is *not* returned in the HTTP response.
     /// If you want the patched item to be returned, set the [`ItemOptions::enable_content_response_on_write`] option to `true`.
-    /// You can deserialize the returned item using [`Response::into_json_body`], like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`Response::into_raw_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
     ///
     /// For example:
     ///
@@ -596,7 +594,7 @@ impl ContainerClient {
     /// let patched_item = client
     ///     .patch_item("partition1", "item1", patch, Some(options))
     ///     .await?
-    ///     .into_json_body::<Product>()
+    ///     .into_raw_body().json::<Product>()
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -607,7 +605,7 @@ impl ContainerClient {
         item_id: &str,
         patch: PatchDocument,
         options: Option<ItemOptions<'_>>,
-    ) -> azure_core::Result<Response> {
+    ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);

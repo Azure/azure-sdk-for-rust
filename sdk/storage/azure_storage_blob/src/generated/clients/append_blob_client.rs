@@ -17,6 +17,7 @@ use azure_core::{
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
+        XmlFormat,
     },
     Bytes, Result,
 };
@@ -102,7 +103,7 @@ impl AppendBlobClient {
         body: RequestContent<Bytes>,
         content_length: u64,
         options: Option<AppendBlobClientAppendBlockOptions<'_>>,
-    ) -> Result<Response<AppendBlobClientAppendBlockResult>> {
+    ) -> Result<Response<AppendBlobClientAppendBlockResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -184,7 +185,7 @@ impl AppendBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Append Block From URL operation creates a new block to be committed as part of an append blob where the contents are
@@ -200,7 +201,7 @@ impl AppendBlobClient {
         source_url: String,
         content_length: u64,
         options: Option<AppendBlobClientAppendBlockFromUrlOptions<'_>>,
-    ) -> Result<Response<AppendBlobClientAppendBlockFromUrlResult>> {
+    ) -> Result<Response<AppendBlobClientAppendBlockFromUrlResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -305,7 +306,7 @@ impl AppendBlobClient {
             request.insert_header("x-ms-source-range", source_range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Create operation creates a new append blob.
@@ -318,7 +319,7 @@ impl AppendBlobClient {
         &self,
         content_length: u64,
         options: Option<AppendBlobClientCreateOptions<'_>>,
-    ) -> Result<Response<AppendBlobClientCreateResult>> {
+    ) -> Result<Response<AppendBlobClientCreateResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -417,7 +418,7 @@ impl AppendBlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Seal operation seals the Append Blob to make it read-only. Seal is supported only on version 2019-12-12 version or
@@ -429,7 +430,7 @@ impl AppendBlobClient {
     pub async fn seal(
         &self,
         options: Option<AppendBlobClientSealOptions<'_>>,
-    ) -> Result<Response<AppendBlobClientSealResult>> {
+    ) -> Result<Response<AppendBlobClientSealResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -470,7 +471,10 @@ impl AppendBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline
+            .send(&ctx, &mut request)
+            .await
+            .map(|r| r.into())
     }
 }
 

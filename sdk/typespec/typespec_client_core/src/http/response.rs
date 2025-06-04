@@ -3,92 +3,42 @@
 
 //! HTTP responses.
 
-use crate::http::{headers::Headers, StatusCode};
+use crate::http::{headers::Headers, DeserializeWith, Format, JsonFormat, StatusCode};
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
-use std::future::Future;
 use std::{fmt, marker::PhantomData, pin::Pin};
 use typespec::error::{ErrorKind, ResultExt};
-
-#[cfg(feature = "derive")]
-pub use typespec_macros::Model;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
 #[cfg(target_arch = "wasm32")]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
-/// Trait that represents types that can be deserialized from an HTTP response body.
-///
-/// [`Response<T>`] is designed to work with values that may be serialized in various formats (JSON, XML, etc.).
-/// In order to support that, the `T` provided must implement [`Model`], which provides the [`Model::from_response_body`]
-/// method to deserialize the type from a response body.
-pub trait Model: Sized {
-    /// Deserialize the response body into type `Self`.
-    ///
-    /// A [`ResponseBody`] represents a stream of bytes coming from the server.
-    /// The server may still be sending data, so it's up to implementors whether they want to wait for the entire body to be received or not.
-    /// For example, a type representing a simple REST API response will want to wait for the entire body to be received and then parse the body.
-    /// However, a type representing the download of a large file, may not want to do that and instead prepare to stream the body to a file or other destination.
-    #[cfg(not(target_arch = "wasm32"))]
-    fn from_response_body(
-        body: ResponseBody,
-    ) -> impl Future<Output = crate::Result<Self>> + Send + Sync;
-
-    #[cfg(target_arch = "wasm32")]
-    fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>>;
-}
-
-// Allow for deserializing into "raw" JSON.
-impl Model for serde_json::Value {
-    #[cfg(not(target_arch = "wasm32"))]
-    fn from_response_body(
-        body: ResponseBody,
-    ) -> impl Future<Output = crate::Result<Self>> + Send + Sync {
-        body.json()
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    fn from_response_body(body: ResponseBody) -> impl Future<Output = crate::Result<Self>> {
-        body.json()
-    }
-}
-
-/// An HTTP response.
-///
-/// The type parameter `T` is a marker type that indicates what the caller should expect to be able to deserialize the body into.
-/// Service client methods should return a `Response<SomeModel>` where `SomeModel` is the service-specific response type.
-/// For example, a service client method that returns a list of secrets should return `Response<ListSecretsResponse>`.
-///
-/// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
-/// However, because the type `T` is just a marker type, the user can also deserialize the body into a different type by calling [`Response::into_json_body`] or [`Response::into_xml_body`],
-/// or access the raw body using [`Response::into_raw_body`].
-pub struct Response<T = ResponseBody> {
+/// A raw HTTP response with status, headers, and body.
+#[derive(Debug)]
+pub struct RawResponse {
     status: StatusCode,
     headers: Headers,
     body: ResponseBody,
-    phantom: PhantomData<T>,
 }
 
-impl<T> Response<T> {
-    /// Create an HTTP response from an asynchronous stream of bytes.
+impl RawResponse {
+    /// Create a raw HTTP response from an asynchronous stream of bytes.
     pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
         Self {
             status,
             headers,
             body: ResponseBody::new(stream),
-            phantom: PhantomData,
         }
     }
 
-    /// Create an HTTP response from raw bytes.
+    /// Create a raw HTTP response from raw bytes.
     pub fn from_bytes(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self {
         Self {
             status,
             headers,
             body: ResponseBody::from_bytes(bytes),
-            phantom: PhantomData,
         }
     }
 
@@ -102,9 +52,44 @@ impl<T> Response<T> {
         &self.headers
     }
 
-    /// Deconstruct the HTTP response into its components.
+    /// Deconstruct the raw HTTP response into its components.
     pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
         (self.status, self.headers, self.body)
+    }
+
+    /// Get the raw response body.
+    pub fn into_body(self) -> ResponseBody {
+        self.body
+    }
+}
+
+/// A typed HTTP response.
+///
+/// The type parameter `T` is a marker type that indicates what the caller should expect to be able to deserialize the body into.
+/// Service client methods should return a `Response<SomeModel>` where `SomeModel` is the service-specific response type.
+/// For example, a service client method that returns a list of secrets should return `Response<ListSecretsResponse>`.
+///
+/// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
+/// However, because the type `T` is just a marker type, you can also access the raw body using [`Response::into_raw_body`].
+pub struct Response<T, F = JsonFormat> {
+    raw: RawResponse,
+    _phantom: PhantomData<(T, F)>,
+}
+
+impl<T, F> Response<T, F> {
+    /// Get the status code from the response.
+    pub fn status(&self) -> StatusCode {
+        self.raw.status()
+    }
+
+    /// Get the headers from the response.
+    pub fn headers(&self) -> &Headers {
+        self.raw.headers()
+    }
+
+    /// Deconstruct the HTTP response into its components.
+    pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
+        self.raw.deconstruct()
     }
 
     /// Fetches the entire body and returns it as a raw stream of bytes.
@@ -112,110 +97,11 @@ impl<T> Response<T> {
     /// This method will force the entire body to be downloaded from the server and consume the response.
     /// If you want to parse the body into a type, use [`Response::into_body`] instead.
     pub fn into_raw_body(self) -> ResponseBody {
-        self.body
-    }
-
-    /// Fetches the entire body and tries to deserialize it as JSON into type `U`.
-    ///
-    /// This method is intended for situations where:
-    ///
-    /// 1. The response was not given a specific type by the service SDK e.g., the API returned `Response<ResponseBody>`, indicating a raw response.
-    /// 2. You want to deserialize the response into your OWN type, rather than the default type specified by the service SDK.
-    ///
-    /// # Example
-    /// ```rust
-    /// # pub struct GetSecretResponse { }
-    /// use typespec_client_core::http::{Model, Response, StatusCode};
-    /// # #[cfg(not(feature = "derive"))]
-    /// # use typespec_macros::Model;
-    /// use serde::Deserialize;
-    /// use bytes::Bytes;
-    ///
-    /// #[derive(Model, Deserialize)]
-    /// struct MySecretResponse {
-    ///    value: String,
-    /// }
-    ///
-    /// async fn parse_response(response: Response<GetSecretResponse>) {
-    ///   // Calling `into_json_body` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
-    ///   let my_struct: MySecretResponse = response.into_json_body().await.unwrap();
-    ///   assert_eq!("hunter2", my_struct.value);
-    /// }
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() {
-    /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
-    /// #      StatusCode::Ok,
-    /// #      typespec_client_core::http::headers::Headers::new(),
-    /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
-    /// #    );
-    /// #    parse_response(r).await;
-    /// # }
-    /// ```
-    #[cfg(feature = "json")]
-    pub async fn into_json_body<U: DeserializeOwned>(self) -> crate::Result<U> {
-        self.into_raw_body().json().await
-    }
-
-    /// Fetches the entire body and tries to deserialize it as XML into type `U`.
-    ///
-    /// This method is intended for situations where:
-    ///
-    /// 1. The response was not given a specific type by the service SDK (i.e. the API returned `Response<ResponseBody>`, indicating a raw response).
-    /// 2. You want to deserialize the response into your OWN type, rather than the default type specified by the service SDK.
-    ///
-    /// # Example
-    /// ```rust
-    /// # pub struct GetSecretResponse { }
-    /// use typespec_client_core::http::{Model, Response, StatusCode};
-    /// # #[cfg(not(feature = "derive"))]
-    /// # use typespec_macros::Model;
-    /// use serde::Deserialize;
-    /// use bytes::Bytes;
-    ///
-    /// #[derive(Model, Deserialize)]
-    /// struct MySecretResponse {
-    ///    value: String,
-    /// }
-    ///
-    /// async fn parse_response(response: Response<GetSecretResponse>) {
-    ///   // Calling `into_xml_body` will parse the body into `MySecretResponse` instead of `GetSecretResponse`.
-    ///   let my_struct: MySecretResponse = response.into_xml_body().await.unwrap();
-    ///   assert_eq!("hunter2", my_struct.value);
-    /// }
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() {
-    /// #    let r: Response<GetSecretResponse> = typespec_client_core::http::Response::from_bytes(
-    /// #      StatusCode::Ok,
-    /// #      typespec_client_core::http::headers::Headers::new(),
-    /// #      "<Response><name>database_password</name><value>hunter2</value></Response>",
-    /// #    );
-    /// #    parse_response(r).await;
-    /// # }
-    /// ```
-    #[cfg(feature = "xml")]
-    pub async fn into_xml_body<U: DeserializeOwned>(self) -> crate::Result<U> {
-        self.into_raw_body().xml().await
+        self.raw.into_body()
     }
 }
 
-impl Response<ResponseBody> {
-    /// Changes the type of the response body.
-    ///
-    /// Used to set the "type" of an untyped `Response<ResponseBody>`, transforming it into a `Response<T>`.
-    pub(crate) fn with_default_deserialize_type<T>(self) -> Response<T> {
-        // This method name is a little clunky, but it's crate-local. If we ever decide it's useful outside this crate (which might happen), we can revisit the name.
-        Response {
-            status: self.status,
-            headers: self.headers,
-            body: self.body,
-            phantom: PhantomData,
-        }
-    }
-}
-
-impl<T: Model> Response<T> {
+impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
     /// Fetches the entire body and tries to convert it into type `T`.
     ///
     /// This is the preferred method for parsing the body of a service response into it's default model type.
@@ -223,10 +109,8 @@ impl<T: Model> Response<T> {
     /// # Example
     /// ```rust
     /// # use serde::Deserialize;
-    /// # use typespec_client_core::http::{Model, StatusCode};
-    /// # #[cfg(not(feature = "derive"))]
-    /// # use typespec_macros::Model;
-    /// # #[derive(Model, Deserialize)]
+    /// # use typespec_client_core::http::StatusCode;
+    /// # #[derive(Deserialize)]
     /// # pub struct GetSecretResponse {
     /// #   name: String,
     /// #   value: String,
@@ -234,11 +118,11 @@ impl<T: Model> Response<T> {
     /// # pub struct SecretClient { }
     /// # impl SecretClient {
     /// #   pub async fn get_secret(&self) -> typespec_client_core::http::Response<GetSecretResponse> {
-    /// #    typespec_client_core::http::Response::from_bytes(
+    /// #    typespec_client_core::http::RawResponse::from_bytes(
     /// #      StatusCode::Ok,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
-    /// #    )
+    /// #    ).into()
     /// #  }
     /// # }
     /// # pub fn create_secret_client() -> SecretClient {
@@ -256,16 +140,32 @@ impl<T: Model> Response<T> {
     /// # }
     /// ```
     pub async fn into_body(self) -> crate::Result<T> {
-        T::from_response_body(self.body).await
+        let body = self.raw.into_body();
+        T::deserialize_with(body).await
     }
 }
 
-impl<T> fmt::Debug for Response<T> {
+impl<T, F> fmt::Debug for Response<T, F> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Response")
-            .field("status", &self.status)
+            .field("status", &self.raw.status())
             // TODO: Sanitize headers and emit body as "(body)".
             .finish_non_exhaustive()
+    }
+}
+
+impl<T, F> From<RawResponse> for Response<T, F> {
+    fn from(raw: RawResponse) -> Self {
+        Self {
+            raw,
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<T, F> From<Response<T, F>> for RawResponse {
+    fn from(val: Response<T, F>) -> Self {
+        val.raw
     }
 }
 
@@ -349,28 +249,15 @@ impl fmt::Debug for ResponseBody {
 #[cfg(test)]
 mod tests {
     use crate::http::headers::Headers;
-    use crate::http::{response::ResponseBody, Model, Response, StatusCode};
+    use crate::http::{RawResponse, Response, StatusCode};
 
     #[tokio::test]
-    pub async fn can_extract_raw_body_regardless_of_t() -> Result<(), Box<dyn std::error::Error>> {
+    async fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {
         pub struct MyModel;
-        impl Model for MyModel {
-            async fn from_response_body(_body: ResponseBody) -> crate::Result<Self> {
-                panic!("Should never be called in this test");
-            }
-        }
-
-        {
-            let response_raw: Response =
-                Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice());
-            let body = response_raw.into_raw_body();
-            assert_eq!(b"Hello", &*body.collect().await?);
-        }
 
         {
             let response_t: Response<MyModel> =
-                Response::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice())
-                    .with_default_deserialize_type();
+                RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice()).into();
             let body = response_t.into_raw_body();
             assert_eq!(b"Hello", &*body.collect().await?);
         }
@@ -378,24 +265,42 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test]
+    async fn can_convert_response_to_raw_response() -> Result<(), Box<dyn std::error::Error>> {
+        pub struct MyModel;
+
+        // Test converting a typed Response to RawResponse using Into
+        let typed_response: Response<MyModel> =
+            RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"Hello World".as_slice())
+                .into();
+
+        // Convert using Into trait
+        let raw_response: RawResponse = typed_response.into();
+
+        // Verify the raw response has the same data
+        assert_eq!(raw_response.status(), StatusCode::Ok);
+        let body = raw_response.into_body().collect().await?;
+        assert_eq!(b"Hello World", &*body);
+
+        Ok(())
+    }
+
     mod json {
         use crate::http::headers::Headers;
+        use crate::http::RawResponse;
         use crate::http::Response;
         use crate::http::StatusCode;
         use serde::Deserialize;
-        use typespec_macros::Model;
 
         /// An example JSON-serialized response type.
-        #[derive(Model, Deserialize)]
-        #[typespec(crate = "crate")]
+        #[derive(Deserialize)]
         struct GetSecretResponse {
             name: String,
             value: String,
         }
 
         /// An example JSON-serialized list response type.
-        #[derive(Model, Deserialize)]
-        #[typespec(crate = "crate")]
+        #[derive(Deserialize)]
         struct GetSecretListResponse {
             value: Vec<GetSecretResponse>,
             #[serde(rename = "nextLink")]
@@ -404,24 +309,26 @@ mod tests {
 
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
-            Response::from_bytes(
+            RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 r#"{"name":"my_secret","value":"my_value"}"#,
             )
+            .into()
         }
 
         /// A sample service client function to return a list of secrets.
         fn list_secrets() -> Response<GetSecretListResponse> {
-            Response::from_bytes(
+            RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 r#"{"value":[{"name":"my_secret","value":"my_value"}],"nextLink":"?page=2"}"#,
             )
+            .into()
         }
 
         #[tokio::test]
-        pub async fn deserialize_default_type() {
+        async fn deserialize_default_type() {
             let response = get_secret();
             let secret = response.into_body().await.unwrap();
             assert_eq!(secret.name, "my_secret");
@@ -429,7 +336,7 @@ mod tests {
         }
 
         #[tokio::test]
-        pub async fn deserialize_alternate_type() {
+        async fn deserialize_alternate_type() {
             #[derive(Deserialize)]
             struct MySecretResponse {
                 #[serde(rename = "name")]
@@ -439,7 +346,7 @@ mod tests {
             }
 
             let response = get_secret();
-            let secret: MySecretResponse = response.into_json_body().await.unwrap();
+            let secret: MySecretResponse = response.into_raw_body().json().await.unwrap();
             assert_eq!(secret.yon_name, "my_secret");
             assert_eq!(secret.yon_value, "my_value");
         }
@@ -457,7 +364,7 @@ mod tests {
             assert_eq!(model.next_link, Some("?page=2".to_string()));
 
             let response: Response<GetSecretListResponse> =
-                Response::from_bytes(status, headers, bytes);
+                RawResponse::from_bytes(status, headers, bytes).into();
             assert_eq!(response.status(), StatusCode::Ok);
             let model = response
                 .into_body()
@@ -470,31 +377,30 @@ mod tests {
     #[cfg(feature = "xml")]
     mod xml {
         use crate::http::headers::Headers;
+        use crate::http::RawResponse;
         use crate::http::Response;
         use crate::http::StatusCode;
+        use crate::http::XmlFormat;
         use serde::Deserialize;
-        use typespec_macros::Model;
 
         /// An example XML-serialized response type.
-        #[derive(Model, Deserialize)]
-        #[typespec(crate = "crate")]
-        #[typespec(format = "xml")]
+        #[derive(Deserialize)]
         struct GetSecretResponse {
             name: String,
             value: String,
         }
 
         /// A sample service client function.
-        fn get_secret() -> Response<GetSecretResponse> {
-            Response::from_bytes(
+        fn get_secret() -> Response<GetSecretResponse, XmlFormat> {
+            RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 "<GetSecretResponse><name>my_secret</name><value>my_value</value></GetSecretResponse>",
-            )
+            ).into()
         }
 
         #[tokio::test]
-        pub async fn deserialize_default_type() {
+        async fn deserialize_default_type() {
             let response = get_secret();
             let secret = response.into_body().await.unwrap();
             assert_eq!(secret.name, "my_secret");
@@ -502,7 +408,7 @@ mod tests {
         }
 
         #[tokio::test]
-        pub async fn deserialize_alternate_type() {
+        async fn deserialize_alternate_type() {
             #[derive(Deserialize)]
             struct MySecretResponse {
                 #[serde(rename = "name")]
@@ -511,8 +417,8 @@ mod tests {
                 yon_value: String,
             }
 
-            let response = get_secret();
-            let secret: MySecretResponse = response.into_xml_body().await.unwrap();
+            let response: Response<GetSecretResponse, XmlFormat> = get_secret();
+            let secret: MySecretResponse = response.into_raw_body().xml().await.unwrap();
             assert_eq!(secret.yon_name, "my_secret");
             assert_eq!(secret.yon_value, "my_value");
         }

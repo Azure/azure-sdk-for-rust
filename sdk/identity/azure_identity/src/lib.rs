@@ -14,7 +14,7 @@ mod process;
 
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    http::Response,
+    http::RawResponse,
     Error, Result,
 };
 pub use azure_developer_cli_credential::*;
@@ -24,15 +24,14 @@ pub use credentials::*;
 pub use managed_identity_credential::*;
 use serde::Deserialize;
 use std::borrow::Cow;
-use typespec_client_core::http::Model;
 
-#[derive(Debug, Default, Deserialize, Model)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 struct EntraIdErrorResponse {
     error_description: String,
 }
 
-#[derive(Debug, Default, Deserialize, Model)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 struct EntraIdTokenResponse {
     token_type: String,
@@ -41,12 +40,13 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-async fn deserialize<T>(credential_name: &str, res: Response) -> Result<T>
+async fn deserialize<T>(credential_name: &str, res: RawResponse) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
     let t: T = res
-        .into_json_body()
+        .into_body()
+        .json()
         .await
         .with_context(ErrorKind::Credential, || {
             format!(
@@ -151,7 +151,7 @@ mod tests {
     use async_trait::async_trait;
     use azure_core::{
         error::ErrorKind,
-        http::{Request, Response},
+        http::{RawResponse, Request},
         process::Executor,
         Error, Result,
     };
@@ -237,7 +237,7 @@ mod tests {
     pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
 
     pub struct MockSts {
-        responses: Mutex<Vec<Response>>,
+        responses: Mutex<Vec<RawResponse>>,
         on_request: Option<RequestCallback>,
     }
 
@@ -248,7 +248,7 @@ mod tests {
     }
 
     impl MockSts {
-        pub fn new(responses: Vec<Response>, on_request: Option<RequestCallback>) -> Self {
+        pub fn new(responses: Vec<RawResponse>, on_request: Option<RequestCallback>) -> Self {
             Self {
                 responses: Mutex::new(responses),
                 on_request,
@@ -258,7 +258,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl azure_core::http::HttpClient for MockSts {
-        async fn execute_request(&self, request: &Request) -> Result<Response> {
+        async fn execute_request(&self, request: &Request) -> Result<RawResponse> {
             self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {
