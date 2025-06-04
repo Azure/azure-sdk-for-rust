@@ -22,6 +22,7 @@ use azure_core::{
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
+        XmlFormat,
     },
     Bytes, Result,
 };
@@ -105,7 +106,7 @@ impl PageBlobClient {
         &self,
         content_length: u64,
         options: Option<PageBlobClientClearPagesOptions<'_>>,
-    ) -> Result<Response<PageBlobClientClearPagesResult>> {
+    ) -> Result<Response<PageBlobClientClearPagesResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -187,7 +188,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-range", range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Copy Incremental operation copies a snapshot of the source page blob to a destination page blob. The snapshot is copied
@@ -205,7 +206,7 @@ impl PageBlobClient {
         &self,
         copy_source: String,
         options: Option<PageBlobClientCopyIncrementalOptions<'_>>,
-    ) -> Result<Response<PageBlobClientCopyIncrementalResult>> {
+    ) -> Result<Response<PageBlobClientCopyIncrementalResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -244,7 +245,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Create operation creates a new page blob.
@@ -260,7 +261,7 @@ impl PageBlobClient {
         content_length: u64,
         blob_content_length: u64,
         options: Option<PageBlobClientCreateOptions<'_>>,
-    ) -> Result<Response<PageBlobClientCreateResult>> {
+    ) -> Result<Response<PageBlobClientCreateResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -369,7 +370,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Get Page Ranges operation returns the list of valid page ranges for a page blob or snapshot of a page blob.
@@ -380,7 +381,7 @@ impl PageBlobClient {
     pub async fn get_page_ranges(
         &self,
         options: Option<PageBlobClientGetPageRangesOptions<'_>>,
-    ) -> Result<Response<PageList>> {
+    ) -> Result<Response<PageList, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -434,7 +435,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-range", range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Get Page Ranges Diff operation returns the list of valid page ranges for a page blob or snapshot of a page blob.
@@ -445,7 +446,7 @@ impl PageBlobClient {
     pub async fn get_page_ranges_diff(
         &self,
         options: Option<PageBlobClientGetPageRangesDiffOptions<'_>>,
-    ) -> Result<Response<PageList>> {
+    ) -> Result<Response<PageList, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -508,7 +509,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-range", range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Resize operation increases the size of the page blob to the specified size.
@@ -522,7 +523,7 @@ impl PageBlobClient {
         &self,
         blob_content_length: u64,
         options: Option<PageBlobClientResizeOptions<'_>>,
-    ) -> Result<Response<PageBlobClientResizeResult>> {
+    ) -> Result<Response<PageBlobClientResizeResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -581,7 +582,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Update Sequence Number operation sets the blob's sequence number. The operation will fail if the specified sequence
@@ -596,7 +597,7 @@ impl PageBlobClient {
         &self,
         sequence_number_action: SequenceNumberActionType,
         options: Option<PageBlobClientUpdateSequenceNumberOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult>> {
+    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -649,7 +650,7 @@ impl PageBlobClient {
             sequence_number_action.to_string(),
         );
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Upload Pages operation writes a range of pages to a page blob
@@ -664,7 +665,7 @@ impl PageBlobClient {
         body: RequestContent<Bytes>,
         content_length: u64,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUploadPagesResult>> {
+    ) -> Result<Response<PageBlobClientUploadPagesResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -765,7 +766,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Upload Pages operation writes a range of pages to a page blob where the contents are read from a URL.
@@ -786,7 +787,7 @@ impl PageBlobClient {
         content_length: u64,
         range: String,
         options: Option<PageBlobClientUploadPagesFromUrlOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult>> {
+    ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -902,7 +903,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-source-range", source_range);
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }
 
