@@ -15,7 +15,7 @@ use std::fmt;
 ///
 /// ```
 /// use azure_core::{
-///     http::{headers::Headers, ClientOptions, Response, StatusCode, TransportOptions},
+///     http::{headers::Headers, ClientOptions, RawResponse, StatusCode, TransportOptions},
 ///     Bytes,
 /// };
 /// use azure_core_test::http::MockHttpClient;
@@ -28,7 +28,7 @@ use std::fmt;
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mock_client = Arc::new(MockHttpClient::new(|req| async {
 ///     assert_eq!(req.url().host_str(), Some("my-vault.vault.azure.net"));
-///     Ok(Response::from_bytes(
+///     Ok(RawResponse::from_bytes(
 ///         StatusCode::Ok,
 ///         Headers::new(),
 ///         Bytes::from_static(br#"{"value":"secret"}"#),

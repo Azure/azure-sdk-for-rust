@@ -118,11 +118,11 @@ impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
     /// # pub struct SecretClient { }
     /// # impl SecretClient {
     /// #   pub async fn get_secret(&self) -> typespec_client_core::http::Response<GetSecretResponse> {
-    /// #    typespec_client_core::http::Response::from_bytes(
+    /// #    typespec_client_core::http::RawResponse::from_bytes(
     /// #      StatusCode::Ok,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
-    /// #    )
+    /// #    ).into()
     /// #  }
     /// # }
     /// # pub fn create_secret_client() -> SecretClient {
