@@ -44,7 +44,7 @@ impl UpsertCommand {
         println!("Item updated successfully");
 
         if self.show_updated {
-            let created: serde_json::Value = response.into_json_body().await?;
+            let created: serde_json::Value = response.into_raw_body().json().await?;
             println!("Updated item:");
             println!("{:#?}", created);
         }

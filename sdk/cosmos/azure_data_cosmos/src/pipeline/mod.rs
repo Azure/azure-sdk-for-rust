@@ -10,7 +10,7 @@ pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
     request::{options::ContentType, Request},
     response::Response,
-    ClientOptions, Context, Method,
+    ClientOptions, Context, Method, RawResponse,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
@@ -57,14 +57,25 @@ impl CosmosPipeline {
         link.url(&self.endpoint)
     }
 
+    pub async fn send_raw(
+        &self,
+        ctx: Context<'_>,
+        request: &mut Request,
+        resource_link: ResourceLink,
+    ) -> azure_core::Result<RawResponse> {
+        let ctx = ctx.with_value(resource_link);
+        self.pipeline.send(&ctx, request).await
+    }
+
     pub async fn send<T>(
         &self,
         ctx: Context<'_>,
         request: &mut Request,
         resource_link: ResourceLink,
     ) -> azure_core::Result<Response<T>> {
-        let ctx = ctx.with_value(resource_link);
-        self.pipeline.send(&ctx, request).await
+        self.send_raw(ctx, request, resource_link)
+            .await
+            .map(|r| r.into())
     }
 
     pub fn send_query_request<T: DeserializeOwned>(

@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use time::OffsetDateTime;
 
 /// Details of the organization administrator of the certificate issuer.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct AdministratorContact {
     /// Email address.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -32,7 +32,7 @@ pub struct AdministratorContact {
 }
 
 /// The backup certificate result, containing the backup blob.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct BackupCertificateResult {
     /// The backup blob containing the backed up certificate.
@@ -46,7 +46,7 @@ pub struct BackupCertificateResult {
 }
 
 /// A certificate bundle consists of a certificate (X509) plus its attributes.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct Certificate {
     /// The certificate attributes.
@@ -103,7 +103,7 @@ pub struct Certificate {
 }
 
 /// The certificate management attributes.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct CertificateAttributes {
     /// Creation time in UTC.
     #[serde(
@@ -155,7 +155,7 @@ pub struct CertificateAttributes {
 }
 
 /// A certificate operation is returned in case of asynchronous requests.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct CertificateOperation {
     /// Indicates if cancellation was requested on the certificate operation.
@@ -206,7 +206,7 @@ pub struct CertificateOperation {
 }
 
 /// Management policy for a certificate.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct CertificatePolicy {
     /// The certificate attributes.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -238,7 +238,7 @@ pub struct CertificatePolicy {
 }
 
 /// The certificate item containing certificate metadata.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct CertificateProperties {
     /// The certificate management attributes.
@@ -265,7 +265,7 @@ pub struct CertificateProperties {
 }
 
 /// The contact information for the vault certificates.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct Contact {
     /// Email address.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -281,7 +281,7 @@ pub struct Contact {
 }
 
 /// The contacts for the vault certificates.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct Contacts {
     /// The contact list for the vault certificates.
     #[serde(rename = "contacts", skip_serializing_if = "Option::is_none")]
@@ -293,7 +293,7 @@ pub struct Contacts {
 }
 
 /// The certificate create parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct CreateCertificateParameters {
     /// The attributes of the certificate (optional).
     #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
@@ -315,7 +315,7 @@ pub struct CreateCertificateParameters {
 
 /// A Deleted Certificate consisting of its previous id, attributes and its tags, as well as information on when it will be
 /// purged.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct DeletedCertificate {
     /// The certificate attributes.
@@ -394,7 +394,7 @@ pub struct DeletedCertificate {
 }
 
 /// The deleted certificate item containing metadata about the deleted certificate.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct DeletedCertificateProperties {
     /// The certificate management attributes.
@@ -443,7 +443,7 @@ pub struct DeletedCertificateProperties {
 }
 
 /// The certificate import parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct ImportCertificateParameters {
     /// Base64 encoded representation of the certificate object to import. This certificate needs to contain the private key.
     #[serde(rename = "value", skip_serializing_if = "Option::is_none")]
@@ -472,7 +472,7 @@ pub struct ImportCertificateParameters {
 }
 
 /// The issuer for Key Vault certificate.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct Issuer {
     /// Attributes of the issuer object.
@@ -497,7 +497,7 @@ pub struct Issuer {
 }
 
 /// The attributes of an issuer managed by the Key Vault service.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct IssuerAttributes {
     /// Creation time in UTC.
     #[serde(
@@ -521,7 +521,7 @@ pub struct IssuerAttributes {
 }
 
 /// The credentials to be used for the certificate issuer.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct IssuerCredentials {
     /// The user name/account name/account id.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -533,7 +533,7 @@ pub struct IssuerCredentials {
 }
 
 /// Parameters for the issuer of the X509 component of a certificate.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct IssuerParameters {
     /// Indicates if the certificates generated under this policy should be published to certificate transparency logs.
     #[serde(rename = "cert_transparency", skip_serializing_if = "Option::is_none")]
@@ -549,7 +549,7 @@ pub struct IssuerParameters {
 }
 
 /// The certificate issuer item containing certificate issuer metadata.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct IssuerProperties {
     /// Certificate Identifier.
@@ -562,7 +562,7 @@ pub struct IssuerProperties {
 }
 
 /// Properties of the key pair backing a certificate.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyProperties {
     /// Elliptic curve name. For valid values, see JsonWebKeyCurveName.
     #[serde(rename = "crv", skip_serializing_if = "Option::is_none")]
@@ -586,7 +586,7 @@ pub struct KeyProperties {
     pub reuse_key: Option<bool>,
 }
 
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct KeyVaultErrorError {
     /// The error code.
@@ -603,7 +603,7 @@ pub struct KeyVaultErrorError {
 }
 
 /// Action and its trigger that will be performed by Key Vault over the lifetime of a certificate.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct LifetimeAction {
     /// The action that will be executed.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -615,7 +615,7 @@ pub struct LifetimeAction {
 }
 
 /// A condition to be satisfied for an action to be executed.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct LifetimeActionTrigger {
     /// Days before expiry to attempt renewal. Value should be between 1 and validity_in_months multiplied by 27. If validity_in_months
     /// is 36, then value should be between 1 and 972 (36 * 27).
@@ -628,7 +628,7 @@ pub struct LifetimeActionTrigger {
 }
 
 /// The action that will be executed.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct LifetimeActionType {
     /// The type of the action.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -636,7 +636,7 @@ pub struct LifetimeActionType {
 }
 
 /// The certificate list result.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct ListCertificatePropertiesResult {
     /// The URL to get the next set of certificates.
@@ -649,7 +649,7 @@ pub struct ListCertificatePropertiesResult {
 }
 
 /// A list of certificates that have been deleted in this vault.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct ListDeletedCertificatePropertiesResult {
     /// The URL to get the next set of deleted certificates.
@@ -663,7 +663,7 @@ pub struct ListDeletedCertificatePropertiesResult {
 }
 
 /// The certificate issuer list result.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct ListIssuerPropertiesResult {
     /// The URL to get the next set of certificate issuers.
@@ -677,7 +677,7 @@ pub struct ListIssuerPropertiesResult {
 }
 
 /// The certificate merge parameters
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct MergeCertificateParameters {
     /// The attributes of the certificate (optional).
     #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
@@ -698,7 +698,7 @@ pub struct MergeCertificateParameters {
 }
 
 /// Details of the organization of the certificate issuer.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct OrganizationDetails {
     /// Details of the organization administrator.
     #[serde(rename = "admin_details", skip_serializing_if = "Option::is_none")]
@@ -710,7 +710,7 @@ pub struct OrganizationDetails {
 }
 
 /// The certificate restore parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct RestoreCertificateParameters {
     /// The backup blob associated with a certificate bundle.
     #[serde(
@@ -724,7 +724,7 @@ pub struct RestoreCertificateParameters {
 }
 
 /// Properties of the key backing a certificate.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct SecretProperties {
     /// The media type (MIME type).
     #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
@@ -732,7 +732,7 @@ pub struct SecretProperties {
 }
 
 /// The certificate issuer set parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct SetIssuerParameters {
     /// Attributes of the issuer object.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -752,7 +752,7 @@ pub struct SetIssuerParameters {
 }
 
 /// The subject alternate names of a X509 object.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct SubjectAlternativeNames {
     /// Domain names.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -768,7 +768,7 @@ pub struct SubjectAlternativeNames {
 }
 
 /// The certificate operation update parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct UpdateCertificateOperationParameter {
     /// Indicates if cancellation was requested on the certificate operation.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -776,7 +776,7 @@ pub struct UpdateCertificateOperationParameter {
 }
 
 /// The certificate update parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct UpdateCertificatePropertiesParameters {
     /// The attributes of the certificate (optional).
     #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
@@ -792,7 +792,7 @@ pub struct UpdateCertificatePropertiesParameters {
 }
 
 /// The certificate issuer update parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct UpdateIssuerParameters {
     /// Attributes of the issuer object.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -812,7 +812,7 @@ pub struct UpdateIssuerParameters {
 }
 
 /// Properties of the X509 component of a certificate.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct X509CertificateProperties {
     /// The enhanced key usage.
     #[serde(rename = "ekus", skip_serializing_if = "Option::is_none")]

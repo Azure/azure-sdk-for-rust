@@ -32,8 +32,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, Pager, PagerResult, Pipeline, Request, RequestContent,
-        Response, Url,
+        ClientOptions, Context, Method, Pager, PagerResult, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url,
     },
     json, Result,
 };
@@ -124,7 +124,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Creates a new certificate.
@@ -155,7 +155,7 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Deletes a certificate from a specified key vault.
@@ -182,7 +182,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Deletes the creation operation for a specific certificate.
@@ -209,7 +209,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Deletes the certificate contacts for a specified key vault.
@@ -232,7 +232,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Deletes the specified certificate issuer.
@@ -259,7 +259,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Gets information about a certificate.
@@ -289,7 +289,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Gets the creation operation of a certificate.
@@ -315,7 +315,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Lists the policy for a certificate.
@@ -342,7 +342,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Lists the certificate contacts for a specified key vault.
@@ -365,7 +365,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Retrieves information about the specified deleted certificate.
@@ -393,7 +393,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Lists the specified certificate issuer.
@@ -420,7 +420,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Imports a certificate into a specified key vault.
@@ -453,7 +453,7 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// List certificates in a specified key vault
@@ -508,19 +508,17 @@ impl CertificateClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListCertificatePropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
-                let next_link = res.next_link.unwrap_or_default();
-                Ok(if next_link.is_empty() {
-                    PagerResult::Complete { response: rsp }
-                } else {
-                    PagerResult::Continue {
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                Ok(match res.next_link {
+                    Some(next_link) => PagerResult::Continue {
                         response: rsp,
                         continuation: next_link.parse()?,
-                    }
+                    },
+                    None => PagerResult::Complete { response: rsp },
                 })
             }
         }))
@@ -577,19 +575,17 @@ impl CertificateClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListCertificatePropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
-                let next_link = res.next_link.unwrap_or_default();
-                Ok(if next_link.is_empty() {
-                    PagerResult::Complete { response: rsp }
-                } else {
-                    PagerResult::Continue {
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                Ok(match res.next_link {
+                    Some(next_link) => PagerResult::Continue {
                         response: rsp,
                         continuation: next_link.parse()?,
-                    }
+                    },
+                    None => PagerResult::Complete { response: rsp },
                 })
             }
         }))
@@ -648,19 +644,17 @@ impl CertificateClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListDeletedCertificatePropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListDeletedCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
-                let next_link = res.next_link.unwrap_or_default();
-                Ok(if next_link.is_empty() {
-                    PagerResult::Complete { response: rsp }
-                } else {
-                    PagerResult::Continue {
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                Ok(match res.next_link {
+                    Some(next_link) => PagerResult::Continue {
                         response: rsp,
                         continuation: next_link.parse()?,
-                    }
+                    },
+                    None => PagerResult::Complete { response: rsp },
                 })
             }
         }))
@@ -713,19 +707,17 @@ impl CertificateClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListIssuerPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListIssuerPropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
-                let next_link = res.next_link.unwrap_or_default();
-                Ok(if next_link.is_empty() {
-                    PagerResult::Complete { response: rsp }
-                } else {
-                    PagerResult::Continue {
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                Ok(match res.next_link {
+                    Some(next_link) => PagerResult::Continue {
                         response: rsp,
                         continuation: next_link.parse()?,
-                    }
+                    },
+                    None => PagerResult::Complete { response: rsp },
                 })
             }
         }))
@@ -759,7 +751,7 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Permanently deletes the specified deleted certificate.
@@ -787,7 +779,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Recovers the deleted certificate back to its current version under /certificates.
@@ -815,7 +807,7 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Restores a backed up certificate to a vault.
@@ -841,7 +833,7 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Sets the certificate contacts for the specified key vault.
@@ -867,7 +859,7 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(contacts);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Sets the specified certificate issuer.
@@ -899,7 +891,7 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameter);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Updates a certificate operation.
@@ -930,7 +922,7 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(certificate_operation);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Updates the policy for a certificate.
@@ -961,7 +953,7 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(certificate_policy);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Updates the specified attributes associated with the given certificate.
@@ -995,7 +987,7 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Updates the specified certificate issuer.
@@ -1026,14 +1018,14 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameter);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }
 
 impl Default for CertificateClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("7.6"),
+            api_version: String::from("7.6-preview.2"),
             client_options: ClientOptions::default(),
         }
     }

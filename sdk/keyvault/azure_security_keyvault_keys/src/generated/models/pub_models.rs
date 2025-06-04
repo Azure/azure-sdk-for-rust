@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use time::OffsetDateTime;
 
 /// The backup key result, containing the backup blob.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct BackupKeyResult {
     /// The backup blob containing the backed up key.
@@ -27,7 +27,7 @@ pub struct BackupKeyResult {
 }
 
 /// The key create parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct CreateKeyParameters {
     /// Elliptic curve name. For valid values, see JsonWebKeyCurveName.
     #[serde(rename = "crv", skip_serializing_if = "Option::is_none")]
@@ -63,7 +63,7 @@ pub struct CreateKeyParameters {
 }
 
 /// A DeletedKeyBundle consisting of a WebKey plus its Attributes and deletion info
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct DeletedKey {
     /// The key management attributes.
@@ -110,7 +110,7 @@ pub struct DeletedKey {
 }
 
 /// The deleted key item containing the deleted key metadata and information about deletion.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct DeletedKeyProperties {
     /// The key management attributes.
@@ -153,7 +153,7 @@ pub struct DeletedKeyProperties {
 }
 
 /// The get random bytes request object.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct GetRandomBytesParameters {
     /// The requested number of random bytes.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -161,7 +161,7 @@ pub struct GetRandomBytesParameters {
 }
 
 /// The key import parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct ImportKeyParameters {
     /// Whether to import as a hardware key (HSM) or software key.
     #[serde(rename = "Hsm", skip_serializing_if = "Option::is_none")]
@@ -185,7 +185,7 @@ pub struct ImportKeyParameters {
 }
 
 /// As of <http://tools.ietf.org/html/draft-ietf-jose-json-web-key-18>
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct JsonWebKey {
     /// Elliptic curve name. For valid values, see JsonWebKeyCurveName.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -314,7 +314,7 @@ pub struct JsonWebKey {
 }
 
 /// A KeyBundle consisting of a WebKey plus its attributes.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct Key {
     /// The key management attributes.
@@ -339,8 +339,7 @@ pub struct Key {
 }
 
 /// The key attestation information.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
-#[non_exhaustive]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyAttestation {
     /// A base64url-encoded string containing certificates in PEM format, used for attestation validation.
     #[serde(
@@ -378,7 +377,7 @@ pub struct KeyAttestation {
 }
 
 /// The attributes of a key managed by the key vault service.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyAttributes {
     /// The key or key version attestation information.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -443,7 +442,7 @@ pub struct KeyAttributes {
 }
 
 /// The key operations parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyOperationParameters {
     /// Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms.
     #[serde(
@@ -489,7 +488,7 @@ pub struct KeyOperationParameters {
 }
 
 /// The key operation result.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct KeyOperationResult {
     /// Additional data to authenticate but not encrypt/decrypt when using authenticated crypto algorithms.
@@ -537,7 +536,7 @@ pub struct KeyOperationResult {
 }
 
 /// The key item containing key metadata.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct KeyProperties {
     /// The key management attributes.
@@ -558,7 +557,7 @@ pub struct KeyProperties {
 }
 
 /// The policy rules under which the key can be exported.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyReleasePolicy {
     /// Content type and version of key release policy
     #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
@@ -581,7 +580,7 @@ pub struct KeyReleasePolicy {
 }
 
 /// The release result, containing the released key.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct KeyReleaseResult {
     /// A signed object containing the released key.
@@ -590,7 +589,7 @@ pub struct KeyReleaseResult {
 }
 
 /// Management policy for a key.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyRotationPolicy {
     /// The key rotation policy attributes.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -608,7 +607,7 @@ pub struct KeyRotationPolicy {
 }
 
 /// The key rotation policy attributes.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyRotationPolicyAttributes {
     /// The key rotation policy created time in UTC.
     #[serde(
@@ -633,7 +632,7 @@ pub struct KeyRotationPolicyAttributes {
 }
 
 /// The key verify result.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct KeyVerifyResult {
     /// True if the signature is verified, otherwise false.
@@ -642,7 +641,7 @@ pub struct KeyVerifyResult {
 }
 
 /// Action and its trigger that will be performed by Key Vault over the lifetime of a key.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct LifetimeAction {
     /// The action that will be executed.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -654,7 +653,7 @@ pub struct LifetimeAction {
 }
 
 /// A condition to be satisfied for an action to be executed.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct LifetimeActionTrigger {
     /// Time after creation to attempt to rotate. It only applies to rotate. It will be in ISO 8601 duration format. Example:
     /// 90 days : "P90D"
@@ -667,7 +666,7 @@ pub struct LifetimeActionTrigger {
 }
 
 /// The action that will be executed.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct LifetimeActionType {
     /// The type of the action. The value should be compared case-insensitively.
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
@@ -675,7 +674,7 @@ pub struct LifetimeActionType {
 }
 
 /// A list of keys that have been deleted in this vault.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct ListDeletedKeyPropertiesResult {
     /// The URL to get the next set of deleted keys.
@@ -688,7 +687,7 @@ pub struct ListDeletedKeyPropertiesResult {
 }
 
 /// The key list result.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct ListKeyPropertiesResult {
     /// The URL to get the next set of keys.
@@ -701,7 +700,7 @@ pub struct ListKeyPropertiesResult {
 }
 
 /// The get random bytes response object containing the bytes.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct RandomBytes {
     /// The bytes encoded as a base64url string.
@@ -715,7 +714,7 @@ pub struct RandomBytes {
 }
 
 /// The release key parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct ReleaseParameters {
     /// The encryption algorithm to use to protected the exported key material
     #[serde(rename = "enc", skip_serializing_if = "Option::is_none")]
@@ -731,7 +730,7 @@ pub struct ReleaseParameters {
 }
 
 /// The key restore parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct RestoreKeyParameters {
     /// The backup blob associated with a key bundle.
     #[serde(
@@ -745,7 +744,7 @@ pub struct RestoreKeyParameters {
 }
 
 /// The key operations parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct SignParameters {
     /// The signing/verification algorithm identifier. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm.
     #[serde(rename = "alg", skip_serializing_if = "Option::is_none")]
@@ -762,7 +761,7 @@ pub struct SignParameters {
 }
 
 /// The key update parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct UpdateKeyPropertiesParameters {
     /// The attributes of a key managed by the key vault service.
     #[serde(rename = "attributes", skip_serializing_if = "Option::is_none")]
@@ -782,7 +781,7 @@ pub struct UpdateKeyPropertiesParameters {
 }
 
 /// The key verify parameters.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct VerifyParameters {
     /// The signing/verification algorithm. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm.
     #[serde(rename = "alg", skip_serializing_if = "Option::is_none")]
