@@ -1,5 +1,5 @@
 use azure_core::http::{
-    headers::Headers, response::Response, HttpClient, Method, Request, StatusCode, Url,
+    headers::Headers, HttpClient, Method, RawResponse, Request, StatusCode, Url,
 };
 use azure_core_test::http::MockHttpClient;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
@@ -30,7 +30,14 @@ fn http_transport_test(c: &mut Criterion) {
 
     // client to be used in the benchmark
     let mock_client = Arc::new(MockHttpClient::new(move |_| {
-        async move { Ok(Response::from_bytes(StatusCode::Ok, Headers::new(), vec![])) }.boxed()
+        async move {
+            Ok(RawResponse::from_bytes(
+                StatusCode::Ok,
+                Headers::new(),
+                vec![],
+            ))
+        }
+        .boxed()
     })) as Arc<dyn HttpClient>;
 
     // requests to be used in the benchmark

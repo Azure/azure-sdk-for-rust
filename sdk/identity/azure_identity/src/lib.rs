@@ -151,7 +151,7 @@ mod tests {
     use async_trait::async_trait;
     use azure_core::{
         error::ErrorKind,
-        http::{Request, Response},
+        http::{RawResponse, Request, Response},
         process::Executor,
         Error, Result,
     };
@@ -237,7 +237,7 @@ mod tests {
     pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
 
     pub struct MockSts {
-        responses: Mutex<Vec<Response>>,
+        responses: Mutex<Vec<RawResponse>>,
         on_request: Option<RequestCallback>,
     }
 
@@ -248,7 +248,7 @@ mod tests {
     }
 
     impl MockSts {
-        pub fn new(responses: Vec<Response>, on_request: Option<RequestCallback>) -> Self {
+        pub fn new(responses: Vec<RawResponse>, on_request: Option<RequestCallback>) -> Self {
             Self {
                 responses: Mutex::new(responses),
                 on_request,
@@ -258,7 +258,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl azure_core::http::HttpClient for MockSts {
-        async fn execute_request(&self, request: &Request) -> Result<Response> {
+        async fn execute_request(&self, request: &Request) -> Result<RawResponse> {
             self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {

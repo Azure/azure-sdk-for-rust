@@ -164,6 +164,7 @@ mod tests {
 
     use futures::StreamExt;
     use serde::Deserialize;
+    use typespec_client_core::http::RawResponse;
 
     use crate::http::{
         headers::{HeaderName, HeaderValue},
@@ -180,7 +181,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 None => Ok(PagerResult::Continue {
-                    response: Response::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -188,11 +189,12 @@ mod tests {
                         )])
                         .into(),
                         r#"{"page":1}"#,
-                    ),
+                    )
+                    .into(),
                     continuation: "1",
                 }),
                 Some("1") => Ok(PagerResult::Continue {
-                    response: Response::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -200,11 +202,12 @@ mod tests {
                         )])
                         .into(),
                         r#"{"page":2}"#,
-                    ),
+                    )
+                    .into(),
                     continuation: "2",
                 }),
                 Some("2") => Ok(PagerResult::Complete {
-                    response: Response::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -212,7 +215,8 @@ mod tests {
                         )])
                         .into(),
                         r#"{"page":3}"#,
-                    ),
+                    )
+                    .into(),
                 }),
                 _ => {
                     panic!("Unexpected continuation value")
@@ -251,7 +255,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 None => Ok(PagerResult::Continue {
-                    response: Response::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -259,7 +263,8 @@ mod tests {
                         )])
                         .into(),
                         r#"{"page":1}"#,
-                    ),
+                    )
+                    .into(),
                     continuation: "1",
                 }),
                 Some("1") => Err(typespec::Error::message(

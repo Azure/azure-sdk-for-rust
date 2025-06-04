@@ -390,7 +390,7 @@ pub async fn item_null_partition_key(context: TestContext) -> Result<(), Box<dyn
         .await?;
 
     let result = container_client
-        .read_item(PartitionKey::NULL, "Item1", None)
+        .read_item::<()>(PartitionKey::NULL, "Item1", None)
         .await;
     match result {
         Ok(_) => return Err("expected a 404 error when reading the deleted item".into()),

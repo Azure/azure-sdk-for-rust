@@ -139,7 +139,7 @@ mod tests {
     use crate::tests::*;
     use azure_core::{
         authority_hosts::AZURE_PUBLIC_CLOUD,
-        http::{headers::Headers, Response, StatusCode},
+        http::{headers::Headers, RawResponse, Response, StatusCode},
         Bytes, Result,
     };
     use std::vec;
@@ -163,7 +163,7 @@ mod tests {
     async fn get_token_error() {
         let description = "AADSTS7000215: Invalid client secret.";
         let sts = MockSts::new(
-            vec![Response::from_bytes(
+            vec![RawResponse::from_bytes(
                 StatusCode::BadRequest,
                 Headers::default(),
                 Bytes::from(format!(
@@ -205,7 +205,7 @@ mod tests {
     async fn get_token_success() {
         let expires_in = 3600;
         let sts = MockSts::new(
-            vec![Response::from_bytes(
+            vec![RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::default(),
                 Bytes::from(format!(

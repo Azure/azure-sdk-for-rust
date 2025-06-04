@@ -3,7 +3,7 @@
 
 use async_trait::async_trait;
 use azure_core::{
-    http::{request::Request, response::Response, HttpClient},
+    http::{request::Request, HttpClient, RawResponse},
     Result,
 };
 use futures::{future::BoxFuture, lock::Mutex};
@@ -54,7 +54,7 @@ pub struct MockHttpClient<C>(Mutex<C>);
 
 impl<C> MockHttpClient<C>
 where
-    C: FnMut(&Request) -> BoxFuture<'_, Result<Response>> + Send + Sync,
+    C: FnMut(&Request) -> BoxFuture<'_, Result<RawResponse>> + Send + Sync,
 {
     /// Creates a new `MockHttpClient` using a capture.
     ///
@@ -75,9 +75,9 @@ impl<C> fmt::Debug for MockHttpClient<C> {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl<C> HttpClient for MockHttpClient<C>
 where
-    C: FnMut(&Request) -> BoxFuture<'_, Result<Response>> + Send + Sync,
+    C: FnMut(&Request) -> BoxFuture<'_, Result<RawResponse>> + Send + Sync,
 {
-    async fn execute_request(&self, req: &Request) -> Result<Response> {
+    async fn execute_request(&self, req: &Request) -> Result<RawResponse> {
         let mut client = self.0.lock().await;
         (client)(req).await
     }
@@ -109,7 +109,11 @@ mod tests {
                     *count += 1;
                 }
 
-                Ok(Response::from_bytes(StatusCode::Ok, Headers::new(), vec![]))
+                Ok(RawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    vec![],
+                ))
             }
             .boxed()
         })) as Arc<dyn HttpClient>;
