@@ -4,6 +4,8 @@
 
 ### Features Added
 
+* Added a function `CosmosClient::with_connection_string` to enable `CosmosClient` creation via connection string. ([#2641](https://github.com/Azure/azure-sdk-for-rust/pull/2641))
+
 ### Breaking Changes
 
 ### Bugs Fixed

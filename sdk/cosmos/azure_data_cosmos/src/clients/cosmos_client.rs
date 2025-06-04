@@ -96,6 +96,36 @@ impl CosmosClient {
         })
     }
 
+    /// Creates a new CosmosClient, using a connection string.
+    ///
+    /// # Arguments
+    ///
+    /// * `connection_string` - the connection string to use for the client, e.g. `AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey`
+    /// * `options` - Optional configuration for the client.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::CosmosClient;
+    /// use azure_core::credentials::Secret;
+    ///
+    /// let client = CosmosClient::with_connection_string(
+    ///     "AccountEndpoint=https://accountname.documents.azure.com:443/‌​;AccountKey=accountk‌​ey",
+    ///     None)
+    ///     .unwrap();
+    /// ```
+    #[cfg(feature = "key_auth")]
+    pub fn with_connection_string(
+        connection_string: Secret,
+        options: Option<CosmosClientOptions>,
+    ) -> Result<Self, azure_core::Error> {
+        let connection_str = crate::ConnectionString::try_from(&connection_string)?;
+        let endpoint = connection_str.account_endpoint;
+        let key = connection_str.account_key;
+
+        Self::with_key(endpoint.as_str(), key, options)
+    }
+
     /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
     ///
     /// # Arguments
