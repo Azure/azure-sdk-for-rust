@@ -164,11 +164,10 @@ mod tests {
 
     use futures::StreamExt;
     use serde::Deserialize;
-    use typespec_client_core::http::RawResponse;
 
     use crate::http::{
         headers::{HeaderName, HeaderValue},
-        Pager, PagerResult, StatusCode,
+        Pager, PagerResult, RawResponse, StatusCode,
     };
 
     #[tokio::test]

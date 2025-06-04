@@ -252,7 +252,7 @@ mod tests {
     use crate::http::{RawResponse, Response, StatusCode};
 
     #[tokio::test]
-    pub async fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {
+    async fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {
         pub struct MyModel;
 
         {
@@ -266,7 +266,7 @@ mod tests {
     }
 
     #[tokio::test]
-    pub async fn can_convert_response_to_raw_response() -> Result<(), Box<dyn std::error::Error>> {
+    async fn can_convert_response_to_raw_response() -> Result<(), Box<dyn std::error::Error>> {
         pub struct MyModel;
 
         // Test converting a typed Response to RawResponse using Into
@@ -328,7 +328,7 @@ mod tests {
         }
 
         #[tokio::test]
-        pub async fn deserialize_default_type() {
+        async fn deserialize_default_type() {
             let response = get_secret();
             let secret = response.into_body().await.unwrap();
             assert_eq!(secret.name, "my_secret");
@@ -336,7 +336,7 @@ mod tests {
         }
 
         #[tokio::test]
-        pub async fn deserialize_alternate_type() {
+        async fn deserialize_alternate_type() {
             #[derive(Deserialize)]
             struct MySecretResponse {
                 #[serde(rename = "name")]
@@ -400,7 +400,7 @@ mod tests {
         }
 
         #[tokio::test]
-        pub async fn deserialize_default_type() {
+        async fn deserialize_default_type() {
             let response = get_secret();
             let secret = response.into_body().await.unwrap();
             assert_eq!(secret.name, "my_secret");
@@ -408,7 +408,7 @@ mod tests {
         }
 
         #[tokio::test]
-        pub async fn deserialize_alternate_type() {
+        async fn deserialize_alternate_type() {
             #[derive(Deserialize)]
             struct MySecretResponse {
                 #[serde(rename = "name")]
