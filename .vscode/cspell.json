@@ -24,6 +24,8 @@
   ],
   "words": [
     "aarch",
+    "accountendpoint",
+    "accountkey",
     "amqp",
     "asyncoperation",
     "azsdk",
