@@ -290,6 +290,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_messaging_eventgrid_namespaces"
+version = "0.0.1"
+dependencies = [
+ "azure_core",
+ "serde",
+ "serde_json",
+ "time",
+ "typespec_client_core",
+]
+
+[[package]]
 name = "azure_messaging_eventhubs"
 version = "0.4.0"
 dependencies = [

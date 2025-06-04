@@ -10,6 +10,7 @@ members = [
   "sdk/core/azure_core_test_macros",
   "sdk/cosmos/azure_data_cosmos",
   "sdk/identity/azure_identity",
+  "sdk/eventgrid/azure_messaging_eventgrid_namespaces",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/keyvault/azure_security_keyvault_certificates",
   "sdk/keyvault/azure_security_keyvault_keys",
