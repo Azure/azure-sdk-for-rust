@@ -2,11 +2,9 @@
 // Licensed under the MIT License.
 
 use super::{AsyncRuntime, SpawnedTask, TaskFuture};
-use std::fmt::Debug;
 
-/// A [`TaskSpawner`] using [`tokio::spawn`].
-#[derive(Debug)]
-pub struct TokioRuntime;
+/// An [`AsyncRuntime`] using `tokio` based APIs.
+pub(crate) struct TokioRuntime;
 
 impl AsyncRuntime for TokioRuntime {
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {

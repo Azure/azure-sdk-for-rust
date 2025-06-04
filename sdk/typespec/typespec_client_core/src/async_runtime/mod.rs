@@ -11,13 +11,13 @@
 //! Example usage:
 //!
 //! ```
-//! use azure_core::task::{new_task_spawner, TaskSpawner};
+//! use typespec_client_core::get_async_runtime;
 //! use futures::FutureExt;
 //!
 //! #[tokio::main]
 //! async fn main() {
-//!     let spawner = new_task_spawner();
-//!     let handle = spawner.spawn(async {
+//!     let async_runtime = get_async_runtime();
+//!     let handle = async_runtime.spawn(async {
 //!         // Simulate some work
 //!         std::thread::sleep(std::time::Duration::from_secs(1));
 //!     }.boxed());
@@ -30,7 +30,6 @@
 //!
 //!
 use std::{
-    fmt::Debug,
     future::Future,
     pin::Pin,
     sync::{Arc, OnceLock},
@@ -45,11 +44,11 @@ mod tokio_runtime;
 mod tests;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
+pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 
 // WASM32 does not support `Send` futures, so we use a non-Send future type.
 #[cfg(target_arch = "wasm32")]
-pub(crate) type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
+pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
 
 /// A `SpawnedTask` is a future that represents a running task.
 /// It can be awaited to block until the task has completed.
@@ -70,7 +69,7 @@ pub type SpawnedTask =
 ///
 /// This trait defines the various
 ///
-pub trait AsyncRuntime: Send + Sync + Debug {
+pub trait AsyncRuntime: Send + Sync {
     /// Spawn a task that executes a given future and returns the output.
     ///
     /// # Arguments
@@ -83,7 +82,7 @@ pub trait AsyncRuntime: Send + Sync + Debug {
     ///
     /// # Example
     /// ```
-    /// use azure_core::async_runtime::{get_async_runtime, TaskSpawner};
+    /// use typespec_client_core::get_async_runtime;
     /// use futures::FutureExt;
     ///
     /// #[tokio::main]
@@ -121,12 +120,12 @@ static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock:
 /// - If the `tokio` feature is not enabled and the target architecture is not `wasm32`, it uses a std::thread based spawner and timer.
 ///
 /// # Returns
-///  A new instance of a [`AsyncRuntime`] which can be used to spawn background tasks.
+///  An instance of a [`AsyncRuntime`] which can be used to spawn background tasks or perform other asynchronous operations.
 ///
 /// # Example
 ///
 /// ```
-/// use azure_core::get_async_runtime;
+/// use typespec_client_core::get_async_runtime;
 /// use futures::FutureExt;
 ///
 /// #[tokio::main]
@@ -155,16 +154,31 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 /// # Example
 ///
 /// ```
-/// use azure_core::async_runtime::{get_async_runtime, AsyncRuntime};
+/// use typespec_client_core::{
+///     set_async_runtime,
+///     async_runtime::{AsyncRuntime, TaskFuture, SpawnedTask}};
+/// use std::sync::Arc;
 /// use futures::FutureExt;
 ///
-/// async fn main() {
-///   let async_runtime = set_async_runtime();
-///   let handle = async_runtime.spawn(async {
-///     // Simulate some work
-///     std::thread::sleep(std::time::Duration::from_secs(1));
-///   }.boxed());
-/// }
+/// struct CustomRuntime;
+///
+/// impl AsyncRuntime for CustomRuntime {
+///    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
+///        // Custom implementation for spawning tasks
+///        Box::pin(async move {
+///            f.await;
+///            Ok(())
+///         })
+///    }
+///    fn sleep(&self, duration: std::time::Duration) -> TaskFuture {
+///       // Custom implementation for sleeping
+///       Box::pin(async move {
+///            std::thread::sleep(duration);
+///         })
+///    }
+///  }
+///
+///  set_async_runtime(Arc::new(CustomRuntime)).expect("Failed to set async runtime");
 /// ```
 ///
 pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {

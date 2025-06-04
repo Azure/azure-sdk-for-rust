@@ -6,6 +6,7 @@ use super::{AsyncRuntime, SpawnedTask, TaskFuture};
 #[cfg(not(target_arch = "wasm32"))]
 use futures::{executor::LocalPool, task::SpawnExt};
 
+#[cfg(not(target_arch = "wasm32"))]
 use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(not(target_arch = "wasm32"))]
 use std::{
@@ -15,7 +16,6 @@ use std::{
     sync::{Arc, Mutex},
     task::{Context, Poll, Waker},
     thread,
-    time::Duration,
 };
 #[cfg(not(target_arch = "wasm32"))]
 use tracing::debug;
@@ -82,8 +82,8 @@ impl Future for ThreadJoinFuture {
 }
 
 /// An [`AsyncRuntime`] using [`std::thread::spawn`].
-#[derive(Debug)]
-pub struct StdRuntime;
+#[allow(dead_code)]
+pub(crate) struct StdRuntime;
 
 impl AsyncRuntime for StdRuntime {
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
@@ -151,7 +151,13 @@ impl AsyncRuntime for StdRuntime {
     ///
     /// Uses a simple thread based implementation for sleep. A more efficient
     /// implementation is available by using the `tokio` crate feature.
-    fn sleep(&self, duration: Duration) -> TaskFuture {
+    #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
+    fn sleep(&self, duration: std::time::Duration) -> TaskFuture {
+        #[cfg(target_arch = "wasm32")]
+        {
+            panic!("std::thread::spawn is not supported on wasm32")
+        }
+        #[cfg(not(target_arch = "wasm32"))]
         Box::pin(Sleep {
             signal: None,
             duration,
@@ -160,11 +166,13 @@ impl AsyncRuntime for StdRuntime {
 }
 
 #[derive(Debug)]
+#[cfg(not(target_arch = "wasm32"))]
 pub struct Sleep {
     signal: Option<Arc<AtomicBool>>,
-    duration: Duration,
+    duration: std::time::Duration,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl Future for Sleep {
     type Output = ();
 
