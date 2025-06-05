@@ -6,7 +6,7 @@
 pub(crate) mod event_receiver;
 
 use crate::{
-    common::{recoverable_connection::RecoverableConnection, ManagementInstance},
+    common::{recoverable::RecoverableConnection, ManagementInstance},
     models::{ConsumerClientDetails, EventHubPartitionProperties, EventHubProperties},
     RetryOptions,
 };

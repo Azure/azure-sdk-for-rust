@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::{common::recoverable_connection::RecoverableConnection, models::ReceivedEventData};
+use crate::{common::recoverable::RecoverableConnection, models::ReceivedEventData};
 use async_stream::try_stream;
 use azure_core::{error::Result, http::Url};
 use azure_core_amqp::{

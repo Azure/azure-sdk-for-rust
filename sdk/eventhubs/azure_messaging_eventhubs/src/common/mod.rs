@@ -3,10 +3,10 @@
 
 pub(crate) mod authorizer;
 pub(crate) mod management;
-pub(crate) mod recoverable_connection;
+pub(crate) mod recoverable;
 pub mod retry;
 pub(crate) mod user_agent;
 
 // Public API
 pub(crate) use management::ManagementInstance;
-pub(crate) use retry::{retry_azure_operation, RetryOptions};
+pub(crate) use retry::retry_azure_operation;
