@@ -1,19 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{SpawnedTask, TaskFuture, TaskSpawner};
+use super::{AsyncRuntime, SpawnedTask, TaskFuture};
+
 #[cfg(not(target_arch = "wasm32"))]
 use futures::{executor::LocalPool, task::SpawnExt};
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(not(target_arch = "wasm32"))]
 use std::{
     future,
-    future::Future,
-    pin::Pin,
     sync::{Arc, Mutex},
-    task::Waker,
-    task::{Context, Poll},
+    task::{Context, Poll, Waker},
     thread,
 };
+use std::{future::Future, pin::Pin};
 #[cfg(not(target_arch = "wasm32"))]
 use tracing::debug;
 
@@ -78,11 +80,11 @@ impl Future for ThreadJoinFuture {
     }
 }
 
-/// A [`TaskSpawner`] using [`std::thread::spawn`].
-#[derive(Debug)]
-pub struct StdSpawner;
+/// An [`AsyncRuntime`] using [`std::thread::spawn`].
+#[allow(dead_code)]
+pub(crate) struct StdRuntime;
 
-impl TaskSpawner for StdSpawner {
+impl AsyncRuntime for StdRuntime {
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {
         #[cfg(target_arch = "wasm32")]
@@ -141,6 +143,59 @@ impl TaskSpawner for StdSpawner {
             // Create a future that will complete when the thread joins
             let join_future = ThreadJoinFuture { join_state };
             Box::pin(join_future)
+        }
+    }
+
+    /// Creates a future that resolves after a specified duration of time.
+    ///
+    /// Uses a simple thread based implementation for sleep. A more efficient
+    /// implementation is available by using the `tokio` crate feature.
+    #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
+    fn sleep(
+        &self,
+        duration: std::time::Duration,
+    ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            panic!("sleep is not supported on wasm32")
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        Box::pin(Sleep {
+            signal: None,
+            duration,
+        })
+    }
+}
+
+#[derive(Debug)]
+#[cfg(not(target_arch = "wasm32"))]
+pub struct Sleep {
+    signal: Option<Arc<AtomicBool>>,
+    duration: std::time::Duration,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Future for Sleep {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if let Some(signal) = &self.signal {
+            if signal.load(Ordering::Acquire) {
+                Poll::Ready(())
+            } else {
+                Poll::Pending
+            }
+        } else {
+            let signal = Arc::new(AtomicBool::new(false));
+            let waker = cx.waker().clone();
+            let duration = self.duration;
+            self.get_mut().signal = Some(signal.clone());
+            thread::spawn(move || {
+                thread::sleep(duration);
+                signal.store(true, Ordering::Release);
+                waker.wake();
+            });
+            Poll::Pending
         }
     }
 }
