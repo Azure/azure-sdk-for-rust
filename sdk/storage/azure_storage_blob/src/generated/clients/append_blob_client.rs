@@ -326,7 +326,6 @@ impl AppendBlobClient {
         path = path.replace("{blobName}", &self.blob_name);
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
-        url.query_pairs_mut().append_key_only("AppendBlob");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
@@ -334,7 +333,6 @@ impl AppendBlobClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
         request.insert_header("content-length", content_length.to_string());
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
