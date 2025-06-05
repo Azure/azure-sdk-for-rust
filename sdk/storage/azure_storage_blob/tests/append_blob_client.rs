@@ -27,25 +27,3 @@ async fn test_create_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>>
     container_client.delete_container(None).await?;
     Ok(())
 }
-
-#[recorded::test]
-async fn test_create_append_blob2(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
-    let append_blob_client = blob_client.append_blob_client();
-
-    append_blob_client.create(0, None).await?;
-
-    // Assert
-    let blob_properties = blob_client.get_properties(None).await?;
-    let blob_type = blob_properties.blob_type()?;
-    let content_length = blob_properties.content_length()?;
-
-    assert_eq!(0, content_length.unwrap());
-    assert_eq!(BlobType::AppendBlob, blob_type.unwrap());
-
-    container_client.delete_container(None).await?;
-    Ok(())
-}
