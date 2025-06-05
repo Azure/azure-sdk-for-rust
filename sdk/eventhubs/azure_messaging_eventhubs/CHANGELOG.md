@@ -11,7 +11,7 @@
 - Added performance tests for some Event Hubs APIs
 - Use `SafeDebug` attribute for AMQP messages
 - Test infrastructure is now deployed using a `test-resources.bicep` file instead of a `test-resources.json` file.
-- Restructured internal logic to prepare for connection/session recovery logic.
+- Restructured internal logic to prepare for connection/session recovery.
 
 ## 0.3.0 (2025-05-07)
 
