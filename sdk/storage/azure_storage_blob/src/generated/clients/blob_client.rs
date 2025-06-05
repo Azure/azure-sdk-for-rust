@@ -19,10 +19,9 @@ use crate::generated::{
         BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
         BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTagsResult,
-        BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions,
-        BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
-        BlobExpiryOptions, BlobTags,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+        BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult,
+        BlobClientUndeleteOptions, BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
     },
 };
 use azure_core::{
@@ -801,7 +800,6 @@ impl BlobClient {
         }
         let mut request = Request::new(url, Method::Head);
         request.insert_header("accept", "application/json");
-        request.insert_header("content-type", "");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -1283,7 +1281,7 @@ impl BlobClient {
         &self,
         tags: RequestContent<BlobTags>,
         options: Option<BlobClientSetTagsOptions<'_>>,
-    ) -> Result<Response<BlobClientSetTagsResult>> {
+    ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
