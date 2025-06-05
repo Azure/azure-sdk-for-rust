@@ -1,0 +1,51 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use azure_core_test::{recorded, TestContext};
+use azure_storage_blob::models::{BlobClientGetPropertiesResultHeaders, BlobType};
+use azure_storage_blob_test::{get_blob_name, get_container_client};
+use std::error::Error;
+
+#[recorded::test]
+async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let page_blob_client = blob_client.page_blob_client();
+
+    page_blob_client.create(0, 1024, None).await?;
+
+    // Assert
+    let blob_properties = blob_client.get_properties(None).await?;
+    let blob_type = blob_properties.blob_type()?;
+    let content_length = blob_properties.content_length()?;
+
+    assert_eq!(1024, content_length.unwrap());
+    assert_eq!(BlobType::PageBlob, blob_type.unwrap());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_create_page_blob2(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let page_blob_client = blob_client.page_blob_client();
+
+    page_blob_client.create(0, 1024, None).await?;
+
+    // Assert
+    let blob_properties = blob_client.get_properties(None).await?;
+    let blob_type = blob_properties.blob_type()?;
+    let content_length = blob_properties.content_length()?;
+
+    assert_eq!(1024, content_length.unwrap());
+    assert_eq!(BlobType::PageBlob, blob_type.unwrap());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
