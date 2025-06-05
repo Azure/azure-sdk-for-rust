@@ -1,14 +1,10 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.4.0 (2025-06-10)
 
 ### Features Added
 
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
+- Built on Azure Key Vault service version 7.6.
 
 ## 0.3.0 (2025-05-06)
 

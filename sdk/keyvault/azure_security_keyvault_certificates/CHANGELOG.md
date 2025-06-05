@@ -1,14 +1,11 @@
 # Release History
 
-## 0.3.0 (Unreleased)
+## 0.3.0 (2025-06-10)
 
 ### Features Added
 
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
+- Built on Azure Key Vault service version 7.6.
+- Added `preserve_cert_order` to several models to preserve the order of signing certificates when importing or merging certificates.
 
 ## 0.2.0 (2025-05-06)
 

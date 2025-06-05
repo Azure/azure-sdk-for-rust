@@ -340,6 +340,7 @@ pub struct Key {
 
 /// The key attestation information.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize, azure_core::http::Model)]
+#[non_exhaustive]
 pub struct KeyAttestation {
     /// A base64url-encoded string containing certificates in PEM format, used for attestation validation.
     #[serde(
