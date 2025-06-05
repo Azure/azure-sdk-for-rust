@@ -217,10 +217,13 @@ impl<P: Page> ItemIterator<P> {
     /// Creates a [`ItemIterator<P>`] from a raw stream of [`Result<P>`](typespec::Result<P>) values.
     ///
     /// This constructor is used when you are implementing a completely custom stream and want to use it as a pager.
-    pub fn from_stream<S>(stream: S) -> Self
-    where
-        S: Stream<Item = Result<P, Error>> + Send + 'static,
-    {
+    pub fn from_stream<
+        // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
+        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = Result<P, Error>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] S: Stream<Item = Result<P, Error>> + 'static,
+    >(
+        stream: S,
+    ) -> Self {
         Self {
             stream: Box::pin(stream),
             current: None,
@@ -396,10 +399,13 @@ impl<P> PageIterator<P> {
     /// Creates a [`PageIterator<P>`] from a raw stream of [`Result<P>`](typespec::Result<P>) values.
     ///
     /// This constructor is used when you are implementing a completely custom stream and want to use it as a pager.
-    pub fn from_stream<S>(stream: S) -> Self
-    where
-        S: Stream<Item = Result<P, Error>> + Send + 'static,
-    {
+    pub fn from_stream<
+        // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
+        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = Result<P, Error>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] S: Stream<Item = Result<P, Error>> + 'static,
+    >(
+        stream: S,
+    ) -> Self {
         Self {
             stream: Box::pin(stream),
         }
