@@ -118,7 +118,7 @@ impl BlobClient {
         &self,
         copy_id: &str,
         options: Option<BlobClientAbortCopyFromUrlOptions<'_>>,
-    ) -> Result<Response<BlobClientAbortCopyFromUrlResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientAbortCopyFromUrlResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -156,7 +156,7 @@ impl BlobClient {
     pub async fn acquire_lease(
         &self,
         options: Option<BlobClientAcquireLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientAcquireLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientAcquireLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -214,7 +214,7 @@ impl BlobClient {
     pub async fn break_lease(
         &self,
         options: Option<BlobClientBreakLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientBreakLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientBreakLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -273,7 +273,7 @@ impl BlobClient {
         lease_id: String,
         proposed_lease_id: String,
         options: Option<BlobClientChangeLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientChangeLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientChangeLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -331,7 +331,7 @@ impl BlobClient {
         &self,
         copy_source: String,
         options: Option<BlobClientCopyFromUrlOptions<'_>>,
-    ) -> Result<Response<BlobClientCopyFromUrlResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientCopyFromUrlResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -445,7 +445,7 @@ impl BlobClient {
     pub async fn create_snapshot(
         &self,
         options: Option<BlobClientCreateSnapshotOptions<'_>>,
-    ) -> Result<Response<BlobClientCreateSnapshotResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientCreateSnapshotResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -589,7 +589,7 @@ impl BlobClient {
     pub async fn delete_immutability_policy(
         &self,
         options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -628,7 +628,7 @@ impl BlobClient {
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<Response<BlobClientDownloadResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientDownloadResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -714,7 +714,7 @@ impl BlobClient {
     pub async fn get_account_info(
         &self,
         options: Option<BlobClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<BlobClientGetAccountInfoResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientGetAccountInfoResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -782,7 +782,7 @@ impl BlobClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobClientGetPropertiesResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientGetPropertiesResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -898,7 +898,7 @@ impl BlobClient {
         &self,
         lease_id: String,
         options: Option<BlobClientReleaseLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientReleaseLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientReleaseLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -953,7 +953,7 @@ impl BlobClient {
         &self,
         lease_id: String,
         options: Option<BlobClientRenewLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientRenewLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientRenewLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1007,7 +1007,7 @@ impl BlobClient {
         &self,
         expiry_options: BlobExpiryOptions,
         options: Option<BlobClientSetExpiryOptions<'_>>,
-    ) -> Result<Response<BlobClientSetExpiryResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientSetExpiryResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1042,7 +1042,7 @@ impl BlobClient {
     pub async fn set_immutability_policy(
         &self,
         options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientSetImmutabilityPolicyResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientSetImmutabilityPolicyResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1100,7 +1100,7 @@ impl BlobClient {
         &self,
         legal_hold: bool,
         options: Option<BlobClientSetLegalHoldOptions<'_>>,
-    ) -> Result<Response<BlobClientSetLegalHoldResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientSetLegalHoldResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1284,7 +1284,7 @@ impl BlobClient {
         &self,
         tags: RequestContent<BlobTags>,
         options: Option<BlobClientSetTagsOptions<'_>>,
-    ) -> Result<Response<BlobClientSetTagsResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientSetTagsResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1389,7 +1389,7 @@ impl BlobClient {
         &self,
         copy_source: String,
         options: Option<BlobClientStartCopyFromUrlOptions<'_>>,
-    ) -> Result<Response<BlobClientStartCopyFromUrlResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientStartCopyFromUrlResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1494,7 +1494,7 @@ impl BlobClient {
     pub async fn undelete(
         &self,
         options: Option<BlobClientUndeleteOptions<'_>>,
-    ) -> Result<Response<BlobClientUndeleteResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientUndeleteResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

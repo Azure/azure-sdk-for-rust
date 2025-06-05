@@ -513,12 +513,14 @@ impl CertificateClient {
                 let bytes = body.collect().await?;
                 let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-                Ok(match res.next_link {
-                    Some(next_link) => PagerResult::More {
+                let next_link = res.next_link.unwrap_or_default();
+                Ok(if next_link.is_empty() {
+                    PagerResult::Done { response: rsp }
+                } else {
+                    PagerResult::More {
                         response: rsp,
                         next: next_link.parse()?,
-                    },
-                    None => PagerResult::Done { response: rsp },
+                    }
                 })
             }
         }))
@@ -580,12 +582,14 @@ impl CertificateClient {
                 let bytes = body.collect().await?;
                 let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-                Ok(match res.next_link {
-                    Some(next_link) => PagerResult::More {
+                let next_link = res.next_link.unwrap_or_default();
+                Ok(if next_link.is_empty() {
+                    PagerResult::Done { response: rsp }
+                } else {
+                    PagerResult::More {
                         response: rsp,
                         next: next_link.parse()?,
-                    },
-                    None => PagerResult::Done { response: rsp },
+                    }
                 })
             }
         }))
@@ -649,12 +653,14 @@ impl CertificateClient {
                 let bytes = body.collect().await?;
                 let res: ListDeletedCertificatePropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-                Ok(match res.next_link {
-                    Some(next_link) => PagerResult::More {
+                let next_link = res.next_link.unwrap_or_default();
+                Ok(if next_link.is_empty() {
+                    PagerResult::Done { response: rsp }
+                } else {
+                    PagerResult::More {
                         response: rsp,
                         next: next_link.parse()?,
-                    },
-                    None => PagerResult::Done { response: rsp },
+                    }
                 })
             }
         }))
@@ -712,12 +718,14 @@ impl CertificateClient {
                 let bytes = body.collect().await?;
                 let res: ListIssuerPropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-                Ok(match res.next_link {
-                    Some(next_link) => PagerResult::More {
+                let next_link = res.next_link.unwrap_or_default();
+                Ok(if next_link.is_empty() {
+                    PagerResult::Done { response: rsp }
+                } else {
+                    PagerResult::More {
                         response: rsp,
                         next: next_link.parse()?,
-                    },
-                    None => PagerResult::Done { response: rsp },
+                    }
                 })
             }
         }))

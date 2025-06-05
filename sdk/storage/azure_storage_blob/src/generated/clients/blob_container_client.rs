@@ -30,8 +30,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, PageIterator, Pager, PagerResult, Pipeline, RawResponse,
-        Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Context, Method, PageIterator, PagerResult, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url, XmlFormat,
     },
     xml, Result,
 };
@@ -110,7 +110,7 @@ impl BlobContainerClient {
     pub async fn acquire_lease(
         &self,
         options: Option<BlobContainerClientAcquireLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientAcquireLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientAcquireLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -157,7 +157,7 @@ impl BlobContainerClient {
     pub async fn break_lease(
         &self,
         options: Option<BlobContainerClientBreakLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientBreakLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientBreakLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -205,7 +205,7 @@ impl BlobContainerClient {
         lease_id: String,
         proposed_lease_id: String,
         options: Option<BlobContainerClientChangeLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientChangeLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientChangeLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -418,7 +418,7 @@ impl BlobContainerClient {
     pub async fn get_account_info(
         &self,
         options: Option<BlobContainerClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientGetAccountInfoResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientGetAccountInfoResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -464,7 +464,7 @@ impl BlobContainerClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientGetPropertiesResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -556,7 +556,7 @@ impl BlobContainerClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: Response<ListBlobsFlatSegmentResponse, XmlFormat> =
+                    let rsp: Response<ListBlobsFlatSegmentResponse> =
                         pipeline.send(&ctx, &mut request).await?.into();
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
@@ -653,7 +653,7 @@ impl BlobContainerClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: Response<ListBlobsHierarchySegmentResponse, XmlFormat> =
+                    let rsp: Response<ListBlobsHierarchySegmentResponse> =
                         pipeline.send(&ctx, &mut request).await?.into();
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
@@ -685,7 +685,7 @@ impl BlobContainerClient {
         &self,
         lease_id: String,
         options: Option<BlobContainerClientReleaseLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientReleaseLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientReleaseLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -728,7 +728,7 @@ impl BlobContainerClient {
         &self,
         source_container_name: String,
         options: Option<BlobContainerClientRenameOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRenameResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientRenameResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -765,7 +765,7 @@ impl BlobContainerClient {
         &self,
         lease_id: String,
         options: Option<BlobContainerClientRenewLeaseOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRenewLeaseResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientRenewLeaseResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -806,7 +806,7 @@ impl BlobContainerClient {
     pub async fn restore(
         &self,
         options: Option<BlobContainerClientRestoreOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientRestoreResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientRestoreResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -845,7 +845,7 @@ impl BlobContainerClient {
         &self,
         container_acl: RequestContent<Vec<SignedIdentifier>>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientSetAccessPolicyResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
