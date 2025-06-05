@@ -1,14 +1,14 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.4.0 (2025-06-10)
 
 ### Features Added
 
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
+- Built on Azure Key Vault service version 7.6.
+- Added `EncryptionAlgorithm::CkmAesKeyWrap` and `CkmAesKeyWrapPad`.
+- Added `JsonWebKeySignatureAlgorithm::Hs256`, `Hs384`, and `Hs512`.
+- Added `KeyAttestation` returned by `KeyAttributes::attestation` field.
+- Added `KeyClient::get_key_attestation` client method.
 
 ## 0.3.0 (2025-05-06)
 
