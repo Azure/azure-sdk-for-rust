@@ -139,10 +139,8 @@ impl TestAccount {
             .with_parameter("@context_id", &self.context_id)?;
         let mut pager = cosmos_client.query_databases(query, None)?;
         let mut ids = Vec::new();
-        while let Some(page) = pager.try_next().await? {
-            for db in page.into_items() {
-                ids.push(db.id);
-            }
+        while let Some(db) = pager.try_next().await? {
+            ids.push(db.id);
         }
 
         // Now that we have a list of databases created by this test, we delete them.

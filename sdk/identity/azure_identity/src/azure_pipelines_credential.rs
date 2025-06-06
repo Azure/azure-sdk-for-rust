@@ -150,7 +150,7 @@ impl ClientAssertion for Client {
             );
         }
 
-        let assertion: Assertion = resp.into_json_body().await?;
+        let assertion: Assertion = resp.into_body().json().await?;
         Ok(assertion.oidc_token.secret().to_string())
     }
 }
@@ -202,7 +202,7 @@ impl fmt::Display for ErrorHeaders {
 mod tests {
     use super::*;
     use crate::env::Env;
-    use azure_core::{http::Response, Bytes};
+    use azure_core::{http::RawResponse, Bytes};
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt as _;
 
@@ -240,7 +240,7 @@ mod tests {
             headers.insert(VSS_E2EID, "bar");
 
             async move {
-                Ok(Response::from_bytes(
+                Ok(RawResponse::from_bytes(
                     StatusCode::Forbidden,
                     headers,
                     Vec::new(),
@@ -293,7 +293,7 @@ mod tests {
                     headers.insert(MSEDGE_REF, "foo");
                     headers.insert(VSS_E2EID, "bar");
 
-                    return Ok(Response::from_bytes(
+                    return Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         headers,
                         Bytes::from_static(br#"{"oidcToken":"baz"}"#),
@@ -301,7 +301,7 @@ mod tests {
                 }
 
                 if req.url().as_str() == "https://login.microsoftonline.com/a/oauth2/v2.0/token" {
-                    return Ok(Response::from_bytes(
+                    return Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         Bytes::from_static(

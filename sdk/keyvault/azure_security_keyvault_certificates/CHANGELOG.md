@@ -1,10 +1,19 @@
 # Release History
 
-## 0.3.0 (Unreleased)
+## 0.3.0 (2025-06-10)
 
 ### Features Added
 
+- Built on Azure Key Vault service version 7.6.
+- Added `preserve_cert_order` to several models to preserve the order of signing certificates when importing or merging certificates.
+
 ### Breaking Changes
+
+- `Pager<T>` now asynchronously iterates items of type `T` instead of pages containing items of type `T`. Call `Pager::into_pages()` to get a `PageIterator` to asynchronously iterate over all pages. This affects:
+  - `CertificateClient::list_deleted_certificate_properties`
+  - `CertificateClient::list_certificate_properties`
+  - `CertificateClient::list_certificate_properties_versions`
+  - `CertificateClient::list_issuer_properties`
 
 ### Bugs Fixed
 

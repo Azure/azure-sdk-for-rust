@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use syn::{parse::ParseStream, parse_macro_input, spanned::Spanned, DeriveInput, Error, LitStr};
+use syn::{parse_macro_input, DeriveInput};
 
 extern crate proc_macro;
 
-mod model;
 mod safe_debug;
 
 type Result<T> = ::std::result::Result<T, syn::Error>;
@@ -23,66 +22,6 @@ fn run_derive_macro(input: proc_macro::TokenStream, imp: DeriveImpl) -> proc_mac
         Ok(tokens) => tokens.into(),
         Err(e) => e.to_compile_error().into(),
     }
-}
-
-/// Parses a `syn::parse::ParseStream` that is expected to contain a string literal and extracts the `syn::LitStr`.
-fn parse_literal_string(value: ParseStream) -> Result<LitStr> {
-    let expr: syn::Expr = value
-        .parse()
-        .map_err(|_| Error::new(value.span(), "expected string literal"))?;
-    match expr {
-        syn::Expr::Lit(lit) => match lit.lit {
-            syn::Lit::Str(s) => Ok(s),
-            _ => Err(Error::new(lit.span(), "expected string literal")),
-        },
-        _ => Err(Error::new(expr.span(), "expected string literal")),
-    }
-}
-
-/// Derive macro for implementing the `Model` trait.
-///
-/// Deriving this trait allows a type to be deserialized from an HTTP response body.
-/// By default, the type must also implement `serde::Deserialize`, or the generated code will not compile.
-///
-/// ## Attributes
-///
-/// The following attributes are supported on the struct itself:
-///
-/// ### `#[typespec(format)]`
-///
-/// The format attribute specifies the format of the response body. The default is `json`.
-/// If compiling with the `xml` feature, the value `xml` is also supported.
-///
-/// ```rust
-/// # use typespec_macros::Model;
-/// # use serde::Deserialize;
-/// #[derive(Model, Deserialize)]
-/// #[typespec(format = "xml")]
-/// struct MyModel {
-///   value: String
-/// }
-/// ```
-///
-/// **NOTE:** Using formats other than JSON may require enabling additional features in `typespec_client_core`.
-///
-/// ### `#[typespec(crate)]`
-///
-/// The 'crate' attribute specifies an alternate module path, other than the default of `typespec_client_core`, to reference the typespec client crate.
-///
-/// ```rust
-/// # use typespec_macros::Model;
-/// # use serde::Deserialize;
-/// extern crate typespec_client_core as my_typespec;
-///
-/// #[derive(Model, Deserialize)]
-/// #[typespec(crate = "my_typespec")]
-/// struct MyModel {
-///   value: String
-/// }
-/// ```
-#[proc_macro_derive(Model, attributes(typespec))]
-pub fn derive_model(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    run_derive_macro(input, model::derive_model_impl)
 }
 
 /// Derive to help prevent leaking personally identifiable information (PII) that deriving [`Debug`](std::fmt::Debug) might otherwise.

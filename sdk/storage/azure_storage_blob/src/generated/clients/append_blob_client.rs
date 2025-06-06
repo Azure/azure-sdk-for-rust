@@ -184,7 +184,7 @@ impl AppendBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Append Block From URL operation creates a new block to be committed as part of an append blob where the contents are
@@ -305,7 +305,7 @@ impl AppendBlobClient {
             request.insert_header("x-ms-source-range", source_range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Create operation creates a new append blob.
@@ -415,7 +415,7 @@ impl AppendBlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Seal operation seals the Append Blob to make it read-only. Seal is supported only on version 2019-12-12 version or
@@ -468,7 +468,7 @@ impl AppendBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }
 

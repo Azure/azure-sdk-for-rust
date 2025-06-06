@@ -5,7 +5,7 @@
 use crate::json::from_json;
 use crate::{
     error::ErrorKind,
-    http::{headers, Response, StatusCode},
+    http::{headers, RawResponse, StatusCode},
     Error,
 };
 use bytes::Bytes;
@@ -24,7 +24,7 @@ impl HttpError {
     /// Create an error from an HTTP response.
     ///
     /// This does not check whether the response was successful and should only be used with unsuccessful responses.
-    pub async fn new<T>(response: Response<T>) -> Self {
+    pub async fn new(response: RawResponse) -> Self {
         let status = response.status();
         let headers: HashMap<String, String> = response
             .headers()
@@ -32,7 +32,7 @@ impl HttpError {
             .map(|(name, value)| (name.as_str().to_owned(), value.as_str().to_owned()))
             .collect();
         let body = response
-            .into_raw_body()
+            .into_body()
             .collect()
             .await
             .unwrap_or_else(|_| Bytes::from_static(b"(error reading body)"));
@@ -341,7 +341,7 @@ mod tests {
             code: Option<String>,
         }
 
-        let response: Response<()> = Response::from_bytes(
+        let response = RawResponse::from_bytes(
             StatusCode::BadRequest,
             Headers::new(),
             Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey","key":"foo"}}}"#),

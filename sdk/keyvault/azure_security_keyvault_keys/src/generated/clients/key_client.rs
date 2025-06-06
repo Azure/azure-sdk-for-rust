@@ -25,8 +25,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, Pager, PagerResult, Pipeline, Request, RequestContent,
-        Response, Url,
+        ClientOptions, Context, Method, Pager, PagerResult, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url,
     },
     json, Result,
 };
@@ -123,7 +123,7 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Creates a new key, stores it, then returns key parameters and attributes to the client.
@@ -156,7 +156,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Decrypts a single block of encrypted data.
@@ -195,7 +195,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Deletes a key of any type from storage in Azure Key Vault.
@@ -223,7 +223,7 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Encrypts an arbitrary sequence of bytes using an encryption key that is stored in a key vault.
@@ -261,7 +261,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Gets the public part of a deleted key.
@@ -288,7 +288,7 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Gets the public part of a stored key.
@@ -319,7 +319,7 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Gets the public part of a stored key along with its attestation blob.
@@ -350,7 +350,7 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Lists the policy for a key.
@@ -377,7 +377,7 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Get the requested number of bytes containing random values.
@@ -403,7 +403,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Imports an externally created key, stores it, and returns key parameters and attributes to the client.
@@ -435,7 +435,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Lists the deleted keys in the specified vault.
@@ -487,17 +487,19 @@ impl KeyClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListDeletedKeyPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListDeletedKeyPropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
-                Ok(match res.next_link {
-                    Some(next_link) => PagerResult::Continue {
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                let next_link = res.next_link.unwrap_or_default();
+                Ok(if next_link.is_empty() {
+                    PagerResult::Done { response: rsp }
+                } else {
+                    PagerResult::More {
                         response: rsp,
-                        continuation: next_link.parse()?,
-                    },
-                    None => PagerResult::Complete { response: rsp },
+                        next: next_link.parse()?,
+                    }
                 })
             }
         }))
@@ -551,17 +553,19 @@ impl KeyClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListKeyPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListKeyPropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
-                Ok(match res.next_link {
-                    Some(next_link) => PagerResult::Continue {
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                let next_link = res.next_link.unwrap_or_default();
+                Ok(if next_link.is_empty() {
+                    PagerResult::Done { response: rsp }
+                } else {
+                    PagerResult::More {
                         response: rsp,
-                        continuation: next_link.parse()?,
-                    },
-                    None => PagerResult::Complete { response: rsp },
+                        next: next_link.parse()?,
+                    }
                 })
             }
         }))
@@ -617,17 +621,19 @@ impl KeyClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListKeyPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListKeyPropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
-                Ok(match res.next_link {
-                    Some(next_link) => PagerResult::Continue {
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                let next_link = res.next_link.unwrap_or_default();
+                Ok(if next_link.is_empty() {
+                    PagerResult::Done { response: rsp }
+                } else {
+                    PagerResult::More {
                         response: rsp,
-                        continuation: next_link.parse()?,
-                    },
-                    None => PagerResult::Complete { response: rsp },
+                        next: next_link.parse()?,
+                    }
                 })
             }
         }))
@@ -657,7 +663,7 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Recovers the deleted key to its latest version.
@@ -685,7 +691,7 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Releases a key.
@@ -719,7 +725,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Restores a backed up key to a vault.
@@ -752,7 +758,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Creates a new key version, stores it, then returns key parameters, attributes and policy to the client.
@@ -778,7 +784,7 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Creates a signature from a digest using the specified key.
@@ -812,7 +818,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Unwraps a symmetric key using the specified key that was initially used for wrapping that key.
@@ -847,7 +853,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The update key operation changes specified attributes of a stored key and can be applied to any key type and key version
@@ -882,7 +888,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Updates the rotation policy for a key.
@@ -912,7 +918,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(key_rotation_policy);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Verifies a signature using a specified key.
@@ -948,7 +954,7 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Wraps a symmetric key using a specified key.
@@ -985,14 +991,14 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }
 
 impl Default for KeyClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("7.6-preview.2"),
+            api_version: String::from("7.6"),
             client_options: ClientOptions::default(),
         }
     }

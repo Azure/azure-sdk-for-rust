@@ -20,6 +20,7 @@ use azure_core::{
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
+        XmlFormat,
     },
     Bytes, Result,
 };
@@ -218,7 +219,7 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(blocks);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Get Block List operation retrieves the list of blocks that have been uploaded as part of a block blob.
@@ -232,7 +233,7 @@ impl BlockBlobClient {
         &self,
         list_type: BlockListType,
         options: Option<BlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockList>> {
+    ) -> Result<Response<BlockList, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -263,7 +264,7 @@ impl BlockBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Put Blob from URL operation creates a new Block Blob where the contents of the blob are read from a given URL. This
@@ -414,7 +415,7 @@ impl BlockBlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Query operation enables users to select/project on blob data by providing simple query expressions.
@@ -484,7 +485,7 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(query_request);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Stage Block operation creates a new block to be committed as part of a blob
@@ -554,7 +555,7 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Stage Block From URL operation creates a new block to be committed as part of a blob where the contents are read from
@@ -654,7 +655,7 @@ impl BlockBlobClient {
             request.insert_header("x-ms-source-range", source_range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Upload Block Blob operation updates the content of an existing block blob. Updating an existing block blob overwrites
@@ -783,7 +784,7 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }
 

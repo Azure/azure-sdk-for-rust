@@ -1,10 +1,21 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.4.0 (2025-06-10)
 
 ### Features Added
 
+- Built on Azure Key Vault service version 7.6.
+- Added `EncryptionAlgorithm::CkmAesKeyWrap` and `CkmAesKeyWrapPad`.
+- Added `JsonWebKeySignatureAlgorithm::Hs256`, `Hs384`, and `Hs512`.
+- Added `KeyAttestation` returned by `KeyAttributes::attestation` field.
+- Added `KeyClient::get_key_attestation` client method.
+
 ### Breaking Changes
+
+- `Pager<T>` now asynchronously iterates items of type `T` instead of pages containing items of type `T`. Call `Pager::into_pages()` to get a `PageIterator` to asynchronously iterate over all pages. This affects:
+  - `KeyClient::list_deleted_key_properties`
+  - `KeyClient::list_key_properties`
+  - `KeyClient::list_key_properties_versions`
 
 ### Bugs Fixed
 
