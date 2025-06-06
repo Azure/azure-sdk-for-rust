@@ -36,11 +36,11 @@ Error: ClientSecretCredential authentication failed. AADSTS7000215: Invalid clie
 
 This error contains several pieces of information:
 
-- __Failing Credential Type__: The type of credential that failed to authenticate. This can be helpful when diagnosing issues with chained credential types such as `DefaultAzureCredential` or `ChainedTokenCredential`.
+- __Failing Credential Type__: The type of credential that failed to authenticate.
 
-- __Microsoft Entra ID Error Code and Message__: The error code and message returned by Microsoft Entra ID. This can give insight into the specific reason the request failed. For instance, in this case authentication failed because the provided client secret is incorrect. [Microsoft Entra ID documentation](https://learn.microsoft.com/entra/identity-platform/reference-error-codes#aadsts-error-codes) has more information on AADSTS error codes.
+- __Microsoft Entra ID Error Code and Message__: This can give insight into the specific reason the request failed. For instance, in this case authentication failed because the provided client secret is incorrect. [Microsoft Entra ID documentation](https://learn.microsoft.com/entra/identity-platform/reference-error-codes#aadsts-error-codes) has more information on AADSTS error codes.
 
-- __Correlation ID and Timestamp__: The correlation ID and timestamp identify the request in server-side logs. This information can be useful to support engineers diagnosing unexpected Microsoft Entra failures.
+- __Correlation ID and Timestamp__: The correlation ID and timestamp identify the request in server-side logs. This information can be useful to support engineers diagnosing unexpected Microsoft Entra ID failures.
 
 <a id="client-secret"></a>
 ## Troubleshoot ClientSecretCredential authentication issues
