@@ -116,7 +116,7 @@ impl BlobClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobClientGetPropertiesResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientGetPropertiesResult>> {
         self.client.get_properties(options).await
     }
 
@@ -138,7 +138,7 @@ impl BlobClient {
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<Response<BlobClientDownloadResult, XmlFormat>> {
+    ) -> Result<Response<BlobClientDownloadResult>> {
         self.client.download(options).await
     }
 
@@ -157,7 +157,7 @@ impl BlobClient {
         overwrite: bool,
         content_length: u64,
         options: Option<BlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadResult, XmlFormat>> {
+    ) -> Result<Response<BlockBlobClientUploadResult>> {
         let mut options = options.unwrap_or_default();
 
         if !overwrite {
