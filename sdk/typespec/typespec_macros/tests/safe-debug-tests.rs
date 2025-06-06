@@ -18,7 +18,6 @@ fn debug_tests() {
 
     let output = Command::new(env!("CARGO"))
         .arg("test")
-        .arg("--locked")
         .arg("--no-fail-fast")
         .arg("--test")
         .arg("debug")
@@ -48,7 +47,6 @@ fn safe_debug_tests() {
 
     let output = Command::new(env!("CARGO"))
         .arg("test")
-        .arg("--locked")
         .arg("--no-fail-fast")
         .arg("--test")
         .arg("safe-debug")
