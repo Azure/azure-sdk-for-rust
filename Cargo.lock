@@ -155,7 +155,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "azure_core"
-version = "0.25.0"
+version = "0.26.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -183,7 +183,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -2786,7 +2786,7 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "typespec"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "base64",
  "serde",
@@ -2797,7 +2797,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -2823,7 +2823,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",
