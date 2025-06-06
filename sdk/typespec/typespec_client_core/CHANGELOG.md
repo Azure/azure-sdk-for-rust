@@ -1,6 +1,6 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.4.0 (2025-06-06)
 
 ### Features Added
 
@@ -13,10 +13,6 @@
 
 - Removed the `Model` trait and replaced it with `Response<T, F>`, which moves the "format" information (JSON/XML/etc.) from the model to the service client method's return type. This allows for more flexibility in handling different response formats and user data types in Responses.
 - Split `Response` into `Response<T, F>` and `RawResponse` (which carries the raw response data without a specific format).
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.3.0 (2025-05-02)
 

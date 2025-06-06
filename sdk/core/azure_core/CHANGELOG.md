@@ -1,6 +1,6 @@
 # Release History
 
-## 0.25.0 (Unreleased)
+## 0.25.0 (2025-06-06)
 
 ### Features Added
 
@@ -19,8 +19,6 @@
 ### Bugs Fixed
 
 - `BearerTokenCredentialPolicy` returns an error when a proactive token refresh attempt fails
-
-### Other Changes
 
 ## 0.24.0 (2025-05-02)
 
