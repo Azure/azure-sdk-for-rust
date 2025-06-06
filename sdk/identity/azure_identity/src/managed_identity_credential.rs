@@ -442,6 +442,53 @@ mod tests {
         .await;
     }
 
+    async fn run_live_imds_test(id: Option<UserAssignedId>) {
+        if std::env::var("IDENTITY_IMDS_AVAILABLE").is_err() {
+            return;
+        }
+
+        let credential = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+            user_assigned_id: id,
+            ..Default::default()
+        }))
+        .expect("credential");
+
+        let token = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect("token");
+
+        assert!(!token.token.secret().is_empty());
+        assert!(token.expires_on.unix_timestamp() > 0);
+        assert_eq!(time::UtcOffset::UTC, token.expires_on.offset());
+    }
+
+    #[tokio::test]
+    async fn imds_live() {
+        run_live_imds_test(None).await;
+    }
+
+    #[tokio::test]
+    async fn imds_live_client_id() {
+        if let Ok(client_id) = std::env::var("IDENTITY_VM_USER_ASSIGNED_MI_CLIENT_ID") {
+            run_live_imds_test(Some(UserAssignedId::ClientId(client_id))).await;
+        }
+    }
+
+    #[tokio::test]
+    async fn imds_live_object_id() {
+        if let Ok(object_id) = std::env::var("IDENTITY_VM_USER_ASSIGNED_MI_OBJECT_ID") {
+            run_live_imds_test(Some(UserAssignedId::ObjectId(object_id))).await;
+        }
+    }
+
+    #[tokio::test]
+    async fn imds_live_resource_id() {
+        if let Ok(resource_id) = std::env::var("IDENTITY_VM_USER_ASSIGNED_MI_RESOURCE_ID") {
+            run_live_imds_test(Some(UserAssignedId::ResourceId(resource_id))).await;
+        }
+    }
+
     #[tokio::test]
     async fn requires_one_scope() {
         let credential = ManagedIdentityCredential::new(None).expect("valid credential");

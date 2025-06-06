@@ -1,19 +1,33 @@
 # NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
-
 trigger:
   branches:
     include:
-    - main
-    - hotfix/*
-    - release/*
+      - main
+      - hotfix/*
+      - release/*
   paths:
     include:
-    - sdk/identity/
+      - sdk/identity/
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
+    CloudConfig:
+      Public:
+        SubscriptionConfigurations:
+          - $(sub-config-identity-test-resources)
     ServiceDirectory: identity
     Artifacts:
-    - name: azure_identity
-      safeName: AzureIdentity
+      - name: azure_identity
+        safeName: AzureIdentity
+
+    ${{ if endsWith(variables['Build.DefinitionName'], 'weekly') }}:
+      PersistOidcToken: true
+      MatrixConfigs:
+        - Name: managed_identity_matrix
+          GenerateVMJobs: true
+          Path: sdk/identity/azure_identity/managed-identity-matrix.json
+          Selection: sparse
+      MatrixReplace:
+        - Pool=.*LINUXPOOL.*/azsdk-pool-mms-ubuntu-2204-identitymsi
+        - OSVmImage=.*LINUXNEXTVMIMAGE.*/azsdk-pool-mms-ubuntu-2204-1espt
