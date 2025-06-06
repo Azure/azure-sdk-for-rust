@@ -7,8 +7,7 @@ use super::{
     CurveName, DeletionRecoveryLevel, EncryptionAlgorithm, KeyEncryptionAlgorithm, KeyOperation,
     KeyRotationPolicyAction, KeyType, SignatureAlgorithm,
 };
-use async_trait::async_trait;
-use azure_core::{base64, fmt::SafeDebug, http::Page, Result};
+use azure_core::{base64, fmt::SafeDebug};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use time::OffsetDateTime;
@@ -341,6 +340,7 @@ pub struct Key {
 
 /// The key attestation information.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
 pub struct KeyAttestation {
     /// A base64url-encoded string containing certificates in PEM format, used for attestation validation.
     #[serde(
@@ -687,16 +687,6 @@ pub struct ListDeletedKeyPropertiesResult {
     pub value: Vec<DeletedKeyProperties>,
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-impl Page for ListDeletedKeyPropertiesResult {
-    type Item = DeletedKeyProperties;
-    type IntoIter = <Vec<DeletedKeyProperties> as IntoIterator>::IntoIter;
-    async fn into_items(self) -> Result<Self::IntoIter> {
-        Ok(self.value.into_iter())
-    }
-}
-
 /// The key list result.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -708,16 +698,6 @@ pub struct ListKeyPropertiesResult {
     /// A response message containing a list of keys in the key vault along with a link to the next page of keys.
     #[serde(default)]
     pub value: Vec<KeyProperties>,
-}
-
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-impl Page for ListKeyPropertiesResult {
-    type Item = KeyProperties;
-    type IntoIter = <Vec<KeyProperties> as IntoIterator>::IntoIter;
-    async fn into_items(self) -> Result<Self::IntoIter> {
-        Ok(self.value.into_iter())
-    }
 }
 
 /// The get random bytes response object containing the bytes.

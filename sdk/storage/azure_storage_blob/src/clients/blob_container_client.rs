@@ -142,7 +142,7 @@ impl BlobContainerClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientGetPropertiesResult, XmlFormat>> {
+    ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {
         self.client.get_properties(options).await
     }
 

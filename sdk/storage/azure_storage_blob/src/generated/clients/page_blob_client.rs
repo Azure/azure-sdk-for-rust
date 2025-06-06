@@ -106,7 +106,7 @@ impl PageBlobClient {
         &self,
         content_length: u64,
         options: Option<PageBlobClientClearPagesOptions<'_>>,
-    ) -> Result<Response<PageBlobClientClearPagesResult, XmlFormat>> {
+    ) -> Result<Response<PageBlobClientClearPagesResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -206,7 +206,7 @@ impl PageBlobClient {
         &self,
         copy_source: String,
         options: Option<PageBlobClientCopyIncrementalOptions<'_>>,
-    ) -> Result<Response<PageBlobClientCopyIncrementalResult, XmlFormat>> {
+    ) -> Result<Response<PageBlobClientCopyIncrementalResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -261,7 +261,7 @@ impl PageBlobClient {
         content_length: u64,
         blob_content_length: u64,
         options: Option<PageBlobClientCreateOptions<'_>>,
-    ) -> Result<Response<PageBlobClientCreateResult, XmlFormat>> {
+    ) -> Result<Response<PageBlobClientCreateResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -523,7 +523,7 @@ impl PageBlobClient {
         &self,
         blob_content_length: u64,
         options: Option<PageBlobClientResizeOptions<'_>>,
-    ) -> Result<Response<PageBlobClientResizeResult, XmlFormat>> {
+    ) -> Result<Response<PageBlobClientResizeResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -597,7 +597,7 @@ impl PageBlobClient {
         &self,
         sequence_number_action: SequenceNumberActionType,
         options: Option<PageBlobClientUpdateSequenceNumberOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult, XmlFormat>> {
+    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -665,7 +665,7 @@ impl PageBlobClient {
         body: RequestContent<Bytes>,
         content_length: u64,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUploadPagesResult, XmlFormat>> {
+    ) -> Result<Response<PageBlobClientUploadPagesResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -787,7 +787,7 @@ impl PageBlobClient {
         content_length: u64,
         range: String,
         options: Option<PageBlobClientUploadPagesFromUrlOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult, XmlFormat>> {
+    ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

@@ -6,9 +6,8 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange, Committed_blocksBlock,
-        Container_itemsContainer, CorsCorsRule, Page_rangePageRange, SchemaField,
-        Uncommitted_blocksBlock,
+        Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange, Committed_blocksBlock, CorsCorsRule,
+        Page_rangePageRange, SchemaField, Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobImmutabilityPolicyMode, BlobType, CopyStatus,
     GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
@@ -1017,12 +1016,7 @@ pub struct ListBlobsHierarchySegmentResponse {
 #[serde(rename = "EnumerationResults")]
 pub struct ListContainersSegmentResponse {
     /// The container segment.
-    #[serde(
-        default,
-        deserialize_with = "Container_itemsContainer::unwrap",
-        rename = "Containers",
-        serialize_with = "Container_itemsContainer::wrap"
-    )]
+    #[serde(default, rename = "Containers")]
     pub container_items: Vec<ContainerItem>,
 
     /// The marker of the containers.
