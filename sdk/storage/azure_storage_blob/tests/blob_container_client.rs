@@ -100,10 +100,7 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_body().await?;
     let blob_list = list_blob_segment_response.segment.blob_items;
-    let mut counter = 0;
     for blob in blob_list {
-        counter += 1;
-        println!("Entered the loop: {} times", counter);
         let blob_name = blob.name.unwrap().content.unwrap();
         let blob_type = blob.properties.unwrap().blob_type.unwrap();
         assert!(blob_names.contains(&blob_name));
