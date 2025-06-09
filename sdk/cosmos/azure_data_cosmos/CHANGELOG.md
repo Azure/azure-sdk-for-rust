@@ -1,6 +1,6 @@
 # Release History
 
-## 0.24.0 (Unreleased)
+## 0.24.0 (2025-06-10)
 
 ### Features Added
 
@@ -9,10 +9,6 @@
 ### Breaking Changes
 
 * `FeedPager<T>` now asynchronously iterates items of type `T` instead of pages containing items of type `T`. Call `FeedPager::into_pages()` to get a `PageIterator` to asynchronously iterate over all pages.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.23.0 (2025-05-06)
 
