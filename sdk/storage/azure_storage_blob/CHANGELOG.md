@@ -4,8 +4,12 @@
 
 ### Features Added
 
-* Added navigation methods to access sub-clients from existing clients.
 * Added a new blob client type, `BlockBlobClient`.
+* Added navigation methods to access sub-clients from existing clients:
+  * `BlobServiceClient::blob_container_client()`
+  * `BlobContainerClient::blob_client()`
+  * `BlobClient::block_blob_client()`
+
 * Added support for `list_blobs`, `set_metadata` to `ContainerClient`.
 * Added support for `set_metadata`, `set_properties`, and `set_tier` to `BlobClient`.
 
@@ -15,7 +19,7 @@
 
 ### Bugs Fixed
 
-* Fixed an issue where blob type would be present in RequestURI for certain APIs extraneously.
+* Fixed an issue where the blob type string would appear as a query parameter in the request URL for certain APIs extraneously.
 
 ## 0.1.0 (2025-04-08)
 
