@@ -342,6 +342,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity",
  "azure_security_keyvault_test",
+ "clap",
  "criterion",
  "futures",
  "rand",
