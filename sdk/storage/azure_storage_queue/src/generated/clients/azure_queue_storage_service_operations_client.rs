@@ -13,7 +13,7 @@ use azure_core::{
 };
 
 pub struct AzureQueueStorageServiceOperationsClient {
-    pub(crate) api_version: str,
+    pub(crate) api_version: String,
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
 }
