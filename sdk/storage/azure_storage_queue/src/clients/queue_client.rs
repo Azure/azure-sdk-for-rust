@@ -55,7 +55,7 @@ impl QueueClient {
         let client = GeneratedQueueClient::new(
             endpoint,
             credential.clone(),
-            queue_name.clone(),
+            QueueApiVersion::StringValue2018_03_28.to_string(),
             Some(options),
         )?;
         Ok(Self {

@@ -9,10 +9,15 @@ use crate::generated::clients::{
     AzureQueueStorageServicePropertiesOperationsClient,
 };
 use azure_core::{
+    credentials::TokenCredential,
     fmt::SafeDebug,
-    http::{ClientOptions, Pipeline, Url},
+    http::{
+        policies::{BearerTokenCredentialPolicy, Policy},
+        ClientOptions, Pipeline, Url,
+    },
     Result,
 };
+use std::sync::Arc;
 
 /// // FIXME: (missing-service-description) Add service description
 pub struct AzureQueueStorageClient {
@@ -34,11 +39,14 @@ impl AzureQueueStorageClient {
     /// # Arguments
     ///
     /// * `endpoint` - Service host
+    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
+    ///   Entra ID token to use when authenticating.
     /// * `api_version` - The API version to use for this operation.
     /// * `options` - Optional configuration for the client.
-    pub fn with_no_credential(
+    pub fn new(
         endpoint: &str,
-        api_version: &str,
+        credential: Arc<dyn TokenCredential>,
+        api_version: String,
         options: Option<AzureQueueStorageClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -50,15 +58,19 @@ impl AzureQueueStorageClient {
             ));
         }
         endpoint.set_query(None);
+        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+            credential,
+            vec!["https://storage.azure.com/.default"],
+        ));
         Ok(Self {
-            api_version: api_version.to_string(),
+            api_version: api_version,
             endpoint,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
                 options.client_options,
                 Vec::default(),
-                Vec::default(),
+                vec![auth_policy],
             ),
         })
     }
