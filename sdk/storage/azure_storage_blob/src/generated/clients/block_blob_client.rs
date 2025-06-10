@@ -20,6 +20,7 @@ use azure_core::{
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
+        XmlFormat,
     },
     Bytes, Result,
 };
@@ -122,7 +123,7 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
@@ -218,7 +219,7 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(blocks);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Get Block List operation retrieves the list of blocks that have been uploaded as part of a block blob.
@@ -232,7 +233,7 @@ impl BlockBlobClient {
         &self,
         list_type: BlockListType,
         options: Option<BlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockList>> {
+    ) -> Result<Response<BlockList, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -263,7 +264,7 @@ impl BlockBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Put Blob from URL operation creates a new Block Blob where the contents of the blob are read from a given URL. This
@@ -299,12 +300,11 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -415,7 +415,7 @@ impl BlockBlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Query operation enables users to select/project on blob data by providing simple query expressions.
@@ -485,7 +485,7 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(query_request);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Stage Block operation creates a new block to be committed as part of a blob
@@ -520,7 +520,7 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
@@ -555,7 +555,7 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Stage Block From URL operation creates a new block to be committed as part of a blob where the contents are read from
@@ -593,7 +593,7 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
@@ -655,7 +655,7 @@ impl BlockBlobClient {
             request.insert_header("x-ms-source-range", source_range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Upload Block Blob operation updates the content of an existing block blob. Updating an existing block blob overwrites
@@ -681,13 +681,12 @@ impl BlockBlobClient {
         path = path.replace("{blobName}", &self.blob_name);
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
-        url.query_pairs_mut().append_key_only("BlockBlob");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
@@ -785,7 +784,7 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }
 

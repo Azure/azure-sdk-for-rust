@@ -141,14 +141,11 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
 
     // List keys.
     let mut pager = client.list_key_properties(None)?.into_stream();
-    while let Some(keys) = pager.try_next().await? {
-        let keys = keys.into_body().await?.value;
-        for key in keys {
-            // Get the key name from the ID.
-            let name = key.resource_id()?.name;
-            if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
-                names.remove(idx);
-            }
+    while let Some(key) = pager.try_next().await? {
+        // Get the key name from the ID.
+        let name = key.resource_id()?.name;
+        if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
+            names.remove(idx);
         }
     }
     assert!(names.is_empty());

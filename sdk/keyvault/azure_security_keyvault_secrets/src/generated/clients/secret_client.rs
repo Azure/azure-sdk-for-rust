@@ -19,8 +19,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, Pager, PagerResult, Pipeline, Request, RequestContent,
-        Response, Url,
+        ClientOptions, Context, Method, Pager, PagerResult, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url,
     },
     json, Result,
 };
@@ -111,7 +111,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Deletes a secret from a specified key vault.
@@ -138,7 +138,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Gets the specified deleted secret.
@@ -165,7 +165,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Get a specified secret from a given key vault.
@@ -195,7 +195,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Lists deleted secrets for the specified vault.
@@ -245,18 +245,18 @@ impl SecretClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListDeletedSecretPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
                 let next_link = res.next_link.unwrap_or_default();
                 Ok(if next_link.is_empty() {
-                    PagerResult::Complete { response: rsp }
+                    PagerResult::Done { response: rsp }
                 } else {
-                    PagerResult::Continue {
+                    PagerResult::More {
                         response: rsp,
-                        continuation: next_link.parse()?,
+                        next: next_link.parse()?,
                     }
                 })
             }
@@ -311,18 +311,18 @@ impl SecretClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListSecretPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListSecretPropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
                 let next_link = res.next_link.unwrap_or_default();
                 Ok(if next_link.is_empty() {
-                    PagerResult::Complete { response: rsp }
+                    PagerResult::Done { response: rsp }
                 } else {
-                    PagerResult::Continue {
+                    PagerResult::More {
                         response: rsp,
-                        continuation: next_link.parse()?,
+                        next: next_link.parse()?,
                     }
                 })
             }
@@ -380,18 +380,18 @@ impl SecretClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: Response<ListSecretPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?;
+                    pipeline.send(&ctx, &mut request).await?.into();
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListSecretPropertiesResult = json::from_json(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
+                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
                 let next_link = res.next_link.unwrap_or_default();
                 Ok(if next_link.is_empty() {
-                    PagerResult::Complete { response: rsp }
+                    PagerResult::Done { response: rsp }
                 } else {
-                    PagerResult::Continue {
+                    PagerResult::More {
                         response: rsp,
-                        continuation: next_link.parse()?,
+                        next: next_link.parse()?,
                     }
                 })
             }
@@ -422,7 +422,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Recovers the deleted secret to the latest version.
@@ -449,7 +449,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Restores a backed up secret to a vault.
@@ -475,7 +475,7 @@ impl SecretClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Sets a secret in a specified key vault.
@@ -507,7 +507,7 @@ impl SecretClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Updates the attributes associated with a specified secret in a given key vault.
@@ -541,7 +541,7 @@ impl SecretClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }
 

@@ -1,6 +1,6 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.4.0 (2025-06-06)
 
 ### Features Added
 
@@ -8,9 +8,7 @@
 
 ### Breaking Changes
 
-### Bugs Fixed
-
-### Other Changes
+- Removed `Model` derive macro.
 
 ## 0.3.0 (2025-05-02)
 
