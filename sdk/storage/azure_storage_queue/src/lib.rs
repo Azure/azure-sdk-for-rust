@@ -11,3 +11,9 @@ pub mod clients;
 mod generated;
 
 pub use clients::*;
+pub use generated::models::{
+    AzureQueueStorageMessageIdOperationsClientDeleteOptions,
+    AzureQueueStorageMessageIdOperationsClientUpdateOptions,
+    AzureQueueStorageQueueOperationsClientCreateOptions,
+    AzureQueueStorageServiceOperationsClientGetPropertiesOptions, QueueApiVersion,
+};

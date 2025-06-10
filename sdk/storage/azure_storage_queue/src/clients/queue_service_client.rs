@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::clients::queue_client;
+use crate::generated::clients::AzureQueueStorageClient as GeneratedQueueClient;
 use crate::generated::clients::AzureQueueStorageServiceOperationsClient as GeneratedQueueServiceClient;
 use crate::generated::models::QueueApiVersion;
 use crate::generated::models::{
@@ -28,6 +30,21 @@ impl QueueServiceClient {
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
+    }
+
+    pub fn new(
+        endpoint: &str,
+        credential: Arc<dyn TokenCredential>,
+        version: QueueApiVersion,
+    ) -> Result<Self> {
+        let queue_client =
+            GeneratedQueueClient::new(endpoint, credential, version.to_string(), None)?;
+        let client = queue_client.get_azure_queue_storage_service_operations_client();
+        Ok(Self {
+            endpoint: endpoint.parse()?,
+            client,
+            version,
+        })
     }
 
     /// gets the properties of a storage account's Queue service, including properties

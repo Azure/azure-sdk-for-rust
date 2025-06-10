@@ -32,25 +32,14 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myqueue.queue.core.windows.net/`
-    /// * `queue_name` - The name of the queue to interact with.
     /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
-        queue_name: String,
         credential: Arc<dyn TokenCredential>,
         options: Option<AzureQueueStorageClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
-
-        let oauth_token_policy = BearerTokenCredentialPolicy::new(
-            credential.clone(),
-            ["https://storage.azure.com/.default"],
-        );
-        options
-            .client_options
-            .per_try_policies
-            .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
         let client = GeneratedQueueClient::new(
             endpoint,

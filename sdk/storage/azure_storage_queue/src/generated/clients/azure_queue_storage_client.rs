@@ -58,10 +58,12 @@ impl AzureQueueStorageClient {
             ));
         }
         endpoint.set_query(None);
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+        let bearerToken = BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
-        ));
+        );
+        let auth_policy: Arc<dyn Policy> = Arc::new(bearerToken);
+
         Ok(Self {
             api_version: api_version,
             endpoint,
@@ -69,7 +71,7 @@ impl AzureQueueStorageClient {
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
                 options.client_options,
-                Vec::default(),
+                vec![auth_policy.clone()],
                 vec![auth_policy],
             ),
         })
