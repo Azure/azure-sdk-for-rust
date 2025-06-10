@@ -1,0 +1,30 @@
+{
+  "advancedOptions": {
+    "createSdkPullRequests": true,
+    "generationCallMode": "one-per-config",
+    "breakingChangeTracking": true
+  },
+  "initOptions": {
+    "initScript": {
+      "path": "sh eng/scripts/sdkGenAutomation/init.sh",
+      "stderr": {
+        "showInComment": false,
+        "scriptError": false
+      }
+    }
+  },
+  "generateOptions": {
+    "generateScript": {
+      "path": "sh eng/scripts/sdkGenAutomation/sdk_generate.sh",
+      "stdout": {
+        "showInComment": "(.*\\[ERROR\\]\\s*).*",
+        "scriptError": "(.*\\[ERROR\\]\\s*).*"
+      }
+    },
+    "parseGenerateOutput": true
+  },
+  "packageOptions": {
+    "breakingChangeLabel": "CI-BreakingChange-Rust",
+    "breakingChangesLabel": "BreakingChange-Rust-Sdk"
+  }
+}
