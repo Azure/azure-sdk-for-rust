@@ -266,7 +266,7 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "0.25.0"
+version = "0.26.0"
 dependencies = [
  "async-lock",
  "async-trait",
