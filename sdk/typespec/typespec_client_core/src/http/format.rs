@@ -37,7 +37,8 @@ impl<D: DeserializeOwned> DeserializeWith<JsonFormat> for D {
     }
 }
 
-/// The default format used for deserialization.
+/// A [`Format`] that deserializes response bodies using JSON.
+/// This is the default format used for deserialization.
 ///
 /// This format supports deserializing response bodies to:
 /// * [`ResponseBody`] - The raw response body, without any deserialization.
@@ -48,6 +49,10 @@ pub struct JsonFormat;
 impl Format for JsonFormat {}
 
 /// A [`Format`] that deserializes response bodies using XML.
+///
+/// This format supports deserializing response bodies to:
+/// * [`ResponseBody`] - The raw response body, without any deserialization.
+/// * Any value implementing [`serde::de::DeserializeOwned`] - Deserializes the response body to the specified type using XML deserialization.
 #[cfg(feature = "xml")]
 #[derive(Debug, Clone)]
 pub struct XmlFormat;
@@ -63,3 +68,13 @@ impl<D: DeserializeOwned> DeserializeWith<XmlFormat> for D {
         body.xml().await
     }
 }
+
+/// A [`Format`] indicating that the response has no structured format.
+/// This includes responses that return raw data and that don't return a response body.
+///
+/// This format supports deserializing response bodies to:
+/// * [`ResponseBody`] - The raw response body, without any deserialization.
+#[derive(Debug, Clone)]
+pub struct NoFormat;
+
+impl Format for NoFormat {}
