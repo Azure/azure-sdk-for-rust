@@ -417,9 +417,13 @@ name = "azure_storage_queue"
 version = "0.1.0"
 dependencies = [
  "azure_core",
+ "azure_core_test",
+ "azure_identity",
+ "futures",
  "serde",
  "serde_json",
  "time",
+ "tokio",
  "typespec_client_core",
 ]
 
