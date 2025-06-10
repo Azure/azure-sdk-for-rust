@@ -410,6 +410,17 @@ name = "azure_storage_common"
 version = "0.1.0"
 
 [[package]]
+name = "azure_storage_queue"
+version = "0.1.0"
+dependencies = [
+ "azure_core",
+ "serde",
+ "serde_json",
+ "time",
+ "typespec_client_core",
+]
+
+[[package]]
 name = "azure_template"
 version = "0.2.0"
 dependencies = [

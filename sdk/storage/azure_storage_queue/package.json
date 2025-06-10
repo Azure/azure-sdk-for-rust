@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@azure-tools/typespec-autorest": "^0.56.0",
+    "@azure-tools/typespec-azure-core": "^0.56.0",
+    "@azure-tools/typespec-rust": "^0.15.0",
+    "@typespec/http": "^1.0.1",
+    "@typespec/openapi": "^1.0.0",
+    "@typespec/rest": "^0.70.0",
+    "@typespec/versioning": "^0.70.0"
+  }
+}
