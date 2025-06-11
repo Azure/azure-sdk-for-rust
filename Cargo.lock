@@ -420,6 +420,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity",
  "futures",
+ "rand",
  "serde",
  "serde_json",
  "time",

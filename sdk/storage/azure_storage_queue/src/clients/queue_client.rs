@@ -4,6 +4,7 @@
 use crate::generated::models::{
     AzureQueueStorageQueueOperationsClientCreateOptions,
     AzureQueueStorageQueueOperationsClientDeleteOptions, QueueApiVersion,
+    StorageServicePropertiesResponse,
 };
 use crate::{
     generated::clients::AzureQueueStorageClient as GeneratedQueueClient,
@@ -87,6 +88,20 @@ impl QueueClient {
         self.client
             .get_azure_queue_storage_queue_operations_client()
             .delete(queue_name, self.version.clone(), options)
+            .await
+    }
+
+    pub async fn get_properties(
+        &self,
+    ) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
+        self.client
+            .get_azure_queue_storage_service_operations_client()
+            .get_properties(
+                crate::generated::models::ServiceRestypeType::Service,
+                crate::generated::models::ServicePropertiesCompType::Properties,
+                self.version.clone(),
+                None,
+            )
             .await
     }
 }

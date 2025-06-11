@@ -4,6 +4,7 @@ use azure_storage_queue::clients::AzureQueueStorageClientOptions;
 use azure_storage_queue::clients::QueueClient;
 use std::option::Option;
 
+/// Creates a new queue under the given account.
 #[recorded::test]
 async fn test_create_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
@@ -12,14 +13,15 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
     let response = queue_client?.create("test-queue", None).await?;
 
     assert!(
-        response.status() == 204,
-        "Expected status code 204, got {}",
+        response.status() == 201,
+        "Expected status code 201, got {}",
         response.status(),
     );
 
     Ok(())
 }
 
+/// Tests the deletion of a queue in Azure Storage Queue service.
 #[recorded::test]
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
@@ -35,7 +37,24 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-// /// Returns an instance of a QueueClient.
+/// Retrieves the properties of a storage account's Queue service.
+#[recorded::test]
+async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await;
+
+    let response = queue_client?.get_properties().await?;
+
+    assert!(
+        response.status() == 200,
+        "Expected status code 200, got {}",
+        response.status(),
+    );
+
+    Ok(())
+}
+
+/// Returns an instance of a QueueClient.
 ///
 /// # Arguments
 ///
