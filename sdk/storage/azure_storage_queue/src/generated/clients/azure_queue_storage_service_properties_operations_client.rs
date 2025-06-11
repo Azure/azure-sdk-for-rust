@@ -61,6 +61,8 @@ impl AzureQueueStorageServicePropertiesOperationsClient {
             request.insert_header("request-id", request_id);
         }
         request.insert_header("version", version.to_string());
+        request.insert_header("x-ms-version", version.to_string());
+
         request.set_body(storage_service_properties);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }

@@ -62,6 +62,8 @@ impl AzureQueueStorageMessageIdOperationsClient {
             request.insert_header("request-id", request_id);
         }
         request.insert_header("version", version.to_string());
+        request.insert_header("x-ms-version", version.to_string());
+
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
@@ -115,6 +117,8 @@ impl AzureQueueStorageMessageIdOperationsClient {
             request.insert_header("request-id", request_id);
         }
         request.insert_header("version", version.to_string());
+        request.insert_header("x-ms-version", version.to_string());
+
         if let Some(queue_message) = options.queue_message {
             request.insert_header("content-type", "application/json");
             request.set_body(queue_message);

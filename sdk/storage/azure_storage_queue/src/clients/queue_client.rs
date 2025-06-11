@@ -39,7 +39,7 @@ impl QueueClient {
         credential: Arc<dyn TokenCredential>,
         options: Option<AzureQueueStorageClientOptions>,
     ) -> Result<Self> {
-        let mut options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
 
         let client = GeneratedQueueClient::new(
             endpoint,

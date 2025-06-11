@@ -57,6 +57,8 @@ impl AzureQueueStorageMessagesOperationsClient {
             request.insert_header("request-id", request_id);
         }
         request.insert_header("version", version.to_string());
+        request.insert_header("x-ms-version", version.to_string());
+
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
@@ -100,6 +102,8 @@ impl AzureQueueStorageMessagesOperationsClient {
             request.insert_header("request-id", request_id);
         }
         request.insert_header("version", version.to_string());
+        request.insert_header("x-ms-version", version.to_string());
+
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
@@ -150,6 +154,8 @@ impl AzureQueueStorageMessagesOperationsClient {
             request.insert_header("request-id", request_id);
         }
         request.insert_header("version", version.to_string());
+        request.insert_header("x-ms-version", version.to_string());
+
         request.set_body(queue_message);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }

@@ -61,10 +61,6 @@ impl AzureQueueStorageQueueOperationsClient {
         request.insert_header("version", version.to_string());
         request.insert_header("x-ms-version", version.to_string());
 
-        println!("Request: {:?}", request);
-        println!("Creating queue with URL: {}", request.url());
-        println!("Request headers: {:?}", request.headers());
-
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
@@ -97,6 +93,8 @@ impl AzureQueueStorageQueueOperationsClient {
             request.insert_header("request-id", request_id);
         }
         request.insert_header("version", version.to_string());
+        request.insert_header("x-ms-version", version.to_string());
+
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }

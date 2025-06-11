@@ -61,11 +61,6 @@ impl Policy for BearerTokenCredentialPolicy {
     ) -> PolicyResult {
         let access_token = self.access_token.read().await;
 
-        println!(
-            "BearerTokenCredentialPolicy: access_token={:?} ",
-            access_token.as_ref().map(|t| t.token.secret())
-        );
-
         match access_token.as_ref() {
             None => {
                 // cache is empty. Upgrade the lock and acquire a token, provided another thread hasn't already done so
