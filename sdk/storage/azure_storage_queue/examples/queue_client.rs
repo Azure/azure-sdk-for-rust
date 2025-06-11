@@ -37,6 +37,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let create_response = queue_client.create(queue_name.as_str(), None).await;
     println!("Queue created: {:?}", create_response);
 
+    // Create the queue again with the not exists option
+    let create_if_not_exists_response = queue_client
+        .create_if_not_exists(queue_name.as_str(), None)
+        .await;
+    println!(
+        "Create if not exists response: {:?}",
+        create_if_not_exists_response
+    );
+
     //Delete the queue after use
     let delete_response = queue_client.delete(queue_name.as_str(), None).await;
     println!("Queue deleted: {:?}", delete_response);

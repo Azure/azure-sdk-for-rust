@@ -21,6 +21,33 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+#[recorded::test]
+/// Tests the creation of a queue in Azure Storage Queue service, ensuring it does not fail if the queue already exists.
+async fn test_create_queue_if_not_exists(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await?;
+
+    // First, create the queue
+    let response = queue_client.create("test-queue-if-exists", None).await?;
+    assert!(
+        response.status() == 201,
+        "Expected status code 201, got {}",
+        response.status(),
+    );
+
+    // Now, try to create the same queue again
+    let response = queue_client
+        .create_if_not_exists("test-queue-if-exists", None)
+        .await?;
+    assert!(
+        response.status() == 204,
+        "Expected status code 204, got {}",
+        response.status(),
+    );
+
+    Ok(())
+}
+
 /// Tests the deletion of a queue in Azure Storage Queue service.
 #[recorded::test]
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {

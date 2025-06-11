@@ -10,6 +10,7 @@ use crate::{
     generated::clients::AzureQueueStorageClient as GeneratedQueueClient,
     generated::clients::AzureQueueStorageClientOptions,
 };
+use azure_core::http::StatusCode;
 use azure_core::{
     credentials::TokenCredential,
     http::{
@@ -62,6 +63,8 @@ impl QueueClient {
     /// * `queue_name` - The queue name.
     /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// Will fail if the queue already exists.
     pub async fn create(
         &self,
         queue_name: &str,
@@ -71,6 +74,33 @@ impl QueueClient {
             .get_azure_queue_storage_queue_operations_client()
             .create(queue_name, self.version.clone(), options)
             .await
+    }
+
+    /// creates a new queue under the given account. Will not fail if the queue already exists.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_name` - The queue name.
+    /// * `version` - Specifies the version of the operation to use for this request.
+    /// * `options` - Optional parameters for the request.
+    pub async fn create_if_not_exists(
+        &self,
+        queue_name: &str,
+        options: Option<AzureQueueStorageQueueOperationsClientCreateOptions<'_>>,
+    ) -> Result<Response<()>> {
+        // Attempt to create the queue, if it already exists, this will return an error.
+        match self.create(queue_name, options).await {
+            Ok(response) => Ok(response),
+            Err(e) if e.http_status().unwrap() == StatusCode::Conflict => {
+                // If the error is a conflict (queue already exists), we return Ok with no content.
+                use azure_core::http::{headers::Headers, RawResponse};
+                Ok(
+                    RawResponse::from_bytes(StatusCode::NoContent, Headers::new(), Bytes::new())
+                        .into(),
+                )
+            }
+            Err(e) => Err(e), // Propagate other errors.
+        }
     }
 
     /// operation permanently deletes the specified queue
