@@ -121,7 +121,7 @@ tracing-subscriber = "0.3"
 url = "2.2"
 uuid = { version = "1.0", features = ["v4"] }
 zerofrom = "0.1.5"
-zip = { version = "2.6.1", default-features = false, features = ["deflate"] }
+zip = { version = "4.0.0", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
 large_futures = "deny"
