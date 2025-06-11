@@ -145,6 +145,31 @@ async fn test_exists(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+#[recorded::test]
+async fn test_set_metadata(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await?;
+
+    let queue_name = format!("test-queue-metadata-{}", QUEUE_SUFFIX.as_str());
+    queue_client.create_if_not_exists(&queue_name, None).await?;
+
+    // Set metadata for the queue
+    let metadata = Some(
+        vec![("key1", "value1"), ("key2", "value2")]
+            .into_iter()
+            .collect(),
+    );
+    let response = queue_client.set_metadata(&queue_name, metadata).await?;
+
+    assert!(
+        response.status().is_success(),
+        "Expected successful status code, got {}",
+        response.status(),
+    );
+
+    Ok(())
+}
+
 /// Returns an instance of a QueueClient.
 ///
 /// # Arguments

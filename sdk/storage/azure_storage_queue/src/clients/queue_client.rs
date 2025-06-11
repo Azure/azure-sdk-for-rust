@@ -19,6 +19,7 @@ use azure_core::{
     },
     Bytes, Result,
 };
+use std::collections::HashMap;
 use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
@@ -172,7 +173,7 @@ impl QueueClient {
     ///
     /// Returns `Ok(true)` if the queue exists, `Ok(false)` if it does not exist, or an error if the request fails for any other reason.
     pub async fn exists(&self, queue_name: &str) -> Result<bool> {
-        match self.get_metadata(queue_name, self.version.clone()).await {
+        match self.get_metadata(queue_name).await {
             Ok(_) => Ok(true),
             Err(e) if e.http_status().unwrap() == StatusCode::NotFound => {
                 // If the queue does not exist, we return false.
@@ -185,6 +186,41 @@ impl QueueClient {
         }
     }
 
+    pub async fn set_metadata(
+        &self,
+        queue_name: &str,
+        metadata: Option<HashMap<&str, &str>>,
+    ) -> Result<Response<()>> {
+        let mut url = self.client.endpoint.clone();
+        let ctx = Context::new();
+
+        url.path_segments_mut()
+            .expect("Invalid URL")
+            .push(queue_name);
+        url.query_pairs_mut()
+            .append_pair("api-version", &self.client.api_version);
+        url.query_pairs_mut().append_pair("comp", "metadata");
+
+        let mut request = Request::new(url, Method::Put);
+        request.insert_header("accept", "application/xml");
+
+        request.insert_header("version", self.version.to_string());
+        request.insert_header("x-ms-version", self.version.to_string());
+
+        if let Some(metadata) = metadata {
+            for (key, value) in metadata {
+                let header_name = format!("x-ms-meta-{}", key);
+                request.insert_header(header_name.to_string(), value.to_string());
+            }
+        }
+
+        self.client
+            .pipeline
+            .send(&ctx, &mut request)
+            .await
+            .map(Into::into)
+    }
+
     /// Retrieves the metadata of the specified queue.
     ///
     /// # Arguments
@@ -193,10 +229,9 @@ impl QueueClient {
     /// * `version` - Specifies the version of the operation to use for this request.
     ///
     /// Returns a `Response` containing the metadata if the queue exists, or an error if it does not.
-    pub async fn get_metadata(
+    async fn get_metadata(
         &self,
         queue_name: &str,
-        version: QueueApiVersion,
     ) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
         let mut url = self.client.endpoint.clone();
 
@@ -212,8 +247,8 @@ impl QueueClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
 
-        request.insert_header("version", version.to_string());
-        request.insert_header("x-ms-version", version.to_string());
+        request.insert_header("version", self.version.to_string());
+        request.insert_header("x-ms-version", self.version.to_string());
 
         self.client
             .pipeline

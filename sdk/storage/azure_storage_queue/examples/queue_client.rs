@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::QueueClient;
 
@@ -68,6 +70,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             response
         ),
         Err(e) => eprintln!("Error when creating a queue that already existed: {}", e),
+    }
+
+    // Set metadata for the queue
+    let metadata = HashMap::from([("key1", "value1"), ("key2", "value2")]);
+    let set_metadata_response = queue_client
+        .set_metadata(queue_name.as_str(), Some(metadata))
+        .await;
+    match set_metadata_response {
+        Ok(response) => println!("Successfully set metadata: {:?}", response),
+        Err(e) => eprintln!("Error setting metadata: {}", e),
     }
 
     // Delete the queue after use
