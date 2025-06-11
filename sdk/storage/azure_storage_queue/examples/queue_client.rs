@@ -63,8 +63,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .create_if_not_exists(queue_name.as_str(), None)
         .await;
     match create_if_not_exists_response {
-        Ok(response) => println!("Successfully created queue (if not exists): {:?}", response),
-        Err(e) => eprintln!("Error creating queue (if not exists): {}", e),
+        Ok(response) => println!(
+            "Did not error when creating a queue that already existed: {:?}",
+            response
+        ),
+        Err(e) => eprintln!("Error when creating a queue that already existed: {}", e),
     }
 
     // Delete the queue after use
@@ -75,9 +78,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Delete a non-existent queue
-    let delete_non_existent_response = queue_client.delete("non-existent-queue", None).await;
+    let delete_non_existent_response = queue_client
+        .delete_if_exists("non-existent-queue", None)
+        .await;
     match delete_non_existent_response {
-        Ok(response) => println!("Successfully deleted non-existent queue: {:?}", response),
+        Ok(response) => println!(
+            "Did not error when deleting non-existent queue: {:?}",
+            response
+        ),
         Err(e) => eprintln!("Error deleting non-existent queue: {}", e),
     }
 
