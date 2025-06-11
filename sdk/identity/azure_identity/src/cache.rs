@@ -79,8 +79,9 @@ fn should_refresh(token: &AccessToken) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use async_lock::Mutex;
     use azure_core::credentials::Secret;
-    use std::{sync::Mutex, time::Duration};
+    use std::time::Duration;
     use time::OffsetDateTime;
 
     #[derive(Debug)]
@@ -103,7 +104,7 @@ mod tests {
             _: Option<TokenRequestOptions>,
         ) -> azure_core::Result<AccessToken> {
             // Include an incrementing counter in the token to track how many times the token has been refreshed
-            let mut call_count = self.get_token_call_count.lock().unwrap();
+            let mut call_count = self.get_token_call_count.lock().await;
             *call_count += 1;
             Ok(AccessToken {
                 token: Secret::new(format!(
