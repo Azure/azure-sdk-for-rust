@@ -81,6 +81,22 @@ async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+#[recorded::test]
+async fn test_exists(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await?;
+
+    // Check if a queue exists
+    let exists_response = queue_client.exists("test-queue").await?;
+    assert!(exists_response, "Queue should exist");
+
+    // Check a non-existent queue
+    let non_existent_exists_response = queue_client.exists("non-existent-queue").await?;
+    assert!(!non_existent_exists_response, "Queue should not exist");
+
+    Ok(())
+}
+
 /// Returns an instance of a QueueClient.
 ///
 /// # Arguments

@@ -26,7 +26,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match properties_response {
         Ok(response) => {
             let (_status_code, _headers, properties) = response.deconstruct();
-            println!("Queue properties: {:?}", properties.collect_string().await?);
+            println!(
+                "Successfully retrieved properties: {:?}",
+                properties.collect_string().await?
+            );
         }
         Err(e) => eprintln!("Error retrieving queue properties: {}", e),
     }
@@ -35,20 +38,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a new queue
     let create_response = queue_client.create(queue_name.as_str(), None).await;
-    println!("Queue created: {:?}", create_response);
+    match create_response {
+        Ok(response) => println!("Successfully created queue: {:?}", response),
+        Err(e) => eprintln!("Error creating queue: {}", e),
+    }
+
+    // Check if the queue exists
+    let exists_response = queue_client.exists(queue_name.as_str()).await;
+    match exists_response {
+        Ok(response) => println!("Queue exists: {:?}", response),
+        Err(e) => eprintln!("Error checking if queue exists: {}", e),
+    }
+
+    // Check a non-existent queue exists
+    let non_existent_queue = "non-existent-queue";
+    let non_existent_exists_response = queue_client.exists(non_existent_queue).await;
+    match non_existent_exists_response {
+        Ok(response) => println!("Non-existent queue exists: {:?}", response),
+        Err(e) => eprintln!("Error checking non-existent queue: {}", e),
+    }
 
     // Create the queue again with the not exists option
     let create_if_not_exists_response = queue_client
         .create_if_not_exists(queue_name.as_str(), None)
         .await;
-    println!(
-        "Create if not exists response: {:?}",
-        create_if_not_exists_response
-    );
+    match create_if_not_exists_response {
+        Ok(response) => println!("Successfully created queue (if not exists): {:?}", response),
+        Err(e) => eprintln!("Error creating queue (if not exists): {}", e),
+    }
 
-    //Delete the queue after use
+    // Delete the queue after use
     let delete_response = queue_client.delete(queue_name.as_str(), None).await;
-    println!("Queue deleted: {:?}", delete_response);
+    match delete_response {
+        Ok(response) => println!("Successfully deleted queue: {:?}", response),
+        Err(e) => eprintln!("Error deleting queue: {}", e),
+    }
+
+    // Delete a non-existent queue
+    let delete_non_existent_response = queue_client.delete("non-existent-queue", None).await;
+    match delete_non_existent_response {
+        Ok(response) => println!("Successfully deleted non-existent queue: {:?}", response),
+        Err(e) => eprintln!("Error deleting non-existent queue: {}", e),
+    }
+
     Ok(())
 }
 
