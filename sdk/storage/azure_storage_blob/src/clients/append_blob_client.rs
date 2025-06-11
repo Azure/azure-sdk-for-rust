@@ -93,9 +93,8 @@ impl AppendBlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn create(
         &self,
-        content_length: u64,
         options: Option<AppendBlobClientCreateOptions<'_>>,
     ) -> Result<Response<AppendBlobClientCreateResult>> {
-        self.client.create(content_length, options).await
+        self.client.create(options).await
     }
 }

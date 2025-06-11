@@ -95,12 +95,9 @@ impl PageBlobClient {
     /// * `options` - Optional parameters for the request.
     pub async fn create(
         &self,
-        content_length: u64,
         blob_content_length: u64,
         options: Option<PageBlobClientCreateOptions<'_>>,
     ) -> Result<Response<PageBlobClientCreateResult>> {
-        self.client
-            .create(content_length, blob_content_length, options)
-            .await
+        self.client.create(blob_content_length, options).await
     }
 }

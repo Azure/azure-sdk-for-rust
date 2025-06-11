@@ -14,7 +14,7 @@ async fn test_create_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>>
     let blob_client = container_client.blob_client(get_blob_name(recording));
     let append_blob_client = blob_client.append_blob_client();
 
-    append_blob_client.create(0, None).await?;
+    append_blob_client.create(None).await?;
 
     // Assert
     let blob_properties = blob_client.get_properties(None).await?;

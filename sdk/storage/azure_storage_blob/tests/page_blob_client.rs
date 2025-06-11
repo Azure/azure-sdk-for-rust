@@ -14,7 +14,7 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let blob_client = container_client.blob_client(get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
 
-    page_blob_client.create(0, 1024, None).await?;
+    page_blob_client.create(1024, None).await?;
 
     // Assert
     let blob_properties = blob_client.get_properties(None).await?;
