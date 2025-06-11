@@ -122,7 +122,7 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
@@ -299,12 +299,11 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -372,6 +371,9 @@ impl BlockBlobClient {
         }
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
+        }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
         }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
@@ -520,7 +522,7 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
@@ -552,6 +554,15 @@ impl BlockBlobClient {
         }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(structured_body_type) = options.structured_body_type {
+            request.insert_header("x-ms-structured-body", structured_body_type);
+        }
+        if let Some(structured_content_length) = options.structured_content_length {
+            request.insert_header(
+                "x-ms-structured-content-length",
+                structured_content_length.to_string(),
+            );
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
@@ -593,7 +604,7 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
@@ -617,6 +628,9 @@ impl BlockBlobClient {
         }
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
+        }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
         }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
@@ -681,13 +695,12 @@ impl BlockBlobClient {
         path = path.replace("{blobName}", &self.blob_name);
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
-        url.query_pairs_mut().append_key_only("BlockBlob");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
@@ -780,6 +793,15 @@ impl BlockBlobClient {
                 request.insert_header(format!("x-ms-meta-{}", k), v);
             }
         }
+        if let Some(structured_body_type) = options.structured_body_type {
+            request.insert_header("x-ms-structured-body", structured_body_type);
+        }
+        if let Some(structured_content_length) = options.structured_content_length {
+            request.insert_header(
+                "x-ms-structured-content-length",
+                structured_content_length.to_string(),
+            );
+        }
         if let Some(blob_tags_string) = options.blob_tags_string {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
@@ -793,7 +815,7 @@ impl Default for BlockBlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-01-05"),
+            version: String::from("2025-11-05"),
         }
     }
 }

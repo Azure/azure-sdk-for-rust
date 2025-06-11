@@ -9,7 +9,8 @@ use crate::generated::{
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
         BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
-        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+        BlobContainerClientCreateOptions, BlobContainerClientCreateResult,
+        BlobContainerClientDeleteOptions, BlobContainerClientDeleteResult,
         BlobContainerClientFilterBlobsOptions, BlobContainerClientGetAccessPolicyOptions,
         BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
@@ -20,8 +21,8 @@ use crate::generated::{
         BlobContainerClientRenewLeaseResult, BlobContainerClientRestoreOptions,
         BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyOptions,
         BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetMetadataOptions,
-        FilterBlobSegment, ListBlobsFlatSegmentResponse, ListBlobsHierarchySegmentResponse,
-        SignedIdentifier,
+        BlobContainerClientSetMetadataResult, FilterBlobSegment, ListBlobsFlatSegmentResponse,
+        ListBlobsHierarchySegmentResponse, SignedIdentifier,
     },
 };
 use azure_core::{
@@ -124,7 +125,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
@@ -171,7 +172,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
@@ -219,7 +220,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
@@ -248,7 +249,7 @@ impl BlobContainerClient {
     pub async fn create(
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobContainerClientCreateResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -259,7 +260,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(access) = options.access {
             request.insert_header("x-ms-blob-public-access", access.to_string());
@@ -294,7 +295,7 @@ impl BlobContainerClient {
     pub async fn delete(
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobContainerClientDeleteResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -305,7 +306,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
@@ -431,7 +432,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -475,7 +476,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -695,7 +696,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
@@ -737,7 +738,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -775,7 +776,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
@@ -815,7 +816,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -854,7 +855,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
@@ -887,7 +888,7 @@ impl BlobContainerClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobContainerClientSetMetadataResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -900,7 +901,7 @@ impl BlobContainerClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
@@ -925,7 +926,7 @@ impl Default for BlobContainerClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-01-05"),
+            version: String::from("2025-11-05"),
         }
     }
 }

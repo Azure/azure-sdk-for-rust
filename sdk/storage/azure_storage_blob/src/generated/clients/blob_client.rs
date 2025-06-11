@@ -11,7 +11,7 @@ use crate::generated::{
         BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
         BlobClientCopyFromUrlOptions, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotOptions,
         BlobClientCreateSnapshotResult, BlobClientDeleteImmutabilityPolicyOptions,
-        BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions,
+        BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions, BlobClientDeleteResult,
         BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientGetAccountInfoOptions,
         BlobClientGetAccountInfoResult, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
@@ -19,8 +19,9 @@ use crate::generated::{
         BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
         BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTagsResult,
-        BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions,
+        BlobClientSetMetadataResult, BlobClientSetPropertiesOptions, BlobClientSetPropertiesResult,
+        BlobClientSetTagsOptions, BlobClientSetTagsResult, BlobClientSetTierOptions,
+        BlobClientSetTierResult, BlobClientStartCopyFromUrlOptions,
         BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
         BlobExpiryOptions, BlobTags,
     },
@@ -134,7 +135,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -171,7 +172,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -229,7 +230,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -288,7 +289,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -346,7 +347,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -378,6 +379,9 @@ impl BlobClient {
         }
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
+        }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
         }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
@@ -458,7 +462,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -524,7 +528,7 @@ impl BlobClient {
     pub async fn delete(
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobClientDeleteResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -547,7 +551,7 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -609,7 +613,7 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -730,7 +734,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -800,8 +804,7 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Head);
-        request.insert_header("accept", "application/json");
-        request.insert_header("content-type", "");
+        request.insert_header("accept", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -913,7 +916,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -968,7 +971,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -1020,7 +1023,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -1062,7 +1065,7 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header(
@@ -1119,7 +1122,7 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -1137,7 +1140,7 @@ impl BlobClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobClientSetMetadataResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1151,7 +1154,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -1209,7 +1212,7 @@ impl BlobClient {
     pub async fn set_properties(
         &self,
         options: Option<BlobClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobClientSetPropertiesResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1225,7 +1228,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -1300,7 +1303,7 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
@@ -1337,7 +1340,7 @@ impl BlobClient {
         &self,
         tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobClientSetTierResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1357,7 +1360,7 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-access-tier", tier.to_string());
         if let Some(client_request_id) = options.client_request_id {
@@ -1401,7 +1404,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -1507,7 +1510,7 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -1521,7 +1524,7 @@ impl Default for BlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-01-05"),
+            version: String::from("2025-11-05"),
         }
     }
 }

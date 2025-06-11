@@ -121,9 +121,8 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -219,7 +218,7 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -251,13 +250,11 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `content_length` - The length of the request.
     /// * `blob_content_length` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must
     ///   be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
     pub async fn create(
         &self,
-        content_length: u64,
         blob_content_length: u64,
         options: Option<PageBlobClientCreateOptions<'_>>,
     ) -> Result<Response<PageBlobClientCreateResult>> {
@@ -268,15 +265,13 @@ impl PageBlobClient {
         path = path.replace("{blobName}", &self.blob_name);
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
-        url.query_pairs_mut().append_key_only("PageBlob");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
-        request.insert_header("content-length", content_length.to_string());
-        request.insert_header("content-type", "");
+        request.insert_header("accept", "application/xml");
+        request.insert_header("content-length", "0");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -538,7 +533,7 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -612,7 +607,7 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -680,7 +675,7 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
@@ -803,9 +798,8 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -842,6 +836,9 @@ impl PageBlobClient {
         }
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
+        }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
         }
         if let Some(if_sequence_number_equal_to) = options.if_sequence_number_equal_to {
             request.insert_header(
@@ -910,7 +907,7 @@ impl Default for PageBlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-01-05"),
+            version: String::from("2025-11-05"),
         }
     }
 }
