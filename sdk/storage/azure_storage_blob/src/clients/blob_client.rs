@@ -22,7 +22,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        RequestContent, Response, Url,
+        RequestContent, Response, Url, XmlFormat,
     },
     Bytes, Result,
 };

@@ -1,4 +1,4 @@
-use azure_core::http::{headers::Headers, Context, Method, Request, Response};
+use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -27,7 +27,7 @@ pub struct QueryExecutor<T: DeserializeOwned> {
     phantom: std::marker::PhantomData<fn() -> T>,
 }
 
-impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
+impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     pub fn new(
         http_pipeline: CosmosPipeline,
         container_link: ResourceLink,
@@ -84,7 +84,7 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
                     self.query_engine.supported_features()?,
                 )
                 .await?
-                .into_raw_body()
+                .into_body()
                 .collect()
                 .await?;
                 let pkranges = get_pkranges(
@@ -93,7 +93,7 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
                     Context::with_context(&self.context),
                 )
                 .await?
-                .into_raw_body()
+                .into_body()
                 .collect()
                 .await?;
 
@@ -142,9 +142,9 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
                     query_request.insert_header(constants::CONTINUATION, continuation);
                 }
 
-                let resp: Response = self
+                let resp = self
                     .http_pipeline
-                    .send(
+                    .send_raw(
                         Context::with_context(&self.context),
                         &mut query_request,
                         self.items_link.clone(),
@@ -153,7 +153,7 @@ impl<T: DeserializeOwned + 'static> QueryExecutor<T> {
 
                 let next_continuation =
                     resp.headers().get_optional_string(&constants::CONTINUATION);
-                let body = resp.into_raw_body().collect().await?;
+                let body = resp.into_body().collect().await?;
 
                 let result = QueryResult {
                     partition_key_range_id: &request.partition_key_range_id,
@@ -181,7 +181,7 @@ async fn get_query_plan(
     context: Context<'_>,
     query: &Query,
     supported_features: &str,
-) -> azure_core::Result<Response> {
+) -> azure_core::Result<RawResponse> {
     let url = http_pipeline.url(items_link);
     let mut request = pipeline::create_base_query_request(url, query)?;
     request.insert_header(constants::QUERY_ENABLE_CROSS_PARTITION, "True");
@@ -192,7 +192,7 @@ async fn get_query_plan(
     );
 
     http_pipeline
-        .send(context, &mut request, items_link.clone())
+        .send_raw(context, &mut request, items_link.clone())
         .await
 }
 
@@ -202,12 +202,12 @@ async fn get_pkranges(
     http_pipeline: &CosmosPipeline,
     container_link: &ResourceLink,
     context: Context<'_>,
-) -> azure_core::Result<Response> {
+) -> azure_core::Result<RawResponse> {
     let pkranges_link = container_link.feed(ResourceType::PartitionKeyRanges);
     let url = http_pipeline.url(&pkranges_link);
     let mut base_request = Request::new(url, Method::Get);
 
     http_pipeline
-        .send(context, &mut base_request, pkranges_link)
+        .send_raw(context, &mut base_request, pkranges_link)
         .await
 }
