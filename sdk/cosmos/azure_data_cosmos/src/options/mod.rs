@@ -47,7 +47,7 @@ pub struct DeleteDatabaseOptions<'a> {
 #[derive(Clone, Default)]
 pub struct ItemOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
-
+    pub if_match_etag: Option<String>,
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.

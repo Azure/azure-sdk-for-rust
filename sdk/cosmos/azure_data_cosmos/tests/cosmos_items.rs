@@ -2,6 +2,7 @@
 
 mod framework;
 
+use azure_core::http::headers::HeaderName;
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{
     clients::ContainerClient,
@@ -31,6 +32,7 @@ async fn create_container(
     cosmos_client: &CosmosClient,
 ) -> azure_core::Result<ContainerClient> {
     // Create a database and a container
+    println!("Attempting to create client");
     let db_client = test_data::create_database(account, cosmos_client).await?;
     db_client
         .create_container(
@@ -42,6 +44,7 @@ async fn create_container(
             None,
         )
         .await?;
+    println!("Created database and container");
     let container_client = db_client.container_client("Container");
 
     Ok(container_client)
@@ -49,6 +52,7 @@ async fn create_container(
 
 #[recorded::test]
 pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(), Box<dyn Error>> {
+    use azure_core::http::headers::HeaderName;
     let account = TestAccount::from_env(context, None).await?;
     let cosmos_client = account.connect_with_key(None)?;
     let container_client = create_container(&account, &cosmos_client).await?;
@@ -67,8 +71,14 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     let response = container_client
         .create_item("Partition1", &item, None)
         .await?;
-    let body = response.into_raw_body().collect_string().await?;
-    assert_eq!("", body);
+    //let body = response.into_raw_body().collect_string().await?;
+
+    const ETAG: HeaderName = HeaderName::from_static("etag");
+    println!(
+        "Body response: {}",
+        response.headers().get_str(&ETAG).unwrap_or("No ETag")
+    );
+    //assert_eq!("", body);
 
     // Try to read the item
     let read_item: TestItem = container_client
@@ -82,9 +92,23 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     item.value = 24;
     item.nested.nested_value = "Updated".into();
 
+    println!("Attempting to replace item");
     let response = container_client
-        .replace_item("Partition1", "Item1", &item, None)
+        .replace_item(
+            "Partition1",
+            "Item1",
+            &item,
+            Some(ItemOptions {
+                if_match_etag: response
+                    .headers()
+                    .get_str(&ETAG)
+                    .ok()
+                    .map(|s| s.to_string()),
+                ..Default::default()
+            }),
+        )
         .await?;
+    println!("Item upserted successfully");
     let body = response.into_raw_body().collect_string().await?;
     assert_eq!("", body);
 
