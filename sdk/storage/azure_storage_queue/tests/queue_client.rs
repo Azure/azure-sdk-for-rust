@@ -34,7 +34,7 @@ async fn test_create_queue_if_not_exists(ctx: TestContext) -> Result<()> {
     let queue_client = get_queue_client(recording).await?;
 
     // First, create the queue
-    let queue_name = String::from(format!("test-queue-if-exists-{}", QUEUE_SUFFIX.as_str()));
+    let queue_name = format!("test-queue-if-exists-{}", QUEUE_SUFFIX.as_str());
     let response = queue_client.create(&queue_name, None).await?;
     assert!(
         response.status().is_success(),
@@ -58,7 +58,7 @@ async fn test_create_queue_if_not_exists(ctx: TestContext) -> Result<()> {
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = String::from(format!("test-queue-{}", QUEUE_SUFFIX.as_str()));
+    let queue_name = format!("test-queue-{}", QUEUE_SUFFIX.as_str());
 
     queue_client.create_if_not_exists(&queue_name, None).await?;
 
@@ -76,7 +76,7 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
 async fn test_delete_queue_if_exists(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = String::from(format!("test-queue-if-exists-{}", QUEUE_SUFFIX.as_str()));
+    let queue_name = format!("test-queue-if-exists-{}", QUEUE_SUFFIX.as_str());
 
     // First, create the queue
     let response = queue_client.create(&queue_name, None).await?;
@@ -129,11 +129,10 @@ async fn test_exists(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
 
-    // Check if a queue exists
-    let queue_name = String::from(format!("test-queue-{}", QUEUE_SUFFIX.as_str()));
-
+    let queue_name = format!("test-queue-{}", QUEUE_SUFFIX.as_str());
     queue_client.create_if_not_exists(&queue_name, None).await?;
 
+    // Check if a queue exists
     let exists_response = queue_client.exists(&queue_name).await?;
     assert!(exists_response, "Queue should exist");
 
