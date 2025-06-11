@@ -2,7 +2,6 @@ use azure_core::{http::ClientOptions, Result};
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::clients::AzureQueueStorageClientOptions;
 use azure_storage_queue::clients::QueueClient;
-use std::error::Error;
 use std::option::Option;
 
 #[recorded::test]
@@ -31,6 +30,7 @@ pub async fn get_queue_client(recording: &Recording) -> Result<QueueClient> {
         recording.credential(),
         Option::Some(queue_client_options),
     )?;
+
     Ok(queue_client)
 }
 
@@ -44,7 +44,9 @@ fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     recording.instrument(&mut client_options);
     let endpoint = format!(
         "https://{}.queue.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
+        recording
+            .var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME", None)
+            .as_str()
     );
 
     (client_options, endpoint)
