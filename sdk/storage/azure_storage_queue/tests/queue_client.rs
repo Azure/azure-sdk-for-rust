@@ -13,6 +13,15 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+#[recorded::test]
+async fn test_delete_queue(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await;
+
+    queue_client?.delete("test-queue", None).await?;
+    Ok(())
+}
+
 // /// Returns an instance of a QueueClient.
 ///
 /// # Arguments
