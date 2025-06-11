@@ -31,7 +31,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myqueue.queue.core.windows.net/`
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://<storage_account_name>.queue.core.windows.net/`
     /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn new(

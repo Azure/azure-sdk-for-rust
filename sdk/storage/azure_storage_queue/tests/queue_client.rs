@@ -9,7 +9,14 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await;
 
-    queue_client?.create("test-queue", None).await?;
+    let response = queue_client?.create("test-queue", None).await?;
+
+    assert!(
+        response.status() == 204,
+        "Expected status code 204, got {}",
+        response.status(),
+    );
+
     Ok(())
 }
 
@@ -18,7 +25,13 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await;
 
-    queue_client?.delete("test-queue", None).await?;
+    let response = queue_client?.delete("test-queue", None).await?;
+
+    assert!(
+        response.status() == 204,
+        "Expected status code 204, got {}",
+        response.status(),
+    );
     Ok(())
 }
 

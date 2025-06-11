@@ -1,8 +1,8 @@
-use azure_core::{http::ClientOptions, Result};
-use azure_core_test::{recorded, Recording, TestContext};
-use azure_storage_queue::clients::QueueServiceClient;
-use azure_storage_queue::AzureQueueStorageServiceOperationsClientGetPropertiesOptions;
-use std::error::Error;
+// use azure_core::{http::ClientOptions, Result};
+// use azure_core_test::{recorded, Recording, TestContext};
+// use azure_storage_queue::clients::QueueServiceClient;
+// use azure_storage_queue::AzureQueueStorageServiceOperationsClientGetPropertiesOptions;
+// use std::error::Error;
 
 // #[recorded::test]
 // async fn test_create_queue(ctx: TestContext) -> Result<(), Box<dyn Error>> {
