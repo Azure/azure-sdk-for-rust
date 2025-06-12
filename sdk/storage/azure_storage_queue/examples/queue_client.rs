@@ -102,6 +102,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // Send a message to the queue
+    let send_message_response = queue_client
+        .send_message(
+            queue_name.as_str(),
+            "Example message created from Rust.",
+            None,
+        )
+        .await;
+    println!("Send message response: {:?}", send_message_response);
+
     // Delete the queue after use
     let delete_response = queue_client.delete(queue_name.as_str(), None).await;
     match delete_response {

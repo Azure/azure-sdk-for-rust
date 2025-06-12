@@ -2,15 +2,17 @@
 // Licensed under the MIT License.
 
 use crate::generated::models::{
+    AzureQueueStorageMessagesOperationsClientEnqueueOptions,
     AzureQueueStorageQueueOperationsClientCreateOptions,
-    AzureQueueStorageQueueOperationsClientDeleteOptions, QueueApiVersion,
-    ServicePropertiesCompType, StorageServicePropertiesResponse,
+    AzureQueueStorageQueueOperationsClientDeleteOptions, ListOfEnqueuedMessage, QueueApiVersion,
+    QueueMessage, ServicePropertiesCompType, StorageServicePropertiesResponse,
 };
 use crate::{
     generated::clients::AzureQueueStorageClient as GeneratedQueueClient,
     generated::clients::AzureQueueStorageClientOptions,
 };
 use azure_core::http::StatusCode;
+use azure_core::xml;
 use azure_core::{
     credentials::TokenCredential,
     http::{
@@ -281,5 +283,27 @@ impl QueueClient {
             .send(&ctx, &mut request)
             .await
             .map(Into::into)
+    }
+
+    pub async fn send_message(
+        &self,
+        queue_name: &str,
+        message: &str,
+        options: Option<AzureQueueStorageMessagesOperationsClientEnqueueOptions<'_>>,
+    ) -> Result<Response<ListOfEnqueuedMessage, XmlFormat>> {
+        let queue_message = QueueMessage {
+            message_text: Some(message.to_owned()),
+        };
+
+        let xml_body = xml::to_xml(&queue_message)?;
+        self.client
+            .get_azure_queue_storage_messages_operations_client()
+            .enqueue(
+                queue_name,
+                self.version.clone(),
+                RequestContent::try_from(xml_body)?,
+                options,
+            )
+            .await
     }
 }

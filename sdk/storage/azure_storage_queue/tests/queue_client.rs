@@ -26,6 +26,25 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+/// Enqueues a message to the specified queue.
+#[recorded::test]
+async fn test_send_message(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await;
+
+    let response = queue_client?
+        .send_message("test-queue", "queue-message", None)
+        .await?;
+
+    assert!(
+        response.status() == 201,
+        "Expected status code 201, got {}",
+        response.status(),
+    );
+
+    Ok(())
+}
+
 #[recorded::test]
 /// Tests the creation of a queue in Azure Storage Queue service, ensuring it does not fail if the queue already exists.
 async fn test_create_queue_if_not_exists(ctx: TestContext) -> Result<()> {
