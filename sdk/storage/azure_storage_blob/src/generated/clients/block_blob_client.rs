@@ -373,6 +373,9 @@ impl BlockBlobClient {
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
+        }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -553,6 +556,15 @@ impl BlockBlobClient {
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
+        if let Some(structured_body_type) = options.structured_body_type {
+            request.insert_header("x-ms-structured-body", structured_body_type);
+        }
+        if let Some(structured_content_length) = options.structured_content_length {
+            request.insert_header(
+                "x-ms-structured-content-length",
+                structured_content_length.to_string(),
+            );
+        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
@@ -617,6 +629,9 @@ impl BlockBlobClient {
         }
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
+        }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
         }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
@@ -779,6 +794,15 @@ impl BlockBlobClient {
                 request.insert_header(format!("x-ms-meta-{}", k), v);
             }
         }
+        if let Some(structured_body_type) = options.structured_body_type {
+            request.insert_header("x-ms-structured-body", structured_body_type);
+        }
+        if let Some(structured_content_length) = options.structured_content_length {
+            request.insert_header(
+                "x-ms-structured-content-length",
+                structured_content_length.to_string(),
+            );
+        }
         if let Some(blob_tags_string) = options.blob_tags_string {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
@@ -792,7 +816,7 @@ impl Default for BlockBlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-01-05"),
+            version: String::from("2025-11-05"),
         }
     }
 }

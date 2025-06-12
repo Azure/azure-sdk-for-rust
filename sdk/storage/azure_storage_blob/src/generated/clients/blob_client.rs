@@ -11,7 +11,7 @@ use crate::generated::{
         BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
         BlobClientCopyFromUrlOptions, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotOptions,
         BlobClientCreateSnapshotResult, BlobClientDeleteImmutabilityPolicyOptions,
-        BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions,
+        BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions, BlobClientDeleteResult,
         BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientGetAccountInfoOptions,
         BlobClientGetAccountInfoResult, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
@@ -19,8 +19,9 @@ use crate::generated::{
         BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
         BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTagsResult,
-        BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions,
+        BlobClientSetMetadataResult, BlobClientSetPropertiesOptions, BlobClientSetPropertiesResult,
+        BlobClientSetTagsOptions, BlobClientSetTagsResult, BlobClientSetTierOptions,
+        BlobClientSetTierResult, BlobClientStartCopyFromUrlOptions,
         BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
         BlobExpiryOptions, BlobTags,
     },
@@ -380,6 +381,9 @@ impl BlobClient {
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
+        }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -525,7 +529,7 @@ impl BlobClient {
     pub async fn delete(
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobClientDeleteResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1137,7 +1141,7 @@ impl BlobClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobClientSetMetadataResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1209,7 +1213,7 @@ impl BlobClient {
     pub async fn set_properties(
         &self,
         options: Option<BlobClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobClientSetPropertiesResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1337,7 +1341,7 @@ impl BlobClient {
         &self,
         tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<BlobClientSetTierResult>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1521,7 +1525,7 @@ impl Default for BlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-01-05"),
+            version: String::from("2025-11-05"),
         }
     }
 }

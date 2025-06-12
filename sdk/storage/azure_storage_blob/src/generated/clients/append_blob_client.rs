@@ -265,6 +265,9 @@ impl AppendBlobClient {
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
         }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
+        }
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
@@ -312,11 +315,9 @@ impl AppendBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `content_length` - The length of the request.
     /// * `options` - Optional parameters for the request.
     pub async fn create(
         &self,
-        content_length: u64,
         options: Option<AppendBlobClientCreateOptions<'_>>,
     ) -> Result<Response<AppendBlobClientCreateResult>> {
         let options = options.unwrap_or_default();
@@ -332,7 +333,7 @@ impl AppendBlobClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-length", content_length.to_string());
+        request.insert_header("content-length", "0");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -476,7 +477,7 @@ impl Default for AppendBlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-01-05"),
+            version: String::from("2025-11-05"),
         }
     }
 }
