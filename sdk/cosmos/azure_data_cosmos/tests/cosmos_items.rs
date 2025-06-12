@@ -705,7 +705,7 @@ pub async fn item_patch_if_match_etag(context: TestContext) -> Result<(), Box<dy
     let patched_item: TestItem = container_client
         .read_item("Partition1", "Item1", None)
         .await?
-        .into_json_body()
+        .into_body()
         .await?;
     assert_eq!("Patched", patched_item.nested.nested_value);
     assert_eq!(52, patched_item.value);
