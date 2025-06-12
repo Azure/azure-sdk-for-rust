@@ -117,7 +117,7 @@ impl AzureCliCredential {
         let env = options.env.clone().unwrap_or_default();
         #[cfg(not(test))]
         let env = Env::default();
-        
+
         let options = AzureCliCredentialOptions {
             additionally_allowed_tenants: options.additionally_allowed_tenants,
             subscription: options.subscription,
