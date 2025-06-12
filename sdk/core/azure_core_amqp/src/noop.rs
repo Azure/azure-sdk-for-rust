@@ -16,9 +16,10 @@ use super::{
     simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use async_trait::async_trait;
-use azure_core::{credentials::AccessToken, error::Result};
-use std::marker::PhantomData;
+use azure_core::{
+    credentials::{AccessToken, Secret},
+    error::Result,
+};
 
 #[derive(Default)]
 pub(crate) struct NoopAmqpConnection {}
@@ -35,12 +36,11 @@ pub(crate) struct NoopAmqpReceiver {}
 #[derive(Default, Clone)]
 pub(crate) struct NoopAmqpSession {}
 
+#[derive(Debug)]
 pub(crate) struct NoopAmqpDelivery {}
 
 #[derive(Default)]
-pub(crate) struct NoopAmqpClaimsBasedSecurity<'a> {
-    phantom: PhantomData<&'a AmqpSession>,
-}
+pub(crate) struct NoopAmqpClaimsBasedSecurity {}
 
 impl NoopAmqpConnection {
     pub fn new() -> Self {
@@ -48,7 +48,8 @@ impl NoopAmqpConnection {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpConnectionApis for NoopAmqpConnection {
     async fn open(
         &self,
@@ -78,7 +79,8 @@ impl NoopAmqpSession {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSessionApis for NoopAmqpSession {
     async fn begin(
         &self,
@@ -93,16 +95,15 @@ impl AmqpSessionApis for NoopAmqpSession {
     }
 }
 
-impl<'a> NoopAmqpClaimsBasedSecurity<'a> {
-    pub fn new(session: &'a AmqpSession) -> Result<Self> {
-        Ok(Self {
-            phantom: PhantomData,
-        })
+impl NoopAmqpClaimsBasedSecurity {
+    pub fn new(session: AmqpSession) -> Result<Self> {
+        Ok(Self {})
     }
 }
 
-#[async_trait]
-impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity<'_> {
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
     }
@@ -113,7 +114,7 @@ impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity<'_> {
         &self,
         path: String,
         token_type: Option<String>,
-        secret: String,
+        secret: &Secret,
         expires_on: time::OffsetDateTime,
     ) -> Result<()> {
         unimplemented!()
@@ -126,7 +127,8 @@ impl NoopAmqpManagement {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpManagementApis for NoopAmqpManagement {
     async fn attach(&self) -> Result<()> {
         unimplemented!();
@@ -151,7 +153,8 @@ impl NoopAmqpSender {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSenderApis for NoopAmqpSender {
     async fn attach(
         &self,
@@ -169,11 +172,21 @@ impl AmqpSenderApis for NoopAmqpSender {
         unimplemented!();
     }
 
-    async fn send(
+    async fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome>
+    where
+        M: Into<AmqpMessage> + std::fmt::Debug + Send,
+    {
+        unimplemented!();
+    }
+
+    async fn send_ref<M>(
         &self,
-        message: impl Into<AmqpMessage> + Send,
+        message: M,
         options: Option<AmqpSendOptions>,
-    ) -> Result<AmqpSendOutcome> {
+    ) -> Result<AmqpSendOutcome>
+    where
+        M: AsRef<AmqpMessage> + std::fmt::Debug + Send,
+    {
         unimplemented!();
     }
 }
@@ -184,7 +197,8 @@ impl NoopAmqpReceiver {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpReceiverApis for NoopAmqpReceiver {
     async fn attach(
         &self,

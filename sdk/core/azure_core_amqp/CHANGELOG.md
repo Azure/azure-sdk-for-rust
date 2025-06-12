@@ -1,12 +1,12 @@
 # Release History
 
-## 0.4.0 (Unreleased)
-
-### Features Added
+## 0.4.0 (2025-06-06)
 
 ### Breaking Changes
 
-### Bugs Fixed
+- `AmqpClaimsBasedSecurity` now takes ownership of the associated session rather than simply referencing the associated session. This means that all CBS authentication operations should be performed on dedicated AmqpSession objects.
+
+- `AmqpOrderedMap::iter` now iterates over references to key and value, not clones of the key and value, thus eliminating unnecessary clones.
 
 ### Other Changes
 

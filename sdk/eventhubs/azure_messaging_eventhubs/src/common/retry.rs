@@ -6,7 +6,7 @@
 use azure_core::error::Result;
 use rand::{thread_rng, Rng};
 use std::{fmt::Debug, time::Duration};
-use tracing::{debug, warn};
+use tracing::{info, warn};
 
 /// Options for configuring exponential backoff retry behavior.
 #[derive(Debug, Clone)]
@@ -70,10 +70,13 @@ where
     loop {
         match operation().await {
             Ok(result) => {
+                if current_retry > 0 {
+                    info!("Operation succeeded after {} retries", current_retry);
+                }
                 return Ok(result);
             }
             Err(err) => {
-                warn!("Operation failed with error: {}, checking for retry.", err);
+                info!("Operation failed with error: {}, checking for retry.", err);
                 // Check if we should retry this error
                 if let Some(checker) = is_retryable {
                     if !checker(&err) {
@@ -101,7 +104,7 @@ where
                     current_delay
                 };
 
-                debug!(
+                info!(
                     "Operation failed with error: {:?}. Retrying after {:?} (retry {}/{})",
                     err,
                     jittered_delay,

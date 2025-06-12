@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, TokenCredentialOptions};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::{AzureCliCredential, AzureDeveloperCliCredential};
+use crate::{TokenCache, TokenCredentialOptions};
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::error::ResultExt;
 use azure_core::{

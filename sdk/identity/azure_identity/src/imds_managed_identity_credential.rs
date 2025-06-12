@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{credentials::cache::TokenCache, env::Env, TokenCredentialOptions, UserAssignedId};
+use crate::{env::Env, TokenCache, TokenCredentialOptions, UserAssignedId};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{http_response_from_body, Error, ErrorKind},

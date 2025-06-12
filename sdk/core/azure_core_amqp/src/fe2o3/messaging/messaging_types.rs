@@ -3,15 +3,19 @@
 
 use std::sync::OnceLock;
 
+use typespec_macros::SafeDebug;
+
 use crate::messaging::{
     AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpOutcome, DeliveryNumber, DeliveryTag,
     DistributionMode, TerminusDurability, TerminusExpiryPolicy,
 };
-
+#[derive(SafeDebug)]
+#[safe(true)]
 pub(crate) struct Fe2o3AmqpDelivery {
     pub(crate) delivery: fe2o3_amqp::link::delivery::Delivery<
         fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
     >,
+    #[safe(false)]
     message: OnceLock<AmqpMessage>,
     delivery_tag: OnceLock<DeliveryTag>,
 }

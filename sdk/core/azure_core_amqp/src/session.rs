@@ -5,7 +5,6 @@ use super::{
     connection::AmqpConnection,
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
 };
-use async_trait::async_trait;
 use azure_core::error::Result;
 use std::fmt::Debug;
 
@@ -61,8 +60,8 @@ impl AmqpSessionOptions {
     }
 }
 
-#[allow(unused_variables)]
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpSessionApis {
     async fn begin(
         &self,
@@ -77,7 +76,8 @@ pub struct AmqpSession {
     pub(crate) implementation: SessionImplementation,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpSessionApis for AmqpSession {
     async fn begin(
         &self,

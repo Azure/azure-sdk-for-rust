@@ -77,19 +77,13 @@ impl<'a> EventDataBatch<'a> {
     }
 
     pub(crate) async fn attach(&mut self) -> Result<()> {
-        let sender = self.producer.ensure_sender(&self.get_batch_path()?).await?;
-        self.max_size_in_bytes =
-            sender
-                .lock()
-                .await
-                .max_message_size()
-                .await?
-                .ok_or_else(|| {
-                    Error::message(
-                        azure_core::error::ErrorKind::Other,
-                        "No message size available.",
-                    )
-                })?;
+        let sender = self.producer.ensure_sender(self.get_batch_path()?).await?;
+        self.max_size_in_bytes = sender.max_message_size().await?.ok_or_else(|| {
+            Error::message(
+                azure_core::error::ErrorKind::Other,
+                "No message size available.",
+            )
+        })?;
         Ok(())
     }
 

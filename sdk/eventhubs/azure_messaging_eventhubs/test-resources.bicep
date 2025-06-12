@@ -42,11 +42,11 @@ resource eventhubNamespace 'Microsoft.EventHub/namespaces@2024-05-01-preview' = 
     }
     minimumTlsVersion: '1.2'
     publicNetworkAccess: 'Enabled'
-    disableLocalAuth: !tenantIsTME // Disable local auth for TME tenants
+    disableLocalAuth: !tenantIsTME // Disable local auth for non-TME tenants
     zoneRedundant: false
     isAutoInflateEnabled: false
-    maximumThroughputUnits: 0
-    kafkaEnabled: true
+    //    maximumThroughputUnits: 0
+    //    kafkaEnabled: true
   }
   resource authorization 'authorizationrules@2024-05-01-preview' = {
     name: 'RootManageSharedAccessKey'

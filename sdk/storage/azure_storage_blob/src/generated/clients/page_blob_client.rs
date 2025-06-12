@@ -22,6 +22,7 @@ use azure_core::{
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
+        XmlFormat,
     },
     Bytes, Result,
 };
@@ -121,9 +122,8 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -187,7 +187,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-range", range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Copy Incremental operation copies a snapshot of the source page blob to a destination page blob. The snapshot is copied
@@ -219,7 +219,7 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -244,7 +244,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Create operation creates a new page blob.
@@ -268,15 +268,13 @@ impl PageBlobClient {
         path = path.replace("{blobName}", &self.blob_name);
         path = path.replace("{containerName}", &self.container_name);
         url = url.join(&path)?;
-        url.query_pairs_mut().append_key_only("PageBlob");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
-        request.insert_header("content-type", "");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -369,7 +367,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Get Page Ranges operation returns the list of valid page ranges for a page blob or snapshot of a page blob.
@@ -380,7 +378,7 @@ impl PageBlobClient {
     pub async fn get_page_ranges(
         &self,
         options: Option<PageBlobClientGetPageRangesOptions<'_>>,
-    ) -> Result<Response<PageList>> {
+    ) -> Result<Response<PageList, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -434,7 +432,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-range", range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Get Page Ranges Diff operation returns the list of valid page ranges for a page blob or snapshot of a page blob.
@@ -445,7 +443,7 @@ impl PageBlobClient {
     pub async fn get_page_ranges_diff(
         &self,
         options: Option<PageBlobClientGetPageRangesDiffOptions<'_>>,
-    ) -> Result<Response<PageList>> {
+    ) -> Result<Response<PageList, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -508,7 +506,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-range", range);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Resize operation increases the size of the page blob to the specified size.
@@ -538,7 +536,7 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -581,7 +579,7 @@ impl PageBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Update Sequence Number operation sets the blob's sequence number. The operation will fail if the specified sequence
@@ -612,7 +610,7 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -649,7 +647,7 @@ impl PageBlobClient {
             sequence_number_action.to_string(),
         );
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Upload Pages operation writes a range of pages to a page blob
@@ -680,7 +678,7 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
@@ -765,7 +763,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The Upload Pages operation writes a range of pages to a page blob where the contents are read from a URL.
@@ -803,9 +801,8 @@ impl PageBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -902,7 +899,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-source-range", source_range);
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }
 
