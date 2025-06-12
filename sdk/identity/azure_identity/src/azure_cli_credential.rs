@@ -71,6 +71,7 @@ impl OutputProcessor for CliTokenResponse {
 #[derive(Debug)]
 pub struct AzureCliCredential {
     options: AzureCliCredentialOptions,
+    env: Env,
 }
 
 /// Options for constructing an [`AzureCliCredential`].
@@ -98,6 +99,7 @@ pub struct AzureCliCredentialOptions {
     /// you can supply your own implementation using a different asynchronous runtime.
     pub executor: Option<Arc<dyn Executor>>,
 
+    #[cfg(test)]
     env: Option<Env>,
 }
 
@@ -111,14 +113,15 @@ impl AzureCliCredential {
         if let Some(ref subscription) = options.subscription {
             validate_subscription(subscription)?;
         }
-        if options.env.is_none() {
-            options.env = Some(Env::default());
-        }
+        #[cfg(test)]
+        let env = options.env.take().unwrap_or_default();
+        #[cfg(not(test))]
+        let env = Env::default();
         if options.executor.is_none() {
             options.executor = Some(new_executor());
         }
 
-        Ok(Arc::new(Self { options }))
+        Ok(Arc::new(Self { options, env }))
     }
 }
 
@@ -156,7 +159,7 @@ impl TokenCredential for AzureCliCredential {
         shell_exec::<CliTokenResponse>(
             // unwrap() is safe because new() ensured the values are Some
             self.options.executor.clone().unwrap(),
-            self.options.env.as_ref().unwrap(),
+            &self.env,
             &command,
         )
         .await
