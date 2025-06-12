@@ -6,7 +6,6 @@ use super::{
     simple_value::AmqpSimpleValue,
     value::{AmqpOrderedMap, AmqpValue},
 };
-use async_trait::async_trait;
 use azure_core::{credentials::AccessToken, error::Result};
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -15,7 +14,8 @@ type ManagementImplementation = super::fe2o3::management::Fe2o3AmqpManagement;
 #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
 type ManagementImplementation = super::noop::NoopAmqpManagement;
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpManagementApis {
     async fn attach(&self) -> Result<()>;
     async fn detach(self) -> Result<()>;
@@ -32,7 +32,8 @@ pub struct AmqpManagement {
     implementation: ManagementImplementation,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpManagementApis for AmqpManagement {
     async fn attach(&self) -> Result<()> {
         self.implementation.attach().await

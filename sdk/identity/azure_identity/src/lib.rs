@@ -4,35 +4,58 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
+mod app_service_managed_identity_credential;
+#[cfg(not(target_arch = "wasm32"))]
+mod azure_cli_credential;
 mod azure_developer_cli_credential;
 mod azure_pipelines_credential;
+mod cache;
+mod client_assertion_credential;
+#[cfg(feature = "client_certificate")]
+mod client_certificate_credential;
 mod client_secret_credential;
-mod credentials;
+mod default_azure_credential;
 mod env;
+mod imds_managed_identity_credential;
 mod managed_identity_credential;
+mod options;
 mod process;
+mod virtual_machine_managed_identity_credential;
+mod workload_identity_credential;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use azure_cli_credential::*;
+pub use azure_developer_cli_credential::*;
+pub use azure_pipelines_credential::*;
+pub use client_assertion_credential::*;
+#[cfg(feature = "client_certificate")]
+pub use client_certificate_credential::*;
+pub use client_secret_credential::*;
+pub use default_azure_credential::*;
+pub use managed_identity_credential::*;
+pub use options::TokenCredentialOptions;
+pub use workload_identity_credential::*;
+
+pub(crate) use app_service_managed_identity_credential::*;
+pub(crate) use cache::TokenCache;
+pub(crate) use imds_managed_identity_credential::*;
+pub(crate) use virtual_machine_managed_identity_credential::*;
 
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    http::Response,
+    http::RawResponse,
     Error, Result,
 };
-pub use azure_developer_cli_credential::*;
-pub use azure_pipelines_credential::*;
-pub use client_secret_credential::*;
-pub use credentials::*;
-pub use managed_identity_credential::*;
 use serde::Deserialize;
 use std::borrow::Cow;
-use typespec_client_core::http::Model;
 
-#[derive(Debug, Default, Deserialize, Model)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 struct EntraIdErrorResponse {
     error_description: String,
 }
 
-#[derive(Debug, Default, Deserialize, Model)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 struct EntraIdTokenResponse {
     token_type: String,
@@ -41,12 +64,13 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-async fn deserialize<T>(credential_name: &str, res: Response) -> Result<T>
+async fn deserialize<T>(credential_name: &str, res: RawResponse) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
     let t: T = res
-        .into_json_body()
+        .into_body()
+        .json()
         .await
         .with_context(ErrorKind::Credential, || {
             format!(
@@ -151,7 +175,7 @@ mod tests {
     use async_trait::async_trait;
     use azure_core::{
         error::ErrorKind,
-        http::{Request, Response},
+        http::{RawResponse, Request},
         process::Executor,
         Error, Result,
     };
@@ -237,7 +261,7 @@ mod tests {
     pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
 
     pub struct MockSts {
-        responses: Mutex<Vec<Response>>,
+        responses: Mutex<Vec<RawResponse>>,
         on_request: Option<RequestCallback>,
     }
 
@@ -248,7 +272,7 @@ mod tests {
     }
 
     impl MockSts {
-        pub fn new(responses: Vec<Response>, on_request: Option<RequestCallback>) -> Self {
+        pub fn new(responses: Vec<RawResponse>, on_request: Option<RequestCallback>) -> Self {
             Self {
                 responses: Mutex::new(responses),
                 on_request,
@@ -258,7 +282,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl azure_core::http::HttpClient for MockSts {
-        async fn execute_request(&self, request: &Request) -> Result<Response> {
+        async fn execute_request(&self, request: &Request) -> Result<RawResponse> {
             self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {

@@ -2,7 +2,6 @@ use crate::{
     models::{Checkpoint, Ownership},
     CheckpointStore,
 };
-use async_trait::async_trait;
 use azure_core::{error::ErrorKind as AzureErrorKind, http::Etag, Error, Result, Uuid};
 use std::sync::{Arc, Mutex};
 use std::{collections::HashMap, time::SystemTime};
@@ -84,7 +83,8 @@ impl InMemoryCheckpointStore {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl CheckpointStore for InMemoryCheckpointStore {
     async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>> {
         trace!("Claim ownership for {} partitions", ownerships.len());

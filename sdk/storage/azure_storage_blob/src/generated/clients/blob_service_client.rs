@@ -19,8 +19,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, Pager, PagerResult, Pipeline, Request, RequestContent,
-        Response, Url,
+        ClientOptions, Context, Method, PageIterator, PagerResult, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url, XmlFormat,
     },
     xml, Result,
 };
@@ -94,7 +94,7 @@ impl BlobServiceClient {
     pub async fn filter_blobs(
         &self,
         options: Option<BlobServiceClientFilterBlobsOptions<'_>>,
-    ) -> Result<Response<FilterBlobSegment>> {
+    ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -130,7 +130,7 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Returns the sku name and account kind.
@@ -153,13 +153,13 @@ impl BlobServiceClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Returns a new instance of BlobContainerClient.
@@ -185,7 +185,7 @@ impl BlobServiceClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServiceProperties>> {
+    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -203,7 +203,7 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Retrieves statistics related to replication for the Blob service. It is only available on the secondary location endpoint
@@ -215,7 +215,7 @@ impl BlobServiceClient {
     pub async fn get_statistics(
         &self,
         options: Option<BlobServiceClientGetStatisticsOptions<'_>>,
-    ) -> Result<Response<StorageServiceStats>> {
+    ) -> Result<Response<StorageServiceStats, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -233,7 +233,7 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Retrieves a user delegation key for the Blob service. This is only a valid operation when using bearer token authentication.
@@ -246,7 +246,7 @@ impl BlobServiceClient {
         &self,
         key_info: RequestContent<KeyInfo>,
         options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
-    ) -> Result<Response<UserDelegationKey>> {
+    ) -> Result<Response<UserDelegationKey, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -265,7 +265,7 @@ impl BlobServiceClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(key_info);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// The List Containers Segment operation returns a list of the containers under the specified account
@@ -276,7 +276,7 @@ impl BlobServiceClient {
     pub fn list_containers_segment(
         &self,
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
-    ) -> Result<Pager<ListContainersSegmentResponse>> {
+    ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -308,46 +308,48 @@ impl BlobServiceClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let version = self.version.clone();
-        Ok(Pager::from_callback(move |marker: Option<String>| {
-            let mut url = first_url.clone();
-            if let Some(marker) = marker {
-                if url.query_pairs().any(|(name, _)| name.eq("marker")) {
-                    let mut new_url = url.clone();
-                    new_url
-                        .query_pairs_mut()
-                        .clear()
-                        .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
-                    url = new_url;
-                }
-                url.query_pairs_mut().append_pair("marker", &marker);
-            }
-            let mut request = Request::new(url, Method::Get);
-            request.insert_header("accept", "application/xml");
-            request.insert_header("content-type", "application/xml");
-            if let Some(client_request_id) = &options.client_request_id {
-                request.insert_header("x-ms-client-request-id", client_request_id);
-            }
-            request.insert_header("x-ms-version", &version);
-            let ctx = options.method_options.context.clone();
-            let pipeline = pipeline.clone();
-            async move {
-                let rsp: Response<ListContainersSegmentResponse> =
-                    pipeline.send(&ctx, &mut request).await?;
-                let (status, headers, body) = rsp.deconstruct();
-                let bytes = body.collect().await?;
-                let res: ListContainersSegmentResponse = xml::read_xml(&bytes)?;
-                let rsp = Response::from_bytes(status, headers, bytes);
-                let next_marker = res.next_marker.unwrap_or_default();
-                Ok(if next_marker.is_empty() {
-                    PagerResult::Complete { response: rsp }
-                } else {
-                    PagerResult::Continue {
-                        response: rsp,
-                        continuation: next_marker,
+        Ok(PageIterator::from_callback(
+            move |marker: Option<String>| {
+                let mut url = first_url.clone();
+                if let Some(marker) = marker {
+                    if url.query_pairs().any(|(name, _)| name.eq("marker")) {
+                        let mut new_url = url.clone();
+                        new_url
+                            .query_pairs_mut()
+                            .clear()
+                            .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
+                        url = new_url;
                     }
-                })
-            }
-        }))
+                    url.query_pairs_mut().append_pair("marker", &marker);
+                }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", "application/xml");
+                request.insert_header("content-type", "application/xml");
+                if let Some(client_request_id) = &options.client_request_id {
+                    request.insert_header("x-ms-client-request-id", client_request_id);
+                }
+                request.insert_header("x-ms-version", &version);
+                let ctx = options.method_options.context.clone();
+                let pipeline = pipeline.clone();
+                async move {
+                    let rsp: Response<ListContainersSegmentResponse> =
+                        pipeline.send(&ctx, &mut request).await?.into();
+                    let (status, headers, body) = rsp.deconstruct();
+                    let bytes = body.collect().await?;
+                    let res: ListContainersSegmentResponse = xml::read_xml(&bytes)?;
+                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                    let next_marker = res.next_marker.unwrap_or_default();
+                    Ok(if next_marker.is_empty() {
+                        PagerResult::Done { response: rsp }
+                    } else {
+                        PagerResult::More {
+                            response: rsp,
+                            next: next_marker,
+                        }
+                    })
+                }
+            },
+        ))
     }
 
     /// Sets properties for a storage account's Blob service endpoint, including properties for Storage Analytics and CORS (Cross-Origin
@@ -373,14 +375,14 @@ impl BlobServiceClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/json");
+        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(storage_service_properties);
-        self.pipeline.send(&ctx, &mut request).await
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }
 

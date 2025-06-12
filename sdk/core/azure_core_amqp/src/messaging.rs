@@ -94,6 +94,7 @@ impl From<&AmqpSymbol> for DistributionMode {
     }
 }
 
+#[derive(Debug)]
 pub struct AmqpDelivery(pub(crate) DeliveryImplementation);
 
 impl AmqpDelivery {
@@ -343,7 +344,7 @@ impl From<AmqpList> for AmqpTarget {
                 let dynamic_node_properties: AmqpOrderedMap<String, AmqpValue> =
                     dynamic_node_properties
                         .iter()
-                        .map(|(k, v)| (k.into(), v))
+                        .map(|(k, v)| (k.into(), v.clone()))
                         .collect();
                 builder = builder.with_dynamic_node_properties(dynamic_node_properties);
             }
@@ -489,7 +490,7 @@ impl From<AmqpList> for AmqpSource {
                 let dynamic_node_properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
                     dynamic_node_properties
                         .iter()
-                        .map(|(k, v)| (k.into(), v))
+                        .map(|(k, v)| (k.into(), v.clone()))
                         .collect();
                 builder = builder.with_dynamic_node_properties(dynamic_node_properties);
             }
@@ -502,7 +503,7 @@ impl From<AmqpList> for AmqpSource {
         if field_count >= 8 {
             if let Some(AmqpValue::Map(filter)) = list.0.get(7) {
                 let filter: AmqpOrderedMap<AmqpSymbol, AmqpValue> =
-                    filter.iter().map(|(k, v)| (k.into(), v)).collect();
+                    filter.iter().map(|(k, v)| (k.into(), v.clone())).collect();
                 builder = builder.with_filter(filter);
             }
         }
@@ -1069,6 +1070,12 @@ pub struct AmqpMessage {
     pub(crate) delivery_annotations: Option<AmqpAnnotations>,
     pub(crate) properties: Option<AmqpMessageProperties>,
     pub(crate) footer: Option<AmqpAnnotations>,
+}
+
+impl AsRef<AmqpMessage> for AmqpMessage {
+    fn as_ref(&self) -> &AmqpMessage {
+        self
+    }
 }
 
 impl AmqpMessage {

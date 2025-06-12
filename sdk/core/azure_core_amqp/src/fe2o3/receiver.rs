@@ -8,7 +8,6 @@ use crate::{
     session::AmqpSession,
     AmqpError,
 };
-use async_trait::async_trait;
 use azure_core::error::Result;
 use std::borrow::BorrowMut;
 use std::sync::OnceLock;
@@ -44,7 +43,8 @@ impl From<&fe2o3_amqp::link::receiver::CreditMode> for ReceiverCreditMode {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpReceiverApis for Fe2o3AmqpReceiver {
     async fn attach(
         &self,

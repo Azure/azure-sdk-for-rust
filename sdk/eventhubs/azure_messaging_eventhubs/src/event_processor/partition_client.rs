@@ -128,19 +128,19 @@ impl PartitionClient {
         let amqp_message = event_data.raw_amqp_message();
         if let Some(message_annotations) = amqp_message.message_annotations() {
             for (key, value) in message_annotations.0.iter() {
-                if key == crate::consumer::SEQUENCE_NUMBER_ANNOTATION {
+                if *key == crate::consumer::SEQUENCE_NUMBER_ANNOTATION {
                     match value {
                         azure_core_amqp::AmqpValue::UInt(value) => {
-                            sequence_number = Some(value as i64);
+                            sequence_number = Some(*value as i64);
                         }
                         azure_core_amqp::AmqpValue::ULong(value) => {
-                            sequence_number = Some(value as i64);
+                            sequence_number = Some(*value as i64);
                         }
                         azure_core_amqp::AmqpValue::Long(value) => {
-                            sequence_number = Some(value);
+                            sequence_number = Some(*value);
                         }
                         azure_core_amqp::AmqpValue::Int(value) => {
-                            sequence_number = Some(value as i64);
+                            sequence_number = Some(*value as i64);
                         }
                         _ => {
                             return Err(azure_core::error::Error::message(
@@ -149,7 +149,7 @@ impl PartitionClient {
                             ));
                         }
                     }
-                } else if key == crate::consumer::OFFSET_ANNOTATION {
+                } else if *key == crate::consumer::OFFSET_ANNOTATION {
                     match value {
                         azure_core_amqp::AmqpValue::String(value) => {
                             offset = Some(value.to_string());

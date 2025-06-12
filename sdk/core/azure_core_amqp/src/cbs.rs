@@ -1,18 +1,17 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use async_trait::async_trait;
-use azure_core::error::Result;
-
 use super::session::AmqpSession;
+use azure_core::{credentials::Secret, error::Result};
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
-type CbsImplementation<'a> = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity<'a>;
+type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
 
 #[cfg(any(not(any(feature = "fe2o3_amqp")), target_arch = "wasm32"))]
-type CbsImplementation<'a> = super::noop::NoopAmqpClaimsBasedSecurity<'a>;
+type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpClaimsBasedSecurityApis {
     /// Asynchronously attaches the Claims-Based Security (CBS) node to the AMQP session.
     ///
@@ -52,30 +51,31 @@ pub trait AmqpClaimsBasedSecurityApis {
         &self,
         path: String,
         token_type: Option<String>,
-        secret: String,
+        secret: &Secret,
         expires_on: time::OffsetDateTime,
     ) -> Result<()>;
 }
 
-pub struct AmqpClaimsBasedSecurity<'a> {
-    implementation: CbsImplementation<'a>,
+pub struct AmqpClaimsBasedSecurity {
+    implementation: CbsImplementation,
 }
 
-impl<'a> AmqpClaimsBasedSecurity<'a> {
-    pub fn new(session: &'a AmqpSession) -> Result<Self> {
+impl AmqpClaimsBasedSecurity {
+    pub fn new(session: AmqpSession) -> Result<Self> {
         Ok(Self {
             implementation: CbsImplementation::new(session)?,
         })
     }
 }
 
-#[async_trait]
-impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity<'_> {
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
     async fn authorize_path(
         &self,
         path: String,
         token_type: Option<String>,
-        secret: String,
+        secret: &Secret,
         expires_on: time::OffsetDateTime,
     ) -> Result<()> {
         self.implementation

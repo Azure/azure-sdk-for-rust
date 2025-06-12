@@ -397,8 +397,10 @@ where
         self.inner.iter().any(|(k, _)| key.eq(k))
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (K, V)> + '_ {
-        self.inner.iter().map(|(k, v)| (k.clone(), v.clone()))
+    /// Returns an iterator over the key-value pairs in the map.
+    /// This iterator yields tuples of references to the keys and values.
+    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> + '_ {
+        self.inner.iter().map(|(k, v)| (k, v))
     }
 }
 

@@ -18,8 +18,8 @@ use std::{
 };
 
 use super::{
-    client_assertion_credentials::{ClientAssertion, ClientAssertionCredential},
-    ClientAssertionCredentialOptions, TokenCredentialOptions,
+    ClientAssertion, ClientAssertionCredential, ClientAssertionCredentialOptions,
+    TokenCredentialOptions,
 };
 
 const AZURE_CLIENT_ID: &str = "AZURE_CLIENT_ID";
@@ -188,12 +188,12 @@ impl ClientAssertion for Token {
 mod tests {
     use super::*;
     use crate::{
-        credentials::client_assertion_credentials::tests::{is_valid_request, FAKE_ASSERTION},
+        client_assertion_credential::tests::{is_valid_request, FAKE_ASSERTION},
         env::Env,
         tests::*,
     };
     use azure_core::{
-        http::{headers::Headers, Response, StatusCode},
+        http::{headers::Headers, RawResponse, StatusCode},
         Bytes,
     };
     use std::{
@@ -233,7 +233,7 @@ mod tests {
     async fn env_vars() {
         let temp_file = TempFile::new(FAKE_ASSERTION);
         let mock = MockSts::new(
-            vec![Response::from_bytes(
+            vec![RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::default(),
                 Bytes::from(format!(
@@ -304,7 +304,7 @@ mod tests {
         let right_file = TempFile::new(FAKE_ASSERTION);
         let wrong_file = TempFile::new("wrong assertion");
         let mock = MockSts::new(
-            vec![Response::from_bytes(
+            vec![RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::default(),
                 Bytes::from(format!(

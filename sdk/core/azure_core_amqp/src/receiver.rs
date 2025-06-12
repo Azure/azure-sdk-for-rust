@@ -5,7 +5,6 @@ use super::messaging::{AmqpDelivery, AmqpSource, AmqpTarget};
 use super::session::AmqpSession;
 use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use super::ReceiverSettleMode;
-use async_trait::async_trait;
 use azure_core::error::Result;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -48,8 +47,8 @@ pub struct AmqpReceiverOptions {
 
 impl AmqpReceiverOptions {}
 
-#[allow(unused_variables)]
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpReceiverApis {
     async fn attach(
         &self,
@@ -72,7 +71,8 @@ pub struct AmqpReceiver {
     implementation: ReceiverImplementation,
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpReceiverApis for AmqpReceiver {
     async fn attach(
         &self,

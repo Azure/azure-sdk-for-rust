@@ -2,11 +2,11 @@
 
 #![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
 
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, str::FromStr, sync::Arc};
 
 use azure_core::{credentials::Secret, http::TransportOptions, test::TestMode};
 use azure_core_test::TestContext;
-use azure_data_cosmos::{CosmosClientOptions, Query};
+use azure_data_cosmos::{ConnectionString, CosmosClientOptions, Query};
 use reqwest::ClientBuilder;
 
 /// Represents a Cosmos DB account for testing purposes.
@@ -74,30 +74,7 @@ impl TestAccount {
         options: Option<TestAccountOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let options = options.unwrap_or_default();
-        let splat = connection_string.split(';');
-        let mut account_endpoint = None;
-        let mut account_key = None;
-        for part in splat {
-            let part = part.trim();
-            if part.is_empty() {
-                continue;
-            }
-
-            let (key, value) = part.split_once('=').ok_or("invalid connection string")?;
-            match key {
-                "AccountEndpoint" => account_endpoint = Some(value.to_string()),
-                "AccountKey" => account_key = Some(Secret::new(value.to_string())),
-                _ => {}
-            }
-        }
-
-        let Some(endpoint) = account_endpoint else {
-            return Err("invalid connection string, missing 'AccountEndpoint'".into());
-        };
-
-        let Some(key) = account_key else {
-            return Err("invalid connection string, missing 'AccountKey'".into());
-        };
+        let connection_str = ConnectionString::from_str(connection_string)?;
 
         // We need the context_id to be constant, so that record/replay work.
         let context_id = context.name().to_string();
@@ -105,8 +82,8 @@ impl TestAccount {
         Ok(TestAccount {
             context,
             context_id,
-            endpoint,
-            key,
+            endpoint: connection_str.account_endpoint.to_string(),
+            key: connection_str.account_key,
             options,
         })
     }
@@ -164,10 +141,8 @@ impl TestAccount {
             .with_parameter("@context_id", &self.context_id)?;
         let mut pager = cosmos_client.query_databases(query, None)?;
         let mut ids = Vec::new();
-        while let Some(page) = pager.try_next().await? {
-            for db in page.into_items() {
-                ids.push(db.id);
-            }
+        while let Some(db) = pager.try_next().await? {
+            ids.push(db.id);
         }
 
         // Now that we have a list of databases created by this test, we delete them.

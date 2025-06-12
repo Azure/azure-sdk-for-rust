@@ -6,9 +6,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use super::{
-    ArrowField, BlobTag, Block, ClearRange, ContainerItem, CorsRule, FilterBlobItem, PageRange,
-};
+use super::{ArrowField, BlobTag, Block, ClearRange, CorsRule, FilterBlobItem, PageRange};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Deserialize, Serialize)]
@@ -113,32 +111,6 @@ impl Committed_blocksBlock {
     {
         Committed_blocksBlock {
             Block: to_serialize.to_owned(),
-        }
-        .serialize(serializer)
-    }
-}
-
-#[derive(Deserialize, Serialize)]
-#[serde(rename = "Containers")]
-pub(crate) struct Container_itemsContainer {
-    #[serde(default)]
-    Container: Vec<ContainerItem>,
-}
-
-impl Container_itemsContainer {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<ContainerItem>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(Container_itemsContainer::deserialize(deserializer)?.Container)
-    }
-
-    pub fn wrap<S>(to_serialize: &Vec<ContainerItem>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        Container_itemsContainer {
-            Container: to_serialize.to_owned(),
         }
         .serialize(serializer)
     }

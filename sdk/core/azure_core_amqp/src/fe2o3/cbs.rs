@@ -3,8 +3,7 @@
 // cspell:: words amqp servicebus sastoken
 
 use crate::{cbs::AmqpClaimsBasedSecurityApis, session::AmqpSession, AmqpError};
-use async_trait::async_trait;
-use azure_core::error::Result;
+use azure_core::{credentials::Secret, error::Result};
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
 use std::borrow::BorrowMut;
@@ -12,13 +11,13 @@ use std::sync::OnceLock;
 use tokio::sync::Mutex;
 use tracing::{debug, trace};
 
-pub(crate) struct Fe2o3ClaimsBasedSecurity<'a> {
+pub(crate) struct Fe2o3ClaimsBasedSecurity {
     cbs: OnceLock<Mutex<fe2o3_amqp_cbs::client::CbsClient>>,
-    session: &'a AmqpSession,
+    session: AmqpSession,
 }
 
-impl<'a> Fe2o3ClaimsBasedSecurity<'a> {
-    pub fn new(session: &'a AmqpSession) -> Result<Self> {
+impl Fe2o3ClaimsBasedSecurity {
+    pub fn new(session: AmqpSession) -> Result<Self> {
         Ok(Self {
             cbs: OnceLock::new(),
             session,
@@ -45,16 +44,17 @@ impl<'a> Fe2o3ClaimsBasedSecurity<'a> {
     }
 }
 
-impl Fe2o3ClaimsBasedSecurity<'_> {}
+impl Fe2o3ClaimsBasedSecurity {}
 
-impl Drop for Fe2o3ClaimsBasedSecurity<'_> {
+impl Drop for Fe2o3ClaimsBasedSecurity {
     fn drop(&mut self) {
         debug!("Dropping Fe2o3ClaimsBasedSecurity.");
     }
 }
 
-#[async_trait]
-impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
     async fn attach(&self) -> Result<()> {
         let session = self.session.implementation.get()?;
         let mut session = session.lock().await;
@@ -80,7 +80,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
         &self,
         path: String,
         token_type: Option<String>,
-        secret: String,
+        secret: &Secret,
         expires_at: time::OffsetDateTime,
     ) -> Result<()> {
         trace!(
@@ -89,7 +89,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity<'_> {
             expires_at
         );
         let cbs_token = CbsToken::new(
-            secret,
+            secret.secret(),
             token_type.unwrap_or("jwt".to_string()),
             Some(Timestamp::from(
                 expires_at

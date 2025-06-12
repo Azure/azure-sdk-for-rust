@@ -253,6 +253,19 @@ impl From<AmqpAnnotationKey> for fe2o3_amqp_types::messaging::annotations::Owned
     }
 }
 
+impl From<&AmqpAnnotationKey> for fe2o3_amqp_types::messaging::annotations::OwnedKey {
+    fn from(key: &AmqpAnnotationKey) -> Self {
+        match key {
+            AmqpAnnotationKey::Ulong(key) => {
+                fe2o3_amqp_types::messaging::annotations::OwnedKey::Ulong(*key)
+            }
+            AmqpAnnotationKey::Symbol(key) => {
+                fe2o3_amqp_types::messaging::annotations::OwnedKey::Symbol(key.into())
+            }
+        }
+    }
+}
+
 impl From<&fe2o3_amqp_types::messaging::annotations::OwnedKey>
     for crate::messaging::AmqpAnnotationKey
 {

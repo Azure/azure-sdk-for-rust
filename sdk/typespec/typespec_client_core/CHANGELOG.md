@@ -1,17 +1,18 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.4.0 (2025-06-06)
 
 ### Features Added
 
 - Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
 - Added module `fmt::as_string` which is used to (de)serialize types in string format.
+- Added `Response<T, F>` type to represent a response with a specific format and model type.
+- Added `RawResponse` type to represent a raw response without a specific model.
 
 ### Breaking Changes
 
-### Bugs Fixed
-
-### Other Changes
+- Removed the `Model` trait and replaced it with `Response<T, F>`, which moves the "format" information (JSON/XML/etc.) from the model to the service client method's return type. This allows for more flexibility in handling different response formats and user data types in Responses.
+- Split `Response` into `Response<T, F>` and `RawResponse` (which carries the raw response data without a specific format).
 
 ## 0.3.0 (2025-05-02)
 
