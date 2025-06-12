@@ -340,4 +340,15 @@ mod tests {
         assert_eq!(UtcOffset::UTC, token.expires_on.offset());
         assert_eq!(expires_on, token.expires_on);
     }
+
+    #[test]
+    fn test_idiomatic_creation() {
+        // Test that AzureCliCredentialOptions can be created idiomatically
+        // This was the main issue reported in #2698
+        let _options = AzureCliCredentialOptions {
+            subscription: Some("1234".into()),
+            tenant_id: Some("4567".into()),
+            ..Default::default()
+        };
+    }
 }
