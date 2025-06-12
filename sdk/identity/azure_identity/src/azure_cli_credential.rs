@@ -106,7 +106,7 @@ pub struct AzureCliCredentialOptions {
 impl AzureCliCredential {
     /// Create a new `AzureCliCredential`.
     pub fn new(options: Option<AzureCliCredentialOptions>) -> azure_core::Result<Arc<Self>> {
-        let mut options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
         if let Some(ref tenant_id) = options.tenant_id {
             validate_tenant_id(tenant_id)?;
         }
@@ -114,12 +114,18 @@ impl AzureCliCredential {
             validate_subscription(subscription)?;
         }
         #[cfg(test)]
-        let env = options.env.take().unwrap_or_default();
+        let env = options.env.clone().unwrap_or_default();
         #[cfg(not(test))]
         let env = Env::default();
-        if options.executor.is_none() {
-            options.executor = Some(new_executor());
-        }
+        
+        let options = AzureCliCredentialOptions {
+            additionally_allowed_tenants: options.additionally_allowed_tenants,
+            subscription: options.subscription,
+            tenant_id: options.tenant_id,
+            executor: Some(options.executor.unwrap_or_else(|| new_executor())),
+            #[cfg(test)]
+            env: options.env,
+        };
 
         Ok(Arc::new(Self { options, env }))
     }
