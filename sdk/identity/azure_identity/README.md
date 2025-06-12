@@ -33,7 +33,7 @@ When no default browser is available, `az login` uses the device code authentica
 
 ### Credentials
 
-A credential is a class that contains or can obtain the data needed for a service client to authenticate requests. Service clients across the Azure SDK accept a credential instance when they're constructed, and use that credential to authenticate requests.
+A credential is a struct that contains or can obtain the data needed for a service client to authenticate requests. Service clients across the Azure SDK accept a credential instance when they're constructed, and use that credential to authenticate requests.
 
 The Azure Identity library focuses on OAuth authentication with Microsoft Entra ID. It offers various credentials capable of acquiring a Microsoft Entra access token. See the [Credential structs](#credential-structs "Credential structs") section for a list of this library's credentials.
 
@@ -55,7 +55,7 @@ The following examples are provided:
 
 ### Authenticate with `DefaultAzureCredential`
 
-More details on configuring your environment to use `DefaultAzureCredential` can be found in the class's [reference documentation][default_cred_ref].
+More details on configuring your environment to use `DefaultAzureCredential` can be found in the struct's [reference documentation][default_cred_ref].
 
 This example demonstrates authenticating the `SecretClient` from the [azure_security_keyvault_secrets] crate using `DefaultAzureCredential`.
 
