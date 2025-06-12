@@ -9,5 +9,6 @@ imds
 managedidentity
 msal
 replacen
+structs
 SYSTEMROOT
 workloadidentity
