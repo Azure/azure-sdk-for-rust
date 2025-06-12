@@ -122,7 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```
 
-## Credential classes
+## Credential structs
 
 ### Credential chains
 
