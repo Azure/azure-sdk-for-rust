@@ -21,7 +21,7 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
+        ClientOptions, Context, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
         XmlFormat,
     },
     Bytes, Result,
@@ -106,7 +106,7 @@ impl PageBlobClient {
         &self,
         content_length: u64,
         options: Option<PageBlobClientClearPagesOptions<'_>>,
-    ) -> Result<Response<PageBlobClientClearPagesResult>> {
+    ) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -205,7 +205,7 @@ impl PageBlobClient {
         &self,
         copy_source: String,
         options: Option<PageBlobClientCopyIncrementalOptions<'_>>,
-    ) -> Result<Response<PageBlobClientCopyIncrementalResult>> {
+    ) -> Result<Response<PageBlobClientCopyIncrementalResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -251,16 +251,14 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `content_length` - The length of the request.
     /// * `blob_content_length` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must
     ///   be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
     pub async fn create(
         &self,
-        content_length: u64,
         blob_content_length: u64,
         options: Option<PageBlobClientCreateOptions<'_>>,
-    ) -> Result<Response<PageBlobClientCreateResult>> {
+    ) -> Result<Response<PageBlobClientCreateResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -274,7 +272,7 @@ impl PageBlobClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-length", content_length.to_string());
+        request.insert_header("content-length", "0");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -520,7 +518,7 @@ impl PageBlobClient {
         &self,
         blob_content_length: u64,
         options: Option<PageBlobClientResizeOptions<'_>>,
-    ) -> Result<Response<PageBlobClientResizeResult>> {
+    ) -> Result<Response<PageBlobClientResizeResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -594,7 +592,7 @@ impl PageBlobClient {
         &self,
         sequence_number_action: SequenceNumberActionType,
         options: Option<PageBlobClientUpdateSequenceNumberOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult>> {
+    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -662,7 +660,7 @@ impl PageBlobClient {
         body: RequestContent<Bytes>,
         content_length: u64,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUploadPagesResult>> {
+    ) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -784,7 +782,7 @@ impl PageBlobClient {
         content_length: u64,
         range: String,
         options: Option<PageBlobClientUploadPagesFromUrlOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult>> {
+    ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -839,6 +837,9 @@ impl PageBlobClient {
         }
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
+        }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
         }
         if let Some(if_sequence_number_equal_to) = options.if_sequence_number_equal_to {
             request.insert_header(
@@ -907,7 +908,7 @@ impl Default for PageBlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-01-05"),
+            version: String::from("2025-11-05"),
         }
     }
 }
