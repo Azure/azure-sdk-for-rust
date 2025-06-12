@@ -8,3 +8,10 @@ pub use crate::generated::clients::{
     AzureQueueStorageQueueOperationsClient, AzureQueueStorageServiceOperationsClient,
     AzureQueueStorageServicePropertiesOperationsClient,
 };
+
+pub use crate::generated::models::{
+    AzureQueueStorageMessagesOperationsClientClearOptions,
+    AzureQueueStorageMessagesOperationsClientDequeueOptions,
+    AzureQueueStorageMessagesOperationsClientEnqueueOptions, ListOfDequeuedMessageItem,
+    ListOfEnqueuedMessage, QueueApiVersion, QueueMessage,
+};
