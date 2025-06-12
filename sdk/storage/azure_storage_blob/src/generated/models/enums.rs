@@ -152,6 +152,13 @@ create_extensible_enum!(
 );
 
 create_extensible_enum!(
+    #[doc = r#"/// The file share token intent types."#]
+    FileShareTokenIntent,
+    #[doc = r#"/// The file share token intent is backup."#]
+    (Backup, "backup")
+);
+
+create_extensible_enum!(
     #[doc = r#"/// The filter blobs includes."#]
     FilterBlobsIncludeItem,
     #[doc = r#"/// The filter includes no versions."#]
