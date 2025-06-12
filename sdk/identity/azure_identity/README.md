@@ -151,7 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 |Credential|Usage|Reference
 |-|-|-
 |[`AzureCliCredential`][cli_cred_ref]| Authenticates in a development environment with the Azure CLI. | [Azure CLI authentication](https://learn.microsoft.com/cli/azure/authenticate-azure-cli)
-|['AzureDeveloperCliCredential`][azd_cred_ref] | Authenticates in a development environment with the Azure Developer CLI. | [Azure Developer CLI reference](https://learn.microsoft.com/azure/developer/azure-developer-cli/reference)
+|[`AzureDeveloperCliCredential`][azd_cred_ref]| Authenticates in a development environment with the Azure Developer CLI. | [Azure Developer CLI reference](https://learn.microsoft.com/azure/developer/azure-developer-cli/reference)
 
 ## Next steps
 
