@@ -2,10 +2,9 @@ use azure_core::{http::ClientOptions, Result};
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::clients::AzureQueueStorageClientOptions;
 use azure_storage_queue::clients::QueueClient;
+use once_cell::sync::Lazy;
 use std::option::Option;
 use uuid::Uuid;
-
-use once_cell::sync::Lazy;
 
 static QUEUE_SUFFIX: Lazy<String> = Lazy::new(|| get_random_queue_suffix());
 
@@ -32,23 +31,32 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 async fn test_create_queue_if_not_exists(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-
-    // First, create the queue
     let queue_name = format!("test-queue-if-exists-{}", QUEUE_SUFFIX.as_str());
-    let response = queue_client.create(&queue_name, None).await?;
-    assert!(
-        response.status().is_success(),
-        "Expected success status code, got {}",
-        response.status(),
-    );
 
-    // Now, try to create the same queue again
-    let response = queue_client.create_if_not_exists(&queue_name, None).await?;
-    assert!(
-        response.status().is_success(),
-        "Expected success status code, got {}",
-        response.status(),
-    );
+    let test_result = async {
+        // First, create the queue
+        let response = queue_client.create(&queue_name, None).await?;
+        assert!(
+            response.status().is_success(),
+            "Expected success status code, got {}",
+            response.status(),
+        );
+
+        // Now, try to create the same queue again
+        let response = queue_client.create_if_not_exists(&queue_name, None).await?;
+        assert!(
+            response.status().is_success(),
+            "Expected success status code, got {}",
+            response.status(),
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(&queue_name, None).await.unwrap();
+
+    test_result?;
 
     Ok(())
 }
@@ -124,17 +132,31 @@ async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+/// Checks if a queue exists in the Azure Storage Queue service.
 #[recorded::test]
 async fn test_exists(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
+    let queue_name = format!("test-queue-exists-{}", QUEUE_SUFFIX.as_str());
 
-    let queue_name = format!("test-queue-{}", QUEUE_SUFFIX.as_str());
-    queue_client.create_if_not_exists(&queue_name, None).await?;
+    let test_result = async {
+        // Create a queue if it does not exist
+        queue_client.create_if_not_exists(&queue_name, None).await?;
 
-    // Check if a queue exists
-    let exists_response = queue_client.exists(&queue_name).await?;
-    assert!(exists_response, "Queue should exist");
+        // Check if the queue exists
+        let exists_response = queue_client.exists(&queue_name).await?;
+        assert!(exists_response, "Queue should exist");
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // let queue_name = format!("test-queue-{}", QUEUE_SUFFIX.as_str());
+    // queue_client.create_if_not_exists(&queue_name, None).await?;
+
+    // // Check if a queue exists
+    // let exists_response = queue_client.exists(&queue_name).await?;
+    // assert!(exists_response, "Queue should exist");
 
     queue_client.delete(&queue_name, None).await?;
 
@@ -142,31 +164,73 @@ async fn test_exists(ctx: TestContext) -> Result<()> {
     let non_existent_exists_response = queue_client.exists("non-existent-queue").await?;
     assert!(!non_existent_exists_response, "Queue should not exist");
 
+    // Return the test result
+    test_result?;
+
     Ok(())
 }
 
+/// Sets metadata for a queue in Azure Storage Queue service.
 #[recorded::test]
 async fn test_set_metadata(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-
     let queue_name = format!("test-queue-metadata-{}", QUEUE_SUFFIX.as_str());
     queue_client.create_if_not_exists(&queue_name, None).await?;
 
-    // Set metadata for the queue
-    let metadata = Some(
-        vec![("key1", "value1"), ("key2", "value2")]
-            .into_iter()
-            .collect(),
-    );
-    let response = queue_client.set_metadata(&queue_name, metadata).await?;
+    let test_result = async {
+        // Set metadata for the queue
+        let metadata = Some(
+            vec![("key1", "value1"), ("key2", "value2")]
+                .into_iter()
+                .collect(),
+        );
+        let response = queue_client.set_metadata(&queue_name, metadata).await?;
 
-    assert!(
-        response.status().is_success(),
-        "Expected successful status code, got {}",
-        response.status(),
-    );
+        assert!(
+            response.status().is_success(),
+            "Expected successful status code, got {}",
+            response.status()
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
 
+    queue_client.delete(&queue_name, None).await?;
+
+    // Return the test result
+    test_result?;
+    Ok(())
+}
+
+/// Deletes all messages from a queue in Azure Storage Queue service.
+#[recorded::test]
+async fn delete_messages(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await?;
+    let queue_name = format!("test-delete-messages-{}", QUEUE_SUFFIX.as_str());
+
+    // Create a queue if it does not exist
+    queue_client.create_if_not_exists(&queue_name, None).await?;
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        // Delete messages from the queue
+        let response = queue_client.delete_messages(&queue_name).await?;
+        assert!(
+            response.status().is_success(),
+            "Expected successful status code, got {}",
+            response.status(),
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(&queue_name, None).await.unwrap();
+
+    // Return the test result
+    test_result?;
     Ok(())
 }
 

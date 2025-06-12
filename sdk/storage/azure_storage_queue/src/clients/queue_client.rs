@@ -186,6 +186,32 @@ impl QueueClient {
         }
     }
 
+    pub async fn delete_messages(&self, queue_name: &str) -> Result<Response<()>> {
+        let mut url = self.client.endpoint.clone();
+        let ctx = Context::new();
+
+        url.path_segments_mut()
+            .expect("Invalid URL")
+            .push(queue_name);
+        url.path_segments_mut()
+            .expect("Invalid URL")
+            .push("messages");
+        // url.query_pairs_mut()
+        //     .append_pair("api-version", &self.client.api_version);
+
+        let mut request = Request::new(url, Method::Delete);
+        // request.insert_header("accept", "application/xml");
+
+        request.insert_header("version", self.version.to_string());
+        request.insert_header("x-ms-version", self.version.to_string());
+
+        self.client
+            .pipeline
+            .send(&ctx, &mut request)
+            .await
+            .map(Into::into)
+    }
+
     pub async fn set_metadata(
         &self,
         queue_name: &str,

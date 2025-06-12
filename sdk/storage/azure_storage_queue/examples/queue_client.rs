@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use azure_core::http::StatusCode;
 use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::QueueClient;
 
@@ -80,6 +81,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match set_metadata_response {
         Ok(response) => println!("Successfully set metadata: {:?}", response),
         Err(e) => eprintln!("Error setting metadata: {}", e),
+    }
+
+    // Delete messages from the queue
+    let delete_messages_response = queue_client.delete_messages(queue_name.as_str()).await;
+    match delete_messages_response {
+        Ok(response) => println!("Successfully deleted messages: {:?}", response),
+        Err(e) => {
+            if e.http_status() == Some(StatusCode::NotFound) {
+                // Handle the case where the queue does not exist
+                // This is a common case when trying to delete messages from a queue that has already been deleted.
+                println!("Unable to delete messages, queue not found");
+            } else if e.http_status() == Some(StatusCode::Forbidden) {
+                // Handle the case where the user does not have permission to delete messages
+                // This can happen if the credentials used do not have the necessary permissions.
+                println!("Unable to delete messages, you do not have permission to delete messages from this queue. Please check your credentials.");
+            } else {
+                eprintln!("Error deleting messages: {}", e);
+            }
+        }
     }
 
     // Delete the queue after use
