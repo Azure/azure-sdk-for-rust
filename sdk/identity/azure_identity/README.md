@@ -134,19 +134,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 |Credential|Usage
 |-|-
+|[`ManagedIdentityCredential`][managed_id_cred_ref]| Authenticates the managed identity of an Azure resource.
 |[`WorkloadIdentityCredential`][workload_id_cred_ref]| Supports [Microsoft Entra Workload ID](https://learn.microsoft.com/azure/aks/workload-identity-overview) on Kubernetes.
 
 ### Authenticate service principals
 
 |Credential|Usage|Reference
 |-|-|-
+|[`AzurePipelinesCredential`][az_pipelines_cred_ref]| Supports [Microsoft Entra Workload ID](https://learn.microsoft.com/azure/devops/pipelines/release/configure-workload-identity?view=azure-devops) on Azure Pipelines. |
+|[`ClientAssertionCredential`][assert_cred_ref]| Authenticates a service principal using a signed client assertion. | [Service principal authentication](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals)
 |[`ClientCertificateCredential`][cert_cred_ref]| Authenticates a service principal using a certificate. | [Service principal authentication](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals)
+|[`ClientSecretCredential`][secret_cred_ref]| Authenticates a service principal using a secret. | [Service principal authentication](https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals)
 
 ### Authenticate via development tools
 
 |Credential|Usage|Reference
 |-|-|-
 |[`AzureCliCredential`][cli_cred_ref]| Authenticates in a development environment with the Azure CLI. | [Azure CLI authentication](https://learn.microsoft.com/cli/azure/authenticate-azure-cli)
+|['AzureDeveloperCliCredential`][azd_cred_ref] | Authenticates in a development environment with the Azure Developer CLI. | [Azure Developer CLI reference](https://learn.microsoft.com/azure/developer/azure-developer-cli/reference)
 
 ## Next steps
 
@@ -167,15 +172,20 @@ When you submit a pull request, a CLA-bot will automatically determine whether y
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 <!-- LINKS -->
+[assert_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientAssertionCredential.html
+[az_pipelines_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzurePipelinesCredential.html
+[azd_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureDeveloperCliCredential.html
 [Azure CLI]: https://learn.microsoft.com/cli/azure
 [azure_security_keyvault_secrets]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets
 [Azure subscription]: https://azure.microsoft.com/free/
 [cert_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientCertificateCredential.html
 [cli_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureCliCredential.html
 [default_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.DefaultAzureCredential.html
+[managed_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ManagedIdentityCredential.html
 [Microsoft Entra ID documentation]: https://learn.microsoft.com/entra/identity/
 [API reference documentation]: https://docs.rs/azure_identity/latest/azure_identity/
 [Package (crates.io)]: https://crates.io/crates/azure_identity
+[secret_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientSecretCredential.html
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
 [token_cred_ref]: https://docs.rs/azure_core/latest/azure_core/credentials/trait.TokenCredential.html
 [workload_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.WorkloadIdentityCredential.html
