@@ -355,13 +355,11 @@ impl ContainerClient {
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Put);
-        println!("Inside replace_item");
         if !options.enable_content_response_on_write {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
         if let Some(etag) = options.if_match_etag {
             req.insert_header(headers::IF_MATCH, etag);
-            println!("Inserted header");
         }
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;

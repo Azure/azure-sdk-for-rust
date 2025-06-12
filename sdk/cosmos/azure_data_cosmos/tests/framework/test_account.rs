@@ -119,7 +119,9 @@ impl TestAccount {
     ) -> Result<azure_data_cosmos::CosmosClient, Box<dyn std::error::Error>> {
         let allow_invalid_certificates = match self.options.allow_invalid_certificates {
             Some(b) => b,
-            None => std::env::var(ALLOW_INVALID_CERTS_ENV_VAR).map(|s| s.parse())??,
+            None => std::env::var(ALLOW_INVALID_CERTS_ENV_VAR)
+                .unwrap_or("false".to_string())
+                .parse()?,
         };
 
         let mut options = options.unwrap_or_default();
