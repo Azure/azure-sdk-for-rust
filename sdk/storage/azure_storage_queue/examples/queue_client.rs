@@ -110,7 +110,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None,
         )
         .await;
-    println!("Send message response: {:?}", send_message_response);
+    match send_message_response {
+        Ok(response) => println!("Successfully sent messages: {:?}", response),
+        Err(e) => {
+            if e.http_status() == Some(StatusCode::NotFound) {
+                // Handle the case where the queue does not exist
+                // This is a common case when trying to send messages to a queue that has already been deleted.
+                println!("Unable to send messages, queue not found");
+            } else if e.http_status() == Some(StatusCode::Forbidden) {
+                // Handle the case where the user does not have permission to send messages
+                // This can happen if the credentials used do not have the necessary permissions.
+                println!("Unable to send messages, you do not have permission to send messages to this queue. Please check your credentials.");
+            } else {
+                eprintln!("Error sending messages: {}", e);
+            }
+        }
+    }
 
     // Delete the queue after use
     let delete_response = queue_client.delete(queue_name.as_str(), None).await;

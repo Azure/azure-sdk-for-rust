@@ -30,17 +30,28 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn test_send_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording).await;
+    let queue_client = get_queue_client(recording).await?;
+    let queue_name = format!("test-queue-send-message-{}", QUEUE_SUFFIX.as_str());
+    queue_client.create(&queue_name, None).await?;
 
-    let response = queue_client?
-        .send_message("test-queue", "queue-message", None)
-        .await?;
+    let test_result = async {
+        let response = queue_client
+            .send_message(&queue_name, "queue-message", None)
+            .await?;
 
-    assert!(
-        response.status() == 201,
-        "Expected status code 201, got {}",
-        response.status(),
-    );
+        assert!(
+            response.status() == 201,
+            "Expected status code 201, got {}",
+            response.status(),
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(&queue_name, None).await.unwrap();
+
+    test_result?;
 
     Ok(())
 }
