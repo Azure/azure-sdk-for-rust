@@ -22,7 +22,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        RequestContent, Response, Url,
+        RequestContent, Response, Url, XmlFormat,
     },
     Bytes, Result,
 };
@@ -141,7 +141,7 @@ impl BlockBlobClient {
         &self,
         list_type: BlockListType,
         options: Option<BlockBlobClientGetBlockListOptions<'_>>,
-    ) -> Result<Response<BlockList>> {
+    ) -> Result<Response<BlockList, XmlFormat>> {
         self.client.get_block_list(list_type, options).await
     }
 }

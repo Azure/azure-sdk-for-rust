@@ -1,2 +1,0 @@
-# Compilation test actual output, which should not be checked in.
-*.actual.json

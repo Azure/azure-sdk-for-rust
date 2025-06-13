@@ -14,7 +14,7 @@ so that once you learn how to use these APIs in one client library, you will kno
 Typically, you will not need to install `azure_core`;
 it will be installed for you when you install one of the client libraries using it.
 In case you want to install it explicitly - to implement your own client library, for example -
-you can find the crates.io package [here][Package (crates.io)].
+you can find the [package on crates.io][Package (crates.io)].
 
 ## Key concepts
 
@@ -180,7 +180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Consuming service methods returning `Pager<T>`
 
-If a service call returns multiple values in pages, it would return `Result<Pager<T>>` as a result. You can iterator over each page's vector of results.
+If a service call returns multiple values in pages, it would return `Result<Pager<T>>` as a result. You can iterate all items from all pages.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
@@ -197,8 +197,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    // get a stream
-    let mut pager = client.list_secret_properties(None)?.into_stream();
+    // get a stream of items
+    let mut pager = client.list_secret_properties(None)?;
+
+    // poll the pager until there are no more SecretListResults
+    while let Some(secret) = pager.try_next().await? {
+        // get the secret name from the ID
+        let name = secret.resource_id()?.name;
+        println!("Found secret with name: {}", name);
+    }
+
+    Ok(())
+}
+```
+
+To instead iterate over all pages, call `into_pages()` on the returned `Pager`.
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
+use futures::TryStreamExt;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // create a client
+    let credential = DefaultAzureCredential::new()?;
+    let client = SecretClient::new(
+        "https://<your-key-vault-name>.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // get a stream of pages
+    let mut pager = client.list_secret_properties(None)?.into_pages();
 
     // poll the pager until there are no more SecretListResults
     while let Some(secrets) = pager.try_next().await? {
@@ -244,8 +275,6 @@ impl AsyncRuntime for CustomRuntime {
 ```
 
 There can only be one async runtime set in a given process, so attempts to set the async runtime multiple times will fail.
-
-<!-- ## Troubleshooting -->
 
 ## Troubleshooting
 

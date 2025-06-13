@@ -17,9 +17,13 @@ pub use options::*;
 pub use pager::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
-pub use response::{Model, Response};
+pub use response::{RawResponse, Response};
 
 pub use typespec_client_core::http::response;
 pub use typespec_client_core::http::{
-    new_http_client, AppendToUrlQuery, Context, HttpClient, Method, StatusCode, Url,
+    new_http_client, AppendToUrlQuery, Context, Format, HttpClient, JsonFormat, Method, NoFormat,
+    StatusCode, Url,
 };
+
+#[cfg(feature = "xml")]
+pub use typespec_client_core::http::XmlFormat;

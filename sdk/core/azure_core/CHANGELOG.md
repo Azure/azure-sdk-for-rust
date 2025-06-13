@@ -1,22 +1,37 @@
 # Release History
 
-## 0.25.0 (Unreleased)
+## 0.26.0 (Unreleased)
 
 ### Features Added
 
-- Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
 - Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace
 the asynchronous runtime used by the Azure SDK.
 
 ### Breaking Changes
 
-- Removed `AccessToken::is_expired()`
+### Bugs Fixed
+
+### Other Changes
+
+## 0.25.0 (2025-06-06)
+
+### Features Added
+
+- Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
+- Added `Page` trait to facilitate the `ItemIterator`.
+- Added `PageIterator` to asynchronously iterator all pages.
+
+### Breaking Changes
+
+- A `Pager` now asynchronously iterates over items across all pages. Call `Pager::into_pages()` to get a `PageIterator` to asynchronously iterate over all pages.
+- Removed `AccessToken::is_expired()`.
+- Renamed `PagerResult::Continue` to `More` and its `continuation` field to `next`.
+- Renamed `PagerResult::Complete` to `Done`.
+- Renamed `PageStream` to `ItemIterator`.
 
 ### Bugs Fixed
 
 - `BearerTokenCredentialPolicy` returns an error when a proactive token refresh attempt fails
-
-### Other Changes
 
 ## 0.24.0 (2025-05-02)
 

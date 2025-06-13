@@ -24,6 +24,8 @@
   ],
   "words": [
     "aarch",
+    "accountendpoint",
+    "accountkey",
     "amqp",
     "asyncoperation",
     "azsdk",
@@ -72,6 +74,7 @@
     "typespec",
     "undelete",
     "upvote",
+    "uninlined",
     "userdelegationkey",
     "vcpkg",
     "versionid",

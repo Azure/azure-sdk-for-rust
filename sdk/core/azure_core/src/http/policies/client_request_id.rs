@@ -78,7 +78,7 @@ mod tests {
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
     use std::sync::Arc;
-    use typespec_client_core::http::{policies::TransportPolicy, Response, TransportOptions};
+    use typespec_client_core::http::{policies::TransportPolicy, RawResponse, TransportOptions};
 
     #[tokio::test]
     async fn header_already_present() {
@@ -100,7 +100,7 @@ mod tests {
                     "Header value should not change"
                 );
 
-                Ok(Response::from_bytes(
+                Ok(RawResponse::from_bytes(
                     StatusCode::Ok,
                     headers::Headers::new(),
                     Bytes::new(),
@@ -133,7 +133,7 @@ mod tests {
                     .expect("Header should be present");
                 assert!(!header_value.is_empty(), "Header value should be generated");
 
-                Ok(Response::from_bytes(
+                Ok(RawResponse::from_bytes(
                     StatusCode::Ok,
                     headers::Headers::new(),
                     Bytes::new(),
@@ -174,7 +174,7 @@ mod tests {
                     "Custom header value should not change"
                 );
 
-                Ok(Response::from_bytes(
+                Ok(RawResponse::from_bytes(
                     StatusCode::Ok,
                     headers::Headers::new(),
                     Bytes::new(),
@@ -214,7 +214,7 @@ mod tests {
                     "Header value should match the client request ID from the context"
                 );
 
-                Ok(Response::from_bytes(
+                Ok(RawResponse::from_bytes(
                     StatusCode::Ok,
                     headers::Headers::new(),
                     Bytes::new(),

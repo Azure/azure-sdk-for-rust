@@ -67,7 +67,7 @@ impl LoadBalancer {
         }
     }
 
-    fn rng(&self) -> Result<MutexGuard<Box<dyn RngCore + Send + Sync>>> {
+    fn rng(&self) -> Result<MutexGuard<'_, Box<dyn RngCore + Send + Sync>>> {
         self.rng
             .lock()
             .map_err(|_| Error::message(AzureErrorKind::Other, "Failed to lock RNG mutex"))

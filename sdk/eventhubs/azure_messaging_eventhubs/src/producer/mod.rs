@@ -257,7 +257,7 @@ impl ProducerClient {
     pub async fn create_batch(
         &self,
         batch_options: Option<EventDataBatchOptions>,
-    ) -> Result<EventDataBatch> {
+    ) -> Result<EventDataBatch<'_>> {
         let mut batch = EventDataBatch::new(self, batch_options);
 
         batch.attach().await?;

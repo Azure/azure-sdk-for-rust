@@ -24,6 +24,9 @@
 # Catch all for non-code project files and unowned files | folders
 /**                      @heaths @RickWinter @ronniegeraghty @LarryOsterman
 
+# Allow service owners to approve crate version updates, which impact Cargo.lock
+/Cargo.lock
+
 ##################
 # Automation
 ##################
@@ -60,7 +63,7 @@
 # ServiceOwner: @Pilchie
 # ServiceLabel: %Cosmos
 # PRLabel: %Cosmos
-/sdk/cosmos/             @analogrelay @Pilchie @kirankumarkolli @tvaron3 @FabianMeiswinkel @kundadebdatta
+/sdk/cosmos/             @analogrelay @Pilchie @kirankumarkolli @tvaron3 @FabianMeiswinkel @kundadebdatta @nehrao1
 
 ###########
 # Eng Sys

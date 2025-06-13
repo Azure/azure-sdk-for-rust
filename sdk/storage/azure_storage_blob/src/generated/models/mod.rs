@@ -6,6 +6,7 @@
 mod enums;
 mod header_traits;
 mod method_options;
+mod models_impl;
 mod pub_models;
 pub use enums::*;
 pub use header_traits::*;
