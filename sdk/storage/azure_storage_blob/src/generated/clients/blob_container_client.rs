@@ -126,7 +126,6 @@ impl BlobContainerClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", date::to_rfc7231(&if_modified_since));
         }
@@ -139,6 +138,7 @@ impl BlobContainerClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
+        request.insert_header("x-ms-lease-action", "acquire");
         if let Some(duration) = options.duration {
             request.insert_header("x-ms-lease-duration", duration.to_string());
         }
@@ -186,6 +186,7 @@ impl BlobContainerClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
+        request.insert_header("x-ms-lease-action", "break");
         if let Some(break_period) = options.break_period {
             request.insert_header("x-ms-lease-break-period", break_period.to_string());
         }
@@ -234,6 +235,7 @@ impl BlobContainerClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
+        request.insert_header("x-ms-lease-action", "change");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         request.insert_header("x-ms-version", &self.version);
@@ -708,6 +710,7 @@ impl BlobContainerClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
+        request.insert_header("x-ms-lease-action", "release");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
@@ -788,6 +791,7 @@ impl BlobContainerClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
+        request.insert_header("x-ms-lease-action", "renew");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)

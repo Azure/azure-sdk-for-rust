@@ -42,7 +42,7 @@ create_extensible_enum!(
     (Premium, "Premium")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The account kind."#]
     AccountKind,
     #[doc = r#"/// The storage account is a blob storage account."#]
@@ -68,7 +68,7 @@ create_extensible_enum!(
     (RehydratePendingToHot, "rehydrate-pending-to-hot")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The type of blob deletions."#]
     BlobDeleteType,
     #[doc = r#"/// Permanently delete the blob."#]
@@ -88,7 +88,7 @@ create_extensible_enum!(
     (RelativeToNow, "RelativeToNow")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The immutability policy mode."#]
     BlobImmutabilityPolicyMode,
     #[doc = r#"/// The immutability policy is locked."#]
@@ -99,7 +99,7 @@ create_extensible_enum!(
     (Unlocked, "Unlocked")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The blob type."#]
     BlobType,
     #[doc = r#"/// The blob is an append blob."#]
@@ -110,7 +110,7 @@ create_extensible_enum!(
     (PageBlob, "PageBlob")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The block list types."#]
     BlockListType,
     #[doc = r#"/// Both lists together."#]
@@ -121,7 +121,7 @@ create_extensible_enum!(
     (Uncommitted, "uncommitted")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The copy status."#]
     CopyStatus,
     #[doc = r#"/// The copy operation is aborted."#]
@@ -134,7 +134,7 @@ create_extensible_enum!(
     (Success, "success")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The delete snapshots option type."#]
     DeleteSnapshotsOptionType,
     #[doc = r#"/// The delete snapshots include option is include."#]
@@ -143,7 +143,7 @@ create_extensible_enum!(
     (Only, "only")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided
 /// if the x-ms-encryption-key header is provided."#]
     EncryptionAlgorithmType,
@@ -158,7 +158,7 @@ create_extensible_enum!(
     (Backup, "backup")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The filter blobs includes."#]
     FilterBlobsIncludeItem,
     #[doc = r#"/// The filter includes no versions."#]
@@ -178,7 +178,16 @@ create_extensible_enum!(
     (Unavailable, "unavailable")
 );
 
-create_extensible_enum!(
+create_enum!(
+    #[doc = r#"/// The immutability policy mode used in requests."#]
+    ImmutabilityPolicyMode,
+    #[doc = r#"/// The immutability policy is locked."#]
+    (Locked, "Locked"),
+    #[doc = r#"/// The immutability policy is unlocked."#]
+    (Unlocked, "Unlocked")
+);
+
+create_enum!(
     #[doc = r#"/// The lease duration."#]
     LeaseDuration,
     #[doc = r#"/// The lease is of fixed duration."#]
@@ -187,7 +196,7 @@ create_extensible_enum!(
     (Infinite, "infinite")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The lease state."#]
     LeaseState,
     #[doc = r#"/// The lease is available."#]
@@ -202,7 +211,7 @@ create_extensible_enum!(
     (Leased, "leased")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The lease status."#]
     LeaseStatus,
     #[doc = r#"/// The lease is locked."#]
@@ -211,7 +220,7 @@ create_extensible_enum!(
     (Unlocked, "unlocked")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The list blob includes parameter values."#]
     ListBlobsIncludeItem,
     #[doc = r#"/// The include copies."#]
@@ -236,7 +245,7 @@ create_extensible_enum!(
     (Versions, "versions")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// Include this parameter to specify that the container's metadata be returned as part of the response body."#]
     ListContainersIncludeType,
     #[doc = r#"/// Include deleted"#]
@@ -283,14 +292,14 @@ create_extensible_enum!(
     (Container, "container")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The query request, note only SQL supported"#]
     QueryRequestType,
     #[doc = r#"/// The SQL request query type."#]
     (SQL, "SQL")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The query format type."#]
     QueryType,
     #[doc = r#"/// The query format type is Apache Arrow."#]
@@ -313,7 +322,7 @@ create_extensible_enum!(
     (Standard, "Standard")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The sequence number actions."#]
     SequenceNumberActionType,
     #[doc = r#"/// Increment the sequence number."#]
@@ -324,7 +333,7 @@ create_extensible_enum!(
     (Update, "update")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The SKU types"#]
     SkuName,
     #[doc = r#"/// The premium LRS SKU."#]

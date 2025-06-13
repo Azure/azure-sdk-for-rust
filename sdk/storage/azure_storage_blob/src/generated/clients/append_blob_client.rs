@@ -7,7 +7,7 @@ use crate::generated::models::{
     AppendBlobClientAppendBlockFromUrlOptions, AppendBlobClientAppendBlockFromUrlResult,
     AppendBlobClientAppendBlockOptions, AppendBlobClientAppendBlockResult,
     AppendBlobClientCreateOptions, AppendBlobClientCreateResult, AppendBlobClientSealOptions,
-    AppendBlobClientSealResult, BlobType,
+    AppendBlobClientSealResult,
 };
 use azure_core::{
     base64,
@@ -367,7 +367,7 @@ impl AppendBlobClient {
         if let Some(blob_content_type) = options.blob_content_type {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
         }
-        request.insert_header("x-ms-blob-type", BlobType::AppendBlob.to_string());
+        request.insert_header("x-ms-blob-type", "AppendBlob");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }

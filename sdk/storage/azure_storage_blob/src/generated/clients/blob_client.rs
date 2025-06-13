@@ -141,6 +141,7 @@ impl BlobClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
+        request.insert_header("x-ms-copy-action", "abort");
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
@@ -174,7 +175,6 @@ impl BlobClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -196,6 +196,7 @@ impl BlobClient {
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
+        request.insert_header("x-ms-lease-action", "acquire");
         if let Some(duration) = options.duration {
             request.insert_header("x-ms-lease-duration", duration.to_string());
         }
@@ -254,6 +255,7 @@ impl BlobClient {
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
+        request.insert_header("x-ms-lease-action", "break");
         if let Some(break_period) = options.break_period {
             request.insert_header("x-ms-lease-break-period", break_period.to_string());
         }
@@ -313,6 +315,7 @@ impl BlobClient {
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
+        request.insert_header("x-ms-lease-action", "change");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         request.insert_header("x-ms-version", &self.version);
@@ -940,6 +943,7 @@ impl BlobClient {
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
+        request.insert_header("x-ms-lease-action", "release");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
@@ -995,6 +999,7 @@ impl BlobClient {
         if let Some(if_tags) = options.if_tags {
             request.insert_header("x-ms-if-tags", if_tags);
         }
+        request.insert_header("x-ms-lease-action", "renew");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
@@ -1458,6 +1463,7 @@ impl BlobClient {
         if let Some(rehydrate_priority) = options.rehydrate_priority {
             request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
         }
+        request.insert_header("x-ms-requires-sync", "true");
         if let Some(seal_blob) = options.seal_blob {
             request.insert_header("x-ms-seal-blob", seal_blob.to_string());
         }
