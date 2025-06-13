@@ -21,8 +21,9 @@ use crate::generated::{
         BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
         BlobClientSetMetadataResult, BlobClientSetPropertiesOptions, BlobClientSetPropertiesResult,
         BlobClientSetTagsOptions, BlobClientSetTagsResult, BlobClientSetTierOptions,
-        BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult,
-        BlobClientUndeleteOptions, BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
+        BlobClientSetTierResult, BlobClientStartCopyFromUrlOptions,
+        BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
+        BlobExpiryOptions, BlobTags,
     },
 };
 use azure_core::{
@@ -1339,7 +1340,7 @@ impl BlobClient {
         &self,
         tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
+    ) -> Result<Response<BlobClientSetTierResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

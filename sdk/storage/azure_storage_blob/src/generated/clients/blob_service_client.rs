@@ -10,8 +10,9 @@ use crate::generated::{
         BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
         BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
         BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
-        FilterBlobSegment, KeyInfo, ListContainersSegmentResponse, StorageServiceProperties,
-        StorageServiceStats, UserDelegationKey,
+        BlobServiceClientSetPropertiesResult, FilterBlobSegment, KeyInfo,
+        ListContainersSegmentResponse, StorageServiceProperties, StorageServiceStats,
+        UserDelegationKey,
     },
 };
 use azure_core::{
@@ -360,7 +361,7 @@ impl BlobServiceClient {
         &self,
         storage_service_properties: RequestContent<StorageServiceProperties>,
         options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
+    ) -> Result<Response<BlobServiceClientSetPropertiesResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
