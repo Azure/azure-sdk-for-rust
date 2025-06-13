@@ -6,8 +6,9 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange, Committed_blocksBlock, CorsCorsRule,
-        Page_rangePageRange, SchemaField, Uncommitted_blocksBlock,
+        Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange, Committed_blocksBlock,
+        Container_itemsContainer, CorsCorsRule, Page_rangePageRange, SchemaField,
+        Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobImmutabilityPolicyMode, BlobType, CopyStatus,
     GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
@@ -123,6 +124,10 @@ pub struct BlobClientCreateSnapshotResult;
 #[derive(SafeDebug)]
 pub struct BlobClientDeleteImmutabilityPolicyResult;
 
+/// Contains results for `BlobClient::delete()`
+#[derive(SafeDebug)]
+pub struct BlobClientDeleteResult;
+
 /// Contains results for `BlobClient::download()`
 #[derive(SafeDebug)]
 pub struct BlobClientDownloadResult;
@@ -155,9 +160,21 @@ pub struct BlobClientSetImmutabilityPolicyResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetLegalHoldResult;
 
+/// Contains results for `BlobClient::set_metadata()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetMetadataResult;
+
+/// Contains results for `BlobClient::set_properties()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetPropertiesResult;
+
 /// Contains results for `BlobClient::set_tags()`
 #[derive(SafeDebug)]
 pub struct BlobClientSetTagsResult;
+
+/// Contains results for `BlobClient::set_tier()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetTierResult;
 
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
@@ -178,6 +195,14 @@ pub struct BlobContainerClientBreakLeaseResult;
 /// Contains results for `BlobContainerClient::change_lease()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientChangeLeaseResult;
+
+/// Contains results for `BlobContainerClient::create()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientCreateResult;
+
+/// Contains results for `BlobContainerClient::delete()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientDeleteResult;
 
 /// Contains results for `BlobContainerClient::get_account_info()`
 #[derive(SafeDebug)]
@@ -206,6 +231,10 @@ pub struct BlobContainerClientRestoreResult;
 /// Contains results for `BlobContainerClient::set_access_policy()`
 #[derive(SafeDebug)]
 pub struct BlobContainerClientSetAccessPolicyResult;
+
+/// Contains results for `BlobContainerClient::set_metadata()`
+#[derive(SafeDebug)]
+pub struct BlobContainerClientSetMetadataResult;
 
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -545,6 +574,10 @@ pub struct BlobPropertiesInternal {
 /// Contains results for `BlobServiceClient::get_account_info()`
 #[derive(SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoResult;
+
+/// Contains results for `BlobServiceClient::set_properties()`
+#[derive(SafeDebug)]
+pub struct BlobServiceClientSetPropertiesResult;
 
 /// The blob tags.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -1016,7 +1049,12 @@ pub struct ListBlobsHierarchySegmentResponse {
 #[serde(rename = "EnumerationResults")]
 pub struct ListContainersSegmentResponse {
     /// The container segment.
-    #[serde(default, rename = "Containers")]
+    #[serde(
+        default,
+        deserialize_with = "Container_itemsContainer::unwrap",
+        rename = "Containers",
+        serialize_with = "Container_itemsContainer::wrap"
+    )]
     pub container_items: Vec<ContainerItem>,
 
     /// The marker of the containers.
