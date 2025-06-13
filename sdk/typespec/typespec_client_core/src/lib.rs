@@ -6,6 +6,7 @@
 
 #[macro_use]
 mod macros;
+pub mod async_runtime;
 pub mod base64;
 pub mod date;
 pub mod error;
@@ -23,3 +24,5 @@ pub mod xml;
 pub use crate::error::{Error, Result};
 pub use bytes::Bytes;
 pub use uuid::Uuid;
+
+pub use sleep::sleep;
