@@ -3,7 +3,7 @@
 
 use crate::{
     common::{
-        recoverable_connection::{AmqpSenderClient, RecoverableConnection},
+        recoverable::{RecoverableConnection, RecoverableSender},
         ManagementInstance,
     },
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
@@ -414,7 +414,7 @@ impl ProducerClient {
         &self.endpoint
     }
 
-    async fn ensure_sender(&self, target: Url) -> Result<AmqpSenderClient> {
+    async fn ensure_sender(&self, target: Url) -> Result<RecoverableSender> {
         self.connection.get_sender(target).await
     }
 
