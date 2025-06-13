@@ -35,7 +35,7 @@ When no default browser is available, `az login` uses the device code authentica
 
 A credential is a struct that contains or can obtain the data needed for a service client to authenticate requests. Service clients across the Azure SDK accept a credential instance when they're constructed, and use that credential to authenticate requests.
 
-The Azure Identity library focuses on OAuth authentication with Microsoft Entra ID. It offers various credentials capable of acquiring a Microsoft Entra access token. See the [Credential structs](#credential-structs "Credential structs") section for a list of this library's credentials.
+The Azure Identity library focuses on OAuth authentication with Microsoft Entra ID. It offers various credentials capable of acquiring a Microsoft Entra access token. See the [Credential structures](#credential-structures "Credential structures") section for a list of this library's credentials.
 
 ### DefaultAzureCredential
 
@@ -122,7 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```
 
-## Credential structs
+## Credential structures
 
 ### Credential chains
 
