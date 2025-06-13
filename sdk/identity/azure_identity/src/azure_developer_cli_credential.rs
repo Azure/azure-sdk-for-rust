@@ -80,6 +80,7 @@ pub struct AzureDeveloperCliCredentialOptions {
     /// Defaults to the azd environment, which is the tenant of the selected Azure subscription.
     pub tenant_id: Option<String>,
 
+    #[cfg(test)]
     env: Option<Env>,
 }
 
@@ -92,7 +93,10 @@ impl AzureDeveloperCliCredential {
         if let Some(ref tenant_id) = options.tenant_id {
             validate_tenant_id(tenant_id)?;
         }
+        #[cfg(test)]
         let env = options.env.unwrap_or_default();
+        #[cfg(not(test))]
+        let env = Env::default();
         let executor = options.executor.unwrap_or(new_executor());
         Ok(Arc::new(Self {
             env,
