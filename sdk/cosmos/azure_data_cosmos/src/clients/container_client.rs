@@ -12,10 +12,10 @@ use crate::{
 };
 
 use azure_core::http::{
-    headers,
+    headers::{self, ETAG},
     request::{options::ContentType, Request},
     response::Response,
-    Method,
+    Etag, Method,
 };
 use serde::{de::DeserializeOwned, Serialize};
 

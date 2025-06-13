@@ -2,7 +2,7 @@
 
 mod framework;
 
-use azure_core::http::{headers::HeaderName, response};
+use azure_core::http::{headers::HeaderName, response, Etag};
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{
     clients::ContainerClient,
@@ -435,7 +435,7 @@ pub async fn item_replace_if_match_etag(context: TestContext) -> Result<(), Box<
         .headers()
         .get_str(&ETAG)
         .ok()
-        .map(|s| s.to_string());
+        .map(|s| Etag::from(s.to_string()));
 
     //Replace item with correct Etag
     item.value = 24;
@@ -520,7 +520,7 @@ pub async fn item_upsert_if_match_etag(context: TestContext) -> Result<(), Box<d
         .headers()
         .get_str(&ETAG)
         .ok()
-        .map(|s| s.to_string());
+        .map(|s| Etag::from(s.to_string()));
 
     //Upsert item with correct Etag
     item.value = 24;
@@ -602,7 +602,7 @@ pub async fn item_delete_if_match_etag(context: TestContext) -> Result<(), Box<d
         .headers()
         .get_str(&ETAG)
         .ok()
-        .map(|s| s.to_string());
+        .map(|s| Etag::from(s.to_string()));
 
     //Delete item with correct Etag
     let response = container_client
@@ -682,7 +682,7 @@ pub async fn item_patch_if_match_etag(context: TestContext) -> Result<(), Box<dy
         .headers()
         .get_str(&ETAG)
         .ok()
-        .map(|s| s.to_string());
+        .map(|s| Etag::from(s.to_string()));
 
     //Patch item with correct Etag
     let patch = PatchDocument::default()
