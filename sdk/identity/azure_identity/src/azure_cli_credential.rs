@@ -70,8 +70,10 @@ impl OutputProcessor for CliTokenResponse {
 /// Authenticates the identity logged in to the [Azure CLI](https://learn.microsoft.com/cli/azure/what-is-azure-cli).
 #[derive(Debug)]
 pub struct AzureCliCredential {
-    options: AzureCliCredentialOptions,
     env: Env,
+    executor: Arc<dyn Executor>,
+    subscription: Option<String>,
+    tenant_id: Option<String>,
 }
 
 /// Options for constructing an [`AzureCliCredential`].
@@ -114,20 +116,16 @@ impl AzureCliCredential {
             validate_subscription(subscription)?;
         }
         #[cfg(test)]
-        let env = options.env.clone().unwrap_or_default();
+        let env = options.env.unwrap_or_default();
         #[cfg(not(test))]
         let env = Env::default();
 
-        let options = AzureCliCredentialOptions {
-            additionally_allowed_tenants: options.additionally_allowed_tenants,
+        Ok(Arc::new(Self {
+            env,
+            executor: options.executor.unwrap_or(new_executor()),
             subscription: options.subscription,
             tenant_id: options.tenant_id,
-            executor: Some(options.executor.unwrap_or_else(|| new_executor())),
-            #[cfg(test)]
-            env: options.env,
-        };
-
-        Ok(Arc::new(Self { options, env }))
+        }))
     }
 }
 
@@ -150,11 +148,11 @@ impl TokenCredential for AzureCliCredential {
 
         let mut command = OsString::from("az account get-access-token -o json --scope ");
         command.push(scopes[0]);
-        if let Some(ref tenant_id) = self.options.tenant_id {
+        if let Some(ref tenant_id) = self.tenant_id {
             command.push(" --tenant ");
             command.push(tenant_id);
         }
-        if let Some(ref subscription) = self.options.subscription {
+        if let Some(ref subscription) = self.subscription {
             command.push(r#" --subscription ""#);
             command.push(subscription);
             command.push("\"");
@@ -162,13 +160,7 @@ impl TokenCredential for AzureCliCredential {
 
         trace!("running Azure CLI command: {command:?}");
 
-        shell_exec::<CliTokenResponse>(
-            // unwrap() is safe because new() ensured the values are Some
-            self.options.executor.clone().unwrap(),
-            &self.env,
-            &command,
-        )
-        .await
+        shell_exec::<CliTokenResponse>(self.executor.clone(), &self.env, &command).await
     }
 }
 
