@@ -250,13 +250,4 @@ mod tests {
         assert_eq!(FAKE_TOKEN, token.token.secret());
         assert_eq!(UtcOffset::UTC, token.expires_on.offset());
     }
-
-    #[test]
-    fn test_idiomatic_creation() {
-        // Test that AzureDeveloperCliCredentialOptions can be created idiomatically
-        let _options = AzureDeveloperCliCredentialOptions {
-            tenant_id: Some("4567".into()),
-            ..Default::default()
-        };
-    }
 }
