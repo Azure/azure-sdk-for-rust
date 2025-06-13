@@ -21,9 +21,8 @@ use crate::generated::{
         BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
         BlobClientSetMetadataResult, BlobClientSetPropertiesOptions, BlobClientSetPropertiesResult,
         BlobClientSetTagsOptions, BlobClientSetTagsResult, BlobClientSetTierOptions,
-        BlobClientSetTierResult, BlobClientStartCopyFromUrlOptions,
-        BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
-        BlobExpiryOptions, BlobTags,
+        BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult,
+        BlobClientUndeleteOptions, BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
     },
 };
 use azure_core::{
@@ -174,7 +173,6 @@ impl BlobClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -1341,7 +1339,7 @@ impl BlobClient {
         &self,
         tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<BlobClientSetTierResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

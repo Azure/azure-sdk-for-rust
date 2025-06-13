@@ -172,10 +172,6 @@ pub struct BlobClientSetPropertiesResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetTagsResult;
 
-/// Contains results for `BlobClient::set_tier()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetTierResult;
-
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
@@ -574,10 +570,6 @@ pub struct BlobPropertiesInternal {
 /// Contains results for `BlobServiceClient::get_account_info()`
 #[derive(SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoResult;
-
-/// Contains results for `BlobServiceClient::set_properties()`
-#[derive(SafeDebug)]
-pub struct BlobServiceClientSetPropertiesResult;
 
 /// The blob tags.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
