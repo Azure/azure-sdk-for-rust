@@ -12,10 +12,10 @@ use crate::{
 };
 
 use azure_core::http::{
-    headers,
+    headers::{self, ETAG},
     request::{options::ContentType, Request},
     response::Response,
-    Method,
+    Etag, Method,
 };
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -35,7 +35,7 @@ impl ContainerClient {
         database_link: &ResourceLink,
         container_id: &str,
     ) -> Self {
-        let link = database_link
+        let link: ResourceLink = database_link
             .feed(ResourceType::Containers)
             .item(container_id);
         let items_link = link.feed(ResourceType::Items);
@@ -358,6 +358,9 @@ impl ContainerClient {
         if !options.enable_content_response_on_write {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
         }
+        if let Some(etag) = options.if_match_etag {
+            req.insert_header(headers::IF_MATCH, etag);
+        }
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
@@ -446,6 +449,9 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Post);
         if !options.enable_content_response_on_write {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
+        }
+        if let Some(etag) = options.if_match_etag {
+            req.insert_header(headers::IF_MATCH, etag);
         }
         req.insert_header(constants::IS_UPSERT, "true");
         req.insert_headers(&partition_key.into())?;
@@ -537,6 +543,9 @@ impl ContainerClient {
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Delete);
+        if let Some(etag) = options.if_match_etag {
+            req.insert_header(headers::IF_MATCH, etag);
+        }
         req.insert_headers(&partition_key.into())?;
         self.pipeline
             .send(options.method_options.context, &mut req, link)
@@ -612,6 +621,9 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Patch);
         if !options.enable_content_response_on_write {
             req.insert_header(headers::PREFER, constants::PREFER_MINIMAL);
+        }
+        if let Some(etag) = options.if_match_etag {
+            req.insert_header(headers::IF_MATCH, etag);
         }
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
