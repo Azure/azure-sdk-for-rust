@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{ClientOptions, RequestContent, Response},
+    http::{ClientOptions, NoFormat, RequestContent, Response},
     Result,
 };
 use azure_core_test::Recording;
@@ -102,7 +102,7 @@ pub async fn get_container_client(
 /// * `blob_client` - A reference to a BlobClient instance.
 pub async fn create_test_blob(
     blob_client: &BlobClient,
-) -> Result<Response<BlockBlobClientUploadResult>> {
+) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
     blob_client
         .upload(
             RequestContent::from(b"hello rusty world".to_vec()),
