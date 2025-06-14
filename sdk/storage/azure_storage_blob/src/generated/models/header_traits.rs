@@ -113,7 +113,6 @@ const REQUEST_SERVER_ENCRYPTED: HeaderName =
 const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encrypted");
 const SKU_NAME: HeaderName = HeaderName::from_static("x-ms-sku-name");
 const SNAPSHOT: HeaderName = HeaderName::from_static("x-ms-snapshot");
-const STRUCTURED_BODY: HeaderName = HeaderName::from_static("x-ms-structured-body");
 const TAG_COUNT: HeaderName = HeaderName::from_static("x-ms-tag-count");
 const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 const VERSION_ID: HeaderName = HeaderName::from_static("x-ms-version-id");
@@ -214,7 +213,6 @@ pub trait AppendBlobClientAppendBlockResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn structured_body_type(&self) -> Result<Option<String>>;
     fn version(&self) -> Result<Option<String>>;
 }
 
@@ -279,11 +277,6 @@ impl AppendBlobClientAppendBlockResultHeaders
     /// algorithm, and false otherwise.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
-    }
-
-    /// Indicates the response body contains a structured message and specifies the message schema version and properties.
-    fn structured_body_type(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &STRUCTURED_BODY)
     }
 
     /// Specifies the version of the operation to use for this request.
@@ -3131,7 +3124,6 @@ pub trait PageBlobClientUploadPagesResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn structured_body_type(&self) -> Result<Option<String>>;
     fn version(&self) -> Result<Option<String>>;
 }
 
@@ -3190,11 +3182,6 @@ impl PageBlobClientUploadPagesResultHeaders
     /// algorithm, and false otherwise.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
-    }
-
-    /// Indicates the response body contains a structured message and specifies the message schema version and properties.
-    fn structured_body_type(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &STRUCTURED_BODY)
     }
 
     /// Specifies the version of the operation to use for this request.
