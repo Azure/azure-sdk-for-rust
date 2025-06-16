@@ -163,7 +163,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 pop_receipt, message_id
             );
             let delete_response = queue_client
-                .delete_message(queue_name.as_str(), message_id, pop_receipt)
+                .delete_message(queue_name.as_str(), message_id, pop_receipt, None)
                 .await;
             match delete_response {
                 Ok(response) => println!("Successfully deleted message: {:?}", response),

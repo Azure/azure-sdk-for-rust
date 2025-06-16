@@ -313,7 +313,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             .unwrap();
 
         let delete_response = queue_client
-            .delete_message(queue_name.as_str(), message_id, pop_receipt)
+            .delete_message(queue_name.as_str(), message_id, pop_receipt, None)
             .await?;
         assert!(
             delete_response.status().is_success(),

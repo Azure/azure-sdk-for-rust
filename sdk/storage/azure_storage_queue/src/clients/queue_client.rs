@@ -5,6 +5,7 @@ use crate::generated::clients::{
     AzureQueueStorageClient as GeneratedQueueClient, AzureQueueStorageClientOptions,
 };
 use crate::generated::models::{
+    AzureQueueStorageMessageIdOperationsClientDeleteOptions,
     AzureQueueStorageMessagesOperationsClientDequeueOptions,
     AzureQueueStorageMessagesOperationsClientEnqueueOptions,
     AzureQueueStorageQueueOperationsClientCreateOptions,
@@ -333,30 +334,18 @@ impl QueueClient {
         queue_name: &str,
         message_id: &str,
         pop_receipt: &str,
+        options: Option<AzureQueueStorageMessageIdOperationsClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
-        let mut url = self.client.endpoint.clone();
-        let ctx = Context::new();
-
-        url.path_segments_mut()
-            .expect("Invalid URL")
-            .push(queue_name);
-        url.path_segments_mut()
-            .expect("Invalid URL")
-            .push("messages");
-        url.path_segments_mut()
-            .expect("Invalid URL")
-            .push(message_id);
-        url.query_pairs_mut().append_pair("popreceipt", pop_receipt);
-
-        let mut request = Request::new(url, Method::Delete);
-        request.insert_header("version", self.version.to_string());
-        request.insert_header("x-ms-version", self.version.to_string());
-
         self.client
-            .pipeline
-            .send(&ctx, &mut request)
+            .get_azure_queue_storage_message_id_operations_client()
+            .delete(
+                queue_name,
+                message_id,
+                pop_receipt,
+                self.version.clone(),
+                options,
+            )
             .await
-            .map(Into::into)
     }
 
     pub async fn receive_message(
