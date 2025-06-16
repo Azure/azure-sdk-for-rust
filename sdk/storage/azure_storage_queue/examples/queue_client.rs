@@ -2,13 +2,12 @@ use std::collections::HashMap;
 
 use azure_core::{
     error::Error,
-    http::{RequestContent, Response, StatusCode},
+    http::{RequestContent, StatusCode},
 };
 use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::{
-    AzureQueueStorageMessagesOperationsClientDequeueOptions, ListOfEnqueuedMessage, QueueClient,
+    AzureQueueStorageMessagesOperationsClientDequeueOptions, QueueClient, QueueMessage,
 };
-use quick_xml::de::from_str;
 
 /// Custom error type for queue operations
 #[derive(Debug)]
@@ -95,6 +94,52 @@ async fn send_and_delete_message(
     Ok(())
 }
 
+async fn send_and_update_message(
+    queue_client: &QueueClient,
+    queue_name: &str,
+    message: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let result = queue_client.send_message(queue_name, message, None).await;
+
+    if let Ok(response) = result {
+        let messages = response.into_body().await?;
+
+        if let Some(message) = messages.value.and_then(|msgs| msgs.first().cloned()) {
+            if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
+            {
+                println!(
+                    "Message ready for update - ID: {}, Receipt: {}",
+                    message_id, pop_receipt
+                );
+                let update_option =
+                    azure_storage_queue::AzureQueueStorageMessageIdOperationsClientUpdateOptions {
+                        // Serialize the message text as bytes for the update
+                        queue_message: Some(RequestContent::from(
+                            quick_xml::se::to_string(&QueueMessage {
+                                message_text: Some("Updated message text from Rust".to_string()),
+                            })?
+                            .into_bytes(),
+                        )),
+                        request_id: Some(message_id.clone()),
+                        ..Default::default()
+                    };
+                let update_result = queue_client
+                    .update_message(
+                        queue_name,
+                        &message_id.clone(),
+                        &pop_receipt,
+                        1,
+                        Some(update_option),
+                    )
+                    .await;
+                log_operation_result(&update_result, "update_message");
+            }
+        }
+    }
+
+    Ok(())
+}
+
 async fn receive_and_process_messages(
     queue_client: &QueueClient,
     queue_name: &str,
@@ -173,6 +218,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await;
     log_operation_result(&result, "send_message");
 
+    send_and_update_message(
+        &queue_client,
+        &queue_name,
+        "Example message created from Rust, ready for update",
+    )
+    .await?;
+
     // Delete messages
     let result = queue_client.delete_messages(&queue_name).await;
     log_operation_result(&result, "delete_messages");
@@ -206,30 +258,4 @@ fn get_random_queue_name() -> String {
     let mut rng = rand::thread_rng();
     let random_suffix: u32 = rng.gen_range(1000..9999);
     format!("sdk-test-queue-{}", random_suffix)
-}
-
-async fn get_enqueued_message_properties(
-    response: Response<ListOfEnqueuedMessage, azure_core::http::XmlFormat>,
-) -> Result<(String, String), Box<dyn std::error::Error>> {
-    let (_status_code, _headers, properties) = response.deconstruct();
-    let xml: String = properties.collect_string().await?;
-    let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml)?;
-
-    // Get the first message from the vector
-    let enqueued_message = queue_messages_list
-        .value
-        .as_ref()
-        .and_then(|msgs| msgs.first())
-        .ok_or("No messages found in response")?;
-
-    let pop_receipt = enqueued_message
-        .pop_receipt
-        .as_ref()
-        .ok_or("PopReceipt not found")?;
-    let message_id = enqueued_message
-        .message_id
-        .as_ref()
-        .ok_or("MessageId not found")?;
-
-    Ok((message_id.clone(), pop_receipt.clone()))
 }

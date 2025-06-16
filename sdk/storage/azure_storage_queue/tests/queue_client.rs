@@ -306,7 +306,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
 }
 
 #[recorded::test]
-async fn test_update_meesage(ctx: TestContext) -> Result<()> {
+async fn test_update_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
     let queue_name = format!("test-update-message-{}", QUEUE_SUFFIX.as_str());
