@@ -6,6 +6,7 @@ use crate::generated::clients::{
 };
 use crate::generated::models::{
     AzureQueueStorageMessageIdOperationsClientDeleteOptions,
+    AzureQueueStorageMessageIdOperationsClientUpdateOptions,
     AzureQueueStorageMessagesOperationsClientDequeueOptions,
     AzureQueueStorageMessagesOperationsClientEnqueueOptions,
     AzureQueueStorageQueueOperationsClientCreateOptions,
@@ -342,6 +343,37 @@ impl QueueClient {
                 queue_name,
                 message_id,
                 pop_receipt,
+                self.version.clone(),
+                options,
+            )
+            .await
+    }
+
+    /// Updates a specific message in the queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_name` - The name of the queue containing the message to update.
+    /// * `messageid` - The ID of the message to update.
+    /// * `pop_receipt` - The pop receipt of the message to update.
+    /// * `visibilitytimeout` - The new visibility timeout for the message, in seconds.
+    /// * `version` - Specifies the version of the operation to use for this request.
+    /// * `options` - Optional parameters for the update operation.
+    pub async fn update_message(
+        &self,
+        queue_name: &str,
+        messageid: &str,
+        pop_receipt: &str,
+        visibility_timeout: i32,
+        options: Option<AzureQueueStorageMessageIdOperationsClientUpdateOptions<'_>>,
+    ) -> Result<Response<()>> {
+        self.client
+            .get_azure_queue_storage_message_id_operations_client()
+            .update(
+                queue_name,
+                messageid,
+                pop_receipt,
+                visibility_timeout,
                 self.version.clone(),
                 options,
             )

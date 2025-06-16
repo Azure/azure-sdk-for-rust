@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
-use azure_core::http::StatusCode;
+use azure_core::http::{RequestContent, Response, StatusCode};
 use azure_identity::DefaultAzureCredential;
-use azure_storage_queue::{ListOfEnqueuedMessage, QueueClient};
+use azure_storage_queue::AzureQueueStorageMessageIdOperationsClientUpdateOptions;
+use azure_storage_queue::{ListOfEnqueuedMessage, QueueClient, QueueMessage};
 
 use quick_xml::de::from_str;
 
@@ -138,32 +139,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await;
     match send_message_response {
         Ok(response) => {
-            let (_status_code, _headers, properties) = response.deconstruct();
-            let xml = properties.collect_string().await?;
-            let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml)?;
-
-            // Get the first message from the vector
-            let enqueued_message = queue_messages_list
-                .value
-                .as_ref()
-                .and_then(|msgs| msgs.first())
-                .ok_or("No messages found in response")?;
-
-            let pop_receipt = enqueued_message
-                .pop_receipt
-                .as_ref()
-                .ok_or("PopReceipt not found")?;
-            let message_id = enqueued_message
-                .message_id
-                .as_ref()
-                .ok_or("MessageId not found")?;
+            let (message_id, pop_receipt) = get_enqueued_message_properties(response).await?;
 
             println!(
                 "Successfully sent message with pop receipt: {:?} and message ID: {:?}",
                 pop_receipt, message_id
             );
             let delete_response = queue_client
-                .delete_message(queue_name.as_str(), message_id, pop_receipt, None)
+                .delete_message(
+                    queue_name.as_str(),
+                    message_id.as_str(),
+                    pop_receipt.as_str(),
+                    None,
+                )
                 .await;
             match delete_response {
                 Ok(response) => println!("Successfully deleted message: {:?}", response),
@@ -185,6 +173,68 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Unable to delete message, you do not have permission to delete messages from this queue. Please check your credentials.");
             } else {
                 eprintln!("Error deleting message: {}", e);
+            }
+        }
+    }
+
+    // Send a message to the queue and then update it
+    let send_update_message_response = queue_client
+        .send_message(
+            queue_name.as_str(),
+            "Example message created from Rust, ready for updating",
+            None,
+        )
+        .await;
+    match send_update_message_response {
+        Ok(response) => {
+            let (message_id, pop_receipt) = get_enqueued_message_properties(response).await?;
+
+            println!(
+                "Successfully sent message with pop receipt: {:?} and message ID: {:?}",
+                pop_receipt, message_id
+            );
+
+            // Update the message in the queue
+            let option = Some(AzureQueueStorageMessageIdOperationsClientUpdateOptions {
+                queue_message: Some(RequestContent::from(
+                    quick_xml::se::to_string(&QueueMessage {
+                        message_text: Some("Updated message text from Rust".to_string()),
+                    })?
+                    .into_bytes(),
+                )),
+                request_id: Some(message_id.clone()),
+                ..Default::default()
+            });
+            let update_response = queue_client
+                .update_message(
+                    queue_name.as_str(),
+                    message_id.as_str(),
+                    pop_receipt.as_str(),
+                    10,
+                    option,
+                )
+                .await;
+
+            match update_response {
+                Ok(response) => println!("Successfully updated message: {:?}", response),
+                Err(e) => {
+                    if e.http_status() == Some(StatusCode::NotFound) {
+                        println!("Unable to update message, it may not exist or has already been deleted.");
+                    } else if e.http_status() == Some(StatusCode::Forbidden) {
+                        println!("Unable to update message, you do not have permission to update this message from this queue. Please check your credentials.");
+                    } else {
+                        eprintln!("Error updating message: {}", e);
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            if e.http_status() == Some(StatusCode::NotFound) {
+                println!("Unable to update message, queue not found");
+            } else if e.http_status() == Some(StatusCode::Forbidden) {
+                println!("Unable to update message, you do not have permission to update messages from this queue. Please check your credentials.");
+            } else {
+                eprintln!("Error updating message: {}", e);
             }
         }
     }
@@ -244,4 +294,30 @@ fn get_random_queue_name() -> String {
     let mut rng = rand::thread_rng();
     let random_suffix: u32 = rng.gen_range(1000..9999);
     format!("sdk-test-queue-{}", random_suffix)
+}
+
+async fn get_enqueued_message_properties(
+    response: Response<ListOfEnqueuedMessage, azure_core::http::XmlFormat>,
+) -> Result<(String, String), Box<dyn std::error::Error>> {
+    let (_status_code, _headers, properties) = response.deconstruct();
+    let xml = properties.collect_string().await?;
+    let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml)?;
+
+    // Get the first message from the vector
+    let enqueued_message = queue_messages_list
+        .value
+        .as_ref()
+        .and_then(|msgs| msgs.first())
+        .ok_or("No messages found in response")?;
+
+    let pop_receipt = enqueued_message
+        .pop_receipt
+        .as_ref()
+        .ok_or("PopReceipt not found")?;
+    let message_id = enqueued_message
+        .message_id
+        .as_ref()
+        .ok_or("MessageId not found")?;
+
+    Ok((message_id.clone(), pop_receipt.clone()))
 }
