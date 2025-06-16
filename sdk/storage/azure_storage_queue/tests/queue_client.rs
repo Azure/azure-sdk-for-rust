@@ -1,9 +1,9 @@
-use azure_core::
-    http::{{ClientOptions, Response},
-    RequestContent};
-use azure_core::Result,
-;
+use azure_core::http::{
+    RequestContent, {ClientOptions, Response},
+};
+use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
+use azure_storage_queue::AzureQueueStorageMessageIdOperationsClientUpdateOptions;
 use azure_storage_queue::{
     clients::{
         AzureQueueStorageClientOptions, AzureQueueStorageMessagesOperationsClientDequeueOptions,
@@ -11,7 +11,6 @@ use azure_storage_queue::{
     },
     ListOfEnqueuedMessage,
 };
-use azure_storage_queue::AzureQueueStorageMessageIdOperationsClientUpdateOptions;
 use once_cell::sync::Lazy;
 use quick_xml::de::from_str;
 use std::option::Option;
@@ -293,7 +292,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
         let delete_response = queue_client
             .delete_message(queue_name.as_str(), message_id, pop_receipt, None)
             .await?;
-         assert_successful_response(&delete_response);
+        assert_successful_response(&delete_response);
         Ok::<(), azure_core::Error>(())
     }
     .await;

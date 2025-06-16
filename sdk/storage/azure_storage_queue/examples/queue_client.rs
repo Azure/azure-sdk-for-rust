@@ -5,7 +5,10 @@ use azure_core::{
     http::{RequestContent, Response, StatusCode},
 };
 use azure_identity::DefaultAzureCredential;
-use azure_storage_queue::{AzureQueueStorageMessagesOperationsClientDequeueOptions, QueueClient};
+use azure_storage_queue::{
+    AzureQueueStorageMessagesOperationsClientDequeueOptions, ListOfEnqueuedMessage, QueueClient,
+};
+use quick_xml::de::from_str;
 
 /// Custom error type for queue operations
 #[derive(Debug)]
@@ -209,7 +212,7 @@ async fn get_enqueued_message_properties(
     response: Response<ListOfEnqueuedMessage, azure_core::http::XmlFormat>,
 ) -> Result<(String, String), Box<dyn std::error::Error>> {
     let (_status_code, _headers, properties) = response.deconstruct();
-    let xml = properties.collect_string().await?;
+    let xml: String = properties.collect_string().await?;
     let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml)?;
 
     // Get the first message from the vector
