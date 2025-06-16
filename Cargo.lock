@@ -420,7 +420,6 @@ dependencies = [
  "azure_core_test",
  "azure_identity",
  "futures",
- "once_cell",
  "quick-xml",
  "rand",
  "serde",
@@ -428,7 +427,6 @@ dependencies = [
  "time",
  "tokio",
  "typespec_client_core",
- "uuid",
 ]
 
 [[package]]

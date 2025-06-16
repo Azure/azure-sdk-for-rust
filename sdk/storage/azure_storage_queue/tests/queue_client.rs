@@ -11,12 +11,8 @@ use azure_storage_queue::{
     },
     ListOfEnqueuedMessage,
 };
-use once_cell::sync::Lazy;
 use quick_xml::de::from_str;
 use std::option::Option;
-use uuid::Uuid;
-
-static QUEUE_SUFFIX: Lazy<String> = Lazy::new(|| get_random_queue_suffix());
 
 /// Creates a new queue under the given account.
 #[recorded::test]
@@ -24,7 +20,7 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await;
 
-    let queue_name = format!("test-queue-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test_create_queue";
     let response = queue_client?.create(&queue_name, None).await?;
 
     assert_successful_response(&response);
@@ -37,7 +33,7 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 async fn test_send_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = format!("test-queue-send-message-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test_send_message";
     queue_client.create(&queue_name, None).await?;
 
     let test_result = async {
@@ -67,7 +63,7 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
 async fn test_create_queue_if_not_exists(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = format!("test-queue-if-exists-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test_create_queue_if_not_exists";
 
     let test_result = async {
         // First, create the queue
@@ -95,7 +91,7 @@ async fn test_create_queue_if_not_exists(ctx: TestContext) -> Result<()> {
 async fn test_delete_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = format!("test-queue-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test_delete_queue";
 
     queue_client.create_if_not_exists(&queue_name, None).await?;
 
@@ -113,7 +109,7 @@ async fn test_delete_queue(ctx: TestContext) -> Result<()> {
 async fn test_delete_queue_if_exists(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = format!("test-queue-if-exists-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test_delete_queue_if_exists";
 
     // First, create the queue
     let response = queue_client.create(&queue_name, None).await?;
@@ -151,10 +147,10 @@ async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
 
 /// Checks if a queue exists in the Azure Storage Queue service.
 #[recorded::test]
-async fn test_exists(ctx: TestContext) -> Result<()> {
+async fn test_queue_exists(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = format!("test-queue-exists-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test_queue_exists";
 
     let test_result = async {
         // Create a queue if it does not exist
@@ -167,13 +163,6 @@ async fn test_exists(ctx: TestContext) -> Result<()> {
         Ok::<(), azure_core::Error>(())
     }
     .await;
-
-    // let queue_name = format!("test-queue-{}", QUEUE_SUFFIX.as_str());
-    // queue_client.create_if_not_exists(&queue_name, None).await?;
-
-    // // Check if a queue exists
-    // let exists_response = queue_client.exists(&queue_name).await?;
-    // assert!(exists_response, "Queue should exist");
 
     queue_client.delete(&queue_name, None).await?;
 
@@ -192,7 +181,7 @@ async fn test_exists(ctx: TestContext) -> Result<()> {
 async fn test_set_metadata(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = format!("test-queue-metadata-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test-queue-metadata";
     queue_client.create_if_not_exists(&queue_name, None).await?;
 
     let test_result = async {
@@ -222,7 +211,7 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
 async fn test_delete_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = format!("test-delete-messages-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test_delete_messages";
 
     // Create a queue if it does not exist
     queue_client.create_if_not_exists(&queue_name, None).await?;
@@ -249,7 +238,7 @@ async fn test_delete_messages(ctx: TestContext) -> Result<()> {
 async fn test_delete_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = format!("test-delete-message-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test_delete_message";
 
     // Create a queue if it does not exist
     queue_client.create_if_not_exists(&queue_name, None).await?;
@@ -260,7 +249,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
         // Note: The message ID and pop receipt are required for deletion, so we need to capture them.
         let send_message_response = queue_client
             .send_message(
-                queue_name.as_str(),
+                queue_name.clone(),
                 "Example message created from Rust, ready for deletion",
                 None,
             )
@@ -290,7 +279,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             .unwrap();
 
         let delete_response = queue_client
-            .delete_message(queue_name.as_str(), message_id, pop_receipt, None)
+            .delete_message(queue_name, message_id, pop_receipt, None)
             .await?;
         assert_successful_response(&delete_response);
         Ok::<(), azure_core::Error>(())
@@ -309,7 +298,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
 async fn test_update_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
-    let queue_name = format!("test-update-message-{}", QUEUE_SUFFIX.as_str());
+    let queue_name = "test_update_message";
 
     // Create a queue if it does not exist
     queue_client.create_if_not_exists(&queue_name, None).await?;
@@ -319,7 +308,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
         // Send a message to the queue
         let send_message_response = queue_client
             .send_message(
-                queue_name.as_str(),
+                queue_name,
                 "Example message created from Rust, ready for update",
                 None,
             )
@@ -363,7 +352,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 
         // Update the message in the queue
         let update_response = queue_client
-            .update_message(queue_name.as_str(), message_id, pop_receipt, 10, option)
+            .update_message(queue_name, message_id, pop_receipt, 10, option)
             .await?;
         assert!(
             update_response.status().is_success(),
@@ -505,10 +494,6 @@ fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     );
 
     (client_options, endpoint)
-}
-
-fn get_random_queue_suffix() -> String {
-    format!("{}", Uuid::new_v4())
 }
 
 /// Helper function to set up a test queue with messages
