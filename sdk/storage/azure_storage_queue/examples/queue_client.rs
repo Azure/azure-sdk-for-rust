@@ -1,11 +1,131 @@
 use std::collections::HashMap;
 
-use azure_core::http::{RequestContent, Response, StatusCode};
+use azure_core::{
+    error::Error,
+    http::{RequestContent, Response, StatusCode},
+};
 use azure_identity::DefaultAzureCredential;
-use azure_storage_queue::AzureQueueStorageMessageIdOperationsClientUpdateOptions;
-use azure_storage_queue::{ListOfEnqueuedMessage, QueueClient, QueueMessage};
+use azure_storage_queue::{AzureQueueStorageMessagesOperationsClientDequeueOptions, QueueClient};
 
-use quick_xml::de::from_str;
+/// Custom error type for queue operations
+#[derive(Debug)]
+enum QueueError {
+    NotFound(&'static str),
+    Forbidden(&'static str),
+    Other(Error),
+}
+
+impl std::fmt::Display for QueueError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            QueueError::NotFound(msg) => write!(f, "Not found: {}", msg),
+            QueueError::Forbidden(msg) => write!(f, "Forbidden: {}", msg),
+            QueueError::Other(e) => write!(f, "Error: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for QueueError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            QueueError::Other(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<Error> for QueueError {
+    fn from(err: Error) -> Self {
+        match err.http_status() {
+            Some(StatusCode::NotFound) => QueueError::NotFound("Resource not found"),
+            Some(StatusCode::Forbidden) => {
+                QueueError::Forbidden("Access forbidden - check credentials")
+            }
+            _ => QueueError::Other(err),
+        }
+    }
+}
+
+/// Helper function to log operation results
+fn log_operation_result<T>(result: &Result<T, Error>, operation: &str)
+where
+    T: std::fmt::Debug,
+{
+    match result {
+        Ok(response) => println!("Successfully {}: {:?}", operation, response),
+        Err(e) => match e.http_status() {
+            Some(StatusCode::NotFound) => println!("Unable to {}, resource not found", operation),
+            Some(StatusCode::Forbidden) => println!(
+                "Unable to {}, access forbidden - check credentials",
+                operation
+            ),
+            _ => eprintln!("Error during {}: {}", operation, e),
+        },
+    }
+}
+
+async fn send_and_delete_message(
+    queue_client: &QueueClient,
+    queue_name: &str,
+    message: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let result = queue_client.send_message(queue_name, message, None).await;
+
+    if let Ok(response) = result {
+        let messages = response.into_body().await?;
+
+        if let Some(message) = messages.value.and_then(|msgs| msgs.first().cloned()) {
+            if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
+            {
+                println!(
+                    "Message ready for deletion - ID: {}, Receipt: {}",
+                    message_id, pop_receipt
+                );
+                let delete_result = queue_client
+                    .delete_message(queue_name, &message_id, &pop_receipt, None)
+                    .await;
+                log_operation_result(&delete_result, "delete_message");
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn receive_and_process_messages(
+    queue_client: &QueueClient,
+    queue_name: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    _ = queue_client
+        .send_message(queue_name, "Message 1 from Rust Queue SDK", None)
+        .await;
+    _ = queue_client
+        .send_message(queue_name, "Message 2 from Rust Queue SDK", None)
+        .await;
+
+    let options = AzureQueueStorageMessagesOperationsClientDequeueOptions {
+        number_of_messages: Some(5),
+        ..Default::default()
+    };
+
+    let result = queue_client
+        .receive_messages(queue_name, Some(options))
+        .await;
+    log_operation_result(&result, "receive_messages");
+
+    if let Ok(response) = result {
+        let messages = response.into_body().await?;
+        if let Some(messages) = messages.value {
+            for msg in messages {
+                if let Some(text) = msg.message_text {
+                    println!("Received message: {}", text);
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,276 +134,65 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Retrieve the storage account endpoint from environment variable.
     let endpoint = std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT")?;
 
-    // Create a QueueClient using the endpoint and credential.
-    // Note: Ensure that the endpoint is in the format "https://<account_name>.queue.core.windows.net/"
-    if !endpoint.ends_with("/") {
-        eprintln!("Endpoint must end with a '/' character.");
-        std::process::exit(1);
-    }
-    if !endpoint.starts_with("https://") {
-        eprintln!("Endpoint must start with 'https://'.");
+    // Validate endpoint format
+    if !endpoint.ends_with("/") || !endpoint.starts_with("https://") {
+        eprintln!("Endpoint must start with 'https://' and end with '/'");
         std::process::exit(1);
     }
 
     let queue_client = QueueClient::new(&endpoint, credential, None)?;
-
-    // Get the properties of the queue service
-    let properties_response = queue_client.get_properties().await;
-    match properties_response {
-        Ok(response) => {
-            let (_status_code, _headers, _properties) = response.deconstruct();
-            println!("Successfully retrieved properties.",);
-        }
-        Err(e) => eprintln!("Error retrieving queue properties: {}", e),
-    }
-
     let queue_name = get_random_queue_name();
 
-    // Create a new queue
-    let create_response = queue_client.create(queue_name.as_str(), None).await;
-    match create_response {
-        Ok(response) => println!("Successfully created queue: {:?}", response),
-        Err(e) => eprintln!("Error creating queue: {}", e),
-    }
+    // Get queue service properties
+    let result = queue_client.get_properties().await;
+    log_operation_result(&result, "get_properties");
 
-    // Check if the queue exists
-    let exists_response = queue_client.exists(queue_name.as_str()).await;
-    match exists_response {
-        Ok(response) => println!("Queue exists: {:?}", response),
-        Err(e) => eprintln!("Error checking if queue exists: {}", e),
-    }
+    // Create and manage queue
+    let result = queue_client.create(&queue_name, None).await;
+    log_operation_result(&result, "create");
 
-    // Check a non-existent queue exists
-    let non_existent_queue = "non-existent-queue";
-    let non_existent_exists_response = queue_client.exists(non_existent_queue).await;
-    match non_existent_exists_response {
-        Ok(response) => println!("Non-existent queue exists: {:?}", response),
-        Err(e) => eprintln!("Error checking non-existent queue: {}", e),
-    }
+    let result = queue_client.exists(&queue_name).await;
+    log_operation_result(&result, "check_exists");
 
-    // Create the queue again with the not exists option
-    let create_if_not_exists_response = queue_client
-        .create_if_not_exists(queue_name.as_str(), None)
-        .await;
-    match create_if_not_exists_response {
-        Ok(response) => println!(
-            "Did not error when creating a queue that already existed: {:?}",
-            response
-        ),
-        Err(e) => eprintln!("Error when creating a queue that already existed: {}", e),
-    }
+    let result = queue_client.exists("non-existent-queue").await;
+    log_operation_result(&result, "check_non_existent");
 
-    // Set metadata for the queue
+    let result = queue_client.create_if_not_exists(&queue_name, None).await;
+    log_operation_result(&result, "create_if_not_exists");
+
+    // Set queue metadata
     let metadata = HashMap::from([("key1", "value1"), ("key2", "value2")]);
-    let set_metadata_response = queue_client
-        .set_metadata(queue_name.as_str(), Some(metadata))
+    let result = queue_client.set_metadata(&queue_name, Some(metadata)).await;
+    log_operation_result(&result, "set_metadata");
+
+    let result = queue_client
+        .send_message(&queue_name, "Example Message", None)
         .await;
-    match set_metadata_response {
-        Ok(response) => println!("Successfully set metadata: {:?}", response),
-        Err(e) => eprintln!("Error setting metadata: {}", e),
-    }
+    log_operation_result(&result, "send_message");
 
-    // Delete messages from the queue
-    let delete_messages_response = queue_client.delete_messages(queue_name.as_str()).await;
-    match delete_messages_response {
-        Ok(response) => println!("Successfully deleted messages: {:?}", response),
-        Err(e) => {
-            if e.http_status() == Some(StatusCode::NotFound) {
-                // Handle the case where the queue does not exist
-                // This is a common case when trying to delete messages from a queue that has already been deleted.
-                println!("Unable to delete messages, queue not found");
-            } else if e.http_status() == Some(StatusCode::Forbidden) {
-                // Handle the case where the user does not have permission to delete messages
-                // This can happen if the credentials used do not have the necessary permissions.
-                println!("Unable to delete messages, you do not have permission to delete messages from this queue. Please check your credentials.");
-            } else {
-                eprintln!("Error deleting messages: {}", e);
-            }
-        }
-    }
+    // Delete messages
+    let result = queue_client.delete_messages(&queue_name).await;
+    log_operation_result(&result, "delete_messages");
 
-    // Send a message to the queue
-    let send_message_response = queue_client
-        .send_message(
-            queue_name.as_str(),
-            "Example message created from Rust.",
-            None,
-        )
-        .await;
-    match send_message_response {
-        Ok(response) => {
-            println!("Successfully sent messages: {:?}", response);
-        }
-        Err(e) => {
-            if e.http_status() == Some(StatusCode::NotFound) {
-                // Handle the case where the queue does not exist
-                // This is a common case when trying to send messages to a queue that has already been deleted.
-                println!("Unable to send messages, queue not found");
-            } else if e.http_status() == Some(StatusCode::Forbidden) {
-                // Handle the case where the user does not have permission to send messages
-                // This can happen if the credentials used do not have the necessary permissions.
-                println!("Unable to send messages, you do not have permission to send messages to this queue. Please check your credentials.");
-            } else {
-                eprintln!("Error sending messages: {}", e);
-            }
-        }
-    }
+    // Send and process messages
+    send_and_delete_message(
+        &queue_client,
+        &queue_name,
+        "Example message created from Rust, ready for deletion",
+    )
+    .await?;
 
-    // Send a message to the queue and then delete it
-    let send_message_response = queue_client
-        .send_message(
-            queue_name.as_str(),
-            "Example message created from Rust, ready for deletion",
-            None,
-        )
-        .await;
-    match send_message_response {
-        Ok(response) => {
-            let (message_id, pop_receipt) = get_enqueued_message_properties(response).await?;
+    // Receive messages
+    receive_and_process_messages(&queue_client, &queue_name).await?;
 
-            println!(
-                "Successfully sent message with pop receipt: {:?} and message ID: {:?}",
-                pop_receipt, message_id
-            );
-            let delete_response = queue_client
-                .delete_message(
-                    queue_name.as_str(),
-                    message_id.as_str(),
-                    pop_receipt.as_str(),
-                    None,
-                )
-                .await;
-            match delete_response {
-                Ok(response) => println!("Successfully deleted message: {:?}", response),
-                Err(e) => {
-                    if e.http_status() == Some(StatusCode::NotFound) {
-                        println!("Unable to delete message, it may not exist or has already been deleted.");
-                    } else if e.http_status() == Some(StatusCode::Forbidden) {
-                        println!("Unable to delete message, you do not have permission to delete this message from this queue. Please check your credentials.");
-                    } else {
-                        eprintln!("Error deleting message: {}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            if e.http_status() == Some(StatusCode::NotFound) {
-                println!("Unable to delete message, queue not found");
-            } else if e.http_status() == Some(StatusCode::Forbidden) {
-                println!("Unable to delete message, you do not have permission to delete messages from this queue. Please check your credentials.");
-            } else {
-                eprintln!("Error deleting message: {}", e);
-            }
-        }
-    }
+    // Cleanup
+    let result = queue_client.delete(&queue_name, None).await;
+    log_operation_result(&result, "delete");
 
-    // Send a message to the queue and then update it
-    let send_update_message_response = queue_client
-        .send_message(
-            queue_name.as_str(),
-            "Example message created from Rust, ready for updating",
-            None,
-        )
-        .await;
-    match send_update_message_response {
-        Ok(response) => {
-            let (message_id, pop_receipt) = get_enqueued_message_properties(response).await?;
-
-            println!(
-                "Successfully sent message with pop receipt: {:?} and message ID: {:?}",
-                pop_receipt, message_id
-            );
-
-            // Update the message in the queue
-            let option = Some(AzureQueueStorageMessageIdOperationsClientUpdateOptions {
-                queue_message: Some(RequestContent::from(
-                    quick_xml::se::to_string(&QueueMessage {
-                        message_text: Some("Updated message text from Rust".to_string()),
-                    })?
-                    .into_bytes(),
-                )),
-                request_id: Some(message_id.clone()),
-                ..Default::default()
-            });
-            let update_response = queue_client
-                .update_message(
-                    queue_name.as_str(),
-                    message_id.as_str(),
-                    pop_receipt.as_str(),
-                    10,
-                    option,
-                )
-                .await;
-
-            match update_response {
-                Ok(response) => println!("Successfully updated message: {:?}", response),
-                Err(e) => {
-                    if e.http_status() == Some(StatusCode::NotFound) {
-                        println!("Unable to update message, it may not exist or has already been deleted.");
-                    } else if e.http_status() == Some(StatusCode::Forbidden) {
-                        println!("Unable to update message, you do not have permission to update this message from this queue. Please check your credentials.");
-                    } else {
-                        eprintln!("Error updating message: {}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            if e.http_status() == Some(StatusCode::NotFound) {
-                println!("Unable to update message, queue not found");
-            } else if e.http_status() == Some(StatusCode::Forbidden) {
-                println!("Unable to update message, you do not have permission to update messages from this queue. Please check your credentials.");
-            } else {
-                eprintln!("Error updating message: {}", e);
-            }
-        }
-    }
-
-    // Receive messages from the queue
-    let receive_message_response = queue_client
-        .receive_messages(queue_name.as_str(), None)
-        .await;
-    match receive_message_response {
-        Ok(response) => {
-            println!("Successfully received messages: {:?}", response);
-            let messages = response.into_body().await?;
-            for msg in messages.value.unwrap() {
-                println!("Received message: {:?}", msg.message_text.unwrap());
-            }
-        }
-        Err(e) => {
-            if e.http_status() == Some(StatusCode::NotFound) {
-                // Handle the case where the queue does not exist
-                // This is a common case when trying to receive messages from a queue that has already been deleted.
-                println!("Unable to receive messages, queue not found");
-            } else if e.http_status() == Some(StatusCode::Forbidden) {
-                // Handle the case where the user does not have permission to receive messages
-                // This can happen if the credentials used do not have the necessary permissions.
-                println!("Unable to receive messages, you do not have permission to receive messages from this queue. Please check your credentials.");
-            } else {
-                eprintln!("Error receiving messages: {}", e);
-            }
-        }
-    }
-
-    // Delete the queue after use
-    let delete_response = queue_client.delete(queue_name.as_str(), None).await;
-    match delete_response {
-        Ok(response) => println!("Successfully deleted queue: {:?}", response),
-        Err(e) => eprintln!("Error deleting queue: {}", e),
-    }
-
-    // Delete a non-existent queue
-    let delete_non_existent_response = queue_client
+    let result = queue_client
         .delete_if_exists("non-existent-queue", None)
         .await;
-    match delete_non_existent_response {
-        Ok(response) => println!(
-            "Did not error when deleting non-existent queue: {:?}",
-            response
-        ),
-        Err(e) => eprintln!("Error deleting non-existent queue: {}", e),
-    }
+    log_operation_result(&result, "delete_if_exists");
 
     Ok(())
 }

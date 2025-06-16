@@ -1,31 +1,28 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::generated::clients::{
-    AzureQueueStorageClient as GeneratedQueueClient, AzureQueueStorageClientOptions,
+use crate::generated::{
+    clients::{AzureQueueStorageClient as GeneratedQueueClient, AzureQueueStorageClientOptions},
+    models::{
+        AzureQueueStorageMessageIdOperationsClientDeleteOptions,
+        AzureQueueStorageMessageIdOperationsClientUpdateOptions,
+        AzureQueueStorageMessagesOperationsClientDequeueOptions,
+        AzureQueueStorageMessagesOperationsClientEnqueueOptions,
+        AzureQueueStorageQueueOperationsClientCreateOptions,
+        AzureQueueStorageQueueOperationsClientDeleteOptions, ListOfDequeuedMessageItem,
+        ListOfEnqueuedMessage, QueueApiVersion, QueueMessage, ServicePropertiesCompType,
+        StorageServicePropertiesResponse,
+    },
 };
-use crate::generated::models::{
-    AzureQueueStorageMessageIdOperationsClientDeleteOptions,
-    AzureQueueStorageMessageIdOperationsClientUpdateOptions,
-    AzureQueueStorageMessagesOperationsClientDequeueOptions,
-    AzureQueueStorageMessagesOperationsClientEnqueueOptions,
-    AzureQueueStorageQueueOperationsClientCreateOptions,
-    AzureQueueStorageQueueOperationsClientDeleteOptions, ListOfDequeuedMessageItem,
-    ListOfEnqueuedMessage, QueueApiVersion, QueueMessage, ServicePropertiesCompType,
-    StorageServicePropertiesResponse,
-};
-use azure_core::http::StatusCode;
-use azure_core::xml;
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        Context, Method, Request, RequestContent, Response, Url, XmlFormat,
+        Context, Method, Request, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
-    Bytes, Result,
+    xml, Bytes, Result,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 /// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
 pub struct QueueClient {
