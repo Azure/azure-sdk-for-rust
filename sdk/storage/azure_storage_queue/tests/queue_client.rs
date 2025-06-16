@@ -2,7 +2,9 @@ use azure_core::{http::ClientOptions, Result};
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::clients::AzureQueueStorageClientOptions;
 use azure_storage_queue::clients::QueueClient;
+use azure_storage_queue::ListOfEnqueuedMessage;
 use once_cell::sync::Lazy;
+use quick_xml::de::from_str;
 use std::option::Option;
 use uuid::Uuid;
 
@@ -258,6 +260,69 @@ async fn delete_messages(ctx: TestContext) -> Result<()> {
 
     // Clean up by deleting the queue - this always executes
     queue_client.delete(&queue_name, None).await.unwrap();
+
+    // Return the test result
+    test_result?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn delete_message(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await?;
+    let queue_name = format!("test-delete-message-{}", QUEUE_SUFFIX.as_str());
+
+    // Create a queue if it does not exist
+    queue_client.create_if_not_exists(&queue_name, None).await?;
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        // Send a message to the queue
+        // Note: The message ID and pop receipt are required for deletion, so we need to capture them.
+        let send_message_response = queue_client
+            .send_message(
+                queue_name.as_str(),
+                "Example message created from Rust, ready for deletion",
+                None,
+            )
+            .await?;
+
+        let (_status_code, _headers, properties) = send_message_response.deconstruct();
+        let xml = properties.collect_string().await?;
+        let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml).unwrap();
+        // Get the first message from the vector
+        let enqueued_message = queue_messages_list
+            .value
+            .as_ref()
+            .and_then(|msgs| msgs.first())
+            .ok_or("No messages found in response")
+            .unwrap();
+
+        let pop_receipt = enqueued_message
+            .pop_receipt
+            .as_ref()
+            .ok_or("PopReceipt not found")
+            .unwrap();
+        let message_id = enqueued_message
+            .message_id
+            .as_ref()
+            .ok_or("MessageId not found")
+            .unwrap();
+
+        let delete_response = queue_client
+            .delete_message(queue_name.as_str(), message_id, pop_receipt)
+            .await?;
+        assert!(
+            delete_response.status().is_success(),
+            "Expected successful status code, got {}",
+            delete_response.status(),
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    //queue_client.delete(&queue_name, None).await.unwrap();
 
     // Return the test result
     test_result?;

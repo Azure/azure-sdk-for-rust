@@ -421,6 +421,7 @@ dependencies = [
  "azure_identity",
  "futures",
  "once_cell",
+ "quick-xml",
  "rand",
  "serde",
  "serde_json",

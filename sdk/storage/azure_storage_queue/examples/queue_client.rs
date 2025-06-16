@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use azure_core::http::StatusCode;
 use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::QueueClient;
+use azure_storage_queue::QueueMessageList;
+use quick_xml::de::from_str;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -111,7 +113,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await;
     match send_message_response {
-        Ok(response) => println!("Successfully sent messages: {:?}", response),
+        Ok(response) => {
+            println!("Successfully sent messages: {:?}", response);
+        }
         Err(e) => {
             if e.http_status() == Some(StatusCode::NotFound) {
                 // Handle the case where the queue does not exist
@@ -123,6 +127,66 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Unable to send messages, you do not have permission to send messages to this queue. Please check your credentials.");
             } else {
                 eprintln!("Error sending messages: {}", e);
+            }
+        }
+    }
+
+    // Send a message to the queue and then delete it
+    let send_message_response = queue_client
+        .send_message(
+            queue_name.as_str(),
+            "Example message created from Rust, ready for deletion",
+            None,
+        )
+        .await;
+    match send_message_response {
+        Ok(response) => {
+            let (_status_code, _headers, properties) = response.deconstruct();
+            let xml = properties.collect_string().await?;
+            let queue_messages_list: QueueMessageList = from_str(&xml)?;
+            println!("xml response: {:#?}", xml);
+            println!("queue_messages_list: {:#?}", queue_messages_list.value);
+
+            // Get the first message from the vector
+            let enqueued_message = &(queue_messages_list
+                .value
+                .ok_or("No messages found in the queue")?[0]);
+            let pop_receipt = enqueued_message
+                .pop_receipt
+                .as_ref()
+                .ok_or("PopReceipt not found")?;
+            let message_id = enqueued_message
+                .message_id
+                .as_ref()
+                .ok_or("MessageId not found")?;
+
+            println!(
+                "Successfully sent message with pop receipt: {:?} and message ID: {:?}",
+                pop_receipt, message_id
+            );
+            let delete_response = queue_client
+                .delete_message(queue_name.as_str(), message_id, pop_receipt)
+                .await;
+            match delete_response {
+                Ok(response) => println!("Successfully deleted message: {:?}", response),
+                Err(e) => {
+                    if e.http_status() == Some(StatusCode::NotFound) {
+                        println!("Unable to delete message, it may not exist or has already been deleted.");
+                    } else if e.http_status() == Some(StatusCode::Forbidden) {
+                        println!("Unable to delete message, you do not have permission to delete this message from this queue. Please check your credentials.");
+                    } else {
+                        eprintln!("Error deleting message: {}", e);
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            if e.http_status() == Some(StatusCode::NotFound) {
+                println!("Unable to delete message, queue not found");
+            } else if e.http_status() == Some(StatusCode::Forbidden) {
+                println!("Unable to delete message, you do not have permission to delete messages from this queue. Please check your credentials.");
+            } else {
+                eprintln!("Error deleting message: {}", e);
             }
         }
     }

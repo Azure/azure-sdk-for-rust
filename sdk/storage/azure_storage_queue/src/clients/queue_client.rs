@@ -188,32 +188,36 @@ impl QueueClient {
         }
     }
 
+    /// Deletes all messages in the specified queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_name` - The name of the queue from which to delete messages.
+    ///
+    /// Returns a `Response` indicating the result of the operation.
     pub async fn delete_messages(&self, queue_name: &str) -> Result<Response<()>> {
-        let mut url = self.client.endpoint.clone();
-        let ctx = Context::new();
+        let messages_client = self
+            .client
+            .get_azure_queue_storage_messages_operations_client();
 
-        url.path_segments_mut()
-            .expect("Invalid URL")
-            .push(queue_name);
-        url.path_segments_mut()
-            .expect("Invalid URL")
-            .push("messages");
-        // url.query_pairs_mut()
-        //     .append_pair("api-version", &self.client.api_version);
-
-        let mut request = Request::new(url, Method::Delete);
-        // request.insert_header("accept", "application/xml");
-
-        request.insert_header("version", self.version.to_string());
-        request.insert_header("x-ms-version", self.version.to_string());
-
-        self.client
-            .pipeline
-            .send(&ctx, &mut request)
-            .await
-            .map(Into::into)
+        let result = messages_client
+            .clear(queue_name, self.version.clone(), None)
+            .await?;
+        Ok(result)
     }
 
+    /// Sets the metadata for the specified queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_name` - The name of the queue for which to set metadata.
+    /// * `metadata` - A map of metadata key-value pairs to set for the queue. If `None`, no metadata will be set.
+    ///
+    /// Returns a `Response` indicating the result of the operation.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the request fails or if the queue does not exist.
     pub async fn set_metadata(
         &self,
         queue_name: &str,
@@ -285,6 +289,13 @@ impl QueueClient {
             .map(Into::into)
     }
 
+    /// Sends a message to the specified queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_name` - The name of the queue to which the message will be sent.
+    /// * `message` - The message to be sent to the queue.
+    /// * `options` - Optional parameters for the enqueue operation.
     pub async fn send_message(
         &self,
         queue_name: &str,
@@ -305,5 +316,45 @@ impl QueueClient {
                 options,
             )
             .await
+    }
+
+    /// Deletes a specific message from the queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_name` - The name of the queue from which to delete the message.
+    /// * `message_id` - The ID of the message to delete.
+    /// * `pop_receipt` - The pop receipt of the message to delete.
+    ///
+    /// Returns a `Response` indicating the result of the operation.
+    pub async fn delete_message(
+        &self,
+        queue_name: &str,
+        message_id: &str,
+        pop_receipt: &str,
+    ) -> Result<Response<()>> {
+        let mut url = self.client.endpoint.clone();
+        let ctx = Context::new();
+
+        url.path_segments_mut()
+            .expect("Invalid URL")
+            .push(queue_name);
+        url.path_segments_mut()
+            .expect("Invalid URL")
+            .push("messages");
+        url.path_segments_mut()
+            .expect("Invalid URL")
+            .push(message_id);
+        url.query_pairs_mut().append_pair("popreceipt", pop_receipt);
+
+        let mut request = Request::new(url, Method::Delete);
+        request.insert_header("version", self.version.to_string());
+        request.insert_header("x-ms-version", self.version.to_string());
+
+        self.client
+            .pipeline
+            .send(&ctx, &mut request)
+            .await
+            .map(Into::into)
     }
 }
