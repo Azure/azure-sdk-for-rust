@@ -27,6 +27,7 @@ use std::{collections::HashMap, sync::Arc};
 /// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
 pub struct QueueClient {
     pub(super) endpoint: Url,
+    pub(super) queue_name: String,
     pub(super) client: GeneratedQueueClient,
     pub(super) version: QueueApiVersion,
 }
@@ -41,6 +42,7 @@ impl QueueClient {
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
+        queue_name: &str,
         credential: Arc<dyn TokenCredential>,
         options: Option<AzureQueueStorageClientOptions>,
     ) -> Result<Self> {
@@ -54,6 +56,7 @@ impl QueueClient {
         )?;
         Ok(Self {
             endpoint: endpoint.parse()?,
+            queue_name: queue_name.to_string(),
             client,
             version: QueueApiVersion::StringValue2018_03_28,
         })
@@ -63,19 +66,16 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `queue_name` - The queue name.
-    /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     ///
     /// Will fail if the queue already exists.
     pub async fn create(
         &self,
-        queue_name: &str,
         options: Option<AzureQueueStorageQueueOperationsClientCreateOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client
             .get_azure_queue_storage_queue_operations_client()
-            .create(queue_name, self.version.clone(), options)
+            .create(&self.queue_name, self.version.clone(), options)
             .await
     }
 
@@ -83,16 +83,14 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `queue_name` - The queue name.
     /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     pub async fn create_if_not_exists(
         &self,
-        queue_name: &str,
         options: Option<AzureQueueStorageQueueOperationsClientCreateOptions<'_>>,
     ) -> Result<Response<()>> {
         // Attempt to create the queue, if it already exists, this will return an error.
-        match self.create(queue_name, options).await {
+        match self.create(options).await {
             Ok(response) => Ok(response),
             Err(e) if e.http_status().unwrap() == StatusCode::Conflict => {
                 // If the error is a conflict (queue already exists), we return Ok with no content.
@@ -110,17 +108,15 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `queue_name` - The queue name.
     /// * `options` - Optional parameters for the request.
     ///
     /// This method will not fail if the queue does not exist; it will return a 204 No Content response.
     pub async fn delete_if_exists(
         &self,
-        queue_name: &str,
         options: Option<AzureQueueStorageQueueOperationsClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         // Attempt to delete the queue, if it does not exist, this will return an error.
-        match self.delete(queue_name, options).await {
+        match self.delete(options).await {
             Ok(response) => Ok(response),
             Err(e) if e.http_status().unwrap() == StatusCode::NotFound => {
                 // If the error is a not found (queue does not exist), we return Ok with no content.
@@ -138,21 +134,19 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `queue_name` - The queue name.
-    /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     pub async fn delete(
         &self,
-        queue_name: &str,
         options: Option<AzureQueueStorageQueueOperationsClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client
             .get_azure_queue_storage_queue_operations_client()
-            .delete(queue_name, self.version.clone(), options)
+            .delete(&self.queue_name, self.version.clone(), options)
             .await
     }
 
     /// Retrieves the properties of the specified queue service.
+    // TODO: Validate that this is correctly implemented. This returns properties for the entire service, not just a single queue.
     pub async fn get_properties(
         &self,
     ) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
@@ -169,13 +163,9 @@ impl QueueClient {
 
     /// Checks if a queue with the specified name exists.
     ///
-    /// # Arguments
-    ///
-    /// * `queue_name` - The name of the queue to check.
-    ///
     /// Returns `Ok(true)` if the queue exists, `Ok(false)` if it does not exist, or an error if the request fails for any other reason.
-    pub async fn exists(&self, queue_name: &str) -> Result<bool> {
-        match self.get_metadata(queue_name).await {
+    pub async fn exists(&self) -> Result<bool> {
+        match self.get_metadata().await {
             Ok(_) => Ok(true),
             Err(e) if e.http_status().unwrap() == StatusCode::NotFound => {
                 // If the queue does not exist, we return false.
@@ -190,18 +180,14 @@ impl QueueClient {
 
     /// Deletes all messages in the specified queue.
     ///
-    /// # Arguments
-    ///
-    /// * `queue_name` - The name of the queue from which to delete messages.
-    ///
     /// Returns a `Response` indicating the result of the operation.
-    pub async fn delete_messages(&self, queue_name: &str) -> Result<Response<()>> {
+    pub async fn delete_messages(&self) -> Result<Response<()>> {
         let messages_client = self
             .client
             .get_azure_queue_storage_messages_operations_client();
 
         let result = messages_client
-            .clear(queue_name, self.version.clone(), None)
+            .clear(&self.queue_name, self.version.clone(), None)
             .await?;
         Ok(result)
     }
@@ -210,7 +196,6 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `queue_name` - The name of the queue for which to set metadata.
     /// * `metadata` - A map of metadata key-value pairs to set for the queue. If `None`, no metadata will be set.
     ///
     /// Returns a `Response` indicating the result of the operation.
@@ -220,7 +205,6 @@ impl QueueClient {
     /// Returns an error if the request fails or if the queue does not exist.
     pub async fn set_metadata(
         &self,
-        queue_name: &str,
         metadata: Option<HashMap<&str, &str>>,
     ) -> Result<Response<()>> {
         let mut url = self.client.endpoint.clone();
@@ -228,7 +212,7 @@ impl QueueClient {
 
         url.path_segments_mut()
             .expect("Invalid URL")
-            .push(queue_name);
+            .push(&self.queue_name);
         url.query_pairs_mut()
             .append_pair("api-version", &self.client.api_version);
         url.query_pairs_mut().append_pair("comp", "metadata");
@@ -257,21 +241,17 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `queue_name` - The name of the queue to retrieve metadata for.
     /// * `version` - Specifies the version of the operation to use for this request.
     ///
     /// Returns a `Response` containing the metadata if the queue exists, or an error if it does not.
-    async fn get_metadata(
-        &self,
-        queue_name: &str,
-    ) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
+    async fn get_metadata(&self) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
         let mut url = self.client.endpoint.clone();
 
         let ctx = Context::new();
 
         url.path_segments_mut()
             .expect("Invalid URL")
-            .push(queue_name);
+            .push(&self.queue_name);
         url.query_pairs_mut()
             .append_pair("api-version", &self.client.api_version);
         url.query_pairs_mut().append_pair("comp", "metadata");
@@ -293,12 +273,10 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `queue_name` - The name of the queue to which the message will be sent.
     /// * `message` - The message to be sent to the queue.
     /// * `options` - Optional parameters for the enqueue operation.
     pub async fn send_message(
         &self,
-        queue_name: &str,
         message: &str,
         options: Option<AzureQueueStorageMessagesOperationsClientEnqueueOptions<'_>>,
     ) -> Result<Response<ListOfEnqueuedMessage, XmlFormat>> {
@@ -310,7 +288,7 @@ impl QueueClient {
         self.client
             .get_azure_queue_storage_messages_operations_client()
             .enqueue(
-                queue_name,
+                &self.queue_name,
                 self.version.clone(),
                 RequestContent::try_from(xml_body)?,
                 options,
@@ -322,14 +300,12 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `queue_name` - The name of the queue from which to delete the message.
     /// * `message_id` - The ID of the message to delete.
     /// * `pop_receipt` - The pop receipt of the message to delete.
     ///
     /// Returns a `Response` indicating the result of the operation.
     pub async fn delete_message(
         &self,
-        queue_name: &str,
         message_id: &str,
         pop_receipt: &str,
         options: Option<AzureQueueStorageMessageIdOperationsClientDeleteOptions<'_>>,
@@ -337,7 +313,7 @@ impl QueueClient {
         self.client
             .get_azure_queue_storage_message_id_operations_client()
             .delete(
-                queue_name,
+                &self.queue_name,
                 message_id,
                 pop_receipt,
                 self.version.clone(),
@@ -350,7 +326,6 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `queue_name` - The name of the queue containing the message to update.
     /// * `messageid` - The ID of the message to update.
     /// * `pop_receipt` - The pop receipt of the message to update.
     /// * `visibilitytimeout` - The new visibility timeout for the message, in seconds.
@@ -358,7 +333,6 @@ impl QueueClient {
     /// * `options` - Optional parameters for the update operation.
     pub async fn update_message(
         &self,
-        queue_name: &str,
         messageid: &str,
         pop_receipt: &str,
         visibility_timeout: i32,
@@ -367,7 +341,7 @@ impl QueueClient {
         self.client
             .get_azure_queue_storage_message_id_operations_client()
             .update(
-                queue_name,
+                &self.queue_name,
                 messageid,
                 pop_receipt,
                 visibility_timeout,
@@ -379,7 +353,6 @@ impl QueueClient {
 
     pub async fn receive_message(
         &self,
-        queue_name: &str,
         options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
     ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
         let options = Some(AzureQueueStorageMessagesOperationsClientDequeueOptions {
@@ -387,17 +360,16 @@ impl QueueClient {
             ..options.unwrap_or_default()
         });
 
-        self.receive_messages(queue_name, options).await
+        self.receive_messages(options).await
     }
 
     pub async fn receive_messages(
         &self,
-        queue_name: &str,
         options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
     ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
         self.client
             .get_azure_queue_storage_messages_operations_client()
-            .dequeue(queue_name, self.version.clone(), options)
+            .dequeue(&self.queue_name, self.version.clone(), options)
             .await
     }
 }

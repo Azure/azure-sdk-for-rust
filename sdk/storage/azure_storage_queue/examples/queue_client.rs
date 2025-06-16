@@ -68,10 +68,9 @@ where
 
 async fn send_and_delete_message(
     queue_client: &QueueClient,
-    queue_name: &str,
     message: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let result = queue_client.send_message(queue_name, message, None).await;
+    let result = queue_client.send_message(message, None).await;
 
     if let Ok(response) = result {
         let messages = response.into_body().await?;
@@ -80,7 +79,7 @@ async fn send_and_delete_message(
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
                 let delete_result = queue_client
-                    .delete_message(queue_name, &message_id, &pop_receipt, None)
+                    .delete_message(&message_id, &pop_receipt, None)
                     .await;
                 log_operation_result(&delete_result, "delete_message");
             }
@@ -92,10 +91,9 @@ async fn send_and_delete_message(
 
 async fn send_and_update_message(
     queue_client: &QueueClient,
-    queue_name: &str,
     message: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let result = queue_client.send_message(queue_name, message, None).await;
+    let result = queue_client.send_message(message, None).await;
 
     if let Ok(response) = result {
         let messages = response.into_body().await?;
@@ -116,13 +114,7 @@ async fn send_and_update_message(
                         ..Default::default()
                     };
                 let update_result = queue_client
-                    .update_message(
-                        queue_name,
-                        &message_id.clone(),
-                        &pop_receipt,
-                        1,
-                        Some(update_option),
-                    )
+                    .update_message(&message_id.clone(), &pop_receipt, 1, Some(update_option))
                     .await;
                 log_operation_result(&update_result, "update_message");
             }
@@ -134,13 +126,12 @@ async fn send_and_update_message(
 
 async fn receive_and_process_messages(
     queue_client: &QueueClient,
-    queue_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     _ = queue_client
-        .send_message(queue_name, "Message 1 from Rust Queue SDK", None)
+        .send_message("Message 1 from Rust Queue SDK", None)
         .await;
     _ = queue_client
-        .send_message(queue_name, "Message 2 from Rust Queue SDK", None)
+        .send_message("Message 2 from Rust Queue SDK", None)
         .await;
 
     let options = AzureQueueStorageMessagesOperationsClientDequeueOptions {
@@ -148,9 +139,7 @@ async fn receive_and_process_messages(
         ..Default::default()
     };
 
-    let result = queue_client
-        .receive_messages(queue_name, Some(options))
-        .await;
+    let result = queue_client.receive_messages(Some(options)).await;
     log_operation_result(&result, "receive_messages");
 
     if let Ok(response) = result {
@@ -187,65 +176,61 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    let queue_client = QueueClient::new(&endpoint, credential, None)?;
     let queue_name = get_random_queue_name();
+    let queue_client = QueueClient::new(&endpoint, &queue_name, credential.clone(), None)?;
 
     // Get queue service properties
     let result = queue_client.get_properties().await;
     log_operation_result(&result, "get_properties");
 
     // Create and manage queue
-    let result = queue_client.create(&queue_name, None).await;
+    let result = queue_client.create(None).await;
     log_operation_result(&result, "create");
 
-    let result = queue_client.exists(&queue_name).await;
+    let result = queue_client.exists().await;
     log_operation_result(&result, "check_exists");
 
-    let result = queue_client.exists("non-existent-queue").await;
-    log_operation_result(&result, "check_non_existent");
-
-    let result = queue_client.create_if_not_exists(&queue_name, None).await;
+    let result = queue_client.create_if_not_exists(None).await;
     log_operation_result(&result, "create_if_not_exists");
 
     // Set queue metadata
     let metadata = HashMap::from([("key1", "value1"), ("key2", "value2")]);
-    let result = queue_client.set_metadata(&queue_name, Some(metadata)).await;
+    let result = queue_client.set_metadata(Some(metadata)).await;
     log_operation_result(&result, "set_metadata");
 
-    let result = queue_client
-        .send_message(&queue_name, "Example Message", None)
-        .await;
+    let result = queue_client.send_message("Example Message", None).await;
     log_operation_result(&result, "send_message");
 
     send_and_update_message(
         &queue_client,
-        &queue_name,
         "Example message created from Rust, ready for update",
     )
     .await?;
 
     // Delete messages
-    let result = queue_client.delete_messages(&queue_name).await;
+    let result = queue_client.delete_messages().await;
     log_operation_result(&result, "delete_messages");
 
     // Send and process messages
     send_and_delete_message(
         &queue_client,
-        &queue_name,
         "Example message created from Rust, ready for deletion",
     )
     .await?;
 
     // Receive messages
-    receive_and_process_messages(&queue_client, &queue_name).await?;
+    receive_and_process_messages(&queue_client).await?;
 
     // Cleanup
-    let result = queue_client.delete(&queue_name, None).await;
+    let result = queue_client.delete(None).await;
     log_operation_result(&result, "delete");
 
-    let result = queue_client
-        .delete_if_exists("non-existent-queue", None)
-        .await;
+    let non_existing_queue_client =
+        QueueClient::new(&endpoint, "non-existent-queue", credential.clone(), None)?;
+    let result = non_existing_queue_client.exists().await;
+    log_operation_result(&result, "check_non_existent");
+
+    let result = non_existing_queue_client.delete_if_exists(None).await;
     log_operation_result(&result, "delete_if_exists");
 
     Ok(())
