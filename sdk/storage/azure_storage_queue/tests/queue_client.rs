@@ -249,7 +249,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
         // Note: The message ID and pop receipt are required for deletion, so we need to capture them.
         let send_message_response = queue_client
             .send_message(
-                queue_name.clone(),
+                queue_name),
                 "Example message created from Rust, ready for deletion",
                 None,
             )
