@@ -79,10 +79,6 @@ async fn send_and_delete_message(
         if let Some(message) = messages.value.and_then(|msgs| msgs.first().cloned()) {
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
-                println!(
-                    "Message ready for deletion - ID: {}, Receipt: {}",
-                    message_id, pop_receipt
-                );
                 let delete_result = queue_client
                     .delete_message(queue_name, &message_id, &pop_receipt, None)
                     .await;
@@ -107,10 +103,6 @@ async fn send_and_update_message(
         if let Some(message) = messages.value.and_then(|msgs| msgs.first().cloned()) {
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
-                println!(
-                    "Message ready for update - ID: {}, Receipt: {}",
-                    message_id, pop_receipt
-                );
                 let update_option =
                     azure_storage_queue::AzureQueueStorageMessageIdOperationsClientUpdateOptions {
                         // Serialize the message text as bytes for the update
@@ -166,7 +158,7 @@ async fn receive_and_process_messages(
         if let Some(messages) = messages.value {
             for msg in messages {
                 if let Some(text) = msg.message_text {
-                    println!("Received message: {}", text);
+                    println!("Successfully received message: {}", text);
                 }
             }
         }
@@ -180,7 +172,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
 
     // Retrieve the storage account endpoint from environment variable.
-    let endpoint = std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT")?;
+    let endpoint = std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT");
+    let endpoint = match endpoint {
+        Ok(url) => url,
+        Err(_) => {
+            eprintln!("Environment variable AZURE_QUEUE_STORAGE_ACCOUNT is not set");
+            std::process::exit(1);
+        }
+    };
 
     // Validate endpoint format
     if !endpoint.ends_with("/") || !endpoint.starts_with("https://") {
