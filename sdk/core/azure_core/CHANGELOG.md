@@ -19,7 +19,7 @@ the asynchronous runtime used by the Azure SDK.
 
 - Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
 - Added `Page` trait to facilitate the `ItemIterator`.
-- Added `PageIterator` to asynchronously iterator all pages.
+- Added `PageIterator` to asynchronously iterate all pages.
 
 ### Breaking Changes
 
