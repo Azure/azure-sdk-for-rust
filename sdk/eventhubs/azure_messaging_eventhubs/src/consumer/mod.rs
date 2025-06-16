@@ -6,7 +6,7 @@
 pub(crate) mod event_receiver;
 
 use crate::{
-    common::{recoverable_connection::RecoverableConnection, ManagementInstance},
+    common::{recoverable::RecoverableConnection, ManagementInstance},
     models::{ConsumerClientDetails, EventHubPartitionProperties, EventHubProperties},
     RetryOptions,
 };
@@ -31,7 +31,7 @@ use tracing::{debug, trace};
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
-    connection_manager: Arc<RecoverableConnection>,
+    recoverable_connection: Arc<RecoverableConnection>,
     consumer_group: String,
     eventhub: String,
     endpoint: Url,
@@ -95,7 +95,7 @@ impl ConsumerClient {
         let retry_options = options.retry_options.unwrap_or_default();
         Ok(Self {
             instance_id: options.instance_id,
-            connection_manager: RecoverableConnection::new(
+            recoverable_connection: RecoverableConnection::new(
                 url.clone(),
                 options.application_id,
                 options.custom_endpoint,
@@ -146,7 +146,8 @@ impl ConsumerClient {
     /// }
     /// ```
     pub async fn close(self) -> Result<()> {
-        self.connection_manager.close_connection().await
+        trace!("Closing consumer client for {}.", self.endpoint);
+        self.recoverable_connection.close_connection().await
     }
 
     /// Retrieves the details of the consumer client.
@@ -166,7 +167,7 @@ impl ConsumerClient {
                     )
                 })?
                 .to_string(),
-            client_id: self.connection_manager.get_connection_id().to_string(),
+            client_id: self.recoverable_connection.get_connection_id().to_string(),
         })
     }
 
@@ -271,7 +272,7 @@ impl ConsumerClient {
 
         debug!("Receiver attached on partition {partition_id}.");
         Ok(EventReceiver::new(
-            self.connection_manager.clone(),
+            self.recoverable_connection.clone(),
             receiver_options,
             message_source,
             source_url,
@@ -373,11 +374,11 @@ impl ConsumerClient {
     }
 
     async fn get_management_instance(&self) -> Result<Arc<ManagementInstance>> {
-        Ok(ManagementInstance::new(self.connection_manager.clone()))
+        Ok(ManagementInstance::new(self.recoverable_connection.clone()))
     }
 
     async fn ensure_connection(&self) -> Result<()> {
-        self.connection_manager.ensure_connection().await?;
+        self.recoverable_connection.ensure_connection().await?;
         Ok(())
     }
 }
