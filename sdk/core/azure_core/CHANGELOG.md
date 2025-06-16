@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace
+the asynchronous runtime used by the Azure SDK.
+
 ### Breaking Changes
 
 ### Bugs Fixed
@@ -16,7 +19,7 @@
 
 - Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
 - Added `Page` trait to facilitate the `ItemIterator`.
-- Added `PageIterator` to asynchronously iterator all pages.
+- Added `PageIterator` to asynchronously iterate all pages.
 
 ### Breaking Changes
 

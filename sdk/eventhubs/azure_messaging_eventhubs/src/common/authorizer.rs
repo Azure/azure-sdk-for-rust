@@ -5,10 +5,10 @@ use super::recoverable_connection::RecoverableConnection;
 use crate::error::{ErrorKind, EventHubsError};
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
+    async_runtime::{get_async_runtime, SpawnedTask},
     credentials::{AccessToken, TokenCredential},
     error::ErrorKind as AzureErrorKind,
     http::Url,
-    task::{new_task_spawner, SpawnedTask},
     Result,
 };
 use azure_core_amqp::AmqpClaimsBasedSecurityApis as _;
@@ -113,8 +113,8 @@ impl Authorizer {
             self.authorization_refresher.get_or_init(|| {
                 debug!("Starting authorization refresh task.");
                 let self_clone = self.clone();
-                let spawner = new_task_spawner();
-                spawner.spawn(Box::pin(self_clone.refresh_tokens_task()))
+                let async_runtime = get_async_runtime();
+                async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
             });
         } else {
             debug!("Token already exists for path: {path}");

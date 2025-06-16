@@ -20,12 +20,12 @@ you can find the [package on crates.io][Package (crates.io)].
 
 The main shared concepts of `azure_core` - and Azure SDK libraries using `azure_core` - include:
 
-- Configuring service clients, e.g. configuring retries, logging (`ClientOptions`).
-- Accessing HTTP response details (`Response<T>`).
-- Paging and asynchronous streams (`Pager<T>`).
-- Errors from service requests in a consistent fashion. (`azure_core::Error`).
-- Customizing requests (`ClientOptions`).
-- Abstractions for representing Azure SDK credentials. (`TokenCredentials`).
+-   Configuring service clients, e.g. configuring retries, logging (`ClientOptions`).
+-   Accessing HTTP response details (`Response<T>`).
+-   Paging and asynchronous streams (`Pager<T>`).
+-   Errors from service requests in a consistent fashion. (`azure_core::Error`).
+-   Customizing requests (`ClientOptions`).
+-   Abstractions for representing Azure SDK credentials. (`TokenCredentials`).
 
 ### Thread safety
 
@@ -34,23 +34,25 @@ We guarantee that all client instance methods are thread-safe and independent of
 ### Additional concepts
 
 <!-- CLIENT COMMON BAR -->
+
 [Client options](#configuring-service-clients-using-clientoptions) |
 [Accessing the response](#accessing-http-response-details-using-responset) |
 [Handling Errors Results](#handling-errors-results) |
 [Consuming Service Methods Returning `Pager<T>`](#consuming-service-methods-returning-pagert)
+
 <!-- CLIENT COMMON BAR -->
 
 ## Features
 
-- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
-- `hmac_openssl`: configures HMAC using `openssl`.
-- `hmac_rust`: configures HMAC using pure Rust.
-- `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
-- `reqwest_deflate` (default): enables deflate compression for `reqwest`.
-- `reqwest_gzip` (default): enables gzip compression for `reqwest`.
-- `reqwest_rustls`: enables `reqwest`'s `rustls-tls-native-roots-no-provider` feature,
-- `tokio`: enables and sets `tokio` as the default async runtime.
-- `xml`: enables XML support.
+-   `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
+-   `hmac_openssl`: configures HMAC using `openssl`.
+-   `hmac_rust`: configures HMAC using pure Rust.
+-   `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
+-   `reqwest_deflate` (default): enables deflate compression for `reqwest`.
+-   `reqwest_gzip` (default): enables gzip compression for `reqwest`.
+-   `reqwest_rustls`: enables `reqwest`'s `rustls-tls-native-roots-no-provider` feature,
+-   `tokio`: enables and sets `tokio` as the default async runtime.
+-   `xml`: enables XML support.
 
 ## Examples
 
@@ -243,6 +245,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+### Replacing the async runtime
+
+Internally, the Azure SDK uses either the `tokio` async runtime (with the `tokio` feature), or it implements asynchronous functionality using functions in the `std` namespace.
+
+If your application uses a different asynchronous runtime, you can replace the asynchronous runtime used for internal functions by providing your own implementation of the `azure_core::async_runtime::AsyncRuntime` trait.
+
+You provide the implementation by calling the `set_async_runtime()` API:
+
+```rust no_run
+use azure_core::async_runtime::{
+     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask};
+use std::sync::Arc;
+use futures::FutureExt;
+
+struct CustomRuntime;
+
+impl AsyncRuntime for CustomRuntime {
+    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
+      unimplemented!("Custom spawn not implemented");
+    }
+    fn sleep(&self, duration: std::time::Duration) -> TaskFuture {
+      unimplemented!("Custom sleep not implemented");
+    }
+  }
+
+  set_async_runtime(Arc::new(CustomRuntime)).expect("Failed to set async runtime");
+```
+
+There can only be one async runtime set in a given process, so attempts to set the async runtime multiple times will fail.
 
 ## Troubleshooting
 
