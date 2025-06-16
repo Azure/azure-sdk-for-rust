@@ -23,7 +23,7 @@ use azure_core_amqp::{
     AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource, AmqpSymbol,
 };
 use std::{collections::HashMap, sync::Arc, time::Duration};
-use tracing::{debug, trace, warn};
+use tracing::{debug, span, trace, warn};
 
 /// The recoverable connection is responsible for managing the connection to the Event Hubs service.
 /// It also handles authorization and connection recovery.
@@ -34,10 +34,10 @@ use tracing::{debug, trace, warn};
 ///   1. Create a new instance of the `RecoverableConnection`.
 ///   2. Retrieve an interim object from the `RecoverableConnection`. Supported
 ///      interim objects are:
-///    - `AmqpManagement`: Used for management operations.
-///    - `AmqpSender`: Used for sending messages to the Event Hubs service.
-///    - `AmqpReceiver`: Used for receiving messages from the Event Hubs service.
-///    - `AmqpClaimsBasedSecurity`: Used for authorization operations (should not be used directly)
+///      - `AmqpManagement`: Used for management operations.
+///      - `AmqpSender`: Used for sending messages to the Event Hubs service.
+///      - `AmqpReceiver`: Used for receiving messages from the Event Hubs service.
+///      - `AmqpClaimsBasedSecurity`: Used for authorization operations (should not be used directly)
 ///   3. Use the interim object to perform operations on the Event Hubs service.
 ///
 /// Under the covers, the interim objects contain a reference back to the [`RecoverableConnection`],
@@ -45,7 +45,7 @@ use tracing::{debug, trace, warn};
 /// objects as needed.
 ///
 /// The various interim objects implement the appropriate AMQP APIs, but wrap the underlying APIs with
-/// a retry loop [`retry_azure_operation`], so that the actual client does not have to worry about retrying or recovering operations.
+/// a retry loop `Recoverable<Type>::should_retry_<type>_error()`], so that the actual client does not have to worry about retrying or recovering operations.
 ///
 /// There is a taxonomy of methods in this struct:
 ///   - `ensure_*` methods: These methods are used to ensure that the underlying connection, session, management client, cbs client, sender, or receiver is created and available.
@@ -282,7 +282,12 @@ impl RecoverableConnection {
 
     /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
     pub(super) async fn ensure_amqp_cbs(self: &Arc<Self>) -> Result<Arc<AmqpClaimsBasedSecurity>> {
-        debug!("Ensuring AMQP Claims-Based Security (CBS) client.");
+        let span = span!(
+            tracing::Level::DEBUG,
+            "ensure_amqp_cbs",
+            connection_id = self.get_connection_id()
+        );
+        let _enter = span.enter();
 
         let connection = self.ensure_connection().await?;
         let cbs_client = RecoverableClaimsBasedSecurity::create_claims_based_security(
@@ -290,7 +295,6 @@ impl RecoverableConnection {
             &self.retry_options,
         )
         .await?;
-        debug!("AMQP Claims-Based Security (CBS) client ensured.");
         Ok(cbs_client)
     }
 

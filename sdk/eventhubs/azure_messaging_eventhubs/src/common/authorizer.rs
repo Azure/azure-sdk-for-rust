@@ -174,7 +174,7 @@ impl Authorizer {
     async fn refresh_tokens_task(self: Arc<Self>) {
         let result = self.refresh_tokens().await;
         if let Err(e) = result {
-            warn!("Error refreshing tokens: {e}");
+            warn!(err=?e, "Error refreshing tokens: {e}");
         }
         debug!("Token refresher task completed.");
     }
@@ -250,8 +250,8 @@ impl Authorizer {
 
                 debug!("Token refresh times: {token_refresh_times:?}");
 
-                let jitter_min = (token_refresh_times.jitter_min.as_seconds_f64() * 1000.0) as i64;
-                let jitter_max = (token_refresh_times.jitter_max.as_seconds_f64() * 1000.0) as i64;
+                let jitter_min = token_refresh_times.jitter_min.whole_milliseconds() as i64;
+                let jitter_max = token_refresh_times.jitter_max.whole_milliseconds() as i64;
                 let expiration_jitter =
                     Duration::milliseconds(thread_rng().gen_range(jitter_min..jitter_max));
                 debug!("Expiration jitter: {expiration_jitter}");
