@@ -6,7 +6,7 @@
 use crate::generated::{
     clients::{AppendBlobClient, BlockBlobClient, PageBlobClient},
     models::{
-        AccessTier, BlobClientAbortCopyFromUrlOptions, BlobClientAbortCopyFromUrlResult,
+        AccessTierOptional, BlobClientAbortCopyFromUrlOptions, BlobClientAbortCopyFromUrlResult,
         BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResult, BlobClientBreakLeaseOptions,
         BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
         BlobClientCopyFromUrlOptions, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotOptions,
@@ -379,7 +379,7 @@ impl BlobClient {
             request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
         }
         if let Some(copy_source_tags) = options.copy_source_tags {
-            request.insert_header("x-ms-copy-source-tag-option", copy_source_tags);
+            request.insert_header("x-ms-copy-source-tag-option", copy_source_tags.to_string());
         }
         if let Some(encryption_scope) = options.encryption_scope {
             request.insert_header("x-ms-encryption-scope", encryption_scope);
@@ -413,6 +413,7 @@ impl BlobClient {
                 request.insert_header(format!("x-ms-meta-{}", k), v);
             }
         }
+        request.insert_header("x-ms-requires-sync", "true");
         if let Some(source_content_md5) = options.source_content_md5 {
             request.insert_header(
                 "x-ms-source-content-md5",
@@ -1344,7 +1345,7 @@ impl BlobClient {
     /// * `options` - Optional parameters for the request.
     pub async fn set_tier(
         &self,
-        tier: AccessTier,
+        tier: AccessTierOptional,
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<BlobClientSetTierResult, NoFormat>> {
         let options = options.unwrap_or_default();

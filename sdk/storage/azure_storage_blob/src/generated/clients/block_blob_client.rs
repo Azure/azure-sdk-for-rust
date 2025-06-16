@@ -356,7 +356,7 @@ impl BlockBlobClient {
             );
         }
         if let Some(copy_source_tags) = options.copy_source_tags {
-            request.insert_header("x-ms-copy-source-tag-option", copy_source_tags);
+            request.insert_header("x-ms-copy-source-tag-option", copy_source_tags.to_string());
         }
         if let Some(encryption_algorithm) = options.encryption_algorithm {
             request.insert_header(
