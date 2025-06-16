@@ -239,7 +239,7 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
 
 /// Deletes all messages from a queue in Azure Storage Queue service.
 #[recorded::test]
-async fn delete_messages(ctx: TestContext) -> Result<()> {
+async fn test_delete_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
     let queue_name = format!("test-delete-messages-{}", QUEUE_SUFFIX.as_str());
@@ -269,7 +269,7 @@ async fn delete_messages(ctx: TestContext) -> Result<()> {
 }
 
 #[recorded::test]
-async fn delete_message(ctx: TestContext) -> Result<()> {
+async fn test_delete_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
     let queue_name = format!("test-delete-message-{}", QUEUE_SUFFIX.as_str());
@@ -292,6 +292,7 @@ async fn delete_message(ctx: TestContext) -> Result<()> {
         let (_status_code, _headers, properties) = send_message_response.deconstruct();
         let xml = properties.collect_string().await?;
         let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml).unwrap();
+
         // Get the first message from the vector
         let enqueued_message = queue_messages_list
             .value
@@ -324,7 +325,7 @@ async fn delete_message(ctx: TestContext) -> Result<()> {
     .await;
 
     // Clean up by deleting the queue - this always executes
-    //queue_client.delete(&queue_name, None).await.unwrap();
+    queue_client.delete(&queue_name, None).await.unwrap();
 
     // Return the test result
     test_result?;
@@ -333,7 +334,7 @@ async fn delete_message(ctx: TestContext) -> Result<()> {
 
 /// Receives the first message from a queue in Azure Storage Queue service.
 #[recorded::test]
-async fn receive_message(ctx: TestContext) -> Result<()> {
+async fn test_receive_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
     let queue_name = format!("test-receive-messages-{}", QUEUE_SUFFIX.as_str());
@@ -383,7 +384,7 @@ async fn receive_message(ctx: TestContext) -> Result<()> {
 
 /// Receives all messages from a queue in Azure Storage Queue service.
 #[recorded::test]
-async fn receive_messages(ctx: TestContext) -> Result<()> {
+async fn test_receive_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording).await?;
     let queue_name = format!("test-receive-messages-{}", QUEUE_SUFFIX.as_str());

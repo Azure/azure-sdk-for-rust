@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use azure_core::http::StatusCode;
 use azure_identity::DefaultAzureCredential;
-use azure_storage_queue::QueueClient;
-use azure_storage_queue::QueueMessageList;
+use azure_storage_queue::{ListOfEnqueuedMessage, QueueClient};
+
 use quick_xml::de::from_str;
 
 #[tokio::main]
@@ -30,11 +30,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let properties_response = queue_client.get_properties().await;
     match properties_response {
         Ok(response) => {
-            let (_status_code, _headers, properties) = response.deconstruct();
-            println!(
-                "Successfully retrieved properties: {:?}",
-                properties.collect_string().await?
-            );
+            let (_status_code, _headers, _properties) = response.deconstruct();
+            println!("Successfully retrieved properties.",);
         }
         Err(e) => eprintln!("Error retrieving queue properties: {}", e),
     }
@@ -143,14 +140,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(response) => {
             let (_status_code, _headers, properties) = response.deconstruct();
             let xml = properties.collect_string().await?;
-            let queue_messages_list: QueueMessageList = from_str(&xml)?;
-            println!("xml response: {:#?}", xml);
-            println!("queue_messages_list: {:#?}", queue_messages_list.value);
+            let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml)?;
 
             // Get the first message from the vector
-            let enqueued_message = &(queue_messages_list
+            let enqueued_message = queue_messages_list
                 .value
-                .ok_or("No messages found in the queue")?[0]);
+                .as_ref()
+                .and_then(|msgs| msgs.first())
+                .ok_or("No messages found in response")?;
+
             let pop_receipt = enqueued_message
                 .pop_receipt
                 .as_ref()
