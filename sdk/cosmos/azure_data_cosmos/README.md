@@ -131,6 +131,8 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 * [Partitioning](https://learn.microsoft.com/azure/cosmos-db/partition-data)
 * [Using emulator](https://github.com/Azure/azure-documentdb-dotnet/blob/master/docs/documentdb-nosql-local-emulator.md)
 
+## Next steps
+
 ### Provide feedback
 
 If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).

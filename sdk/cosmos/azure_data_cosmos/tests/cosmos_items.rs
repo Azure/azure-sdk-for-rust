@@ -2,7 +2,7 @@
 
 mod framework;
 
-use azure_core::http::{headers::HeaderName, response, Etag};
+use azure_core::http::Etag;
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{
     clients::ContainerClient,
@@ -430,33 +430,27 @@ pub async fn item_replace_if_match_etag(context: TestContext) -> Result<(), Box<
         .await?;
 
     //Store Etag from response
-    const ETAG: HeaderName = HeaderName::from_static("etag");
-    let etag = response
+    let etag: Etag = response
         .headers()
-        .get_str(&ETAG)
-        .ok()
-        .map(|s| Etag::from(s.to_string()));
+        .get_str(&azure_core::http::headers::ETAG)
+        .expect("expected the etag to be returned")
+        .into();
 
     //Replace item with correct Etag
     item.value = 24;
     item.nested.nested_value = "Updated".into();
 
-    //could change response name to replaced item for better understanding
-    let response = container_client
+    container_client
         .replace_item(
             "Partition1",
             "Item1",
             &item,
             Some(ItemOptions {
-                if_match_etag: etag,
-                enable_content_response_on_write: false,
+                if_match_etag: Some(etag),
                 ..Default::default()
             }),
         )
         .await?;
-
-    let body = response.into_raw_body().collect_string().await?;
-    assert_eq!("", body);
 
     //Replace item with incorrect Etag
     item.value = 52;
@@ -469,25 +463,17 @@ pub async fn item_replace_if_match_etag(context: TestContext) -> Result<(), Box<
             &item,
             Some(ItemOptions {
                 if_match_etag: Some("incorrectEtag".into()),
-                enable_content_response_on_write: true,
                 ..Default::default()
             }),
         )
         .await;
 
-    match response {
-        Ok(_) => {
-            return Err(
-                "expected a 412 Precondition Failed error when using an incorrect ETag".into(),
-            );
-        }
-        Err(err) => {
-            assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
-                err.http_status()
-            );
-        }
-    }
+    assert_eq!(
+        Some(azure_core::http::StatusCode::PreconditionFailed),
+        response
+            .expect_err("expected the server to return an error")
+            .http_status()
+    );
 
     account.cleanup().await?;
     Ok(())
@@ -515,31 +501,26 @@ pub async fn item_upsert_if_match_etag(context: TestContext) -> Result<(), Box<d
         .await?;
 
     //Store Etag from response
-    const ETAG: HeaderName = HeaderName::from_static("etag");
-    let etag = response
+    let etag: Etag = response
         .headers()
-        .get_str(&ETAG)
-        .ok()
-        .map(|s| Etag::from(s.to_string()));
+        .get_str(&azure_core::http::headers::ETAG)
+        .expect("expected the etag to be returned")
+        .into();
 
     //Upsert item with correct Etag
     item.value = 24;
     item.nested.nested_value = "Updated".into();
 
-    let response = container_client
+    container_client
         .upsert_item(
             "Partition1",
             &item,
             Some(ItemOptions {
-                if_match_etag: etag,
-                enable_content_response_on_write: false,
+                if_match_etag: Some(etag),
                 ..Default::default()
             }),
         )
         .await?;
-
-    let body = response.into_raw_body().collect_string().await?;
-    assert_eq!("", body);
 
     //Upsert item with incorrect Etag
     item.value = 52;
@@ -551,25 +532,17 @@ pub async fn item_upsert_if_match_etag(context: TestContext) -> Result<(), Box<d
             &item,
             Some(ItemOptions {
                 if_match_etag: Some("incorrectEtag".into()),
-                enable_content_response_on_write: false,
                 ..Default::default()
             }),
         )
         .await;
 
-    match response {
-        Ok(_) => {
-            return Err(
-                "expected a 412 Precondition Failed error when using an incorrect ETag".into(),
-            );
-        }
-        Err(err) => {
-            assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
-                err.http_status()
-            );
-        }
-    }
+    assert_eq!(
+        Some(azure_core::http::StatusCode::PreconditionFailed),
+        response
+            .expect_err("expected the server to return an error")
+            .http_status()
+    );
 
     account.cleanup().await?;
     Ok(())
@@ -597,31 +570,26 @@ pub async fn item_delete_if_match_etag(context: TestContext) -> Result<(), Box<d
         .await?;
 
     //Store Etag from response
-    const ETAG: HeaderName = HeaderName::from_static("etag");
-    let etag = response
+    let etag: Etag = response
         .headers()
-        .get_str(&ETAG)
-        .ok()
-        .map(|s| Etag::from(s.to_string()));
+        .get_str(&azure_core::http::headers::ETAG)
+        .expect("expected the etag to be returned")
+        .into();
 
     //Delete item with correct Etag
-    let response = container_client
+    container_client
         .delete_item(
             "Partition1",
             "Item1",
             Some(ItemOptions {
-                if_match_etag: etag,
-                enable_content_response_on_write: false,
+                if_match_etag: Some(etag),
                 ..Default::default()
             }),
         )
         .await?;
 
-    let body = response.into_raw_body().collect_string().await?;
-    assert_eq!("", body);
-
     //Add item again for second delete test
-    let response = container_client
+    container_client
         .create_item("Partition1", &item, None)
         .await?;
 
@@ -632,24 +600,17 @@ pub async fn item_delete_if_match_etag(context: TestContext) -> Result<(), Box<d
             "Item1",
             Some(ItemOptions {
                 if_match_etag: Some("incorrectEtag".into()),
-                enable_content_response_on_write: false,
                 ..Default::default()
             }),
         )
         .await;
-    match response {
-        Ok(_) => {
-            return Err(
-                "expected a 412 Precondition Failed error when using an incorrect ETag".into(),
-            );
-        }
-        Err(err) => {
-            assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
-                err.http_status()
-            );
-        }
-    }
+
+    assert_eq!(
+        Some(azure_core::http::StatusCode::PreconditionFailed),
+        response
+            .expect_err("expected the server to return an error")
+            .http_status()
+    );
 
     account.cleanup().await?;
     Ok(())
@@ -677,12 +638,11 @@ pub async fn item_patch_if_match_etag(context: TestContext) -> Result<(), Box<dy
         .await?;
 
     //Store Etag from response
-    const ETAG: HeaderName = HeaderName::from_static("etag");
-    let etag = response
+    let etag: Etag = response
         .headers()
-        .get_str(&ETAG)
-        .ok()
-        .map(|s| Etag::from(s.to_string()));
+        .get_str(&azure_core::http::headers::ETAG)
+        .expect("expected the etag to be returned")
+        .into();
 
     //Patch item with correct Etag
     let patch = PatchDocument::default()
@@ -695,8 +655,7 @@ pub async fn item_patch_if_match_etag(context: TestContext) -> Result<(), Box<dy
             "Item1",
             patch,
             Some(ItemOptions {
-                if_match_etag: etag,
-                enable_content_response_on_write: false,
+                if_match_etag: Some(etag),
                 ..Default::default()
             }),
         )
@@ -707,12 +666,13 @@ pub async fn item_patch_if_match_etag(context: TestContext) -> Result<(), Box<dy
         .await?
         .into_body()
         .await?;
+
     assert_eq!("Patched", patched_item.nested.nested_value);
     assert_eq!(52, patched_item.value);
 
     //Patch item with incorrect Etag
     let patch = PatchDocument::default()
-        .with_replace("/nested/nested_value", "Patched_Incorrect")?
+        .with_replace("/nested/nested_value", "PatchedIncorrect")?
         .with_increment("/value", 15)?;
 
     let response = container_client
@@ -722,25 +682,17 @@ pub async fn item_patch_if_match_etag(context: TestContext) -> Result<(), Box<dy
             patch,
             Some(ItemOptions {
                 if_match_etag: Some("incorrectEtag".into()),
-                enable_content_response_on_write: false,
                 ..Default::default()
             }),
         )
         .await;
 
-    match response {
-        Ok(_) => {
-            return Err(
-                "expected a 412 Precondition Failed error when using an incorrect ETag".into(),
-            );
-        }
-        Err(err) => {
-            assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
-                err.http_status()
-            );
-        }
-    }
+    assert_eq!(
+        Some(azure_core::http::StatusCode::PreconditionFailed),
+        response
+            .expect_err("expected the server to return an error")
+            .http_status()
+    );
 
     account.cleanup().await?;
     Ok(())

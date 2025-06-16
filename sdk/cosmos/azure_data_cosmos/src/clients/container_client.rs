@@ -12,10 +12,10 @@ use crate::{
 };
 
 use azure_core::http::{
-    headers::{self, ETAG},
+    headers::{self},
     request::{options::ContentType, Request},
     response::Response,
-    Etag, Method,
+    Method,
 };
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -35,7 +35,7 @@ impl ContainerClient {
         database_link: &ResourceLink,
         container_id: &str,
     ) -> Self {
-        let link: ResourceLink = database_link
+        let link = database_link
             .feed(ResourceType::Containers)
             .item(container_id);
         let items_link = link.feed(ResourceType::Items);
