@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use super::{
-    cbs::RecoverableClaimsBasedSecurity, management::RecoverableManagementClient,
+    claims_based_security::RecoverableClaimsBasedSecurity, management::RecoverableManagementClient,
     receiver::RecoverableReceiver, sender::RecoverableSender,
 };
 use crate::{

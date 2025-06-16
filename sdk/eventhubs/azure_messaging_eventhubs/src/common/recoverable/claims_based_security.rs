@@ -42,19 +42,19 @@ impl RecoverableClaimsBasedSecurity {
                 let session = AmqpSession::new();
                 session.begin(connection.as_ref(), None).await?;
 
-                let cbs = Arc::new(AmqpClaimsBasedSecurity::new(session)?);
+                let claims_based_security = Arc::new(AmqpClaimsBasedSecurity::new(session)?);
 
-                // Attach the CBS client to the session.
-                cbs.attach().await?;
-                Ok(cbs)
+                // Attach the claims_based_security client to the session.
+                claims_based_security.attach().await?;
+                Ok(claims_based_security)
             },
             retry_options,
-            Some(Self::should_retry_cbs_response),
+            Some(Self::should_retry_claims_based_security_response),
         )
         .await
     }
 
-    fn should_retry_cbs_response(e: &azure_core::Error) -> bool {
+    fn should_retry_claims_based_security_response(e: &azure_core::Error) -> bool {
         match e.kind() {
             AzureErrorKind::Amqp => {
                 warn!(err=?e, "Amqp operation failed: {:?}", e.source());
@@ -99,14 +99,15 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
                 let secret = secret.clone();
 
                 async move {
-                    let cbs_client = self.recoverable_connection.ensure_amqp_cbs().await?;
-                    cbs_client
+                    let claims_based_security_client =
+                        self.recoverable_connection.ensure_amqp_cbs().await?;
+                    claims_based_security_client
                         .authorize_path(path, token_type, &secret, expires_on)
                         .await
                 }
             },
             &self.recoverable_connection.retry_options,
-            Some(Self::should_retry_cbs_response),
+            Some(Self::should_retry_claims_based_security_response),
         )
         .await?;
         Ok(result)

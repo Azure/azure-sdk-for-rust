@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-mod cbs;
+mod claims_based_security;
 mod connection;
 mod management;
 mod receiver;
