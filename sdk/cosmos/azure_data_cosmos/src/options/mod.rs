@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientMethodOptions, ClientOptions};
+use azure_core::http::{ClientMethodOptions, ClientOptions, Etag};
 
 use crate::models::ThroughputProperties;
 
@@ -47,7 +47,10 @@ pub struct DeleteDatabaseOptions<'a> {
 #[derive(Clone, Default)]
 pub struct ItemOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
-
+    /// IfMatchEtag is used to ensure optimistic concurrency control, it helps prevent accidental overwrites and maintains data integrity.
+    ///
+    /// https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/database-transactions-optimistic-concurrency#optimistic-concurrency-control
+    pub if_match_etag: Option<Etag>,
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.
