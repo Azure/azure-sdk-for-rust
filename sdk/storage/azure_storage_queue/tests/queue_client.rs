@@ -1,7 +1,9 @@
 use azure_core::{http::ClientOptions, Result};
 use azure_core_test::{recorded, Recording, TestContext};
-use azure_storage_queue::clients::AzureQueueStorageClientOptions;
-use azure_storage_queue::clients::QueueClient;
+use azure_storage_queue::clients::{
+    AzureQueueStorageClientOptions, AzureQueueStorageMessagesOperationsClientDequeueOptions,
+    QueueClient,
+};
 use once_cell::sync::Lazy;
 use std::option::Option;
 use uuid::Uuid;
@@ -251,6 +253,117 @@ async fn delete_messages(ctx: TestContext) -> Result<()> {
             response.status().is_success(),
             "Expected successful status code, got {}",
             response.status(),
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(&queue_name, None).await.unwrap();
+
+    // Return the test result
+    test_result?;
+    Ok(())
+}
+
+/// Receives the first message from a queue in Azure Storage Queue service.
+#[recorded::test]
+async fn receive_message(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await?;
+    let queue_name = format!("test-receive-messages-{}", QUEUE_SUFFIX.as_str());
+
+    // Create a queue if it does not exist
+    queue_client.create_if_not_exists(&queue_name, None).await?;
+    queue_client
+        .send_message(&queue_name, "Message 1", None)
+        .await?;
+    queue_client
+        .send_message(&queue_name, "Message 2", None)
+        .await?;
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        // Delete messages from the queue
+        let response = queue_client.receive_message(&queue_name, None).await?;
+        assert!(
+            response.status().is_success(),
+            "Expected successful status code, got {}",
+            response.status(),
+        );
+        let messages = response.into_body().await?;
+        assert!(
+            messages.clone().value.iter().len() == 1,
+            "Expected to receive at least 1 message, got {}",
+            messages.clone().value.iter().len()
+        );
+        let messages = messages.value.unwrap();
+        let message = messages.first().unwrap();
+        assert!(
+            message.clone().message_text.unwrap() == "Message 1",
+            "Expected to receive 'Message 1', got {}",
+            message.clone().message_text.unwrap()
+        );
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(&queue_name, None).await.unwrap();
+
+    // Return the test result
+    test_result?;
+    Ok(())
+}
+
+/// Receives all messages from a queue in Azure Storage Queue service.
+#[recorded::test]
+async fn receive_messages(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording).await?;
+    let queue_name = format!("test-receive-messages-{}", QUEUE_SUFFIX.as_str());
+
+    // Create a queue if it does not exist
+    queue_client.create_if_not_exists(&queue_name, None).await?;
+    queue_client
+        .send_message(&queue_name, "Message 1", None)
+        .await?;
+    queue_client
+        .send_message(&queue_name, "Message 2", None)
+        .await?;
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        let options = Some(AzureQueueStorageMessagesOperationsClientDequeueOptions {
+            number_of_messages: Some(10),
+            ..Default::default()
+        });
+
+        // Delete messages from the queue
+        let response = queue_client.receive_messages(&queue_name, options).await?;
+        assert!(
+            response.status().is_success(),
+            "Expected successful status code, got {}",
+            response.status(),
+        );
+        let messages = response.into_body().await?;
+        let messages = messages.value.unwrap();
+        assert!(
+            messages.clone().iter().len() == 2,
+            "Expected to receive 2 messages, got {}",
+            messages.clone().iter().len()
+        );
+        let message1 = messages.first().unwrap();
+        assert!(
+            message1.clone().message_text.unwrap() == "Message 1",
+            "Expected to receive 'Message 1', got {}",
+            message1.clone().message_text.unwrap()
+        );
+        let message2 = messages.last().unwrap();
+        assert!(
+            message2.clone().message_text.unwrap() == "Message 2",
+            "Expected to receive 'Message 2', got {}",
+            message2.clone().message_text.unwrap()
         );
         Ok::<(), azure_core::Error>(())
     }

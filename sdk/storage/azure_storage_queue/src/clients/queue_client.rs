@@ -1,15 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::generated::clients::{
+    AzureQueueStorageClient as GeneratedQueueClient, AzureQueueStorageClientOptions,
+};
 use crate::generated::models::{
+    AzureQueueStorageMessagesOperationsClientDequeueOptions,
     AzureQueueStorageMessagesOperationsClientEnqueueOptions,
     AzureQueueStorageQueueOperationsClientCreateOptions,
-    AzureQueueStorageQueueOperationsClientDeleteOptions, ListOfEnqueuedMessage, QueueApiVersion,
-    QueueMessage, ServicePropertiesCompType, StorageServicePropertiesResponse,
-};
-use crate::{
-    generated::clients::AzureQueueStorageClient as GeneratedQueueClient,
-    generated::clients::AzureQueueStorageClientOptions,
+    AzureQueueStorageQueueOperationsClientDeleteOptions, ListOfDequeuedMessageItem,
+    ListOfEnqueuedMessage, QueueApiVersion, QueueMessage, ServicePropertiesCompType,
+    StorageServicePropertiesResponse,
 };
 use azure_core::http::StatusCode;
 use azure_core::xml;
@@ -304,6 +305,30 @@ impl QueueClient {
                 RequestContent::try_from(xml_body)?,
                 options,
             )
+            .await
+    }
+
+    pub async fn receive_message(
+        &self,
+        queue_name: &str,
+        options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
+    ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
+        let options = Some(AzureQueueStorageMessagesOperationsClientDequeueOptions {
+            number_of_messages: Some(1),
+            ..options.unwrap_or_default()
+        });
+
+        self.receive_messages(queue_name, options).await
+    }
+
+    pub async fn receive_messages(
+        &self,
+        queue_name: &str,
+        options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
+    ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
+        self.client
+            .get_azure_queue_storage_messages_operations_client()
+            .dequeue(queue_name, self.version.clone(), options)
             .await
     }
 }

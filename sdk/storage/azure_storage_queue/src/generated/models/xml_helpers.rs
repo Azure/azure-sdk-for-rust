@@ -7,7 +7,7 @@
 #![allow(non_snake_case)]
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer, };
-use super::{CorsRuleResponse, DequeuedMessageItem, EnqueuedMessage, };
+use super::CorsRuleResponse;
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename = "Cors")]
@@ -24,46 +24,6 @@ impl CorsCorsRuleResponse {
     pub fn wrap<S>(to_serialize: &Option<Vec<CorsRuleResponse>>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         CorsCorsRuleResponse {
             CorsRuleResponse: to_serialize.to_owned(),
-        }
-        .serialize(serializer)
-    }
-}
-
-#[derive(Deserialize, Serialize)]
-#[serde(rename = "value")]
-pub(crate) struct ValueDequeuedMessageItem {
-    #[serde(default)]
-    DequeuedMessageItem: Option<Vec<DequeuedMessageItem>>,
-}
-
-impl ValueDequeuedMessageItem {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<DequeuedMessageItem>>, D::Error> where D: Deserializer<'de> {
-        Ok(ValueDequeuedMessageItem::deserialize(deserializer)?.DequeuedMessageItem)
-    }
-
-    pub fn wrap<S>(to_serialize: &Option<Vec<DequeuedMessageItem>>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        ValueDequeuedMessageItem {
-            DequeuedMessageItem: to_serialize.to_owned(),
-        }
-        .serialize(serializer)
-    }
-}
-
-#[derive(Deserialize, Serialize)]
-#[serde(rename = "value")]
-pub(crate) struct ValueEnqueuedMessage {
-    #[serde(default)]
-    EnqueuedMessage: Option<Vec<EnqueuedMessage>>,
-}
-
-impl ValueEnqueuedMessage {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<EnqueuedMessage>>, D::Error> where D: Deserializer<'de> {
-        Ok(ValueEnqueuedMessage::deserialize(deserializer)?.EnqueuedMessage)
-    }
-
-    pub fn wrap<S>(to_serialize: &Option<Vec<EnqueuedMessage>>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        ValueEnqueuedMessage {
-            EnqueuedMessage: to_serialize.to_owned(),
         }
         .serialize(serializer)
     }

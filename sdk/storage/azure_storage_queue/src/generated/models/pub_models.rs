@@ -5,7 +5,7 @@
 
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize, };
-use super::xml_helpers::{CorsCorsRuleResponse, ValueDequeuedMessageItem, ValueEnqueuedMessage, };
+use super::xml_helpers::CorsCorsRuleResponse;
 use time::OffsetDateTime;
 
 /// CORS rule for request body
@@ -83,11 +83,11 @@ pub struct DequeuedMessageItem {
     pub dequeue_count: Option<i64>,
 
 /// The time that the Message will expire and be automatically deleted.
-    #[serde(default, rename = "ExpirationTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc3339::option")]
+    #[serde(default, rename = "ExpirationTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc7231::option")]
     pub expiration_time: Option<OffsetDateTime>,
 
 /// The time the Message was inserted into the Queue.
-    #[serde(default, rename = "InsertionTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc3339::option")]
+    #[serde(default, rename = "InsertionTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc7231::option")]
     pub insertion_time: Option<OffsetDateTime>,
 
 /// The Id of the Message.
@@ -104,7 +104,7 @@ pub struct DequeuedMessageItem {
     pub pop_receipt: Option<String>,
 
 /// The time that the message will again become visible in the Queue.
-    #[serde(default, rename = "TimeNextVisible", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc3339::option")]
+    #[serde(default, rename = "TimeNextVisible", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc7231::option")]
     pub time_next_visible: Option<OffsetDateTime>,
 
 }
@@ -115,11 +115,11 @@ pub struct DequeuedMessageItem {
 #[non_exhaustive]
 pub struct EnqueuedMessage {
 /// The time that the Message will expire and be automatically deleted.
-    #[serde(default, rename = "ExpirationTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc3339::option")]
+    #[serde(default, rename = "ExpirationTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc7231::option")]
     pub expiration_time: Option<OffsetDateTime>,
 
 /// The time the Message was inserted into the Queue.
-    #[serde(default, rename = "InsertionTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc3339::option")]
+    #[serde(default, rename = "InsertionTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc7231::option")]
     pub insertion_time: Option<OffsetDateTime>,
 
 /// The Id of the Message.
@@ -132,7 +132,7 @@ pub struct EnqueuedMessage {
     pub pop_receipt: Option<String>,
 
 /// The time that the message will again become visible in the Queue.
-    #[serde(default, rename = "TimeNextVisible", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc3339::option")]
+    #[serde(default, rename = "TimeNextVisible", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc7231::option")]
     pub time_next_visible: Option<OffsetDateTime>,
 
 }
@@ -140,8 +140,9 @@ pub struct EnqueuedMessage {
 /// List wrapper for DequeuedMessageItem array
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
+#[serde(rename = "QueueMessagesList")]
 pub struct ListOfDequeuedMessageItem {
-    #[serde(default, deserialize_with = "ValueDequeuedMessageItem::unwrap", serialize_with = "ValueDequeuedMessageItem::wrap", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
     pub value: Option<Vec<DequeuedMessageItem>>,
 
 }
@@ -149,8 +150,9 @@ pub struct ListOfDequeuedMessageItem {
 /// List wrapper for EnqueuedMessage array
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
+#[serde(rename = "QueueMessagesList")]
 pub struct ListOfEnqueuedMessage {
-    #[serde(default, deserialize_with = "ValueEnqueuedMessage::unwrap", serialize_with = "ValueEnqueuedMessage::wrap", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
     pub value: Option<Vec<EnqueuedMessage>>,
 
 }
