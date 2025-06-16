@@ -241,18 +241,18 @@ fn test_get_runtime() {
     let _runtime = get_async_runtime();
 }
 
-struct DummyRuntime;
+struct TestRuntime;
 
-impl AsyncRuntime for DummyRuntime {
+impl AsyncRuntime for TestRuntime {
     fn spawn(&self, _f: TaskFuture) -> SpawnedTask {
-        unimplemented!("DummyRuntime does not support spawning tasks");
+        unimplemented!("TestRuntime does not support spawning tasks");
     }
 
     fn sleep(
         &self,
         _duration: std::time::Duration,
     ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
-        unimplemented!("DummyRuntime does not support sleeping");
+        unimplemented!("TestRuntime does not support sleeping");
     }
 }
 
@@ -262,7 +262,7 @@ impl AsyncRuntime for DummyRuntime {
 #[test]
 #[ignore = "Skipping the runtime set test to avoid conflicts with parallel test execution"]
 fn test_set_runtime() {
-    let runtime = Arc::new(DummyRuntime);
+    let runtime = Arc::new(TestRuntime);
     // Ensure that the runtime can be set without panicking
     set_async_runtime(runtime.clone()).unwrap();
 
