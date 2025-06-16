@@ -8,29 +8,26 @@ use super::{
     AppendBlobClientCreateResult, AppendBlobClientSealResult, ArchiveStatus,
     BlobClientAbortCopyFromUrlResult, BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult,
     BlobClientChangeLeaseResult, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotResult,
-    BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteResult, BlobClientDownloadResult,
+    BlobClientDeleteImmutabilityPolicyResult, BlobClientDownloadResult,
     BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
     BlobClientRenewLeaseResult, BlobClientSetExpiryResult, BlobClientSetImmutabilityPolicyResult,
-    BlobClientSetLegalHoldResult, BlobClientSetMetadataResult, BlobClientSetPropertiesResult,
-    BlobClientSetTagsResult, BlobClientSetTierResult, BlobClientStartCopyFromUrlResult,
+    BlobClientSetLegalHoldResult, BlobClientSetTagsResult, BlobClientStartCopyFromUrlResult,
     BlobClientUndeleteResult, BlobContainerClientAcquireLeaseResult,
     BlobContainerClientBreakLeaseResult, BlobContainerClientChangeLeaseResult,
-    BlobContainerClientCreateResult, BlobContainerClientDeleteResult,
     BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenameResult,
     BlobContainerClientRenewLeaseResult, BlobContainerClientRestoreResult,
-    BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetMetadataResult,
-    BlobImmutabilityPolicyMode, BlobServiceClientGetAccountInfoResult,
-    BlobServiceClientSetPropertiesResult, BlobTags, BlobType, BlockBlobClientCommitBlockListResult,
-    BlockBlobClientPutBlobFromUrlResult, BlockBlobClientQueryResult,
-    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
-    BlockBlobClientUploadResult, BlockList, CopyStatus, FilterBlobSegment, LeaseDuration,
-    LeaseState, LeaseStatus, ListBlobsFlatSegmentResponse, ListBlobsHierarchySegmentResponse,
-    ListContainersSegmentResponse, PageBlobClientClearPagesResult,
+    BlobContainerClientSetAccessPolicyResult, BlobImmutabilityPolicyMode,
+    BlobServiceClientGetAccountInfoResult, BlobTags, BlobType,
+    BlockBlobClientCommitBlockListResult, BlockBlobClientPutBlobFromUrlResult,
+    BlockBlobClientQueryResult, BlockBlobClientStageBlockFromUrlResult,
+    BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, CopyStatus,
+    FilterBlobSegment, LeaseDuration, LeaseState, LeaseStatus, ListBlobsFlatSegmentResponse,
+    ListBlobsHierarchySegmentResponse, PageBlobClientClearPagesResult,
     PageBlobClientCopyIncrementalResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
     PageBlobClientUpdateSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
     PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
-    SignedIdentifier, SkuName, StorageServiceProperties, StorageServiceStats, UserDelegationKey,
+    SignedIdentifier, SkuName, StorageServiceStats, UserDelegationKey,
 };
 use azure_core::{
     base64, date,
@@ -113,7 +110,6 @@ const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encryp
 const SKU_NAME: HeaderName = HeaderName::from_static("x-ms-sku-name");
 const SNAPSHOT: HeaderName = HeaderName::from_static("x-ms-snapshot");
 const TAG_COUNT: HeaderName = HeaderName::from_static("x-ms-tag-count");
-const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 const VERSION_ID: HeaderName = HeaderName::from_static("x-ms-version-id");
 
 /// Provides access to typed response headers for `AppendBlobClient::append_block_from_url()`
@@ -128,7 +124,6 @@ pub trait AppendBlobClientAppendBlockFromUrlResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl AppendBlobClientAppendBlockFromUrlResultHeaders
@@ -193,11 +188,6 @@ impl AppendBlobClientAppendBlockFromUrlResultHeaders
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `AppendBlobClient::append_block()`
@@ -212,7 +202,6 @@ pub trait AppendBlobClientAppendBlockResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl AppendBlobClientAppendBlockResultHeaders
@@ -277,11 +266,6 @@ impl AppendBlobClientAppendBlockResultHeaders
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `AppendBlobClient::create()`
@@ -293,7 +277,6 @@ pub trait AppendBlobClientCreateResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -340,11 +323,6 @@ impl AppendBlobClientCreateResultHeaders for Response<AppendBlobClientCreateResu
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -358,7 +336,6 @@ pub trait AppendBlobClientSealResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn is_sealed(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl AppendBlobClientSealResultHeaders for Response<AppendBlobClientSealResult, NoFormat> {
@@ -383,17 +360,11 @@ impl AppendBlobClientSealResultHeaders for Response<AppendBlobClientSealResult, 
     fn is_sealed(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEALED)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::abort_copy_from_url()`
 pub trait BlobClientAbortCopyFromUrlResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientAbortCopyFromUrlResultHeaders
@@ -403,11 +374,6 @@ impl BlobClientAbortCopyFromUrlResultHeaders
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::acquire_lease()`
@@ -416,7 +382,6 @@ pub trait BlobClientAcquireLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientAcquireLeaseResultHeaders for Response<BlobClientAcquireLeaseResult, NoFormat> {
@@ -441,11 +406,6 @@ impl BlobClientAcquireLeaseResultHeaders for Response<BlobClientAcquireLeaseResu
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::break_lease()`
@@ -454,7 +414,6 @@ pub trait BlobClientBreakLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn lease_time(&self) -> Result<Option<i32>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientBreakLeaseResultHeaders for Response<BlobClientBreakLeaseResult, NoFormat> {
@@ -479,11 +438,6 @@ impl BlobClientBreakLeaseResultHeaders for Response<BlobClientBreakLeaseResult, 
     fn lease_time(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &LEASE_TIME)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::change_lease()`
@@ -492,7 +446,6 @@ pub trait BlobClientChangeLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult, NoFormat> {
@@ -517,11 +470,6 @@ impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::copy_from_url()`
@@ -533,7 +481,6 @@ pub trait BlobClientCopyFromUrlResultHeaders: private::Sealed {
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn copy_id(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -581,11 +528,6 @@ impl BlobClientCopyFromUrlResultHeaders for Response<BlobClientCopyFromUrlResult
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -600,7 +542,6 @@ pub trait BlobClientCreateSnapshotResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn snapshot(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -634,11 +575,6 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
         Headers::get_optional_as(self.headers(), &SNAPSHOT)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -649,7 +585,6 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
 /// Provides access to typed response headers for `BlobClient::delete_immutability_policy()`
 pub trait BlobClientDeleteImmutabilityPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientDeleteImmutabilityPolicyResultHeaders
@@ -658,23 +593,6 @@ impl BlobClientDeleteImmutabilityPolicyResultHeaders
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::delete()`
-pub trait BlobClientDeleteResultHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientDeleteResultHeaders for Response<BlobClientDeleteResult, NoFormat> {
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
     }
 }
 
@@ -717,7 +635,6 @@ pub trait BlobClientDownloadResultHeaders: private::Sealed {
     fn object_replication_policy_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn tag_count(&self) -> Result<Option<i64>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -961,11 +878,6 @@ impl BlobClientDownloadResultHeaders for Response<BlobClientDownloadResult, NoFo
         Headers::get_optional_as(self.headers(), &TAG_COUNT)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -979,7 +891,6 @@ pub trait BlobClientGetAccountInfoResultHeaders: private::Sealed {
     fn account_kind(&self) -> Result<Option<AccountKind>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
     fn sku_name(&self) -> Result<Option<SkuName>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfoResult, NoFormat> {
@@ -1001,11 +912,6 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
     /// Identifies the sku name of the account
     fn sku_name(&self) -> Result<Option<SkuName>> {
         Headers::get_optional_as(self.headers(), &SKU_NAME)
-    }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
     }
 }
 
@@ -1053,7 +959,6 @@ pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn rehydrate_priority(&self) -> Result<Option<RehydratePriority>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn tag_count(&self) -> Result<Option<i64>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -1326,11 +1231,6 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
         Headers::get_optional_as(self.headers(), &TAG_COUNT)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -1343,7 +1243,6 @@ pub trait BlobClientReleaseLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientReleaseLeaseResultHeaders for Response<BlobClientReleaseLeaseResult, NoFormat> {
@@ -1363,11 +1262,6 @@ impl BlobClientReleaseLeaseResultHeaders for Response<BlobClientReleaseLeaseResu
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::renew_lease()`
@@ -1376,7 +1270,6 @@ pub trait BlobClientRenewLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, NoFormat> {
@@ -1401,11 +1294,6 @@ impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, 
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::set_expiry()`
@@ -1413,7 +1301,6 @@ pub trait BlobClientSetExpiryResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientSetExpiryResultHeaders for Response<BlobClientSetExpiryResult, NoFormat> {
@@ -1433,11 +1320,6 @@ impl BlobClientSetExpiryResultHeaders for Response<BlobClientSetExpiryResult, No
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::set_immutability_policy()`
@@ -1445,7 +1327,6 @@ pub trait BlobClientSetImmutabilityPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn immutability_policy_mode(&self) -> Result<Option<BlobImmutabilityPolicyMode>>;
     fn immutability_policy_expires_on(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientSetImmutabilityPolicyResultHeaders
@@ -1467,18 +1348,12 @@ impl BlobClientSetImmutabilityPolicyResultHeaders
             date::parse_rfc7231(h.as_str())
         })
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::set_legal_hold()`
 pub trait BlobClientSetLegalHoldResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn legal_hold(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientSetLegalHoldResultHeaders for Response<BlobClientSetLegalHoldResult, NoFormat> {
@@ -1491,64 +1366,17 @@ impl BlobClientSetLegalHoldResultHeaders for Response<BlobClientSetLegalHoldResu
     fn legal_hold(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &LEGAL_HOLD)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::set_metadata()`
-pub trait BlobClientSetMetadataResultHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientSetMetadataResultHeaders for Response<BlobClientSetMetadataResult, NoFormat> {
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::set_properties()`
-pub trait BlobClientSetPropertiesResultHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientSetPropertiesResultHeaders for Response<BlobClientSetPropertiesResult, NoFormat> {
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::set_tags()`
 pub trait BlobClientSetTagsResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientSetTagsResultHeaders for Response<BlobClientSetTagsResult, NoFormat> {
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::set_tier()`
-pub trait BlobClientSetTierResultHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientSetTierResultHeaders for Response<BlobClientSetTierResult, NoFormat> {
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
     }
 }
 
@@ -1559,7 +1387,6 @@ pub trait BlobClientStartCopyFromUrlResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<String>>;
     fn copy_id(&self) -> Result<Option<String>>;
     fn copy_status(&self) -> Result<Option<CopyStatus>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -1594,11 +1421,6 @@ impl BlobClientStartCopyFromUrlResultHeaders
         Headers::get_optional_as(self.headers(), &COPY_STATUS)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -1609,18 +1431,12 @@ impl BlobClientStartCopyFromUrlResultHeaders
 /// Provides access to typed response headers for `BlobClient::undelete()`
 pub trait BlobClientUndeleteResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientUndeleteResultHeaders for Response<BlobClientUndeleteResult, NoFormat> {
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
     }
 }
 
@@ -1630,7 +1446,6 @@ pub trait BlobContainerClientAcquireLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientAcquireLeaseResultHeaders
@@ -1657,11 +1472,6 @@ impl BlobContainerClientAcquireLeaseResultHeaders
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::break_lease()`
@@ -1671,7 +1481,6 @@ pub trait BlobContainerClientBreakLeaseResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
     fn lease_time(&self) -> Result<Option<i32>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientBreakLeaseResultHeaders
@@ -1703,11 +1512,6 @@ impl BlobContainerClientBreakLeaseResultHeaders
     fn lease_time(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &LEASE_TIME)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::change_lease()`
@@ -1716,7 +1520,6 @@ pub trait BlobContainerClientChangeLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientChangeLeaseResultHeaders
@@ -1743,39 +1546,6 @@ impl BlobContainerClientChangeLeaseResultHeaders
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobContainerClient::create()`
-pub trait BlobContainerClientCreateResultHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl BlobContainerClientCreateResultHeaders
-    for Response<BlobContainerClientCreateResult, NoFormat>
-{
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobContainerClient::delete()`
-pub trait BlobContainerClientDeleteResultHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl BlobContainerClientDeleteResultHeaders
-    for Response<BlobContainerClientDeleteResult, NoFormat>
-{
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::get_account_info()`
@@ -1784,7 +1554,6 @@ pub trait BlobContainerClientGetAccountInfoResultHeaders: private::Sealed {
     fn account_kind(&self) -> Result<Option<AccountKind>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
     fn sku_name(&self) -> Result<Option<SkuName>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientGetAccountInfoResultHeaders
@@ -1809,11 +1578,6 @@ impl BlobContainerClientGetAccountInfoResultHeaders
     fn sku_name(&self) -> Result<Option<SkuName>> {
         Headers::get_optional_as(self.headers(), &SKU_NAME)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::get_properties()`
@@ -1830,7 +1594,6 @@ pub trait BlobContainerClientGetPropertiesResultHeaders: private::Sealed {
     fn lease_state(&self) -> Result<Option<LeaseState>>;
     fn lease_status(&self) -> Result<Option<LeaseStatus>>;
     fn metadata(&self) -> Result<HashMap<String, String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientGetPropertiesResultHeaders
@@ -1906,11 +1669,6 @@ impl BlobContainerClientGetPropertiesResultHeaders
         }
         Ok(values)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::release_lease()`
@@ -1918,7 +1676,6 @@ pub trait BlobContainerClientReleaseLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientReleaseLeaseResultHeaders
@@ -1940,17 +1697,11 @@ impl BlobContainerClientReleaseLeaseResultHeaders
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::rename()`
 pub trait BlobContainerClientRenameResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientRenameResultHeaders
@@ -1960,11 +1711,6 @@ impl BlobContainerClientRenameResultHeaders
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::renew_lease()`
@@ -1973,7 +1719,6 @@ pub trait BlobContainerClientRenewLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientRenewLeaseResultHeaders
@@ -2000,17 +1745,11 @@ impl BlobContainerClientRenewLeaseResultHeaders
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::restore()`
 pub trait BlobContainerClientRestoreResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientRestoreResultHeaders
@@ -2020,11 +1759,6 @@ impl BlobContainerClientRestoreResultHeaders
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::set_access_policy()`
@@ -2032,7 +1766,6 @@ pub trait BlobContainerClientSetAccessPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientSetAccessPolicyResultHeaders
@@ -2054,25 +1787,6 @@ impl BlobContainerClientSetAccessPolicyResultHeaders
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobContainerClient::set_metadata()`
-pub trait BlobContainerClientSetMetadataResultHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl BlobContainerClientSetMetadataResultHeaders
-    for Response<BlobContainerClientSetMetadataResult, NoFormat>
-{
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobServiceClient::get_account_info()`
@@ -2081,7 +1795,6 @@ pub trait BlobServiceClientGetAccountInfoResultHeaders: private::Sealed {
     fn account_kind(&self) -> Result<Option<AccountKind>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
     fn sku_name(&self) -> Result<Option<SkuName>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobServiceClientGetAccountInfoResultHeaders
@@ -2106,42 +1819,17 @@ impl BlobServiceClientGetAccountInfoResultHeaders
     fn sku_name(&self) -> Result<Option<SkuName>> {
         Headers::get_optional_as(self.headers(), &SKU_NAME)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobServiceClient::set_properties()`
-pub trait BlobServiceClientSetPropertiesResultHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl BlobServiceClientSetPropertiesResultHeaders
-    for Response<BlobServiceClientSetPropertiesResult, NoFormat>
-{
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::get_tags()`
 pub trait BlobTagsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlobTagsHeaders for Response<BlobTags, XmlFormat> {
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
     }
 }
 
@@ -2154,7 +1842,6 @@ pub trait BlockBlobClientCommitBlockListResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -2205,11 +1892,6 @@ impl BlockBlobClientCommitBlockListResultHeaders
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -2226,7 +1908,6 @@ pub trait BlockBlobClientPutBlobFromUrlResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -2275,11 +1956,6 @@ impl BlockBlobClientPutBlobFromUrlResultHeaders
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -2318,7 +1994,6 @@ pub trait BlockBlobClientQueryResultHeaders: private::Sealed {
     fn lease_status(&self) -> Result<Option<LeaseStatus>>;
     fn metadata(&self) -> Result<HashMap<String, String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlockBlobClientQueryResultHeaders for Response<BlockBlobClientQueryResult, NoFormat> {
@@ -2505,11 +2180,6 @@ impl BlockBlobClientQueryResultHeaders for Response<BlockBlobClientQueryResult, 
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &SERVER_ENCRYPTED)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::stage_block_from_url()`
@@ -2520,7 +2190,6 @@ pub trait BlockBlobClientStageBlockFromUrlResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlockBlobClientStageBlockFromUrlResultHeaders
@@ -2562,11 +2231,6 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::stage_block()`
@@ -2576,7 +2240,6 @@ pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlockBlobClientStageBlockResultHeaders
@@ -2613,11 +2276,6 @@ impl BlockBlobClientStageBlockResultHeaders
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::upload()`
@@ -2628,7 +2286,6 @@ pub trait BlockBlobClientUploadResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -2670,11 +2327,6 @@ impl BlockBlobClientUploadResultHeaders for Response<BlockBlobClientUploadResult
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -2687,7 +2339,6 @@ pub trait BlockListHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn blob_content_length(&self) -> Result<Option<u64>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl BlockListHeaders for Response<BlockList, XmlFormat> {
@@ -2708,11 +2359,6 @@ impl BlockListHeaders for Response<BlockList, XmlFormat> {
     fn blob_content_length(&self) -> Result<Option<u64>> {
         Headers::get_optional_as(self.headers(), &BLOB_CONTENT_LENGTH)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for the following methods:
@@ -2720,7 +2366,6 @@ impl BlockListHeaders for Response<BlockList, XmlFormat> {
 /// * `BlobServiceClient::filter_blobs()`
 pub trait FilterBlobSegmentHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl FilterBlobSegmentHeaders for Response<FilterBlobSegment, XmlFormat> {
@@ -2728,17 +2373,11 @@ impl FilterBlobSegmentHeaders for Response<FilterBlobSegment, XmlFormat> {
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::list_blob_flat_segment()`
 pub trait ListBlobsFlatSegmentResponseHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl ListBlobsFlatSegmentResponseHeaders for Response<ListBlobsFlatSegmentResponse, XmlFormat> {
@@ -2746,17 +2385,11 @@ impl ListBlobsFlatSegmentResponseHeaders for Response<ListBlobsFlatSegmentRespon
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::list_blob_hierarchy_segment()`
 pub trait ListBlobsHierarchySegmentResponseHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl ListBlobsHierarchySegmentResponseHeaders
@@ -2765,23 +2398,6 @@ impl ListBlobsHierarchySegmentResponseHeaders
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobServiceClient::list_containers_segment()`
-pub trait ListContainersSegmentResponseHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl ListContainersSegmentResponseHeaders for Response<ListContainersSegmentResponse, XmlFormat> {
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
     }
 }
 
@@ -2793,7 +2409,6 @@ pub trait PageBlobClientClearPagesResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<String>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPagesResult, NoFormat> {
@@ -2831,11 +2446,6 @@ impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPages
             base64::decode(h.as_str())
         })
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `PageBlobClient::copy_incremental()`
@@ -2845,7 +2455,6 @@ pub trait PageBlobClientCopyIncrementalResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<String>>;
     fn copy_id(&self) -> Result<Option<String>>;
     fn copy_status(&self) -> Result<Option<CopyStatus>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl PageBlobClientCopyIncrementalResultHeaders
@@ -2878,11 +2487,6 @@ impl PageBlobClientCopyIncrementalResultHeaders
     fn copy_status(&self) -> Result<Option<CopyStatus>> {
         Headers::get_optional_as(self.headers(), &COPY_STATUS)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `PageBlobClient::create()`
@@ -2894,7 +2498,6 @@ pub trait PageBlobClientCreateResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -2941,11 +2544,6 @@ impl PageBlobClientCreateResultHeaders for Response<PageBlobClientCreateResult, 
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
 
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -2959,7 +2557,6 @@ pub trait PageBlobClientResizeResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl PageBlobClientResizeResultHeaders for Response<PageBlobClientResizeResult, NoFormat> {
@@ -2984,11 +2581,6 @@ impl PageBlobClientResizeResultHeaders for Response<PageBlobClientResizeResult, 
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `PageBlobClient::update_sequence_number()`
@@ -2997,7 +2589,6 @@ pub trait PageBlobClientUpdateSequenceNumberResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl PageBlobClientUpdateSequenceNumberResultHeaders
@@ -3024,11 +2615,6 @@ impl PageBlobClientUpdateSequenceNumberResultHeaders
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `PageBlobClient::upload_pages_from_url()`
@@ -3042,7 +2628,6 @@ pub trait PageBlobClientUploadPagesFromUrlResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl PageBlobClientUploadPagesFromUrlResultHeaders
@@ -3101,11 +2686,6 @@ impl PageBlobClientUploadPagesFromUrlResultHeaders
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `PageBlobClient::upload_pages()`
@@ -3119,7 +2699,6 @@ pub trait PageBlobClientUploadPagesResultHeaders: private::Sealed {
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl PageBlobClientUploadPagesResultHeaders
@@ -3178,11 +2757,6 @@ impl PageBlobClientUploadPagesResultHeaders
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for the following methods:
@@ -3193,7 +2767,6 @@ pub trait PageListHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn blob_content_length(&self) -> Result<Option<u64>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl PageListHeaders for Response<PageList, XmlFormat> {
@@ -3219,29 +2792,11 @@ impl PageListHeaders for Response<PageList, XmlFormat> {
     fn blob_content_length(&self) -> Result<Option<u64>> {
         Headers::get_optional_as(self.headers(), &BLOB_CONTENT_LENGTH)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
-}
-
-/// Provides access to typed response headers for `BlobServiceClient::get_properties()`
-pub trait StorageServicePropertiesHeaders: private::Sealed {
-    fn version(&self) -> Result<Option<String>>;
-}
-
-impl StorageServicePropertiesHeaders for Response<StorageServiceProperties, XmlFormat> {
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobServiceClient::get_statistics()`
 pub trait StorageServiceStatsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl StorageServiceStatsHeaders for Response<StorageServiceStats, XmlFormat> {
@@ -3249,28 +2804,17 @@ impl StorageServiceStatsHeaders for Response<StorageServiceStats, XmlFormat> {
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 /// Provides access to typed response headers for `BlobServiceClient::get_user_delegation_key()`
 pub trait UserDelegationKeyHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl UserDelegationKeyHeaders for Response<UserDelegationKey, XmlFormat> {
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
     }
 }
 
@@ -3280,7 +2824,6 @@ pub trait VecSignedIdentifierHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn access(&self) -> Result<Option<PublicAccessType>>;
-    fn version(&self) -> Result<Option<String>>;
 }
 
 impl VecSignedIdentifierHeaders for Response<Vec<SignedIdentifier>, XmlFormat> {
@@ -3305,11 +2848,6 @@ impl VecSignedIdentifierHeaders for Response<Vec<SignedIdentifier>, XmlFormat> {
     fn access(&self) -> Result<Option<PublicAccessType>> {
         Headers::get_optional_as(self.headers(), &BLOB_PUBLIC_ACCESS)
     }
-
-    /// Specifies the version of the operation to use for this request.
-    fn version(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION)
-    }
 }
 
 mod private {
@@ -3318,29 +2856,25 @@ mod private {
         AppendBlobClientCreateResult, AppendBlobClientSealResult, BlobClientAbortCopyFromUrlResult,
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
         BlobClientCopyFromUrlResult, BlobClientCreateSnapshotResult,
-        BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteResult, BlobClientDownloadResult,
+        BlobClientDeleteImmutabilityPolicyResult, BlobClientDownloadResult,
         BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
         BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlobClientSetExpiryResult,
         BlobClientSetImmutabilityPolicyResult, BlobClientSetLegalHoldResult,
-        BlobClientSetMetadataResult, BlobClientSetPropertiesResult, BlobClientSetTagsResult,
-        BlobClientSetTierResult, BlobClientStartCopyFromUrlResult, BlobClientUndeleteResult,
+        BlobClientSetTagsResult, BlobClientStartCopyFromUrlResult, BlobClientUndeleteResult,
         BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
-        BlobContainerClientChangeLeaseResult, BlobContainerClientCreateResult,
-        BlobContainerClientDeleteResult, BlobContainerClientGetAccountInfoResult,
+        BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
         BlobContainerClientRenameResult, BlobContainerClientRenewLeaseResult,
         BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyResult,
-        BlobContainerClientSetMetadataResult, BlobServiceClientGetAccountInfoResult,
-        BlobServiceClientSetPropertiesResult, BlobTags, BlockBlobClientCommitBlockListResult,
+        BlobServiceClientGetAccountInfoResult, BlobTags, BlockBlobClientCommitBlockListResult,
         BlockBlobClientPutBlobFromUrlResult, BlockBlobClientQueryResult,
         BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult, BlockList, FilterBlobSegment, ListBlobsFlatSegmentResponse,
-        ListBlobsHierarchySegmentResponse, ListContainersSegmentResponse,
-        PageBlobClientClearPagesResult, PageBlobClientCopyIncrementalResult,
-        PageBlobClientCreateResult, PageBlobClientResizeResult,
-        PageBlobClientUpdateSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
-        PageBlobClientUploadPagesResult, PageList, SignedIdentifier, StorageServiceProperties,
-        StorageServiceStats, UserDelegationKey,
+        ListBlobsHierarchySegmentResponse, PageBlobClientClearPagesResult,
+        PageBlobClientCopyIncrementalResult, PageBlobClientCreateResult,
+        PageBlobClientResizeResult, PageBlobClientUpdateSequenceNumberResult,
+        PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
+        SignedIdentifier, StorageServiceStats, UserDelegationKey,
     };
     use azure_core::http::{NoFormat, Response, XmlFormat};
 
@@ -3357,7 +2891,6 @@ mod private {
     impl Sealed for Response<BlobClientCopyFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlobClientCreateSnapshotResult, NoFormat> {}
     impl Sealed for Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat> {}
-    impl Sealed for Response<BlobClientDeleteResult, NoFormat> {}
     impl Sealed for Response<BlobClientDownloadResult, NoFormat> {}
     impl Sealed for Response<BlobClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlobClientGetPropertiesResult, NoFormat> {}
@@ -3366,17 +2899,12 @@ mod private {
     impl Sealed for Response<BlobClientSetExpiryResult, NoFormat> {}
     impl Sealed for Response<BlobClientSetImmutabilityPolicyResult, NoFormat> {}
     impl Sealed for Response<BlobClientSetLegalHoldResult, NoFormat> {}
-    impl Sealed for Response<BlobClientSetMetadataResult, NoFormat> {}
-    impl Sealed for Response<BlobClientSetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobClientSetTagsResult, NoFormat> {}
-    impl Sealed for Response<BlobClientSetTierResult, NoFormat> {}
     impl Sealed for Response<BlobClientStartCopyFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlobClientUndeleteResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientAcquireLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientBreakLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientChangeLeaseResult, NoFormat> {}
-    impl Sealed for Response<BlobContainerClientCreateResult, NoFormat> {}
-    impl Sealed for Response<BlobContainerClientDeleteResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientGetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientReleaseLeaseResult, NoFormat> {}
@@ -3384,9 +2912,7 @@ mod private {
     impl Sealed for Response<BlobContainerClientRenewLeaseResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientRestoreResult, NoFormat> {}
     impl Sealed for Response<BlobContainerClientSetAccessPolicyResult, NoFormat> {}
-    impl Sealed for Response<BlobContainerClientSetMetadataResult, NoFormat> {}
     impl Sealed for Response<BlobServiceClientGetAccountInfoResult, NoFormat> {}
-    impl Sealed for Response<BlobServiceClientSetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobTags, XmlFormat> {}
     impl Sealed for Response<BlockBlobClientCommitBlockListResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientPutBlobFromUrlResult, NoFormat> {}
@@ -3398,7 +2924,6 @@ mod private {
     impl Sealed for Response<FilterBlobSegment, XmlFormat> {}
     impl Sealed for Response<ListBlobsFlatSegmentResponse, XmlFormat> {}
     impl Sealed for Response<ListBlobsHierarchySegmentResponse, XmlFormat> {}
-    impl Sealed for Response<ListContainersSegmentResponse, XmlFormat> {}
     impl Sealed for Response<PageBlobClientClearPagesResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientCopyIncrementalResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientCreateResult, NoFormat> {}
@@ -3407,7 +2932,6 @@ mod private {
     impl Sealed for Response<PageBlobClientUploadPagesFromUrlResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientUploadPagesResult, NoFormat> {}
     impl Sealed for Response<PageList, XmlFormat> {}
-    impl Sealed for Response<StorageServiceProperties, XmlFormat> {}
     impl Sealed for Response<StorageServiceStats, XmlFormat> {}
     impl Sealed for Response<UserDelegationKey, XmlFormat> {}
     impl Sealed for Response<Vec<SignedIdentifier>, XmlFormat> {}

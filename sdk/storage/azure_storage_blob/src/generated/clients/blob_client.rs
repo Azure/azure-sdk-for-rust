@@ -11,7 +11,7 @@ use crate::generated::{
         BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
         BlobClientCopyFromUrlOptions, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotOptions,
         BlobClientCreateSnapshotResult, BlobClientDeleteImmutabilityPolicyOptions,
-        BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions, BlobClientDeleteResult,
+        BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteOptions,
         BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientGetAccountInfoOptions,
         BlobClientGetAccountInfoResult, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlobClientGetTagsOptions, BlobClientReleaseLeaseOptions,
@@ -19,9 +19,8 @@ use crate::generated::{
         BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
         BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
-        BlobClientSetMetadataResult, BlobClientSetPropertiesOptions, BlobClientSetPropertiesResult,
-        BlobClientSetTagsOptions, BlobClientSetTagsResult, BlobClientSetTierOptions,
-        BlobClientSetTierResult, BlobClientStartCopyFromUrlOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTagsResult,
+        BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions,
         BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions, BlobClientUndeleteResult,
         BlobExpiryOptions, BlobTags,
     },
@@ -533,7 +532,7 @@ impl BlobClient {
     pub async fn delete(
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
-    ) -> Result<Response<BlobClientDeleteResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1147,7 +1146,7 @@ impl BlobClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<BlobClientSetMetadataResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1219,7 +1218,7 @@ impl BlobClient {
     pub async fn set_properties(
         &self,
         options: Option<BlobClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobClientSetPropertiesResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -1347,7 +1346,7 @@ impl BlobClient {
         &self,
         tier: AccessTierOptional,
         options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<BlobClientSetTierResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

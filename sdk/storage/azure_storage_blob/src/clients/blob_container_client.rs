@@ -3,10 +3,7 @@
 
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
-    generated::models::{
-        BlobContainerClientCreateResult, BlobContainerClientDeleteResult,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientSetMetadataResult,
-    },
+    generated::models::BlobContainerClientGetPropertiesResult,
     models::{
         BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
         BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
@@ -106,7 +103,7 @@ impl BlobContainerClient {
     pub async fn create_container(
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientCreateResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.create(options).await
     }
 
@@ -120,7 +117,7 @@ impl BlobContainerClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientSetMetadataResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.set_metadata(options).await
     }
 
@@ -132,7 +129,7 @@ impl BlobContainerClient {
     pub async fn delete_container(
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientDeleteResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.delete(options).await
     }
 

@@ -7,7 +7,7 @@ use azure_core::{
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AccessTier, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
+    AccessTierOptional, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
     BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions,
     LeaseState,
 };
@@ -262,16 +262,16 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     create_test_blob(&blob_client).await?;
 
     let original_response = blob_client.get_properties(None).await?;
-    let og_access_tier = original_response.tier()?;
-    assert_eq!(AccessTier::Hot, og_access_tier.unwrap());
+    let og_access_tier = original_response.access_tier()?;
+    assert_eq!(AccessTierOptional::Hot.to_string(), og_access_tier.unwrap());
 
     // Set Standard Blob Tier (Cold)
-    blob_client.set_tier(AccessTier::Cold, None).await?;
+    blob_client.set_tier(AccessTierOptional::Cold, None).await?;
     let response = blob_client.get_properties(None).await?;
 
     // Assert
-    let access_tier = response.tier()?;
-    assert_eq!(AccessTier::Cold, access_tier.unwrap());
+    let access_tier = response.access_tier()?;
+    assert_eq!(AccessTierOptional::Cold.to_string(), access_tier.unwrap());
 
     container_client.delete_container(None).await?;
     Ok(())

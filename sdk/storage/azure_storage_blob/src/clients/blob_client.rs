@@ -4,13 +4,12 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDeleteResult, BlobClientDownloadResult, BlobClientGetPropertiesResult,
-        BlobClientSetMetadataResult, BlobClientSetPropertiesResult, BlobClientSetTierResult,
+        BlobClientDownloadResult, BlobClientGetPropertiesResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
     models::{
-        AccessTier, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        AccessTierOptional, BlobClientDeleteOptions, BlobClientDownloadOptions,
         BlobClientGetPropertiesOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
@@ -129,7 +128,7 @@ impl BlobClient {
     pub async fn set_properties(
         &self,
         options: Option<BlobClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobClientSetPropertiesResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.set_properties(options).await
     }
 
@@ -182,7 +181,7 @@ impl BlobClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<BlobClientSetMetadataResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.set_metadata(options).await
     }
 
@@ -194,7 +193,7 @@ impl BlobClient {
     pub async fn delete(
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
-    ) -> Result<Response<BlobClientDeleteResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.delete(options).await
     }
 
@@ -207,9 +206,9 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn set_tier(
         &self,
-        tier: AccessTier,
+        tier: AccessTierOptional,
         options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<BlobClientSetTierResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.set_tier(tier, options).await
     }
 }

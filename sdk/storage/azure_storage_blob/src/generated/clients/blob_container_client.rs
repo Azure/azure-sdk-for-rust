@@ -9,8 +9,7 @@ use crate::generated::{
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
         BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
-        BlobContainerClientCreateOptions, BlobContainerClientCreateResult,
-        BlobContainerClientDeleteOptions, BlobContainerClientDeleteResult,
+        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
         BlobContainerClientFilterBlobsOptions, BlobContainerClientGetAccessPolicyOptions,
         BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
@@ -21,8 +20,8 @@ use crate::generated::{
         BlobContainerClientRenewLeaseResult, BlobContainerClientRestoreOptions,
         BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyOptions,
         BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetMetadataOptions,
-        BlobContainerClientSetMetadataResult, FilterBlobSegment, ListBlobsFlatSegmentResponse,
-        ListBlobsHierarchySegmentResponse, SignedIdentifier,
+        FilterBlobSegment, ListBlobsFlatSegmentResponse, ListBlobsHierarchySegmentResponse,
+        SignedIdentifier,
     },
 };
 use azure_core::{
@@ -251,7 +250,7 @@ impl BlobContainerClient {
     pub async fn create(
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientCreateResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -297,7 +296,7 @@ impl BlobContainerClient {
     pub async fn delete(
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientDeleteResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -890,7 +889,7 @@ impl BlobContainerClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientSetMetadataResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
