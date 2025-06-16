@@ -144,6 +144,7 @@ model StorageServiceProperties {
   /**
    * The set of CORS rules.
    */
+  @encodedName("application/xml", "CorsRule")
   Cors?: CorsRule[];
 }
 
@@ -560,7 +561,7 @@ model GeoReplication {
    * are guaranteed to be available for read operations at the secondary. Primary
    * writes after this point in time may or may not be available for reads.
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   LastSyncTime: utcDateTime;
 }
 
@@ -568,6 +569,7 @@ model GeoReplication {
  * The object returned when calling List Queues on a Queue Service.
  */
 @pagedResult
+@encodedName("application/xml", "EnumerationResults")
 model ListQueuesSegmentResponse {
   ServiceEndpoint: string;
   Prefix: string;
@@ -584,6 +586,7 @@ model ListQueuesSegmentResponse {
 /**
  * An Azure Storage Queue.
  */
+@encodedName("application/xml", "Queue")
 model QueueItem {
   /**
    * The name of the Queue.
@@ -618,13 +621,13 @@ model AccessPolicy {
   /**
    * the date-time the policy is active
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   Start?: utcDateTime;
 
   /**
    * the date-time the policy expires
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   Expiry?: utcDateTime;
 
   /**
@@ -646,13 +649,13 @@ model DequeuedMessageItem {
   /**
    * The time the Message was inserted into the Queue.
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   InsertionTime: utcDateTime;
 
   /**
    * The time that the Message will expire and be automatically deleted.
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   ExpirationTime: utcDateTime;
 
   /**
@@ -664,7 +667,7 @@ model DequeuedMessageItem {
   /**
    * The time that the message will again become visible in the Queue.
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   TimeNextVisible: utcDateTime;
 
   /**
@@ -682,31 +685,33 @@ model DequeuedMessageItem {
  * List wrapper for SignedIdentifier array
  */
 model ListOfSignedIdentifier {
-  @items
   value: SignedIdentifier[];
 }
 
 /**
  * List wrapper for DequeuedMessageItem array
  */
+@encodedName("application/xml", "QueueMessagesList")
 model ListOfDequeuedMessageItem {
-  @items
+  @encodedName("application/xml", "QueueMessage")
   value: DequeuedMessageItem[];
 }
 
 /**
  * List wrapper for EnqueuedMessage array
  */
+@encodedName("application/xml", "QueueMessagesList")
 model ListOfEnqueuedMessage {
-  @items
+  @encodedName("application/xml", "QueueMessage")
   value: EnqueuedMessage[];
 }
 
 /**
  * List wrapper for PeekedMessageItem array
  */
+@encodedName("application/xml", "QueueMessagesList")
 model ListOfPeekedMessageItem {
-  @items
+  @encodedName("application/xml", "QueueMessage")
   value: PeekedMessageItem[];
 }
 
@@ -733,13 +738,13 @@ model EnqueuedMessage {
   /**
    * The time the Message was inserted into the Queue.
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   InsertionTime: utcDateTime;
 
   /**
    * The time that the Message will expire and be automatically deleted.
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   ExpirationTime: utcDateTime;
 
   /**
@@ -751,7 +756,7 @@ model EnqueuedMessage {
   /**
    * The time that the message will again become visible in the Queue.
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   TimeNextVisible: utcDateTime;
 }
 
@@ -768,13 +773,13 @@ model PeekedMessageItem {
   /**
    * The time the Message was inserted into the Queue.
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   InsertionTime: utcDateTime;
 
   /**
    * The time that the Message will expire and be automatically deleted.
    */
-  // FIXME: (utcDateTime) Please double check that this is the correct type for your scenario.
+  @encode(DateTimeKnownEncoding.rfc7231)
   ExpirationTime: utcDateTime;
 
   /**

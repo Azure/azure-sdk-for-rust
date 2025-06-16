@@ -191,6 +191,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // Receive messages from the queue
+    let receive_message_response = queue_client
+        .receive_messages(queue_name.as_str(), None)
+        .await;
+    match receive_message_response {
+        Ok(response) => {
+            println!("Successfully received messages: {:?}", response);
+            let messages = response.into_body().await?;
+            for msg in messages.value.unwrap() {
+                println!("Received message: {:?}", msg.message_text.unwrap());
+            }
+        }
+        Err(e) => {
+            if e.http_status() == Some(StatusCode::NotFound) {
+                // Handle the case where the queue does not exist
+                // This is a common case when trying to receive messages from a queue that has already been deleted.
+                println!("Unable to receive messages, queue not found");
+            } else if e.http_status() == Some(StatusCode::Forbidden) {
+                // Handle the case where the user does not have permission to receive messages
+                // This can happen if the credentials used do not have the necessary permissions.
+                println!("Unable to receive messages, you do not have permission to receive messages from this queue. Please check your credentials.");
+            } else {
+                eprintln!("Error receiving messages: {}", e);
+            }
+        }
+    }
+
     // Delete the queue after use
     let delete_response = queue_client.delete(queue_name.as_str(), None).await;
     match delete_response {
