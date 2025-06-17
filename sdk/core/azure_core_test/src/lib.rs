@@ -33,7 +33,8 @@ pub struct TestContext {
 }
 
 impl TestContext {
-    pub(crate) fn new(
+    #[doc(hidden)]
+    pub fn new(
         crate_dir: &'static str,
         module_dir: &'static str,
         name: &'static str,
