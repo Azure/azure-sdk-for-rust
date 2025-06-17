@@ -50,19 +50,16 @@ pub fn get_retry_after(headers: &Headers, now: DateTimeFn) -> Option<Duration> {
             headers.get_str(header).ok().and_then(|v| {
                 if header == &RETRY_AFTER {
                     // RETRY_AFTER values are either in seconds or a HTTP date
-                    v.parse::<i64>()
-                        .ok()
-                        .map(Duration::milliseconds)
-                        .or_else(|| {
-                            try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
-                                let now = now();
-                                if retry_after_datetime < now {
-                                    Duration::seconds(0)
-                                } else {
-                                    time::diff(retry_after_datetime, now)
-                                }
-                            })
+                    v.parse::<i64>().ok().map(Duration::seconds).or_else(|| {
+                        try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
+                            let now = now();
+                            if retry_after_datetime < now {
+                                Duration::seconds(0)
+                            } else {
+                                time::diff(retry_after_datetime, now)
+                            }
                         })
+                    })
                 } else {
                     // RETRY_AFTER_MS or X_MS_RETRY_AFTER_MS values are in milliseconds
                     v.parse::<i64>().ok().map(Duration::milliseconds)
