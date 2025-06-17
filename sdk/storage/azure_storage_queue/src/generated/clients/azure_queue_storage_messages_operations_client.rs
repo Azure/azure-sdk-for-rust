@@ -6,8 +6,9 @@
 use crate::generated::models::{
     AzureQueueStorageMessagesOperationsClientClearOptions,
     AzureQueueStorageMessagesOperationsClientDequeueOptions,
-    AzureQueueStorageMessagesOperationsClientEnqueueOptions, ListOfDequeuedMessageItem,
-    ListOfEnqueuedMessage, QueueApiVersion, QueueMessage,
+    AzureQueueStorageMessagesOperationsClientEnqueueOptions,
+    AzureQueueStorageMessagesOperationsClientPeekOptions, ListOfDequeuedMessageItem,
+    ListOfEnqueuedMessage, ListOfPeekedMessageItem, QueueApiVersion, QueueMessage,
 };
 use azure_core::{
     http::{Context, Method, Pipeline, Request, RequestContent, Response, Url, XmlFormat},
@@ -157,6 +158,44 @@ impl AzureQueueStorageMessagesOperationsClient {
         request.insert_header("x-ms-version", version.to_string());
 
         request.set_body(queue_message);
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+    }
+
+    /// The Peek operation retrieves one or more messages from the front of the
+    /// queue but does not alter the visibility of the message.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_name` - The queue name.
+    /// * `version` - Specifies the version of the operation to use for this request.
+    /// * `options` - Optional parameters for the request.
+    pub async fn peek(
+        &self,
+        queue_name: &str,
+        version: QueueApiVersion,
+        options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'_>>,
+    ) -> Result<Response<ListOfPeekedMessageItem, XmlFormat>> {
+        let options = options.unwrap_or_default();
+        let ctx = Context::with_context(&options.method_options.context);
+        let mut url = self.endpoint.clone();
+        let mut path = String::from("{queueName}/messages");
+        path = path.replace("{queueName}", queue_name);
+        url = url.join(&path)?;
+        url.query_pairs_mut().append_pair("peekonly", "true");
+        url.query_pairs_mut()
+            .append_pair("api-version", &self.api_version);
+        if let Some(number_of_messages) = options.number_of_messages {
+            url.query_pairs_mut()
+                .append_pair("numofmessages", &number_of_messages.to_string());
+        }
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header("accept", "application/xml");
+        if let Some(request_id) = options.request_id {
+            request.insert_header("request-id", request_id);
+        }
+        request.insert_header("version", version.to_string());
+        request.insert_header("x-ms-version", version.to_string());
+
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }

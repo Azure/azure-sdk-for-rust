@@ -8,10 +8,11 @@ use crate::generated::{
         AzureQueueStorageMessageIdOperationsClientUpdateOptions,
         AzureQueueStorageMessagesOperationsClientDequeueOptions,
         AzureQueueStorageMessagesOperationsClientEnqueueOptions,
+        AzureQueueStorageMessagesOperationsClientPeekOptions,
         AzureQueueStorageQueueOperationsClientCreateOptions,
         AzureQueueStorageQueueOperationsClientDeleteOptions, ListOfDequeuedMessageItem,
-        ListOfEnqueuedMessage, QueueApiVersion, QueueMessage, ServicePropertiesCompType,
-        StorageServicePropertiesResponse,
+        ListOfEnqueuedMessage, ListOfPeekedMessageItem, QueueApiVersion, QueueMessage,
+        ServicePropertiesCompType, StorageServicePropertiesResponse,
     },
 };
 use azure_core::{
@@ -33,7 +34,7 @@ pub struct QueueClient {
 }
 
 impl QueueClient {
-    /// Creates a new BlobClient, using Entra ID authentication.
+    /// Creates a new QueueClient, using Entra ID authentication.
     ///
     /// # Arguments
     ///
@@ -370,6 +371,28 @@ impl QueueClient {
         self.client
             .get_azure_queue_storage_messages_operations_client()
             .dequeue(&self.queue_name, self.version.clone(), options)
+            .await
+    }
+
+    pub async fn peek_message(
+        &self,
+        options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'_>>,
+    ) -> Result<Response<ListOfPeekedMessageItem, XmlFormat>> {
+        let options = Some(AzureQueueStorageMessagesOperationsClientPeekOptions {
+            number_of_messages: Some(1),
+            ..options.unwrap_or_default()
+        });
+
+        self.peek_messages(options).await
+    }
+
+    pub async fn peek_messages(
+        &self,
+        options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'_>>,
+    ) -> Result<Response<ListOfPeekedMessageItem, XmlFormat>> {
+        self.client
+            .get_azure_queue_storage_messages_operations_client()
+            .peek(&self.queue_name, self.version.clone(), options)
             .await
     }
 }

@@ -6,7 +6,8 @@ use azure_core::{
 };
 use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::{
-    AzureQueueStorageMessagesOperationsClientDequeueOptions, QueueClient, QueueMessage,
+    AzureQueueStorageMessagesOperationsClientDequeueOptions,
+    AzureQueueStorageMessagesOperationsClientPeekOptions, QueueClient, QueueMessage,
 };
 
 /// Custom error type for queue operations
@@ -124,7 +125,7 @@ async fn send_and_update_message(
     Ok(())
 }
 
-async fn receive_and_process_messages(
+async fn peek_and_receive_messages(
     queue_client: &QueueClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
     _ = queue_client
@@ -133,6 +134,27 @@ async fn receive_and_process_messages(
     _ = queue_client
         .send_message("Message 2 from Rust Queue SDK", None)
         .await;
+
+    let options = AzureQueueStorageMessagesOperationsClientPeekOptions {
+        number_of_messages: Some(5),
+        ..Default::default()
+    };
+
+    let result = queue_client.peek_messages(Some(options)).await;
+    log_operation_result(&result, "peek_messages");
+
+    if let Ok(response) = result {
+        let messages = response.into_body().await?;
+        if let Some(messages) = messages.value {
+            for msg in messages {
+                println!(
+                    "Successfully peeked message ({}): {}",
+                    msg.message_id.unwrap(),
+                    msg.message_text.unwrap_or_default()
+                );
+            }
+        }
+    }
 
     let options = AzureQueueStorageMessagesOperationsClientDequeueOptions {
         number_of_messages: Some(5),
@@ -146,9 +168,11 @@ async fn receive_and_process_messages(
         let messages = response.into_body().await?;
         if let Some(messages) = messages.value {
             for msg in messages {
-                if let Some(text) = msg.message_text {
-                    println!("Successfully received message: {}", text);
-                }
+                println!(
+                    "Successfully received message ({}): {}",
+                    msg.message_id.unwrap(),
+                    msg.message_text.unwrap_or_default()
+                );
             }
         }
     }
@@ -219,7 +243,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     // Receive messages
-    receive_and_process_messages(&queue_client).await?;
+    peek_and_receive_messages(&queue_client).await?;
 
     // Cleanup
     let result = queue_client.delete(None).await;

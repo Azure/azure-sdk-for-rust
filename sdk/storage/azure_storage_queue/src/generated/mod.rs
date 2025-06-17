@@ -6,8 +6,3 @@
 pub mod clients;
 pub mod models;
 pub use clients::{AzureQueueStorageClient, AzureQueueStorageClientOptions};
-pub use models::{
-    AzureQueueStorageMessageIdOperationsClientDeleteOptions,
-    AzureQueueStorageMessageIdOperationsClientUpdateOptions,
-    AzureQueueStorageServiceOperationsClientGetPropertiesOptions, QueueApiVersion,
-};

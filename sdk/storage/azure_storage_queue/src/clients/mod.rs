@@ -12,6 +12,7 @@ pub use crate::generated::clients::{
 pub use crate::generated::models::{
     AzureQueueStorageMessagesOperationsClientClearOptions,
     AzureQueueStorageMessagesOperationsClientDequeueOptions,
-    AzureQueueStorageMessagesOperationsClientEnqueueOptions, ListOfDequeuedMessageItem,
+    AzureQueueStorageMessagesOperationsClientEnqueueOptions,
+    AzureQueueStorageMessagesOperationsClientPeekOptions, ListOfDequeuedMessageItem,
     ListOfEnqueuedMessage, QueueApiVersion, QueueMessage,
 };

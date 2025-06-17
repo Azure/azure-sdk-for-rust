@@ -7,7 +7,7 @@ use azure_storage_queue::AzureQueueStorageMessageIdOperationsClientUpdateOptions
 use azure_storage_queue::{
     clients::{
         AzureQueueStorageClientOptions, AzureQueueStorageMessagesOperationsClientDequeueOptions,
-        QueueClient, QueueMessage,
+        AzureQueueStorageMessagesOperationsClientPeekOptions, QueueClient, QueueMessage,
     },
     ListOfEnqueuedMessage,
 };
@@ -354,13 +354,86 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 
 /// Receives the first message from a queue in Azure Storage Queue service.
 #[recorded::test]
+async fn test_peek_message(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, "test-peek-message").await?;
+    let test_messages = ["Message 1", "Message 2"];
+
+    // Setup test queue with messages
+    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        peek_and_assert(&queue_client, &test_messages, 1, None).await?;
+
+        // The messages should not have been dequeued, so we can peek again
+        // and expect to receive the same message again.
+        peek_and_assert(&queue_client, &test_messages, 1, None).await?;
+
+        Ok(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
+/// Receives all messages from a queue in Azure Storage Queue service.
+#[recorded::test]
+async fn test_peek_messages(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, "test-peek-messages").await?;
+    let test_messages = ["Message 1", "Message 2"];
+
+    // Setup test queue with messages
+    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        let options = Some(AzureQueueStorageMessagesOperationsClientPeekOptions {
+            number_of_messages: Some(10),
+            ..Default::default()
+        });
+
+        peek_and_assert(
+            &queue_client,
+            &test_messages,
+            test_messages.len(),
+            options.clone(),
+        )
+        .await?;
+
+        // The messages should not have been dequeued, so we can peek again
+        // and expect to receive both messages this time.
+        peek_and_assert(
+            &queue_client,
+            &test_messages,
+            test_messages.len(),
+            options.clone(),
+        )
+        .await?;
+
+        Ok(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
+/// Receives the first message from a queue in Azure Storage Queue service.
+#[recorded::test]
 async fn test_receive_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, "test-receive-message").await?;
     let test_messages = ["Message 1", "Message 2"];
 
     // Setup test queue with messages
-    setup_test_queue_for_receive_message(&queue_client, &test_messages).await?;
+    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
@@ -398,7 +471,7 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
     let test_messages = ["Message 1", "Message 2"];
 
     // Setup test queue with messages
-    setup_test_queue_for_receive_message(&queue_client, &test_messages).await?;
+    setup_test_queue_with_messages(&queue_client, &test_messages).await?;
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
@@ -477,7 +550,7 @@ fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
 }
 
 /// Helper function to set up a test queue with messages
-async fn setup_test_queue_for_receive_message(
+async fn setup_test_queue_with_messages(
     queue_client: &QueueClient,
     messages: &[&str],
 ) -> Result<()> {
@@ -507,4 +580,33 @@ fn assert_message_text(actual: Option<String>, expected: &str, message_index: us
         expected,
         actual
     );
+}
+
+async fn peek_and_assert<'a>(
+    queue_client: &QueueClient,
+    expected_messages: &[&str],
+    count: usize,
+    options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'a>>,
+) -> Result<()> {
+    // Peek the messages in the queue
+    let response = queue_client.peek_messages(options).await?;
+    assert_successful_response(&response);
+
+    let messages = response.into_body().await?;
+    let messages = messages.value.unwrap();
+
+    assert_eq!(
+        messages.len(),
+        count,
+        "Expected to receive exactly {} messages, got {}",
+        count,
+        messages.len()
+    );
+
+    // Assert each message matches the expected text
+    for (i, message) in messages.iter().enumerate() {
+        assert_message_text(message.message_text.clone(), expected_messages[i], i);
+    }
+
+    Ok(())
 }

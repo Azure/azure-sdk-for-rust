@@ -157,6 +157,16 @@ pub struct ListOfEnqueuedMessage {
 
 }
 
+/// List wrapper for PeekedMessageItem array
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "QueueMessagesList")]
+pub struct ListOfPeekedMessageItem {
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    pub value: Option<Vec<PeekedMessageItem>>,
+
+}
+
 /// Azure Analytics Logging settings for request.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct LoggingRequest {
@@ -252,6 +262,33 @@ pub struct MetricsResponse {
 /// The version of Storage Analytics to configure.
     #[serde(rename = "Version", skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+
+}
+
+/// The object returned in the QueueMessageList array when calling Peek Messages on
+/// a Queue
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+pub struct PeekedMessageItem {
+/// The number of times the message has been dequeued.
+    #[serde(rename = "DequeueCount", skip_serializing_if = "Option::is_none")]
+    pub dequeue_count: Option<i64>,
+
+/// The time that the Message will expire and be automatically deleted.
+    #[serde(default, rename = "ExpirationTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc7231::option")]
+    pub expiration_time: Option<OffsetDateTime>,
+
+/// The time the Message was inserted into the Queue.
+    #[serde(default, rename = "InsertionTime", skip_serializing_if = "Option::is_none", with = "azure_core::date::rfc7231::option")]
+    pub insertion_time: Option<OffsetDateTime>,
+
+/// The Id of the Message.
+    #[serde(rename = "MessageId", skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+
+/// The content of the Message.
+    #[serde(rename = "MessageText", skip_serializing_if = "Option::is_none")]
+    pub message_text: Option<String>,
 
 }
 

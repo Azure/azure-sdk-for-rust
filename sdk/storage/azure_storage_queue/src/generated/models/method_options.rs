@@ -112,6 +112,24 @@ pub struct AzureQueueStorageMessagesOperationsClientEnqueueOptions<'a> {
     pub visibilitytimeout: Option<i32>,
 }
 
+
+/// Options to be passed to [`AzureQueueStorageMessagesOperationsClient::peek()`](crate::generated::clients::AzureQueueStorageMessagesOperationsClient::peek())
+#[derive(Clone, Default, SafeDebug)]
+pub struct AzureQueueStorageMessagesOperationsClientPeekOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// Optional. A nonzero integer value that specifies the number of messages to
+/// retrieve from the queue, up to a maximum of 32. If fewer are visible, the
+/// visible messages are returned. By default, a single message is retrieved from
+/// the queue with this operation.
+    pub number_of_messages: Option<i32>,
+
+    /// Provides a client-generated, opaque value with a 1 KB character limit that is
+/// recorded in the analytics logs when storage analytics logging is enabled.
+    pub request_id: Option<String>,
+}
+
 /// Options to be passed to [`AzureQueueStorageQueueOperationsClient::create()`](crate::generated::clients::AzureQueueStorageQueueOperationsClient::create())
 #[derive(Clone, Default, SafeDebug)]
 pub struct AzureQueueStorageQueueOperationsClientCreateOptions<'a> {
