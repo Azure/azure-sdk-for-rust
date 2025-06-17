@@ -255,8 +255,9 @@ If your application uses a different asynchronous runtime, you can replace the a
 You provide the implementation by calling the `set_async_runtime()` API:
 
 ```rust no_run
-use azure_core::async_runtime::{
-     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask};
+use azure_core::{async_runtime::{
+     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask},
+     time::Duration};
 use std::sync::Arc;
 use futures::FutureExt;
 
@@ -266,7 +267,7 @@ impl AsyncRuntime for CustomRuntime {
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {
       unimplemented!("Custom spawn not implemented");
     }
-    fn sleep(&self, duration: std::time::Duration) -> TaskFuture {
+    fn sleep(&self, duration: Duration) -> TaskFuture {
       unimplemented!("Custom sleep not implemented");
     }
   }

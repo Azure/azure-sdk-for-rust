@@ -3,7 +3,7 @@
 
 //! Sleep functions.
 
-use crate::async_runtime::get_async_runtime;
+use crate::{async_runtime::get_async_runtime, time::Duration};
 
 /// Sleeps for the specified duration using the configured async runtime.
 ///
@@ -15,16 +15,15 @@ use crate::async_runtime::get_async_runtime;
 ///
 /// # Example
 /// ```
-/// use typespec_client_core::sleep;
-/// use std::time::Duration;
+/// use typespec_client_core::{sleep, time::Duration};
 ///
 /// #[tokio::main]
 /// async fn main() {
 ///     // Sleep for 1 second
-///     sleep(Duration::from_secs(1)).await;
+///     sleep(Duration::seconds(1)).await;
 ///     println!("Slept for 1 second");
 /// }
 /// ```
-pub async fn sleep(duration: std::time::Duration) {
+pub async fn sleep(duration: Duration) {
     get_async_runtime().sleep(duration).await
 }

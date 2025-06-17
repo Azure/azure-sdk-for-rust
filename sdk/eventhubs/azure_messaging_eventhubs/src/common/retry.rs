@@ -113,12 +113,7 @@ where
                 );
 
                 // Wait for the backoff duration
-                azure_core::sleep::sleep(
-                    jittered_delay
-                        .try_into()
-                        .unwrap_or(std::time::Duration::MAX),
-                )
-                .await;
+                azure_core::sleep::sleep(jittered_delay).await;
 
                 // Increase retry count
                 current_retry += 1;

@@ -59,8 +59,8 @@ struct EntraIdErrorResponse {
 #[serde(default)]
 struct EntraIdTokenResponse {
     token_type: String,
-    expires_in: u64,
-    ext_expires_in: u64,
+    expires_in: i64,
+    ext_expires_in: i64,
     access_token: String,
 }
 

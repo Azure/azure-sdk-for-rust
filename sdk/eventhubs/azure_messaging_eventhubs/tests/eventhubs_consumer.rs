@@ -182,22 +182,19 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
 
         // Read events from the stream for a bit of time.
 
-        let result = timeout(
-            TEST_DURATION.try_into().unwrap_or(std::time::Duration::MAX),
-            async {
-                while let Some(event) = event_stream.next().await {
-                    match event {
-                        Ok(_event) => {
-                            //                    info!("Received the following message:: {:?}", event);
-                            count += 1;
-                        }
-                        Err(err) => {
-                            info!("Error while receiving message: {:?}", err);
-                        }
+        let result = timeout(TEST_DURATION.try_into().unwrap(), async {
+            while let Some(event) = event_stream.next().await {
+                match event {
+                    Ok(_event) => {
+                        //                    info!("Received the following message:: {:?}", event);
+                        count += 1;
+                    }
+                    Err(err) => {
+                        info!("Error while receiving message: {:?}", err);
                     }
                 }
-            },
-        )
+            }
+        })
         .await;
 
         info!("Received {count} messages in {TEST_DURATION:?}. Timeout: {result:?}");
@@ -248,22 +245,19 @@ async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     info!("Receiving events for {:?}.", TEST_DURATION);
 
     // Read events from the stream for a bit of time.
-    let result = timeout(
-        TEST_DURATION.try_into().unwrap_or(std::time::Duration::MAX),
-        async {
-            while let Some(event) = event_stream.next().await {
-                match event {
-                    Ok(_event) => {
-                        //                    info!("Received the following message:: {:?}", event);
-                        count += 1;
-                    }
-                    Err(err) => {
-                        info!("Error while receiving message: {:?}", err);
-                    }
+    let result = timeout(TEST_DURATION.try_into().unwrap(), async {
+        while let Some(event) = event_stream.next().await {
+            match event {
+                Ok(_event) => {
+                    //                    info!("Received the following message:: {:?}", event);
+                    count += 1;
+                }
+                Err(err) => {
+                    info!("Error while receiving message: {:?}", err);
                 }
             }
-        },
-    )
+        }
+    })
     .await;
 
     info!("Received {count} messages in {TEST_DURATION:?}. Timeout: {result:?}");

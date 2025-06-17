@@ -244,12 +244,7 @@ impl EventProcessor {
                 }
             }
             debug!("Event processor sleeping for {:?}", self.update_interval);
-            azure_core::sleep::sleep(
-                self.update_interval
-                    .try_into()
-                    .unwrap_or(std::time::Duration::MAX),
-            )
-            .await;
+            azure_core::sleep::sleep(self.update_interval).await;
             if self.is_shutdown()? {
                 info!("Event processor shutting down.");
                 break Ok(());

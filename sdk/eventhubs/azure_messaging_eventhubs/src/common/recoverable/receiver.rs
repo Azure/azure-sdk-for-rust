@@ -104,7 +104,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
                 if let Some(delivery_timeout) = self.timeout {
                     select! {
                         delivery = receiver.receive_delivery().fuse() => Ok(delivery),
-                        _ = azure_core::sleep::sleep(delivery_timeout.try_into().unwrap_or(std::time::Duration::MAX)).fuse() => {
+                        _ = azure_core::sleep::sleep(delivery_timeout).fuse() => {
                              Err(azure_core::Error::new(
                                 AzureErrorKind::Io,
                                 Box::new(std::io::Error::from(std::io::ErrorKind::TimedOut))))

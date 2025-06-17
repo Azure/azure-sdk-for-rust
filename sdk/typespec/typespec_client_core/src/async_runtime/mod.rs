@@ -29,6 +29,7 @@
 //! ```
 //!
 //!
+use crate::time::Duration;
 use std::{
     future::Future,
     pin::Pin,
@@ -106,10 +107,7 @@ pub trait AsyncRuntime: Send + Sync {
     ///
     fn spawn(&self, f: TaskFuture) -> SpawnedTask;
 
-    fn sleep(
-        &self,
-        duration: std::time::Duration,
-    ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
+    fn sleep(&self, duration: Duration) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 }
 
 static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock::new();
@@ -170,7 +168,7 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 ///    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
 ///      unimplemented!("Custom spawn not implemented");
 ///    }
-///    fn sleep(&self, duration: std::time::Duration) -> TaskFuture {
+///    fn sleep(&self, duration: typespec_client_core::time::Duration) -> TaskFuture {
 ///      unimplemented!("Custom sleep not implemented");
 ///    }
 ///  }

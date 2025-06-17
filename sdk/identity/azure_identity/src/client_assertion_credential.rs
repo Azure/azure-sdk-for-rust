@@ -12,10 +12,10 @@ use azure_core::{
         headers::{self, content_type},
         Method, Request, StatusCode, Url,
     },
-    time::OffsetDateTime,
+    time::{Duration, OffsetDateTime},
     Error,
 };
-use std::{fmt::Debug, str, sync::Arc, time::Duration};
+use std::{fmt::Debug, str, sync::Arc};
 use url::form_urlencoded;
 
 const ASSERTION_TYPE: &str = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
@@ -126,7 +126,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
                     deserialize(CLIENT_ASSERTION_CREDENTIAL, res).await?;
                 Ok(AccessToken::new(
                     token_response.access_token,
-                    OffsetDateTime::now_utc() + Duration::from_secs(token_response.expires_in),
+                    OffsetDateTime::now_utc() + Duration::seconds(token_response.expires_in),
                 ))
             }
             _ => {

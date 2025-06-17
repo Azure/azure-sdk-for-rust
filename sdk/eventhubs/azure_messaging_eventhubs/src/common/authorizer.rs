@@ -217,12 +217,7 @@ impl Authorizer {
             debug!("Found expiration times: {:?}", expiration_times);
             if expiration_times.is_empty() {
                 debug!("No tokens to refresh. Sleeping for {TOKEN_REFRESH_BIAS:?}.");
-                azure_core::sleep::sleep(
-                    TOKEN_REFRESH_BIAS
-                        .try_into()
-                        .unwrap_or(std::time::Duration::MAX),
-                )
-                .await;
+                azure_core::sleep::sleep(TOKEN_REFRESH_BIAS).await;
                 continue;
             }
 
@@ -288,12 +283,7 @@ impl Authorizer {
                     "refresh_tokens: Sleeping for {sleep_duration:?} until {:?}",
                     now + sleep_duration
                 );
-                azure_core::sleep::sleep(
-                    sleep_duration
-                        .try_into()
-                        .unwrap_or(std::time::Duration::MAX),
-                )
-                .await;
+                azure_core::sleep::sleep(sleep_duration).await;
                 now = OffsetDateTime::now_utc();
             } else {
                 debug!("Not sleeping because refresh time ({refresh_time}) is in the past (now = {now}).");

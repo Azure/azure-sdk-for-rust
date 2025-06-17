@@ -93,12 +93,7 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
         let sleep_duration = retry_after.map_or(policy_sleep_duration, |retry_after| {
             std::cmp::max(retry_after, policy_sleep_duration)
         });
-        sleep(
-            sleep_duration
-                .try_into()
-                .unwrap_or(std::time::Duration::MAX),
-        )
-        .await;
+        sleep(sleep_duration).await;
     }
 }
 

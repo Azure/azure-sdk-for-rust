@@ -14,10 +14,9 @@ use azure_core::{
         headers::{self, content_type},
         Method, Request, Url,
     },
-    time::OffsetDateTime,
+    time::{Duration, OffsetDateTime},
     Error,
 };
-use std::time::Duration;
 use std::{str, sync::Arc};
 use url::form_urlencoded;
 
@@ -95,7 +94,7 @@ impl ClientSecretCredential {
                     deserialize(CLIENT_SECRET_CREDENTIAL, res).await?;
                 Ok(AccessToken::new(
                     token_response.access_token,
-                    OffsetDateTime::now_utc() + Duration::from_secs(token_response.expires_in),
+                    OffsetDateTime::now_utc() + Duration::seconds(token_response.expires_in),
                 ))
             }
             _ => {

@@ -3,10 +3,9 @@
 
 use async_lock::RwLock;
 use azure_core::credentials::{AccessToken, TokenRequestOptions};
-use azure_core::time::OffsetDateTime;
+use azure_core::time::{Duration, OffsetDateTime};
 use std::collections::HashMap;
 use std::future::Future;
-use std::time::Duration;
 use tracing::trace;
 
 #[derive(Debug)]
@@ -73,16 +72,17 @@ impl Default for TokenCache {
 }
 
 fn should_refresh(token: &AccessToken) -> bool {
-    token.expires_on <= OffsetDateTime::now_utc() + Duration::from_secs(300)
+    token.expires_on <= OffsetDateTime::now_utc() + Duration::seconds(300)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use async_lock::Mutex;
-    use azure_core::credentials::Secret;
-    use std::time::Duration;
-    use time::OffsetDateTime;
+    use azure_core::{
+        credentials::Secret,
+        time::{Duration, OffsetDateTime},
+    };
 
     #[derive(Debug)]
     struct MockCredential {
@@ -126,7 +126,7 @@ mod tests {
         let resource1 = &[STORAGE_TOKEN_SCOPE];
         let resource2 = &[IOTHUB_TOKEN_SCOPE];
         let secret_string = "test-token";
-        let expires_on = OffsetDateTime::now_utc() + Duration::from_secs(3600);
+        let expires_on = OffsetDateTime::now_utc() + Duration::seconds(3600);
         let access_token = AccessToken::new(Secret::new(secret_string), expires_on);
 
         let mock_credential = MockCredential::new(access_token);
