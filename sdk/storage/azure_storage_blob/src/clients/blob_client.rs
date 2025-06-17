@@ -9,7 +9,7 @@ use crate::{
         BlockBlobClientUploadResult,
     },
     models::{
-        AccessTier, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        AccessTierOptional, BlobClientDeleteOptions, BlobClientDownloadOptions,
         BlobClientGetPropertiesOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
@@ -22,7 +22,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        RequestContent, Response, Url, XmlFormat,
+        NoFormat, RequestContent, Response, Url, XmlFormat,
     },
     Bytes, Result,
 };
@@ -116,7 +116,7 @@ impl BlobClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobClientGetPropertiesResult>> {
+    ) -> Result<Response<BlobClientGetPropertiesResult, NoFormat>> {
         self.client.get_properties(options).await
     }
 
@@ -128,7 +128,7 @@ impl BlobClient {
     pub async fn set_properties(
         &self,
         options: Option<BlobClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.set_properties(options).await
     }
 
@@ -138,7 +138,7 @@ impl BlobClient {
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<Response<BlobClientDownloadResult>> {
+    ) -> Result<Response<BlobClientDownloadResult, NoFormat>> {
         self.client.download(options).await
     }
 
@@ -157,7 +157,7 @@ impl BlobClient {
         overwrite: bool,
         content_length: u64,
         options: Option<BlockBlobClientUploadOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientUploadResult>> {
+    ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
         let mut options = options.unwrap_or_default();
 
         if !overwrite {
@@ -181,7 +181,7 @@ impl BlobClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.set_metadata(options).await
     }
 
@@ -193,7 +193,7 @@ impl BlobClient {
     pub async fn delete(
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.delete(options).await
     }
 
@@ -206,9 +206,9 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn set_tier(
         &self,
-        tier: AccessTier,
+        tier: AccessTierOptional,
         options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.set_tier(tier, options).await
     }
 }
