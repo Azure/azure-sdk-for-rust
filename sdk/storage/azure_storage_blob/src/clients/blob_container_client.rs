@@ -16,7 +16,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        PageIterator, Pager, Response, Url, XmlFormat,
+        NoFormat, PageIterator, Pager, Response, Url, XmlFormat,
     },
     Result,
 };
@@ -103,7 +103,7 @@ impl BlobContainerClient {
     pub async fn create_container(
         &self,
         options: Option<BlobContainerClientCreateOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.create(options).await
     }
 
@@ -117,7 +117,7 @@ impl BlobContainerClient {
     pub async fn set_metadata(
         &self,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.set_metadata(options).await
     }
 
@@ -129,7 +129,7 @@ impl BlobContainerClient {
     pub async fn delete_container(
         &self,
         options: Option<BlobContainerClientDeleteOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client.delete(options).await
     }
 
@@ -142,7 +142,7 @@ impl BlobContainerClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<BlobContainerClientGetPropertiesResult>> {
+    ) -> Result<Response<BlobContainerClientGetPropertiesResult, NoFormat>> {
         self.client.get_properties(options).await
     }
 

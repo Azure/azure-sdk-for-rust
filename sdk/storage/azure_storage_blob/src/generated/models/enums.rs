@@ -43,6 +43,41 @@ create_extensible_enum!(
 );
 
 create_extensible_enum!(
+    #[doc = r#"/// The access tiers."#]
+    AccessTierOptional,
+    #[doc = r#"/// The archive access tier."#]
+    (Archive, "Archive"),
+    #[doc = r#"/// The Cold access tier."#]
+    (Cold, "Cold"),
+    #[doc = r#"/// The cool access tier."#]
+    (Cool, "Cool"),
+    #[doc = r#"/// The hot access tier."#]
+    (Hot, "Hot"),
+    #[doc = r#"/// The hot P10 tier."#]
+    (P10, "P10"),
+    #[doc = r#"/// The hot P15 tier."#]
+    (P15, "P15"),
+    #[doc = r#"/// The hot P20 tier."#]
+    (P20, "P20"),
+    #[doc = r#"/// The hot P30 tier."#]
+    (P30, "P30"),
+    #[doc = r#"/// The hot P4 tier."#]
+    (P4, "P4"),
+    #[doc = r#"/// The hot P40 tier."#]
+    (P40, "P40"),
+    #[doc = r#"/// The hot P50 tier."#]
+    (P50, "P50"),
+    #[doc = r#"/// The hot P6 tier."#]
+    (P6, "P6"),
+    #[doc = r#"/// The hot P60 tier."#]
+    (P60, "P60"),
+    #[doc = r#"/// The hot P70 tier."#]
+    (P70, "P70"),
+    #[doc = r#"/// The hot P80 tier."#]
+    (P80, "P80")
+);
+
+create_enum!(
     #[doc = r#"/// The account kind."#]
     AccountKind,
     #[doc = r#"/// The storage account is a blob storage account."#]
@@ -68,7 +103,16 @@ create_extensible_enum!(
     (RehydratePendingToHot, "rehydrate-pending-to-hot")
 );
 
-create_extensible_enum!(
+create_enum!(
+    #[doc = r#"/// The blob copy source tags types."#]
+    BlobCopySourceTags,
+    #[doc = r#"/// The copy blob source tags option."#]
+    (Copy, "COPY"),
+    #[doc = r#"/// The replace blob source tags option."#]
+    (Replace, "REPLACE")
+);
+
+create_enum!(
     #[doc = r#"/// The type of blob deletions."#]
     BlobDeleteType,
     #[doc = r#"/// Permanently delete the blob."#]
@@ -88,7 +132,7 @@ create_extensible_enum!(
     (RelativeToNow, "RelativeToNow")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The immutability policy mode."#]
     BlobImmutabilityPolicyMode,
     #[doc = r#"/// The immutability policy is locked."#]
@@ -99,7 +143,7 @@ create_extensible_enum!(
     (Unlocked, "Unlocked")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The blob type."#]
     BlobType,
     #[doc = r#"/// The blob is an append blob."#]
@@ -110,7 +154,7 @@ create_extensible_enum!(
     (PageBlob, "PageBlob")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The block list types."#]
     BlockListType,
     #[doc = r#"/// Both lists together."#]
@@ -121,7 +165,7 @@ create_extensible_enum!(
     (Uncommitted, "uncommitted")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The copy status."#]
     CopyStatus,
     #[doc = r#"/// The copy operation is aborted."#]
@@ -134,7 +178,7 @@ create_extensible_enum!(
     (Success, "success")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The delete snapshots option type."#]
     DeleteSnapshotsOptionType,
     #[doc = r#"/// The delete snapshots include option is include."#]
@@ -143,7 +187,7 @@ create_extensible_enum!(
     (Only, "only")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided
 /// if the x-ms-encryption-key header is provided."#]
     EncryptionAlgorithmType,
@@ -152,6 +196,13 @@ create_extensible_enum!(
 );
 
 create_extensible_enum!(
+    #[doc = r#"/// The file share token intent types."#]
+    FileShareTokenIntent,
+    #[doc = r#"/// The file share token intent is backup."#]
+    (Backup, "backup")
+);
+
+create_enum!(
     #[doc = r#"/// The filter blobs includes."#]
     FilterBlobsIncludeItem,
     #[doc = r#"/// The filter includes no versions."#]
@@ -171,7 +222,16 @@ create_extensible_enum!(
     (Unavailable, "unavailable")
 );
 
-create_extensible_enum!(
+create_enum!(
+    #[doc = r#"/// The immutability policy mode used in requests."#]
+    ImmutabilityPolicyMode,
+    #[doc = r#"/// The immutability policy is locked."#]
+    (Locked, "Locked"),
+    #[doc = r#"/// The immutability policy is unlocked."#]
+    (Unlocked, "Unlocked")
+);
+
+create_enum!(
     #[doc = r#"/// The lease duration."#]
     LeaseDuration,
     #[doc = r#"/// The lease is of fixed duration."#]
@@ -180,7 +240,7 @@ create_extensible_enum!(
     (Infinite, "infinite")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The lease state."#]
     LeaseState,
     #[doc = r#"/// The lease is available."#]
@@ -195,7 +255,7 @@ create_extensible_enum!(
     (Leased, "leased")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The lease status."#]
     LeaseStatus,
     #[doc = r#"/// The lease is locked."#]
@@ -204,7 +264,7 @@ create_extensible_enum!(
     (Unlocked, "unlocked")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The list blob includes parameter values."#]
     ListBlobsIncludeItem,
     #[doc = r#"/// The include copies."#]
@@ -229,7 +289,7 @@ create_extensible_enum!(
     (Versions, "versions")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// Include this parameter to specify that the container's metadata be returned as part of the response body."#]
     ListContainersIncludeType,
     #[doc = r#"/// Include deleted"#]
@@ -276,14 +336,14 @@ create_extensible_enum!(
     (Container, "container")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The query request, note only SQL supported"#]
     QueryRequestType,
     #[doc = r#"/// The SQL request query type."#]
     (SQL, "SQL")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The query format type."#]
     QueryType,
     #[doc = r#"/// The query format type is Apache Arrow."#]
@@ -306,7 +366,7 @@ create_extensible_enum!(
     (Standard, "Standard")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The sequence number actions."#]
     SequenceNumberActionType,
     #[doc = r#"/// Increment the sequence number."#]
@@ -317,7 +377,7 @@ create_extensible_enum!(
     (Update, "update")
 );
 
-create_extensible_enum!(
+create_enum!(
     #[doc = r#"/// The SKU types"#]
     SkuName,
     #[doc = r#"/// The premium LRS SKU."#]

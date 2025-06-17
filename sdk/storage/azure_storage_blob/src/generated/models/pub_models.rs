@@ -6,8 +6,9 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange, Committed_blocksBlock, CorsCorsRule,
-        Page_rangePageRange, SchemaField, Uncommitted_blocksBlock,
+        Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange, Committed_blocksBlock,
+        Container_itemsContainer, CorsCorsRule, Page_rangePageRange, SchemaField,
+        Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobImmutabilityPolicyMode, BlobType, CopyStatus,
     GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
@@ -26,7 +27,7 @@ pub struct AccessPolicy {
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc3339::option"
+        with = "azure_core::date::rfc7231::option"
     )]
     pub expiry: Option<OffsetDateTime>,
 
@@ -39,7 +40,7 @@ pub struct AccessPolicy {
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc3339::option"
+        with = "azure_core::date::rfc7231::option"
     )]
     pub start: Option<OffsetDateTime>,
 }
@@ -1016,7 +1017,12 @@ pub struct ListBlobsHierarchySegmentResponse {
 #[serde(rename = "EnumerationResults")]
 pub struct ListContainersSegmentResponse {
     /// The container segment.
-    #[serde(default, rename = "Containers")]
+    #[serde(
+        default,
+        deserialize_with = "Container_itemsContainer::unwrap",
+        rename = "Containers",
+        serialize_with = "Container_itemsContainer::wrap"
+    )]
     pub container_items: Vec<ContainerItem>,
 
     /// The marker of the containers.
