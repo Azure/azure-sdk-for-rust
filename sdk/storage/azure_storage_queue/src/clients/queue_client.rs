@@ -6,11 +6,13 @@ use crate::generated::{
     models::{
         AzureQueueStorageMessageIdOperationsClientDeleteOptions,
         AzureQueueStorageMessageIdOperationsClientUpdateOptions,
+        AzureQueueStorageMessagesOperationsClientClearOptions,
         AzureQueueStorageMessagesOperationsClientDequeueOptions,
         AzureQueueStorageMessagesOperationsClientEnqueueOptions,
         AzureQueueStorageMessagesOperationsClientPeekOptions,
         AzureQueueStorageQueueOperationsClientCreateOptions,
-        AzureQueueStorageQueueOperationsClientDeleteOptions, ListOfDequeuedMessageItem,
+        AzureQueueStorageQueueOperationsClientDeleteOptions,
+        AzureQueueStorageServiceOperationsClientGetPropertiesOptions, ListOfDequeuedMessageItem,
         ListOfEnqueuedMessage, ListOfPeekedMessageItem, QueueApiVersion, QueueMessage,
         ServicePropertiesCompType, StorageServicePropertiesResponse,
     },
@@ -150,6 +152,7 @@ impl QueueClient {
     // TODO: Validate that this is correctly implemented. This returns properties for the entire service, not just a single queue.
     pub async fn get_properties(
         &self,
+        options: Option<AzureQueueStorageServiceOperationsClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
         self.client
             .get_azure_queue_storage_service_operations_client()
@@ -157,7 +160,7 @@ impl QueueClient {
                 crate::generated::models::ServiceRestypeType::Service,
                 crate::generated::models::ServicePropertiesCompType::Properties,
                 self.version.clone(),
-                None,
+                options,
             )
             .await
     }
@@ -182,13 +185,16 @@ impl QueueClient {
     /// Deletes all messages in the specified queue.
     ///
     /// Returns a `Response` indicating the result of the operation.
-    pub async fn delete_messages(&self) -> Result<Response<()>> {
+    pub async fn delete_messages(
+        &self,
+        options: Option<AzureQueueStorageMessagesOperationsClientClearOptions<'_>>,
+    ) -> Result<Response<()>> {
         let messages_client = self
             .client
             .get_azure_queue_storage_messages_operations_client();
 
         let result = messages_client
-            .clear(&self.queue_name, self.version.clone(), None)
+            .clear(&self.queue_name, self.version.clone(), options)
             .await?;
         Ok(result)
     }

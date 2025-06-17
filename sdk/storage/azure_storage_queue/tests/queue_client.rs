@@ -125,7 +125,7 @@ async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, "dummy").await;
 
-    let response = queue_client?.get_properties().await?;
+    let response = queue_client?.get_properties(None).await?;
 
     assert!(
         response.status() == 200,
@@ -207,7 +207,7 @@ async fn test_delete_messages(ctx: TestContext) -> Result<()> {
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
         // Delete messages from the queue
-        let response = queue_client.delete_messages().await?;
+        let response = queue_client.delete_messages(None).await?;
         assert_successful_response(&response);
 
         Ok::<(), azure_core::Error>(())

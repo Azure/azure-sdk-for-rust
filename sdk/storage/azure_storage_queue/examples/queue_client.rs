@@ -204,7 +204,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let queue_client = QueueClient::new(&endpoint, &queue_name, credential.clone(), None)?;
 
     // Get queue service properties
-    let result = queue_client.get_properties().await;
+    let result = queue_client.get_properties(None).await;
     log_operation_result(&result, "get_properties");
 
     // Create and manage queue
@@ -232,7 +232,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     // Delete messages
-    let result = queue_client.delete_messages().await;
+    let result = queue_client.delete_messages(None).await;
     log_operation_result(&result, "delete_messages");
 
     // Send and process messages
