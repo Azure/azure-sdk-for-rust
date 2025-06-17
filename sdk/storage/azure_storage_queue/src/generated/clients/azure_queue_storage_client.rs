@@ -65,7 +65,7 @@ impl AzureQueueStorageClient {
         ));
 
         Ok(Self {
-            api_version: api_version,
+            api_version,
             endpoint,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),

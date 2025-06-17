@@ -31,7 +31,7 @@ impl AzureQueueStorageMessageIdOperationsClient {
     /// * `queue_name` - The queue name.
     /// * `messageid` - The container name.
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call
-    /// to the Get Messages or Update Message operation.
+    ///   to the Get Messages or Update Message operation.
     /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     pub async fn delete(
@@ -78,12 +78,12 @@ impl AzureQueueStorageMessageIdOperationsClient {
     /// * `queue_name` - The queue name.
     /// * `messageid` - The container name.
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call
-    /// to the Get Messages or Update Message operation.
+    ///   to the Get Messages or Update Message operation.
     /// * `visibilitytimeout` - Optional. Specifies the new visibility timeout value, in seconds, relative to
-    /// server time. The default value is 30 seconds. A specified value must be larger
-    /// than or equal to 1 second, and cannot be larger than 7 days, or larger than 2
-    /// hours on REST protocol versions prior to version 2011-08-18. The visibility
-    /// timeout of a message can be set to a value later than the expiry time.
+    ///   server time. The default value is 30 seconds. A specified value must be larger
+    ///   than or equal to 1 second, and cannot be larger than 7 days, or larger than 2
+    ///   hours on REST protocol versions prior to version 2011-08-18. The visibility
+    ///   timeout of a message can be set to a value later than the expiry time.
     /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     pub async fn update(

@@ -519,7 +519,6 @@ pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result
     let (options, endpoint) = recorded_test_setup(recording);
     let queue_client_options = AzureQueueStorageClientOptions {
         client_options: options.clone(),
-        ..Default::default()
     };
     let queue_client = QueueClient::new(
         &endpoint,
