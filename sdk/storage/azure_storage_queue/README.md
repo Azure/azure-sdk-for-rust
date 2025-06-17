@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let queue_client = QueueClient::new(
         "https://<storage_account_name>.blob.core.windows.net/", // endpoint
-        "queue-name".to_string(),                                // queue name
+        "queue-name",                                // queue name
         credential,                                              // credential
         Some(AzureQueueStorageClientOptions::default()),         // QueueClient options
     )?;
