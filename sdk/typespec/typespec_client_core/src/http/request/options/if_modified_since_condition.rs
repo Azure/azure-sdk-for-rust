@@ -4,7 +4,7 @@
 #[cfg(doc)]
 use crate::http::request::Request;
 use crate::{
-    date::{self, OffsetDateTime},
+    time::{self, OffsetDateTime},
     http::headers::{self, Header, HeaderName},
 };
 
@@ -26,7 +26,7 @@ impl Header for IfModifiedSinceCondition {
     fn value(&self) -> headers::HeaderValue {
         match self {
             IfModifiedSinceCondition::Modified(date)
-            | IfModifiedSinceCondition::Unmodified(date) => date::to_rfc7231(date),
+            | IfModifiedSinceCondition::Unmodified(date) => time::to_rfc7231(date),
         }
         .into()
     }

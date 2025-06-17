@@ -13,10 +13,10 @@ use super::{
     GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     QueryRequestType, QueryType, RehydratePriority,
 };
+use azure_core::time::OffsetDateTime;
 use azure_core::{base64, fmt::SafeDebug};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use time::OffsetDateTime;
 
 /// Represents an access policy.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -26,7 +26,7 @@ pub struct AccessPolicy {
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc3339::option"
+        with = "azure_core::time::rfc3339::option"
     )]
     pub expiry: Option<OffsetDateTime>,
 
@@ -39,7 +39,7 @@ pub struct AccessPolicy {
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc3339::option"
+        with = "azure_core::time::rfc3339::option"
     )]
     pub start: Option<OffsetDateTime>,
 }
@@ -323,7 +323,7 @@ pub struct BlobPropertiesInternal {
         default,
         rename = "AccessTierChangeTime",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub access_tier_change_time: Option<OffsetDateTime>,
 
@@ -388,7 +388,7 @@ pub struct BlobPropertiesInternal {
         default,
         rename = "CopyCompletionTime",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub copy_completion_time: Option<OffsetDateTime>,
 
@@ -420,7 +420,7 @@ pub struct BlobPropertiesInternal {
         default,
         rename = "Creation-Time",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub creation_time: Option<OffsetDateTime>,
 
@@ -436,7 +436,7 @@ pub struct BlobPropertiesInternal {
         default,
         rename = "DeletedTime",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub deleted_time: Option<OffsetDateTime>,
 
@@ -460,7 +460,7 @@ pub struct BlobPropertiesInternal {
         default,
         rename = "Expiry-Time",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub expires_on: Option<OffsetDateTime>,
 
@@ -469,7 +469,7 @@ pub struct BlobPropertiesInternal {
         default,
         rename = "ImmutabilityPolicyUntilDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub immutability_policy_expires_on: Option<OffsetDateTime>,
 
@@ -493,7 +493,7 @@ pub struct BlobPropertiesInternal {
         default,
         rename = "LastAccessTime",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub last_accessed_on: Option<OffsetDateTime>,
 
@@ -502,7 +502,7 @@ pub struct BlobPropertiesInternal {
         default,
         rename = "Last-Modified",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub last_modified: Option<OffsetDateTime>,
 
@@ -729,7 +729,7 @@ pub struct ContainerProperties {
         default,
         rename = "DeletedTime",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub deleted_time: Option<OffsetDateTime>,
 
@@ -760,7 +760,7 @@ pub struct ContainerProperties {
         default,
         rename = "Last-Modified",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub last_modified: Option<OffsetDateTime>,
 
@@ -909,7 +909,7 @@ pub struct GeoReplication {
         default,
         rename = "LastSyncTime",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::rfc7231::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub last_sync_time: Option<OffsetDateTime>,
 

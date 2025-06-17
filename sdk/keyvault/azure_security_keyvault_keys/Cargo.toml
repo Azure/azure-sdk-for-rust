@@ -19,7 +19,6 @@ azure_core = { workspace = true }
 futures = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-time = { workspace = true }
 typespec_client_core = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]
@@ -31,6 +30,7 @@ azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 criterion.workspace = true
 rand.workspace = true
 sha2.workspace = true
+time.workspace = true
 tokio.workspace = true
 
 [build-dependencies]

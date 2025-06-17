@@ -10,13 +10,13 @@
 #[cfg_attr(not(feature = "key_auth"), allow(unused_imports))]
 use azure_core::{
     credentials::{Secret, TokenCredential},
-    date::{self, OffsetDateTime},
     http::{
         headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION},
         policies::{Policy, PolicyResult},
         request::Request,
         Context, Url,
     },
+    time::{self, OffsetDateTime},
 };
 use std::sync::Arc;
 use tracing::trace;
@@ -74,7 +74,7 @@ impl Policy for AuthorizationPolicy {
         );
 
         // x-ms-date and the string used in the signature must be exactly the same, so just generate it here once.
-        let date_string = date::to_rfc7231(&OffsetDateTime::now_utc()).to_lowercase();
+        let date_string = time::to_rfc7231(&OffsetDateTime::now_utc()).to_lowercase();
 
         let resource_link: &ResourceLink = ctx
             .value()
@@ -147,10 +147,9 @@ mod tests {
 
     use azure_core::{
         credentials::{AccessToken, TokenCredential, TokenRequestOptions},
-        date,
         http::Method,
+        time::{Duration, OffsetDateTime},
     };
-    use time::OffsetDateTime;
     use url::Url;
 
     use crate::{
@@ -176,15 +175,16 @@ mod tests {
             let token = format!("{}+{}", self.0, scopes.join(","));
             Ok(AccessToken::new(
                 token,
-                OffsetDateTime::now_utc().saturating_add(time::Duration::minutes(5)),
+                OffsetDateTime::now_utc().saturating_add(Duration::minutes(5)),
             ))
         }
     }
 
     #[tokio::test]
     async fn generate_authorization_for_token_credential() {
-        let time_nonce = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
-        let date_string = date::to_rfc7231(&time_nonce).to_lowercase();
+        let time_nonce =
+            azure_core::time::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+        let date_string = azure_core::time::to_rfc7231(&time_nonce).to_lowercase();
         let cred = Arc::new(TestTokenCredential("test_token".to_string()));
         let auth_token = Credential::Token(cred);
 
@@ -213,8 +213,9 @@ mod tests {
     #[tokio::test]
     #[cfg(feature = "key_auth")]
     async fn generate_authorization_for_primary_key_0() {
-        let time_nonce = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
-        let date_string = date::to_rfc7231(&time_nonce).to_lowercase();
+        let time_nonce =
+            azure_core::time::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+        let date_string = azure_core::time::to_rfc7231(&time_nonce).to_lowercase();
 
         let auth_token = Credential::PrimaryKey(
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==".into(),
@@ -247,8 +248,9 @@ mod tests {
     #[tokio::test]
     #[cfg(feature = "key_auth")]
     async fn generate_authorization_for_primary_key_1() {
-        let time_nonce = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
-        let date_string = date::to_rfc7231(&time_nonce).to_lowercase();
+        let time_nonce =
+            azure_core::time::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
+        let date_string = azure_core::time::to_rfc7231(&time_nonce).to_lowercase();
 
         let auth_token = Credential::PrimaryKey(
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL".into(),

@@ -3,7 +3,7 @@
 // cspell:: words amqp servicebus sastoken
 
 use crate::{cbs::AmqpClaimsBasedSecurityApis, session::AmqpSession, AmqpError};
-use azure_core::{credentials::Secret, error::Result};
+use azure_core::{credentials::Secret, time::OffsetDateTime, error::Result};
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
 use std::borrow::BorrowMut;
@@ -81,7 +81,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
         path: String,
         token_type: Option<String>,
         secret: &Secret,
-        expires_at: time::OffsetDateTime,
+        expires_at: OffsetDateTime,
     ) -> Result<()> {
         trace!(
             "authorize_path: path: {:?}, expires_at: {:?}",
@@ -93,7 +93,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
             token_type.unwrap_or("jwt".to_string()),
             Some(Timestamp::from(
                 expires_at
-                    .to_offset(time::UtcOffset::UTC)
+                    .to_utc()
                     .unix_timestamp()
                     .checked_mul(1_000)
                     .ok_or_else(|| {

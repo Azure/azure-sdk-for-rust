@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug};
-use typespec_client_core::{date::OffsetDateTime, fmt::SafeDebug};
+use typespec_client_core::{time::OffsetDateTime, fmt::SafeDebug};
 
 /// Default Azure authorization scope.
 pub static DEFAULT_SCOPE_SUFFIX: &str = "/.default";

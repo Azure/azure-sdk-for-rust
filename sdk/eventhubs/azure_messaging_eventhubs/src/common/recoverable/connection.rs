@@ -15,14 +15,14 @@ use crate::{
     ErrorKind, EventHubsError, RetryOptions,
 };
 use async_lock::{Mutex as AsyncMutex, OnceCell};
-use azure_core::{credentials::TokenCredential, http::Url, Result, Uuid};
+use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Result, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
     AmqpManagement, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSender,
     AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource, AmqpSymbol,
 };
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc};
 use tracing::{debug, span, trace, warn};
 
 /// The recoverable connection is responsible for managing the connection to the Event Hubs service.

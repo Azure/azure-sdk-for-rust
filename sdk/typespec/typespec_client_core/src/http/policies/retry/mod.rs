@@ -10,7 +10,6 @@ pub use fixed::*;
 pub use none::*;
 
 use crate::{
-    date::{self, OffsetDateTime},
     error::HttpError,
     http::{
         headers::{Headers, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
@@ -18,16 +17,17 @@ use crate::{
         Context, Request, StatusCode,
     },
     sleep::sleep,
+    time::{self, Duration, OffsetDateTime},
 };
 use async_trait::async_trait;
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 use tracing::{debug, trace};
 use typespec::error::{Error, ErrorKind, ResultExt};
 
 /// Attempts to parse the supplied string as an HTTP date, of the form defined by RFC 7231 (e.g. `Fri, 01 Jan 2021 00:00:00 GMT`).
 /// Returns `None` if the string is not a valid HTTP date.
 fn try_parse_retry_after_http_date(http_date: &str) -> Option<OffsetDateTime> {
-    crate::date::parse_rfc7231(http_date).ok()
+    crate::time::parse_rfc7231(http_date).ok()
 }
 
 /// A function that returns an `OffsetDateTime`.
@@ -50,19 +50,22 @@ pub fn get_retry_after(headers: &Headers, now: DateTimeFn) -> Option<Duration> {
             headers.get_str(header).ok().and_then(|v| {
                 if header == &RETRY_AFTER {
                     // RETRY_AFTER values are either in seconds or a HTTP date
-                    v.parse::<u64>().ok().map(Duration::from_secs).or_else(|| {
-                        try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
-                            let now = now();
-                            if retry_after_datetime < now {
-                                Duration::from_secs(0)
-                            } else {
-                                date::diff(retry_after_datetime, now)
-                            }
+                    v.parse::<i64>()
+                        .ok()
+                        .map(Duration::milliseconds)
+                        .or_else(|| {
+                            try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
+                                let now = now();
+                                if retry_after_datetime < now {
+                                    Duration::seconds(0)
+                                } else {
+                                    time::diff(retry_after_datetime, now)
+                                }
+                            })
                         })
-                    })
                 } else {
                     // RETRY_AFTER_MS or X_MS_RETRY_AFTER_MS values are in milliseconds
-                    v.parse::<u64>().ok().map(Duration::from_millis)
+                    v.parse::<i64>().ok().map(Duration::milliseconds)
                 }
             })
         })
@@ -93,7 +96,12 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
         let sleep_duration = retry_after.map_or(policy_sleep_duration, |retry_after| {
             std::cmp::max(retry_after, policy_sleep_duration)
         });
-        sleep(sleep_duration).await;
+        sleep(
+            sleep_duration
+                .try_into()
+                .unwrap_or(std::time::Duration::MAX),
+        )
+        .await;
     }
 }
 
@@ -203,9 +211,7 @@ where
                 }
             };
 
-            let time_since_start = (OffsetDateTime::now_utc() - *start)
-                .try_into()
-                .unwrap_or_default();
+            let time_since_start = OffsetDateTime::now_utc() - *start;
             if self.is_expired(time_since_start, retry_count) {
                 return Err(last_error
                     .context("retry policy expired and the request will no longer be retried"));
@@ -221,7 +227,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use time::macros::datetime;
+    use ::time::macros::datetime;
 
     // A function that returns a fixed "now" value for testing.
     fn datetime_now() -> OffsetDateTime {
@@ -253,13 +259,13 @@ mod test {
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "Fri, 01 Jan 2021 00:00:10 GMT");
         let retry_after = get_retry_after(&headers, datetime_now);
-        assert_eq!(retry_after, Some(Duration::from_secs(10)));
+        assert_eq!(retry_after, Some(Duration::seconds(10)));
 
         // Test parsing a valid HTTP date that is in the past returns 0
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "Thu, 31 Dec 2020 23:59:50 GMT");
         let retry_after = get_retry_after(&headers, datetime_now);
-        assert_eq!(retry_after, Some(Duration::from_secs(0)));
+        assert_eq!(retry_after, Some(Duration::seconds(0)));
 
         // Test that when no retry headers are present, None is returned
         let headers = Headers::new();
@@ -276,6 +282,6 @@ mod test {
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "123");
         let retry_after = get_retry_after(&headers, datetime_now);
-        assert_eq!(retry_after, Some(Duration::from_secs(123)));
+        assert_eq!(retry_after, Some(Duration::seconds(123)));
     }
 }

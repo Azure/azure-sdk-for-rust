@@ -3,7 +3,9 @@
 
 use super::RecoverableConnection;
 use crate::{common::retry_azure_operation, RetryOptions};
-use azure_core::{credentials::Secret, error::ErrorKind as AzureErrorKind, error::Result};
+use azure_core::{
+    credentials::Secret, time::OffsetDateTime, error::ErrorKind as AzureErrorKind, error::Result,
+};
 use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpError, AmqpSession,
     AmqpSessionApis,
@@ -90,7 +92,7 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
         path: String,
         token_type: Option<String>,
         secret: &Secret,
-        expires_on: time::OffsetDateTime,
+        expires_on: OffsetDateTime,
     ) -> Result<()> {
         let result = retry_azure_operation(
             || {

@@ -26,7 +26,6 @@ azure_core_amqp.workspace = true
 futures.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
-time.workspace = true
 tracing.workspace = true
 
 [build-dependencies]
@@ -40,6 +39,7 @@ azure_messaging_eventhubs = { path = ".", features = [
   "test",
 ] }
 criterion.workspace = true
+time.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 

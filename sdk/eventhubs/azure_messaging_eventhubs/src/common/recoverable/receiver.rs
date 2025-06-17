@@ -3,12 +3,11 @@
 
 use super::RecoverableConnection;
 use crate::common::retry_azure_operation;
-use azure_core::{error::ErrorKind as AzureErrorKind, error::Result, http::Url};
+use azure_core::{error::ErrorKind as AzureErrorKind, error::Result, http::Url, time::Duration};
 use azure_core_amqp::{AmqpError, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSource};
 use futures::{select, FutureExt};
 use std::error::Error;
 use std::sync::Arc;
-use std::time::Duration;
 use tracing::{debug, warn};
 
 pub(crate) struct RecoverableReceiver {
@@ -105,7 +104,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
                 if let Some(delivery_timeout) = self.timeout {
                     select! {
                         delivery = receiver.receive_delivery().fuse() => Ok(delivery),
-                        _ = azure_core::sleep::sleep(delivery_timeout).fuse() => {
+                        _ = azure_core::sleep::sleep(delivery_timeout.try_into().unwrap_or(std::time::Duration::MAX)).fuse() => {
                              Err(azure_core::Error::new(
                                 AzureErrorKind::Io,
                                 Box::new(std::io::Error::from(std::io::ErrorKind::TimedOut))))
