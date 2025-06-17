@@ -112,12 +112,12 @@ impl RetryOptions {
 ///
 /// Configuring retry to be exponential with 10 retries max and an initial delay of 1 second.
 /// ```
-/// # use core::time::Duration;
+/// # use typespec_client_core::time::Duration;
 /// # use typespec_client_core::http::{ExponentialRetryOptions, RetryOptions};
 /// RetryOptions::exponential(
 ///    ExponentialRetryOptions::default()
 ///        .max_retries(10u32)
-///        .initial_delay(Duration::from_secs(1)),
+///        .initial_delay(Duration::seconds(1)),
 /// );
 /// ```
 #[derive(Clone, Debug)]

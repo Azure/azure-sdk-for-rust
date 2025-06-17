@@ -14,7 +14,7 @@ use crate::{
 };
 //use async_io::Timer;
 use async_lock::Mutex as AsyncMutex;
-use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
+use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration, Error, Result};
 use futures::{
     channel::mpsc::{channel, Receiver, Sender},
     SinkExt, StreamExt,
@@ -24,7 +24,6 @@ use std::{
         Arc,
         Mutex as SyncMutex, // Mutex for blocking operations
     },
-    time::Duration,
     {collections::HashMap, sync::Weak},
 };
 use tracing::{debug, error, info};
@@ -185,7 +184,7 @@ impl EventProcessor {
     /// use azure_messaging_eventhubs::EventProcessor;
     /// use azure_messaging_eventhubs::ConsumerClient;
     /// use std::sync::Arc;
-    /// use std::time::Duration;
+    /// use azure_core::time::Duration;
     /// use azure_messaging_eventhubs::ProcessorStrategy;
     /// use azure_messaging_eventhubs::CheckpointStore;
     /// use azure_core::Result;
@@ -194,8 +193,8 @@ impl EventProcessor {
     ///   // Create an instance of the EventProcessor
     ///   let event_processor = EventProcessor::builder()
     ///       .with_load_balancing_strategy(ProcessorStrategy::Balanced)
-    ///       .with_update_interval(Duration::from_secs(30))
-    ///       .with_partition_expiration_duration(Duration::from_secs(10))
+    ///       .with_update_interval(Duration::seconds(30))
+    ///       .with_partition_expiration_duration(Duration::seconds(10))
     ///       .with_prefetch(300)
     ///       .build(
     ///          Arc::new(consumer_client),
@@ -211,7 +210,7 @@ impl EventProcessor {
     ///                  println!("Event processor finished successfully");
     ///              }
     ///          }
-    ///          _ = tokio::time::sleep(Duration::from_secs(60)) => {}
+    ///          _ = tokio::time::sleep(std::time::Duration::from_secs(60)) => {}
     ///     }
     ///   }
     ///   Ok(())
@@ -245,7 +244,12 @@ impl EventProcessor {
                 }
             }
             debug!("Event processor sleeping for {:?}", self.update_interval);
-            azure_core::sleep::sleep(self.update_interval).await;
+            azure_core::sleep::sleep(
+                self.update_interval
+                    .try_into()
+                    .unwrap_or(std::time::Duration::MAX),
+            )
+            .await;
             if self.is_shutdown()? {
                 info!("Event processor shutting down.");
                 break Ok(());
@@ -520,13 +524,12 @@ pub mod builders {
     use super::{CheckpointStore, EventProcessor};
     use crate::event_processor::models::StartPositions;
     use crate::ConsumerClient;
-    use azure_core::Result;
+    use azure_core::{time::Duration, Result};
     use std::sync::Arc;
-    use std::time::Duration;
 
     const DEFAULT_PREFETCH: u32 = 300;
-    const DEFAULT_UPDATE_INTERVAL: Duration = Duration::from_secs(30);
-    const DEFAULT_PARTITION_EXPIRATION_DURATION: Duration = Duration::from_secs(10);
+    const DEFAULT_UPDATE_INTERVAL: Duration = Duration::seconds(30);
+    const DEFAULT_PARTITION_EXPIRATION_DURATION: Duration = Duration::seconds(10);
 
     /// Builder for creating an `EventProcessor`.
     /// This builder allows you to configure various options for the event processor,

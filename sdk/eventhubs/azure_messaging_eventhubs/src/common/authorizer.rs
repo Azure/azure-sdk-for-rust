@@ -22,8 +22,8 @@ use tracing::{debug, trace, warn};
 
 // The number of seconds before token expiration that we wake up to refresh the token.
 const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we refresh tokens 6 minutes before they expire.
-const TOKEN_REFRESH_JITTER_MIN: Duration = Duration::seconds(-5); // Minimum jitter in milliseconds
-const TOKEN_REFRESH_JITTER_MAX: Duration = Duration::seconds(5); // Maximum jitter in milliseconds
+const TOKEN_REFRESH_JITTER_MIN: Duration = Duration::seconds(-5); // Minimum jitter (added from the bias, so a negative number means we refresh before the bias)
+const TOKEN_REFRESH_JITTER_MAX: Duration = Duration::seconds(5); // Maximum jitter (added to the bias)
 
 const EVENTHUBS_AUTHORIZATION_SCOPE: &str = "https://eventhubs.azure.net/.default";
 
