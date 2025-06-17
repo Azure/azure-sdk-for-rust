@@ -31,5 +31,4 @@ azure_core_test.workspace = true
 azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
 futures.workspace = true
-time.workspace = true
 tokio = { workspace = true, features = ["macros"] }

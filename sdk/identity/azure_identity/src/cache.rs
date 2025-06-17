@@ -3,10 +3,10 @@
 
 use async_lock::RwLock;
 use azure_core::credentials::{AccessToken, TokenRequestOptions};
+use azure_core::time::OffsetDateTime;
 use std::collections::HashMap;
 use std::future::Future;
 use std::time::Duration;
-use time::OffsetDateTime;
 use tracing::trace;
 
 #[derive(Debug)]

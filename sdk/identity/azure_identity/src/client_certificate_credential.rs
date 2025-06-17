@@ -11,6 +11,7 @@ use azure_core::{
         request::Request,
         HttpClient, Method, Url,
     },
+    time::{Duration, OffsetDateTime},
     Uuid,
 };
 
@@ -23,8 +24,8 @@ use openssl::{
     sign::Signer,
     x509::X509,
 };
-use std::{str, sync::Arc, time::Duration};
-use time::OffsetDateTime;
+use std::{str, sync::Arc};
+
 use url::form_urlencoded;
 
 /// Refresh time to use in seconds.
@@ -261,7 +262,7 @@ impl ClientCertificateCredential {
         let response: EntraIdTokenResponse = rsp.into_body().json().await?;
         Ok(AccessToken::new(
             response.access_token,
-            OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
+            OffsetDateTime::now_utc() + Duration::seconds(response.expires_in as i64),
         ))
     }
 }

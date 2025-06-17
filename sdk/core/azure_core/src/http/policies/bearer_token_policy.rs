@@ -126,6 +126,7 @@ mod tests {
             policies::Policy,
             Request, StatusCode,
         },
+        time::OffsetDateTime,
         Bytes, Result,
     };
     use async_trait::async_trait;
@@ -135,7 +136,6 @@ mod tests {
         atomic::{AtomicUsize, Ordering},
         Arc,
     };
-    use time::OffsetDateTime;
     use typespec_client_core::{
         http::{policies::TransportPolicy, Method, RawResponse, TransportOptions},
         time::Duration,

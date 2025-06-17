@@ -11,10 +11,10 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     json::from_json,
     process::{new_executor, Executor},
+    time::OffsetDateTime,
 };
 use serde::Deserialize;
 use std::{ffi::OsString, sync::Arc};
-use time::OffsetDateTime;
 use tracing::trace;
 
 /// The response from `az account get-access-token --output json`.

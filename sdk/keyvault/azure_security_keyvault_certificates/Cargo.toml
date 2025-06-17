@@ -31,7 +31,6 @@ azure_security_keyvault_keys = { path = "../azure_security_keyvault_keys" }
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 openssl.workspace = true
 rand.workspace = true
-time.workspace = true
 tokio.workspace = true
 
 [build-dependencies]

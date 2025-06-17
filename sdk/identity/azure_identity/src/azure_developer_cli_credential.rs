@@ -11,12 +11,12 @@ use azure_core::{
     error::{Error, ErrorKind},
     json::from_json,
     process::{new_executor, Executor},
+    time::OffsetDateTime,
 };
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
 use std::{ffi::OsString, sync::Arc};
 use time::format_description::well_known::Rfc3339;
-use time::OffsetDateTime;
 
 #[derive(Clone, Debug, Deserialize)]
 struct AzdTokenResponse {

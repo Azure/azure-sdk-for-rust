@@ -372,9 +372,8 @@ impl Authorizer {
 mod tests {
     use super::*;
     use azure_core::credentials::TokenRequestOptions;
-    use azure_core::{http::Url, Result};
+    use azure_core::{http::Url, time::OffsetDateTime, Result};
     use std::sync::Arc;
-    use time::OffsetDateTime;
     use tracing::info;
 
     // Helper struct to mock token credential

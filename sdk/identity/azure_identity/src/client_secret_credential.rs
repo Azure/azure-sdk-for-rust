@@ -14,11 +14,11 @@ use azure_core::{
         headers::{self, content_type},
         Method, Request, Url,
     },
+    time::OffsetDateTime,
     Error,
 };
 use std::time::Duration;
 use std::{str, sync::Arc};
-use time::OffsetDateTime;
 use url::form_urlencoded;
 
 const CLIENT_SECRET_CREDENTIAL: &str = "ClientSecretCredential";
