@@ -6,8 +6,8 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer, };
 use super::CorsRuleResponse;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename = "Cors")]
@@ -17,15 +17,23 @@ pub(crate) struct CorsCorsRuleResponse {
 }
 
 impl CorsCorsRuleResponse {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<CorsRuleResponse>>, D::Error> where D: Deserializer<'de> {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<CorsRuleResponse>>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
         Ok(CorsCorsRuleResponse::deserialize(deserializer)?.CorsRuleResponse)
     }
 
-    pub fn wrap<S>(to_serialize: &Option<Vec<CorsRuleResponse>>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    pub fn wrap<S>(
+        to_serialize: &Option<Vec<CorsRuleResponse>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         CorsCorsRuleResponse {
             CorsRuleResponse: to_serialize.to_owned(),
         }
         .serialize(serializer)
     }
 }
-
