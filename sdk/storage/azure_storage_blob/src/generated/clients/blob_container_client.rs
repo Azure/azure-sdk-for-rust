@@ -26,14 +26,13 @@ use crate::generated::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    time,
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Context, Method, PageIterator, PagerResult, Pipeline, RawResponse, Request,
         RequestContent, Response, Url, XmlFormat,
     },
-    xml, Result,
+    time, xml, Result,
 };
 use std::sync::Arc;
 

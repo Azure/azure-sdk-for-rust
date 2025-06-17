@@ -3,7 +3,7 @@
 
 //! Model types sent to and received from the Azure Cosmos DB API.
 
-use azure_core::{time::OffsetDateTime, http::Etag};
+use azure_core::{http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Deserializer, Serialize};
 
 mod container_properties;

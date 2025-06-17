@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use super::session::AmqpSession;
-use azure_core::{credentials::Secret, time::OffsetDateTime, error::Result};
+use azure_core::{credentials::Secret, error::Result, time::OffsetDateTime};
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;

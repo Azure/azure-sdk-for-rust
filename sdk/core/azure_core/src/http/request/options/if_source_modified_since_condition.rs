@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    time,
     http::headers::{self, Header, HeaderName},
+    time,
 };
 use typespec_client_core::time::OffsetDateTime;
 

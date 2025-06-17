@@ -31,12 +31,12 @@ use super::{
 };
 use azure_core::time::OffsetDateTime;
 use azure_core::{
-    base64, time,
+    base64,
     http::{
         headers::{HeaderName, Headers},
         Response, XmlFormat,
     },
-    Result,
+    time, Result,
 };
 use std::collections::HashMap;
 

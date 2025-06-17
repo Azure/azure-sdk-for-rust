@@ -3,7 +3,7 @@
 // cspell:: words amqp servicebus sastoken
 
 use crate::{cbs::AmqpClaimsBasedSecurityApis, session::AmqpSession, AmqpError};
-use azure_core::{credentials::Secret, time::OffsetDateTime, error::Result};
+use azure_core::{credentials::Secret, error::Result, time::OffsetDateTime};
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
 use std::borrow::BorrowMut;

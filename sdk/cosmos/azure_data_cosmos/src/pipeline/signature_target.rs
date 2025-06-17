@@ -67,7 +67,7 @@ impl<'a> SignatureTarget<'a> {
 #[cfg(test)]
 #[cfg(feature = "key_auth")]
 mod tests {
-    use azure_core::{time, http::Method};
+    use azure_core::{http::Method, time};
 
     use crate::{
         pipeline::signature_target::SignatureTarget,

@@ -4,7 +4,7 @@
 use super::RecoverableConnection;
 use crate::{common::retry_azure_operation, RetryOptions};
 use azure_core::{
-    credentials::Secret, time::OffsetDateTime, error::ErrorKind as AzureErrorKind, error::Result,
+    credentials::Secret, error::ErrorKind as AzureErrorKind, error::Result, time::OffsetDateTime,
 };
 use azure_core_amqp::{
     AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis, AmqpConnection, AmqpError, AmqpSession,

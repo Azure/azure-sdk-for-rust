@@ -4,8 +4,8 @@
 #[cfg(doc)]
 use crate::http::request::Request;
 use crate::{
-    time::{self, OffsetDateTime},
     http::headers::{self, Header, HeaderName},
+    time::{self, OffsetDateTime},
 };
 
 /// Sets the "if-modified-since" or "if-unmodified-since" headers in a [`Request`].

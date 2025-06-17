@@ -12,13 +12,12 @@ use crate::generated::models::{
 use azure_core::{
     base64,
     credentials::TokenCredential,
-    time,
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Context, Method, Pipeline, Request, RequestContent, Response, Url,
     },
-    Bytes, Result,
+    time, Bytes, Result,
 };
 use std::sync::Arc;
 
