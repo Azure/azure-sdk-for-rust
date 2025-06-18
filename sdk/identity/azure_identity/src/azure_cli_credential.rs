@@ -69,7 +69,10 @@ impl OutputProcessor for CliTokenResponse {
 /// Authenticates the identity logged in to the [Azure CLI](https://learn.microsoft.com/cli/azure/what-is-azure-cli).
 #[derive(Debug)]
 pub struct AzureCliCredential {
-    options: AzureCliCredentialOptions,
+    env: Env,
+    executor: Arc<dyn Executor>,
+    subscription: Option<String>,
+    tenant_id: Option<String>,
 }
 
 /// Options for constructing an [`AzureCliCredential`].
@@ -97,27 +100,31 @@ pub struct AzureCliCredentialOptions {
     /// you can supply your own implementation using a different asynchronous runtime.
     pub executor: Option<Arc<dyn Executor>>,
 
+    #[cfg(test)]
     env: Option<Env>,
 }
 
 impl AzureCliCredential {
     /// Create a new `AzureCliCredential`.
     pub fn new(options: Option<AzureCliCredentialOptions>) -> azure_core::Result<Arc<Self>> {
-        let mut options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
         if let Some(ref tenant_id) = options.tenant_id {
             validate_tenant_id(tenant_id)?;
         }
         if let Some(ref subscription) = options.subscription {
             validate_subscription(subscription)?;
         }
-        if options.env.is_none() {
-            options.env = Some(Env::default());
-        }
-        if options.executor.is_none() {
-            options.executor = Some(new_executor());
-        }
+        #[cfg(test)]
+        let env = options.env.unwrap_or_default();
+        #[cfg(not(test))]
+        let env = Env::default();
 
-        Ok(Arc::new(Self { options }))
+        Ok(Arc::new(Self {
+            env,
+            executor: options.executor.unwrap_or(new_executor()),
+            subscription: options.subscription,
+            tenant_id: options.tenant_id,
+        }))
     }
 }
 
@@ -140,11 +147,11 @@ impl TokenCredential for AzureCliCredential {
 
         let mut command = OsString::from("az account get-access-token -o json --scope ");
         command.push(scopes[0]);
-        if let Some(ref tenant_id) = self.options.tenant_id {
+        if let Some(ref tenant_id) = self.tenant_id {
             command.push(" --tenant ");
             command.push(tenant_id);
         }
-        if let Some(ref subscription) = self.options.subscription {
+        if let Some(ref subscription) = self.subscription {
             command.push(r#" --subscription ""#);
             command.push(subscription);
             command.push("\"");
@@ -152,13 +159,7 @@ impl TokenCredential for AzureCliCredential {
 
         trace!("running Azure CLI command: {command:?}");
 
-        shell_exec::<CliTokenResponse>(
-            // unwrap() is safe because new() ensured the values are Some
-            self.options.executor.clone().unwrap(),
-            self.options.env.as_ref().unwrap(),
-            &command,
-        )
-        .await
+        shell_exec::<CliTokenResponse>(self.executor.clone(), &self.env, &command).await
     }
 }
 
