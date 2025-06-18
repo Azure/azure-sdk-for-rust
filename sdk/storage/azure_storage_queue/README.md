@@ -74,6 +74,8 @@ The following methods are available on the ```QueueClient``` class:
 - ```exists```: Returns bool representing whether the queue exists or not.
 - ```get_metadata```: Returns metadata for the queue.
 - ```get_properties```: Returns the properties of the queue service.
+- ```peek_message```: Peeks a single message from the front of the queue without removing it.
+- ```peek_messages```: Peeks multiple messages from the front of the queue without removing them.
 - ```receive_message```: Receive a single message from the queue.
 - ```receive_messages```: Receive multiple messages from the queue. The number of messages to return is determined by the ```AzureQueueStorageMessagesOperationsClientDequeueOptions::number_of_messages``` property.
 - ```send_message```: Sends a message to the queue.
