@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
     let queue_client = QueueClient::new(
         "https://<storage_account_name>.blob.core.windows.net/", // endpoint
-        "queue-name",                                // queue name
+        "queue-name",                                            // queue name
         credential,                                              // credential
         Some(AzureQueueStorageClientOptions::default()),         // QueueClient options
     )?;
@@ -59,6 +59,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #### Permissions
 
 You may need to specify RBAC roles to access Queues via Microsoft Entra ID. Please see [Assign an Azure role for access to queue data] for more details.
+
+## Features
+
+The following methods are available on the ```QueueClient``` class:
+
+- ```new```: Create a new instance of the ```QueueClient```.
+- ```create```: Creates a new queue, will fail if the queue already exists.
+- ```create_if_not_exists```: Creates a new queue, will _not_ fail if the queue already exists.
+- ```delete```: Deletes a queue, will fail if the queue does not exist.
+- ```delete_if_exists```: Deletes a queue, will _not_ fail if the queue does not exist.
+- ```delete_message```: Deletes a single message from the queue.
+- ```delete_messages```: Deletes all the messages in a queue. Requires Account Owner permission or it will fail.
+- ```exists```: Returns bool representing whether the queue exists or not.
+- ```get_metadata```: Returns metadata for the queue.
+- ```get_properties```: Returns the properties of the queue service.
+- ```receive_message```: Receive a single message from the queue.
+- ```receive_messages```: Receive multiple messages from the queue. The number of messages to return is determined by the ```AzureQueueStorageMessagesOperationsClientDequeueOptions::number_of_messages``` property.
+- ```send_message```: Sends a message to the queue.
+- ```set_metadata```: Sets metadata on the queue.
+- ```update_message```: Updates a specific message in the queue.
 
 ## Examples
 

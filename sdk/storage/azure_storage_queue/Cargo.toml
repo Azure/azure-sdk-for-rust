@@ -13,6 +13,10 @@ documentation = "https://docs.rs/azure_storage_queue"
 keywords = ["sdk", "azure", "storage", "queue", "queues"]
 categories = ["api-bindings"]
 
+[features]
+default = ["reqwest"]
+reqwest = ["dep:reqwest"]
+
 [dependencies]
 azure_core = { workspace = true, features = ["xml"] }
 quick-xml.workspace = true
@@ -22,10 +26,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 time = { workspace = true }
 typespec_client_core = { workspace = true, features = ["derive"] }
-
-[features]
-default = ["reqwest"]
-reqwest = ["dep:reqwest"]
 
 [lints]
 workspace = true
