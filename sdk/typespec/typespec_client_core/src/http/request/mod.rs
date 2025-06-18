@@ -58,10 +58,10 @@ impl Body {
 impl fmt::Debug for Body {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Bytes(v) if !v.is_empty() => f.write_str("Bytes { ... }"),
+            Self::Bytes(v) if !v.is_empty() => f.write_str("Bytes { .. }"),
             Self::Bytes(_) => f.write_str("Bytes {}"),
             #[cfg(not(target_arch = "wasm32"))]
-            Self::SeekableStream(v) if !v.is_empty() => f.write_str("SeekableStream { ... }"),
+            Self::SeekableStream(v) if !v.is_empty() => f.write_str("SeekableStream { .. }"),
             #[cfg(not(target_arch = "wasm32"))]
             Self::SeekableStream(_) => f.write_str("SeekableStream {}"),
         }

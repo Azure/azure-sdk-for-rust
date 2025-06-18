@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::recoverable_connection::RecoverableConnection;
+use super::recoverable::RecoverableConnection;
 use crate::error::{ErrorKind, EventHubsError};
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
+    async_runtime::{get_async_runtime, SpawnedTask},
     credentials::{AccessToken, TokenCredential},
     error::ErrorKind as AzureErrorKind,
     http::Url,
-    task::{new_task_spawner, SpawnedTask},
     Result,
 };
 use azure_core_amqp::AmqpClaimsBasedSecurityApis as _;
@@ -16,20 +16,20 @@ use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex as SyncMutex, OnceLock, Weak};
 use time::{Duration, OffsetDateTime};
-use tracing::{debug, error, trace};
+use tracing::{debug, trace, warn};
 
 // The number of seconds before token expiration that we wake up to refresh the token.
 const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we refresh tokens 6 minutes before they expire.
-const TOKEN_REFRESH_JITTER_MIN: i64 = -5; // Minimum jitter in seconds
-const TOKEN_REFRESH_JITTER_MAX: i64 = 5; // Maximum jitter in seconds
+const TOKEN_REFRESH_JITTER_MIN: Duration = Duration::seconds(-5); // Minimum jitter in seconds
+const TOKEN_REFRESH_JITTER_MAX: Duration = Duration::seconds(5); // Maximum jitter in seconds
 
 const EVENTHUBS_AUTHORIZATION_SCOPE: &str = "https://eventhubs.azure.net/.default";
 
 #[derive(Debug)]
 struct TokenRefreshTimes {
     before_expiration_refresh_time: Duration,
-    jitter_min: i64,
-    jitter_max: i64,
+    jitter_min: Duration,
+    jitter_max: Duration,
 }
 
 impl Default for TokenRefreshTimes {
@@ -113,8 +113,8 @@ impl Authorizer {
             self.authorization_refresher.get_or_init(|| {
                 debug!("Starting authorization refresh task.");
                 let self_clone = self.clone();
-                let spawner = new_task_spawner();
-                spawner.spawn(Box::pin(self_clone.refresh_tokens_task()))
+                let async_runtime = get_async_runtime();
+                async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
             });
         } else {
             debug!("Token already exists for path: {path}");
@@ -174,7 +174,7 @@ impl Authorizer {
     async fn refresh_tokens_task(self: Arc<Self>) {
         let result = self.refresh_tokens().await;
         if let Err(e) = result {
-            error!("Error refreshing tokens: {e}");
+            warn!(err=?e, "Error refreshing tokens: {e}");
         }
         debug!("Token refresher task completed.");
     }
@@ -250,10 +250,10 @@ impl Authorizer {
 
                 debug!("Token refresh times: {token_refresh_times:?}");
 
-                let expiration_jitter = Duration::seconds(
-                    thread_rng()
-                        .gen_range(token_refresh_times.jitter_min..token_refresh_times.jitter_max),
-                );
+                let jitter_min = token_refresh_times.jitter_min.whole_milliseconds() as i64;
+                let jitter_max = token_refresh_times.jitter_max.whole_milliseconds() as i64;
+                let expiration_jitter =
+                    Duration::milliseconds(thread_rng().gen_range(jitter_min..jitter_max));
                 debug!("Expiration jitter: {expiration_jitter}");
 
                 token_refresh_bias = token_refresh_times
@@ -543,8 +543,8 @@ mod tests {
         authorizer
             .set_token_refresh_times(TokenRefreshTimes {
                 before_expiration_refresh_time: Duration::seconds(10),
-                jitter_min: -2,
-                jitter_max: 2,
+                jitter_min: Duration::seconds(-2),
+                jitter_max: Duration::seconds(2),
             })
             .unwrap();
 
@@ -611,8 +611,8 @@ mod tests {
         authorizer
             .set_token_refresh_times(TokenRefreshTimes {
                 before_expiration_refresh_time: Duration::seconds(5),
-                jitter_min: -1,
-                jitter_max: 1,
+                jitter_min: Duration::milliseconds(-500),
+                jitter_max: Duration::milliseconds(500),
             })
             .unwrap();
 

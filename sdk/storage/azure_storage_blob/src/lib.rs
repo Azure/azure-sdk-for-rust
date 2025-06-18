@@ -15,9 +15,8 @@ pub use clients::*;
 
 pub mod models {
     pub use crate::generated::models::{
-        AccessTier, AppendBlobClientCreateOptions, AppendBlobClientCreateResult, ArchiveStatus,
-        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientDownloadResult,
-        BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
+        AccessTierOptional, ArchiveStatus, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        BlobClientDownloadResult, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
