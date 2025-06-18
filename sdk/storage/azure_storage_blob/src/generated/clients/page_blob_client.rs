@@ -187,6 +187,9 @@ impl PageBlobClient {
         if let Some(range) = options.range {
             request.insert_header("x-ms-range", range);
         }
+        // Generated code support
+        // request.insert_header("x-ms-range", "bytes=0-511");
+
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
@@ -752,6 +755,9 @@ impl PageBlobClient {
         if let Some(range) = options.range {
             request.insert_header("x-ms-range", range);
         }
+        // Generated code support
+        // request.insert_header("x-ms-range", "bytes=0-511");
+
         if let Some(structured_body_type) = options.structured_body_type {
             request.insert_header("x-ms-structured-body", structured_body_type);
         }

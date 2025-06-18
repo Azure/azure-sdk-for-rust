@@ -3,7 +3,12 @@
 
 use crate::{
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
-    models::{PageBlobClientCreateOptions, PageBlobClientCreateResult},
+    models::{
+        PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
+        PageBlobClientCreateOptions, PageBlobClientCreateResult, PageBlobClientResizeOptions,
+        PageBlobClientResizeResult, PageBlobClientUploadPagesOptions,
+        PageBlobClientUploadPagesResult,
+    },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions, PageBlobClientOptions,
 };
@@ -89,15 +94,63 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `content_length` - Total length of the blob data to be uploaded.
-    /// * `blob_content_length` - The maximum size for the Page blob, up to 1TB. The page blob size must
+    /// * `content_length` - The maximum size for the Page blob, up to 1TB. The page blob size must
     ///   be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
     pub async fn create(
         &self,
-        blob_content_length: u64,
+        content_length: u64,
         options: Option<PageBlobClientCreateOptions<'_>>,
     ) -> Result<Response<PageBlobClientCreateResult, NoFormat>> {
-        self.client.create(blob_content_length, options).await
+        self.client.create(content_length, options).await
+    }
+
+    /// Clears a range of pages.
+    ///
+    /// # Arguments
+    ///
+    /// * `length` - Number of bytes to clear. The length specified must be a modulus of 512.
+    /// * `options` - Optional parameters for the request.
+    pub async fn clear_page(
+        &self,
+        length: u64,
+        options: Option<PageBlobClientClearPagesOptions<'_>>,
+    ) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>> {
+        self.client.clear_pages(length, options).await
+    }
+
+    /// Resizes a Page blob to the specified size. If the specified value is less than
+    /// the current size of the blob, then all pages above the specified value are cleared.
+    ///
+    /// # Arguments
+    ///
+    /// * `size` - Size used to resize the blob. Maximum size for a page Blob is up to 1TB. The
+    ///   Page blob size must be aligned to a 512-byte boundary.
+    /// * `options` - Optional parameters for the request.
+    pub async fn resize_blob(
+        &self,
+        size: u64,
+        options: Option<PageBlobClientResizeOptions<'_>>,
+    ) -> Result<Response<PageBlobClientResizeResult, NoFormat>> {
+        self.client.resize(size, options).await
+    }
+
+    /// The Upload Pages operation writes a range of pages to a Page blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The contents of the page.
+    /// * `content_length` - Number of bytes to use for writing to a section of the blob. The
+    ///   content_length specified must be a modulus of 512.
+    /// * `options` - Optional parameters for the request.
+    pub async fn upload_page(
+        &self,
+        data: RequestContent<Bytes>,
+        content_length: u64,
+        options: Option<PageBlobClientUploadPagesOptions<'_>>,
+    ) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>> {
+        self.client
+            .upload_pages(data, content_length, options)
+            .await
     }
 }

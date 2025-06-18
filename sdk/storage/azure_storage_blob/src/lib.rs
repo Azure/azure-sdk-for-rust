@@ -29,7 +29,10 @@ pub mod models {
         BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
         BlockList, BlockListType, BlockLookupList, CopyStatus, LeaseState, LeaseStatus,
-        ListBlobsFlatSegmentResponse, PageBlobClientCreateOptions, PageBlobClientCreateResult,
-        PublicAccessType, RehydratePriority, StorageServiceProperties,
+        ListBlobsFlatSegmentResponse, PageBlobClientClearPagesOptions,
+        PageBlobClientClearPagesResult, PageBlobClientCreateOptions, PageBlobClientCreateResult,
+        PageBlobClientResizeOptions, PageBlobClientResizeResult, PageBlobClientUploadPagesOptions,
+        PageBlobClientUploadPagesResult, PublicAccessType, RehydratePriority,
+        StorageServiceProperties,
     };
 }
