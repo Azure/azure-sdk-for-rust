@@ -19,7 +19,6 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-/// // FIXME: (missing-service-description) Add service description
 pub struct AzureQueueStorageClient {
     pub(crate) api_version: String,
     pub(crate) endpoint: Url,
@@ -27,26 +26,26 @@ pub struct AzureQueueStorageClient {
 }
 
 /// Options used when creating a [`AzureQueueStorageClient`](AzureQueueStorageClient)
-#[derive(Clone, Default, SafeDebug)]
+#[derive(Clone, SafeDebug)]
 pub struct AzureQueueStorageClientOptions {
+    /// The API version to use for this operation.
+    pub api_version: String,
     /// Allows customization of the client.
     pub client_options: ClientOptions,
 }
 
 impl AzureQueueStorageClient {
-    /// Creates a new AzureQueueStorageClient requiring no authentication.
+    /// Creates a new AzureQueueStorageClient, using Entra ID authentication.
     ///
     /// # Arguments
     ///
     /// * `endpoint` - Service host
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
-    /// * `api_version` - The API version to use for this operation.
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        api_version: String,
         options: Option<AzureQueueStorageClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -58,20 +57,18 @@ impl AzureQueueStorageClient {
             ));
         }
         endpoint.set_query(None);
-
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
         ));
-
         Ok(Self {
-            api_version,
             endpoint,
+            api_version: options.api_version,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
                 options.client_options,
-                vec![auth_policy.clone()],
+                Vec::default(),
                 vec![auth_policy],
             ),
         })
@@ -134,6 +131,15 @@ impl AzureQueueStorageClient {
             api_version: self.api_version.clone(),
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
+        }
+    }
+}
+
+impl Default for AzureQueueStorageClientOptions {
+    fn default() -> Self {
+        Self {
+            api_version: String::from("2018-03-28"),
+            client_options: ClientOptions::default(),
         }
     }
 }

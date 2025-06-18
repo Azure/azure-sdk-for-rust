@@ -5,7 +5,7 @@
 
 use crate::generated::models::{
     AzureQueueStorageMessageIdOperationsClientDeleteOptions,
-    AzureQueueStorageMessageIdOperationsClientUpdateOptions, QueueApiVersion,
+    AzureQueueStorageMessageIdOperationsClientUpdateOptions,
 };
 use azure_core::{
     http::{Context, Method, Pipeline, Request, Response, Url},
@@ -31,15 +31,13 @@ impl AzureQueueStorageMessageIdOperationsClient {
     /// * `queue_name` - The queue name.
     /// * `messageid` - The container name.
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call
-    ///   to the Get Messages or Update Message operation.
-    /// * `version` - Specifies the version of the operation to use for this request.
+    /// to the Get Messages or Update Message operation.
     /// * `options` - Optional parameters for the request.
     pub async fn delete(
         &self,
         queue_name: &str,
         messageid: &str,
         pop_receipt: &str,
-        version: QueueApiVersion,
         options: Option<AzureQueueStorageMessageIdOperationsClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
@@ -61,9 +59,7 @@ impl AzureQueueStorageMessageIdOperationsClient {
         if let Some(request_id) = options.request_id {
             request.insert_header("request-id", request_id);
         }
-        request.insert_header("version", version.to_string());
-        request.insert_header("x-ms-version", version.to_string());
-
+        request.insert_header("x-ms-version", self.api_version.to_string());
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
@@ -78,13 +74,12 @@ impl AzureQueueStorageMessageIdOperationsClient {
     /// * `queue_name` - The queue name.
     /// * `messageid` - The container name.
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call
-    ///   to the Get Messages or Update Message operation.
+    /// to the Get Messages or Update Message operation.
     /// * `visibilitytimeout` - Optional. Specifies the new visibility timeout value, in seconds, relative to
-    ///   server time. The default value is 30 seconds. A specified value must be larger
-    ///   than or equal to 1 second, and cannot be larger than 7 days, or larger than 2
-    ///   hours on REST protocol versions prior to version 2011-08-18. The visibility
-    ///   timeout of a message can be set to a value later than the expiry time.
-    /// * `version` - Specifies the version of the operation to use for this request.
+    /// server time. The default value is 30 seconds. A specified value must be larger
+    /// than or equal to 1 second, and cannot be larger than 7 days, or larger than 2
+    /// hours on REST protocol versions prior to version 2011-08-18. The visibility
+    /// timeout of a message can be set to a value later than the expiry time.
     /// * `options` - Optional parameters for the request.
     pub async fn update(
         &self,
@@ -92,7 +87,6 @@ impl AzureQueueStorageMessageIdOperationsClient {
         messageid: &str,
         pop_receipt: &str,
         visibilitytimeout: i32,
-        version: QueueApiVersion,
         options: Option<AzureQueueStorageMessageIdOperationsClientUpdateOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
@@ -116,9 +110,7 @@ impl AzureQueueStorageMessageIdOperationsClient {
         if let Some(request_id) = options.request_id {
             request.insert_header("request-id", request_id);
         }
-        request.insert_header("version", version.to_string());
-        request.insert_header("x-ms-version", version.to_string());
-
+        request.insert_header("x-ms-version", self.api_version.to_string());
         if let Some(queue_message) = options.queue_message {
             request.insert_header("content-type", "application/json");
             request.set_body(queue_message);

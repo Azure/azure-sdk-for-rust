@@ -3,14 +3,15 @@ use azure_core::http::{
 };
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
-use azure_storage_queue::AzureQueueStorageMessageIdOperationsClientUpdateOptions;
 use azure_storage_queue::{
-    clients::{
-        AzureQueueStorageClientOptions, AzureQueueStorageMessagesOperationsClientDequeueOptions,
-        AzureQueueStorageMessagesOperationsClientPeekOptions, QueueClient, QueueMessage,
+    clients::{AzureQueueStorageClientOptions, QueueClient},
+    models::{
+        AzureQueueStorageMessageIdOperationsClientUpdateOptions,
+        AzureQueueStorageMessagesOperationsClientDequeueOptions,
+        AzureQueueStorageMessagesOperationsClientPeekOptions, ListOfEnqueuedMessage, QueueMessage,
     },
-    ListOfEnqueuedMessage,
 };
+
 use quick_xml::de::from_str;
 use std::option::Option;
 
@@ -519,6 +520,7 @@ pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result
     let (options, endpoint) = recorded_test_setup(recording);
     let queue_client_options = AzureQueueStorageClientOptions {
         client_options: options.clone(),
+        ..Default::default()
     };
     let queue_client = QueueClient::new(
         &endpoint,

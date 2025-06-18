@@ -8,7 +8,7 @@ use crate::generated::models::{
     AzureQueueStorageMessagesOperationsClientDequeueOptions,
     AzureQueueStorageMessagesOperationsClientEnqueueOptions,
     AzureQueueStorageMessagesOperationsClientPeekOptions, ListOfDequeuedMessageItem,
-    ListOfEnqueuedMessage, ListOfPeekedMessageItem, QueueApiVersion, QueueMessage,
+    ListOfEnqueuedMessage, ListOfPeekedMessageItem, QueueMessage,
 };
 use azure_core::{
     http::{Context, Method, Pipeline, Request, RequestContent, Response, Url, XmlFormat},
@@ -32,12 +32,10 @@ impl AzureQueueStorageMessagesOperationsClient {
     /// # Arguments
     ///
     /// * `queue_name` - The queue name.
-    /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     pub async fn clear(
         &self,
         queue_name: &str,
-        version: QueueApiVersion,
         options: Option<AzureQueueStorageMessagesOperationsClientClearOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
@@ -57,9 +55,7 @@ impl AzureQueueStorageMessagesOperationsClient {
         if let Some(request_id) = options.request_id {
             request.insert_header("request-id", request_id);
         }
-        request.insert_header("version", version.to_string());
-        request.insert_header("x-ms-version", version.to_string());
-
+        request.insert_header("x-ms-version", self.api_version.to_string());
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
@@ -69,12 +65,10 @@ impl AzureQueueStorageMessagesOperationsClient {
     /// # Arguments
     ///
     /// * `queue_name` - The queue name.
-    /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     pub async fn dequeue(
         &self,
         queue_name: &str,
-        version: QueueApiVersion,
         options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
     ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
         let options = options.unwrap_or_default();
@@ -102,9 +96,7 @@ impl AzureQueueStorageMessagesOperationsClient {
         if let Some(request_id) = options.request_id {
             request.insert_header("request-id", request_id);
         }
-        request.insert_header("version", version.to_string());
-        request.insert_header("x-ms-version", version.to_string());
-
+        request.insert_header("x-ms-version", self.api_version.to_string());
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
@@ -118,13 +110,11 @@ impl AzureQueueStorageMessagesOperationsClient {
     /// # Arguments
     ///
     /// * `queue_name` - The queue name.
-    /// * `version` - Specifies the version of the operation to use for this request.
     /// * `queue_message` - A Message object which can be stored in a Queue
     /// * `options` - Optional parameters for the request.
     pub async fn enqueue(
         &self,
         queue_name: &str,
-        version: QueueApiVersion,
         queue_message: RequestContent<QueueMessage>,
         options: Option<AzureQueueStorageMessagesOperationsClientEnqueueOptions<'_>>,
     ) -> Result<Response<ListOfEnqueuedMessage, XmlFormat>> {
@@ -154,9 +144,7 @@ impl AzureQueueStorageMessagesOperationsClient {
         if let Some(request_id) = options.request_id {
             request.insert_header("request-id", request_id);
         }
-        request.insert_header("version", version.to_string());
-        request.insert_header("x-ms-version", version.to_string());
-
+        request.insert_header("x-ms-version", self.api_version.to_string());
         request.set_body(queue_message);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
@@ -167,12 +155,10 @@ impl AzureQueueStorageMessagesOperationsClient {
     /// # Arguments
     ///
     /// * `queue_name` - The queue name.
-    /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     pub async fn peek(
         &self,
         queue_name: &str,
-        version: QueueApiVersion,
         options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'_>>,
     ) -> Result<Response<ListOfPeekedMessageItem, XmlFormat>> {
         let options = options.unwrap_or_default();
@@ -193,9 +179,7 @@ impl AzureQueueStorageMessagesOperationsClient {
         if let Some(request_id) = options.request_id {
             request.insert_header("request-id", request_id);
         }
-        request.insert_header("version", version.to_string());
-        request.insert_header("x-ms-version", version.to_string());
-
+        request.insert_header("x-ms-version", self.api_version.to_string());
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }

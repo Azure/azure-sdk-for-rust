@@ -18,11 +18,6 @@ union ServicePropertiesCompType {
   properties: "properties",
 }
 
-union QueueApiVersion {
-  string,
-  `2018-03-28`: "2018-03-28",
-}
-
 union ServiceStatsCompType {
   string,
   stats: "stats",

@@ -39,7 +39,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 In order to interact with the Azure Queue service, you'll need to create an instance of a client, `QueueClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
-use azure_storage_queue::{QueueClient, AzureQueueStorageClientOptions};
+use azure_storage_queue::clients::{AzureQueueStorageClientOptions, QueueClient};
 use azure_identity::DefaultAzureCredential;
 
 #[tokio::main]

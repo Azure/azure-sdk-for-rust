@@ -1,18 +1,2 @@
-mod queue_client;
-
+pub mod queue_client;
 pub use queue_client::QueueClient;
-
-pub use crate::generated::clients::{
-    AzureQueueStorageClient, AzureQueueStorageClientOptions,
-    AzureQueueStorageMessageIdOperationsClient, AzureQueueStorageMessagesOperationsClient,
-    AzureQueueStorageQueueOperationsClient, AzureQueueStorageServiceOperationsClient,
-    AzureQueueStorageServicePropertiesOperationsClient,
-};
-
-pub use crate::generated::models::{
-    AzureQueueStorageMessagesOperationsClientClearOptions,
-    AzureQueueStorageMessagesOperationsClientDequeueOptions,
-    AzureQueueStorageMessagesOperationsClientEnqueueOptions,
-    AzureQueueStorageMessagesOperationsClientPeekOptions, ListOfDequeuedMessageItem,
-    ListOfEnqueuedMessage, QueueApiVersion, QueueMessage,
-};
