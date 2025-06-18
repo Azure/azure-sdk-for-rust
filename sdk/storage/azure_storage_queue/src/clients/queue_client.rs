@@ -36,6 +36,22 @@ pub struct QueueClient {
 }
 
 impl QueueClient {
+    /// Returns the endpoint URL of the Azure storage account this client is associated with.
+    /// # Returns
+    ///
+    /// A reference to the URL of the storage account.
+    pub fn endpoint(&self) -> &Url {
+        self.client.endpoint()
+    }
+
+    /// Returns the name of the queue this client is associated with.
+    /// # Returns
+    ///
+    /// A reference to the name of the queue.
+    pub fn queue_name(&self) -> &str {
+        &self.queue_name
+    }
+
     /// Creates a new QueueClient, using Entra ID authentication.
     ///
     /// # Arguments

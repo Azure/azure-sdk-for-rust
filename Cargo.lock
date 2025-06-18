@@ -422,6 +422,7 @@ dependencies = [
  "futures",
  "quick-xml",
  "rand",
+ "reqwest",
  "serde",
  "serde_json",
  "time",
