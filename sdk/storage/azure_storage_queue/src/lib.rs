@@ -7,13 +7,14 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-pub mod clients;
 mod generated;
 
-pub use clients::*;
-pub use generated::models::{
-    AzureQueueStorageMessageIdOperationsClientDeleteOptions,
-    AzureQueueStorageMessageIdOperationsClientUpdateOptions,
-    AzureQueueStorageQueueOperationsClientCreateOptions,
-    AzureQueueStorageServiceOperationsClientGetPropertiesOptions, QueueApiVersion,
-};
+pub mod models {
+    pub use crate::generated::models::*;
+}
+
+pub mod clients {
+    mod queue_client;
+    pub use self::queue_client::QueueClient;
+    pub use crate::generated::clients::*;
+}

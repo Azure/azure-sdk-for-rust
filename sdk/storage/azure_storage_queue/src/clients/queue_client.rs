@@ -13,8 +13,8 @@ use crate::generated::{
         AzureQueueStorageQueueOperationsClientCreateOptions,
         AzureQueueStorageQueueOperationsClientDeleteOptions,
         AzureQueueStorageServiceOperationsClientGetPropertiesOptions, ListOfDequeuedMessageItem,
-        ListOfEnqueuedMessage, ListOfPeekedMessageItem, QueueApiVersion, QueueMessage,
-        ServicePropertiesCompType, StorageServicePropertiesResponse,
+        ListOfEnqueuedMessage, ListOfPeekedMessageItem, QueueMessage, ServicePropertiesCompType,
+        StorageServicePropertiesResponse,
     },
 };
 use azure_core::{
@@ -32,7 +32,6 @@ pub struct QueueClient {
     pub(super) endpoint: Url,
     pub(super) queue_name: String,
     pub(super) client: GeneratedQueueClient,
-    pub(super) version: QueueApiVersion,
 }
 
 impl QueueClient {
@@ -67,17 +66,11 @@ impl QueueClient {
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
 
-        let client = GeneratedQueueClient::new(
-            endpoint,
-            credential.clone(),
-            QueueApiVersion::StringValue2018_03_28.to_string(),
-            Some(options),
-        )?;
+        let client = GeneratedQueueClient::new(endpoint, credential.clone(), Some(options))?;
         Ok(Self {
             endpoint: endpoint.parse()?,
             queue_name: queue_name.to_string(),
             client,
-            version: QueueApiVersion::StringValue2018_03_28,
         })
     }
 
@@ -94,7 +87,7 @@ impl QueueClient {
     ) -> Result<Response<()>> {
         self.client
             .get_azure_queue_storage_queue_operations_client()
-            .create(&self.queue_name, self.version.clone(), options)
+            .create(&self.queue_name, options)
             .await
     }
 
@@ -160,7 +153,7 @@ impl QueueClient {
     ) -> Result<Response<()>> {
         self.client
             .get_azure_queue_storage_queue_operations_client()
-            .delete(&self.queue_name, self.version.clone(), options)
+            .delete(&self.queue_name, options)
             .await
     }
 
@@ -175,7 +168,6 @@ impl QueueClient {
             .get_properties(
                 crate::generated::models::ServiceRestypeType::Service,
                 crate::generated::models::ServicePropertiesCompType::Properties,
-                self.version.clone(),
                 options,
             )
             .await
@@ -209,9 +201,7 @@ impl QueueClient {
             .client
             .get_azure_queue_storage_messages_operations_client();
 
-        let result = messages_client
-            .clear(&self.queue_name, self.version.clone(), options)
-            .await?;
+        let result = messages_client.clear(&self.queue_name, options).await?;
         Ok(result)
     }
 
@@ -243,8 +233,7 @@ impl QueueClient {
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/xml");
 
-        request.insert_header("version", self.version.to_string());
-        request.insert_header("x-ms-version", self.version.to_string());
+        request.insert_header("x-ms-version", self.client.api_version.to_string());
 
         if let Some(metadata) = metadata {
             for (key, value) in metadata {
@@ -282,8 +271,7 @@ impl QueueClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
 
-        request.insert_header("version", self.version.to_string());
-        request.insert_header("x-ms-version", self.version.to_string());
+        request.insert_header("x-ms-version", self.client.api_version.to_string());
 
         self.client
             .pipeline
@@ -312,7 +300,6 @@ impl QueueClient {
             .get_azure_queue_storage_messages_operations_client()
             .enqueue(
                 &self.queue_name,
-                self.version.clone(),
                 RequestContent::try_from(xml_body)?,
                 options,
             )
@@ -335,13 +322,7 @@ impl QueueClient {
     ) -> Result<Response<()>> {
         self.client
             .get_azure_queue_storage_message_id_operations_client()
-            .delete(
-                &self.queue_name,
-                message_id,
-                pop_receipt,
-                self.version.clone(),
-                options,
-            )
+            .delete(&self.queue_name, message_id, pop_receipt, options)
             .await
     }
 
@@ -368,7 +349,6 @@ impl QueueClient {
                 messageid,
                 pop_receipt,
                 visibility_timeout,
-                self.version.clone(),
                 options,
             )
             .await
@@ -392,7 +372,7 @@ impl QueueClient {
     ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
         self.client
             .get_azure_queue_storage_messages_operations_client()
-            .dequeue(&self.queue_name, self.version.clone(), options)
+            .dequeue(&self.queue_name, options)
             .await
     }
 
@@ -414,7 +394,7 @@ impl QueueClient {
     ) -> Result<Response<ListOfPeekedMessageItem, XmlFormat>> {
         self.client
             .get_azure_queue_storage_messages_operations_client()
-            .peek(&self.queue_name, self.version.clone(), options)
+            .peek(&self.queue_name, options)
             .await
     }
 }

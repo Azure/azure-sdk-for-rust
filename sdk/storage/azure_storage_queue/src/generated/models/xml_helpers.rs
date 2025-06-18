@@ -6,7 +6,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use super::CorsRuleResponse;
+use super::{CorsRuleResponse, DequeuedMessageItem, EnqueuedMessage, PeekedMessageItem};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Deserialize, Serialize)]

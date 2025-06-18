@@ -5,7 +5,7 @@
 
 use crate::generated::models::{
     AzureQueueStorageQueueOperationsClientCreateOptions,
-    AzureQueueStorageQueueOperationsClientDeleteOptions, QueueApiVersion,
+    AzureQueueStorageQueueOperationsClientDeleteOptions,
 };
 use azure_core::{
     http::{Context, Method, Pipeline, Request, Response, Url},
@@ -29,12 +29,10 @@ impl AzureQueueStorageQueueOperationsClient {
     /// # Arguments
     ///
     /// * `queue_name` - The queue name.
-    /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     pub async fn create(
         &self,
         queue_name: &str,
-        version: QueueApiVersion,
         options: Option<AzureQueueStorageQueueOperationsClientCreateOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
@@ -49,18 +47,10 @@ impl AzureQueueStorageQueueOperationsClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
-        if let Some(metadata) = options.metadata {
-            for (key, value) in metadata {
-                let header_name = format!("x-ms-meta-{}", key);
-                request.insert_header(header_name, value);
-            }
-        }
         if let Some(request_id) = options.request_id {
             request.insert_header("request-id", request_id);
         }
-        request.insert_header("version", version.to_string());
-        request.insert_header("x-ms-version", version.to_string());
-
+        request.insert_header("x-ms-version", self.api_version.to_string());
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
@@ -69,12 +59,10 @@ impl AzureQueueStorageQueueOperationsClient {
     /// # Arguments
     ///
     /// * `queue_name` - The queue name.
-    /// * `version` - Specifies the version of the operation to use for this request.
     /// * `options` - Optional parameters for the request.
     pub async fn delete(
         &self,
         queue_name: &str,
-        version: QueueApiVersion,
         options: Option<AzureQueueStorageQueueOperationsClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
@@ -92,9 +80,7 @@ impl AzureQueueStorageQueueOperationsClient {
         if let Some(request_id) = options.request_id {
             request.insert_header("request-id", request_id);
         }
-        request.insert_header("version", version.to_string());
-        request.insert_header("x-ms-version", version.to_string());
-
+        request.insert_header("x-ms-version", self.api_version.to_string());
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 }

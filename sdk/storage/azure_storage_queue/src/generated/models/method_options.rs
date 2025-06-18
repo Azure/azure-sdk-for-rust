@@ -8,7 +8,6 @@ use azure_core::{
     fmt::SafeDebug,
     http::{ClientMethodOptions, RequestContent},
 };
-use std::collections::HashMap;
 
 /// Options to be passed to [`AzureQueueStorageMessageIdOperationsClient::delete()`](crate::generated::clients::AzureQueueStorageMessageIdOperationsClient::delete())
 #[derive(Clone, Default, SafeDebug)]
@@ -132,13 +131,6 @@ pub struct AzureQueueStorageMessagesOperationsClientPeekOptions<'a> {
 /// Options to be passed to [`AzureQueueStorageQueueOperationsClient::create()`](crate::generated::clients::AzureQueueStorageQueueOperationsClient::create())
 #[derive(Clone, Default, SafeDebug)]
 pub struct AzureQueueStorageQueueOperationsClientCreateOptions<'a> {
-    /// Optional. Include this parameter to specify that the queue's metadata be
-    /// returned as part of the response body. Note that metadata requested with this
-    /// parameter must be stored in accordance with the naming restrictions imposed by
-    /// the 2009-09-19 version of the Queue service. Beginning with this version, all
-    /// metadata names must adhere to the naming conventions for C# identifiers.
-    pub metadata: Option<HashMap<String, String>>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 

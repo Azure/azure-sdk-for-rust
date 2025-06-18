@@ -168,7 +168,11 @@ pub struct EnqueuedMessage {
 #[non_exhaustive]
 #[serde(rename = "QueueMessagesList")]
 pub struct ListOfDequeuedMessageItem {
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        rename = "QueueMessage",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub value: Option<Vec<DequeuedMessageItem>>,
 }
 
@@ -177,7 +181,11 @@ pub struct ListOfDequeuedMessageItem {
 #[non_exhaustive]
 #[serde(rename = "QueueMessagesList")]
 pub struct ListOfEnqueuedMessage {
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        rename = "QueueMessage",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub value: Option<Vec<EnqueuedMessage>>,
 }
 
@@ -186,7 +194,11 @@ pub struct ListOfEnqueuedMessage {
 #[non_exhaustive]
 #[serde(rename = "QueueMessagesList")]
 pub struct ListOfPeekedMessageItem {
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        rename = "QueueMessage",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub value: Option<Vec<PeekedMessageItem>>,
 }
 

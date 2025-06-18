@@ -6,8 +6,12 @@ use azure_core::{
 };
 use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::{
-    AzureQueueStorageMessagesOperationsClientDequeueOptions,
-    AzureQueueStorageMessagesOperationsClientPeekOptions, QueueClient, QueueMessage,
+    clients::QueueClient,
+    models::{
+        AzureQueueStorageMessageIdOperationsClientUpdateOptions,
+        AzureQueueStorageMessagesOperationsClientDequeueOptions,
+        AzureQueueStorageMessagesOperationsClientPeekOptions, QueueMessage,
+    },
 };
 
 /// Custom error type for queue operations
@@ -102,18 +106,17 @@ async fn send_and_update_message(
         if let Some(message) = messages.value.and_then(|msgs| msgs.first().cloned()) {
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
-                let update_option =
-                    azure_storage_queue::AzureQueueStorageMessageIdOperationsClientUpdateOptions {
-                        // Serialize the message text as bytes for the update
-                        queue_message: Some(RequestContent::from(
-                            quick_xml::se::to_string(&QueueMessage {
-                                message_text: Some("Updated message text from Rust".to_string()),
-                            })?
-                            .into_bytes(),
-                        )),
-                        request_id: Some(message_id.clone()),
-                        ..Default::default()
-                    };
+                let update_option = AzureQueueStorageMessageIdOperationsClientUpdateOptions {
+                    // Serialize the message text as bytes for the update
+                    queue_message: Some(RequestContent::from(
+                        quick_xml::se::to_string(&QueueMessage {
+                            message_text: Some("Updated message text from Rust".to_string()),
+                        })?
+                        .into_bytes(),
+                    )),
+                    request_id: Some(message_id.clone()),
+                    ..Default::default()
+                };
                 let update_result = queue_client
                     .update_message(&message_id.clone(), &pop_receipt, 1, Some(update_option))
                     .await;

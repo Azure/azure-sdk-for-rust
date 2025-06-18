@@ -16,9 +16,15 @@ using TypeSpec.Rest;
 using TypeSpec.Http;
 using TypeSpec.Versioning;
 
-/**
- * // FIXME: (missing-service-description) Add service description
- */
+@useAuth(
+  OAuth2Auth<[
+    {
+      type: OAuth2FlowType.implicit,
+      authorizationUrl: "https://login.microsoftonline.com/common/oauth2/authorize",
+      scopes: ["https://storage.azure.com/.default"],
+    }
+  ]>
+)
 @service(#{ title: "Azure Queue Storage" })
 @server(
   "{url}",
@@ -27,5 +33,12 @@ using TypeSpec.Versioning;
     url: string,
   }
 )
-@useDependency(Azure.Core.Versions.v1_0_Preview_2)
+@versioned(Versions)
 namespace AzureQueueStorage;
+
+@doc("The Azure.Storage.Queue service versions.")
+enum Versions {
+  @doc("The 2018-03-28 version of the Azure.Storage.Blob service.")
+  @useDependency(Azure.Core.Versions.v1_0_Preview_2)
+  v2018_03_28: "2018-03-28",
+}
