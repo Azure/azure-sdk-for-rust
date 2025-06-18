@@ -3,7 +3,7 @@
 ## 0.25.0 (Unreleased)
 
 ### Features Added
-* Added 'if_match_etag' to ItemOptions ([#2705](https://github.com/Azure/azure-sdk-for-rust/pull/2705))
+* Added `if_match_etag` to `ItemOptions` ([#2705](https://github.com/Azure/azure-sdk-for-rust/pull/2705))
 
 ### Breaking Changes
 
