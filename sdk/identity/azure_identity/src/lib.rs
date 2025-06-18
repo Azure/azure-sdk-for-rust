@@ -34,6 +34,7 @@ pub use client_secret_credential::*;
 pub use default_azure_credential::*;
 pub use managed_identity_credential::*;
 pub use options::TokenCredentialOptions;
+pub use process::{new_executor, Executor};
 pub use workload_identity_credential::*;
 
 pub(crate) use app_service_managed_identity_credential::*;
@@ -172,11 +173,11 @@ fn test_validate_tenant_id() {
 
 #[cfg(test)]
 mod tests {
+    use crate::process::Executor;
     use async_trait::async_trait;
     use azure_core::{
         error::ErrorKind,
         http::{RawResponse, Request},
-        process::Executor,
         Error, Result,
     };
     use std::{

@@ -3,17 +3,50 @@
 
 // cspell:ignore workdir
 
+use crate::env::Env;
+use async_trait::async_trait;
 use azure_core::{
     credentials::AccessToken,
     error::{Error, ErrorKind, Result},
-    process::Executor,
 };
 use std::{
     ffi::{OsStr, OsString},
+    fmt, io,
+    process::Output,
     sync::Arc,
 };
 
-use crate::env::Env;
+mod standard;
+#[cfg(feature = "tokio")]
+mod tokio;
+
+#[allow(unused)]
+pub use standard::StdExecutor;
+#[cfg(feature = "tokio")]
+pub use tokio::TokioExecutor;
+
+/// Creates a new [`Executor`].
+///
+/// The returned Executor spawns a [`std::process::Command`] in a separate thread unless `tokio` is enabled,
+/// in which case it spawns a `tokio::process::Command`.
+pub fn new_executor() -> Arc<dyn Executor> {
+    #[cfg(not(feature = "tokio"))]
+    {
+        Arc::new(StdExecutor)
+    }
+    #[cfg(feature = "tokio")]
+    {
+        Arc::new(TokioExecutor)
+    }
+}
+
+/// An async command runner.
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+pub trait Executor: Send + Sync + fmt::Debug {
+    /// Run a program with the given arguments until it terminates, returning the output.
+    async fn run(&self, program: &OsStr, args: &[&OsStr]) -> io::Result<Output>;
+}
 
 /// Runs a command in the appropriate platform shell and processes the output
 /// using the specified `OutputProcessor`.
@@ -89,7 +122,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
     }
 }
 
-pub trait OutputProcessor: Send + Sized + Sync + 'static {
+pub(crate) trait OutputProcessor: Send + Sized + Sync + 'static {
     /// The credential name to include in error messages
     fn credential_name() -> &'static str;
 

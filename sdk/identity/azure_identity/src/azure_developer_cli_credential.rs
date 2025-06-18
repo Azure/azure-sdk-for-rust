@@ -3,14 +3,13 @@
 
 use crate::{
     env::Env,
-    process::{shell_exec, OutputProcessor},
+    process::{new_executor, shell_exec, Executor, OutputProcessor},
     validate_scope, validate_tenant_id, TokenCredentialOptions,
 };
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
     json::from_json,
-    process::{new_executor, Executor},
 };
 use serde::de::{self, Deserializer};
 use serde::Deserialize;

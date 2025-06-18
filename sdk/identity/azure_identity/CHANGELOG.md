@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Replaced `azure_core::process::Executor` with `azure_identity::process::Executor`.
+
 ### Bugs Fixed
 
 ### Other Changes
