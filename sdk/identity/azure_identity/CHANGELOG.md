@@ -6,7 +6,9 @@
 
 ### Breaking Changes
 
+- Replaced `azure_core::process::Executor` with `azure_identity::process::Executor`.
 - Converted all `Duration` types to `azure_core::Duration`
+- Renamed `azure_core::date` module to `azure_core::time`
 
 ### Bugs Fixed
 
