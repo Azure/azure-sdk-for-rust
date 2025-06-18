@@ -353,7 +353,38 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Receives the first message from a queue in Azure Storage Queue service.
+/// Attempts to peek the first message from an empty queue in Azure Storage Queue service.
+#[recorded::test]
+async fn test_peek_message_empty(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, "test-peek-message-empty").await?;
+
+    // Setup test queue with messages
+    queue_client.create_if_not_exists(None).await?;
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        let response = queue_client.peek_message(None).await?;
+        assert_successful_response(&response);
+
+        let message = response.into_body().await?;
+
+        assert!(
+            message.is_none(),
+            "Expected to receive no message, but got Some"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
+/// Peeks the first message from a queue in Azure Storage Queue service.
 #[recorded::test]
 async fn test_peek_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
@@ -426,6 +457,37 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
     test_result
 }
 
+/// Attempts to receive the first message from an empty queue in Azure Storage Queue service.
+#[recorded::test]
+async fn test_receive_message_empty(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, "test-receive-message-empty").await?;
+
+    // Setup test queue with messages
+    queue_client.create_if_not_exists(None).await?;
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        let response = queue_client.receive_message(None).await?;
+        assert_successful_response(&response);
+
+        let message = response.into_body().await?;
+
+        assert!(
+            message.is_none(),
+            "Expected to receive no message, but got Some"
+        );
+
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
 /// Receives the first message from a queue in Azure Storage Queue service.
 #[recorded::test]
 async fn test_receive_message(ctx: TestContext) -> Result<()> {
@@ -441,17 +503,14 @@ async fn test_receive_message(ctx: TestContext) -> Result<()> {
         let response = queue_client.receive_message(None).await?;
         assert_successful_response(&response);
 
-        let messages = response.into_body().await?;
-        let messages = messages.value.unwrap();
+        let message = response.into_body().await?;
 
-        assert_eq!(
-            messages.len(),
-            1,
-            "Expected to receive exactly 1 message, got {}",
-            messages.len()
+        assert!(
+            message.is_some(),
+            "Expected to receive a message, but got None"
         );
 
-        let message = messages.first().unwrap();
+        let message = message.unwrap();
         assert_message_text(message.message_text.clone(), test_messages[0], 0);
 
         Ok::<(), azure_core::Error>(())

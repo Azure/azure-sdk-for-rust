@@ -12,8 +12,9 @@ use crate::generated::{
         AzureQueueStorageMessagesOperationsClientPeekOptions,
         AzureQueueStorageQueueOperationsClientCreateOptions,
         AzureQueueStorageQueueOperationsClientDeleteOptions,
-        AzureQueueStorageServiceOperationsClientGetPropertiesOptions, ListOfDequeuedMessageItem,
-        ListOfEnqueuedMessage, ListOfPeekedMessageItem, QueueMessage, ServicePropertiesCompType,
+        AzureQueueStorageServiceOperationsClientGetPropertiesOptions, DequeuedMessageItem,
+        ListOfDequeuedMessageItem, ListOfEnqueuedMessage, ListOfPeekedMessageItem,
+        PeekedMessageItem, QueueMessage, ServicePropertiesCompType,
         StorageServicePropertiesResponse,
     },
 };
@@ -21,7 +22,8 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        Context, Method, Request, RequestContent, Response, StatusCode, Url, XmlFormat,
+        Context, Method, RawResponse, Request, RequestContent, Response, StatusCode, Url,
+        XmlFormat,
     },
     xml, Bytes, Result,
 };
@@ -459,13 +461,47 @@ impl QueueClient {
     pub async fn receive_message(
         &self,
         options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
-    ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
+    ) -> Result<Response<Option<DequeuedMessageItem>, XmlFormat>> {
         let options = Some(AzureQueueStorageMessagesOperationsClientDequeueOptions {
             number_of_messages: Some(1),
             ..options.unwrap_or_default()
         });
 
-        self.receive_messages(options).await
+        match self.receive_messages(options).await {
+            Ok(response) => {
+                // Extract the first message from the list of dequeued messages.
+                // If the list is empty, this will return None.
+
+                let status = response.status();
+                let headers = response.headers().clone();
+                let messages = response.into_body().await?;
+                if let Some(messages) = messages.value {
+                    if let Some(first_message) = messages.into_iter().next() {
+                        // Serialize the first message to XML format.
+                        // Construct a response using the serialized message as the body and the status code from the original response.
+                        let xml_body = xml::to_xml(&first_message)?;
+                        let raw_response =
+                            RawResponse::from_bytes(status, headers.clone(), xml_body);
+
+                        Ok(raw_response.into())
+                    } else {
+                        let raw_response =
+                            RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
+
+                        Ok(raw_response.into())
+                    }
+                } else {
+                    let raw_response =
+                        RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
+
+                    Ok(raw_response.into())
+                }
+            }
+            Err(e) => {
+                // Propagate other errors.
+                Err(e)
+            }
+        }
     }
 
     /// Retrieves multiple messages from the queue.
@@ -511,13 +547,47 @@ impl QueueClient {
     pub async fn peek_message(
         &self,
         options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'_>>,
-    ) -> Result<Response<ListOfPeekedMessageItem, XmlFormat>> {
+    ) -> Result<Response<Option<PeekedMessageItem>, XmlFormat>> {
         let options = Some(AzureQueueStorageMessagesOperationsClientPeekOptions {
             number_of_messages: Some(1),
             ..options.unwrap_or_default()
         });
 
-        self.peek_messages(options).await
+        match self.peek_messages(options).await {
+            Ok(response) => {
+                // Extract the first message from the list of dequeued messages.
+                // If the list is empty, this will return None.
+
+                let status = response.status();
+                let headers = response.headers().clone();
+                let messages = response.into_body().await?;
+                if let Some(messages) = messages.value {
+                    if let Some(first_message) = messages.into_iter().next() {
+                        // Serialize the first message to XML format.
+                        // Construct a response using the serialized message as the body and the status code from the original response.
+                        let xml_body = xml::to_xml(&first_message)?;
+                        let raw_response =
+                            RawResponse::from_bytes(status, headers.clone(), xml_body);
+
+                        Ok(raw_response.into())
+                    } else {
+                        let raw_response =
+                            RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
+
+                        Ok(raw_response.into())
+                    }
+                } else {
+                    let raw_response =
+                        RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
+
+                    Ok(raw_response.into())
+                }
+            }
+            Err(e) => {
+                // Propagate other errors.
+                Err(e)
+            }
+        }
     }
 
     /// Peeks multiple messages from the front of the queue without removing them.
