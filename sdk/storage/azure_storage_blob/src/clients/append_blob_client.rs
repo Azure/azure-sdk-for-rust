@@ -11,7 +11,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        RequestContent, Response, Url,
+        NoFormat, RequestContent, Response, Url,
     },
     Bytes, Result,
 };
@@ -94,7 +94,7 @@ impl AppendBlobClient {
     pub async fn create(
         &self,
         options: Option<AppendBlobClientCreateOptions<'_>>,
-    ) -> Result<Response<AppendBlobClientCreateResult>> {
+    ) -> Result<Response<AppendBlobClientCreateResult, NoFormat>> {
         self.client.create(options).await
     }
 }

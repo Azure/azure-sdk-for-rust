@@ -11,7 +11,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        RequestContent, Response, Url,
+        NoFormat, RequestContent, Response, Url,
     },
     Bytes, Result,
 };
@@ -97,7 +97,7 @@ impl PageBlobClient {
         &self,
         blob_content_length: u64,
         options: Option<PageBlobClientCreateOptions<'_>>,
-    ) -> Result<Response<PageBlobClientCreateResult>> {
+    ) -> Result<Response<PageBlobClientCreateResult, NoFormat>> {
         self.client.create(blob_content_length, options).await
     }
 }

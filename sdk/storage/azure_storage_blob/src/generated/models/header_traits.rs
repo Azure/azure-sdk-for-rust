@@ -23,12 +23,11 @@ use super::{
     BlockBlobClientQueryResult, BlockBlobClientStageBlockFromUrlResult,
     BlockBlobClientStageBlockResult, BlockBlobClientUploadResult, BlockList, CopyStatus,
     FilterBlobSegment, LeaseDuration, LeaseState, LeaseStatus, ListBlobsFlatSegmentResponse,
-    ListBlobsHierarchySegmentResponse, ListContainersSegmentResponse,
-    PageBlobClientClearPagesResult, PageBlobClientCopyIncrementalResult,
-    PageBlobClientCreateResult, PageBlobClientResizeResult,
+    ListBlobsHierarchySegmentResponse, PageBlobClientClearPagesResult,
+    PageBlobClientCopyIncrementalResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
     PageBlobClientUpdateSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
     PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
-    SignedIdentifier, SkuName, StorageServiceProperties, StorageServiceStats, UserDelegationKey,
+    SignedIdentifier, SkuName, StorageServiceStats, UserDelegationKey,
 };
 use azure_core::{
     base64, date,
@@ -57,7 +56,6 @@ const BLOB_SEALED: HeaderName = HeaderName::from_static("x-ms-blob-sealed");
 const BLOB_SEQUENCE_NUMBER: HeaderName = HeaderName::from_static("x-ms-blob-sequence-number");
 const BLOB_TYPE: HeaderName = HeaderName::from_static("x-ms-blob-type");
 const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
-const CLIENT_REQUEST_ID: HeaderName = HeaderName::from_static("x-ms-client-request-id");
 const CONTENT_CRC64: HeaderName = HeaderName::from_static("x-ms-content-crc64");
 const CONTENT_DISPOSITION: HeaderName = HeaderName::from_static("content-disposition");
 const CONTENT_ENCODING: HeaderName = HeaderName::from_static("content-encoding");
@@ -71,8 +69,6 @@ const COPY_DESTINATION_SNAPSHOT: HeaderName =
 const COPY_ID: HeaderName = HeaderName::from_static("x-ms-copy-id");
 const COPY_PROGRESS: HeaderName = HeaderName::from_static("x-ms-copy-progress");
 const COPY_SOURCE: HeaderName = HeaderName::from_static("x-ms-copy-source");
-const COPY_SOURCE_ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-copy-source-error-code");
-const COPY_SOURCE_STATUS_CODE: HeaderName = HeaderName::from_static("x-ms-copy-source-status-code");
 const COPY_STATUS: HeaderName = HeaderName::from_static("x-ms-copy-status");
 const COPY_STATUS_DESCRIPTION: HeaderName = HeaderName::from_static("x-ms-copy-status-description");
 const CREATION_TIME: HeaderName = HeaderName::from_static("x-ms-creation-time");
@@ -108,7 +104,6 @@ const META: &str = "x-ms-meta-";
 const OR: &str = "x-ms-or-";
 const OR_POLICY_ID: HeaderName = HeaderName::from_static("x-ms-or-policy-id");
 const REHYDRATE_PRIORITY: HeaderName = HeaderName::from_static("x-ms-rehydrate-priority");
-const REQUEST_ID: HeaderName = HeaderName::from_static("x-ms-request-id");
 const REQUEST_SERVER_ENCRYPTED: HeaderName =
     HeaderName::from_static("x-ms-request-server-encrypted");
 const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encrypted");
@@ -125,13 +120,9 @@ pub trait AppendBlobClientAppendBlockFromUrlResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<String>>;
     fn blob_append_offset(&self) -> Result<Option<String>>;
     fn blob_committed_block_count(&self) -> Result<Option<i32>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
-    fn copy_source_error_code(&self) -> Result<Option<String>>;
-    fn copy_source_status_code(&self) -> Result<Option<i32>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -172,26 +163,11 @@ impl AppendBlobClientAppendBlockFromUrlResultHeaders
         Headers::get_optional_as(self.headers(), &BLOB_COMMITTED_BLOCK_COUNT)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
-    }
-
-    /// The error code for the copy source.
-    fn copy_source_error_code(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_ERROR_CODE)
-    }
-
-    /// The status code for the copy source.
-    fn copy_source_status_code(&self) -> Result<Option<i32>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_STATUS_CODE)
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -205,11 +181,6 @@ impl AppendBlobClientAppendBlockFromUrlResultHeaders
     /// header, with the latter calculated from the requested range
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
@@ -227,11 +198,9 @@ pub trait AppendBlobClientAppendBlockResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<String>>;
     fn blob_append_offset(&self) -> Result<Option<String>>;
     fn blob_committed_block_count(&self) -> Result<Option<i32>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -272,11 +241,6 @@ impl AppendBlobClientAppendBlockResultHeaders
         Headers::get_optional_as(self.headers(), &BLOB_COMMITTED_BLOCK_COUNT)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
@@ -297,11 +261,6 @@ impl AppendBlobClientAppendBlockResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
     /// algorithm, and false otherwise.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
@@ -312,6 +271,7 @@ impl AppendBlobClientAppendBlockResultHeaders
 /// Provides access to typed response headers for `AppendBlobClient::create()`
 pub trait AppendBlobClientCreateResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+    fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
@@ -325,6 +285,11 @@ impl AppendBlobClientCreateResultHeaders for Response<AppendBlobClientCreateResu
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
+    }
+
+    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
+    fn date(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
 
     /// The date/time that the container was last modified.
@@ -371,8 +336,6 @@ pub trait AppendBlobClientSealResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn is_sealed(&self) -> Result<Option<bool>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl AppendBlobClientSealResultHeaders for Response<AppendBlobClientSealResult, NoFormat> {
@@ -397,23 +360,11 @@ impl AppendBlobClientSealResultHeaders for Response<AppendBlobClientSealResult, 
     fn is_sealed(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEALED)
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::abort_copy_from_url()`
 pub trait BlobClientAbortCopyFromUrlResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientAbortCopyFromUrlResultHeaders
@@ -423,16 +374,6 @@ impl BlobClientAbortCopyFromUrlResultHeaders
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::acquire_lease()`
@@ -440,9 +381,7 @@ pub trait BlobClientAcquireLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientAcquireLeaseResultHeaders for Response<BlobClientAcquireLeaseResult, NoFormat> {
@@ -463,19 +402,9 @@ impl BlobClientAcquireLeaseResultHeaders for Response<BlobClientAcquireLeaseResu
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Uniquely identifies a blobs' lease
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -484,9 +413,7 @@ pub trait BlobClientBreakLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn lease_time(&self) -> Result<Option<i32>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientBreakLeaseResultHeaders for Response<BlobClientBreakLeaseResult, NoFormat> {
@@ -507,19 +434,9 @@ impl BlobClientBreakLeaseResultHeaders for Response<BlobClientBreakLeaseResult, 
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Approximate time remaining in the lease period, in seconds.
     fn lease_time(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &LEASE_TIME)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -528,9 +445,7 @@ pub trait BlobClientChangeLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult, NoFormat> {
@@ -551,19 +466,9 @@ impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Uniquely identifies a blobs' lease
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -573,11 +478,9 @@ pub trait BlobClientCopyFromUrlResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn copy_id(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -605,11 +508,6 @@ impl BlobClientCopyFromUrlResultHeaders for Response<BlobClientCopyFromUrlResult
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
@@ -630,11 +528,6 @@ impl BlobClientCopyFromUrlResultHeaders for Response<BlobClientCopyFromUrlResult
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
     /// version, and may be used in subsequent requests to access this version of the blob.
     fn version_id(&self) -> Result<Option<String>> {
@@ -647,8 +540,6 @@ pub trait BlobClientCreateSnapshotResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn snapshot(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
@@ -670,16 +561,6 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
     /// The ETag contains a value that you can use to perform operations conditionally.
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
@@ -704,8 +585,6 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
 /// Provides access to typed response headers for `BlobClient::delete_immutability_policy()`
 pub trait BlobClientDeleteImmutabilityPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientDeleteImmutabilityPolicyResultHeaders
@@ -714,40 +593,6 @@ impl BlobClientDeleteImmutabilityPolicyResultHeaders
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::delete()`
-pub trait BlobClientDeleteResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientDeleteResultHeaders for Response<BlobClientDeleteResult> {
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -760,7 +605,6 @@ pub trait BlobClientDownloadResultHeaders: private::Sealed {
     fn content_length(&self) -> Result<Option<u64>>;
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn content_range(&self) -> Result<Option<String>>;
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn blob_committed_block_count(&self) -> Result<Option<i32>>;
@@ -768,7 +612,6 @@ pub trait BlobClientDownloadResultHeaders: private::Sealed {
     fn is_sealed(&self) -> Result<Option<bool>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
     fn blob_type(&self) -> Result<Option<BlobType>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>>;
     fn copy_id(&self) -> Result<Option<String>>;
@@ -790,10 +633,7 @@ pub trait BlobClientDownloadResultHeaders: private::Sealed {
     fn metadata(&self) -> Result<HashMap<String, String>>;
     fn object_replication_rules(&self) -> Result<HashMap<String, String>>;
     fn object_replication_policy_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn structured_body_type(&self) -> Result<Option<String>>;
-    fn structured_content_length(&self) -> Result<Option<u64>>;
     fn tag_count(&self) -> Result<Option<i64>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
@@ -839,11 +679,6 @@ impl BlobClientDownloadResultHeaders for Response<BlobClientDownloadResult, NoFo
         Headers::get_optional_as(self.headers(), &CONTENT_RANGE)
     }
 
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
     /// The date/time that the container was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
@@ -883,11 +718,6 @@ impl BlobClientDownloadResultHeaders for Response<BlobClientDownloadResult, NoFo
     /// The type of the blob.
     fn blob_type(&self) -> Result<Option<BlobType>> {
         Headers::get_optional_as(self.headers(), &BLOB_TYPE)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
     }
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
@@ -1037,11 +867,6 @@ impl BlobClientDownloadResultHeaders for Response<BlobClientDownloadResult, NoFo
         Headers::get_optional_as(self.headers(), &OR_POLICY_ID)
     }
 
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
     /// algorithm, and false otherwise.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
@@ -1064,9 +889,7 @@ impl BlobClientDownloadResultHeaders for Response<BlobClientDownloadResult, NoFo
 pub trait BlobClientGetAccountInfoResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn account_kind(&self) -> Result<Option<AccountKind>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn sku_name(&self) -> Result<Option<SkuName>>;
 }
 
@@ -1081,19 +904,9 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
         Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 
     /// Identifies the sku name of the account
@@ -1104,14 +917,12 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
 
 /// Provides access to typed response headers for `BlobClient::get_properties()`
 pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
-    fn accept_ranges(&self) -> Result<Option<String>>;
     fn cache_control(&self) -> Result<Option<String>>;
     fn content_disposition(&self) -> Result<Option<String>>;
     fn content_encoding(&self) -> Result<Option<String>>;
     fn content_language(&self) -> Result<Option<String>>;
     fn content_length(&self) -> Result<Option<u64>>;
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn access_tier(&self) -> Result<Option<String>>;
@@ -1184,11 +995,6 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
-    }
-
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
 
     /// The date/time that the container was last modified.
@@ -1437,8 +1243,6 @@ pub trait BlobClientReleaseLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientReleaseLeaseResultHeaders for Response<BlobClientReleaseLeaseResult, NoFormat> {
@@ -1458,16 +1262,6 @@ impl BlobClientReleaseLeaseResultHeaders for Response<BlobClientReleaseLeaseResu
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::renew_lease()`
@@ -1475,9 +1269,7 @@ pub trait BlobClientRenewLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, NoFormat> {
@@ -1498,19 +1290,9 @@ impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, 
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Uniquely identifies a blobs' lease
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -1519,8 +1301,6 @@ pub trait BlobClientSetExpiryResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientSetExpiryResultHeaders for Response<BlobClientSetExpiryResult, NoFormat> {
@@ -1540,25 +1320,13 @@ impl BlobClientSetExpiryResultHeaders for Response<BlobClientSetExpiryResult, No
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::set_immutability_policy()`
 pub trait BlobClientSetImmutabilityPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn immutability_policy_mode(&self) -> Result<Option<BlobImmutabilityPolicyMode>>;
     fn immutability_policy_expires_on(&self) -> Result<Option<OffsetDateTime>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientSetImmutabilityPolicyResultHeaders
@@ -1567,11 +1335,6 @@ impl BlobClientSetImmutabilityPolicyResultHeaders
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
     }
 
     /// Indicates the immutability policy mode of the blob.
@@ -1585,19 +1348,12 @@ impl BlobClientSetImmutabilityPolicyResultHeaders
             date::parse_rfc7231(h.as_str())
         })
     }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobClient::set_legal_hold()`
 pub trait BlobClientSetLegalHoldResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn legal_hold(&self) -> Result<Option<bool>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientSetLegalHoldResultHeaders for Response<BlobClientSetLegalHoldResult, NoFormat> {
@@ -1606,172 +1362,21 @@ impl BlobClientSetLegalHoldResultHeaders for Response<BlobClientSetLegalHoldResu
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Specifies the legal hold status to set on the blob.
     fn legal_hold(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &LEGAL_HOLD)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::set_metadata()`
-pub trait BlobClientSetMetadataResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn encryption_key_sha256(&self) -> Result<Option<String>>;
-    fn encryption_scope(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-    fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn version_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientSetMetadataResultHeaders for Response<BlobClientSetMetadataResult> {
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            date::parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
-    /// with a customer-provided key.
-    fn encryption_key_sha256(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ENCRYPTION_KEY_SHA256)
-    }
-
-    /// If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned
-    /// with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5
-    /// header, with the latter calculated from the requested range
-    fn encryption_scope(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-
-    /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
-    /// algorithm, and false otherwise.
-    fn is_server_encrypted(&self) -> Result<Option<bool>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
-    }
-
-    /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
-    /// version, and may be used in subsequent requests to access this version of the blob.
-    fn version_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &VERSION_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::set_properties()`
-pub trait BlobClientSetPropertiesResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn blob_sequence_number(&self) -> Result<Option<i64>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientSetPropertiesResultHeaders for Response<BlobClientSetPropertiesResult> {
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            date::parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// The current sequence number for a page blob. This header is not returned for block blobs or append blobs.
-    fn blob_sequence_number(&self) -> Result<Option<i64>> {
-        Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
 /// Provides access to typed response headers for `BlobClient::set_tags()`
 pub trait BlobClientSetTagsResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientSetTagsResultHeaders for Response<BlobClientSetTagsResult, NoFormat> {
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobClient::set_tier()`
-pub trait BlobClientSetTierResultHeaders: private::Sealed {
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobClientSetTierResultHeaders for Response<BlobClientSetTierResult> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -1780,12 +1385,8 @@ pub trait BlobClientStartCopyFromUrlResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn copy_id(&self) -> Result<Option<String>>;
-    fn copy_source_error_code(&self) -> Result<Option<String>>;
-    fn copy_source_status_code(&self) -> Result<Option<i32>>;
     fn copy_status(&self) -> Result<Option<CopyStatus>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -1809,35 +1410,15 @@ impl BlobClientStartCopyFromUrlResultHeaders
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or
     /// pass to Abort Copy Blob to abort a pending copy.
     fn copy_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &COPY_ID)
     }
 
-    /// The error code for the copy source.
-    fn copy_source_error_code(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_ERROR_CODE)
-    }
-
-    /// The status code for the copy source.
-    fn copy_source_status_code(&self) -> Result<Option<i32>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_STATUS_CODE)
-    }
-
     /// State of the copy operation identified by x-ms-copy-id.
     fn copy_status(&self) -> Result<Option<CopyStatus>> {
         Headers::get_optional_as(self.headers(), &COPY_STATUS)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
@@ -1850,24 +1431,12 @@ impl BlobClientStartCopyFromUrlResultHeaders
 /// Provides access to typed response headers for `BlobClient::undelete()`
 pub trait BlobClientUndeleteResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobClientUndeleteResultHeaders for Response<BlobClientUndeleteResult, NoFormat> {
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -1876,9 +1445,7 @@ pub trait BlobContainerClientAcquireLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientAcquireLeaseResultHeaders
@@ -1901,19 +1468,9 @@ impl BlobContainerClientAcquireLeaseResultHeaders
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Uniquely identifies a blobs' lease
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -1922,10 +1479,8 @@ pub trait BlobContainerClientBreakLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
     fn lease_time(&self) -> Result<Option<i32>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientBreakLeaseResultHeaders
@@ -1948,11 +1503,6 @@ impl BlobContainerClientBreakLeaseResultHeaders
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Uniquely identifies a blobs' lease
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
@@ -1962,11 +1512,6 @@ impl BlobContainerClientBreakLeaseResultHeaders
     fn lease_time(&self) -> Result<Option<i32>> {
         Headers::get_optional_as(self.headers(), &LEASE_TIME)
     }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::change_lease()`
@@ -1974,9 +1519,7 @@ pub trait BlobContainerClientChangeLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientChangeLeaseResultHeaders
@@ -1999,81 +1542,9 @@ impl BlobContainerClientChangeLeaseResultHeaders
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Uniquely identifies a blobs' lease
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobContainerClient::create()`
-pub trait BlobContainerClientCreateResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobContainerClientCreateResultHeaders for Response<BlobContainerClientCreateResult> {
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            date::parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobContainerClient::delete()`
-pub trait BlobContainerClientDeleteResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobContainerClientDeleteResultHeaders for Response<BlobContainerClientDeleteResult> {
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -2081,9 +1552,7 @@ impl BlobContainerClientDeleteResultHeaders for Response<BlobContainerClientDele
 pub trait BlobContainerClientGetAccountInfoResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn account_kind(&self) -> Result<Option<AccountKind>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn sku_name(&self) -> Result<Option<SkuName>>;
 }
 
@@ -2100,19 +1569,9 @@ impl BlobContainerClientGetAccountInfoResultHeaders
         Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 
     /// Identifies the sku name of the account
@@ -2123,11 +1582,9 @@ impl BlobContainerClientGetAccountInfoResultHeaders
 
 /// Provides access to typed response headers for `BlobContainerClient::get_properties()`
 pub trait BlobContainerClientGetPropertiesResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn access(&self) -> Result<Option<PublicAccessType>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn default_encryption_scope(&self) -> Result<Option<String>>;
     fn prevent_encryption_scope_override(&self) -> Result<Option<bool>>;
     fn has_immutability_policy(&self) -> Result<Option<bool>>;
@@ -2137,17 +1594,11 @@ pub trait BlobContainerClientGetPropertiesResultHeaders: private::Sealed {
     fn lease_state(&self) -> Result<Option<LeaseState>>;
     fn lease_status(&self) -> Result<Option<LeaseStatus>>;
     fn metadata(&self) -> Result<HashMap<String, String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientGetPropertiesResultHeaders
     for Response<BlobContainerClientGetPropertiesResult, NoFormat>
 {
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
     /// The date/time that the container was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
@@ -2163,11 +1614,6 @@ impl BlobContainerClientGetPropertiesResultHeaders
     /// The public access setting for the container.
     fn access(&self) -> Result<Option<PublicAccessType>> {
         Headers::get_optional_as(self.headers(), &BLOB_PUBLIC_ACCESS)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
     }
 
     /// The default encryption scope for the container.
@@ -2223,11 +1669,6 @@ impl BlobContainerClientGetPropertiesResultHeaders
         }
         Ok(values)
     }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::release_lease()`
@@ -2235,8 +1676,6 @@ pub trait BlobContainerClientReleaseLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientReleaseLeaseResultHeaders
@@ -2258,23 +1697,11 @@ impl BlobContainerClientReleaseLeaseResultHeaders
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::rename()`
 pub trait BlobContainerClientRenameResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientRenameResultHeaders
@@ -2284,16 +1711,6 @@ impl BlobContainerClientRenameResultHeaders
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::renew_lease()`
@@ -2301,9 +1718,7 @@ pub trait BlobContainerClientRenewLeaseResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn lease_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientRenewLeaseResultHeaders
@@ -2326,27 +1741,15 @@ impl BlobContainerClientRenewLeaseResultHeaders
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Uniquely identifies a blobs' lease
     fn lease_id(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::restore()`
 pub trait BlobContainerClientRestoreResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientRestoreResultHeaders
@@ -2356,16 +1759,6 @@ impl BlobContainerClientRestoreResultHeaders
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::set_access_policy()`
@@ -2373,8 +1766,6 @@ pub trait BlobContainerClientSetAccessPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobContainerClientSetAccessPolicyResultHeaders
@@ -2396,65 +1787,13 @@ impl BlobContainerClientSetAccessPolicyResultHeaders
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobContainerClient::set_metadata()`
-pub trait BlobContainerClientSetMetadataResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobContainerClientSetMetadataResultHeaders
-    for Response<BlobContainerClientSetMetadataResult>
-{
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            date::parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobServiceClient::get_account_info()`
 pub trait BlobServiceClientGetAccountInfoResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn account_kind(&self) -> Result<Option<AccountKind>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn sku_name(&self) -> Result<Option<SkuName>>;
 }
 
@@ -2471,19 +1810,9 @@ impl BlobServiceClientGetAccountInfoResultHeaders
         Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 
     /// Identifies the sku name of the account
@@ -2492,31 +1821,9 @@ impl BlobServiceClientGetAccountInfoResultHeaders
     }
 }
 
-/// Provides access to typed response headers for `BlobServiceClient::set_properties()`
-pub trait BlobServiceClientSetPropertiesResultHeaders: private::Sealed {
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-}
-
-impl BlobServiceClientSetPropertiesResultHeaders
-    for Response<BlobServiceClientSetPropertiesResult>
-{
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-}
-
 /// Provides access to typed response headers for `BlobClient::get_tags()`
 pub trait BlobTagsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl BlobTagsHeaders for Response<BlobTags, XmlFormat> {
@@ -2524,29 +1831,16 @@ impl BlobTagsHeaders for Response<BlobTags, XmlFormat> {
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::commit_block_list()`
 pub trait BlockBlobClientCommitBlockListResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
@@ -2560,11 +1854,6 @@ impl BlockBlobClientCommitBlockListResultHeaders
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
     }
 
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
     /// The date/time that the container was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
@@ -2575,11 +1864,6 @@ impl BlockBlobClientCommitBlockListResultHeaders
     /// The ETag contains a value that you can use to perform operations conditionally.
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
     }
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
@@ -2602,11 +1886,6 @@ impl BlockBlobClientCommitBlockListResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
     /// algorithm, and false otherwise.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
@@ -2626,8 +1905,6 @@ pub trait BlockBlobClientPutBlobFromUrlResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn copy_source_error_code(&self) -> Result<Option<String>>;
-    fn copy_source_status_code(&self) -> Result<Option<i32>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
@@ -2658,16 +1935,6 @@ impl BlockBlobClientPutBlobFromUrlResultHeaders
     /// The ETag contains a value that you can use to perform operations conditionally.
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// The error code for the copy source.
-    fn copy_source_error_code(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_ERROR_CODE)
-    }
-
-    /// The status code for the copy source.
-    fn copy_source_status_code(&self) -> Result<Option<i32>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_STATUS_CODE)
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -2713,7 +1980,6 @@ pub trait BlockBlobClientQueryResultHeaders: private::Sealed {
     fn blob_content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
     fn blob_type(&self) -> Result<Option<BlobType>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn copy_completion_time(&self) -> Result<Option<OffsetDateTime>>;
     fn copy_id(&self) -> Result<Option<String>>;
@@ -2727,7 +1993,6 @@ pub trait BlockBlobClientQueryResultHeaders: private::Sealed {
     fn lease_state(&self) -> Result<Option<LeaseState>>;
     fn lease_status(&self) -> Result<Option<LeaseStatus>>;
     fn metadata(&self) -> Result<HashMap<String, String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -2816,11 +2081,6 @@ impl BlockBlobClientQueryResultHeaders for Response<BlockBlobClientQueryResult, 
     /// The type of the blob.
     fn blob_type(&self) -> Result<Option<BlobType>> {
         Headers::get_optional_as(self.headers(), &BLOB_TYPE)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
     }
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
@@ -2915,11 +2175,6 @@ impl BlockBlobClientQueryResultHeaders for Response<BlockBlobClientQueryResult, 
         Ok(values)
     }
 
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
     /// algorithm, and false otherwise.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
@@ -2931,13 +2186,9 @@ impl BlockBlobClientQueryResultHeaders for Response<BlockBlobClientQueryResult, 
 pub trait BlockBlobClientStageBlockFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
-    fn copy_source_error_code(&self) -> Result<Option<String>>;
-    fn copy_source_status_code(&self) -> Result<Option<i32>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -2955,26 +2206,11 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
             base64::decode(h.as_str())
         })
-    }
-
-    /// The error code for the copy source.
-    fn copy_source_error_code(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_ERROR_CODE)
-    }
-
-    /// The status code for the copy source.
-    fn copy_source_status_code(&self) -> Result<Option<i32>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_STATUS_CODE)
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -2988,11 +2224,6 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
     /// header, with the latter calculated from the requested range
     fn encryption_scope(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
@@ -3005,14 +2236,10 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
 /// Provides access to typed response headers for `BlockBlobClient::stage_block()`
 pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn structured_body_type(&self) -> Result<Option<String>>;
 }
 
 impl BlockBlobClientStageBlockResultHeaders
@@ -3022,16 +2249,6 @@ impl BlockBlobClientStageBlockResultHeaders
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
-    }
-
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
     }
 
     /// This response header is returned so that the client can check for the integrity of the copied content.
@@ -3054,35 +2271,21 @@ impl BlockBlobClientStageBlockResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
     /// algorithm, and false otherwise.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
-    }
-
-    /// Indicates the response body contains a structured message and specifies the message schema version and properties.
-    fn structured_body_type(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &STRUCTURED_BODY)
     }
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::upload()`
 pub trait BlockBlobClientUploadResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
-    fn structured_body_type(&self) -> Result<Option<String>>;
     fn version_id(&self) -> Result<Option<String>>;
 }
 
@@ -3091,11 +2294,6 @@ impl BlockBlobClientUploadResultHeaders for Response<BlockBlobClientUploadResult
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
-    }
-
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
 
     /// The date/time that the container was last modified.
@@ -3108,11 +2306,6 @@ impl BlockBlobClientUploadResultHeaders for Response<BlockBlobClientUploadResult
     /// The ETag contains a value that you can use to perform operations conditionally.
     fn etag(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
     }
 
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
@@ -3128,20 +2321,10 @@ impl BlockBlobClientUploadResultHeaders for Response<BlockBlobClientUploadResult
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
     /// algorithm, and false otherwise.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
-    }
-
-    /// Indicates the response body contains a structured message and specifies the message schema version and properties.
-    fn structured_body_type(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &STRUCTURED_BODY)
     }
 
     /// A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob
@@ -3153,20 +2336,12 @@ impl BlockBlobClientUploadResultHeaders for Response<BlockBlobClientUploadResult
 
 /// Provides access to typed response headers for `BlockBlobClient::get_block_list()`
 pub trait BlockListHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn blob_content_length(&self) -> Result<Option<u64>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
+    fn blob_content_length(&self) -> Result<Option<i64>>;
 }
 
-impl BlockListHeaders for Response<BlockList> {
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
+impl BlockListHeaders for Response<BlockList, XmlFormat> {
     /// The date/time that the container was last modified.
     fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
@@ -3179,20 +2354,9 @@ impl BlockListHeaders for Response<BlockList> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to a 512-byte
-    /// boundary.
-    fn blob_content_length(&self) -> Result<Option<u64>> {
+    /// The size of the blob in bytes.
+    fn blob_content_length(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_CONTENT_LENGTH)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -3201,8 +2365,6 @@ impl BlockListHeaders for Response<BlockList> {
 /// * `BlobServiceClient::filter_blobs()`
 pub trait FilterBlobSegmentHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl FilterBlobSegmentHeaders for Response<FilterBlobSegment, XmlFormat> {
@@ -3210,23 +2372,11 @@ impl FilterBlobSegmentHeaders for Response<FilterBlobSegment, XmlFormat> {
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::list_blob_flat_segment()`
 pub trait ListBlobsFlatSegmentResponseHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl ListBlobsFlatSegmentResponseHeaders for Response<ListBlobsFlatSegmentResponse, XmlFormat> {
@@ -3234,23 +2384,11 @@ impl ListBlobsFlatSegmentResponseHeaders for Response<ListBlobsFlatSegmentRespon
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::list_blob_hierarchy_segment()`
 pub trait ListBlobsHierarchySegmentResponseHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl ListBlobsHierarchySegmentResponseHeaders
@@ -3259,34 +2397,6 @@ impl ListBlobsHierarchySegmentResponseHeaders
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobServiceClient::list_containers_segment()`
-pub trait ListContainersSegmentResponseHeaders: private::Sealed {
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-}
-
-impl ListContainersSegmentResponseHeaders for Response<ListContainersSegmentResponse> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -3342,10 +2452,8 @@ pub trait PageBlobClientCopyIncrementalResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn copy_id(&self) -> Result<Option<String>>;
     fn copy_status(&self) -> Result<Option<CopyStatus>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl PageBlobClientCopyIncrementalResultHeaders
@@ -3368,11 +2476,6 @@ impl PageBlobClientCopyIncrementalResultHeaders
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or
     /// pass to Abort Copy Blob to abort a pending copy.
     fn copy_id(&self) -> Result<Option<String>> {
@@ -3383,16 +2486,12 @@ impl PageBlobClientCopyIncrementalResultHeaders
     fn copy_status(&self) -> Result<Option<CopyStatus>> {
         Headers::get_optional_as(self.headers(), &COPY_STATUS)
     }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `PageBlobClient::create()`
 pub trait PageBlobClientCreateResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
+    fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
@@ -3406,6 +2505,11 @@ impl PageBlobClientCreateResultHeaders for Response<PageBlobClientCreateResult, 
     /// client can check for message content integrity.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_MD5, |h| base64::decode(h.as_str()))
+    }
+
+    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
+    fn date(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
 
     /// The date/time that the container was last modified.
@@ -3452,8 +2556,6 @@ pub trait PageBlobClientResizeResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl PageBlobClientResizeResultHeaders for Response<PageBlobClientResizeResult, NoFormat> {
@@ -3478,16 +2580,6 @@ impl PageBlobClientResizeResultHeaders for Response<PageBlobClientResizeResult, 
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `PageBlobClient::update_sequence_number()`
@@ -3496,8 +2588,6 @@ pub trait PageBlobClientUpdateSequenceNumberResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl PageBlobClientUpdateSequenceNumberResultHeaders
@@ -3524,16 +2614,6 @@ impl PageBlobClientUpdateSequenceNumberResultHeaders
     fn blob_sequence_number(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `PageBlobClient::upload_pages_from_url()`
@@ -3544,8 +2624,6 @@ pub trait PageBlobClientUploadPagesFromUrlResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<String>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
-    fn copy_source_error_code(&self) -> Result<Option<String>>;
-    fn copy_source_status_code(&self) -> Result<Option<i32>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
@@ -3589,16 +2667,6 @@ impl PageBlobClientUploadPagesFromUrlResultHeaders
         })
     }
 
-    /// The error code for the copy source.
-    fn copy_source_error_code(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_ERROR_CODE)
-    }
-
-    /// The status code for the copy source.
-    fn copy_source_status_code(&self) -> Result<Option<i32>> {
-        Headers::get_optional_as(self.headers(), &COPY_SOURCE_STATUS_CODE)
-    }
-
     /// The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted
     /// with a customer-provided key.
     fn encryption_key_sha256(&self) -> Result<Option<String>> {
@@ -3626,11 +2694,9 @@ pub trait PageBlobClientUploadPagesResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn blob_sequence_number(&self) -> Result<Option<i64>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
     fn encryption_scope(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
@@ -3665,11 +2731,6 @@ impl PageBlobClientUploadPagesResultHeaders
         Headers::get_optional_as(self.headers(), &BLOB_SEQUENCE_NUMBER)
     }
 
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
     /// This response header is returned so that the client can check for the integrity of the copied content.
     fn content_crc64(&self) -> Result<Option<Vec<u8>>> {
         Headers::get_optional_with(self.headers(), &CONTENT_CRC64, |h| {
@@ -3690,11 +2751,6 @@ impl PageBlobClientUploadPagesResultHeaders
         Headers::get_optional_as(self.headers(), &ENCRYPTION_SCOPE)
     }
 
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-
     /// The value of this header is set to true if the contents of the request are successfully encrypted using the specified
     /// algorithm, and false otherwise.
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
@@ -3709,9 +2765,7 @@ pub trait PageListHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn blob_content_length(&self) -> Result<Option<u64>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
+    fn blob_content_length(&self) -> Result<Option<i64>>;
 }
 
 impl PageListHeaders for Response<PageList, XmlFormat> {
@@ -3732,46 +2786,15 @@ impl PageListHeaders for Response<PageList, XmlFormat> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to a 512-byte
-    /// boundary.
-    fn blob_content_length(&self) -> Result<Option<u64>> {
+    /// The size of the blob in bytes.
+    fn blob_content_length(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_CONTENT_LENGTH)
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
-}
-
-/// Provides access to typed response headers for `BlobServiceClient::get_properties()`
-pub trait StorageServicePropertiesHeaders: private::Sealed {
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
-}
-
-impl StorageServicePropertiesHeaders for Response<StorageServiceProperties> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
 /// Provides access to typed response headers for `BlobServiceClient::get_statistics()`
 pub trait StorageServiceStatsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl StorageServiceStatsHeaders for Response<StorageServiceStats, XmlFormat> {
@@ -3779,39 +2802,17 @@ impl StorageServiceStatsHeaders for Response<StorageServiceStats, XmlFormat> {
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 /// Provides access to typed response headers for `BlobServiceClient::get_user_delegation_key()`
 pub trait UserDelegationKeyHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl UserDelegationKeyHeaders for Response<UserDelegationKey, XmlFormat> {
     /// UTC date/time value generated by the service that indicates the time at which the response was initiated
     fn date(&self) -> Result<Option<OffsetDateTime>> {
         Headers::get_optional_with(self.headers(), &DATE, |h| date::parse_rfc7231(h.as_str()))
-    }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
     }
 }
 
@@ -3821,8 +2822,6 @@ pub trait VecSignedIdentifierHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
     fn access(&self) -> Result<Option<PublicAccessType>>;
-    fn client_request_id(&self) -> Result<Option<String>>;
-    fn request_id(&self) -> Result<Option<String>>;
 }
 
 impl VecSignedIdentifierHeaders for Response<Vec<SignedIdentifier>, XmlFormat> {
@@ -3847,16 +2846,6 @@ impl VecSignedIdentifierHeaders for Response<Vec<SignedIdentifier>, XmlFormat> {
     fn access(&self) -> Result<Option<PublicAccessType>> {
         Headers::get_optional_as(self.headers(), &BLOB_PUBLIC_ACCESS)
     }
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    fn client_request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &CLIENT_REQUEST_ID)
-    }
-
-    /// An opaque, globally-unique, server-generated string identifier for the request.
-    fn request_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &REQUEST_ID)
-    }
 }
 
 mod private {
@@ -3865,29 +2854,25 @@ mod private {
         AppendBlobClientCreateResult, AppendBlobClientSealResult, BlobClientAbortCopyFromUrlResult,
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
         BlobClientCopyFromUrlResult, BlobClientCreateSnapshotResult,
-        BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteResult, BlobClientDownloadResult,
+        BlobClientDeleteImmutabilityPolicyResult, BlobClientDownloadResult,
         BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
         BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlobClientSetExpiryResult,
         BlobClientSetImmutabilityPolicyResult, BlobClientSetLegalHoldResult,
-        BlobClientSetMetadataResult, BlobClientSetPropertiesResult, BlobClientSetTagsResult,
-        BlobClientSetTierResult, BlobClientStartCopyFromUrlResult, BlobClientUndeleteResult,
+        BlobClientSetTagsResult, BlobClientStartCopyFromUrlResult, BlobClientUndeleteResult,
         BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
-        BlobContainerClientChangeLeaseResult, BlobContainerClientCreateResult,
-        BlobContainerClientDeleteResult, BlobContainerClientGetAccountInfoResult,
+        BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
         BlobContainerClientRenameResult, BlobContainerClientRenewLeaseResult,
         BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyResult,
-        BlobContainerClientSetMetadataResult, BlobServiceClientGetAccountInfoResult,
-        BlobServiceClientSetPropertiesResult, BlobTags, BlockBlobClientCommitBlockListResult,
+        BlobServiceClientGetAccountInfoResult, BlobTags, BlockBlobClientCommitBlockListResult,
         BlockBlobClientPutBlobFromUrlResult, BlockBlobClientQueryResult,
         BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult, BlockList, FilterBlobSegment, ListBlobsFlatSegmentResponse,
-        ListBlobsHierarchySegmentResponse, ListContainersSegmentResponse,
-        PageBlobClientClearPagesResult, PageBlobClientCopyIncrementalResult,
-        PageBlobClientCreateResult, PageBlobClientResizeResult,
-        PageBlobClientUpdateSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
-        PageBlobClientUploadPagesResult, PageList, SignedIdentifier, StorageServiceProperties,
-        StorageServiceStats, UserDelegationKey,
+        ListBlobsHierarchySegmentResponse, PageBlobClientClearPagesResult,
+        PageBlobClientCopyIncrementalResult, PageBlobClientCreateResult,
+        PageBlobClientResizeResult, PageBlobClientUpdateSequenceNumberResult,
+        PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
+        SignedIdentifier, StorageServiceStats, UserDelegationKey,
     };
     use azure_core::http::{NoFormat, Response, XmlFormat};
 

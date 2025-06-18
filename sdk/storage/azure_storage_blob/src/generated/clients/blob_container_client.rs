@@ -9,8 +9,7 @@ use crate::generated::{
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
         BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
-        BlobContainerClientCreateOptions, BlobContainerClientCreateResult,
-        BlobContainerClientDeleteOptions, BlobContainerClientDeleteResult,
+        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
         BlobContainerClientFilterBlobsOptions, BlobContainerClientGetAccessPolicyOptions,
         BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
@@ -21,8 +20,8 @@ use crate::generated::{
         BlobContainerClientRenewLeaseResult, BlobContainerClientRestoreOptions,
         BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyOptions,
         BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetMetadataOptions,
-        BlobContainerClientSetMetadataResult, FilterBlobSegment, ListBlobsFlatSegmentResponse,
-        ListBlobsHierarchySegmentResponse, SignedIdentifier,
+        FilterBlobSegment, ListBlobsFlatSegmentResponse, ListBlobsHierarchySegmentResponse,
+        SignedIdentifier,
     },
 };
 use azure_core::{

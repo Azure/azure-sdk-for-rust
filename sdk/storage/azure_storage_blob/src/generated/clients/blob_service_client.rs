@@ -10,9 +10,8 @@ use crate::generated::{
         BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
         BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
         BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
-        BlobServiceClientSetPropertiesResult, FilterBlobSegment, KeyInfo,
-        ListContainersSegmentResponse, StorageServiceProperties, StorageServiceStats,
-        UserDelegationKey,
+        FilterBlobSegment, KeyInfo, ListContainersSegmentResponse, StorageServiceProperties,
+        StorageServiceStats, UserDelegationKey,
     },
 };
 use azure_core::{
