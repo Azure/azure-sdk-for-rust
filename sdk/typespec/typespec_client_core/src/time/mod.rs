@@ -135,7 +135,7 @@ pub fn duration_from_days(days: u64) -> Duration {
 
 /// Get the difference between two dates.
 pub fn diff(first: OffsetDateTime, second: OffsetDateTime) -> Duration {
-    first - second
+    (first - second).unsigned_abs()
 }
 
 #[cfg(test)]
