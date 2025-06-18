@@ -36,6 +36,7 @@ pub struct QueueClient {
 
 impl QueueClient {
     /// Returns the endpoint URL of the Azure storage account this client is associated with.
+    ///
     /// # Returns
     ///
     /// A reference to the URL of the storage account.
@@ -44,6 +45,7 @@ impl QueueClient {
     }
 
     /// Returns the name of the queue this client is associated with.
+    ///
     /// # Returns
     ///
     /// A reference to the name of the queue.
@@ -51,13 +53,18 @@ impl QueueClient {
         &self.queue_name
     }
 
-    /// Creates a new QueueClient, using Entra ID authentication.
+    /// Creates a new QueueClient using Entra ID authentication.
     ///
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://<storage_account_name>.queue.core.windows.net/`
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
+    /// * `queue_name` - The name of the queue to interact with
+    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token for authentication
+    /// * `options` - Optional configuration for the client
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the new `QueueClient` if successful, or an error if the endpoint URL is invalid
     pub fn new(
         endpoint: &str,
         queue_name: &str,
@@ -78,9 +85,15 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional parameters for the request
     ///
-    /// Will fail if the queue already exists.
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the response if successful
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the queue already exists or if the request fails
     pub async fn create(
         &self,
         options: Option<AzureQueueStorageQueueOperationsClientCreateOptions<'_>>,
@@ -91,12 +104,16 @@ impl QueueClient {
             .await
     }
 
-    /// Creates a new queue under the given account. Will not fail if the queue already exists.
+    /// Creates a new queue under the given account if it doesn't already exist.
     ///
     /// # Arguments
     ///
-    /// * `version` - Specifies the version of the operation to use for this request.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the response. If the queue already exists,
+    /// returns a success response with no content (204 No Content)
     pub async fn create_if_not_exists(
         &self,
         options: Option<AzureQueueStorageQueueOperationsClientCreateOptions<'_>>,
@@ -116,13 +133,39 @@ impl QueueClient {
         }
     }
 
+    /// Permanently deletes the specified queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the response if successful
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the queue doesn't exist or if the request fails
+    pub async fn delete(
+        &self,
+        options: Option<AzureQueueStorageQueueOperationsClientDeleteOptions<'_>>,
+    ) -> Result<Response<()>> {
+        self.client
+            .get_azure_queue_storage_queue_operations_client()
+            .delete(&self.queue_name, options)
+            .await
+    }
+
     /// Deletes the specified queue if it exists.
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional parameters for the request
     ///
-    /// This method will not fail if the queue does not exist; it will return a 204 No Content response.
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the response. If the queue doesn't exist,
+    /// returns a success response with no content (204 No Content)
     pub async fn delete_if_exists(
         &self,
         options: Option<AzureQueueStorageQueueOperationsClientDeleteOptions<'_>>,
@@ -142,22 +185,18 @@ impl QueueClient {
         }
     }
 
-    /// Permanently delete the specified queue
+    /// Retrieves the properties of the queue service.
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
-    pub async fn delete(
-        &self,
-        options: Option<AzureQueueStorageQueueOperationsClientDeleteOptions<'_>>,
-    ) -> Result<Response<()>> {
-        self.client
-            .get_azure_queue_storage_queue_operations_client()
-            .delete(&self.queue_name, options)
-            .await
-    }
-
-    /// Retrieves the properties of the specified queue service.
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the service properties response if successful
+    ///
+    /// # Note
+    ///
     // TODO: Validate that this is correctly implemented. This returns properties for the entire service, not just a single queue.
     pub async fn get_properties(
         &self,
@@ -173,9 +212,17 @@ impl QueueClient {
             .await
     }
 
-    /// Checks if a queue with the specified name exists.
+    /// Checks if the queue exists.
     ///
-    /// Returns `Ok(true)` if the queue exists, `Ok(false)` if it does not exist, or an error if the request fails for any other reason.
+    /// # Returns
+    ///
+    /// Returns a `Result` containing:
+    /// - `Ok(true)` if the queue exists
+    /// - `Ok(false)` if the queue does not exist
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the request fails for any reason other than a non-existent queue
     pub async fn exists(&self) -> Result<bool> {
         match self.get_metadata().await {
             Ok(_) => Ok(true),
@@ -192,7 +239,17 @@ impl QueueClient {
 
     /// Deletes all messages in the specified queue.
     ///
-    /// Returns a `Response` indicating the result of the operation.
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the response if successful
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn delete_messages(
         &self,
         options: Option<AzureQueueStorageMessagesOperationsClientClearOptions<'_>>,
@@ -209,13 +266,15 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `metadata` - A map of metadata key-value pairs to set for the queue. If `None`, no metadata will be set.
+    /// * `metadata` - A map of metadata key-value pairs to set for the queue. If `None`, all metadata will be removed
     ///
-    /// Returns a `Response` indicating the result of the operation.
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the response if successful
     ///
     /// # Errors
     ///
-    /// Returns an error if the request fails or if the queue does not exist.
+    /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn set_metadata(
         &self,
         metadata: Option<HashMap<&str, &str>>,
@@ -251,12 +310,16 @@ impl QueueClient {
 
     /// Retrieves the metadata of the specified queue.
     ///
-    /// # Arguments
+    /// # Returns
     ///
-    /// * `version` - Specifies the version of the operation to use for this request.
+    /// Returns a `Result` containing the queue's metadata if successful
     ///
-    /// Returns a `Response` containing the metadata if the queue exists, or an error if it does not.
-    async fn get_metadata(&self) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
+    /// # Errors
+    ///
+    /// Returns an error if the queue doesn't exist or if the request fails
+    pub async fn get_metadata(
+        &self,
+    ) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
         let mut url = self.client.endpoint.clone();
 
         let ctx = Context::new();
@@ -284,8 +347,16 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `message` - The message to be sent to the queue.
-    /// * `options` - Optional parameters for the enqueue operation.
+    /// * `message` - The message text to be added to the queue
+    /// * `options` - Optional parameters for the enqueue operation, including visibility timeout and message time-to-live
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the enqueued message details if successful
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn send_message(
         &self,
         message: &str,
@@ -310,10 +381,18 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `message_id` - The ID of the message to delete.
-    /// * `pop_receipt` - The pop receipt of the message to delete.
+    /// * `message_id` - The ID of the message to delete
+    /// * `pop_receipt` - The pop receipt obtained when the message was retrieved
+    /// * `options` - Optional parameters for the delete operation
     ///
-    /// Returns a `Response` indicating the result of the operation.
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the response if successful
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the message doesn't exist, the pop receipt is invalid,
+    /// or if the request fails
     pub async fn delete_message(
         &self,
         message_id: &str,
@@ -330,14 +409,22 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `messageid` - The ID of the message to update.
-    /// * `pop_receipt` - The pop receipt of the message to update.
-    /// * `visibilitytimeout` - The new visibility timeout for the message, in seconds.
-    /// * `version` - Specifies the version of the operation to use for this request.
-    /// * `options` - Optional parameters for the update operation.
+    /// * `message_id` - The ID of the message to update
+    /// * `pop_receipt` - The pop receipt obtained when the message was retrieved
+    /// * `visibility_timeout` - The new visibility timeout for the message, in seconds
+    /// * `options` - Optional parameters for the update operation
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the response if successful
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the message doesn't exist, the pop receipt is invalid,
+    /// or if the request fails
     pub async fn update_message(
         &self,
-        messageid: &str,
+        message_id: &str,
         pop_receipt: &str,
         visibility_timeout: i32,
         options: Option<AzureQueueStorageMessageIdOperationsClientUpdateOptions<'_>>,
@@ -346,7 +433,7 @@ impl QueueClient {
             .get_azure_queue_storage_message_id_operations_client()
             .update(
                 &self.queue_name,
-                messageid,
+                message_id,
                 pop_receipt,
                 visibility_timeout,
                 options,
@@ -354,6 +441,21 @@ impl QueueClient {
             .await
     }
 
+    /// Retrieves a single message from the queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the dequeue operation. If `number_of_messages` is specified in the options,
+    ///   it will be overridden to 1. Use this to set the visibility timeout for the message
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the dequeued message if successful. The message will be invisible
+    /// to other consumers for the duration specified in the visibility timeout
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn receive_message(
         &self,
         options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
@@ -366,6 +468,21 @@ impl QueueClient {
         self.receive_messages(options).await
     }
 
+    /// Retrieves multiple messages from the queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the dequeue operation. Use `number_of_messages` to specify
+    ///   how many messages to retrieve (up to 32) and set the visibility timeout
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the dequeued messages if successful. The messages will be invisible
+    /// to other consumers for the duration specified in the visibility timeout
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn receive_messages(
         &self,
         options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
@@ -376,6 +493,21 @@ impl QueueClient {
             .await
     }
 
+    /// Peeks a single message from the front of the queue without removing it.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the peek operation. If `number_of_messages` is specified,
+    ///   it will be overridden to 1
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the message at the front of the queue if successful.
+    /// The message remains visible to other consumers
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn peek_message(
         &self,
         options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'_>>,
@@ -388,6 +520,21 @@ impl QueueClient {
         self.peek_messages(options).await
     }
 
+    /// Peeks multiple messages from the front of the queue without removing them.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the peek operation. Use `number_of_messages`
+    ///   to specify how many messages to peek (up to 32)
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the messages at the front of the queue if successful.
+    /// The messages remain visible to other consumers
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn peek_messages(
         &self,
         options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'_>>,
