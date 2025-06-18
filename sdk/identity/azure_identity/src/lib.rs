@@ -59,6 +59,8 @@ struct EntraIdErrorResponse {
 #[serde(default)]
 struct EntraIdTokenResponse {
     token_type: String,
+    // these are i64 to avoid conversion when calling Duration::seconds
+    // (real values are unsigned)
     expires_in: i64,
     ext_expires_in: i64,
     access_token: String,
