@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+use azure_core::time::Duration;
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::models::StartPositions;
 use azure_messaging_eventhubs::{
@@ -10,7 +11,6 @@ use azure_messaging_eventhubs::{
 use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::task::JoinHandle;
 use tracing::info;
 
@@ -28,8 +28,8 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
 
     let event_processor = EventProcessor::builder()
         .with_load_balancing_strategy(ProcessorStrategy::Balanced)
-        .with_update_interval(Duration::from_secs(5))
-        .with_partition_expiration_duration(Duration::from_secs(10))
+        .with_update_interval(Duration::seconds(5))
+        .with_partition_expiration_duration(Duration::seconds(10))
         .with_prefetch(300)
         .build(
             Arc::new(consumer_client),
@@ -38,7 +38,7 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
         .await?;
 
     {
-        const TIMEOUT: Duration = Duration::from_secs(30);
+        const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 
         info!("Started event processor");
         info!("Waiting for event processor to finish");
@@ -68,7 +68,7 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
     }
 
     info!("Sleeping to let the processor task finish.");
-    tokio::time::sleep(Duration::from_secs(5)).await;
+    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
     info!("Closing the processor.");
     let processor = Arc::into_inner(event_processor);
@@ -118,7 +118,7 @@ async fn create_processor(
     let mut builder = EventProcessor::builder()
         .with_load_balancing_strategy(ProcessorStrategy::Balanced)
         .with_update_interval(update_interval)
-        .with_partition_expiration_duration(Duration::from_secs(120))
+        .with_partition_expiration_duration(Duration::seconds(120))
         .with_prefetch(300);
     if let Some(start_positions) = start_positions {
         builder = builder.with_start_positions(start_positions);
@@ -138,7 +138,7 @@ async fn start_processor_running(
 #[recorded::test(live)]
 async fn get_next_partition_client(ctx: TestContext) -> azure_core::Result<()> {
     let consumer_client = create_consumer_client(&ctx).await?;
-    let processor = create_processor(consumer_client, Duration::from_secs(20), None).await?;
+    let processor = create_processor(consumer_client, Duration::seconds(20), None).await?;
 
     let running_processor = start_processor_running(&processor).await;
 
@@ -167,7 +167,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
     let consumer_client = create_consumer_client(&ctx).await?;
     // The processor only adds one client as needed up to the max, so we block waiting
     // on all the clients to become available.
-    let processor = create_processor(consumer_client.clone(), Duration::from_secs(3), None).await?;
+    let processor = create_processor(consumer_client.clone(), Duration::seconds(3), None).await?;
 
     let running_processor = start_processor_running(&processor).await;
 
@@ -205,7 +205,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
     {
         info!("Retrieving one more processor client than possible.");
         tokio::select! {
-            _ = tokio::time::sleep(Duration::from_secs(5)) =>
+            _ = tokio::time::sleep(std::time::Duration::from_secs(5)) =>
                 info!("Timeout reached - event processor has no more partitions."),
 
             _ = processor.next_partition_client() =>
@@ -235,7 +235,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
             info!("Received next partition client");
             result?
         }
-        _ = tokio::time::sleep(Duration::from_secs(15)) => {
+        _ = tokio::time::sleep(std::time::Duration::from_secs(15)) => {
             info!("Timeout reached - event processor has no more partitions.");
             return Err(azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
@@ -291,7 +291,7 @@ async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<(
 
     let processor = create_processor(
         consumer_client,
-        Duration::from_secs(20),
+        Duration::seconds(20),
         Some(StartPositions {
             per_partition: start_positions,
             ..Default::default()

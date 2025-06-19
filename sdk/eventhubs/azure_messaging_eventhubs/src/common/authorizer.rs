@@ -9,19 +9,21 @@ use azure_core::{
     credentials::{AccessToken, TokenCredential},
     error::ErrorKind as AzureErrorKind,
     http::Url,
+    time::{Duration, OffsetDateTime},
     Result,
 };
 use azure_core_amqp::AmqpClaimsBasedSecurityApis as _;
 use rand::{thread_rng, Rng};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex as SyncMutex, OnceLock, Weak};
-use time::{Duration, OffsetDateTime};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
+};
 use tracing::{debug, trace, warn};
 
 // The number of seconds before token expiration that we wake up to refresh the token.
 const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we refresh tokens 6 minutes before they expire.
-const TOKEN_REFRESH_JITTER_MIN: Duration = Duration::seconds(-5); // Minimum jitter in seconds
-const TOKEN_REFRESH_JITTER_MAX: Duration = Duration::seconds(5); // Maximum jitter in seconds
+const TOKEN_REFRESH_JITTER_MIN: Duration = Duration::seconds(-5); // Minimum jitter (added from the bias, so a negative number means we refresh before the bias)
+const TOKEN_REFRESH_JITTER_MAX: Duration = Duration::seconds(5); // Maximum jitter (added to the bias)
 
 const EVENTHUBS_AUTHORIZATION_SCOPE: &str = "https://eventhubs.azure.net/.default";
 
@@ -214,13 +216,8 @@ impl Authorizer {
             expiration_times.sort();
             debug!("Found expiration times: {:?}", expiration_times);
             if expiration_times.is_empty() {
-                debug!("No tokens to refresh. Sleeping for {TOKEN_REFRESH_BIAS}.");
-                azure_core::sleep::sleep(
-                    std::time::Duration::try_from(TOKEN_REFRESH_BIAS).map_err(|e| {
-                        azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
-                    })?,
-                )
-                .await;
+                debug!("No tokens to refresh. Sleeping for {TOKEN_REFRESH_BIAS:?}.");
+                azure_core::sleep::sleep(TOKEN_REFRESH_BIAS).await;
                 continue;
             }
 
@@ -254,7 +251,7 @@ impl Authorizer {
                 let jitter_max = token_refresh_times.jitter_max.whole_milliseconds() as i64;
                 let expiration_jitter =
                     Duration::milliseconds(thread_rng().gen_range(jitter_min..jitter_max));
-                debug!("Expiration jitter: {expiration_jitter}");
+                debug!("Expiration jitter: {expiration_jitter:?}");
 
                 token_refresh_bias = token_refresh_times
                     .before_expiration_refresh_time
@@ -265,7 +262,7 @@ impl Authorizer {
                             "Unable to calculate token refresh bias - overflow",
                         )
                     })?;
-                debug!("Token refresh bias with jitter: {token_refresh_bias}");
+                debug!("Token refresh bias with jitter: {token_refresh_bias:?}");
 
                 refresh_time = most_recent_refresh
                     .checked_sub(token_refresh_bias)
@@ -282,13 +279,11 @@ impl Authorizer {
             // to refresh the token.
             if refresh_time > now {
                 let sleep_duration = refresh_time - now;
-                let std_duration = std::time::Duration::try_from(sleep_duration)
-                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
                 debug!(
-                    "refresh_tokens: Sleeping for {std_duration:?} until {:?}",
-                    now + std_duration
+                    "refresh_tokens: Sleeping for {sleep_duration:?} until {:?}",
+                    now + sleep_duration
                 );
-                azure_core::sleep::sleep(std_duration).await;
+                azure_core::sleep::sleep(sleep_duration).await;
                 now = OffsetDateTime::now_utc();
             } else {
                 debug!("Not sleeping because refresh time ({refresh_time}) is in the past (now = {now}).");
@@ -302,15 +297,15 @@ impl Authorizer {
                 for (url, token) in scopes.iter() {
                     if token.expires_on >= now + (token_refresh_bias) {
                         debug!(
-                            "Token not expired for {url}: ExpiresOn: {}, Now: {}, Bias: {}",
-                            token.expires_on, now, token_refresh_bias
+                            "Token not expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
+                            token.expires_on
                         );
                         continue;
                     }
 
                     debug!(
-                        "Token about to be expired for {url}: ExpiresOn: {}, Now: {}, Bias: {}",
-                        token.expires_on, now, token_refresh_bias
+                        "Token about to be expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
+                        token.expires_on
                     );
                     to_refresh.push(url.clone());
                 }
@@ -367,9 +362,8 @@ impl Authorizer {
 mod tests {
     use super::*;
     use azure_core::credentials::TokenRequestOptions;
-    use azure_core::{http::Url, Result};
+    use azure_core::{http::Url, time::OffsetDateTime, Result};
     use std::sync::Arc;
-    use time::OffsetDateTime;
     use tracing::info;
 
     // Helper struct to mock token credential
@@ -543,8 +537,8 @@ mod tests {
         authorizer
             .set_token_refresh_times(TokenRefreshTimes {
                 before_expiration_refresh_time: Duration::seconds(10),
-                jitter_min: Duration::seconds(-2),
-                jitter_max: Duration::seconds(2),
+                jitter_min: Duration::seconds(-2), // 2 seconds in milliseconds
+                jitter_max: Duration::seconds(2),  // 2 seconds in milliseconds
             })
             .unwrap();
 

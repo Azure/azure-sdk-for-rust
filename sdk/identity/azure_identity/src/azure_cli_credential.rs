@@ -10,10 +10,10 @@ use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind, ResultExt},
     json::from_json,
+    time::OffsetDateTime,
 };
 use serde::Deserialize;
 use std::{ffi::OsString, sync::Arc};
-use time::OffsetDateTime;
 use tracing::trace;
 
 /// The response from `az account get-access-token --output json`.

@@ -10,12 +10,12 @@ use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
     json::from_json,
+    time::OffsetDateTime,
 };
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
 use std::{ffi::OsString, sync::Arc};
 use time::format_description::well_known::Rfc3339;
-use time::OffsetDateTime;
 
 #[derive(Clone, Debug, Deserialize)]
 struct AzdTokenResponse {

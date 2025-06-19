@@ -7,13 +7,13 @@ use azure_core::{
     error::{http_response_from_body, Error, ErrorKind},
     http::{headers::HeaderName, request::Request, HttpClient, Method, StatusCode, Url},
     json::from_json,
+    time::OffsetDateTime,
 };
 use serde::{
     de::{self, Deserializer},
     Deserialize,
 };
 use std::{str, sync::Arc};
-use time::OffsetDateTime;
 
 /// An identifier for the Azure Instance Metadata Service (IMDS).
 ///
