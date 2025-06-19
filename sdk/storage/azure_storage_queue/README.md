@@ -84,7 +84,7 @@ The following methods are available on the ```QueueClient``` class:
 
 ## Examples
 
-Executable examples of all the functions provided by this SDK can be found in the [queue_client.rs](./examples/queue_client.rs) file in the examples directory.
+Executable examples of all the functions provided by this SDK can be found in the [queue_client.rs](<!--https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs)--> file in the examples directory.
 
 ## Next steps
 
@@ -100,6 +100,7 @@ When you submit a pull request, a CLA-bot will automatically determine whether y
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
+<!-- TODO: Update the links below when the crate is published -->
 <!-- LINKS -->
 [Azure subscription]: https://azure.microsoft.com/free/
 [Azure storage account]: https://learn.microsoft.com/azure/storage/common/storage-account-overview
@@ -108,8 +109,8 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure CLI]: https://learn.microsoft.com/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
 [cargo]: https://dev-doc.rust-lang.org/stable/cargo/commands/cargo.html
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
-[API reference documentation]: https://docs.rs/crate/azure_storage_queue/latest
-[Package (crates.io)]: https://crates.io/crates/azure_storage_queue
+[API reference documentation]: <!--(https://docs.rs/crate/azure_storage_queue/latest)-->
+[Package (crates.io)]: <!--(https://crates.io/crates/azure_storage_queue)-->
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue
 [REST API documentation]: https://learn.microsoft.com/en-us/rest/api/storageservices/queue-service-rest-api
 [Product documentation]: https://learn.microsoft.com/en-gb/azure/storage/queues/storage-queues-introduction
