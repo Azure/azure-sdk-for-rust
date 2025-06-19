@@ -10,4 +10,3 @@ mod pub_models;
 pub use enums::*;
 pub use method_options::*;
 pub use pub_models::*;
-pub(crate) mod xml_helpers;

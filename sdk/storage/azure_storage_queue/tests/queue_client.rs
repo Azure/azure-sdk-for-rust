@@ -6,9 +6,10 @@ use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
     clients::{AzureQueueStorageClientOptions, QueueClient},
     models::{
-        AzureQueueStorageMessageIdOperationsClientUpdateOptions,
-        AzureQueueStorageMessagesOperationsClientDequeueOptions,
-        AzureQueueStorageMessagesOperationsClientPeekOptions, ListOfEnqueuedMessage, QueueMessage,
+        AzureQueueStorageMessageIdOperationGroupClientUpdateOptions,
+        AzureQueueStorageMessagesOperationGroupClientDequeueOptions,
+        AzureQueueStorageMessagesOperationGroupClientPeekOptions, ListOfEnqueuedMessage,
+        QueueMessage,
     },
 };
 
@@ -328,17 +329,19 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             .unwrap();
 
         // Update the message in the queue
-        let option = Some(AzureQueueStorageMessageIdOperationsClientUpdateOptions {
-            queue_message: Some(RequestContent::from(
-                quick_xml::se::to_string(&QueueMessage {
-                    message_text: Some("Updated message text from Rust".to_string()),
-                })
-                .unwrap()
-                .into_bytes(),
-            )),
-            request_id: Some(message_id.clone()),
-            ..Default::default()
-        });
+        let option = Some(
+            AzureQueueStorageMessageIdOperationGroupClientUpdateOptions {
+                queue_message: Some(RequestContent::from(
+                    quick_xml::se::to_string(&QueueMessage {
+                        message_text: Some("Updated message text from Rust".to_string()),
+                    })
+                    .unwrap()
+                    .into_bytes(),
+                )),
+                request_id: Some(message_id.clone()),
+                ..Default::default()
+            },
+        );
 
         // Update the message in the queue
         let update_response = queue_client
@@ -432,7 +435,7 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let options = Some(AzureQueueStorageMessagesOperationsClientPeekOptions {
+        let options = Some(AzureQueueStorageMessagesOperationGroupClientPeekOptions {
             number_of_messages: Some(10),
             ..Default::default()
         });
@@ -543,10 +546,12 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let options = Some(AzureQueueStorageMessagesOperationsClientDequeueOptions {
-            number_of_messages: Some(10),
-            ..Default::default()
-        });
+        let options = Some(
+            AzureQueueStorageMessagesOperationGroupClientDequeueOptions {
+                number_of_messages: Some(10),
+                ..Default::default()
+            },
+        );
 
         let response = queue_client.receive_messages(options).await?;
         assert_successful_response(&response);
@@ -654,7 +659,7 @@ async fn peek_and_assert<'a>(
     queue_client: &QueueClient,
     expected_messages: &[&str],
     count: usize,
-    options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'a>>,
+    options: Option<AzureQueueStorageMessagesOperationGroupClientPeekOptions<'a>>,
 ) -> Result<()> {
     // Peek the messages in the queue
     let response = queue_client.peek_messages(options).await?;

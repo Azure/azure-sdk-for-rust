@@ -4,18 +4,17 @@
 use crate::generated::{
     clients::{AzureQueueStorageClient as GeneratedQueueClient, AzureQueueStorageClientOptions},
     models::{
-        AzureQueueStorageMessageIdOperationsClientDeleteOptions,
-        AzureQueueStorageMessageIdOperationsClientUpdateOptions,
-        AzureQueueStorageMessagesOperationsClientClearOptions,
-        AzureQueueStorageMessagesOperationsClientDequeueOptions,
-        AzureQueueStorageMessagesOperationsClientEnqueueOptions,
-        AzureQueueStorageMessagesOperationsClientPeekOptions,
-        AzureQueueStorageQueueOperationsClientCreateOptions,
-        AzureQueueStorageQueueOperationsClientDeleteOptions,
-        AzureQueueStorageServiceOperationsClientGetPropertiesOptions, DequeuedMessageItem,
+        AzureQueueStorageMessageIdOperationGroupClientDeleteOptions,
+        AzureQueueStorageMessageIdOperationGroupClientUpdateOptions,
+        AzureQueueStorageMessagesOperationGroupClientClearOptions,
+        AzureQueueStorageMessagesOperationGroupClientDequeueOptions,
+        AzureQueueStorageMessagesOperationGroupClientEnqueueOptions,
+        AzureQueueStorageMessagesOperationGroupClientPeekOptions,
+        AzureQueueStorageQueueOperationGroupClientCreateOptions,
+        AzureQueueStorageQueueOperationGroupClientDeleteOptions,
+        AzureQueueStorageServiceOperationGroupClientGetPropertiesOptions, DequeuedMessageItem,
         ListOfDequeuedMessageItem, ListOfEnqueuedMessage, ListOfPeekedMessageItem,
-        PeekedMessageItem, QueueMessage, ServicePropertiesCompType,
-        StorageServicePropertiesResponse,
+        PeekedMessageItem, QueueMessage, StorageServiceProperties,
     },
 };
 use azure_core::{
@@ -98,10 +97,10 @@ impl QueueClient {
     /// Returns an error if the queue already exists or if the request fails
     pub async fn create(
         &self,
-        options: Option<AzureQueueStorageQueueOperationsClientCreateOptions<'_>>,
+        options: Option<AzureQueueStorageQueueOperationGroupClientCreateOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client
-            .get_azure_queue_storage_queue_operations_client()
+            .get_azure_queue_storage_queue_operation_group_client()
             .create(&self.queue_name, options)
             .await
     }
@@ -118,7 +117,7 @@ impl QueueClient {
     /// returns a success response with no content (204 No Content)
     pub async fn create_if_not_exists(
         &self,
-        options: Option<AzureQueueStorageQueueOperationsClientCreateOptions<'_>>,
+        options: Option<AzureQueueStorageQueueOperationGroupClientCreateOptions<'_>>,
     ) -> Result<Response<()>> {
         // Attempt to create the queue, if it already exists, this will return an error.
         match self.create(options).await {
@@ -150,10 +149,10 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn delete(
         &self,
-        options: Option<AzureQueueStorageQueueOperationsClientDeleteOptions<'_>>,
+        options: Option<AzureQueueStorageQueueOperationGroupClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client
-            .get_azure_queue_storage_queue_operations_client()
+            .get_azure_queue_storage_queue_operation_group_client()
             .delete(&self.queue_name, options)
             .await
     }
@@ -170,7 +169,7 @@ impl QueueClient {
     /// returns a success response with no content (204 No Content)
     pub async fn delete_if_exists(
         &self,
-        options: Option<AzureQueueStorageQueueOperationsClientDeleteOptions<'_>>,
+        options: Option<AzureQueueStorageQueueOperationGroupClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         // Attempt to delete the queue, if it does not exist, this will return an error.
         match self.delete(options).await {
@@ -202,15 +201,11 @@ impl QueueClient {
     // TODO: Validate that this is correctly implemented. This returns properties for the entire service, not just a single queue.
     pub async fn get_properties(
         &self,
-        options: Option<AzureQueueStorageServiceOperationsClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
+        options: Option<AzureQueueStorageServiceOperationGroupClientGetPropertiesOptions<'_>>,
+    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
         self.client
-            .get_azure_queue_storage_service_operations_client()
-            .get_properties(
-                crate::generated::models::ServiceRestypeType::Service,
-                crate::generated::models::ServicePropertiesCompType::Properties,
-                options,
-            )
+            .get_azure_queue_storage_service_operation_group_client()
+            .get_properties(options)
             .await
     }
 
@@ -254,11 +249,11 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn delete_messages(
         &self,
-        options: Option<AzureQueueStorageMessagesOperationsClientClearOptions<'_>>,
+        options: Option<AzureQueueStorageMessagesOperationGroupClientClearOptions<'_>>,
     ) -> Result<Response<()>> {
         let messages_client = self
             .client
-            .get_azure_queue_storage_messages_operations_client();
+            .get_azure_queue_storage_messages_operation_group_client();
 
         let result = messages_client.clear(&self.queue_name, options).await?;
         Ok(result)
@@ -319,9 +314,7 @@ impl QueueClient {
     /// # Errors
     ///
     /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn get_metadata(
-        &self,
-    ) -> Result<Response<StorageServicePropertiesResponse, XmlFormat>> {
+    pub async fn get_metadata(&self) -> Result<Response<StorageServiceProperties, XmlFormat>> {
         let mut url = self.client.endpoint.clone();
 
         let ctx = Context::new();
@@ -362,7 +355,7 @@ impl QueueClient {
     pub async fn send_message(
         &self,
         message: &str,
-        options: Option<AzureQueueStorageMessagesOperationsClientEnqueueOptions<'_>>,
+        options: Option<AzureQueueStorageMessagesOperationGroupClientEnqueueOptions<'_>>,
     ) -> Result<Response<ListOfEnqueuedMessage, XmlFormat>> {
         let queue_message = QueueMessage {
             message_text: Some(message.to_owned()),
@@ -370,7 +363,7 @@ impl QueueClient {
 
         let xml_body = xml::to_xml(&queue_message)?;
         self.client
-            .get_azure_queue_storage_messages_operations_client()
+            .get_azure_queue_storage_messages_operation_group_client()
             .enqueue(
                 &self.queue_name,
                 RequestContent::try_from(xml_body)?,
@@ -399,10 +392,10 @@ impl QueueClient {
         &self,
         message_id: &str,
         pop_receipt: &str,
-        options: Option<AzureQueueStorageMessageIdOperationsClientDeleteOptions<'_>>,
+        options: Option<AzureQueueStorageMessageIdOperationGroupClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client
-            .get_azure_queue_storage_message_id_operations_client()
+            .get_azure_queue_storage_message_id_operation_group_client()
             .delete(&self.queue_name, message_id, pop_receipt, options)
             .await
     }
@@ -429,10 +422,10 @@ impl QueueClient {
         message_id: &str,
         pop_receipt: &str,
         visibility_timeout: i32,
-        options: Option<AzureQueueStorageMessageIdOperationsClientUpdateOptions<'_>>,
+        options: Option<AzureQueueStorageMessageIdOperationGroupClientUpdateOptions<'_>>,
     ) -> Result<Response<()>> {
         self.client
-            .get_azure_queue_storage_message_id_operations_client()
+            .get_azure_queue_storage_message_id_operation_group_client()
             .update(
                 &self.queue_name,
                 message_id,
@@ -460,12 +453,14 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn receive_message(
         &self,
-        options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
+        options: Option<AzureQueueStorageMessagesOperationGroupClientDequeueOptions<'_>>,
     ) -> Result<Response<Option<DequeuedMessageItem>, XmlFormat>> {
-        let options = Some(AzureQueueStorageMessagesOperationsClientDequeueOptions {
-            number_of_messages: Some(1),
-            ..options.unwrap_or_default()
-        });
+        let options = Some(
+            AzureQueueStorageMessagesOperationGroupClientDequeueOptions {
+                number_of_messages: Some(1),
+                ..options.unwrap_or_default()
+            },
+        );
 
         match self.receive_messages(options).await {
             Ok(response) => {
@@ -521,10 +516,10 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn receive_messages(
         &self,
-        options: Option<AzureQueueStorageMessagesOperationsClientDequeueOptions<'_>>,
+        options: Option<AzureQueueStorageMessagesOperationGroupClientDequeueOptions<'_>>,
     ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
         self.client
-            .get_azure_queue_storage_messages_operations_client()
+            .get_azure_queue_storage_messages_operation_group_client()
             .dequeue(&self.queue_name, options)
             .await
     }
@@ -546,9 +541,9 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn peek_message(
         &self,
-        options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'_>>,
+        options: Option<AzureQueueStorageMessagesOperationGroupClientPeekOptions<'_>>,
     ) -> Result<Response<Option<PeekedMessageItem>, XmlFormat>> {
-        let options = Some(AzureQueueStorageMessagesOperationsClientPeekOptions {
+        let options = Some(AzureQueueStorageMessagesOperationGroupClientPeekOptions {
             number_of_messages: Some(1),
             ..options.unwrap_or_default()
         });
@@ -607,10 +602,10 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn peek_messages(
         &self,
-        options: Option<AzureQueueStorageMessagesOperationsClientPeekOptions<'_>>,
+        options: Option<AzureQueueStorageMessagesOperationGroupClientPeekOptions<'_>>,
     ) -> Result<Response<ListOfPeekedMessageItem, XmlFormat>> {
         self.client
-            .get_azure_queue_storage_messages_operations_client()
+            .get_azure_queue_storage_messages_operation_group_client()
             .peek(&self.queue_name, options)
             .await
     }

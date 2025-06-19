@@ -5,6 +5,10 @@
 
 use azure_core::{create_enum, create_extensible_enum};
 
-create_extensible_enum!(ServicePropertiesCompType, (Properties, "properties"));
-
-create_extensible_enum!(ServiceRestypeType, (Service, "service"));
+create_extensible_enum!(
+    #[doc = r#"/// The status of the secondary location"#]
+    GeoReplicationStatusType,
+    (Bootstrap, "bootstrap"),
+    (Live, "live"),
+    (Unavailable, "unavailable")
+);

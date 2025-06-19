@@ -8,9 +8,9 @@ use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::{
     clients::QueueClient,
     models::{
-        AzureQueueStorageMessageIdOperationsClientUpdateOptions,
-        AzureQueueStorageMessagesOperationsClientDequeueOptions,
-        AzureQueueStorageMessagesOperationsClientPeekOptions, QueueMessage,
+        AzureQueueStorageMessageIdOperationGroupClientUpdateOptions,
+        AzureQueueStorageMessagesOperationGroupClientDequeueOptions,
+        AzureQueueStorageMessagesOperationGroupClientPeekOptions, QueueMessage,
     },
 };
 
@@ -106,7 +106,7 @@ async fn send_and_update_message(
         if let Some(message) = messages.value.and_then(|msgs| msgs.first().cloned()) {
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
-                let update_option = AzureQueueStorageMessageIdOperationsClientUpdateOptions {
+                let update_option = AzureQueueStorageMessageIdOperationGroupClientUpdateOptions {
                     // Serialize the message text as bytes for the update
                     queue_message: Some(RequestContent::from(
                         quick_xml::se::to_string(&QueueMessage {
@@ -138,7 +138,7 @@ async fn peek_and_receive_messages(
         .send_message("Message 2 from Rust Queue SDK", None)
         .await;
 
-    let options = AzureQueueStorageMessagesOperationsClientPeekOptions {
+    let options = AzureQueueStorageMessagesOperationGroupClientPeekOptions {
         number_of_messages: Some(5),
         ..Default::default()
     };
@@ -159,7 +159,7 @@ async fn peek_and_receive_messages(
         }
     }
 
-    let options = AzureQueueStorageMessagesOperationsClientDequeueOptions {
+    let options = AzureQueueStorageMessagesOperationGroupClientDequeueOptions {
         number_of_messages: Some(5),
         ..Default::default()
     };
