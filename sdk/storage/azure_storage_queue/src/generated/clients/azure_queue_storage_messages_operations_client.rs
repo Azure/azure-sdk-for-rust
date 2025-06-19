@@ -81,15 +81,15 @@ impl AzureQueueStorageMessagesOperationsClient {
             .append_pair("api-version", &self.api_version);
         if let Some(number_of_messages) = options.number_of_messages {
             url.query_pairs_mut()
-                .append_pair("numofmessages", &number_of_messages.to_string());
+                .append_pair("numOfMessages", &number_of_messages.to_string());
         }
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        if let Some(visibilitytimeout) = options.visibilitytimeout {
+        if let Some(visibility_timeout) = options.visibility_timeout {
             url.query_pairs_mut()
-                .append_pair("visibilitytimeout", &visibilitytimeout.to_string());
+                .append_pair("visibilityTimeout", &visibility_timeout.to_string());
         }
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
@@ -128,15 +128,15 @@ impl AzureQueueStorageMessagesOperationsClient {
             .append_pair("api-version", &self.api_version);
         if let Some(message_time_to_live) = options.message_time_to_live {
             url.query_pairs_mut()
-                .append_pair("messagettl", &message_time_to_live.to_string());
+                .append_pair("messageTtl", &message_time_to_live.to_string());
         }
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        if let Some(visibilitytimeout) = options.visibilitytimeout {
+        if let Some(visibility_timeout) = options.visibility_timeout {
             url.query_pairs_mut()
-                .append_pair("visibilitytimeout", &visibilitytimeout.to_string());
+                .append_pair("visibilityTimeout", &visibility_timeout.to_string());
         }
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/xml");
@@ -167,12 +167,12 @@ impl AzureQueueStorageMessagesOperationsClient {
         let mut path = String::from("{queueName}/messages");
         path = path.replace("{queueName}", queue_name);
         url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("peekonly", "true");
+        url.query_pairs_mut().append_pair("peekOnly", "true");
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         if let Some(number_of_messages) = options.number_of_messages {
             url.query_pairs_mut()
-                .append_pair("numofmessages", &number_of_messages.to_string());
+                .append_pair("numOfMessages", &number_of_messages.to_string());
         }
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");

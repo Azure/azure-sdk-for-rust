@@ -107,7 +107,7 @@ pub struct DequeuedMessageItem {
     pub message_text: Option<String>,
 
     /// This value is required to delete the Message. If deletion fails using this
-    /// popreceipt then the message has been dequeued by another client.
+    /// PopReceipt then the message has been dequeued by another client.
     #[serde(rename = "PopReceipt", skip_serializing_if = "Option::is_none")]
     pub pop_receipt: Option<String>,
 
@@ -149,7 +149,7 @@ pub struct EnqueuedMessage {
     pub message_id: Option<String>,
 
     /// This value is required to delete the Message. If deletion fails using this
-    /// popreceipt then the message has been dequeued by another client.
+    /// PopReceipt then the message has been dequeued by another client.
     #[serde(rename = "PopReceipt", skip_serializing_if = "Option::is_none")]
     pub pop_receipt: Option<String>,
 

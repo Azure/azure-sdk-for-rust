@@ -78,7 +78,7 @@ pub struct AzureQueueStorageMessagesOperationsClientDequeueOptions<'a> {
     /// than or equal to 1 second, and cannot be larger than 7 days, or larger than 2
     /// hours on REST protocol versions prior to version 2011-08-18. The visibility
     /// timeout of a message can be set to a value later than the expiry time.
-    pub visibilitytimeout: Option<i32>,
+    pub visibility_timeout: Option<i32>,
 }
 
 /// Options to be passed to [`AzureQueueStorageMessagesOperationsClient::enqueue()`](crate::generated::clients::AzureQueueStorageMessagesOperationsClient::enqueue())
@@ -106,9 +106,9 @@ pub struct AzureQueueStorageMessagesOperationsClientEnqueueOptions<'a> {
     /// new visibility timeout value, in seconds, relative to server time. The new
     /// value must be larger than or equal to 0, and cannot be larger than 7 days. The
     /// visibility timeout of a message cannot be set to a value later than the expiry
-    /// time. visibilitytimeout should be set to a value smaller than the time-to-live
+    /// time. visibilityTimeout should be set to a value smaller than the time-to-live
     /// value.
-    pub visibilitytimeout: Option<i32>,
+    pub visibility_timeout: Option<i32>,
 }
 
 /// Options to be passed to [`AzureQueueStorageMessagesOperationsClient::peek()`](crate::generated::clients::AzureQueueStorageMessagesOperationsClient::peek())

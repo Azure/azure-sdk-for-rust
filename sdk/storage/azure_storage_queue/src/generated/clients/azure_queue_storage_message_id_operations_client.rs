@@ -29,27 +29,27 @@ impl AzureQueueStorageMessageIdOperationsClient {
     /// # Arguments
     ///
     /// * `queue_name` - The queue name.
-    /// * `messageid` - The container name.
+    /// * `message_id` - The container name.
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or
     ///   Update Message operation.
     /// * `options` - Optional parameters for the request.
     pub async fn delete(
         &self,
         queue_name: &str,
-        messageid: &str,
+        message_id: &str,
         pop_receipt: &str,
         options: Option<AzureQueueStorageMessageIdOperationsClientDeleteOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/messages/{messageid}");
-        path = path.replace("{messageid}", messageid);
+        let mut path = String::from("{queueName}/messages/{messageId}");
+        path = path.replace("{messageId}", message_id);
         path = path.replace("{queueName}", queue_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        url.query_pairs_mut().append_pair("popreceipt", pop_receipt);
+        url.query_pairs_mut().append_pair("popReceipt", pop_receipt);
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
@@ -72,10 +72,10 @@ impl AzureQueueStorageMessageIdOperationsClient {
     /// # Arguments
     ///
     /// * `queue_name` - The queue name.
-    /// * `messageid` - The container name.
+    /// * `message_id` - The container name.
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or
     ///   Update Message operation.
-    /// * `visibilitytimeout` - Optional. Specifies the new visibility timeout value, in seconds, relative to server time. The
+    /// * `visibility_timeout` - Optional. Specifies the new visibility timeout value, in seconds, relative to server time. The
     ///   default value is 30 seconds. A specified value must be larger than or equal to 1 second, and cannot be larger than 7 days,
     ///   or larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can
     ///   be set to a value later than the expiry time.
@@ -83,27 +83,27 @@ impl AzureQueueStorageMessageIdOperationsClient {
     pub async fn update(
         &self,
         queue_name: &str,
-        messageid: &str,
+        message_id: &str,
         pop_receipt: &str,
-        visibilitytimeout: i32,
+        visibility_timeout: i32,
         options: Option<AzureQueueStorageMessageIdOperationsClientUpdateOptions<'_>>,
     ) -> Result<Response<()>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{queueName}/messages/{messageid}");
-        path = path.replace("{messageid}", messageid);
+        let mut path = String::from("{queueName}/messages/{messageId}");
+        path = path.replace("{messageId}", message_id);
         path = path.replace("{queueName}", queue_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        url.query_pairs_mut().append_pair("popreceipt", pop_receipt);
+        url.query_pairs_mut().append_pair("popReceipt", pop_receipt);
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
         url.query_pairs_mut()
-            .append_pair("visibilitytimeout", &visibilitytimeout.to_string());
+            .append_pair("visibilityTimeout", &visibility_timeout.to_string());
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/json");
         if let Some(request_id) = options.request_id {

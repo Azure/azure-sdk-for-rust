@@ -655,7 +655,7 @@ model DequeuedMessageItem {
 
   /**
    * This value is required to delete the Message. If deletion fails using this
-   * popreceipt then the message has been dequeued by another client.
+   * PopReceipt then the message has been dequeued by another client.
    */
   PopReceipt: string;
 
@@ -744,7 +744,7 @@ model EnqueuedMessage {
 
   /**
    * This value is required to delete the Message. If deletion fails using this
-   * popreceipt then the message has been dequeued by another client.
+   * PopReceipt then the message has been dequeued by another client.
    */
   PopReceipt: string;
 
