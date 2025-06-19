@@ -19,11 +19,19 @@ use std::option::Option;
 #[recorded::test]
 async fn test_create_queue(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-create-queue").await;
+    let queue_client = get_queue_client(recording, "test-create-queue").await?;
 
-    let response = queue_client?.create(None).await?;
+    let response = queue_client.create(None).await?;
+    let test_result = async {
+        assert_successful_response(&response);
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
 
-    assert_successful_response(&response);
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(None).await.unwrap();
+
+    test_result?;
 
     Ok(())
 }
