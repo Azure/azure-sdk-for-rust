@@ -501,6 +501,9 @@ impl ContainerClient {
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Get);
+        if let Some(consistency_level) = options.consistency_level {
+            req.insert_header(constants::CONSISTENCY_LEVEL, consistency_level.to_string());
+        }
         req.insert_headers(&partition_key.into())?;
         self.pipeline
             .send(options.method_options.context, &mut req, link)

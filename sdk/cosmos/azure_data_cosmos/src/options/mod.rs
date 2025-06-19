@@ -43,11 +43,34 @@ pub struct DeleteDatabaseOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to ['ItemOptions'](crate::options::ItemOptions).
+#[derive(Clone)]
+pub enum ConsistencyLevel {
+    Eventual,
+    Session,
+    BoundedStaleness,
+    Strong,
+}
+
+impl ToString for ConsistencyLevel {
+    fn to_string(&self) -> String {
+        match self {
+            ConsistencyLevel::Eventual => String::from("Eventual"),
+            ConsistencyLevel::Session => String::from("Session"),
+            ConsistencyLevel::BoundedStaleness => String::from("BoundedStaleness"),
+            ConsistencyLevel::Strong => String::from("Strong"),
+        }
+    }
+}
+
 /// Options to be passed to APIs that manipulate items.
 #[derive(Clone, Default)]
 pub struct ItemOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
-
+    /// Used to specify the consistency level for the operation.
+    ///
+    /// The default value is the consistency level set on the Cosmos DB account.
+    pub consistency_level: Option<ConsistencyLevel>,
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.

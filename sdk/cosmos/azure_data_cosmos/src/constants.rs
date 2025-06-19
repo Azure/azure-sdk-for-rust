@@ -28,6 +28,7 @@ pub const IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-up
 pub const OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
 pub const OFFER_AUTOPILOT_SETTINGS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
+pub const CONSISTENCY_LEVEL: HeaderName = HeaderName::from_static("x-ms-consistency-level");
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
 
