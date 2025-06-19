@@ -343,7 +343,7 @@ pub struct PeekedMessageItem {
 #[non_exhaustive]
 #[serde(rename = "Queue")]
 pub struct QueueItem {
-    /// Dictionary of <string>
+    /// Dictionary of string
     #[serde(rename = "Metadata", skip_serializing_if = "Option::is_none")]
     pub metadata: Option<HashMap<String, String>>,
 
