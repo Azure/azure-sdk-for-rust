@@ -3,7 +3,6 @@
 
 #![cfg(not(target_arch = "wasm32"))]
 
-use azure_core::http::{Body, RequestContent};
 use azure_core_test::{recorded, stream::GeneratedStream, TestContext};
 use azure_storage_blob::BlobClient;
 use azure_storage_blob_test::{get_blob_name, get_container_client};
@@ -37,9 +36,8 @@ async fn upload<const CONTENT_LENGTH: usize>(client: &BlobClient) -> azure_core:
     // but to avoid consuming a large amount of drive space generate content.
     let stream = GeneratedStream::<_, CONTENT_LENGTH>::default();
 
-    let data: RequestContent<_> = Body::SeekableStream(Box::new(stream)).into();
     client
-        .upload(data, true, CONTENT_LENGTH as u64, None)
+        .upload(stream.into(), true, CONTENT_LENGTH as u64, None)
         .await?;
 
     Ok(())

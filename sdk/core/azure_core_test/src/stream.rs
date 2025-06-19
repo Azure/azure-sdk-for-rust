@@ -4,6 +4,11 @@
 //! Streams for testing purposes.
 
 use azure_core::stream::SeekableStream;
+#[cfg(not(target_arch = "wasm32"))]
+use azure_core::{
+    http::{Body, RequestContent},
+    Bytes,
+};
 use futures::{io::AsyncRead, stream::Stream};
 use std::{fmt, iter::Cycle, ops::Range, pin::Pin, task::Poll};
 
@@ -176,6 +181,52 @@ where
 
     fn len(&self) -> usize {
         LENGTH
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<I, const LENGTH: usize, const CHUNK: usize> From<&GeneratedStream<I, LENGTH, CHUNK>> for Body
+where
+    for<'a> I: Clone + Send + Sync + 'a,
+    Cycle<I>: Iterator<Item = u8> + Unpin,
+{
+    fn from(stream: &GeneratedStream<I, LENGTH, CHUNK>) -> Self {
+        Body::SeekableStream(Box::new(stream.clone()))
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<I, const LENGTH: usize, const CHUNK: usize> From<GeneratedStream<I, LENGTH, CHUNK>> for Body
+where
+    for<'a> I: Clone + Send + Sync + 'a,
+    Cycle<I>: Iterator<Item = u8> + Unpin,
+{
+    fn from(stream: GeneratedStream<I, LENGTH, CHUNK>) -> Self {
+        Body::SeekableStream(Box::new(stream))
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<I, const LENGTH: usize, const CHUNK: usize> From<&GeneratedStream<I, LENGTH, CHUNK>>
+    for RequestContent<Bytes>
+where
+    for<'a> I: Clone + Send + Sync + 'a,
+    Cycle<I>: Iterator<Item = u8> + Unpin,
+{
+    fn from(stream: &GeneratedStream<I, LENGTH, CHUNK>) -> Self {
+        Body::from(stream).into()
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<I, const LENGTH: usize, const CHUNK: usize> From<GeneratedStream<I, LENGTH, CHUNK>>
+    for RequestContent<Bytes>
+where
+    for<'a> I: Clone + Send + Sync + 'a,
+    Cycle<I>: Iterator<Item = u8> + Unpin,
+{
+    fn from(stream: GeneratedStream<I, LENGTH, CHUNK>) -> Self {
+        Body::from(stream).into()
     }
 }
 
