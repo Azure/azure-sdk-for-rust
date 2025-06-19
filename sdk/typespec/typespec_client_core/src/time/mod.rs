@@ -120,17 +120,17 @@ pub fn to_last_state_change(date: &OffsetDateTime) -> String {
 
 /// Create a duration from the number of minutes.
 pub fn duration_from_minutes(minutes: u64) -> Duration {
-    Duration::minutes(i64::try_from(minutes).unwrap_or(i64::MAX))
+    Duration::minutes(i64::try_from(minutes).unwrap())
 }
 
 /// Create a duration from the number of hours.
 pub fn duration_from_hours(hours: u64) -> Duration {
-    Duration::hours(i64::try_from(hours).unwrap_or(i64::MAX))
+    Duration::hours(i64::try_from(hours).unwrap())
 }
 
 /// Create a duration from the number of days.
 pub fn duration_from_days(days: u64) -> Duration {
-    Duration::days(i64::try_from(days).unwrap_or(i64::MAX))
+    Duration::days(i64::try_from(days).unwrap())
 }
 
 /// Get the difference between two dates.

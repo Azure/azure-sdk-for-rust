@@ -6,7 +6,7 @@
 
 ### Breaking Changes
 
-- Converted all `Duration` references to be `azure_core::Duration`.
+- Converted all `time::Duration` references to be `azure_core::time::Duration`.
 
 ### Bugs Fixed
 
