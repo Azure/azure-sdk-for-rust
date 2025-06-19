@@ -2338,7 +2338,7 @@ impl BlockBlobClientUploadResultHeaders for Response<BlockBlobClientUploadResult
 pub trait BlockListHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn blob_content_length(&self) -> Result<Option<u64>>;
+    fn blob_content_length(&self) -> Result<Option<i64>>;
 }
 
 impl BlockListHeaders for Response<BlockList, XmlFormat> {
@@ -2354,9 +2354,8 @@ impl BlockListHeaders for Response<BlockList, XmlFormat> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to a 512-byte
-    /// boundary.
-    fn blob_content_length(&self) -> Result<Option<u64>> {
+    /// The size of the blob in bytes.
+    fn blob_content_length(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_CONTENT_LENGTH)
     }
 }
@@ -2766,7 +2765,7 @@ pub trait PageListHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
-    fn blob_content_length(&self) -> Result<Option<u64>>;
+    fn blob_content_length(&self) -> Result<Option<i64>>;
 }
 
 impl PageListHeaders for Response<PageList, XmlFormat> {
@@ -2787,9 +2786,8 @@ impl PageListHeaders for Response<PageList, XmlFormat> {
         Headers::get_optional_as(self.headers(), &ETAG)
     }
 
-    /// This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to a 512-byte
-    /// boundary.
-    fn blob_content_length(&self) -> Result<Option<u64>> {
+    /// The size of the blob in bytes.
+    fn blob_content_length(&self) -> Result<Option<i64>> {
         Headers::get_optional_as(self.headers(), &BLOB_CONTENT_LENGTH)
     }
 }
