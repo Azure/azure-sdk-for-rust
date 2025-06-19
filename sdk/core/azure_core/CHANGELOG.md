@@ -1,12 +1,28 @@
 # Release History
 
+## 0.26.0 (Unreleased)
+
+### Features Added
+
+- Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace
+the asynchronous runtime used by the Azure SDK.
+
+### Breaking Changes
+
+- Moved `process::Executor` to `azure_identity`.
+- Renamed `azure_core::date` to `azure_core::time` and added `azure_core::time::Duration` as the standard "duration" type for the SDK.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.25.0 (2025-06-06)
 
 ### Features Added
 
 - Added `#[safe]` attribute helper for `SafeDebug` derive macro to show or hide types and members as appropriate.
 - Added `Page` trait to facilitate the `ItemIterator`.
-- Added `PageIterator` to asynchronously iterator all pages.
+- Added `PageIterator` to asynchronously iterate all pages.
 
 ### Breaking Changes
 

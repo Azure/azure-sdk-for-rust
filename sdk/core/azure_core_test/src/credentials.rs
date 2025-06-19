@@ -4,11 +4,10 @@
 //! Credentials for live and recorded tests.
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
-    date::OffsetDateTime,
-    error::ErrorKind,
+    time::{Duration, OffsetDateTime},
 };
 use azure_identity::{AzurePipelinesCredential, DefaultAzureCredential, TokenCredentialOptions};
-use std::{env, sync::Arc, time::Duration};
+use std::{env, sync::Arc};
 
 /// A mock [`TokenCredential`] useful for testing.
 #[derive(Clone, Debug, Default)]
@@ -23,11 +22,8 @@ impl TokenCredential for MockCredential {
         _: Option<TokenRequestOptions>,
     ) -> azure_core::Result<AccessToken> {
         let token: Secret = format!("TEST TOKEN {}", scopes.join(" ")).into();
-        let expires_on = OffsetDateTime::now_utc().saturating_add(
-            Duration::from_secs(60 * 5).try_into().map_err(|err| {
-                azure_core::Error::full(ErrorKind::Other, err, "failed to compute expiration")
-            })?,
-        );
+        let expires_on = OffsetDateTime::now_utc().saturating_add(Duration::minutes(5));
+
         Ok(AccessToken { token, expires_on })
     }
 }

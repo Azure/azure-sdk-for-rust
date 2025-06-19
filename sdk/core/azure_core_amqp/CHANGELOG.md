@@ -1,5 +1,17 @@
 # Release History
 
+## 0.5.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Converted all `time::Duration` references to be `azure_core::time::Duration`.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.4.0 (2025-06-06)
 
 ### Breaking Changes

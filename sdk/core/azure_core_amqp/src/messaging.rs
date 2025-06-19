@@ -11,8 +11,7 @@ use crate::fe2o3::error::Fe2o3SerializationError;
 use crate::Deserializable;
 #[cfg(feature = "cplusplus")]
 use azure_core::error::ErrorKind;
-use azure_core::{Result, Uuid};
-use std::time::Duration;
+use azure_core::{time::Duration, Result, Uuid};
 use typespec_macros::SafeDebug;
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -631,7 +630,7 @@ impl From<AmqpList> for AmqpMessageHeader {
         }
         if field_count >= 3 {
             if let Some(AmqpValue::UInt(time_to_live)) = list.0.get(2) {
-                header.time_to_live = Some(std::time::Duration::from_millis(*time_to_live as u64));
+                header.time_to_live = Some(Duration::milliseconds(*time_to_live as i64));
             }
         }
         if field_count >= 4 {
@@ -663,7 +662,7 @@ impl From<AmqpMessageHeader> for AmqpList {
             list[1] = AmqpValue::UByte(header.priority)
         };
         list[2] = header.time_to_live.map_or(AmqpValue::Null, |ttl| {
-            AmqpValue::UInt(ttl.as_millis() as u32)
+            AmqpValue::UInt(ttl.whole_milliseconds() as u32)
         });
         if header.first_acquirer {
             list[3] = AmqpValue::Boolean(header.first_acquirer)
@@ -1555,16 +1554,13 @@ mod tests {
         let header = AmqpMessageHeader {
             durable: true,
             priority: 5,
-            time_to_live: Some(std::time::Duration::from_millis(1000)),
+            time_to_live: Some(Duration::milliseconds(1000)),
             first_acquirer: false,
             delivery_count: 3,
         };
         assert!(header.durable);
         assert_eq!(header.priority, 5);
-        assert_eq!(
-            header.time_to_live,
-            Some(std::time::Duration::from_millis(1000))
-        );
+        assert_eq!(header.time_to_live, Some(Duration::milliseconds(1000)));
         assert!(!header.first_acquirer);
         assert_eq!(header.delivery_count, 3);
     }
@@ -1805,7 +1801,7 @@ mod tests {
         {
             let message = AmqpMessage::builder()
                 .with_header(AmqpMessageHeader {
-                    time_to_live: (Some(std::time::Duration::from_millis(23))),
+                    time_to_live: (Some(Duration::milliseconds(23))),
                     ..Default::default()
                 })
                 .build();

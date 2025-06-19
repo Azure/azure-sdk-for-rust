@@ -1,5 +1,20 @@
 # Release History
 
+## 0.5.0 (Unreleased)
+
+### Features Added
+
+- Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace
+the default asynchronous runtime with another.
+
+### Breaking Changes
+
+- Renamed `typespec_client_core::date` to `typespec_client_core::time` and added `typespec_client_core::time::Duration`
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.4.0 (2025-06-06)
 
 ### Features Added

@@ -7,10 +7,10 @@ use super::{
     CurveName, DeletionRecoveryLevel, EncryptionAlgorithm, KeyEncryptionAlgorithm, KeyOperation,
     KeyRotationPolicyAction, KeyType, SignatureAlgorithm,
 };
+use azure_core::time::OffsetDateTime;
 use azure_core::{base64, fmt::SafeDebug};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use time::OffsetDateTime;
 
 /// The backup key result, containing the backup blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -75,7 +75,7 @@ pub struct DeletedKey {
         default,
         rename = "deletedDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
 
@@ -100,7 +100,7 @@ pub struct DeletedKey {
         default,
         rename = "scheduledPurgeDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
@@ -122,7 +122,7 @@ pub struct DeletedKeyProperties {
         default,
         rename = "deletedDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
 
@@ -143,7 +143,7 @@ pub struct DeletedKeyProperties {
         default,
         rename = "scheduledPurgeDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
@@ -388,7 +388,7 @@ pub struct KeyAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub created: Option<OffsetDateTime>,
 
@@ -401,7 +401,7 @@ pub struct KeyAttributes {
         default,
         rename = "exp",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub expires: Option<OffsetDateTime>,
 
@@ -419,7 +419,7 @@ pub struct KeyAttributes {
         default,
         rename = "nbf",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub not_before: Option<OffsetDateTime>,
 
@@ -437,7 +437,7 @@ pub struct KeyAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub updated: Option<OffsetDateTime>,
 }
@@ -614,7 +614,7 @@ pub struct KeyRotationPolicyAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub created: Option<OffsetDateTime>,
 
@@ -627,7 +627,7 @@ pub struct KeyRotationPolicyAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub updated: Option<OffsetDateTime>,
 }

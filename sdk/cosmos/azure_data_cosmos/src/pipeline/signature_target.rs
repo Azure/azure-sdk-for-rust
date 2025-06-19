@@ -67,7 +67,7 @@ impl<'a> SignatureTarget<'a> {
 #[cfg(test)]
 #[cfg(feature = "key_auth")]
 mod tests {
-    use azure_core::{date, http::Method};
+    use azure_core::{http::Method, time};
 
     use crate::{
         pipeline::signature_target::SignatureTarget,
@@ -78,8 +78,8 @@ mod tests {
     // However, testing the signable string here is useful to isolate failures in constructing the string to be signed
     #[test]
     fn into_signable_string_generates_correct_value() {
-        let time_nonce = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
-        let date_string = date::to_rfc7231(&time_nonce).to_lowercase();
+        let time_nonce = time::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
+        let date_string = time::to_rfc7231(&time_nonce).to_lowercase();
 
         let ret = SignatureTarget::new(
             Method::Get,

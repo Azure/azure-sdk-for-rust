@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.25.0"
+version = "0.26.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors.workspace = true
@@ -27,7 +27,11 @@ sha2 = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
 typespec = { workspace = true, features = ["http", "json"] }
-typespec_client_core = { workspace = true, features = ["derive", "http", "json"] }
+typespec_client_core = { workspace = true, features = [
+  "derive",
+  "http",
+  "json",
+] }
 
 [build-dependencies]
 rustc_version.workspace = true
@@ -38,7 +42,6 @@ azure_identity.workspace = true
 azure_security_keyvault_secrets.path = "../../keyvault/azure_security_keyvault_secrets"
 criterion.workspace = true
 thiserror.workspace = true
-time.workspace = true
 tokio.workspace = true
 tracing-subscriber.workspace = true
 
@@ -57,7 +60,7 @@ reqwest_deflate = ["typespec_client_core/reqwest_deflate"]
 reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
-tokio = ["dep:tokio", "tokio/process", "typespec_client_core/tokio"]
+tokio = ["dep:tokio", "typespec_client_core/tokio"]
 xml = ["typespec_client_core/xml"]
 
 [lints]

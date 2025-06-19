@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::{common::recoverable_connection::RecoverableConnection, models::ReceivedEventData};
+use crate::{common::recoverable::RecoverableConnection, models::ReceivedEventData};
 use async_stream::try_stream;
-use azure_core::{error::Result, http::Url};
+use azure_core::{error::Result, http::Url, time::Duration};
 use azure_core_amqp::{
     AmqpDeliveryApis as _, AmqpReceiverApis as _, AmqpReceiverOptions, AmqpSource,
 };
 use futures::Stream;
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 use tracing::trace;
 
 /// A message receiver that can be used to receive messages from an Event Hub.

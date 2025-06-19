@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use super::session::AmqpSession;
-use azure_core::{credentials::Secret, error::Result};
+use azure_core::{credentials::Secret, error::Result, time::OffsetDateTime};
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
@@ -52,7 +52,7 @@ pub trait AmqpClaimsBasedSecurityApis {
         path: String,
         token_type: Option<String>,
         secret: &Secret,
-        expires_on: time::OffsetDateTime,
+        expires_on: OffsetDateTime,
     ) -> Result<()>;
 }
 
@@ -76,7 +76,7 @@ impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
         path: String,
         token_type: Option<String>,
         secret: &Secret,
-        expires_on: time::OffsetDateTime,
+        expires_on: OffsetDateTime,
     ) -> Result<()> {
         self.implementation
             .authorize_path(path, token_type, secret, expires_on)

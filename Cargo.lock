@@ -155,7 +155,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "azure_core"
-version = "0.25.0"
+version = "0.26.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -173,7 +173,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "thiserror",
- "time",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -183,7 +182,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -195,7 +194,6 @@ dependencies = [
  "serde",
  "serde_amqp",
  "serde_bytes",
- "time",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -306,7 +304,6 @@ dependencies = [
  "rand",
  "rand_chacha",
  "rustc_version",
- "time",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -328,7 +325,6 @@ dependencies = [
  "rustc_version",
  "serde",
  "serde_json",
- "time",
  "tokio",
  "typespec_client_core",
 ]
@@ -349,7 +345,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "time",
  "tokio",
  "typespec_client_core",
 ]
@@ -391,7 +386,6 @@ dependencies = [
  "azure_storage_blob_test",
  "futures",
  "serde",
- "time",
  "tokio",
  "typespec_client_core",
  "url",
@@ -791,9 +785,9 @@ dependencies = [
 
 [[package]]
 name = "deranged"
-version = "0.3.11"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b42b6fa04a440b495c8b04d0e71b707c585f83cb9cb28cf8cd0d976c315e31b4"
+checksum = "9c9e6a11ca8224451684bc0d7d5a7adbf8f2fd6887261a1cfc3c0432f9d4068e"
 dependencies = [
  "powerfmt",
  "serde",
@@ -982,11 +976,12 @@ dependencies = [
 
 [[package]]
 name = "flate2"
-version = "1.1.0"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11faaf5a5236997af9848be0bef4db95824b1d534ebc64d0f0c6cf3e67bd38dc"
+checksum = "4a3d7db9596fecd151c5f638c0ee5d5bd487b6e0ea232e5dc96d5250f6f94b1d"
 dependencies = [
  "crc32fast",
+ "libz-rs-sys",
  "miniz_oxide",
 ]
 
@@ -1539,6 +1534,15 @@ dependencies = [
  "bitflags 2.6.0",
  "libc",
  "redox_syscall 0.5.7",
+]
+
+[[package]]
+name = "libz-rs-sys"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "172a788537a2221661b480fee8dc5f96c580eb34fa88764d3205dc356c7e4221"
+dependencies = [
+ "zlib-rs",
 ]
 
 [[package]]
@@ -2551,9 +2555,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.37"
+version = "0.3.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35e7868883861bd0e56d9ac6efcaaca0d6d5d82a2a7ec8209ff492c07cf37b21"
+checksum = "8a7619e19bc266e0f9c5e6686659d394bc57973859340060a69221e57dbc0c40"
 dependencies = [
  "deranged",
  "itoa",
@@ -2567,15 +2571,15 @@ dependencies = [
 
 [[package]]
 name = "time-core"
-version = "0.1.2"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
+checksum = "c9e9a38711f559d9e3ce1cdb06dd7c5b8ea546bc90052da6d06bb76da74bb07c"
 
 [[package]]
 name = "time-macros"
-version = "0.2.19"
+version = "0.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2834e6017e3e5e4b9834939793b282bc03b37a3336245fa820e35e233e2a85de"
+checksum = "3526739392ec93fd8b359c8e98514cb3e8e021beb4e5f597b00a0221f8ed8a49"
 dependencies = [
  "num-conv",
  "time-core",
@@ -2786,7 +2790,7 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "typespec"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "base64",
  "serde",
@@ -2797,7 +2801,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -2823,7 +2827,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",
@@ -3277,18 +3281,23 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "2.6.1"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dcb24d0152526ae49b9b96c1dcf71850ca1e0b882e4e28ed898a93c41334744"
+checksum = "153a6fff49d264c4babdcfa6b4d534747f520e56e8f0f384f3b808c4b64cc1fd"
 dependencies = [
  "arbitrary",
  "crc32fast",
- "crossbeam-utils",
  "flate2",
  "indexmap",
  "memchr",
  "zopfli",
 ]
+
+[[package]]
+name = "zlib-rs"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "626bd9fa9734751fc50d6060752170984d7053f5a39061f524cda68023d4db8a"
 
 [[package]]
 name = "zopfli"

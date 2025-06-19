@@ -6,8 +6,8 @@
 
 #[macro_use]
 mod macros;
+pub mod async_runtime;
 pub mod base64;
-pub mod date;
 pub mod error;
 pub mod fmt;
 pub mod fs;
@@ -17,9 +17,12 @@ pub mod http;
 pub mod json;
 pub mod sleep;
 pub mod stream;
+pub mod time;
 #[cfg(feature = "xml")]
 pub mod xml;
 
 pub use crate::error::{Error, Result};
 pub use bytes::Bytes;
 pub use uuid::Uuid;
+
+pub use sleep::sleep;

@@ -55,7 +55,7 @@ where
 
 /// ISO 8601 date and time parsing and formatting functions for optional values.
 pub mod option {
-    use crate::date::iso8601::{parse_iso8601, to_iso8601};
+    use crate::time::iso8601::{parse_iso8601, to_iso8601};
     use serde::{Deserialize, Deserializer, Serializer};
     use time::OffsetDateTime;
 
