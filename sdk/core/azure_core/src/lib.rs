@@ -14,7 +14,6 @@ pub mod credentials;
 pub mod fs;
 pub mod hmac;
 pub mod http;
-pub mod process;
 
 #[cfg(feature = "test")]
 pub mod test;

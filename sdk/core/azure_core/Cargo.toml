@@ -60,7 +60,7 @@ reqwest_deflate = ["typespec_client_core/reqwest_deflate"]
 reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
-tokio = ["dep:tokio", "tokio/process", "typespec_client_core/tokio"]
+tokio = ["dep:tokio", "typespec_client_core/tokio"]
 xml = ["typespec_client_core/xml"]
 
 [lints]
