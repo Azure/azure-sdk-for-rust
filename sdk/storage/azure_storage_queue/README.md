@@ -85,7 +85,7 @@ The following methods are available on the ```QueueClient``` class:
 ## Examples
 
 <!-- TODO: Update the link below when the PR is merged -->
-Executable examples of all the functions provided by this SDK can be found in the [queue_client.rs](<!--https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs-->) file in the examples directory.
+Executable examples of all the functions provided by this SDK can be found in the [queue_client.rs]<!--(https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs)--> file in the examples directory.
 
 ## Next steps
 
