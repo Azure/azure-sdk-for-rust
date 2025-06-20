@@ -1,20 +1,28 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::generated::{
-    clients::{AzureQueueStorageClient as GeneratedQueueClient, AzureQueueStorageClientOptions},
+use crate::{
+    generated::{
+        clients::{
+            AzureQueueStorageClient as GeneratedQueueClient, AzureQueueStorageClientOptions,
+        },
+        models::{
+            AzureQueueStorageMessageIdOperationGroupClientDeleteOptions,
+            AzureQueueStorageMessageIdOperationGroupClientUpdateOptions,
+            AzureQueueStorageMessagesOperationGroupClientClearOptions,
+            AzureQueueStorageMessagesOperationGroupClientDequeueOptions,
+            AzureQueueStorageMessagesOperationGroupClientEnqueueOptions,
+            AzureQueueStorageMessagesOperationGroupClientPeekOptions,
+            AzureQueueStorageQueueOperationGroupClientCreateOptions,
+            AzureQueueStorageQueueOperationGroupClientDeleteOptions,
+            AzureQueueStorageServiceOperationGroupClientGetPropertiesOptions, DequeuedMessageItem,
+            ListOfDequeuedMessageItem, ListOfEnqueuedMessage, ListOfPeekedMessageItem,
+            PeekedMessageItem, QueueMessage, StorageServiceProperties,
+        },
+    },
     models::{
-        AzureQueueStorageMessageIdOperationGroupClientDeleteOptions,
-        AzureQueueStorageMessageIdOperationGroupClientUpdateOptions,
-        AzureQueueStorageMessagesOperationGroupClientClearOptions,
-        AzureQueueStorageMessagesOperationGroupClientDequeueOptions,
-        AzureQueueStorageMessagesOperationGroupClientEnqueueOptions,
-        AzureQueueStorageMessagesOperationGroupClientPeekOptions,
-        AzureQueueStorageQueueOperationGroupClientCreateOptions,
-        AzureQueueStorageQueueOperationGroupClientDeleteOptions,
-        AzureQueueStorageServiceOperationGroupClientGetPropertiesOptions, DequeuedMessageItem,
-        ListOfDequeuedMessageItem, ListOfEnqueuedMessage, ListOfPeekedMessageItem,
-        PeekedMessageItem, QueueMessage, StorageServiceProperties,
+        AzureQueueStorageQueueOperationGroupClientGetAccessPolicyOptions,
+        AzureQueueStorageQueueOperationGroupClientSetAccessPolicyOptions, ListOfSignedIdentifier,
     },
 };
 use azure_core::{
@@ -198,7 +206,7 @@ impl QueueClient {
     ///
     /// # Note
     ///
-    // TODO: Validate that this is correctly implemented. This returns properties for the entire service, not just a single queue.
+    /// This returns properties for the entire service, not just a single queue.
     pub async fn get_properties(
         &self,
         options: Option<AzureQueueStorageServiceOperationGroupClientGetPropertiesOptions<'_>>,
@@ -234,7 +242,7 @@ impl QueueClient {
         }
     }
 
-    /// Deletes all messages in the specified queue.
+    /// Clears all messages in the specified queue.
     ///
     /// # Arguments
     ///
@@ -247,7 +255,7 @@ impl QueueClient {
     /// # Errors
     ///
     /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn delete_messages(
+    pub async fn clear(
         &self,
         options: Option<AzureQueueStorageMessagesOperationGroupClientClearOptions<'_>>,
     ) -> Result<Response<()>> {
@@ -338,7 +346,7 @@ impl QueueClient {
             .map(Into::into)
     }
 
-    /// Sends a message to the specified queue.
+    /// Enqueues a message to the specified queue.
     ///
     /// # Arguments
     ///
@@ -352,7 +360,7 @@ impl QueueClient {
     /// # Errors
     ///
     /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn send_message(
+    pub async fn enqueue_message(
         &self,
         message: &str,
         options: Option<AzureQueueStorageMessagesOperationGroupClientEnqueueOptions<'_>>,
@@ -436,7 +444,7 @@ impl QueueClient {
             .await
     }
 
-    /// Retrieves a single message from the queue.
+    /// The Dequeue operation retrieves a single message from the front of the queue.
     ///
     /// # Arguments
     ///
@@ -451,7 +459,7 @@ impl QueueClient {
     /// # Errors
     ///
     /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn receive_message(
+    pub async fn dequeue_message(
         &self,
         options: Option<AzureQueueStorageMessagesOperationGroupClientDequeueOptions<'_>>,
     ) -> Result<Response<Option<DequeuedMessageItem>, XmlFormat>> {
@@ -462,7 +470,7 @@ impl QueueClient {
             },
         );
 
-        match self.receive_messages(options).await {
+        match self.dequeue_messages(options).await {
             Ok(response) => {
                 // Extract the first message from the list of dequeued messages.
                 // If the list is empty, this will return None.
@@ -499,7 +507,7 @@ impl QueueClient {
         }
     }
 
-    /// Retrieves multiple messages from the queue.
+    /// The Dequeue operation retrieves one or more messages from the front of the queue.
     ///
     /// # Arguments
     ///
@@ -514,7 +522,7 @@ impl QueueClient {
     /// # Errors
     ///
     /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn receive_messages(
+    pub async fn dequeue_messages(
         &self,
         options: Option<AzureQueueStorageMessagesOperationGroupClientDequeueOptions<'_>>,
     ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
@@ -607,6 +615,52 @@ impl QueueClient {
         self.client
             .get_azure_queue_storage_messages_operation_group_client()
             .peek(&self.queue_name, options)
+            .await
+    }
+
+    /// Retrieves the access policy for the specified queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the access policy response if successful
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the queue doesn't exist or if the request fails
+    pub async fn get_access_policy(
+        &self,
+        options: Option<AzureQueueStorageQueueOperationGroupClientGetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<ListOfSignedIdentifier, XmlFormat>> {
+        self.client
+            .get_azure_queue_storage_queue_operation_group_client()
+            .get_access_policy(&self.queue_name, options)
+            .await
+    }
+
+    /// Sets the access policy for the specified queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request, including the list of signed identifiers
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the response if successful
+    ///
+    /// # Errors
+    /// ///
+    /// Returns an error if the queue doesn't exist or if the request fails
+    pub async fn set_access_policy(
+        &self,
+        options: Option<AzureQueueStorageQueueOperationGroupClientSetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<()>> {
+        self.client
+            .get_azure_queue_storage_queue_operation_group_client()
+            .set_access_policy(&self.queue_name, options)
             .await
     }
 }

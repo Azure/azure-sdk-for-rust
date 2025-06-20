@@ -39,13 +39,15 @@ async fn test_create_queue(ctx: TestContext) -> Result<()> {
 
 /// Enqueues a message to the specified queue.
 #[recorded::test]
-async fn test_send_message(ctx: TestContext) -> Result<()> {
+async fn test_enqueue_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-send-message").await?;
+    let queue_client = get_queue_client(recording, "test-enqueue-message").await?;
     queue_client.create(None).await?;
 
     let test_result = async {
-        let response = queue_client.send_message("queue-message", None).await?;
+        let response = queue_client
+            .enqueue_message("enqueue_message", None)
+            .await?;
 
         assert!(
             response.status() == 201,
@@ -205,19 +207,19 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Deletes all messages from a queue in Azure Storage Queue service.
+/// Clears all messages from a queue in Azure Storage Queue service.
 #[recorded::test]
-async fn test_delete_messages(ctx: TestContext) -> Result<()> {
+async fn test_clear_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-delete-messages").await?;
+    let queue_client = get_queue_client(recording, "test-clear-messages").await?;
 
     // Create a queue if it does not exist
     queue_client.create_if_not_exists(None).await?;
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        // Delete messages from the queue
-        let response = queue_client.delete_messages(None).await?;
+        // Clear messages from the queue
+        let response = queue_client.clear(None).await?;
         assert_successful_response(&response);
 
         Ok::<(), azure_core::Error>(())
@@ -245,7 +247,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
         // Send a message to the queue
         // Note: The message ID and pop receipt are required for deletion, so we need to capture them.
         let send_message_response = queue_client
-            .send_message(
+            .enqueue_message(
                 "Example message created from Rust, ready for deletion",
                 None,
             )
@@ -300,12 +302,12 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        // Send a message to the queue
-        let send_message_response = queue_client
-            .send_message("Example message created from Rust, ready for update", None)
+        // Enqueue a message to the queue
+        let enqueue_message_response = queue_client
+            .enqueue_message("Example message created from Rust, ready for update", None)
             .await?;
 
-        let (_status_code, _headers, properties) = send_message_response.deconstruct();
+        let (_status_code, _headers, properties) = enqueue_message_response.deconstruct();
         let xml = properties.collect_string().await?;
         let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml).unwrap();
 
@@ -470,23 +472,23 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
 
 /// Attempts to receive the first message from an empty queue in Azure Storage Queue service.
 #[recorded::test]
-async fn test_receive_message_empty(ctx: TestContext) -> Result<()> {
+async fn test_dequeue_message_empty(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-receive-message-empty").await?;
+    let queue_client = get_queue_client(recording, "test-dequeue-message-empty").await?;
 
     // Setup test queue with messages
     queue_client.create_if_not_exists(None).await?;
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let response = queue_client.receive_message(None).await?;
+        let response = queue_client.dequeue_message(None).await?;
         assert_successful_response(&response);
 
         let message = response.into_body().await?;
 
         assert!(
             message.is_none(),
-            "Expected to receive no message, but got Some"
+            "Expected to dequeue no message, but got Some"
         );
 
         Ok::<(), azure_core::Error>(())
@@ -499,11 +501,11 @@ async fn test_receive_message_empty(ctx: TestContext) -> Result<()> {
     test_result
 }
 
-/// Receives the first message from a queue in Azure Storage Queue service.
+/// Dequeues the first message from a queue in Azure Storage Queue service.
 #[recorded::test]
-async fn test_receive_message(ctx: TestContext) -> Result<()> {
+async fn test_dequeue_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-receive-message").await?;
+    let queue_client = get_queue_client(recording, "test-dequeue-message").await?;
     let test_messages = ["Message 1", "Message 2"];
 
     // Setup test queue with messages
@@ -511,14 +513,14 @@ async fn test_receive_message(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let response = queue_client.receive_message(None).await?;
+        let response = queue_client.dequeue_message(None).await?;
         assert_successful_response(&response);
 
         let message = response.into_body().await?;
 
         assert!(
             message.is_some(),
-            "Expected to receive a message, but got None"
+            "Expected to dequeue a message, but got None"
         );
 
         let message = message.unwrap();
@@ -534,11 +536,11 @@ async fn test_receive_message(ctx: TestContext) -> Result<()> {
     test_result
 }
 
-/// Receives all messages from a queue in Azure Storage Queue service.
+/// Dequeues all messages from a queue in Azure Storage Queue service.
 #[recorded::test]
-async fn test_receive_messages(ctx: TestContext) -> Result<()> {
+async fn test_dequeue_messages(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-receive-messages").await?;
+    let queue_client = get_queue_client(recording, "test-dequeue-messages").await?;
     let test_messages = ["Message 1", "Message 2"];
 
     // Setup test queue with messages
@@ -553,7 +555,7 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
             },
         );
 
-        let response = queue_client.receive_messages(options).await?;
+        let response = queue_client.dequeue_messages(options).await?;
         assert_successful_response(&response);
 
         let messages = response.into_body().await?;
@@ -562,7 +564,7 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
         assert_eq!(
             messages.len(),
             test_messages.len(),
-            "Expected to receive {} messages, got {}",
+            "Expected to dequeue {} messages, got {}",
             test_messages.len(),
             messages.len()
         );
@@ -572,6 +574,69 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
             assert_message_text(message.message_text.clone(), test_messages[i], i);
         }
 
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
+/// Gets the access policies for a queue in Azure Storage Queue service.
+#[recorded::test]
+async fn test_get_access_policies(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, "test-get-access-policies").await?;
+
+    // Setup test queue with messages
+    queue_client.create(None).await?;
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        let response = queue_client.get_access_policy(None).await?;
+        assert_successful_response(&response);
+        Ok::<(), azure_core::Error>(())
+    }
+    .await;
+
+    // Clean up by deleting the queue - this always executes
+    queue_client.delete(None).await.unwrap();
+
+    test_result
+}
+
+/// Sets the access policies for a queue in Azure Storage Queue service.
+#[recorded::test]
+async fn test_set_access_policies(ctx: TestContext) -> Result<()> {
+    use azure_storage_queue::models::AzureQueueStorageQueueOperationGroupClientSetAccessPolicyOptions;
+
+    let recording = ctx.recording();
+    let queue_client = get_queue_client(recording, "test-set-access-policies").await?;
+
+    // Setup test queue with messages
+    queue_client.create(None).await?;
+
+    // Get the current access policies to set them back after the test
+    let result = queue_client.get_access_policy(None).await?;
+
+    let properties = result.into_body().await?;
+    let properties_xml = quick_xml::se::to_string(&properties).unwrap();
+    let properties_bytes = properties_xml.into_bytes();
+
+    let set_access_policy_options =
+        AzureQueueStorageQueueOperationGroupClientSetAccessPolicyOptions {
+            list_of_signed_identifier: Some(RequestContent::from(properties_bytes)),
+            ..Default::default()
+        };
+
+    // Run the test logic and ensure cleanup always happens
+    let test_result = async {
+        let response = queue_client
+            .set_access_policy(Some(set_access_policy_options))
+            .await?;
+        assert_successful_response(&response);
         Ok::<(), azure_core::Error>(())
     }
     .await;
@@ -629,7 +694,7 @@ async fn setup_test_queue_with_messages(
 ) -> Result<()> {
     queue_client.create_if_not_exists(None).await?;
     for message in messages {
-        queue_client.send_message(message, None).await?;
+        queue_client.enqueue_message(message, None).await?;
     }
     Ok(())
 }

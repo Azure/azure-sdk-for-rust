@@ -249,10 +249,10 @@ pub struct ListQueuesSegmentResponse {
     #[serde(rename = "Prefix", skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
 
-    #[serde(default, rename = "QueueItems")]
-    pub queue_items: Vec<QueueItem>,
+    #[serde(default, rename = "Queues")]
+    pub queue_items: QueueItems,
 
-    #[serde(rename = "ServiceEndpoint", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
     pub service_endpoint: Option<String>,
 }
 
@@ -341,7 +341,7 @@ pub struct PeekedMessageItem {
 /// An Azure Storage Queue.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
-#[serde(rename = "Queue")]
+// #[serde(rename = "Queue")]
 pub struct QueueItem {
     /// Dictionary of string
     #[serde(rename = "Metadata", skip_serializing_if = "Option::is_none")]
@@ -350,6 +350,14 @@ pub struct QueueItem {
     /// The name of the Queue.
     #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+// #[serde(rename = "Queues")]
+pub struct QueueItems {
+    #[serde(rename = "Queue")]
+    pub queues: Vec<QueueItem>,
 }
 
 /// A Message object which can be stored in a Queue
