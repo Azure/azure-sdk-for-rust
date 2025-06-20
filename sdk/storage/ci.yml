@@ -1,4 +1,9 @@
 # NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
+parameters:
+- name: RunLiveTests
+  displayName: 'Run live tests'
+  type: boolean
+  default: false
 
 trigger:
   branches:
@@ -14,6 +19,7 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: storage
+    RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule')) }}
     TestTimeoutInMinutes: 120
     Artifacts:
     - name: azure_storage_common
