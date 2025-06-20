@@ -2,10 +2,9 @@
 // Licensed under the MIT License.
 
 use super::{AsyncRuntime, SpawnedTask, TaskFuture};
-
+use crate::time::Duration;
 #[cfg(not(target_arch = "wasm32"))]
 use futures::{executor::LocalPool, task::SpawnExt};
-
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(not(target_arch = "wasm32"))]
@@ -151,10 +150,7 @@ impl AsyncRuntime for StdRuntime {
     /// Uses a simple thread based implementation for sleep. A more efficient
     /// implementation is available by using the `tokio` crate feature.
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
-    fn sleep(
-        &self,
-        duration: std::time::Duration,
-    ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
+    fn sleep(&self, duration: Duration) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
         #[cfg(target_arch = "wasm32")]
         {
             panic!("sleep is not supported on wasm32")
@@ -171,7 +167,7 @@ impl AsyncRuntime for StdRuntime {
 #[cfg(not(target_arch = "wasm32"))]
 pub struct Sleep {
     signal: Option<Arc<AtomicBool>>,
-    duration: std::time::Duration,
+    duration: Duration,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -191,7 +187,7 @@ impl Future for Sleep {
             let duration = self.duration;
             self.get_mut().signal = Some(signal.clone());
             thread::spawn(move || {
-                thread::sleep(duration);
+                thread::sleep(duration.try_into().expect("Duration conversion failed"));
                 signal.store(true, Ordering::Release);
                 waker.wake();
             });

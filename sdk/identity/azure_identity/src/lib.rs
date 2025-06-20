@@ -34,6 +34,7 @@ pub use client_secret_credential::*;
 pub use default_azure_credential::*;
 pub use managed_identity_credential::*;
 pub use options::TokenCredentialOptions;
+pub use process::{new_executor, Executor};
 pub use workload_identity_credential::*;
 
 pub(crate) use app_service_managed_identity_credential::*;
@@ -59,8 +60,10 @@ struct EntraIdErrorResponse {
 #[serde(default)]
 struct EntraIdTokenResponse {
     token_type: String,
-    expires_in: u64,
-    ext_expires_in: u64,
+    // these are i64 to avoid conversion when calling Duration::seconds
+    // (real values are unsigned)
+    expires_in: i64,
+    ext_expires_in: i64,
     access_token: String,
 }
 
@@ -172,11 +175,11 @@ fn test_validate_tenant_id() {
 
 #[cfg(test)]
 mod tests {
+    use crate::process::Executor;
     use async_trait::async_trait;
     use azure_core::{
         error::ErrorKind,
         http::{RawResponse, Request},
-        process::Executor,
         Error, Result,
     };
     use std::{

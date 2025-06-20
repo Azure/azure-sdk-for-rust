@@ -6,10 +6,9 @@
 use super::{
     models_serde, CertificatePolicyAction, CurveName, DeletionRecoveryLevel, KeyType, KeyUsageType,
 };
-use azure_core::{base64, fmt::SafeDebug};
+use azure_core::{base64, fmt::SafeDebug, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use time::OffsetDateTime;
 
 /// Details of the organization administrator of the certificate issuer.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -109,7 +108,7 @@ pub struct CertificateAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub created: Option<OffsetDateTime>,
 
@@ -122,7 +121,7 @@ pub struct CertificateAttributes {
         default,
         rename = "exp",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub expires: Option<OffsetDateTime>,
 
@@ -131,7 +130,7 @@ pub struct CertificateAttributes {
         default,
         rename = "nbf",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub not_before: Option<OffsetDateTime>,
 
@@ -149,7 +148,7 @@ pub struct CertificateAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub updated: Option<OffsetDateTime>,
 }
@@ -340,7 +339,7 @@ pub struct DeletedCertificate {
         default,
         rename = "deletedDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
 
@@ -370,7 +369,7 @@ pub struct DeletedCertificate {
         default,
         rename = "scheduledPurgeDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
@@ -406,7 +405,7 @@ pub struct DeletedCertificateProperties {
         default,
         rename = "deletedDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
 
@@ -423,7 +422,7 @@ pub struct DeletedCertificateProperties {
         default,
         rename = "scheduledPurgeDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
@@ -503,7 +502,7 @@ pub struct IssuerAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub created: Option<OffsetDateTime>,
 
@@ -515,7 +514,7 @@ pub struct IssuerAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub updated: Option<OffsetDateTime>,
 }

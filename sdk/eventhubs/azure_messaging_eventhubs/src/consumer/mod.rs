@@ -14,6 +14,7 @@ use azure_core::{
     credentials::TokenCredential,
     error::{Error, ErrorKind as AzureErrorKind, Result},
     http::Url,
+    time::Duration,
     Uuid,
 };
 use azure_core_amqp::{
@@ -25,7 +26,7 @@ use std::{
     default::Default,
     fmt::Debug,
     sync::Arc,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{SystemTime, UNIX_EPOCH},
 };
 use tracing::{debug, trace};
 

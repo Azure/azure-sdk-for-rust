@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 use super::*;
+use crate::time::Duration;
 use futures::FutureExt;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 #[cfg(not(feature = "tokio"))]
 #[test]
@@ -16,7 +16,7 @@ fn test_task_spawner_execution() {
     let handle = runtime.spawn(
         async move {
             // Simulate some work
-            crate::sleep::sleep(Duration::from_millis(50)).await;
+            crate::sleep::sleep(Duration::milliseconds(50)).await;
             let mut value = result_clone.lock().unwrap();
             *value = true;
         }
@@ -39,7 +39,7 @@ async fn tokio_task_spawner_execution() {
     let handle = async_runtime.spawn(
         async move {
             // Simulate some work
-            crate::sleep::sleep(Duration::from_millis(50)).await;
+            crate::sleep::sleep(Duration::milliseconds(50)).await;
             let mut value = result_clone.lock().unwrap();
             *value = true;
         }
@@ -108,7 +108,7 @@ async fn tokio_task_execution() {
     let handle = spawner.spawn(
         async move {
             // Simulate some work
-            crate::sleep::sleep(Duration::from_millis(50)).await;
+            crate::sleep::sleep(Duration::milliseconds(50)).await;
             let mut value = result_clone.lock().unwrap();
             *value = true;
         }
@@ -138,7 +138,7 @@ fn std_specific_handling() {
     );
 
     // For std threads, we need to wait for the task to complete
-    std::thread::sleep(Duration::from_millis(100));
+    std::thread::sleep(Duration::milliseconds(100).try_into().unwrap());
     futures::executor::block_on(handle).expect("Task should complete successfully");
     assert!(*task_completed.lock().unwrap());
 }
@@ -182,7 +182,7 @@ fn std_task_execution() {
     let handle = runtime.spawn(
         async move {
             // Simulate some work
-            crate::sleep::sleep(Duration::from_millis(500)).await;
+            crate::sleep::sleep(Duration::milliseconds(500)).await;
             let mut value = result_clone.lock().unwrap();
             *value = true;
         }
@@ -203,7 +203,7 @@ fn std_task_execution() {
 #[tokio::test]
 async fn test_timeout() {
     use super::*;
-    use std::time::Duration;
+    use crate::time::Duration;
     use tokio::task::JoinSet;
 
     let async_runtime = get_async_runtime();
@@ -212,7 +212,7 @@ async fn test_timeout() {
     for _i in 0..total {
         let runtime = async_runtime.clone();
         join_set.spawn(async move {
-            runtime.sleep(Duration::from_millis(10)).await;
+            runtime.sleep(Duration::milliseconds(10)).await;
         });
     }
 
@@ -230,9 +230,9 @@ async fn test_timeout() {
 async fn test_sleep() {
     let runtime = get_async_runtime();
     let start = std::time::Instant::now();
-    runtime.sleep(Duration::from_millis(100)).await;
+    runtime.sleep(Duration::milliseconds(100)).await;
     let elapsed = start.elapsed();
-    assert!(elapsed >= Duration::from_millis(100));
+    assert!(elapsed >= Duration::milliseconds(100));
 }
 
 #[test]
@@ -248,10 +248,7 @@ impl AsyncRuntime for TestRuntime {
         unimplemented!("TestRuntime does not support spawning tasks");
     }
 
-    fn sleep(
-        &self,
-        _duration: std::time::Duration,
-    ) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
+    fn sleep(&self, _duration: Duration) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
         unimplemented!("TestRuntime does not support sleeping");
     }
 }

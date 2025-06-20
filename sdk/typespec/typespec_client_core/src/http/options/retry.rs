@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::http::policies::{
-    ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryPolicy,
+use crate::{
+    http::policies::{
+        ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryPolicy,
+    },
+    time::Duration,
 };
 use std::fmt::Debug;
 use std::sync::Arc;
-use std::time::Duration;
 
 /// The algorithm to apply when calculating the delay between retry attempts.
 #[derive(Clone)]
@@ -110,12 +112,12 @@ impl RetryOptions {
 ///
 /// Configuring retry to be exponential with 10 retries max and an initial delay of 1 second.
 /// ```
-/// # use core::time::Duration;
+/// # use typespec_client_core::time::Duration;
 /// # use typespec_client_core::http::{ExponentialRetryOptions, RetryOptions};
 /// RetryOptions::exponential(
 ///    ExponentialRetryOptions::default()
 ///        .max_retries(10u32)
-///        .initial_delay(Duration::from_secs(1)),
+///        .initial_delay(Duration::seconds(1)),
 /// );
 /// ```
 #[derive(Clone, Debug)]
@@ -153,10 +155,10 @@ impl ExponentialRetryOptions {
 impl Default for ExponentialRetryOptions {
     fn default() -> Self {
         Self {
-            initial_delay: Duration::from_millis(200),
+            initial_delay: Duration::milliseconds(200),
             max_retries: 8,
-            max_total_elapsed: Duration::from_secs(60),
-            max_delay: Duration::from_secs(30),
+            max_total_elapsed: Duration::seconds(60),
+            max_delay: Duration::seconds(30),
         }
     }
 }
@@ -205,9 +207,9 @@ impl FixedRetryOptions {
 impl Default for FixedRetryOptions {
     fn default() -> Self {
         Self {
-            delay: Duration::from_millis(200),
+            delay: Duration::milliseconds(200),
             max_retries: 8,
-            max_total_elapsed: Duration::from_secs(60),
+            max_total_elapsed: Duration::seconds(60),
         }
     }
 }

@@ -3,7 +3,7 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::{http::StatusCode, sleep::sleep, Result};
+use azure_core::{http::StatusCode, sleep::sleep, time::Duration, Result};
 use azure_core_test::{recorded, Recording, TestContext, TestMode, SANITIZE_BODY_NAME};
 use azure_security_keyvault_certificates::{
     models::{
@@ -20,7 +20,7 @@ use azure_security_keyvault_keys::{
 use azure_security_keyvault_test::Retry;
 use futures::TryStreamExt;
 use openssl::sha::sha256;
-use std::{collections::HashMap, sync::LazyLock, time::Duration};
+use std::{collections::HashMap, sync::LazyLock};
 
 static DEFAULT_POLICY: LazyLock<CertificatePolicy> = LazyLock::new(|| CertificatePolicy {
     x509_certificate_properties: Some(X509CertificateProperties {
@@ -337,7 +337,7 @@ async fn wait_for_certificate_completion(
         }
 
         if recording.test_mode() != TestMode::Playback {
-            sleep(Duration::from_secs(3)).await;
+            sleep(Duration::seconds(3)).await;
         }
 
         operation = client

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 //! RFC 7231 date and time parsing and formatting functions.
-use crate::date::{parse_rfc7231, to_rfc7231};
+use crate::time::{parse_rfc7231, to_rfc7231};
 use serde::{de, Deserialize, Deserializer, Serializer};
 use time::OffsetDateTime;
 
@@ -24,7 +24,7 @@ where
 }
 
 pub mod option {
-    use crate::date::{parse_rfc7231, to_rfc7231};
+    use crate::time::{parse_rfc7231, to_rfc7231};
     use serde::{Deserialize, Deserializer, Serializer};
     use time::OffsetDateTime;
 

@@ -20,12 +20,12 @@ you can find the [package on crates.io][Package (crates.io)].
 
 The main shared concepts of `azure_core` - and Azure SDK libraries using `azure_core` - include:
 
--   Configuring service clients, e.g. configuring retries, logging (`ClientOptions`).
--   Accessing HTTP response details (`Response<T>`).
--   Paging and asynchronous streams (`Pager<T>`).
--   Errors from service requests in a consistent fashion. (`azure_core::Error`).
--   Customizing requests (`ClientOptions`).
--   Abstractions for representing Azure SDK credentials. (`TokenCredentials`).
+- Configuring service clients, e.g. configuring retries, logging (`ClientOptions`).
+- Accessing HTTP response details (`Response<T>`).
+- Paging and asynchronous streams (`Pager<T>`).
+- Errors from service requests in a consistent fashion. (`azure_core::Error`).
+- Customizing requests (`ClientOptions`).
+- Abstractions for representing Azure SDK credentials. (`TokenCredentials`).
 
 ### Thread safety
 
@@ -44,15 +44,15 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 ## Features
 
--   `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
--   `hmac_openssl`: configures HMAC using `openssl`.
--   `hmac_rust`: configures HMAC using pure Rust.
--   `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
--   `reqwest_deflate` (default): enables deflate compression for `reqwest`.
--   `reqwest_gzip` (default): enables gzip compression for `reqwest`.
--   `reqwest_rustls`: enables `reqwest`'s `rustls-tls-native-roots-no-provider` feature,
--   `tokio`: enables and sets `tokio` as the default async runtime.
--   `xml`: enables XML support.
+- `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
+- `hmac_openssl`: configures HMAC using `openssl`.
+- `hmac_rust`: configures HMAC using pure Rust.
+- `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
+- `reqwest_deflate` (default): enables deflate compression for `reqwest`.
+- `reqwest_gzip` (default): enables gzip compression for `reqwest`.
+- `reqwest_rustls`: enables `reqwest`'s `rustls-tls-native-roots-no-provider` feature,
+- `tokio`: enables and sets `tokio` as the default async runtime.
+- `xml`: enables XML support.
 
 ## Examples
 
@@ -255,8 +255,9 @@ If your application uses a different asynchronous runtime, you can replace the a
 You provide the implementation by calling the `set_async_runtime()` API:
 
 ```rust no_run
-use azure_core::async_runtime::{
-     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask};
+use azure_core::{async_runtime::{
+     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask},
+     time::Duration};
 use std::sync::Arc;
 use futures::FutureExt;
 
@@ -266,7 +267,7 @@ impl AsyncRuntime for CustomRuntime {
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {
       unimplemented!("Custom spawn not implemented");
     }
-    fn sleep(&self, duration: std::time::Duration) -> TaskFuture {
+    fn sleep(&self, duration: Duration) -> TaskFuture {
       unimplemented!("Custom sleep not implemented");
     }
   }

@@ -508,14 +508,14 @@ impl From<AmqpMessage>
 #[cfg(test)]
 mod tests {
 
-    use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
     use super::*;
     use crate::messaging::{
         AmqpAnnotationKey, AmqpAnnotations, AmqpMessageHeader, AmqpMessageProperties,
     };
     use crate::value::AmqpSymbol;
+    use azure_core::time::Duration;
     use fe2o3_amqp_types::messaging::{Data, MessageAnnotations};
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
     fn round_trip_message_amqp_to_fe2o3() {
@@ -598,7 +598,7 @@ mod tests {
                 .as_millis() as i64;
 
             // Round trip timestamp through milliseconds to round down from nanoseconds.
-            let timestamp: SystemTime = UNIX_EPOCH + Duration::from_millis(timestamp as u64);
+            let timestamp: SystemTime = UNIX_EPOCH + Duration::milliseconds(timestamp);
 
             let amqp_message = AmqpMessage::builder()
                 .add_application_property("abc".to_string(), "23 skiddoo")
@@ -623,7 +623,7 @@ mod tests {
                     delivery_count: 95,
                     first_acquirer: true,
                     durable: true,
-                    time_to_live: Some(Duration::from_millis(1000)),
+                    time_to_live: Some(Duration::milliseconds(1000)),
                     priority: 3,
                 })
                 .with_delivery_annotations(AmqpAnnotations::from(vec![

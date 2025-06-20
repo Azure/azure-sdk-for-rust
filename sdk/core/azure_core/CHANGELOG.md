@@ -9,6 +9,9 @@ the asynchronous runtime used by the Azure SDK.
 
 ### Breaking Changes
 
+- Moved `process::Executor` to `azure_identity`.
+- Renamed `azure_core::date` to `azure_core::time` and added `azure_core::time::Duration` as the standard "duration" type for the SDK.
+
 ### Bugs Fixed
 
 ### Other Changes

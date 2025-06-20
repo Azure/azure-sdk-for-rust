@@ -7,14 +7,14 @@ use super::{
     {CheckpointStore, ProcessorStrategy},
 };
 use crate::models::ConsumerClientDetails;
-use azure_core::{error::ErrorKind as AzureErrorKind, Error, Result};
+use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration, Error, Result};
 use rand::{seq::SliceRandom, Rng, RngCore, SeedableRng};
 use rand_chacha::ChaCha20Rng;
 use std::{
     cmp::min,
     collections::{HashMap, HashSet},
     sync::{Arc, Mutex, MutexGuard},
-    time::{Duration, SystemTime},
+    time::SystemTime,
 };
 use tracing::{debug, trace};
 
@@ -484,7 +484,7 @@ pub(crate) mod tests {
             checkpoint_store.clone(),
             new_test_consumer_client_details("new-client"),
             ProcessorStrategy::Greedy,
-            Duration::from_secs(3600),
+            Duration::seconds(3600),
             None,
         );
 
@@ -525,7 +525,7 @@ pub(crate) mod tests {
             checkpoint_store.clone(),
             new_test_consumer_client_details("new-client"),
             ProcessorStrategy::Balanced,
-            Duration::from_secs(3600),
+            Duration::seconds(3600),
             None,
         );
 
@@ -598,7 +598,7 @@ pub(crate) mod tests {
             checkpoint_store.clone(),
             new_test_consumer_client_details(stealing_client_id),
             ProcessorStrategy::Greedy,
-            Duration::from_secs(3600),
+            Duration::seconds(3600),
             None,
         );
 
@@ -670,7 +670,7 @@ pub(crate) mod tests {
             .etag
             .clone();
         let mut ownership = ownership.clone();
-        ownership.last_modified_time = Some(SystemTime::now() - Duration::from_secs(3600));
+        ownership.last_modified_time = Some(SystemTime::now() - Duration::seconds(3600));
         ownership.etag = etag;
         checkpoint_store.update_ownership(ownership).await?;
         Ok(())
@@ -737,7 +737,7 @@ pub(crate) mod tests {
                 checkpoint_store.clone(),
                 new_test_consumer_client_details(CLIENT_B),
                 strategy,
-                Duration::from_secs(3600),
+                Duration::seconds(3600),
                 None,
             );
 
@@ -776,7 +776,7 @@ pub(crate) mod tests {
                     checkpoint_store.clone(),
                     new_test_consumer_client_details(CLIENT_B),
                     strategy,
-                    Duration::from_secs(3600),
+                    Duration::seconds(3600),
                     None,
                 );
 
@@ -800,7 +800,7 @@ pub(crate) mod tests {
                     checkpoint_store.clone(),
                     new_test_consumer_client_details(CLIENT_A),
                     strategy,
-                    Duration::from_secs(3600),
+                    Duration::seconds(3600),
                     None,
                 );
 
@@ -848,7 +848,7 @@ pub(crate) mod tests {
                     checkpoint_store.clone(),
                     new_test_consumer_client_details(CLIENT_B),
                     strategy,
-                    Duration::from_secs(3600),
+                    Duration::seconds(3600),
                     None,
                 );
 
@@ -870,7 +870,7 @@ pub(crate) mod tests {
                     checkpoint_store.clone(),
                     new_test_consumer_client_details(CLIENT_A),
                     strategy,
-                    Duration::from_secs(3600),
+                    Duration::seconds(3600),
                     None,
                 );
 
@@ -917,7 +917,7 @@ pub(crate) mod tests {
                 checkpoint_store.clone(),
                 new_test_consumer_client_details(CLIENT_B),
                 strategy,
-                Duration::from_secs(3600),
+                Duration::seconds(3600),
                 None,
             );
 
@@ -964,7 +964,7 @@ pub(crate) mod tests {
                     checkpoint_store.clone(),
                     new_test_consumer_client_details(LOTS_CLIENT_ID),
                     strategy,
-                    Duration::from_secs(3600),
+                    Duration::seconds(3600),
                     None,
                 );
 
@@ -985,7 +985,7 @@ pub(crate) mod tests {
                     checkpoint_store.clone(),
                     new_test_consumer_client_details(LITTLE_CLIENT_ID),
                     strategy,
-                    Duration::from_secs(3600),
+                    Duration::seconds(3600),
                     None,
                 );
 
@@ -1042,7 +1042,7 @@ pub(crate) mod tests {
                 checkpoint_store.clone(),
                 new_test_consumer_client_details(CLIENT_B),
                 strategy,
-                Duration::from_secs(3600),
+                Duration::seconds(3600),
                 None,
             );
 
@@ -1273,7 +1273,7 @@ pub(crate) mod tests {
             checkpoint_store.clone(),
             client_details,
             ProcessorStrategy::Balanced,                  // Ignored.
-            Duration::from_secs(3600), // No partitions are expired in these tests.
+            Duration::seconds(3600), // No partitions are expired in these tests.
             Some(Box::new(ChaCha20Rng::from_seed(seed))), // For deterministic results.
         );
         Ok((load_balancer, partition_ids))

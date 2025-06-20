@@ -3,10 +3,11 @@
 
 // cspell::ignore Uncategorized
 
+use azure_core::time::Duration;
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{ConsumerClient, OpenReceiverOptions, StartPosition};
 use futures::StreamExt;
-use std::{env, error::Error, time::Duration};
+use std::{env, error::Error};
 use tokio::time::timeout;
 use tracing::{info, trace};
 
@@ -157,7 +158,7 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
                         ..Default::default()
                     }),
                     // Timeout for individual receive operations.
-                    receive_timeout: Some(Duration::from_secs(5)),
+                    receive_timeout: Some(Duration::seconds(5)),
                     ..Default::default()
                 }),
             )
@@ -176,12 +177,12 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
 
         let mut count = 0;
 
-        const TEST_DURATION: Duration = Duration::from_secs(10);
+        const TEST_DURATION: Duration = Duration::seconds(10);
         info!("Receiving events for {:?}.", TEST_DURATION);
 
         // Read events from the stream for a bit of time.
 
-        let result = timeout(TEST_DURATION, async {
+        let result = timeout(TEST_DURATION.try_into().unwrap(), async {
             while let Some(event) = event_stream.next().await {
                 match event {
                     Ok(_event) => {
@@ -229,7 +230,7 @@ async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> 
                     ..Default::default()
                 }),
                 // Timeout for individual receive operations.
-                receive_timeout: Some(Duration::from_secs(5)),
+                receive_timeout: Some(Duration::seconds(5)),
                 ..Default::default()
             }),
         )
@@ -240,11 +241,11 @@ async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 
     let mut count = 0;
 
-    const TEST_DURATION: Duration = Duration::from_secs(10);
+    const TEST_DURATION: Duration = Duration::seconds(10);
     info!("Receiving events for {:?}.", TEST_DURATION);
 
     // Read events from the stream for a bit of time.
-    let result = timeout(TEST_DURATION, async {
+    let result = timeout(TEST_DURATION.try_into().unwrap(), async {
         while let Some(event) = event_stream.next().await {
             match event {
                 Ok(_event) => {

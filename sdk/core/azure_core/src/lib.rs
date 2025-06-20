@@ -14,7 +14,6 @@ pub mod credentials;
 pub mod fs;
 pub mod hmac;
 pub mod http;
-pub mod process;
 
 #[cfg(feature = "test")]
 pub mod test;
@@ -23,9 +22,9 @@ pub use constants::*;
 
 // Re-export modules in typespec_client_core such that azure_core-based crates don't need to reference it directly.
 pub use typespec_client_core::{
-    async_runtime, base64, create_enum, create_extensible_enum, date,
+    async_runtime, base64, create_enum, create_extensible_enum,
     error::{self, Error, Result},
-    fmt, json, sleep, stream, Bytes, Uuid,
+    fmt, json, sleep, stream, time, Bytes, Uuid,
 };
 
 #[cfg(feature = "xml")]

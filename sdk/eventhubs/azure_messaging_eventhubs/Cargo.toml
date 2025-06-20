@@ -26,7 +26,6 @@ azure_core_amqp.workspace = true
 futures.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
-time.workspace = true
 tracing.workspace = true
 
 [build-dependencies]

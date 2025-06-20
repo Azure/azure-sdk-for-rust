@@ -19,6 +19,7 @@ use super::{
 use azure_core::{
     credentials::{AccessToken, Secret},
     error::Result,
+    time::OffsetDateTime,
 };
 
 #[derive(Default)]
@@ -115,7 +116,7 @@ impl AmqpClaimsBasedSecurityApis for NoopAmqpClaimsBasedSecurity {
         path: String,
         token_type: Option<String>,
         secret: &Secret,
-        expires_on: time::OffsetDateTime,
+        expires_on: OffsetDateTime,
     ) -> Result<()> {
         unimplemented!()
     }
