@@ -387,6 +387,7 @@ dependencies = [
  "futures",
  "serde",
  "tokio",
+ "tracing",
  "typespec_client_core",
  "url",
  "uuid",

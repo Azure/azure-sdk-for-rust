@@ -157,12 +157,14 @@ impl futures::io::AsyncRead for FileStream {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl From<&FileStream> for Body {
     fn from(stream: &FileStream) -> Self {
         Body::SeekableStream(Box::new(stream.clone()))
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl From<FileStream> for Body {
     fn from(stream: FileStream) -> Self {
         Body::SeekableStream(Box::new(stream))
