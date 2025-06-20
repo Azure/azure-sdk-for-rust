@@ -5,6 +5,7 @@ use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
+    PageBlobClientCreateOptions,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client};
 use std::error::Error;
@@ -17,13 +18,33 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let blob_client = container_client.blob_client(get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
 
+    // Regular Create Scenario
     page_blob_client.create(1024, None).await?;
-
     // Assert
     let blob_properties = blob_client.get_properties(None).await?;
     let blob_type = blob_properties.blob_type()?;
     let content_length = blob_properties.content_length()?;
+    assert_eq!(1024, content_length.unwrap());
+    assert_eq!(BlobType::PageBlob, blob_type.unwrap());
 
+    // Create If Not Exists Scenario
+    let create_options = PageBlobClientCreateOptions {
+        if_none_match: Some("*".to_string()),
+        ..Default::default()
+    };
+    let response = page_blob_client
+        .create(1024, Some(create_options.clone()))
+        .await;
+    // Assert
+    let error = response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    blob_client.delete(None).await?;
+    page_blob_client.create(1024, Some(create_options)).await?;
+    // Assert
+    let blob_properties = blob_client.get_properties(None).await?;
+    let blob_type = blob_properties.blob_type()?;
+    let content_length = blob_properties.content_length()?;
     assert_eq!(1024, content_length.unwrap());
     assert_eq!(BlobType::PageBlob, blob_type.unwrap());
 
