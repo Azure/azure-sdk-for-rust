@@ -5,7 +5,6 @@ use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
-    PageBlobClientUploadPagesOptions,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client};
 use std::error::Error;
@@ -42,7 +41,12 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(RequestContent::from(data.clone()), 512, None)
+        .upload_page(
+            RequestContent::from(data.clone()),
+            512,
+            "bytes=0-511".to_string(),
+            None,
+        )
         .await?;
 
     // Assert
@@ -67,10 +71,17 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(RequestContent::from(data), 512, None)
+        .upload_page(
+            RequestContent::from(data),
+            512,
+            "bytes=0-511".to_string(),
+            None,
+        )
         .await?;
 
-    page_blob_client.clear_page(512, None).await?;
+    page_blob_client
+        .clear_page("bytes=0-511".to_string(), None)
+        .await?;
 
     // Assert
     let response = blob_client.download(None).await?;
@@ -95,16 +106,12 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Blob Too Small Scenario
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 1024];
-    // TODO: REMOVE, SHOULD BE REQUIRED PARAM
-    let upload_page_options = PageBlobClientUploadPagesOptions {
-        range: Some("bytes=0-1023".to_string()),
-        ..Default::default()
-    };
     let response = page_blob_client
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            Some(upload_page_options.clone()),
+            "bytes=0-1023".to_string(),
+            None,
         )
         .await;
     // Assert
@@ -116,7 +123,8 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            Some(upload_page_options),
+            "bytes=0-1023".to_string(),
+            None,
         )
         .await?;
 

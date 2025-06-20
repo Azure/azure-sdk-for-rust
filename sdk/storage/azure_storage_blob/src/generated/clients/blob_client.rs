@@ -670,6 +670,9 @@ impl BlobClient {
                 date::to_rfc7231(&if_unmodified_since),
             );
         }
+        if let Some(range) = options.range {
+            request.insert_header("range", range);
+        }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
@@ -690,9 +693,6 @@ impl BlobClient {
         }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(range) = options.range {
-            request.insert_header("x-ms-range", range);
         }
         if let Some(range_get_content_crc64) = options.range_get_content_crc64 {
             request.insert_header(

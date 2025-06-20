@@ -109,14 +109,14 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `length` - Number of bytes to clear. The length specified must be a modulus of 512.
+    /// * `range` - The range of bytes to clear.
     /// * `options` - Optional parameters for the request.
     pub async fn clear_page(
         &self,
-        length: u64,
+        range: String,
         options: Option<PageBlobClientClearPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>> {
-        self.client.clear_pages(length, options).await
+        self.client.clear_pages(range, options).await
     }
 
     /// Resizes a Page blob to the specified size. If the specified value is less than
@@ -142,15 +142,17 @@ impl PageBlobClient {
     /// * `data` - The contents of the page.
     /// * `content_length` - Number of bytes to use for writing to a section of the blob. The
     ///   content_length specified must be a modulus of 512.
+    /// * `range` - The range of bytes to write to.
     /// * `options` - Optional parameters for the request.
     pub async fn upload_page(
         &self,
         data: RequestContent<Bytes>,
         content_length: u64,
+        range: String,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>> {
         self.client
-            .upload_pages(data, content_length, options)
+            .upload_pages(data, content_length, range, options)
             .await
     }
 }
