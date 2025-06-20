@@ -55,25 +55,6 @@ resource storage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
     networkAcls: networkAcls
     supportsHttpsTrafficOnly: true
   }
-
-  resource blob 'blobServices' = {
-    name: 'default'
-    properties: {
-      isVersioningEnabled: true
-      lastAccessTimeTrackingPolicy: {
-        blobType: [
-          'blockBlob'
-        ]
-        enable: true
-        name: 'AccessTimeTracking'
-        trackingGranularityInDays: 1
-      }
-    }
-  }
 }
 
-func serviceEndpointSuffix(endpoint string) string =>
-  substring(endpoint, indexOf(endpoint, '.') + 1, length(endpoint) - (indexOf(endpoint, '.') + 2))
-
 output AZURE_STORAGE_ACCOUNT_NAME string = storage.name
-output PRIMARY_STORAGE_ACCOUNT_BLOB_ENDPOINT_SUFFIX string = serviceEndpointSuffix(storage.properties.primaryEndpoints.blob)
