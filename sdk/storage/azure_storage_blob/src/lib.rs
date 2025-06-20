@@ -15,7 +15,8 @@ pub use clients::*;
 
 pub mod models {
     pub use crate::generated::models::{
-        AccessTierOptional, ArchiveStatus, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        AccessTierOptional, AppendBlobClientCreateOptions, AppendBlobClientCreateResult,
+        ArchiveStatus, BlobClientDeleteOptions, BlobClientDownloadOptions,
         BlobClientDownloadResult, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
@@ -29,7 +30,11 @@ pub mod models {
         BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
         BlockList, BlockListType, BlockLookupList, CopyStatus, LeaseState, LeaseStatus,
-        ListBlobsFlatSegmentResponse, ListContainersSegmentResponse, PublicAccessType,
-        RehydratePriority, StorageServiceProperties,
+        ListBlobsFlatSegmentResponse, ListContainersSegmentResponse,
+        PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
+        PageBlobClientCreateOptions, PageBlobClientCreateResult, PageBlobClientResizeOptions,
+        PageBlobClientResizeResult, PageBlobClientUploadPagesOptions,
+        PageBlobClientUploadPagesResult, PublicAccessType, RehydratePriority,
+        StorageServiceProperties,
     };
 }
