@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::serialize::serialize_blob_tags;
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     models::{
@@ -24,6 +25,7 @@ use azure_core::{
     },
     Bytes, Result,
 };
+use std::collections::HashMap;
 use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
@@ -215,13 +217,21 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
+    /// * `tags` - Name-value pairs associated with the blob as tag. Tags are case-sensitive.
+    ///   The tag set may contain at most 10 tags.  Tag keys must be between 1 and 128 characters,
+    ///   and tag values must be between 0 and 256 characters.
+    ///   Valid tag key and value characters include: lowercase and uppercase letters, digits (0-9),
+    ///   space (' '), plus (+), minus (-), period (.), solidus (/), colon (:), equals (=), underscore (_)
     /// * `options` - Optional configuration for the request.
     pub async fn set_tags(
         &self,
-        tags: RequestContent<BlobTags>,
+        tags: HashMap<String, String>,
         options: Option<BlobClientSetTagsOptions<'_>>,
     ) -> Result<Response<()>> {
-        self.client.set_tags(tags, options).await
+        let blob_tags = serialize_blob_tags(tags);
+        self.client
+            .set_tags(RequestContent::try_from(blob_tags)?, options)
+            .await
     }
 
     /// Gets the tags on a blob.

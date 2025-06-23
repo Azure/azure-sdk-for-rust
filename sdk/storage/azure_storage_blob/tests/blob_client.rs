@@ -9,14 +9,14 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AccessTier, AccountKind, BlobClientDownloadResultHeaders,
     BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesResultHeaders,
-    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobTag, BlobTags,
-    BlockBlobClientUploadOptions, LeaseState,
+    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions,
+    LeaseState,
 };
+use azure_storage_blob::serialize::serialize_blob_tags;
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, test_blob_tag_equality,
 };
 use std::{collections::HashMap, error::Error};
-
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -289,34 +289,54 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     create_test_blob(&blob_client).await?;
 
     // Set Tags with Tags Specified
-    let blob_tag_1 = BlobTag {
-        key: Some("hello".to_string()),
-        value: Some("world".to_string()),
-    };
-    let blob_tag_2 = BlobTag {
-        key: Some("ferris".to_string()),
-        value: Some("crab".to_string()),
-    };
-    let blob_tags = BlobTags {
-        blob_tag_set: Some(vec![blob_tag_1, blob_tag_2]),
-    };
-    blob_client
-        .set_tags(RequestContent::try_from(blob_tags.clone())?, None)
-        .await?;
+    let blob_tags = HashMap::from([
+        ("hello".to_string(), "world".to_string()),
+        ("ferris".to_string(), "crab".to_string()),
+    ]);
+    blob_client.set_tags(blob_tags.clone(), None).await?;
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_body().await?;
-    assert!(test_blob_tag_equality(blob_tags, response_tags));
+    assert!(test_blob_tag_equality(
+        serialize_blob_tags(blob_tags),
+        response_tags
+    ));
 
     // Set Tags with No Tags (Clear Tags)
-    blob_client
-        .set_tags(
-            RequestContent::try_from(BlobTags {
-                blob_tag_set: Some(vec![]),
-            })?,
-            None,
-        )
-        .await?;
+    blob_client.set_tags(HashMap::new(), None).await?;
+
+    // Assert
+    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    assert!(response_tags.blob_tag_set.is_none());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_blob_tags2(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+    create_test_blob(&blob_client).await?;
+
+    // Set Tags with Tags Specified
+    let blob_tags = HashMap::from([
+        ("hello".to_string(), "world".to_string()),
+        ("ferris".to_string(), "crab".to_string()),
+    ]);
+    blob_client.set_tags(blob_tags.clone(), None).await?;
+
+    // Assert
+    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    assert!(test_blob_tag_equality(
+        serialize_blob_tags(blob_tags),
+        response_tags
+    ));
+
+    // Set Tags with No Tags (Clear Tags)
+    blob_client.set_tags(HashMap::new(), None).await?;
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_body().await?;
