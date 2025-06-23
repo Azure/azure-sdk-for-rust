@@ -236,7 +236,7 @@ impl Recording {
         let value = Alphanumeric.sample_string(&mut *rng, len);
         match prefix {
             Some(prefix) => prefix.to_string() + &value,
-            None => value.to_string(),
+            None => value,
         }
     }
     /// Removes the list of sanitizers from the recording.
