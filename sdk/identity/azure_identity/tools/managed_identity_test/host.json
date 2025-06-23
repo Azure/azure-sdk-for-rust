@@ -1,0 +1,28 @@
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "excludedTypes": "Request",
+        "isEnabled": true
+      }
+    }
+  },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[4.*, 5.0.0)"
+  },
+  "extensions": {
+    "http": {
+      "routePrefix": ""
+    }
+  },
+  "customHandler": {
+    "description": {
+      "arguments": [],
+      "defaultExecutablePath": "./target/debug/managed_identity_test_app",
+      "workingDirectory": ""
+    },
+    "enableForwardingHttpRequest": true
+  }
+}

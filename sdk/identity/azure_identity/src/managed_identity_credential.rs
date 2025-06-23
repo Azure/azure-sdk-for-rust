@@ -153,7 +153,7 @@ mod tests {
     use crate::env::Env;
     use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
     use azure_core::http::headers::Headers;
-    use azure_core::http::{Method, RawResponse, Request, StatusCode};
+    use azure_core::http::{Method, RawResponse, Request, StatusCode, Url};
     use azure_core::Bytes;
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
@@ -161,6 +161,10 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
+
+    fn imds_available() -> bool {
+        std::env::var("IDENTITY_IMDS_AVAILABLE").is_ok()
+    }
 
     async fn run_supported_source_test(
         env: Env,
@@ -315,6 +319,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn app_service_client_id_live() {
+        if std::env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
+            return;
+        }
+        let Some(id) = std::env::var("AZURE_IDENTITY_FUNCTION_NAME").ok() else {
+            panic!("no value for AZURE_IDENTITY_FUNCTION_NAME");
+        };
+        let url = format!(
+            "https://{}.azurewebsites.net/api/credential=mic",
+            id.as_str()
+        );
+        let u = Url::parse(&url).expect("valid URL");
+        let client = azure_core::http::new_http_client();
+        let req = Request::new(u, Method::Get);
+
+        let res = client
+            .execute_request(&req)
+            .await
+            .expect("request should succeed");
+        assert_eq!(res.status(), StatusCode::Ok, "request should succeed");
+    }
+
+    #[tokio::test]
     async fn app_service_object_id() {
         run_app_service_test(Some(ManagedIdentityCredentialOptions {
             user_assigned_id: Some(UserAssignedId::ObjectId("expected object ID".to_string())),
@@ -440,6 +467,68 @@ mod tests {
             ..Default::default()
         }))
         .await;
+    }
+
+    async fn run_live_imds_test(id: Option<UserAssignedId>) {
+        if !imds_available() {
+            return;
+        }
+
+        let credential = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+            user_assigned_id: id,
+            ..Default::default()
+        }))
+        .expect("credential");
+
+        let token = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect("token");
+
+        assert!(!token.token.secret().is_empty());
+        assert!(token.expires_on.unix_timestamp() > 0);
+        assert_eq!(time::UtcOffset::UTC, token.expires_on.offset());
+    }
+
+    #[tokio::test]
+    async fn imds_live() {
+        run_live_imds_test(None).await;
+    }
+
+    #[tokio::test]
+    async fn imds_live_client_id() {
+        let Some(id) = std::env::var("IDENTITY_VM_USER_ASSIGNED_MI_CLIENT_ID").ok() else {
+            assert!(
+                !imds_available(),
+                "pipeline configuration error: live IMDS environment but no value for IDENTITY_VM_USER_ASSIGNED_MI_CLIENT_ID"
+            );
+            return;
+        };
+        run_live_imds_test(Some(UserAssignedId::ClientId(id))).await;
+    }
+
+    #[tokio::test]
+    async fn imds_live_object_id() {
+        let Some(id) = std::env::var("IDENTITY_VM_USER_ASSIGNED_MI_OBJECT_ID").ok() else {
+            assert!(
+                !imds_available(),
+                "pipeline configuration error: live IMDS environment but no value for IDENTITY_VM_USER_ASSIGNED_MI_OBJECT_ID"
+            );
+            return;
+        };
+        run_live_imds_test(Some(UserAssignedId::ObjectId(id))).await;
+    }
+
+    #[tokio::test]
+    async fn imds_live_resource_id() {
+        let Some(id) = std::env::var("IDENTITY_VM_USER_ASSIGNED_MI_RESOURCE_ID").ok() else {
+            assert!(
+                !imds_available(),
+                "pipeline configuration error: live IMDS environment but no value for IDENTITY_VM_USER_ASSIGNED_MI_RESOURCE_ID"
+            );
+            return;
+        };
+        run_live_imds_test(Some(UserAssignedId::ResourceId(id))).await;
     }
 
     #[tokio::test]
