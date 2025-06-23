@@ -10,6 +10,7 @@ use crate::{
         PageBlobClientUploadPagesResult,
     },
     pipeline::StorageHeadersPolicy,
+    serialize::format_http_range,
     BlobClientOptions, PageBlobClientOptions,
 };
 use azure_core::{
@@ -109,14 +110,20 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `range` - The range of bytes to clear.
+    /// * `offset` - Start of the byte range to use for clearing a section of the blob.
+    ///   The offset specified must be a modulus of 512.
+    /// * `length` - Number of bytes to use for clearing a section of the blob.
+    ///   The length specified must be a modulus of 512.
     /// * `options` - Optional parameters for the request.
     pub async fn clear_page(
         &self,
-        range: String,
+        offset: u64,
+        length: u64,
         options: Option<PageBlobClientClearPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>> {
-        self.client.clear_pages(range, options).await
+        self.client
+            .clear_pages(format_http_range(offset, length), options)
+            .await
     }
 
     /// Resizes a Page blob to the specified size. If the specified value is less than
@@ -140,19 +147,20 @@ impl PageBlobClient {
     /// # Arguments
     ///
     /// * `data` - The contents of the page.
-    /// * `content_length` - Number of bytes to use for writing to a section of the blob. The
-    ///   content_length specified must be a modulus of 512.
-    /// * `range` - The range of bytes to write to.
+    /// * `offset` - Start of the byte range to use for writing to a section of the blob.
+    ///   The offset specified must be a modulus of 512.
+    /// * `length` - Number of bytes to use for writing to a section of the blob.
+    ///   The length specified must be a modulus of 512.
     /// * `options` - Optional parameters for the request.
     pub async fn upload_page(
         &self,
         data: RequestContent<Bytes>,
-        content_length: u64,
-        range: String,
+        offset: u64,
+        length: u64,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>> {
         self.client
-            .upload_pages(data, content_length, range, options)
+            .upload_pages(data, length, format_http_range(offset, length), options)
             .await
     }
 }

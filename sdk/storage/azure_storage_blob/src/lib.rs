@@ -10,6 +10,7 @@
 pub mod clients;
 mod generated;
 mod pipeline;
+pub mod serialize;
 
 pub use clients::*;
 
@@ -37,4 +38,5 @@ pub mod models {
         PageBlobClientUploadPagesResult, PublicAccessType, RehydratePriority,
         StorageServiceProperties,
     };
+    pub use crate::serialize::*;
 }

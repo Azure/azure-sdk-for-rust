@@ -7,6 +7,7 @@ use azure_storage_blob::models::{
     BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
     PageBlobClientCreateOptions,
 };
+use azure_storage_blob::serialize::page_blob_create_if_not_exists;
 use azure_storage_blob_test::{get_blob_name, get_container_client};
 use std::error::Error;
 
@@ -28,10 +29,7 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(BlobType::PageBlob, blob_type.unwrap());
 
     // Create If Not Exists Scenario
-    let create_options = PageBlobClientCreateOptions {
-        if_none_match: Some("*".to_string()),
-        ..Default::default()
-    };
+    let create_options = page_blob_create_if_not_exists(PageBlobClientCreateOptions::default());
     let response = page_blob_client
         .create(1024, Some(create_options.clone()))
         .await;
@@ -62,12 +60,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(
-            RequestContent::from(data.clone()),
-            512,
-            "bytes=0-511".to_string(),
-            None,
-        )
+        .upload_page(RequestContent::from(data.clone()), 0, 512, None)
         .await?;
 
     // Assert
@@ -92,17 +85,10 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(
-            RequestContent::from(data),
-            512,
-            "bytes=0-511".to_string(),
-            None,
-        )
+        .upload_page(RequestContent::from(data), 0, 512, None)
         .await?;
 
-    page_blob_client
-        .clear_page("bytes=0-511".to_string(), None)
-        .await?;
+    page_blob_client.clear_page(0, 512, None).await?;
 
     // Assert
     let response = blob_client.download(None).await?;
@@ -128,12 +114,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 1024];
     let response = page_blob_client
-        .upload_page(
-            RequestContent::from(data.clone()),
-            1024,
-            "bytes=0-1023".to_string(),
-            None,
-        )
+        .upload_page(RequestContent::from(data.clone()), 0, 1024, None)
         .await;
     // Assert
     let error = response.unwrap_err().http_status();
@@ -141,12 +122,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     page_blob_client.resize_blob(1024, None).await?;
     page_blob_client
-        .upload_page(
-            RequestContent::from(data.clone()),
-            1024,
-            "bytes=0-1023".to_string(),
-            None,
-        )
+        .upload_page(RequestContent::from(data.clone()), 0, 1024, None)
         .await?;
 
     // Truncate Blob Scenario
