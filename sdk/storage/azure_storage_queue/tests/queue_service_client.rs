@@ -3,7 +3,7 @@ use azure_core::http::{
 };
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
-use azure_storage_queue::clients::{AzureQueueStorageClientOptions, QueueServiceClient};
+use azure_storage_queue::clients::{QueueClientOptions, QueueServiceClient};
 use futures::StreamExt;
 
 use std::option::Option;
@@ -86,11 +86,7 @@ async fn test_set_queue_properties(ctx: TestContext) -> Result<()> {
     let properties_bytes = properties_xml.into_bytes();
 
     let response = queue_service_client
-        .set_properties(
-            RequestContent::from(properties_bytes),
-            "application/xml".to_string(),
-            None,
-        )
+        .set_properties(RequestContent::from(properties_bytes), None)
         .await
         .unwrap();
 
@@ -122,7 +118,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         let queue_list = response.into_body().await?;
 
         //Collect queue names from this page
-        for queue_item in &queue_list.queue_items.queues {
+        for queue_item in &queue_list.queue_items.values.unwrap_or_default() {
             if let Some(queue_name_found) = &queue_item.name {
                 all_queue_names.push(queue_name_found.clone());
             }
@@ -151,7 +147,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
 /// * `create` - An optional flag to determine whether the container should also be created.
 pub async fn get_queue_service_client(recording: &Recording) -> Result<QueueServiceClient> {
     let (options, endpoint) = recorded_test_setup(recording);
-    let queue_client_options = AzureQueueStorageClientOptions {
+    let queue_client_options = QueueClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };

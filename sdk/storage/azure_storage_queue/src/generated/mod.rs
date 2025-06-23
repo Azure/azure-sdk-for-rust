@@ -5,4 +5,4 @@
 
 pub mod clients;
 pub mod models;
-pub use clients::{AzureQueueStorageClient, AzureQueueStorageClientOptions};
+pub use clients::{QueueClient, QueueClientOptions};

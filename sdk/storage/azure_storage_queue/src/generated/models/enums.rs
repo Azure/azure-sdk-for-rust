@@ -6,9 +6,12 @@
 use azure_core::{create_enum, create_extensible_enum};
 
 create_extensible_enum!(
-    #[doc = r#"/// The status of the secondary location"#]
+    #[doc = r#"/// The geo replication status."#]
     GeoReplicationStatusType,
+    #[doc = r#"/// The geo replication is bootstrap."#]
     (Bootstrap, "bootstrap"),
+    #[doc = r#"/// The geo replication is live."#]
     (Live, "live"),
+    #[doc = r#"/// The geo replication is unavailable."#]
     (Unavailable, "unavailable")
 );

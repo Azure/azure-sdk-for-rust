@@ -10,10 +10,9 @@ use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::{
     clients::QueueClient,
     models::{
-        AzureQueueStorageMessageIdOperationGroupClientUpdateOptions,
-        AzureQueueStorageMessagesOperationGroupClientDequeueOptions,
-        AzureQueueStorageMessagesOperationGroupClientPeekOptions,
-        AzureQueueStorageQueueOperationGroupClientSetAccessPolicyOptions, QueueMessage,
+        QueueMessage, QueueMessageIdOperationGroupClientUpdateOptions,
+        QueueMessagesOperationGroupClientDequeueOptions,
+        QueueMessagesOperationGroupClientPeekOptions,
     },
 };
 
@@ -52,19 +51,16 @@ async fn send_and_update_message(
         if let Some(message) = messages.value.and_then(|msgs| msgs.first().cloned()) {
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
-                let update_option = AzureQueueStorageMessageIdOperationGroupClientUpdateOptions {
+                let message_xml_string = quick_xml::se::to_string(&QueueMessage {
+                    message_text: Some("Updated message text from Rust".to_string()),
+                });
+                let update_option = QueueMessageIdOperationGroupClientUpdateOptions {
                     // Serialize the message text as bytes for the update
-                    queue_message: Some(RequestContent::from(
-                        quick_xml::se::to_string(&QueueMessage {
-                            message_text: Some("Updated message text from Rust".to_string()),
-                        })?
-                        .into_bytes(),
-                    )),
-                    request_id: Some(message_id.clone()),
+                    queue_message: Some(RequestContent::from(message_xml_string?.into_bytes())),
                     ..Default::default()
                 };
                 let update_result = queue_client
-                    .update_message(&message_id.clone(), &pop_receipt, 1, Some(update_option))
+                    .update_message(&message_id.clone(), &pop_receipt, 50, Some(update_option))
                     .await;
                 log_operation_result(&update_result, "update_message");
             }
@@ -84,13 +80,8 @@ async fn get_and_set_access_policies(
     let properties_xml = quick_xml::se::to_string(&properties)?;
     let properties_bytes = properties_xml.into_bytes();
 
-    let set_access_policy_options =
-        AzureQueueStorageQueueOperationGroupClientSetAccessPolicyOptions {
-            list_of_signed_identifier: Some(RequestContent::from(properties_bytes)),
-            ..Default::default()
-        };
     let result = queue_client
-        .set_access_policy(Some(set_access_policy_options))
+        .set_access_policy(RequestContent::from(properties_bytes), None)
         .await;
     log_operation_result(&result, "set_access_policy");
 
@@ -107,7 +98,7 @@ async fn peek_and_receive_messages(
         .enqueue_message("Message 2 from Rust Queue SDK", None)
         .await;
 
-    let options = AzureQueueStorageMessagesOperationGroupClientPeekOptions {
+    let options = QueueMessagesOperationGroupClientPeekOptions {
         number_of_messages: Some(5),
         ..Default::default()
     };
@@ -128,7 +119,7 @@ async fn peek_and_receive_messages(
         }
     }
 
-    let options = AzureQueueStorageMessagesOperationGroupClientDequeueOptions {
+    let options = QueueMessagesOperationGroupClientDequeueOptions {
         number_of_messages: Some(5),
         ..Default::default()
     };

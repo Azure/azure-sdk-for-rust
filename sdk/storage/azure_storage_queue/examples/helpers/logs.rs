@@ -13,7 +13,13 @@ where
                 "Unable to {}, access forbidden - check credentials",
                 operation
             ),
-            _ => eprintln!("Error during {}: {}", operation, e),
+            _ => {
+                eprintln!("Error during {}: {}", operation, e);
+                if let Some(status) = e.http_status() {
+                    eprintln!("HTTP Status: {}", status);
+                }
+                eprintln!("Full Error: {:#?}", e);
+            }
         },
     }
 }

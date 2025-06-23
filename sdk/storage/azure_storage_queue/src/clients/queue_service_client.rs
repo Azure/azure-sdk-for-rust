@@ -1,31 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    generated::{
-        clients::{
-            AzureQueueStorageClient as GeneratedQueueClient, AzureQueueStorageClientOptions,
-        },
-        models::{
-            AzureQueueStorageMessageIdOperationGroupClientDeleteOptions,
-            AzureQueueStorageMessageIdOperationGroupClientUpdateOptions,
-            AzureQueueStorageMessagesOperationGroupClientClearOptions,
-            AzureQueueStorageMessagesOperationGroupClientDequeueOptions,
-            AzureQueueStorageMessagesOperationGroupClientEnqueueOptions,
-            AzureQueueStorageMessagesOperationGroupClientPeekOptions,
-            AzureQueueStorageQueueOperationGroupClientCreateOptions,
-            AzureQueueStorageQueueOperationGroupClientDeleteOptions,
-            AzureQueueStorageServiceOperationGroupClientGetPropertiesOptions,
-            AzureQueueStorageServiceOperationGroupClientListQueuesSegmentOptions,
-            DequeuedMessageItem, ListOfDequeuedMessageItem, ListOfEnqueuedMessage,
-            ListOfPeekedMessageItem, PeekedMessageItem, QueueMessage, StorageServiceProperties,
-        },
-    },
-    models::{
-        AzureQueueStorageServiceOperationGroupClientGetStatisticsOptions,
-        AzureQueueStorageServiceOperationGroupClientSetPropertiesOptions,
-        ListQueuesSegmentResponse, StorageServiceStats,
-    },
+use crate::generated::{
+    clients::{QueueClient as GeneratedQueueClient, QueueClientOptions},
+    models::*,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -68,7 +46,7 @@ impl QueueServiceClient {
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        options: Option<AzureQueueStorageClientOptions>,
+        options: Option<QueueClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
 
@@ -96,10 +74,10 @@ impl QueueServiceClient {
     pub async fn create_queue(
         &self,
         queue_name: &str,
-        options: Option<AzureQueueStorageQueueOperationGroupClientCreateOptions<'_>>,
-    ) -> Result<Response<()>> {
+        options: Option<QueueQueueOperationGroupClientCreateOptions<'_>>,
+    ) -> Result<Response<QueueQueueOperationGroupClientCreateResult>> {
         self.client
-            .get_azure_queue_storage_queue_operation_group_client()
+            .get_queue_queue_operation_group_client()
             .create(queue_name, options)
             .await
     }
@@ -121,10 +99,10 @@ impl QueueServiceClient {
     pub async fn delete_queue(
         &self,
         queue_name: &str,
-        options: Option<AzureQueueStorageQueueOperationGroupClientDeleteOptions<'_>>,
-    ) -> Result<Response<()>> {
+        options: Option<QueueQueueOperationGroupClientDeleteOptions<'_>>,
+    ) -> Result<Response<QueueQueueOperationGroupClientDeleteResult>> {
         self.client
-            .get_azure_queue_storage_queue_operation_group_client()
+            .get_queue_queue_operation_group_client()
             .delete(queue_name, options)
             .await
     }
@@ -144,10 +122,10 @@ impl QueueServiceClient {
     /// This returns properties for the entire service, not just a single queue.
     pub async fn get_properties(
         &self,
-        options: Option<AzureQueueStorageServiceOperationGroupClientGetPropertiesOptions<'_>>,
+        options: Option<QueueServiceOperationGroupClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
         self.client
-            .get_azure_queue_storage_service_operation_group_client()
+            .get_queue_service_operation_group_client()
             .get_properties(options)
             .await
     }
@@ -166,12 +144,11 @@ impl QueueServiceClient {
     pub async fn set_properties(
         &self,
         storage_service_properties: RequestContent<StorageServiceProperties>,
-        content_type: String,
-        options: Option<AzureQueueStorageServiceOperationGroupClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<()>> {
+        options: Option<QueueServiceOperationGroupClientSetPropertiesOptions<'_>>,
+    ) -> Result<Response<QueueServiceOperationGroupClientSetPropertiesResult>> {
         self.client
-            .get_azure_queue_storage_service_operation_group_client()
-            .set_properties(storage_service_properties, content_type, options)
+            .get_queue_service_operation_group_client()
+            .set_properties(storage_service_properties, options)
             .await
     }
 
@@ -188,10 +165,10 @@ impl QueueServiceClient {
     /// The `PageIterator` can be used to iterate through the results page by page.
     pub fn list_queues_segment(
         &self,
-        options: Option<AzureQueueStorageServiceOperationGroupClientListQueuesSegmentOptions<'_>>,
+        options: Option<QueueServiceOperationGroupClientListQueuesSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListQueuesSegmentResponse, XmlFormat>>> {
         self.client
-            .get_azure_queue_storage_service_operation_group_client()
+            .get_queue_service_operation_group_client()
             .list_queues_segment(options)
     }
 }

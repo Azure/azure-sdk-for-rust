@@ -1,5 +1,6 @@
 mod helpers;
 
+use azure_storage_queue::models::ListQueuesSegmentResponse;
 use helpers::endpoint::get_endpoint;
 use helpers::logs::log_operation_result;
 use helpers::random_queue_name::get_random_queue_name;
@@ -7,6 +8,8 @@ use helpers::random_queue_name::get_random_queue_name;
 use azure_core::http::RequestContent;
 use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::clients::QueueServiceClient;
+
+use futures::StreamExt;
 
 async fn get_and_set_properties(
     queue_client: &QueueServiceClient,
@@ -21,13 +24,34 @@ async fn get_and_set_properties(
     let properties_bytes = properties_xml.into_bytes();
 
     let result = queue_client
-        .set_properties(
-            RequestContent::from(properties_bytes),
-            "application/xml".to_string(),
-            None,
-        )
+        .set_properties(RequestContent::from(properties_bytes), None)
         .await;
     log_operation_result(&result, "set_properties");
+
+    Ok(())
+}
+
+async fn list_queues_segment(
+    queue_client: &QueueServiceClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let result = queue_client.list_queues_segment(None);
+    log_operation_result(&result, "list_queues_segment");
+
+    if let Ok(mut pager_response) = result {
+        while let Some(response_result) = pager_response.next().await {
+            match response_result {
+                Ok(response) => {
+                    let queue_list: ListQueuesSegmentResponse = response.into_body().await?;
+                    for queue in queue_list.queue_items.values.unwrap_or_default() {
+                        println!("Queue: {}", queue.name.unwrap_or_default());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error getting queue page: {}", e);
+                }
+            }
+        }
+    }
 
     Ok(())
 }
@@ -49,8 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     get_and_set_properties(&queue_client).await?;
 
     // List queues
-    let result = queue_client.list_queues_segment(None);
-    log_operation_result(&result, "list_queues_segment");
+    list_queues_segment(&queue_client).await?;
 
     // Cleanup
     let result = queue_client.delete_queue(&queue_name, None).await;
