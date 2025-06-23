@@ -8,7 +8,7 @@ use crate::{
     },
     value::{AmqpOrderedMap, AmqpValue},
 };
-use std::time::Duration;
+use azure_core::time::Duration;
 
 impl From<&fe2o3_amqp_types::messaging::MessageId> for AmqpMessageId {
     fn from(message_id: &fe2o3_amqp_types::messaging::MessageId) -> Self {
@@ -210,7 +210,7 @@ impl From<&fe2o3_amqp_types::messaging::Header> for AmqpMessageHeader {
         AmqpMessageHeader {
             durable: header.durable,
             priority: header.priority.into(),
-            time_to_live: header.ttl.map(|t| Duration::from_millis(t as u64)),
+            time_to_live: header.ttl.map(|t| Duration::milliseconds(t as i64)),
             first_acquirer: (header.first_acquirer),
             delivery_count: (header.delivery_count),
         }
@@ -221,7 +221,7 @@ impl From<&AmqpMessageHeader> for fe2o3_amqp_types::messaging::Header {
         fe2o3_amqp_types::messaging::Header {
             durable: header.durable,
             priority: fe2o3_amqp_types::messaging::Priority(header.priority),
-            ttl: header.time_to_live.map(|t| t.as_millis() as u32),
+            ttl: header.time_to_live.map(|t| t.whole_milliseconds() as u32),
             first_acquirer: header.first_acquirer,
             delivery_count: header.delivery_count,
         }
@@ -550,7 +550,7 @@ fn test_properties_conversion() {
             .as_millis() as i64;
 
         // Round trip time_now through milliseconds to round down from nanoseconds.
-        let time_now: SystemTime = UNIX_EPOCH + Duration::from_millis(time_now as u64);
+        let time_now: SystemTime = UNIX_EPOCH + Duration::milliseconds(time_now);
 
         let properties = AmqpMessageProperties {
             absolute_expiry_time: Some(time_now.into()),

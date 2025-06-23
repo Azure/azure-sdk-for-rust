@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_blob"
-version = "0.2.0"
+version = "0.3.0"
 description = "Microsoft Azure Blob Storage client library for Rust"
 readme = "README.md"
 authors.workspace = true
@@ -19,7 +19,6 @@ categories = ["api-bindings"]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 serde.workspace = true
-time.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
 uuid.workspace = true

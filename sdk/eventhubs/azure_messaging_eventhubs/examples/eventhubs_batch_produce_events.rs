@@ -3,7 +3,7 @@
 
 //! This sample demonstrates how to send events to all partitions using a batch sender.
 
-use azure_core::Uuid;
+use azure_core::{time::Duration, Uuid};
 use azure_identity::DefaultAzureCredential;
 use azure_messaging_eventhubs::{
     models::EventData, EventDataBatchOptions, ProducerClient, RetryOptions,
@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = ProducerClient::builder()
         .with_retry_options(RetryOptions {
-            initial_delay: std::time::Duration::from_millis(100),
+            initial_delay: Duration::milliseconds(100),
             ..Default::default()
         })
         .open(

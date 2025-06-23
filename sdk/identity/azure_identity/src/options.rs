@@ -1,11 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::env::Env;
+use crate::{
+    env::Env,
+    process::{new_executor, Executor},
+};
 use azure_core::{
     error::{ErrorKind, Result, ResultExt},
     http::{new_http_client, HttpClient, Url},
-    process::Executor,
 };
 use std::sync::Arc;
 
@@ -36,7 +38,7 @@ impl Default for TokenCredentialOptions {
             env: Env::default(),
             http_client: new_http_client(),
             authority_host,
-            executor: azure_core::process::new_executor(),
+            executor: new_executor(),
         }
     }
 }

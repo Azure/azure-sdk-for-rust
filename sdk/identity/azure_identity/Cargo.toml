@@ -1,6 +1,6 @@
 [package]
 name = "azure_identity"
-version = "0.25.0"
+version = "0.26.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure identity helper crate"
 readme = "README.md"
 authors.workspace = true
@@ -21,6 +21,7 @@ openssl = { workspace = true, optional = true }
 pin-project.workspace = true
 serde.workspace = true
 time.workspace = true
+tokio = { workspace = true, optional = true }
 tracing.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
@@ -39,7 +40,7 @@ tracing-subscriber.workspace = true
 default = ["reqwest"]
 reqwest = ["azure_core/reqwest"]
 reqwest_rustls = ["azure_core/reqwest_rustls"]
-tokio = ["azure_core/tokio"]
+tokio = ["dep:tokio", "azure_core/tokio", "tokio/process"]
 client_certificate = ["openssl"]
 
 [lints]

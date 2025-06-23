@@ -1,6 +1,6 @@
 {
   "AssetsRepo": "Azure/azure-sdk-assets",
   "AssetsRepoPrefixPath": "rust",
-  "Tag": "rust/azure_storage_47f3a930a9",
-  "TagPrefix": "rust/azure_storage"
+  "Tag": "rust/azure_storage_blob_a55c38eec2",
+  "TagPrefix": "rust/azure_storage_blob"
 }

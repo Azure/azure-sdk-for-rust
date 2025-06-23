@@ -1,5 +1,19 @@
 # Release History
 
+## 0.26.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Converted all `time::Duration` types to `azure_core::time::Duration`
+- Replaced `azure_core::process::Executor` with `azure_identity::process::Executor`.
+- Renamed `azure_core::date` module to `azure_core::time`
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.25.0 (2025-06-10)
 
 ### Bugs Fixed

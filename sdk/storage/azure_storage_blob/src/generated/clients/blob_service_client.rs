@@ -19,8 +19,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, PageIterator, PagerResult, Pipeline, RawResponse, Request,
-        RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, Pipeline, RawResponse,
+        Request, RequestContent, Response, Url, XmlFormat,
     },
     xml, Result,
 };
@@ -141,7 +141,7 @@ impl BlobServiceClient {
     pub async fn get_account_info(
         &self,
         options: Option<BlobServiceClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<BlobServiceClientGetAccountInfoResult>> {
+    ) -> Result<Response<BlobServiceClientGetAccountInfoResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -332,20 +332,17 @@ impl BlobServiceClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: Response<ListContainersSegmentResponse> =
-                        pipeline.send(&ctx, &mut request).await?.into();
+                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListContainersSegmentResponse = xml::read_xml(&bytes)?;
                     let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-                    let next_marker = res.next_marker.unwrap_or_default();
-                    Ok(if next_marker.is_empty() {
-                        PagerResult::Done { response: rsp }
-                    } else {
-                        PagerResult::More {
+                    Ok(match res.next_marker {
+                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
                             next: next_marker,
-                        }
+                        },
+                        _ => PagerResult::Done { response: rsp },
                     })
                 }
             },
@@ -363,7 +360,7 @@ impl BlobServiceClient {
         &self,
         storage_service_properties: RequestContent<StorageServiceProperties>,
         options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -390,7 +387,7 @@ impl Default for BlobServiceClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            version: String::from("2025-01-05"),
+            version: String::from("2025-11-05"),
         }
     }
 }

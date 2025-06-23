@@ -2,9 +2,10 @@
 // Licensed under the MIT License.
 
 //! Unix timestamp serde helpers.
+use crate::time::OffsetDateTime;
 use serde::{de, Deserialize, Deserializer, Serializer};
 use std::str::FromStr;
-use time::{OffsetDateTime, UtcOffset};
+use time::UtcOffset;
 
 /// Deserialize a Unix timestamp into an [`OffsetDateTime`].
 pub fn deserialize<'de, D>(deserializer: D) -> Result<OffsetDateTime, D::Error>
@@ -59,8 +60,8 @@ pub mod option {
 
 #[cfg(test)]
 mod tests {
-    use crate::date::parse_unix_time;
     use crate::json::{from_json, to_json};
+    use crate::time::parse_unix_time;
     use serde::{Deserialize, Serialize};
     use time::macros::datetime;
 
@@ -69,11 +70,10 @@ mod tests {
         #[serde(
             default,
             skip_serializing_if = "Option::is_none",
-            with = "crate::date::unix_time::option"
+            with = "crate::time::unix_time::option"
         )]
         optional_timestamp: Option<time::OffsetDateTime>,
-
-        #[serde(with = "crate::date::unix_time")]
+        #[serde(with = "crate::time::unix_time")]
         required_timestamp: time::OffsetDateTime,
     }
 

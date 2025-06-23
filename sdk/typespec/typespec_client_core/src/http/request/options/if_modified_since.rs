@@ -4,8 +4,8 @@
 #[cfg(doc)]
 use crate::http::request::Request;
 use crate::{
-    date::{self, OffsetDateTime},
     http::headers::{self, Header},
+    time::{self, OffsetDateTime},
 };
 
 /// Sets the "if-modified-since" header in a [`Request`].
@@ -24,7 +24,7 @@ impl Header for IfModifiedSince {
     }
 
     fn value(&self) -> headers::HeaderValue {
-        date::to_rfc7231(&self.0).into()
+        time::to_rfc7231(&self.0).into()
     }
 }
 

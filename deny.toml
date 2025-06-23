@@ -17,6 +17,7 @@ allow = [
     "MIT",
     # "OpenSSL",
     "Unicode-3.0",
+    "Zlib",
 ]
 
 [[licenses.clarify]]

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::recoverable_connection::RecoverableConnection;
+use super::recoverable::RecoverableConnection;
 use crate::{
     error::{ErrorKind, EventHubsError},
     models::{EventHubPartitionProperties, EventHubProperties},

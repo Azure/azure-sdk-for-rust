@@ -3,9 +3,9 @@
 
 // cspell: ignore retryable backoff
 
-use azure_core::error::Result;
+use azure_core::{error::Result, time::Duration};
 use rand::{thread_rng, Rng};
-use std::{fmt::Debug, time::Duration};
+use std::fmt::Debug;
 use tracing::{info, warn};
 
 /// Options for configuring exponential backoff retry behavior.
@@ -28,8 +28,8 @@ pub struct RetryOptions {
 impl Default for RetryOptions {
     fn default() -> Self {
         Self {
-            initial_delay: Duration::from_millis(100),
-            max_delay: Duration::from_secs(30),
+            initial_delay: Duration::milliseconds(100),
+            max_delay: Duration::seconds(30),
             max_retries: 5,
             jitter: 0.2,
         }
@@ -96,10 +96,10 @@ where
 
                 // Apply jitter to the delay
                 let jittered_delay = if options.jitter > 0.0 {
-                    let jitter_range = options.jitter * current_delay.as_secs_f64();
+                    let jitter_range = options.jitter * current_delay.as_seconds_f64();
                     let jitter_amount = thread_rng().gen_range(-jitter_range..jitter_range);
-                    let jittered_secs = current_delay.as_secs_f64() + jitter_amount;
-                    Duration::from_secs_f64(jittered_secs.max(0.001)) // Ensure we don't go negative
+                    let jittered_secs = current_delay.as_seconds_f64() + jitter_amount;
+                    Duration::seconds_f64(jittered_secs.max(0.001)) // Ensure we don't go negative
                 } else {
                     current_delay
                 };
@@ -119,7 +119,7 @@ where
                 current_retry += 1;
 
                 // Calculate the next delay with exponential backoff
-                let next_delay = current_delay.mul_f64(2.0);
+                let next_delay = current_delay.saturating_mul(2);
                 current_delay = std::cmp::min(next_delay, options.max_delay);
             }
         }
@@ -202,8 +202,8 @@ mod tests {
     async fn test_retry_exhausted() {
         let attempts = AtomicUsize::new(0);
         let options = RetryOptions {
-            initial_delay: Duration::from_millis(10),
-            max_delay: Duration::from_millis(50),
+            initial_delay: Duration::milliseconds(10),
+            max_delay: Duration::milliseconds(50),
             max_retries: 2,
             jitter: 0.0,
         };
@@ -242,8 +242,8 @@ mod tests {
                 }
             },
             &RetryOptions {
-                initial_delay: Duration::from_millis(10),
-                max_delay: Duration::from_millis(50),
+                initial_delay: Duration::milliseconds(10),
+                max_delay: Duration::milliseconds(50),
                 max_retries: 2,
                 jitter: 0.0,
             },

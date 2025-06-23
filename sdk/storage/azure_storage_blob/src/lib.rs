@@ -15,7 +15,7 @@ pub use clients::*;
 
 pub mod models {
     pub use crate::generated::models::{
-        AccessTier, ArchiveStatus, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        AccessTierOptional, ArchiveStatus, BlobClientDeleteOptions, BlobClientDownloadOptions,
         BlobClientDownloadResult, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
         BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
@@ -23,12 +23,13 @@ pub mod models {
         BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
         BlobContainerClientGetPropertiesResultHeaders,
         BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientSetMetadataOptions,
-        BlobImmutabilityPolicyMode, BlobServiceClientGetPropertiesOptions, BlobType,
+        BlobImmutabilityPolicyMode, BlobServiceClientGetPropertiesOptions,
+        BlobServiceClientListContainersSegmentOptions, BlobType,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
         BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
         BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
         BlockList, BlockListType, BlockLookupList, CopyStatus, LeaseState, LeaseStatus,
-        ListBlobsFlatSegmentResponse, PublicAccessType, RehydratePriority,
-        StorageServiceProperties,
+        ListBlobsFlatSegmentResponse, ListContainersSegmentResponse, PublicAccessType,
+        RehydratePriority, StorageServiceProperties,
     };
 }
