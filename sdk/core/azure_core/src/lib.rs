@@ -27,5 +27,17 @@ pub use typespec_client_core::{
     fmt, json, sleep, stream, time, Bytes, Uuid,
 };
 
+pub mod tracing {
+    pub use typespec_client_core::tracing::{
+        AsAny, FutureExt, Span, SpanGuard, SpanKind, SpanStatus, Tracer, TracerProvider,
+        WithContext,
+    };
+    pub mod attributes {
+        pub use typespec_client_core::tracing::attributes::{
+            AttributeArray, AttributeValue, KeyValue,
+        };
+    }
+}
+
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
