@@ -319,17 +319,22 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn app_service_client_id_live() {
+    async fn aci_client_id_live() {
         if std::env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
             return;
         }
-        let Some(id) = std::env::var("AZURE_IDENTITY_FUNCTION_NAME").ok() else {
-            panic!("no value for AZURE_IDENTITY_FUNCTION_NAME");
+        let Some(ip) = std::env::var("AZURE_IDENTITY_ACI_IP").ok() else {
+            panic!("no value for AZURE_IDENTITY_ACI_IP");
         };
-        let url = format!(
-            "https://{}.azurewebsites.net/api/credential=mic",
-            id.as_str()
-        );
+        let Some(stg) = std::env::var("AZURE_IDENTITY_STORAGE_NAME").ok() else {
+            panic!("no value for AZURE_IDENTITY_STORAGE_NAME");
+        };
+        let Some(client_id) = std::env::var("AZURE_IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID").ok()
+        else {
+            panic!("no value for AZURE_IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID");
+        };
+        let url =
+            format!("http://{ip}/api?credential=mic&client-id={client_id}&storage-name={stg}");
         let u = Url::parse(&url).expect("valid URL");
         let client = azure_core::http::new_http_client();
         let req = Request::new(u, Method::Get);
@@ -338,7 +343,7 @@ mod tests {
             .execute_request(&req)
             .await
             .expect("request should succeed");
-        assert_eq!(res.status(), StatusCode::Ok, "request should succeed");
+        assert_eq!(StatusCode::Ok, res.status());
     }
 
     #[tokio::test]

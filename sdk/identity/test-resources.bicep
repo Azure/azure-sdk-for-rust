@@ -13,9 +13,10 @@ param deployResources bool = false
 param location string = resourceGroup().location
 
 // https://learn.microsoft.com/azure/role-based-access-control/built-in-roles
-var blobReader = subscriptionResourceId(
+var acrPull = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+var storageAccountContributor = subscriptionResourceId(
   'Microsoft.Authorization/roleDefinitions',
-  '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'
+  '17d1049b-9a84-46fb-8f53-869881c3d3ab'
 )
 
 resource sa 'Microsoft.Storage/storageAccounts@2021-08-01' = if (deployResources) {
@@ -47,88 +48,39 @@ resource usermgdid 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30'
   name: baseName
 }
 
-resource blobRoleUserAssigned 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
-  scope: saUserAssigned
-  name: guid(resourceGroup().id, blobReader, usermgdid.id)
+resource acrPullContainerInstance 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
+  name: guid(resourceGroup().id, acrPull, 'containerInstance')
   properties: {
     principalId: deployResources ? usermgdid.properties.principalId : ''
     principalType: 'ServicePrincipal'
-    roleDefinitionId: blobReader
+    roleDefinitionId: acrPull
   }
+  scope: containerRegistry
 }
 
-resource blobRoleFunc 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
-  name: guid(resourceGroup().id, blobReader, 'azfunc')
+resource blobRoleUserAssigned 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployResources) {
+  scope: saUserAssigned
+  name: guid(resourceGroup().id, storageAccountContributor, usermgdid.id)
   properties: {
-    principalId: deployResources ? azfunc.identity.principalId : ''
-    roleDefinitionId: blobReader
+    principalId: deployResources ? usermgdid.properties.principalId : ''
     principalType: 'ServicePrincipal'
+    roleDefinitionId: storageAccountContributor
   }
-  scope: sa
 }
 
-resource farm 'Microsoft.Web/serverfarms@2021-03-01' = if (deployResources) {
-  kind: 'linux'
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = if (deployResources) {
   location: location
-  name: '${baseName}_asp'
+  name: uniqueString(resourceGroup().id)
   properties: {
-    reserved: true
+    adminUserEnabled: true
   }
   sku: {
-    capacity: 1
-    family: 'B'
-    name: 'B1'
-    size: 'B1'
-    tier: 'Basic'
+    name: 'Basic'
   }
 }
 
-resource azfunc 'Microsoft.Web/sites@2021-03-01' = if (deployResources) {
-  identity: {
-    type: 'SystemAssigned, UserAssigned'
-    userAssignedIdentities: {
-      '${deployResources ? usermgdid.id : ''}': {}
-    }
-  }
-  kind: 'functionapp,linux'
-  location: location
-  name: '${baseName}func'
-  properties: {
-    enabled: true
-    httpsOnly: true
-    keyVaultReferenceIdentity: 'SystemAssigned'
-    serverFarmId: farm.id
-    siteConfig: {
-      alwaysOn: true
-      appSettings: [
-        {
-          name: 'AzureWebJobsStorage'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${deployResources ? sa.name : ''};EndpointSuffix=${deployResources ? environment().suffixes.storage : ''};AccountKey=${deployResources ? sa.listKeys().keys[0].value : ''}'
-        }
-        {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~4'
-        }
-        {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'custom'
-        }
-        {
-          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${deployResources ? sa.name : ''};EndpointSuffix=${deployResources ? environment().suffixes.storage : ''};AccountKey=${deployResources ? sa.listKeys().keys[0].value : ''}'
-        }
-        {
-          name: 'WEBSITE_CONTENTSHARE'
-          value: toLower('${baseName}-func')
-        }
-      ]
-      http20Enabled: true
-      minTlsVersion: '1.2'
-    }
-  }
-}
-
-output AZURE_IDENTITY_FUNCTION_NAME string = deployResources ? azfunc.name : ''
+output AZURE_IDENTITY_ACR_LOGIN_SERVER string = deployResources ? containerRegistry.properties.loginServer : ''
+output AZURE_IDENTITY_ACR_NAME string = deployResources ? containerRegistry.name : ''
 output AZURE_IDENTITY_STORAGE_ID string = deployResources ? sa.id : ''
 output AZURE_IDENTITY_STORAGE_NAME string = deployResources ? sa.name : ''
 output AZURE_IDENTITY_STORAGE_NAME_USER_ASSIGNED string = deployResources ? saUserAssigned.name : ''

@@ -29,11 +29,17 @@ struct Params {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = std::env::var("FUNCTIONS_CUSTOMHANDLER_PORT").unwrap_or_else(|_| "8080".to_string());
-    let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port)).await?;
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
     println!("Server running on http://{}", listener.local_addr()?);
 
     let router = Router::new().route("/api", get(handle_request));
-    axum::serve(listener, router).await?;
+    axum::serve(listener, router)
+        .with_graceful_shutdown(async {
+            tokio::signal::ctrl_c()
+                .await
+                .expect("failed to handle ctrl-c");
+        })
+        .await?;
 
     Ok(())
 }
@@ -94,6 +100,6 @@ async fn test_mic(params: Params) -> Result<String, Box<dyn std::error::Error>> 
 
     match client.get_properties(None).await {
         Ok(_) => Ok("test passed".to_string()),
-        Err(e) => Err(format!("BlobServiceClient::get_properties failed: {}", e).into()),
+        Err(e) => Err(format!("BlobServiceClient::get_properties failed: {:?}", e).into()),
     }
 }

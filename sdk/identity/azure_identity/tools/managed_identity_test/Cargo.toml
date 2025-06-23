@@ -11,5 +11,5 @@ azure_storage_blob = { path = "../../../../storage/azure_storage_blob" }
 azure_core = { path = "../../../../core/azure_core" }
 tokio = { version = "1.0", features = ["full"] }
 url = "2.5"
-axum = "0.7"
+axum = "0.8"
 serde = { version = "1.0", features = ["derive"] }

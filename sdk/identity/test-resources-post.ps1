@@ -42,23 +42,33 @@ if ($CI) {
 }
 
 Write-Host "Building test app"
-pushd "$(git rev-parse --show-toplevel)/sdk/identity/azure_identity/tools/managed_identity_test"
-cargo build --release --target x86_64-unknown-linux-gnu
-Copy-Item -Path "target/release/managed_identity_test" -Destination .
+cd "$(git rev-parse --show-toplevel)/sdk/identity/azure_identity/tools/managed_identity_test"
+cargo install --path . --root .
 
-# Write-Host "Building container image"
-# $image = "$($DeploymentOutputs['AZURE_IDENTITY_ACR_LOGIN_SERVER'])/managed-id-test"
-# Set-Content -Path "$PSScriptRoot/Dockerfile" -Value @"
-# FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
-# COPY target/release/managed_identity_test .
-# CMD ["./managed_identity_test"]
-# "@
-# docker build -t $image .
-# az acr login -n $DeploymentOutputs['AZURE_IDENTITY_ACR_NAME']
-# docker push $image
+Write-Host "Building container image"
+$image = "$($DeploymentOutputs['AZURE_IDENTITY_ACR_LOGIN_SERVER'])/managed-id-test"
+Set-Content -Path Dockerfile -Value @"
+FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
+RUN apt update && apt install ca-certificates --no-install-recommends -y
+COPY bin/managed_identity_test .
+CMD ["./managed_identity_test"]
+"@
+docker build -t $image .
+az acr login -n $DeploymentOutputs['AZURE_IDENTITY_ACR_NAME']
+docker push $image
 
-$rg = $DeploymentOutputs['AZURE_IDENTITY_RESOURCE_GROUP']
+$rg = $DeploymentOutputs['IDENTITY_RESOURCE_GROUP']
 
-Write-Host "Deploying to Azure Functions"
-Get-ChildItem -Path . -Recurse | Where-Object { $_.FullName -notlike "target" } | Compress-Archive -DestinationPath func.zip -Force
-az functionapp deploy -g $rg -n $DeploymentOutputs['AZURE_IDENTITY_FUNCTION_NAME'] --src-path func.zip --type zip
+# ACI is easier to provision here than in the bicep file because the image isn't available before now
+Write-Host "Deploying Azure Container Instance"
+$aciName = "azure-identity-test"
+az container create -g $rg -n $aciName --image $image `
+  --acr-identity $($DeploymentOutputs['AZURE_IDENTITY_USER_ASSIGNED_IDENTITY']) `
+  --assign-identity $($DeploymentOutputs['AZURE_IDENTITY_USER_ASSIGNED_IDENTITY']) `
+  --cpu 1 `
+  --ip-address Public `
+  --memory 1.0 `
+  --os-type Linux `
+  -e FUNCTIONS_CUSTOMHANDLER_PORT=80
+$aciIP = az container show -g $rg -n $aciName --query ipAddress.ip --output tsv
+Write-Host "##vso[task.setvariable variable=AZURE_IDENTITY_ACI_IP;]$aciIP"
