@@ -6,13 +6,12 @@ use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
     clients::{QueueClient, QueueClientOptions},
     models::{
-        ListOfEnqueuedMessage, QueueMessage, QueueMessageIdOperationGroupClientUpdateOptions,
+        QueueMessage, QueueMessageIdOperationGroupClientUpdateOptions,
         QueueMessagesOperationGroupClientDequeueOptions,
         QueueMessagesOperationGroupClientPeekOptions,
     },
 };
 
-use quick_xml::de::from_str;
 use std::option::Option;
 
 /// Creates a new queue under the given account.
@@ -245,38 +244,21 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
     let test_result = async {
         // Send a message to the queue
         // Note: The message ID and pop receipt are required for deletion, so we need to capture them.
-        let send_message_response = queue_client
+        let enqueue_message_response = queue_client
             .enqueue_message(
                 "Example message created from Rust, ready for deletion",
                 None,
             )
             .await?;
 
-        let (_status_code, _headers, properties) = send_message_response.deconstruct();
-        let xml = properties.collect_string().await?;
-        let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml).unwrap();
-
-        // Get the first message from the vector
-        let enqueued_message = queue_messages_list
-            .items
-            .as_ref()
-            .and_then(|msgs| msgs.first())
-            .ok_or("No messages found in response")
-            .unwrap();
-
-        let pop_receipt = enqueued_message
-            .pop_receipt
-            .as_ref()
-            .ok_or("PopReceipt not found")
-            .unwrap();
-        let message_id = enqueued_message
-            .message_id
-            .as_ref()
-            .ok_or("MessageId not found")
-            .unwrap();
+        let enqueued_message = enqueue_message_response.into_body().await?.unwrap();
 
         let delete_response = queue_client
-            .delete_message(message_id, pop_receipt, None)
+            .delete_message(
+                &enqueued_message.message_id.unwrap(),
+                &enqueued_message.pop_receipt.unwrap(),
+                None,
+            )
             .await?;
         assert_successful_response(&delete_response);
         Ok::<(), azure_core::Error>(())
@@ -306,28 +288,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             .enqueue_message("Example message created from Rust, ready for update", None)
             .await?;
 
-        let (_status_code, _headers, properties) = enqueue_message_response.deconstruct();
-        let xml = properties.collect_string().await?;
-        let queue_messages_list: ListOfEnqueuedMessage = from_str(&xml).unwrap();
-
-        // Get the first message from the vector
-        let enqueued_message = queue_messages_list
-            .items
-            .as_ref()
-            .and_then(|msgs| msgs.first())
-            .ok_or("No messages found in response")
-            .unwrap();
-
-        let pop_receipt = enqueued_message
-            .pop_receipt
-            .as_ref()
-            .ok_or("PopReceipt not found")
-            .unwrap();
-        let message_id = enqueued_message
-            .message_id
-            .as_ref()
-            .ok_or("MessageId not found")
-            .unwrap();
+        let enqueued_message = enqueue_message_response.into_body().await?.unwrap();
 
         // Update the message in the queue
         let option = Some(QueueMessageIdOperationGroupClientUpdateOptions {
@@ -343,7 +304,12 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 
         // Update the message in the queue
         let update_response = queue_client
-            .update_message(message_id, pop_receipt, 10, option)
+            .update_message(
+                &enqueued_message.message_id.unwrap(),
+                &enqueued_message.pop_receipt.unwrap(),
+                10,
+                option,
+            )
             .await?;
         assert!(
             update_response.status().is_success(),

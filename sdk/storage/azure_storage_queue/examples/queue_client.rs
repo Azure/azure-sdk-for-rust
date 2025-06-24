@@ -23,11 +23,15 @@ async fn send_and_delete_message(
     let result = queue_client.enqueue_message(message, None).await;
 
     if let Ok(response) = result {
-        let messages = response.into_body().await?;
+        let message = response.into_body().await?;
 
-        if let Some(message) = messages.items.and_then(|msgs| msgs.first().cloned()) {
+        if let Some(message) = message {
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
+                println!(
+                    "Deleting message with ID: {} and pop receipt: {}",
+                    message_id, pop_receipt
+                );
                 let delete_result = queue_client
                     .delete_message(&message_id, &pop_receipt, None)
                     .await;
@@ -46,11 +50,15 @@ async fn send_and_update_message(
     let result = queue_client.enqueue_message(message, None).await;
 
     if let Ok(response) = result {
-        let messages = response.into_body().await?;
+        let message = response.into_body().await?;
 
-        if let Some(message) = messages.items.and_then(|msgs| msgs.first().cloned()) {
+        if let Some(message) = message {
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
+                println!(
+                    "Updating message with ID: {} and pop receipt: {}",
+                    message_id, pop_receipt
+                );
                 let message_xml_string = quick_xml::se::to_string(&QueueMessage {
                     message_text: Some("Updated message text from Rust".to_string()),
                 });

@@ -338,19 +338,24 @@ impl QueueClient {
         &self,
         message: &str,
         options: Option<QueueMessagesOperationGroupClientEnqueueOptions<'_>>,
-    ) -> Result<Response<ListOfEnqueuedMessage, XmlFormat>> {
+    ) -> Result<Response<Option<EnqueuedMessage>, XmlFormat>> {
         let queue_message = QueueMessage {
             message_text: Some(message.to_owned()),
         };
 
         let xml_body = xml::to_xml(&queue_message)?;
-        self.client
+
+        let response = self
+            .client
             .get_queue_messages_operation_group_client()
             .enqueue(
                 &self.queue_name,
                 RequestContent::try_from(xml_body)?,
                 options,
             )
+            .await?;
+
+        Self::extract_first_message(response, |list: &ListOfEnqueuedMessage| list.items.clone())
             .await
     }
 
@@ -442,41 +447,9 @@ impl QueueClient {
             ..options.unwrap_or_default()
         });
 
-        match self.dequeue_messages(options).await {
-            Ok(response) => {
-                // Extract the first message from the list of dequeued messages.
-                // If the list is empty, this will return None.
-
-                let status = response.status();
-                let headers = response.headers().clone();
-                let messages = response.into_body().await?;
-                if let Some(messages) = messages.items {
-                    if let Some(first_message) = messages.into_iter().next() {
-                        // Serialize the first message to XML format.
-                        // Construct a response using the serialized message as the body and the status code from the original response.
-                        let xml_body = xml::to_xml(&first_message)?;
-                        let raw_response =
-                            RawResponse::from_bytes(status, headers.clone(), xml_body);
-
-                        Ok(raw_response.into())
-                    } else {
-                        let raw_response =
-                            RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
-
-                        Ok(raw_response.into())
-                    }
-                } else {
-                    let raw_response =
-                        RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
-
-                    Ok(raw_response.into())
-                }
-            }
-            Err(e) => {
-                // Propagate other errors.
-                Err(e)
-            }
-        }
+        let response = self.dequeue_messages(options).await?;
+        Self::extract_first_message(response, |list: &ListOfDequeuedMessage| list.items.clone())
+            .await
     }
 
     /// The Dequeue operation retrieves one or more messages from the front of the queue.
@@ -528,41 +501,8 @@ impl QueueClient {
             ..options.unwrap_or_default()
         });
 
-        match self.peek_messages(options).await {
-            Ok(response) => {
-                // Extract the first message from the list of dequeued messages.
-                // If the list is empty, this will return None.
-
-                let status = response.status();
-                let headers = response.headers().clone();
-                let messages = response.into_body().await?;
-                if let Some(messages) = messages.items {
-                    if let Some(first_message) = messages.into_iter().next() {
-                        // Serialize the first message to XML format.
-                        // Construct a response using the serialized message as the body and the status code from the original response.
-                        let xml_body = xml::to_xml(&first_message)?;
-                        let raw_response =
-                            RawResponse::from_bytes(status, headers.clone(), xml_body);
-
-                        Ok(raw_response.into())
-                    } else {
-                        let raw_response =
-                            RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
-
-                        Ok(raw_response.into())
-                    }
-                } else {
-                    let raw_response =
-                        RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
-
-                    Ok(raw_response.into())
-                }
-            }
-            Err(e) => {
-                // Propagate other errors.
-                Err(e)
-            }
-        }
+        let response = self.peek_messages(options).await?;
+        Self::extract_first_message(response, |list: &ListOfPeekedMessage| list.items.clone()).await
     }
 
     /// Peeks multiple messages from the front of the queue without removing them.
@@ -636,5 +576,34 @@ impl QueueClient {
             .get_queue_queue_operation_group_client()
             .set_access_policy(&self.queue_name, queue_acl, options)
             .await
+    }
+
+    /// Helper function to extract the first message from a list response and convert it to a single message response
+    async fn extract_first_message<T, U>(
+        response: Response<T, XmlFormat>,
+        extract_fn: impl Fn(&T) -> Option<Vec<U>>,
+    ) -> Result<Response<Option<U>, XmlFormat>>
+    where
+        T: serde::de::DeserializeOwned,
+        U: serde::Serialize + Clone,
+    {
+        let status = response.status();
+        let headers = response.headers().clone();
+        let message_list = response.into_body().await?;
+
+        if let Some(messages) = extract_fn(&message_list) {
+            if let Some(first_message) = messages.into_iter().next() {
+                let xml_body = xml::to_xml(&first_message)?;
+                let raw_response = RawResponse::from_bytes(status, headers, xml_body);
+                Ok(raw_response.into())
+            } else {
+                let raw_response =
+                    RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
+                Ok(raw_response.into())
+            }
+        } else {
+            let raw_response = RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
+            Ok(raw_response.into())
+        }
     }
 }
