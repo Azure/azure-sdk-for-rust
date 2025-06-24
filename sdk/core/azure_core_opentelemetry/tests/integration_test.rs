@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::tracing::{SpanKind, TracerProvider};
-use azure_core_tracing_opentelemetry::OpenTelemetryTracerProvider;
+use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::SdkTracerProvider;
 use std::error::Error;
 use std::sync::Arc;

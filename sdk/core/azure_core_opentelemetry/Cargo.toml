@@ -1,7 +1,7 @@
 [package]
-name = "azure_core_tracing_opentelemetry"
+name = "azure_core_opentelemetry"
 version = "0.1.0"
-description = "OpenTelemetry tracing integration for the Azure SDK for Rust"
+description = "OpenTelemetry integration for the Azure SDK for Rust"
 readme = "README.md"
 authors.workspace = true
 license.workspace = true
