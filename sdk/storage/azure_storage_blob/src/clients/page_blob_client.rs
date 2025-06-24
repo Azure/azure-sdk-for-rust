@@ -110,20 +110,14 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `offset` - Start of the byte range to use for clearing a section of the blob.
-    ///   The offset specified must be a modulus of 512.
-    /// * `length` - Number of bytes to use for clearing a section of the blob.
-    ///   The length specified must be a modulus of 512.
+    /// * `range` - The range of bytes to clear. See [`azure_storage_blob::serialize::format_http_range()`](crate::serialize::format_http_range) for help with the expected String format.
     /// * `options` - Optional parameters for the request.
     pub async fn clear_page(
         &self,
-        offset: u64,
-        length: u64,
+        range: String,
         options: Option<PageBlobClientClearPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>> {
-        self.client
-            .clear_pages(format_http_range(offset, length), options)
-            .await
+        self.client.clear_pages(range, options).await
     }
 
     /// Resizes a Page blob to the specified size. If the specified value is less than
@@ -134,7 +128,7 @@ impl PageBlobClient {
     /// * `size` - Size used to resize the blob. Maximum size for a page Blob is up to 1TB. The
     ///   Page blob size must be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
-    pub async fn resize_blob(
+    pub async fn resize(
         &self,
         size: u64,
         options: Option<PageBlobClientResizeOptions<'_>>,
@@ -147,20 +141,19 @@ impl PageBlobClient {
     /// # Arguments
     ///
     /// * `data` - The contents of the page.
-    /// * `offset` - Start of the byte range to use for writing to a section of the blob.
-    ///   The offset specified must be a modulus of 512.
-    /// * `length` - Number of bytes to use for writing to a section of the blob.
-    ///   The length specified must be a modulus of 512.
+    /// * `content_length` - Number of bytes to use for writing to a section of the blob. The
+    ///   content_length specified must be a modulus of 512.
+    /// * `range` - The range of the bytes to write. See [`azure_storage_blob::serialize::format_http_range()`](crate::serialize::format_http_range) for help with the expected String format.
     /// * `options` - Optional parameters for the request.
     pub async fn upload_page(
         &self,
         data: RequestContent<Bytes>,
-        offset: u64,
-        length: u64,
+        content_length: u64,
+        range: String,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>> {
         self.client
-            .upload_pages(data, length, format_http_range(offset, length), options)
+            .upload_pages(data, content_length, range, options)
             .await
     }
 }

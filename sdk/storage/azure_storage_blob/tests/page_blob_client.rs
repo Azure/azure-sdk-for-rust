@@ -7,7 +7,7 @@ use azure_storage_blob::models::{
     BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
     PageBlobClientCreateOptions,
 };
-use azure_storage_blob::serialize::page_blob_create_if_not_exists;
+use azure_storage_blob::serialize::{format_http_range, page_blob_create_if_not_exists};
 use azure_storage_blob_test::{get_blob_name, get_container_client};
 use std::error::Error;
 
@@ -60,7 +60,12 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(RequestContent::from(data.clone()), 0, 512, None)
+        .upload_page(
+            RequestContent::from(data.clone()),
+            512,
+            format_http_range(0, 512),
+            None,
+        )
         .await?;
 
     // Assert
@@ -85,10 +90,17 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
     page_blob_client
-        .upload_page(RequestContent::from(data), 0, 512, None)
+        .upload_page(
+            RequestContent::from(data),
+            512,
+            format_http_range(0, 512),
+            None,
+        )
         .await?;
 
-    page_blob_client.clear_page(0, 512, None).await?;
+    page_blob_client
+        .clear_page(format_http_range(0, 512), None)
+        .await?;
 
     // Assert
     let response = blob_client.download(None).await?;
@@ -114,19 +126,29 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 1024];
     let response = page_blob_client
-        .upload_page(RequestContent::from(data.clone()), 0, 1024, None)
+        .upload_page(
+            RequestContent::from(data.clone()),
+            1024,
+            format_http_range(0, 1024),
+            None,
+        )
         .await;
     // Assert
     let error = response.unwrap_err().http_status();
     assert_eq!(StatusCode::RequestedRangeNotSatisfiable, error.unwrap());
 
-    page_blob_client.resize_blob(1024, None).await?;
+    page_blob_client.resize(1024, None).await?;
     page_blob_client
-        .upload_page(RequestContent::from(data.clone()), 0, 1024, None)
+        .upload_page(
+            RequestContent::from(data.clone()),
+            1024,
+            format_http_range(0, 1024),
+            None,
+        )
         .await?;
 
     // Truncate Blob Scenario
-    page_blob_client.resize_blob(512, None).await?;
+    page_blob_client.resize(512, None).await?;
     // Assert
     let response = blob_client.download(None).await?;
     let content_length = response.content_length()?;

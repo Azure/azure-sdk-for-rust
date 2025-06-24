@@ -7,10 +7,10 @@ use crate::models::PageBlobClientCreateOptions;
 ///
 /// # Arguments
 ///
-/// * `offset` - Start of the byte range to use for writing to a section of the blob. Must be aligned
-///   to a 512-byte boundary.
-/// * `length` - Number of bytes to use for writing to a section of the blob. Must be aligned
-///   to a 512-byte boundary.
+/// * `offset` - Start of the byte range to use for writing to a section of the blob.
+///   The offset specified must be a modulus of 512.
+/// * `length` - Number of bytes to use for writing to a section of the blob.
+///   The length specified must be a modulus of 512.
 pub fn format_http_range(offset: u64, length: u64) -> String {
     if offset % 512 != 0 {
         panic!("offset must be aligned to a 512-byte boundary.");
