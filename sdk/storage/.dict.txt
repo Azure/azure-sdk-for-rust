@@ -24,3 +24,5 @@ testblob1
 testblob2
 testblob3
 testblob4
+numofmessages
+peekonly
