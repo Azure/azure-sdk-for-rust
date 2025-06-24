@@ -25,15 +25,18 @@ try {
 
   $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
   # We would like to use the "hotfix" branch because that is current, but unfortunately it references System.Net.Security version 4.0.0
-  $repositoryBranch = "master"
-  $cloneCommand = "git clone $repositoryUrl --branch $repositoryBranch"
+  #  $repositoryBranch = "master"
+  $repositoryHash = "d82a86455c3459c5628bc95b25511f6e8a065598"
+  #  $cloneCommand = "git clone $repositoryUrl --branch $repositoryBranch"
+  $cloneCommand = "git clone $repositoryUrl --revision $repositoryHash"
+
 
   Write-Host "Cloning repository from $repositoryUrl..."
   Invoke-LoggedCommand $cloneCommand
 
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
-  Invoke-LoggedCommand "dotnet build -p RollForward=LatestMajor --framework net8.0"
+  Invoke-LoggedCommand "dotnet build"
   if (!$? -ne 0) {
     Write-Error "Failed to build TestAmqpBroker."
     exit 1
@@ -46,8 +49,11 @@ try {
 
   Write-Host "Starting test broker listening on ${env:TEST_BROKER_ADDRESS} ..."
 
+  # Note that we cannot use `dotnet run -f` here because the TestAmqpBroker relies on args[0] being the broker address.
+  # If we use `dotnet run -f`, the first argument is the csproj file.
+  # Instead, we use `dotnet exec` to run the compiled DLL directly.
+  # This allows us to pass the broker address as the first argument.
   Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net8.0
-
   $job = dotnet exec ./TestAmqpBroker.dll ${env:TEST_BROKER_ADDRESS} /headless &
 
   $env:TEST_BROKER_JOBID = $job.Id
