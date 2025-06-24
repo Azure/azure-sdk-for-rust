@@ -7,14 +7,13 @@ use crate::generated::models::{
     ListQueuesSegmentResponse, QueueServiceOperationGroupClientGetPropertiesOptions,
     QueueServiceOperationGroupClientGetStatisticsOptions,
     QueueServiceOperationGroupClientListQueuesSegmentOptions,
-    QueueServiceOperationGroupClientSetPropertiesOptions,
-    QueueServiceOperationGroupClientSetPropertiesResult, StorageServiceProperties,
+    QueueServiceOperationGroupClientSetPropertiesOptions, StorageServiceProperties,
     StorageServiceStats,
 };
 use azure_core::{
     http::{
-        Context, Method, PageIterator, PagerResult, Pipeline, RawResponse, Request, RequestContent,
-        Response, Url, XmlFormat,
+        Context, Method, NoFormat, PageIterator, PagerResult, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url, XmlFormat,
     },
     xml, Result,
 };
@@ -132,11 +131,19 @@ impl QueueServiceOperationGroupClient {
         }
         let version = self.version.clone();
         Ok(PageIterator::from_callback(
-            move |next_marker: Option<Url>| {
-                let url = match next_marker {
-                    Some(next_marker) => next_marker,
-                    None => first_url.clone(),
-                };
+            move |marker: Option<String>| {
+                let mut url = first_url.clone();
+                if let Some(marker) = marker {
+                    if url.query_pairs().any(|(name, _)| name.eq("marker")) {
+                        let mut new_url = url.clone();
+                        new_url
+                            .query_pairs_mut()
+                            .clear()
+                            .extend_pairs(url.query_pairs().filter(|(name, _)| name.ne("marker")));
+                        url = new_url;
+                    }
+                    url.query_pairs_mut().append_pair("marker", &marker);
+                }
                 let mut request = Request::new(url, Method::Get);
                 request.insert_header("accept", "application/xml");
                 request.insert_header("content-type", "application/xml");
@@ -147,20 +154,17 @@ impl QueueServiceOperationGroupClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: Response<ListQueuesSegmentResponse> =
-                        pipeline.send(&ctx, &mut request).await?.into();
+                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListQueuesSegmentResponse = xml::read_xml(&bytes)?;
                     let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-                    let next_marker = res.next_marker.unwrap_or_default();
-                    Ok(if next_marker.is_empty() {
-                        PagerResult::Done { response: rsp }
-                    } else {
-                        PagerResult::More {
+                    Ok(match res.next_marker {
+                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
-                            next: next_marker.parse()?,
-                        }
+                            next: next_marker,
+                        },
+                        _ => PagerResult::Done { response: rsp },
                     })
                 }
             },
@@ -178,7 +182,7 @@ impl QueueServiceOperationGroupClient {
         &self,
         storage_service_properties: RequestContent<StorageServiceProperties>,
         options: Option<QueueServiceOperationGroupClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<QueueServiceOperationGroupClientSetPropertiesResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

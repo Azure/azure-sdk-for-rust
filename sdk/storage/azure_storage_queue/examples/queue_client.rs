@@ -25,7 +25,7 @@ async fn send_and_delete_message(
     if let Ok(response) = result {
         let messages = response.into_body().await?;
 
-        if let Some(message) = messages.value.and_then(|msgs| msgs.first().cloned()) {
+        if let Some(message) = messages.items.and_then(|msgs| msgs.first().cloned()) {
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
                 let delete_result = queue_client
@@ -48,7 +48,7 @@ async fn send_and_update_message(
     if let Ok(response) = result {
         let messages = response.into_body().await?;
 
-        if let Some(message) = messages.value.and_then(|msgs| msgs.first().cloned()) {
+        if let Some(message) = messages.items.and_then(|msgs| msgs.first().cloned()) {
             if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
             {
                 let message_xml_string = quick_xml::se::to_string(&QueueMessage {
@@ -108,7 +108,7 @@ async fn peek_and_receive_messages(
 
     if let Ok(response) = result {
         let messages = response.into_body().await?;
-        if let Some(messages) = messages.value {
+        if let Some(messages) = messages.items {
             for msg in messages {
                 println!(
                     "Successfully peeked message ({}): {}",
@@ -129,7 +129,7 @@ async fn peek_and_receive_messages(
 
     if let Ok(response) = result {
         let messages = response.into_body().await?;
-        if let Some(messages) = messages.value {
+        if let Some(messages) = messages.items {
             for msg in messages {
                 println!(
                     "Successfully received message ({}): {}",

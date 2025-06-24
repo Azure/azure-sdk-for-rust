@@ -24,7 +24,7 @@ pub struct QueueClient {
     pub(crate) version: String,
 }
 
-/// Options used when creating a [`QueueClient`](QueueClient)
+/// Options used when creating a `QueueClient`
 #[derive(Clone, SafeDebug)]
 pub struct QueueClientOptions {
     /// Allows customization of the client.

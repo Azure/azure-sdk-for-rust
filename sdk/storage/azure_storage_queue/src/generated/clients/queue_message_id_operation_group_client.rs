@@ -5,12 +5,10 @@
 
 use crate::generated::models::{
     QueueMessageIdOperationGroupClientDeleteOptions,
-    QueueMessageIdOperationGroupClientDeleteResult,
     QueueMessageIdOperationGroupClientUpdateOptions,
-    QueueMessageIdOperationGroupClientUpdateResult,
 };
 use azure_core::{
-    http::{Context, Method, Pipeline, Request, Response, Url},
+    http::{Context, Method, NoFormat, Pipeline, Request, Response, Url},
     Result,
 };
 
@@ -41,7 +39,7 @@ impl QueueMessageIdOperationGroupClient {
         message_id: &str,
         pop_receipt: &str,
         options: Option<QueueMessageIdOperationGroupClientDeleteOptions<'_>>,
-    ) -> Result<Response<QueueMessageIdOperationGroupClientDeleteResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -83,7 +81,7 @@ impl QueueMessageIdOperationGroupClient {
         pop_receipt: &str,
         visibility_timeout: i32,
         options: Option<QueueMessageIdOperationGroupClientUpdateOptions<'_>>,
-    ) -> Result<Response<QueueMessageIdOperationGroupClientUpdateResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

@@ -10,7 +10,7 @@ use azure_core::{
 };
 use std::collections::HashMap;
 
-/// Options to be passed to [`QueueMessageIdOperationGroupClient::delete()`](crate::generated::clients::QueueMessageIdOperationGroupClient::delete())
+/// Options to be passed to `QueueMessageIdOperationGroupClient::delete()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueMessageIdOperationGroupClientDeleteOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -20,7 +20,7 @@ pub struct QueueMessageIdOperationGroupClientDeleteOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`QueueMessageIdOperationGroupClient::update()`](crate::generated::clients::QueueMessageIdOperationGroupClient::update())
+/// Options to be passed to `QueueMessageIdOperationGroupClient::update()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueMessageIdOperationGroupClientUpdateOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -33,7 +33,7 @@ pub struct QueueMessageIdOperationGroupClientUpdateOptions<'a> {
     pub queue_message: Option<RequestContent<QueueMessage>>,
 }
 
-/// Options to be passed to [`QueueMessagesOperationGroupClient::clear()`](crate::generated::clients::QueueMessagesOperationGroupClient::clear())
+/// Options to be passed to `QueueMessagesOperationGroupClient::clear()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueMessagesOperationGroupClientClearOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -43,7 +43,7 @@ pub struct QueueMessagesOperationGroupClientClearOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`QueueMessagesOperationGroupClient::dequeue()`](crate::generated::clients::QueueMessagesOperationGroupClient::dequeue())
+/// Options to be passed to `QueueMessagesOperationGroupClient::dequeue()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueMessagesOperationGroupClientDequeueOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -68,7 +68,7 @@ pub struct QueueMessagesOperationGroupClientDequeueOptions<'a> {
     pub visibility_timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueMessagesOperationGroupClient::enqueue()`](crate::generated::clients::QueueMessagesOperationGroupClient::enqueue())
+/// Options to be passed to `QueueMessagesOperationGroupClient::enqueue()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueMessagesOperationGroupClientEnqueueOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -91,7 +91,7 @@ pub struct QueueMessagesOperationGroupClientEnqueueOptions<'a> {
     pub visibility_timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueMessagesOperationGroupClient::peek()`](crate::generated::clients::QueueMessagesOperationGroupClient::peek())
+/// Options to be passed to `QueueMessagesOperationGroupClient::peek()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueMessagesOperationGroupClientPeekOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -107,7 +107,7 @@ pub struct QueueMessagesOperationGroupClientPeekOptions<'a> {
     pub number_of_messages: Option<i32>,
 }
 
-/// Options to be passed to [`QueueQueueOperationGroupClient::create()`](crate::generated::clients::QueueQueueOperationGroupClient::create())
+/// Options to be passed to `QueueQueueOperationGroupClient::create()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueQueueOperationGroupClientCreateOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -123,7 +123,7 @@ pub struct QueueQueueOperationGroupClientCreateOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueQueueOperationGroupClient::delete()`](crate::generated::clients::QueueQueueOperationGroupClient::delete())
+/// Options to be passed to `QueueQueueOperationGroupClient::delete()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueQueueOperationGroupClientDeleteOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -139,7 +139,7 @@ pub struct QueueQueueOperationGroupClientDeleteOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueQueueOperationGroupClient::get_access_policy()`](crate::generated::clients::QueueQueueOperationGroupClient::get_access_policy())
+/// Options to be passed to `QueueQueueOperationGroupClient::get_access_policy()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueQueueOperationGroupClientGetAccessPolicyOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -152,7 +152,7 @@ pub struct QueueQueueOperationGroupClientGetAccessPolicyOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueQueueOperationGroupClient::get_properties()`](crate::generated::clients::QueueQueueOperationGroupClient::get_properties())
+/// Options to be passed to `QueueQueueOperationGroupClient::get_properties()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueQueueOperationGroupClientGetPropertiesOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -165,7 +165,7 @@ pub struct QueueQueueOperationGroupClientGetPropertiesOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueQueueOperationGroupClient::set_access_policy()`](crate::generated::clients::QueueQueueOperationGroupClient::set_access_policy())
+/// Options to be passed to `QueueQueueOperationGroupClient::set_access_policy()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueQueueOperationGroupClientSetAccessPolicyOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -178,7 +178,7 @@ pub struct QueueQueueOperationGroupClientSetAccessPolicyOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueQueueOperationGroupClient::set_metadata()`](crate::generated::clients::QueueQueueOperationGroupClient::set_metadata())
+/// Options to be passed to `QueueQueueOperationGroupClient::set_metadata()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueQueueOperationGroupClientSetMetadataOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -194,7 +194,7 @@ pub struct QueueQueueOperationGroupClientSetMetadataOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueServiceOperationGroupClient::get_properties()`](crate::generated::clients::QueueServiceOperationGroupClient::get_properties())
+/// Options to be passed to `QueueServiceOperationGroupClient::get_properties()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceOperationGroupClientGetPropertiesOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -207,7 +207,7 @@ pub struct QueueServiceOperationGroupClientGetPropertiesOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueServiceOperationGroupClient::get_statistics()`](crate::generated::clients::QueueServiceOperationGroupClient::get_statistics())
+/// Options to be passed to `QueueServiceOperationGroupClient::get_statistics()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceOperationGroupClientGetStatisticsOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -220,7 +220,7 @@ pub struct QueueServiceOperationGroupClientGetStatisticsOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to [`QueueServiceOperationGroupClient::list_queues_segment()`](crate::generated::clients::QueueServiceOperationGroupClient::list_queues_segment())
+/// Options to be passed to `QueueServiceOperationGroupClient::list_queues_segment()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceOperationGroupClientListQueuesSegmentOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
@@ -265,7 +265,7 @@ impl QueueServiceOperationGroupClientListQueuesSegmentOptions<'_> {
     }
 }
 
-/// Options to be passed to [`QueueServiceOperationGroupClient::set_properties()`](crate::generated::clients::QueueServiceOperationGroupClient::set_properties())
+/// Options to be passed to `QueueServiceOperationGroupClient::set_properties()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceOperationGroupClientSetPropertiesOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.

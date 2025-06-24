@@ -6,7 +6,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use super::CorsRule;
+use super::{CorsRule, QueueItem};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Deserialize, Serialize)]
@@ -30,6 +30,32 @@ impl CorsCorsRule {
     {
         CorsCorsRule {
             CorsRule: to_serialize.to_owned(),
+        }
+        .serialize(serializer)
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "Queues")]
+pub(crate) struct Queue_itemsQueue {
+    #[serde(default)]
+    Queue: Vec<QueueItem>,
+}
+
+impl Queue_itemsQueue {
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<QueueItem>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Queue_itemsQueue::deserialize(deserializer)?.Queue)
+    }
+
+    pub fn wrap<S>(to_serialize: &Vec<QueueItem>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        Queue_itemsQueue {
+            Queue: to_serialize.to_owned(),
         }
         .serialize(serializer)
     }

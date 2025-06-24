@@ -109,7 +109,13 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     let queue_name = "test-service-list-queues";
     queue_service_client.create_queue(queue_name, None).await?;
 
-    let mut page_iterator = queue_service_client.list_queues_segment(None)?;
+    let options =
+        azure_storage_queue::models::QueueServiceOperationGroupClientListQueuesSegmentOptions {
+            maxresults: Some(1),
+            ..Default::default()
+        };
+
+    let mut page_iterator = queue_service_client.list_queues_segment(Some(options))?;
     let mut all_queue_names = Vec::new();
 
     // Iterate through all pages
@@ -118,7 +124,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
         let queue_list = response.into_body().await?;
 
         //Collect queue names from this page
-        for queue_item in &queue_list.queue_items.values.unwrap_or_default() {
+        for queue_item in &queue_list.queue_items {
             if let Some(queue_name_found) = &queue_item.name {
                 all_queue_names.push(queue_name_found.clone());
             }

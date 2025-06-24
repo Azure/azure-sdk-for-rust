@@ -258,7 +258,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
 
         // Get the first message from the vector
         let enqueued_message = queue_messages_list
-            .value
+            .items
             .as_ref()
             .and_then(|msgs| msgs.first())
             .ok_or("No messages found in response")
@@ -312,7 +312,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 
         // Get the first message from the vector
         let enqueued_message = queue_messages_list
-            .value
+            .items
             .as_ref()
             .and_then(|msgs| msgs.first())
             .ok_or("No messages found in response")
@@ -553,7 +553,7 @@ async fn test_dequeue_messages(ctx: TestContext) -> Result<()> {
         assert_successful_response(&response);
 
         let messages = response.into_body().await?;
-        let messages = messages.value.unwrap();
+        let messages = messages.items.unwrap();
 
         assert_eq!(
             messages.len(),
@@ -717,7 +717,7 @@ async fn peek_and_assert<'a>(
     assert_successful_response(&response);
 
     let messages = response.into_body().await?;
-    let messages = messages.value.unwrap();
+    let messages = messages.items.unwrap();
 
     assert_eq!(
         messages.len(),

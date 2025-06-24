@@ -9,8 +9,8 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        Context, Method, PageIterator, RawResponse, Request, RequestContent, Response, StatusCode,
-        Url, XmlFormat,
+        Context, Method, NoFormat, PageIterator, RawResponse, Request, RequestContent, Response,
+        StatusCode, Url, XmlFormat,
     },
     xml, Bytes, Result,
 };
@@ -75,7 +75,7 @@ impl QueueServiceClient {
         &self,
         queue_name: &str,
         options: Option<QueueQueueOperationGroupClientCreateOptions<'_>>,
-    ) -> Result<Response<QueueQueueOperationGroupClientCreateResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client
             .get_queue_queue_operation_group_client()
             .create(queue_name, options)
@@ -100,7 +100,7 @@ impl QueueServiceClient {
         &self,
         queue_name: &str,
         options: Option<QueueQueueOperationGroupClientDeleteOptions<'_>>,
-    ) -> Result<Response<QueueQueueOperationGroupClientDeleteResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client
             .get_queue_queue_operation_group_client()
             .delete(queue_name, options)
@@ -145,7 +145,7 @@ impl QueueServiceClient {
         &self,
         storage_service_properties: RequestContent<StorageServiceProperties>,
         options: Option<QueueServiceOperationGroupClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<QueueServiceOperationGroupClientSetPropertiesResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client
             .get_queue_service_operation_group_client()
             .set_properties(storage_service_properties, options)

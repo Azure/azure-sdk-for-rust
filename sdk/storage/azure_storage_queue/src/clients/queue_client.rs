@@ -9,7 +9,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        Context, Method, RawResponse, Request, RequestContent, Response, StatusCode, Url,
+        Context, Method, NoFormat, RawResponse, Request, RequestContent, Response, StatusCode, Url,
         XmlFormat,
     },
     xml, Bytes, Result,
@@ -86,7 +86,7 @@ impl QueueClient {
     pub async fn create(
         &self,
         options: Option<QueueQueueOperationGroupClientCreateOptions<'_>>,
-    ) -> Result<Response<QueueQueueOperationGroupClientCreateResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client
             .get_queue_queue_operation_group_client()
             .create(&self.queue_name, options)
@@ -106,7 +106,7 @@ impl QueueClient {
     pub async fn create_if_not_exists(
         &self,
         options: Option<QueueQueueOperationGroupClientCreateOptions<'_>>,
-    ) -> Result<Response<QueueQueueOperationGroupClientCreateResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         // Attempt to create the queue, if it already exists, this will return an error.
         match self.create(options).await {
             Ok(response) => Ok(response),
@@ -138,7 +138,7 @@ impl QueueClient {
     pub async fn delete(
         &self,
         options: Option<QueueQueueOperationGroupClientDeleteOptions<'_>>,
-    ) -> Result<Response<QueueQueueOperationGroupClientDeleteResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client
             .get_queue_queue_operation_group_client()
             .delete(&self.queue_name, options)
@@ -158,7 +158,7 @@ impl QueueClient {
     pub async fn delete_if_exists(
         &self,
         options: Option<QueueQueueOperationGroupClientDeleteOptions<'_>>,
-    ) -> Result<Response<QueueQueueOperationGroupClientDeleteResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         // Attempt to delete the queue, if it does not exist, this will return an error.
         match self.delete(options).await {
             Ok(response) => Ok(response),
@@ -238,7 +238,7 @@ impl QueueClient {
     pub async fn clear(
         &self,
         options: Option<QueueMessagesOperationGroupClientClearOptions<'_>>,
-    ) -> Result<Response<QueueMessagesOperationGroupClientClearResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         let messages_client = self.client.get_queue_messages_operation_group_client();
 
         let result = messages_client.clear(&self.queue_name, options).await?;
@@ -375,7 +375,7 @@ impl QueueClient {
         message_id: &str,
         pop_receipt: &str,
         options: Option<QueueMessageIdOperationGroupClientDeleteOptions<'_>>,
-    ) -> Result<Response<QueueMessageIdOperationGroupClientDeleteResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client
             .get_queue_message_id_operation_group_client()
             .delete(&self.queue_name, message_id, pop_receipt, options)
@@ -405,7 +405,7 @@ impl QueueClient {
         pop_receipt: &str,
         visibility_timeout: i32,
         options: Option<QueueMessageIdOperationGroupClientUpdateOptions<'_>>,
-    ) -> Result<Response<QueueMessageIdOperationGroupClientUpdateResult>> {
+    ) -> Result<Response<(), NoFormat>> {
         self.client
             .get_queue_message_id_operation_group_client()
             .update(
@@ -436,7 +436,7 @@ impl QueueClient {
     pub async fn dequeue_message(
         &self,
         options: Option<QueueMessagesOperationGroupClientDequeueOptions<'_>>,
-    ) -> Result<Response<Option<DequeuedMessageItem>, XmlFormat>> {
+    ) -> Result<Response<Option<DequeuedMessage>, XmlFormat>> {
         let options = Some(QueueMessagesOperationGroupClientDequeueOptions {
             number_of_messages: Some(1),
             ..options.unwrap_or_default()
@@ -450,7 +450,7 @@ impl QueueClient {
                 let status = response.status();
                 let headers = response.headers().clone();
                 let messages = response.into_body().await?;
-                if let Some(messages) = messages.value {
+                if let Some(messages) = messages.items {
                     if let Some(first_message) = messages.into_iter().next() {
                         // Serialize the first message to XML format.
                         // Construct a response using the serialized message as the body and the status code from the original response.
@@ -497,7 +497,7 @@ impl QueueClient {
     pub async fn dequeue_messages(
         &self,
         options: Option<QueueMessagesOperationGroupClientDequeueOptions<'_>>,
-    ) -> Result<Response<ListOfDequeuedMessageItem, XmlFormat>> {
+    ) -> Result<Response<ListOfDequeuedMessage, XmlFormat>> {
         self.client
             .get_queue_messages_operation_group_client()
             .dequeue(&self.queue_name, options)
@@ -522,7 +522,7 @@ impl QueueClient {
     pub async fn peek_message(
         &self,
         options: Option<QueueMessagesOperationGroupClientPeekOptions<'_>>,
-    ) -> Result<Response<Option<PeekedMessageItem>, XmlFormat>> {
+    ) -> Result<Response<Option<PeekedMessage>, XmlFormat>> {
         let options = Some(QueueMessagesOperationGroupClientPeekOptions {
             number_of_messages: Some(1),
             ..options.unwrap_or_default()
@@ -536,7 +536,7 @@ impl QueueClient {
                 let status = response.status();
                 let headers = response.headers().clone();
                 let messages = response.into_body().await?;
-                if let Some(messages) = messages.value {
+                if let Some(messages) = messages.items {
                     if let Some(first_message) = messages.into_iter().next() {
                         // Serialize the first message to XML format.
                         // Construct a response using the serialized message as the body and the status code from the original response.
@@ -583,7 +583,7 @@ impl QueueClient {
     pub async fn peek_messages(
         &self,
         options: Option<QueueMessagesOperationGroupClientPeekOptions<'_>>,
-    ) -> Result<Response<ListOfPeekedMessageItem, XmlFormat>> {
+    ) -> Result<Response<ListOfPeekedMessage, XmlFormat>> {
         self.client
             .get_queue_messages_operation_group_client()
             .peek(&self.queue_name, options)
@@ -630,7 +630,8 @@ impl QueueClient {
         &self,
         queue_acl: RequestContent<ListOfSignedIdentifier>,
         options: Option<QueueQueueOperationGroupClientSetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<QueueQueueOperationGroupClientSetAccessPolicyResult>> {
+        // TODO: Validate return
+    ) -> Result<Response<QueueQueueOperationGroupClientSetAccessPolicyResult, NoFormat>> {
         self.client
             .get_queue_queue_operation_group_client()
             .set_access_policy(&self.queue_name, queue_acl, options)

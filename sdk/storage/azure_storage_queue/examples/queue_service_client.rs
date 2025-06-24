@@ -34,15 +34,21 @@ async fn get_and_set_properties(
 async fn list_queues_segment(
     queue_client: &QueueServiceClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let result = queue_client.list_queues_segment(None);
+    let options =
+        azure_storage_queue::models::QueueServiceOperationGroupClientListQueuesSegmentOptions {
+            maxresults: Some(1),
+            ..Default::default()
+        };
+    let result = queue_client.list_queues_segment(Some(options));
     log_operation_result(&result, "list_queues_segment");
 
     if let Ok(mut pager_response) = result {
         while let Some(response_result) = pager_response.next().await {
+            println!("Processing next page of queues...");
             match response_result {
                 Ok(response) => {
                     let queue_list: ListQueuesSegmentResponse = response.into_body().await?;
-                    for queue in queue_list.queue_items.values.unwrap_or_default() {
+                    for queue in queue_list.queue_items {
                         println!("Queue: {}", queue.name.unwrap_or_default());
                     }
                 }
