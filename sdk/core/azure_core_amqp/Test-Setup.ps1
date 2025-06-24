@@ -36,7 +36,7 @@ try {
 
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
-  Invoke-LoggedCommand "dotnet build"
+  Invoke-LoggedCommand "dotnet build --framework net8.0"
   if (-not $?) {
     Write-Error "Failed to build TestAmqpBroker."
     exit 1
