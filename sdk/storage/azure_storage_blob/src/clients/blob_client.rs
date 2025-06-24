@@ -4,14 +4,16 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadResult,
+        BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
+        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
+        BlobClientRenewLeaseResult, BlockBlobClientCommitBlockListResult,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult,
     },
     models::{
-        AccessTierOptional, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetPropertiesOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+        AccessTierOptional, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
+        BlobClientChangeLeaseOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        BlobClientGetPropertiesOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList,
     },
@@ -210,5 +212,46 @@ impl BlobClient {
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.set_tier(tier, options).await
+    }
+
+    pub async fn acquire_lease(
+        &self,
+        options: Option<BlobClientAcquireLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>> {
+        self.client.acquire_lease(options).await
+    }
+
+    pub async fn break_lease(
+        &self,
+        options: Option<BlobClientBreakLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientBreakLeaseResult, NoFormat>> {
+        self.client.break_lease(options).await
+    }
+
+    pub async fn change_lease(
+        &self,
+        lease_id: String,
+        proposed_lease_id: String,
+        options: Option<BlobClientChangeLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientChangeLeaseResult, NoFormat>> {
+        self.client
+            .change_lease(lease_id, proposed_lease_id, options)
+            .await
+    }
+
+    pub async fn release_lease(
+        &self,
+        lease_id: String,
+        options: Option<BlobClientReleaseLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientReleaseLeaseResult, NoFormat>> {
+        self.client.release_lease(lease_id, options).await
+    }
+
+    pub async fn renew_lease(
+        &self,
+        lease_id: String,
+        options: Option<BlobClientRenewLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>> {
+        self.client.renew_lease(lease_id, options).await
     }
 }
