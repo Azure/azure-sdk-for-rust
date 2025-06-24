@@ -15,7 +15,3 @@ pub enum AttributeValue {
     String(String),
     Array(AttributeArray),
 }
-pub struct KeyValue {
-    pub key: String,
-    pub value: AttributeValue,
-}

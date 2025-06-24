@@ -22,11 +22,11 @@ async fn test_span_creation() -> Result<(), Box<dyn Error>> {
     // Add attributes to the span using individual set_attribute calls
     span.set_attribute(
         "test_key",
-        azure_core::tracing::attributes::AttributeValue::String("test_value".to_string()),
+        azure_core::tracing::AttributeValue::String("test_value".to_string()),
     )?;
     span.set_attribute(
         "service.name",
-        azure_core::tracing::attributes::AttributeValue::String("azure-test".to_string()),
+        azure_core::tracing::AttributeValue::String("azure-test".to_string()),
     )?;
 
     // End the span
@@ -64,15 +64,15 @@ async fn test_span_attributes() -> Result<(), Box<dyn Error>> {
     // Add attributes using individual set_attribute calls
     span.set_attribute(
         "service.name",
-        azure_core::tracing::attributes::AttributeValue::String("test-service".to_string()),
+        azure_core::tracing::AttributeValue::String("test-service".to_string()),
     )?;
     span.set_attribute(
         "operation.name",
-        azure_core::tracing::attributes::AttributeValue::String("test-operation".to_string()),
+        azure_core::tracing::AttributeValue::String("test-operation".to_string()),
     )?;
     span.set_attribute(
         "request.id",
-        azure_core::tracing::attributes::AttributeValue::String("req-123".to_string()),
+        azure_core::tracing::AttributeValue::String("req-123".to_string()),
     )?;
 
     // End the span

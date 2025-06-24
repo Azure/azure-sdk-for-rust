@@ -4,16 +4,13 @@
 //! Attribute conversions between typespec_client_core and OpenTelemetry.
 
 // Re-export typespec_client_core tracing attributes for convenience
-use azure_core::tracing::attributes::{
+use azure_core::tracing::{
     AttributeArray as AzureAttributeArray, AttributeValue as AzureAttributeValue,
-    KeyValue as AzureKeyValue,
 };
 
 pub(super) struct AttributeArray(AzureAttributeArray);
 
 pub(super) struct AttributeValue(pub AzureAttributeValue);
-
-pub(super) struct KeyValue(pub AzureKeyValue);
 
 impl From<bool> for AttributeValue {
     fn from(value: bool) -> Self {
@@ -60,16 +57,6 @@ impl From<Vec<u64>> for AttributeArray {
 impl From<Vec<String>> for AttributeArray {
     fn from(values: Vec<String>) -> Self {
         AttributeArray(AzureAttributeArray::String(values))
-    }
-}
-
-/// Conversion from typespec_client_core KeyValue to OpenTelemetry KeyValue
-impl From<KeyValue> for opentelemetry::KeyValue {
-    fn from(kv: KeyValue) -> Self {
-        opentelemetry::KeyValue::new(
-            kv.0.key,
-            opentelemetry::Value::from(AttributeValue(kv.0.value)),
-        )
     }
 }
 

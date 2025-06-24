@@ -28,15 +28,7 @@ pub use typespec_client_core::{
 };
 
 pub mod tracing {
-    pub use typespec_client_core::tracing::{
-        AsAny, FutureExt, Span, SpanGuard, SpanKind, SpanStatus, Tracer, TracerProvider,
-        WithContext,
-    };
-    pub mod attributes {
-        pub use typespec_client_core::tracing::attributes::{
-            AttributeArray, AttributeValue, KeyValue,
-        };
-    }
+    pub use typespec_client_core::tracing::*;
 }
 
 #[cfg(feature = "xml")]

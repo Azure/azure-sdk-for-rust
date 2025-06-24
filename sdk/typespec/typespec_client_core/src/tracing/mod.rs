@@ -16,9 +16,9 @@ use crate::http::Context;
 ///   entrypoint for distributed tracing in the SDK.
 /// - Tracer: This trait is responsible for creating spans and managing the active span.
 /// - Span: This trait represents a single unit of work in the distributed tracing system.
-///
-pub mod attributes;
-pub mod with_context;
+mod attributes;
+mod with_context;
+pub use attributes::{AttributeArray, AttributeValue};
 pub use with_context::{FutureExt, WithContext};
 
 /// The TracerProvider trait is the entrypoint for distributed tracing in the SDK.

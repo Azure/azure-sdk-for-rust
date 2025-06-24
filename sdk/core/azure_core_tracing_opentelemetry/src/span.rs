@@ -5,7 +5,7 @@
 
 use crate::attributes::AttributeValue as ConversionAttributeValue;
 use azure_core::{
-    tracing::{attributes::AttributeValue, AsAny, Span, SpanGuard, SpanStatus},
+    tracing::{AsAny, AttributeValue, Span, SpanGuard, SpanStatus},
     Result,
 };
 use opentelemetry::trace::TraceContextExt;
@@ -122,7 +122,7 @@ impl Drop for OpenTelemetrySpanGuard {
 mod tests {
     use crate::telemetry::OpenTelemetryTracerProvider;
     use azure_core::http::Context as AzureContext;
-    use azure_core::tracing::{attributes::AttributeValue, SpanKind, SpanStatus, TracerProvider};
+    use azure_core::tracing::{AttributeValue, SpanKind, SpanStatus, TracerProvider};
     use opentelemetry::trace::TraceContextExt;
     use opentelemetry::{Context, Key, KeyValue, Value};
     use opentelemetry_sdk::trace::{in_memory_exporter::InMemorySpanExporter, SdkTracerProvider};

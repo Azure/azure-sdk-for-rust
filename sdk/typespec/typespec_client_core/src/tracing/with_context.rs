@@ -6,10 +6,12 @@
 use super::Span;
 use crate::http::Context;
 use pin_project::pin_project;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::Arc;
-use std::task::{Context as TaskContext, Poll};
+use std::{
+    future::Future,
+    pin::Pin,
+    sync::Arc,
+    task::{Context as TaskContext, Poll},
+};
 
 impl<T: Sized + Future> FutureExt for T {}
 
@@ -18,15 +20,11 @@ impl<T: std::future::Future> std::future::Future for WithContext<'_, T> {
 
     fn poll(self: Pin<&mut Self>, task_cx: &mut TaskContext<'_>) -> Poll<Self::Output> {
         let this = self.project();
-        println!("Polling future with context: {:?}", this.context);
         if let Some(span) = this.context.value::<Arc<dyn Span + Send + Sync>>() {
-            println!("Setting current span: {:?}", this.context);
             let _guard = span.set_current(this.context).unwrap();
-            let res = this.inner.poll(task_cx);
-            println!("Future polled with span, result");
-            res
+
+            this.inner.poll(task_cx)
         } else {
-            println!("No span set in context, polling future without span.");
             this.inner.poll(task_cx)
         }
     }
