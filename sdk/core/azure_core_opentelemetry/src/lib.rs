@@ -9,7 +9,7 @@
 
 mod attributes;
 mod span;
-pub mod telemetry;
+mod telemetry;
 mod tracer;
 
 // Re-export the main types for convenience
