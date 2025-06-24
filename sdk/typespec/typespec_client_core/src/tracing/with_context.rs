@@ -6,11 +6,12 @@
 use super::Span;
 use crate::http::Context;
 use pin_project::pin_project;
+use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context as TaskContext, Poll};
 
-impl<T: Sized> FutureExt for T {}
+impl<T: Sized + Future> FutureExt for T {}
 
 impl<T: std::future::Future> std::future::Future for WithContext<'_, T> {
     type Output = T::Output;
@@ -33,7 +34,6 @@ impl<T: std::future::Future> std::future::Future for WithContext<'_, T> {
 
 #[pin_project]
 /// A future, that has an associated span.
-#[derive(Clone)]
 pub struct WithContext<'a, T> {
     #[pin]
     inner: T,

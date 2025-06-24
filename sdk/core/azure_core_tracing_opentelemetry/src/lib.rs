@@ -8,9 +8,8 @@
 //! enabling automatic span creation, context propagation, and telemetry collection for Azure services.
 
 mod attributes;
-//mod conventions;
+mod conventions;
 mod span;
-//mod span_future;
 pub mod telemetry;
 mod tracer;
 
