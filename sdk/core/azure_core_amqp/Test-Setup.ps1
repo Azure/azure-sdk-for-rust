@@ -33,7 +33,7 @@ try {
 
   Set-Location -Path "./azure-amqp/test/TestAmqpBroker"
 
-  Invoke-LoggedCommand "dotnet build -p RollForward=LatestMajor --framework net6.0"
+  Invoke-LoggedCommand "dotnet build -p RollForward=LatestMajor --framework net8.0"
   if (!$? -ne 0) {
     Write-Error "Failed to build TestAmqpBroker."
     exit 1
@@ -46,7 +46,7 @@ try {
 
   Write-Host "Starting test broker listening on ${env:TEST_BROKER_ADDRESS} ..."
 
-  Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net6.0
+  Set-Location -Path $WorkingDirectory/azure-amqp/bin/Debug/TestAmqpBroker/net8.0
 
   $job = dotnet exec ./TestAmqpBroker.dll ${env:TEST_BROKER_ADDRESS} /headless &
 
