@@ -9,8 +9,7 @@ use super::{
     ListBlobsIncludeItem, ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType,
     RehydratePriority,
 };
-use azure_core::time::OffsetDateTime;
-use azure_core::{fmt::SafeDebug, http::ClientMethodOptions};
+use azure_core::{fmt::SafeDebug, http::ClientMethodOptions, time::OffsetDateTime};
 use std::collections::HashMap;
 
 /// Options to be passed to `AppendBlobClient::append_block()`

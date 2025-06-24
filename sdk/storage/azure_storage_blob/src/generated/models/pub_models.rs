@@ -14,8 +14,11 @@ use super::{
     GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     QueryRequestType, QueryType, RehydratePriority,
 };
-use azure_core::time::OffsetDateTime;
-use azure_core::{base64, fmt::SafeDebug};
+use azure_core::{
+    base64::{deserialize, serialize},
+    fmt::SafeDebug,
+    time::OffsetDateTime,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -27,7 +30,7 @@ pub struct AccessPolicy {
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc3339::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub expiry: Option<OffsetDateTime>,
 
@@ -40,7 +43,7 @@ pub struct AccessPolicy {
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc3339::option"
+        with = "azure_core::time::rfc7231::option"
     )]
     pub start: Option<OffsetDateTime>,
 }
@@ -373,9 +376,9 @@ pub struct BlobPropertiesInternal {
     /// The content MD5 of the blob.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize",
+        deserialize_with = "deserialize",
         rename = "Content-MD5",
-        serialize_with = "base64::serialize",
+        serialize_with = "serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub content_md5: Option<Vec<u8>>,
@@ -582,9 +585,9 @@ pub struct Block {
     /// The base64 encoded block ID.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize",
+        deserialize_with = "deserialize",
         rename = "Name",
-        serialize_with = "base64::serialize",
+        serialize_with = "serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub name: Option<Vec<u8>>,
@@ -1376,9 +1379,9 @@ pub struct UserDelegationKey {
     /// The key as a base64 string.
     #[serde(
         default,
-        deserialize_with = "base64::deserialize",
+        deserialize_with = "deserialize",
         rename = "Value",
-        serialize_with = "base64::serialize",
+        serialize_with = "serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub value: Option<Vec<u8>>,
