@@ -3,18 +3,13 @@
 
 //! OpenTelemetry implementation of typespec_client_core tracing traits.
 
-use crate::attributes::{
-    AttributeValue as ConversionAttributeValue, KeyValue as ConversionKeyValue,
-};
+use crate::attributes::AttributeValue as ConversionAttributeValue;
 use azure_core::{
-    tracing::{
-        attributes::{AttributeValue, KeyValue},
-        AsAny, Span, SpanGuard, SpanStatus,
-    },
+    tracing::{attributes::AttributeValue, AsAny, Span, SpanGuard, SpanStatus},
     Result,
 };
 use opentelemetry::trace::TraceContextExt;
-use std::{error::Error as StdError, sync::Arc, time::SystemTime};
+use std::{error::Error as StdError, sync::Arc};
 
 /// newtype for Azure Core SpanKind to enable conversion to OpenTelemetry SpanKind
 pub(crate) struct OpenTelemetrySpanKind(pub azure_core::tracing::SpanKind);
@@ -53,23 +48,6 @@ impl Span for OpenTelemetrySpan {
 
     fn span_id(&self) -> [u8; 8] {
         self.context.span().span_context().span_id().to_bytes()
-    }
-
-    fn add_event(&self, name: &'static str, attributes: Option<Vec<KeyValue>>) -> Result<()> {
-        if let Some(attrs) = attributes {
-            let otel_attrs: Vec<opentelemetry::KeyValue> = attrs
-                .into_iter()
-                .map(|kv| ConversionKeyValue(kv).into())
-                .collect();
-            self.context
-                .span()
-                .add_event_with_timestamp(name, SystemTime::now(), otel_attrs);
-        } else {
-            self.context
-                .span()
-                .add_event_with_timestamp(name, SystemTime::now(), vec![]);
-        }
-        Ok(())
     }
 
     fn set_attribute(&self, key: &'static str, value: AttributeValue) -> Result<()> {
@@ -267,27 +245,6 @@ mod tests {
                 assert_ne!(span.parent_span_id, opentelemetry::trace::SpanId::INVALID);
                 assert_eq!(span.parent_span_id.to_bytes(), span2.span_id());
             }
-        }
-    }
-    #[test]
-    fn test_open_telemetry_span_add_event() {
-        let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
-        let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        assert!(tracer_provider.is_ok());
-        let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span = tracer.start_span("test_span", SpanKind::Internal);
-        assert!(span.add_event("test_event", None).is_ok());
-        assert!(span.end().is_ok());
-
-        let spans = otel_exporter.get_finished_spans().unwrap();
-        assert_eq!(spans.len(), 1);
-        for span in &spans {
-            println!("Span: {:?}", span);
-            assert_eq!(span.name, "test_span");
-            assert_eq!(span.status, opentelemetry::trace::Status::Unset);
-            assert_eq!(span.events.len(), 1);
-            assert_eq!(span.events[0].name, "test_event");
-            assert!(span.events[0].attributes.is_empty());
         }
     }
 

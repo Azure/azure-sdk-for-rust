@@ -109,21 +109,6 @@ pub trait Span: AsAny {
     /// Ends the current span.
     fn end(&self) -> crate::Result<()>;
 
-    /// Adds an event to the current span.
-    ///
-    /// # Arguments
-    /// - `name`: The name of the event to add.
-    /// - `attributes`: Optional attributes to associate with the event.
-    ///
-    /// # Returns
-    /// A `Result` indicating success or failure of the operation.
-    ///
-    fn add_event(
-        &self,
-        name: &'static str,
-        attributes: Option<Vec<attributes::KeyValue>>,
-    ) -> crate::Result<()>;
-
     /// Sets the status of the current span.
     /// # Arguments
     /// - `status`: The status to set for the current span.
