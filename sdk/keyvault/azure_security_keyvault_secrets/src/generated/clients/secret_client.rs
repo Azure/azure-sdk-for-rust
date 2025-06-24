@@ -19,8 +19,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, Pager, PagerResult, Pipeline, RawResponse, Request,
-        RequestContent, Response, Url,
+        ClientOptions, Context, Method, NoFormat, Pager, PagerResult, Pipeline, RawResponse,
+        Request, RequestContent, Response, Url,
     },
     json, Result,
 };
@@ -244,20 +244,17 @@ impl SecretClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: Response<ListDeletedSecretPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?.into();
+                let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-                let next_link = res.next_link.unwrap_or_default();
-                Ok(if next_link.is_empty() {
-                    PagerResult::Done { response: rsp }
-                } else {
-                    PagerResult::More {
+                Ok(match res.next_link {
+                    Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
                         next: next_link.parse()?,
-                    }
+                    },
+                    _ => PagerResult::Done { response: rsp },
                 })
             }
         }))
@@ -310,20 +307,17 @@ impl SecretClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: Response<ListSecretPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?.into();
+                let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListSecretPropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-                let next_link = res.next_link.unwrap_or_default();
-                Ok(if next_link.is_empty() {
-                    PagerResult::Done { response: rsp }
-                } else {
-                    PagerResult::More {
+                Ok(match res.next_link {
+                    Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
                         next: next_link.parse()?,
-                    }
+                    },
+                    _ => PagerResult::Done { response: rsp },
                 })
             }
         }))
@@ -379,20 +373,17 @@ impl SecretClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: Response<ListSecretPropertiesResult> =
-                    pipeline.send(&ctx, &mut request).await?.into();
+                let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListSecretPropertiesResult = json::from_json(&bytes)?;
                 let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-                let next_link = res.next_link.unwrap_or_default();
-                Ok(if next_link.is_empty() {
-                    PagerResult::Done { response: rsp }
-                } else {
-                    PagerResult::More {
+                Ok(match res.next_link {
+                    Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
                         next: next_link.parse()?,
-                    }
+                    },
+                    _ => PagerResult::Done { response: rsp },
                 })
             }
         }))
@@ -411,7 +402,7 @@ impl SecretClient {
         &self,
         secret_name: &str,
         options: Option<SecretClientPurgeDeletedSecretOptions<'_>>,
-    ) -> Result<Response<()>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

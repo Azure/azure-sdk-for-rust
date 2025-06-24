@@ -39,11 +39,12 @@ mod client {
     use typespec_client_core::{
         http::{headers::Headers, Body, RawResponse, RequestContent, Response, StatusCode},
         stream::BytesStream,
+        Bytes,
     };
 
     #[tracing::instrument(skip(body))]
     pub async fn put_binary_data(
-        body: RequestContent<()>,
+        body: RequestContent<Bytes>,
     ) -> typespec_client_core::Result<Response<()>> {
         let body: Body = body.into();
 
