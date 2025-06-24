@@ -3,9 +3,9 @@
 
 //! Distributed tracing trait definitions
 //!
-use std::sync::Arc;
-
 use crate::http::Context;
+use crate::Result;
+use std::sync::Arc;
 
 /// Overall architecture for distributed tracing in the SDK.
 ///
@@ -18,6 +18,7 @@ use crate::http::Context;
 /// - Span: This trait represents a single unit of work in the distributed tracing system.
 mod attributes;
 mod with_context;
+
 pub use attributes::{AttributeArray, AttributeValue};
 pub use with_context::{FutureExt, WithContext};
 
@@ -47,7 +48,8 @@ pub trait Tracer {
     /// # Returns
     /// An `Arc<dyn Span + Send + Sync>` representing the started span.
     ///
-    fn start_span(&self, name: &'static str, kind: SpanKind) -> Arc<dyn Span + Send + Sync>;
+    fn start_span(&self, name: &'static str, kind: SpanKind)
+        -> Result<Arc<dyn Span + Send + Sync>>;
 
     /// Starts a new span with the given type, using the current span as the parent span.
     ///
@@ -62,7 +64,7 @@ pub trait Tracer {
         &self,
         name: &'static str,
         kind: SpanKind,
-    ) -> Arc<dyn Span + Send + Sync>;
+    ) -> Result<Arc<dyn Span + Send + Sync>>;
 
     /// Starts a new child with the given name, type, and parent span.
     ///
@@ -79,7 +81,7 @@ pub trait Tracer {
         name: &'static str,
         kind: SpanKind,
         parent: Arc<dyn Span + Send + Sync>,
-    ) -> Arc<dyn Span + Send + Sync>;
+    ) -> Result<Arc<dyn Span + Send + Sync>>;
 }
 pub enum SpanStatus {
     Unset,

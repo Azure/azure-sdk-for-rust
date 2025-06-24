@@ -2,7 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::span::{OpenTelemetrySpan, OpenTelemetrySpanKind};
-use azure_core::tracing::{SpanKind, Tracer};
+use azure_core::{
+    tracing::{SpanKind, Tracer},
+    Result,
+};
 use opentelemetry::{
     global::BoxedTracer,
     trace::{TraceContextExt, Tracer as OpenTelemetryTracerTrait},
@@ -26,26 +29,26 @@ impl Tracer for OpenTelemetryTracer {
         &self,
         name: &'static str,
         kind: SpanKind,
-    ) -> Arc<dyn azure_core::tracing::Span + Send + Sync> {
+    ) -> Result<Arc<dyn azure_core::tracing::Span + Send + Sync>> {
         let span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
             .with_kind(OpenTelemetrySpanKind(kind).into());
         let context = Context::new();
         let span = self.inner.build_with_context(span_builder, &context);
 
-        OpenTelemetrySpan::new(context.with_span(span))
+        Ok(OpenTelemetrySpan::new(context.with_span(span)))
     }
 
     fn start_span_with_current(
         &self,
         name: &'static str,
         kind: SpanKind,
-    ) -> Arc<dyn azure_core::tracing::Span + Send + Sync> {
+    ) -> Result<Arc<dyn azure_core::tracing::Span + Send + Sync>> {
         let span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
             .with_kind(OpenTelemetrySpanKind(kind).into());
         let context = Context::current();
         let span = self.inner.build_with_context(span_builder, &context);
 
-        OpenTelemetrySpan::new(context.with_span(span))
+        Ok(OpenTelemetrySpan::new(context.with_span(span)))
     }
 
     fn start_span_with_parent(
@@ -53,7 +56,7 @@ impl Tracer for OpenTelemetryTracer {
         name: &'static str,
         kind: SpanKind,
         parent: Arc<dyn azure_core::tracing::Span + Send + Sync>,
-    ) -> Arc<dyn azure_core::tracing::Span + Send + Sync> {
+    ) -> Result<Arc<dyn azure_core::tracing::Span + Send + Sync>> {
         let span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
             .with_kind(OpenTelemetrySpanKind(kind).into());
 
@@ -61,12 +64,17 @@ impl Tracer for OpenTelemetryTracer {
         let context = parent
             .as_any()
             .downcast_ref::<OpenTelemetrySpan>()
-            .unwrap()
+            .ok_or_else(|| {
+                azure_core::Error::message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "Could not downcast parent span to OpenTelemetrySpan",
+                )
+            })?
             .context()
             .clone();
         let span = self.inner.build_with_context(span_builder, &context);
 
-        OpenTelemetrySpan::new(context.with_span(span))
+        Ok(OpenTelemetrySpan::new(context.with_span(span)))
     }
 }
 
@@ -83,7 +91,7 @@ mod tests {
         let noop_tracer = NoopTracerProvider::new();
         let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(noop_tracer)).unwrap();
         let tracer = otel_provider.get_tracer("test_tracer", "1.0.0");
-        let span = tracer.start_span("test_span", SpanKind::Internal);
+        let span = tracer.start_span("test_span", SpanKind::Internal).unwrap();
         assert!(span.end().is_ok());
     }
 

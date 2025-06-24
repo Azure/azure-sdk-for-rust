@@ -84,7 +84,6 @@ impl Span for OpenTelemetrySpan {
         // Create a context with the current span
         let context_guard = self.context.clone().attach();
 
-        println!("Setting current OpenTelemetry span context");
         Ok(Box::new(OpenTelemetrySpanGuard {
             _inner: context_guard,
         }))
@@ -111,10 +110,6 @@ impl SpanGuard for OpenTelemetrySpanGuard {
 impl Drop for OpenTelemetrySpanGuard {
     fn drop(&mut self) {
         // The OpenTelemetry context guard will automatically end the span when dropped.
-        println!(
-            "Dropping OpenTelemetry span guard, ending span: {:?}",
-            self._inner
-        );
     }
 }
 
@@ -145,7 +140,7 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span = tracer.start_span("test_span", SpanKind::Client);
+        let span = tracer.start_span("test_span", SpanKind::Client).unwrap();
         assert!(span.end().is_ok());
 
         let spans = otel_exporter.get_finished_spans().unwrap();
@@ -164,9 +159,10 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let parent_span = tracer.start_span("parent_span", SpanKind::Server);
-        let child_span =
-            tracer.start_span_with_parent("child_span", SpanKind::Client, parent_span.clone());
+        let parent_span = tracer.start_span("parent_span", SpanKind::Server).unwrap();
+        let child_span = tracer
+            .start_span_with_parent("child_span", SpanKind::Client, parent_span.clone())
+            .unwrap();
 
         assert!(child_span.end().is_ok());
         assert!(parent_span.end().is_ok());
@@ -192,10 +188,11 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span1 = tracer.start_span("span1", SpanKind::Internal);
-        let span2 = tracer.start_span("span2", SpanKind::Server);
-        let child_span =
-            tracer.start_span_with_parent("child_span", SpanKind::Client, span1.clone());
+        let span1 = tracer.start_span("span1", SpanKind::Internal).unwrap();
+        let span2 = tracer.start_span("span2", SpanKind::Server).unwrap();
+        let child_span = tracer
+            .start_span_with_parent("child_span", SpanKind::Client, span1.clone())
+            .unwrap();
 
         assert!(child_span.end().is_ok());
         assert!(span2.end().is_ok());
@@ -222,12 +219,14 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span1 = tracer.start_span("span1", SpanKind::Internal);
-        let span2 = tracer.start_span("span2", SpanKind::Server);
+        let span1 = tracer.start_span("span1", SpanKind::Internal).unwrap();
+        let span2 = tracer.start_span("span2", SpanKind::Server).unwrap();
         let _span_guard = span2
             .set_current(&azure_core::http::Context::new())
             .unwrap();
-        let child_span = tracer.start_span_with_current("child_span", SpanKind::Client);
+        let child_span = tracer
+            .start_span_with_current("child_span", SpanKind::Client)
+            .unwrap();
 
         assert!(child_span.end().is_ok());
         assert!(span2.end().is_ok());
@@ -254,7 +253,7 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span = tracer.start_span("test_span", SpanKind::Internal);
+        let span = tracer.start_span("test_span", SpanKind::Internal).unwrap();
 
         assert!(span
             .set_attribute("test_key", AttributeValue::String("test_value".to_string()))
@@ -280,7 +279,7 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span = tracer.start_span("test_span", SpanKind::Client);
+        let span = tracer.start_span("test_span", SpanKind::Client).unwrap();
 
         let error = Error::new(ErrorKind::NotFound, "resource not found");
         assert!(span.record_error(&error).is_ok());
@@ -309,12 +308,14 @@ mod tests {
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
 
         // Test Ok status
-        let span = tracer.start_span("test_span_ok", SpanKind::Server);
+        let span = tracer.start_span("test_span_ok", SpanKind::Server).unwrap();
         assert!(span.set_status(SpanStatus::Ok).is_ok());
         assert!(span.end().is_ok());
 
         // Test Error status
-        let span = tracer.start_span("test_span_error", SpanKind::Server);
+        let span = tracer
+            .start_span("test_span_error", SpanKind::Server)
+            .unwrap();
         assert!(span
             .set_status(SpanStatus::Error {
                 description: "test error".to_string()
@@ -354,7 +355,7 @@ mod tests {
             42
         };
 
-        let span = tracer.start_span("test_span", SpanKind::Client);
+        let span = tracer.start_span("test_span", SpanKind::Client).unwrap();
 
         let azure_context = AzureContext::new();
         let azure_context = azure_context.with_value(span.clone());
