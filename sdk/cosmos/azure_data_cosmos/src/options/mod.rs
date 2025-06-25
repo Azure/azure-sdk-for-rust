@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientMethodOptions, ClientOptions};
+use azure_core::http::{ClientMethodOptions, ClientOptions, Etag};
 
 use crate::models::ThroughputProperties;
 
@@ -71,6 +71,10 @@ pub struct ItemOptions<'a> {
     ///
     /// The default value is the consistency level set on the Cosmos DB account.
     pub consistency_level: Option<ConsistencyLevel>,
+    /// If specified, the operation will only be performed if the item matches the provided Etag.
+    ///
+    /// See [Optimistic Concurrency Control](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/database-transactions-optimistic-concurrency#optimistic-concurrency-control) for more.
+    pub if_match_etag: Option<Etag>,
     /// When this value is true, write operations will respond with the new value of the resource being written.
     ///
     /// The default for this is `false`, which reduces the network and CPU burden that comes from serializing and deserializing the response.

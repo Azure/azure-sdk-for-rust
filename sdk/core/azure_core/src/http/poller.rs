@@ -4,14 +4,13 @@
 //! Types and methods for Long-Running Operations (LROs).
 
 use crate::http::headers::Headers;
-use std::time::Duration;
-use typespec_client_core::date::OffsetDateTime;
+use typespec_client_core::time::{Duration, OffsetDateTime};
 
 /// Default retry time for long running operations if no retry-after header is present
 ///
 /// This value is the same as the default used in the Azure SDK for Python.
 /// Ref: <https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-mgmt-core/azure/mgmt/core/polling/arm_polling.py#L191>
-const DEFAULT_RETRY_TIME: Duration = Duration::from_secs(30);
+const DEFAULT_RETRY_TIME: Duration = Duration::seconds(30);
 
 /// Long-Running Operation (LRO) status.
 #[derive(Debug)]

@@ -3,8 +3,7 @@
 
 //! Date and time parsing and formatting functions.
 
-use std::time::Duration;
-pub use time::{error::ComponentRange, OffsetDateTime};
+pub use time::{error::ComponentRange, Duration, OffsetDateTime};
 use time::{
     format_description::{well_known::Rfc3339, FormatItem},
     macros::format_description,
@@ -121,22 +120,22 @@ pub fn to_last_state_change(date: &OffsetDateTime) -> String {
 
 /// Create a duration from the number of minutes.
 pub fn duration_from_minutes(minutes: u64) -> Duration {
-    Duration::from_secs(minutes * 60)
+    Duration::minutes(i64::try_from(minutes).unwrap())
 }
 
 /// Create a duration from the number of hours.
 pub fn duration_from_hours(hours: u64) -> Duration {
-    Duration::from_secs(hours * 3_600)
+    Duration::hours(i64::try_from(hours).unwrap())
 }
 
 /// Create a duration from the number of days.
 pub fn duration_from_days(days: u64) -> Duration {
-    Duration::from_secs(days * 86_400)
+    Duration::days(i64::try_from(days).unwrap())
 }
 
 /// Get the difference between two dates.
 pub fn diff(first: OffsetDateTime, second: OffsetDateTime) -> Duration {
-    (first - second).unsigned_abs()
+    (first - second).abs()
 }
 
 #[cfg(test)]
@@ -148,11 +147,11 @@ mod tests {
 
     #[derive(Serialize, Deserialize)]
     struct ExampleState {
-        #[serde(with = "crate::date::rfc3339")]
+        #[serde(with = "crate::time::rfc3339")]
         created_time: time::OffsetDateTime,
 
         // Note: Must specify "default" in serde options when using "with"
-        #[serde(default, with = "crate::date::rfc3339::option")]
+        #[serde(default, with = "crate::time::rfc3339::option")]
         deleted_time: Option<time::OffsetDateTime>,
     }
 

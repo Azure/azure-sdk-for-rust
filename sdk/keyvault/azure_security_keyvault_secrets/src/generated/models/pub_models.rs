@@ -40,7 +40,7 @@ pub struct DeletedSecret {
         default,
         rename = "deletedDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
 
@@ -66,7 +66,7 @@ pub struct DeletedSecret {
         default,
         rename = "scheduledPurgeDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
@@ -96,7 +96,7 @@ pub struct DeletedSecretProperties {
         default,
         rename = "deletedDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub deleted_date: Option<OffsetDateTime>,
 
@@ -117,7 +117,7 @@ pub struct DeletedSecretProperties {
         default,
         rename = "scheduledPurgeDate",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub scheduled_purge_date: Option<OffsetDateTime>,
 
@@ -208,7 +208,7 @@ pub struct SecretAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub created: Option<OffsetDateTime>,
 
@@ -221,7 +221,7 @@ pub struct SecretAttributes {
         default,
         rename = "exp",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub expires: Option<OffsetDateTime>,
 
@@ -230,7 +230,7 @@ pub struct SecretAttributes {
         default,
         rename = "nbf",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub not_before: Option<OffsetDateTime>,
 
@@ -248,7 +248,7 @@ pub struct SecretAttributes {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::date::unix_time::option"
+        with = "azure_core::time::unix_time::option"
     )]
     pub updated: Option<OffsetDateTime>,
 }

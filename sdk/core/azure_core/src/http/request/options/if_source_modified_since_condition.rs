@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::{
-    date,
     http::headers::{self, Header, HeaderName},
+    time,
 };
-use typespec_client_core::date::OffsetDateTime;
+use typespec_client_core::time::OffsetDateTime;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IfSourceModifiedSinceCondition {
@@ -24,7 +24,7 @@ impl Header for IfSourceModifiedSinceCondition {
     fn value(&self) -> headers::HeaderValue {
         match self {
             IfSourceModifiedSinceCondition::Modified(date)
-            | IfSourceModifiedSinceCondition::Unmodified(date) => date::to_rfc7231(date).into(),
+            | IfSourceModifiedSinceCondition::Unmodified(date) => time::to_rfc7231(date).into(),
         }
     }
 }

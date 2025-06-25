@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::RetryPolicy;
-use std::time::Duration;
+use crate::time::Duration;
 
 /// Retry policy with exponential back-off.
 ///
@@ -27,10 +27,10 @@ impl ExponentialRetryPolicy {
         max_delay: Duration,
     ) -> Self {
         Self {
-            initial_delay: initial_delay.max(Duration::from_millis(1)),
+            initial_delay: initial_delay.max(Duration::milliseconds(1)),
             max_retries,
             max_elapsed,
-            max_delay: max_delay.max(Duration::from_secs(1)),
+            max_delay: max_delay.max(Duration::seconds(1)),
         }
     }
 }
@@ -41,10 +41,15 @@ impl RetryPolicy for ExponentialRetryPolicy {
     }
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
-        let sleep_ms = self.initial_delay.as_millis() as u64 * 2u64.pow(retry_count)
+        let sleep_ms = self.initial_delay.whole_milliseconds() as u64 * 2u64.pow(retry_count)
             + u64::from(rand::random::<u8>());
-        let sleep_ms = sleep_ms.min(self.max_delay.as_millis().try_into().unwrap_or(u64::MAX));
-        Duration::from_millis(sleep_ms)
+        let sleep_ms = sleep_ms.min(
+            self.max_delay
+                .whole_milliseconds()
+                .try_into()
+                .unwrap_or(u64::MAX),
+        );
+        Duration::milliseconds(sleep_ms as i64)
     }
 }
 
@@ -63,7 +68,7 @@ mod tests {
             options.max_delay,
         );
 
-        let mut elapsed_time = Duration::from_secs(0);
+        let mut elapsed_time = Duration::seconds(0);
         let mut retry_count = 0;
         let mut durations = vec![];
         while !policy.is_expired(elapsed_time, retry_count) {
@@ -75,7 +80,7 @@ mod tests {
 
         let actual = durations
             .into_iter()
-            .map(|d| d.as_secs())
+            .map(|d| d.whole_seconds())
             .collect::<Vec<_>>();
         let expected = &[0, 0, 1, 3, 6, 12, 25, 30];
         assert_eq!(

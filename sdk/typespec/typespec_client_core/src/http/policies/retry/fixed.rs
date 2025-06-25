@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::time::Duration;
+use crate::time::Duration;
 
 /// Retry policy with a fixed back-off.
 ///
@@ -19,7 +19,7 @@ pub struct FixedRetryPolicy {
 impl FixedRetryPolicy {
     pub(crate) fn new(delay: Duration, max_retries: u32, max_elapsed: Duration) -> Self {
         Self {
-            delay: delay.max(Duration::from_millis(10)),
+            delay: delay.max(Duration::milliseconds(10)),
             max_retries,
             max_elapsed,
         }
@@ -32,7 +32,7 @@ impl super::RetryPolicy for FixedRetryPolicy {
     }
 
     fn sleep_duration(&self, _retry_count: u32) -> Duration {
-        let sleep_ms = self.delay.as_millis() as u64 + u64::from(rand::random::<u8>());
-        Duration::from_millis(sleep_ms)
+        let sleep_ms = self.delay.whole_milliseconds() as u64 + u64::from(rand::random::<u8>());
+        Duration::milliseconds(sleep_ms as i64)
     }
 }

@@ -34,10 +34,12 @@ We guarantee that all client instance methods are thread-safe and independent of
 ### Additional concepts
 
 <!-- CLIENT COMMON BAR -->
+
 [Client options](#configuring-service-clients-using-clientoptions) |
 [Accessing the response](#accessing-http-response-details-using-responset) |
 [Handling Errors Results](#handling-errors-results) |
 [Consuming Service Methods Returning `Pager<T>`](#consuming-service-methods-returning-pagert)
+
 <!-- CLIENT COMMON BAR -->
 
 ## Features
@@ -243,6 +245,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+### Replacing the async runtime
+
+Internally, the Azure SDK uses either the `tokio` async runtime (with the `tokio` feature), or it implements asynchronous functionality using functions in the `std` namespace.
+
+If your application uses a different asynchronous runtime, you can replace the asynchronous runtime used for internal functions by providing your own implementation of the `azure_core::async_runtime::AsyncRuntime` trait.
+
+You provide the implementation by calling the `set_async_runtime()` API:
+
+```rust no_run
+use azure_core::{async_runtime::{
+     set_async_runtime, AsyncRuntime, TaskFuture, SpawnedTask},
+     time::Duration};
+use std::sync::Arc;
+use futures::FutureExt;
+
+struct CustomRuntime;
+
+impl AsyncRuntime for CustomRuntime {
+    fn spawn(&self, f: TaskFuture) -> SpawnedTask {
+      unimplemented!("Custom spawn not implemented");
+    }
+    fn sleep(&self, duration: Duration) -> TaskFuture {
+      unimplemented!("Custom sleep not implemented");
+    }
+  }
+
+  set_async_runtime(Arc::new(CustomRuntime)).expect("Failed to set async runtime");
+```
+
+There can only be one async runtime set in a given process, so attempts to set the async runtime multiple times will fail.
 
 ## Troubleshooting
 
