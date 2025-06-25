@@ -4,7 +4,7 @@
 use crate::{
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
     models::{
-        format_http_range, PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
+        PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
         PageBlobClientCreateOptions, PageBlobClientCreateResult, PageBlobClientResizeOptions,
         PageBlobClientResizeResult, PageBlobClientUploadPagesOptions,
         PageBlobClientUploadPagesResult,
@@ -109,7 +109,7 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `range` - The range of bytes to clear. See [`azure_storage_blob::models::format_http_range()`](crate::models::format_http_range) for help with the expected String format.
+    /// * `range` - The range of bytes to clear. See [`azure_storage_blob::format_http_range()`](crate::PageBlobClientExt::format_http_range) for help with the expected String format.
     /// * `options` - Optional parameters for the request.
     pub async fn clear_page(
         &self,

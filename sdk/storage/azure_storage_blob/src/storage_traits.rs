@@ -2,7 +2,11 @@
 // Licensed under the MIT License.
 
 use crate::models::PageBlobClientCreateOptions;
+use crate::PageBlobClient;
 
+pub trait PageBlobClientExt {
+    fn format_http_range(offset: u64, length: u64) -> String;
+}
 /// Takes in an offset and a length and returns the HTTP range in string format.
 ///
 /// # Arguments
@@ -11,16 +15,18 @@ use crate::models::PageBlobClientCreateOptions;
 ///   The offset specified must be a modulus of 512.
 /// * `length` - Number of bytes to use for writing to a section of the blob.
 ///   The length specified must be a modulus of 512.
-pub fn format_http_range(offset: u64, length: u64) -> String {
-    if offset % 512 != 0 {
-        panic!("offset must be aligned to a 512-byte boundary.");
+impl PageBlobClientExt for PageBlobClient {
+    fn format_http_range(offset: u64, length: u64) -> String {
+        if offset % 512 != 0 {
+            panic!("offset must be aligned to a 512-byte boundary.");
+        }
+        if length % 512 != 0 {
+            panic!("length must be aligned to a 512-byte boundary.");
+        }
+        let end_range = offset + length - 1;
+        let content_range = format!("bytes={}-{}", offset, end_range);
+        content_range
     }
-    if length % 512 != 0 {
-        panic!("length must be aligned to a 512-byte boundary.");
-    }
-    let end_range = offset + length - 1;
-    let content_range = format!("bytes={}-{}", offset, end_range);
-    content_range
 }
 
 pub trait PageBlobClientCreateOptionsExt {

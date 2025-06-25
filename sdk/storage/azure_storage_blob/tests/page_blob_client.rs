@@ -3,9 +3,12 @@
 
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::models::{
-    format_http_range, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
-    BlobType, PageBlobClientCreateOptions, PageBlobClientCreateOptionsExt,
+use azure_storage_blob::{
+    models::{
+        BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
+        PageBlobClientCreateOptions,
+    },
+    PageBlobClient, PageBlobClientCreateOptionsExt, PageBlobClientExt,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client};
 use std::error::Error;
@@ -13,6 +16,7 @@ use std::error::Error;
 #[recorded::test]
 async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
+
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
@@ -62,7 +66,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             512,
-            format_http_range(0, 512),
+            PageBlobClient::format_http_range(0, 512),
             None,
         )
         .await?;
@@ -92,13 +96,13 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data),
             512,
-            format_http_range(0, 512),
+            PageBlobClient::format_http_range(0, 512),
             None,
         )
         .await?;
 
     page_blob_client
-        .clear_page(format_http_range(0, 512), None)
+        .clear_page(PageBlobClient::format_http_range(0, 512), None)
         .await?;
 
     // Assert
@@ -128,7 +132,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            format_http_range(0, 1024),
+            PageBlobClient::format_http_range(0, 1024),
             None,
         )
         .await;
@@ -141,7 +145,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            format_http_range(0, 1024),
+            PageBlobClient::format_http_range(0, 1024),
             None,
         )
         .await?;
