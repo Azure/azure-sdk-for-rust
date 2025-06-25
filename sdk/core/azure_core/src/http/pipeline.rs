@@ -48,17 +48,14 @@ impl Pipeline {
         let mut per_call_policies = per_call_policies.clone();
         push_unique(&mut per_call_policies, ClientRequestIdPolicy::default());
 
-        let user_agent = options
-            .user_agent
-            .as_ref()
-            .map_or_else(Default::default, Clone::clone);
+        let (user_agent, options) = options.deconstruct();
         if !user_agent.disabled {
             let telemetry_policy = UserAgentPolicy::new(crate_name, crate_version, &user_agent);
             push_unique(&mut per_call_policies, telemetry_policy);
         }
 
         Self(http::Pipeline::new(
-            options.into(),
+            options,
             per_call_policies,
             per_try_policies,
         ))

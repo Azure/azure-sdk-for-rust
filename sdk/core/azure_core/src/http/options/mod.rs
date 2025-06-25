@@ -29,13 +29,20 @@ pub struct ClientOptions {
     pub user_agent: Option<UserAgentOptions>,
 }
 
-impl From<ClientOptions> for typespec_client_core::http::ClientOptions {
-    fn from(value: ClientOptions) -> Self {
-        Self {
-            per_call_policies: value.per_call_policies,
-            per_try_policies: value.per_try_policies,
-            retry: value.retry,
-            transport: value.transport,
-        }
+impl ClientOptions {
+    /// Efficiently deconstructs into owned [`typespec_client_core::http::ClientOptions`] as well as unwrapped or default Azure-specific options.
+    ///
+    /// If instead we implemented [`Into`], we'd have to clone Azure-specific options instead of moving memory of [`Some`] values.
+    pub(in crate::http) fn deconstruct(
+        self,
+    ) -> (UserAgentOptions, typespec_client_core::http::ClientOptions) {
+        let options = typespec_client_core::http::ClientOptions {
+            per_call_policies: self.per_call_policies,
+            per_try_policies: self.per_try_policies,
+            retry: self.retry,
+            transport: self.transport,
+        };
+
+        (self.user_agent.unwrap_or_default(), options)
     }
 }
