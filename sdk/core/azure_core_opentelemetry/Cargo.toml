@@ -22,9 +22,13 @@ tracing.workspace = true
 typespec_client_core.workspace = true
 
 [dev-dependencies]
+async-trait.workspace = true
+azure_core_test = { workspace = true, features = ["tracing"] }
+azure_core_test_macros.workspace = true
 opentelemetry_sdk = { version = "0.30", features = ["testing"] }
 tokio.workspace = true
 tracing-subscriber.workspace = true
+url.workspace = true
 
 [lints]
 workspace = true

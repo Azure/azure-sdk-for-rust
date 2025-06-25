@@ -206,14 +206,18 @@ dependencies = [
 name = "azure_core_opentelemetry"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "azure_core",
+ "azure_core_test",
+ "azure_core_test_macros",
  "log",
- "opentelemetry",
- "opentelemetry_sdk",
+ "opentelemetry 0.30.0",
+ "opentelemetry_sdk 0.30.0",
  "tokio",
  "tracing",
  "tracing-subscriber",
  "typespec_client_core",
+ "url",
 ]
 
 [[package]]
