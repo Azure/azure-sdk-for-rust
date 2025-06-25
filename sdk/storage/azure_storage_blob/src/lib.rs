@@ -9,34 +9,6 @@
 
 pub mod clients;
 mod generated;
+pub mod models;
 mod pipeline;
-pub mod serialize;
-
 pub use clients::*;
-
-pub mod models {
-    pub use crate::generated::models::{
-        AccessTierOptional, AppendBlobClientCreateOptions, AppendBlobClientCreateResult,
-        ArchiveStatus, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientDownloadResult, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
-        BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-        BlobContainerClientGetPropertiesResultHeaders,
-        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientSetMetadataOptions,
-        BlobImmutabilityPolicyMode, BlobServiceClientGetPropertiesOptions,
-        BlobServiceClientListContainersSegmentOptions, BlobType,
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
-        BlockList, BlockListType, BlockLookupList, CopyStatus, LeaseState, LeaseStatus,
-        ListBlobsFlatSegmentResponse, ListContainersSegmentResponse,
-        PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
-        PageBlobClientCreateOptions, PageBlobClientCreateResult, PageBlobClientResizeOptions,
-        PageBlobClientResizeResult, PageBlobClientUploadPagesOptions,
-        PageBlobClientUploadPagesResult, PublicAccessType, RehydratePriority,
-        StorageServiceProperties,
-    };
-    pub use crate::serialize::*;
-}

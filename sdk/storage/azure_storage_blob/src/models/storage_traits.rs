@@ -23,9 +23,15 @@ pub fn format_http_range(offset: u64, length: u64) -> String {
     content_range
 }
 
-pub fn page_blob_create_if_not_exists(
-    mut options: PageBlobClientCreateOptions,
-) -> PageBlobClientCreateOptions {
-    options.if_none_match = Some("*".to_string());
-    options
+pub trait PageBlobClientCreateOptionsExt {
+    fn with_if_not_exists(self) -> Self;
+}
+
+impl PageBlobClientCreateOptionsExt for PageBlobClientCreateOptions<'_> {
+    fn with_if_not_exists(self) -> Self {
+        Self {
+            if_none_match: Some("*".into()),
+            ..self
+        }
+    }
 }
