@@ -50,46 +50,6 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-async fn test_create_page_blob2(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
-    let page_blob_client = blob_client.page_blob_client();
-
-    // Regular Create Scenario
-    page_blob_client.create(1024, None).await?;
-    // Assert
-    let blob_properties = blob_client.get_properties(None).await?;
-    let blob_type = blob_properties.blob_type()?;
-    let content_length = blob_properties.content_length()?;
-    assert_eq!(1024, content_length.unwrap());
-    assert_eq!(BlobType::PageBlob, blob_type.unwrap());
-
-    // Create If Not Exists Scenario
-    // let create_options = page_blob_create_if_not_exists(PageBlobClientCreateOptions::default());
-    let create_options = PageBlobClientCreateOptions::default().with_overwrite();
-    let response = page_blob_client
-        .create(1024, Some(create_options.clone()))
-        .await;
-    // Assert
-    let error = response.unwrap_err().http_status();
-    assert_eq!(StatusCode::Conflict, error.unwrap());
-
-    blob_client.delete(None).await?;
-    page_blob_client.create(1024, Some(create_options)).await?;
-    // Assert
-    let blob_properties = blob_client.get_properties(None).await?;
-    let blob_type = blob_properties.blob_type()?;
-    let content_length = blob_properties.content_length()?;
-    assert_eq!(1024, content_length.unwrap());
-    assert_eq!(BlobType::PageBlob, blob_type.unwrap());
-
-    container_client.delete_container(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
 async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
