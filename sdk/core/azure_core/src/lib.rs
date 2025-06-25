@@ -27,9 +27,7 @@ pub use typespec_client_core::{
     fmt, json, sleep, stream, time, Bytes, Uuid,
 };
 
-pub mod tracing {
-    pub use typespec_client_core::tracing::*;
-}
+pub use typespec_client_core::tracing;
 
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;

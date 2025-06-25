@@ -24,9 +24,9 @@ impl From<i64> for AttributeValue {
     }
 }
 
-impl From<u64> for AttributeValue {
-    fn from(value: u64) -> Self {
-        AttributeValue(AzureAttributeValue::U64(value))
+impl From<f64> for AttributeValue {
+    fn from(value: f64) -> Self {
+        AttributeValue(AzureAttributeValue::I64(value as i64))
     }
 }
 
@@ -47,10 +47,9 @@ impl From<Vec<i64>> for AttributeArray {
         AttributeArray(AzureAttributeArray::I64(values))
     }
 }
-
-impl From<Vec<u64>> for AttributeArray {
-    fn from(values: Vec<u64>) -> Self {
-        AttributeArray(AzureAttributeArray::U64(values))
+impl From<Vec<f64>> for AttributeArray {
+    fn from(values: Vec<f64>) -> Self {
+        AttributeArray(AzureAttributeArray::F64(values))
     }
 }
 
@@ -66,7 +65,7 @@ impl From<AttributeValue> for opentelemetry::Value {
         match value.0 {
             AzureAttributeValue::Bool(b) => opentelemetry::Value::Bool(b),
             AzureAttributeValue::I64(i) => opentelemetry::Value::I64(i),
-            AzureAttributeValue::U64(u) => opentelemetry::Value::I64(u as i64),
+            AzureAttributeValue::F64(u) => opentelemetry::Value::F64(u),
             AzureAttributeValue::String(s) => opentelemetry::Value::String(s.into()),
             AzureAttributeValue::Array(arr) => {
                 opentelemetry::Value::Array(opentelemetry::Array::from(AttributeArray(arr)))
@@ -81,10 +80,7 @@ impl From<AttributeArray> for opentelemetry::Array {
         match array.0 {
             AzureAttributeArray::Bool(values) => values.into(),
             AzureAttributeArray::I64(values) => values.into(),
-            AzureAttributeArray::U64(values) => {
-                let i64_values: Vec<i64> = values.into_iter().map(|v| v as i64).collect();
-                i64_values.into()
-            }
+            AzureAttributeArray::F64(values) => values.into(),
             AzureAttributeArray::String(values) => {
                 let string_values: Vec<opentelemetry::StringValue> =
                     values.into_iter().map(|s| s.into()).collect();
