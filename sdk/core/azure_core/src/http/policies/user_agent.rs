@@ -3,7 +3,7 @@
 
 use crate::http::{
     headers::{HeaderValue, USER_AGENT},
-    options::TelemetryOptions,
+    options::UserAgentOptions,
 };
 use std::env::consts::{ARCH, OS};
 use std::sync::Arc;
@@ -12,15 +12,15 @@ use typespec_client_core::http::{Context, Request};
 
 /// Sets the User-Agent header with useful information in a typical format for Azure SDKs.
 #[derive(Clone, Debug)]
-pub struct TelemetryPolicy {
+pub struct UserAgentPolicy {
     header: String,
 }
 
-impl<'a> TelemetryPolicy {
+impl<'a> UserAgentPolicy {
     pub fn new(
         crate_name: Option<&'a str>,
         crate_version: Option<&'a str>,
-        options: &TelemetryOptions,
+        options: &UserAgentOptions,
     ) -> Self {
         Self::new_with_rustc_version(
             crate_name,
@@ -34,7 +34,7 @@ impl<'a> TelemetryPolicy {
         crate_name: Option<&'a str>,
         crate_version: Option<&'a str>,
         rustc_version: Option<&'a str>,
-        options: &TelemetryOptions,
+        options: &UserAgentOptions,
     ) -> Self {
         const UNKNOWN: &str = "unknown";
         let mut crate_name = crate_name.unwrap_or(UNKNOWN);
@@ -53,13 +53,13 @@ impl<'a> TelemetryPolicy {
             None => format!("azsdk-rust-{crate_name}/{crate_version} {platform_info}"),
         };
 
-        TelemetryPolicy { header }
+        UserAgentPolicy { header }
     }
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl Policy for TelemetryPolicy {
+impl Policy for UserAgentPolicy {
     async fn send(
         &self,
         ctx: &Context,
@@ -78,11 +78,11 @@ mod tests {
 
     #[test]
     fn without_application_id() {
-        let policy = TelemetryPolicy::new_with_rustc_version(
+        let policy = UserAgentPolicy::new_with_rustc_version(
             Some("azure_test"), // Tests that "azure_" is removed.
             Some("1.2.3"),
             Some("4.5.6"),
-            &TelemetryOptions::default(),
+            &UserAgentOptions::default(),
         );
         assert_eq!(
             policy.header,
@@ -92,10 +92,11 @@ mod tests {
 
     #[test]
     fn with_application_id() {
-        let options = TelemetryOptions {
+        let options = UserAgentOptions {
             application_id: Some("my_app".to_string()),
+            ..Default::default()
         };
-        let policy = TelemetryPolicy::new_with_rustc_version(
+        let policy = UserAgentPolicy::new_with_rustc_version(
             Some("test"),
             Some("1.2.3"),
             Some("4.5.6"),
@@ -111,7 +112,7 @@ mod tests {
     fn missing_env() {
         // Would simulate if option_env!("CARGO_PKG_NAME"), for example, returned None.
         let policy =
-            TelemetryPolicy::new_with_rustc_version(None, None, None, &TelemetryOptions::default());
+            UserAgentPolicy::new_with_rustc_version(None, None, None, &UserAgentOptions::default());
         assert_eq!(
             policy.header,
             format!("azsdk-rust-unknown/unknown (unknown; {OS}; {ARCH})")
