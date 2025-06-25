@@ -2,13 +2,16 @@
 // Licensed under the MIT License.
 
 use super::policies::ClientRequestIdPolicy;
-use crate::http::{policies::UserAgentPolicy, ClientOptions};
+use crate::http::{
+    policies::{Policy, UserAgentPolicy},
+    ClientOptions,
+};
 use std::{
     any::{Any, TypeId},
     ops::Deref,
     sync::Arc,
 };
-use typespec_client_core::http::{self, policies::Policy};
+use typespec_client_core::http;
 
 /// Execution pipeline.
 ///
@@ -18,7 +21,7 @@ use typespec_client_core::http::{self, policies::Policy};
 ///    immediately.
 /// 2. User-specified per-call policies in [`ClientOptions::per_call_policies`] are executed.
 /// 3. The retry policy is executed. It allows to re-execute the following policies.
-/// 4. The [`CustomHeadersPolicy`] is executed
+/// 4. The [`CustomHeadersPolicy`](crate::http::policies::CustomHeadersPolicy) is executed
 /// 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are
 ///    re-executed in case of retries.
 /// 6. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
