@@ -142,7 +142,7 @@ impl PageBlobClient {
     /// * `data` - The contents of the page.
     /// * `content_length` - Number of bytes to use for writing to a section of the blob. The
     ///   content_length specified must be a modulus of 512.
-    /// * `range` - The range of the bytes to write. See [`azure_storage_blob::serialize::format_http_range()`](crate::serialize::format_http_range) for help with the expected String format.
+    /// * `range` - The range of the bytes to write. See [`azure_storage_blob::format_http_range()`](crate::PageBlobClientExt::format_http_range) for help with the expected String format.
     /// * `options` - Optional parameters for the request.
     pub async fn upload_page(
         &self,
