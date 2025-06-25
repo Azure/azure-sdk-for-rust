@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::tracing::{SpanKind, TracerProvider};
+use azure_core::tracing::{SpanKind, TracerProvider as _};
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::SdkTracerProvider;
 use std::error::Error;
@@ -17,7 +17,7 @@ async fn test_span_creation() -> Result<(), Box<dyn Error>> {
     let tracer = azure_provider.get_tracer("test_tracer", "1.0.0");
 
     // Create a span using the Azure tracer
-    let span = tracer.start_span("test_span", SpanKind::Internal).unwrap();
+    let span = tracer.start_span("test_span", SpanKind::Internal);
 
     // Add attributes to the span using individual set_attribute calls
     span.set_attribute(
@@ -43,7 +43,7 @@ async fn test_tracer_provider_creation() -> Result<(), Box<dyn Error>> {
 
     // Get a tracer and verify it works
     let tracer = azure_provider.get_tracer("test_tracer", "1.0.0");
-    let span = tracer.start_span("test_span", SpanKind::Internal).unwrap();
+    let span = tracer.start_span("test_span", SpanKind::Internal);
     span.end()?;
 
     Ok(())
@@ -59,7 +59,7 @@ async fn test_span_attributes() -> Result<(), Box<dyn Error>> {
     let tracer = azure_provider.get_tracer("test_tracer", "1.0.0");
 
     // Create span with multiple attributes
-    let span = tracer.start_span("test_span", SpanKind::Internal).unwrap();
+    let span = tracer.start_span("test_span", SpanKind::Internal);
 
     // Add attributes using individual set_attribute calls
     span.set_attribute(
