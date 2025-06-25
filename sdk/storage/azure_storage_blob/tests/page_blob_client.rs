@@ -8,7 +8,8 @@ use azure_storage_blob::{
         BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
         PageBlobClientCreateOptions,
     },
-    PageBlobClient, PageBlobClientCreateOptionsExt, PageBlobClientExt,
+    storage_traits::PageBlobClientCreateOptionsExt,
+    StorageUtils,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client};
 use std::error::Error;
@@ -66,7 +67,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             512,
-            PageBlobClient::format_http_range(0, 512),
+            StorageUtils::format_http_range(0, 512),
             None,
         )
         .await?;
@@ -96,13 +97,13 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data),
             512,
-            PageBlobClient::format_http_range(0, 512),
+            StorageUtils::format_http_range(0, 512),
             None,
         )
         .await?;
 
     page_blob_client
-        .clear_page(PageBlobClient::format_http_range(0, 512), None)
+        .clear_page(StorageUtils::format_http_range(0, 512), None)
         .await?;
 
     // Assert
@@ -132,7 +133,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            PageBlobClient::format_http_range(0, 1024),
+            StorageUtils::format_http_range(0, 1024),
             None,
         )
         .await;
@@ -145,7 +146,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            PageBlobClient::format_http_range(0, 1024),
+            StorageUtils::format_http_range(0, 1024),
             None,
         )
         .await?;

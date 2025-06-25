@@ -96,7 +96,7 @@ impl PageBlobClient {
     ///
     /// * `content_length` - The maximum size for the Page blob, up to 1TB. The page blob size must
     ///   be aligned to a 512-byte boundary.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional parameters for the request. See [`azure_storage_blob::storage_traits::PageBlobClientCreateOptionsExt`](crate::storage_traits::PageBlobClientCreateOptionsExt) for additional usage helpers.
     pub async fn create(
         &self,
         content_length: u64,
@@ -109,7 +109,7 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `range` - The range of bytes to clear. See [`azure_storage_blob::format_http_range()`](crate::PageBlobClientExt::format_http_range) for help with the expected String format.
+    /// * `range` - The range of bytes to clear. See [`azure_storage_blob::StorageUtils::format_http_range()`](crate::StorageUtils::format_http_range) for help with the expected String format.
     /// * `options` - Optional parameters for the request.
     pub async fn clear_page(
         &self,
@@ -142,7 +142,7 @@ impl PageBlobClient {
     /// * `data` - The contents of the page.
     /// * `content_length` - Number of bytes to use for writing to a section of the blob. The
     ///   content_length specified must be a modulus of 512.
-    /// * `range` - The range of the bytes to write. See [`azure_storage_blob::format_http_range()`](crate::PageBlobClientExt::format_http_range) for help with the expected String format.
+    /// * `range` - The range of the bytes to write. See [`azure_storage_blob::StorageUtils::format_http_range()`](crate::StorageUtils::format_http_range) for help with the expected String format.
     /// * `options` - Optional parameters for the request.
     pub async fn upload_page(
         &self,

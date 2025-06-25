@@ -10,9 +10,10 @@
 pub mod clients;
 mod generated;
 mod pipeline;
-mod storage_traits;
+pub mod storage_traits;
+pub mod storage_utils;
 pub use clients::*;
-pub use storage_traits::*;
+pub use storage_utils::*;
 
 pub mod models {
     pub use crate::generated::models::{
