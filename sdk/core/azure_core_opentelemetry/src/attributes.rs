@@ -5,12 +5,16 @@
 
 // Re-export typespec_client_core tracing attributes for convenience
 use azure_core::tracing::{
-    AttributeArray as AzureAttributeArray, AttributeValue as AzureAttributeValue,
+    Attribute as AzureAttribute, AttributeArray as AzureAttributeArray,
+    AttributeValue as AzureAttributeValue,
 };
+use opentelemetry::KeyValue;
 
 pub(super) struct AttributeArray(AzureAttributeArray);
 
 pub(super) struct AttributeValue(pub AzureAttributeValue);
+
+pub(super) struct OpenTelemetryAttribute(pub AzureAttribute);
 
 impl From<bool> for AttributeValue {
     fn from(value: bool) -> Self {
@@ -59,13 +63,22 @@ impl From<Vec<String>> for AttributeArray {
     }
 }
 
+impl From<OpenTelemetryAttribute> for KeyValue {
+    fn from(attr: OpenTelemetryAttribute) -> Self {
+        KeyValue::new(
+            attr.0.key,
+            opentelemetry::Value::from(AttributeValue(attr.0.value)),
+        )
+    }
+}
+
 /// Conversion from typespec_client_core AttributeValue to OpenTelemetry Value
 impl From<AttributeValue> for opentelemetry::Value {
     fn from(value: AttributeValue) -> Self {
         match value.0 {
             AzureAttributeValue::Bool(b) => opentelemetry::Value::Bool(b),
             AzureAttributeValue::I64(i) => opentelemetry::Value::I64(i),
-            AzureAttributeValue::F64(u) => opentelemetry::Value::F64(u),
+            AzureAttributeValue::F64(f) => opentelemetry::Value::F64(f),
             AzureAttributeValue::String(s) => opentelemetry::Value::String(s.into()),
             AzureAttributeValue::Array(arr) => {
                 opentelemetry::Value::Array(opentelemetry::Array::from(AttributeArray(arr)))

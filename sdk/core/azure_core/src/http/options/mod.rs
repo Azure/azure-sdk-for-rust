@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod request_instrumentation;
 mod user_agent;
 
+pub use request_instrumentation::*;
 use std::sync::Arc;
 use typespec_client_core::http::policies::Policy;
 pub use typespec_client_core::http::{
@@ -27,6 +29,8 @@ pub struct ClientOptions {
 
     /// User-Agent telemetry options.
     pub user_agent: Option<UserAgentOptions>,
+
+    pub request_instrumentation: Option<RequestInstrumentationOptions>,
 }
 
 impl ClientOptions {

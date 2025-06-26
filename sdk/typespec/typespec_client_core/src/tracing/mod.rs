@@ -4,6 +4,7 @@
 //! Distributed tracing trait definitions
 //!
 use crate::http::Context;
+use std::fmt::Debug;
 use std::sync::Arc;
 
 /// Overall architecture for distributed tracing in the SDK.
@@ -18,26 +19,28 @@ use std::sync::Arc;
 mod attributes;
 mod with_context;
 
-pub use attributes::{AttributeArray, AttributeValue};
+pub use attributes::{Attribute, AttributeArray, AttributeValue};
 pub use with_context::{FutureExt, WithContext};
 
 /// The TracerProvider trait is the entrypoint for distributed tracing in the SDK.
 ///
 /// It provides a method to get a tracer for a specific name and package version.
-pub trait TracerProvider {
+pub trait TracerProvider: Send + Sync {
     /// Returns a tracer for the given name.
     ///
     /// Arguments:
     /// - `package_name`: The name of the package for which the tracer is requested.
     /// - `package_version`: The version of the package for which the tracer is requested.
-    fn get_tracer(
-        &self,
-        package_name: &'static str,
-        package_version: &'static str,
-    ) -> Box<dyn Tracer + Send + Sync>;
+    fn get_tracer(&self, package_name: &str, package_version: &str) -> Arc<dyn Tracer>;
 }
 
-pub trait Tracer {
+impl Debug for dyn TracerProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TracerProvider").finish_non_exhaustive()
+    }
+}
+
+pub trait Tracer: Send + Sync {
     /// Starts a new span with the given name and type.
     ///
     /// # Arguments
@@ -47,7 +50,7 @@ pub trait Tracer {
     /// # Returns
     /// An `Arc<dyn Span + Send + Sync>` representing the started span.
     ///
-    fn start_span(&self, name: &'static str, kind: SpanKind) -> Arc<dyn Span + Send + Sync>;
+    fn start_span(&self, name: &str, kind: SpanKind, attributes: Vec<Attribute>) -> Arc<dyn Span>;
 
     /// Starts a new span with the given type, using the current span as the parent span.
     ///
@@ -60,9 +63,10 @@ pub trait Tracer {
     ///
     fn start_span_with_current(
         &self,
-        name: &'static str,
+        name: &str,
         kind: SpanKind,
-    ) -> Arc<dyn Span + Send + Sync>;
+        attributes: Vec<Attribute>,
+    ) -> Arc<dyn Span>;
 
     /// Starts a new child with the given name, type, and parent span.
     ///
@@ -78,11 +82,20 @@ pub trait Tracer {
     ///
     fn start_span_with_parent(
         &self,
-        name: &'static str,
+        name: &str,
         kind: SpanKind,
-        parent: Arc<dyn Span + Send + Sync>,
-    ) -> Arc<dyn Span + Send + Sync>;
+        attributes: Vec<Attribute>,
+        parent: Arc<dyn Span>,
+    ) -> Arc<dyn Span>;
 }
+
+impl Debug for dyn Tracer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Tracer").finish_non_exhaustive()
+    }
+}
+
+#[derive(Debug)]
 pub enum SpanStatus {
     Unset,
     Ok,
@@ -104,12 +117,14 @@ pub trait SpanGuard {
     fn end(self) -> crate::Result<()>;
 }
 
-pub trait Span: AsAny {
+pub trait Span: AsAny + Send + Sync {
+    fn is_recording(&self) -> bool;
+
     /// The 8 byte value which identifies the span.
     fn span_id(&self) -> [u8; 8];
 
     /// Ends the current span.
-    fn end(&self) -> crate::Result<()>;
+    fn end(&self);
 
     /// Sets the status of the current span.
     /// # Arguments
@@ -118,14 +133,10 @@ pub trait Span: AsAny {
     /// # Returns
     /// A `Result` indicating success or failure of the operation.
     ///
-    fn set_status(&self, status: SpanStatus) -> crate::Result<()>;
+    fn set_status(&self, status: SpanStatus);
 
     /// Sets an attribute on the current span.
-    fn set_attribute(
-        &self,
-        key: &'static str,
-        value: attributes::AttributeValue,
-    ) -> crate::Result<()>;
+    fn set_attribute(&self, key: &'static str, value: attributes::AttributeValue);
 
     /// Records a Rust standard error on the current span.
     ///
@@ -135,7 +146,7 @@ pub trait Span: AsAny {
     /// # Returns
     /// A `Result` indicating success or failure of the operation.
     ///
-    fn record_error(&self, error: &dyn std::error::Error) -> crate::Result<()>;
+    fn record_error(&self, error: &dyn std::error::Error);
 
     /// Temporarily sets the span as the current active span in the context.
     /// # Arguments
