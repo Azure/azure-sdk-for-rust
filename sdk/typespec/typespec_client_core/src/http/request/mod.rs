@@ -145,8 +145,23 @@ impl Request {
         &self.method
     }
 
-    /// Inserts zero or more headers from a type that implements [`AsHeaders`].
-    pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), T::Error> {
+    /// Returns the HTTP method as a static string.
+    ///
+    /// This is not generally useful and should be avoided in favor of using the ['Request::method()'] method.
+    #[doc(hidden)]
+    pub fn method_as_str(&self) -> &'static str {
+        match self.method {
+            Method::Delete => "DELETE",
+            Method::Get => "GET",
+            Method::Head => "HEAD",
+            Method::Patch => "PATCH",
+            Method::Post => "POST",
+            Method::Put => "PUT",
+        }
+    }
+
+   /// Inserts zero or more headers from a type that implements [`AsHeaders`].
+   pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), T::Error> {
         for (name, value) in headers.as_headers()? {
             self.insert_header(name, value);
         }

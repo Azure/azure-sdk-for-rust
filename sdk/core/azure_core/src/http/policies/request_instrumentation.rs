@@ -31,10 +31,10 @@ pub struct RequestInstrumentationPolicy {
     tracer: Option<Arc<dyn crate::tracing::Tracer>>,
 }
 
-impl<'a> RequestInstrumentationPolicy {
+impl RequestInstrumentationPolicy {
     pub fn new(
-        crate_name: Option<&'a str>,
-        crate_version: Option<&'a str>,
+        crate_name: Option<&'static str>,
+        crate_version: Option<&'static str>,
         options: Option<&RequestInstrumentationOptions>,
     ) -> Self {
         if let Some(tracing_provider) = options.and_then(|o| o.tracing_provider.clone()) {
@@ -119,21 +119,19 @@ impl Policy for RequestInstrumentationPolicy {
                     value: port.into(),
                 });
             }
+            // Get the method as a string to avoid lifetime issues
+            let method_str = request.method_as_str();
             let span = if let Some(parent_span) = ctx.value::<Arc<dyn Span>>() {
                 // If a parent span exists, start a new span with the parent.
                 tracer.start_span_with_parent(
-                    request.method().to_string().as_str(),
+                    method_str,
                     SpanKind::Client,
                     span_attributes,
                     parent_span.clone(),
                 )
             } else {
                 // If no parent span exists, start a new span without a parent.
-                tracer.start_span_with_current(
-                    request.method().to_string().as_str(),
-                    SpanKind::Client,
-                    span_attributes,
-                )
+                tracer.start_span_with_current(method_str, SpanKind::Client, span_attributes)
             };
 
             if let Some(client_request_id) = request
@@ -364,8 +362,8 @@ mod tests {
     }
 
     async fn run_instrumentation_test(
-        crate_name: Option<&str>,
-        version: Option<&str>,
+        crate_name: Option<&'static str>,
+        version: Option<&'static str>,
         request: &mut Request,
     ) -> Arc<MockTracingProvider> {
         let mock_tracer = Arc::new(MockTracingProvider::new());

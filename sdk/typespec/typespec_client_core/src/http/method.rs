@@ -194,7 +194,7 @@ impl<'a> std::convert::TryFrom<&'a str> for Method {
 }
 
 impl AsRef<str> for Method {
-    fn as_ref(&self) -> &str {
+    fn as_ref(&self) -> &'static str {
         match self {
             Self::Delete => "DELETE",
             Self::Get => "GET",
