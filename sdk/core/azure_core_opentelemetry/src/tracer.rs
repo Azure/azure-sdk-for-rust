@@ -28,11 +28,11 @@ impl OpenTelemetryTracer {
 impl Tracer for OpenTelemetryTracer {
     fn start_span(
         &self,
-        name: &str,
+        name: &'static str,
         kind: SpanKind,
         attributes: Vec<Attribute>,
     ) -> Arc<dyn azure_core::tracing::Span> {
-        let span_builder = opentelemetry::trace::SpanBuilder::from_name(name.to_owned())
+        let span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
             .with_kind(OpenTelemetrySpanKind(kind).into())
             .with_attributes(
                 attributes
@@ -47,11 +47,11 @@ impl Tracer for OpenTelemetryTracer {
 
     fn start_span_with_current(
         &self,
-        name: &str,
+        name: &'static str,
         kind: SpanKind,
         attributes: Vec<azure_core::tracing::Attribute>,
     ) -> Arc<dyn azure_core::tracing::Span> {
-        let span_builder = opentelemetry::trace::SpanBuilder::from_name(name.to_owned())
+        let span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
             .with_kind(OpenTelemetrySpanKind(kind).into())
             .with_attributes(
                 attributes
@@ -66,7 +66,7 @@ impl Tracer for OpenTelemetryTracer {
 
     fn start_span_with_parent(
         &self,
-        name: &str,
+        name: &'static str,
         kind: SpanKind,
         attributes: Vec<azure_core::tracing::Attribute>,
         parent: Arc<dyn azure_core::tracing::Span>,

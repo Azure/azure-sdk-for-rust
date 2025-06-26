@@ -31,7 +31,11 @@ pub trait TracerProvider: Send + Sync {
     /// Arguments:
     /// - `package_name`: The name of the package for which the tracer is requested.
     /// - `package_version`: The version of the package for which the tracer is requested.
-    fn get_tracer(&self, package_name: &str, package_version: &str) -> Arc<dyn Tracer>;
+    fn get_tracer(
+        &self,
+        package_name: &'static str,
+        package_version: &'static str,
+    ) -> Arc<dyn Tracer>;
 }
 
 impl Debug for dyn TracerProvider {
@@ -50,7 +54,12 @@ pub trait Tracer: Send + Sync {
     /// # Returns
     /// An `Arc<dyn Span + Send + Sync>` representing the started span.
     ///
-    fn start_span(&self, name: &str, kind: SpanKind, attributes: Vec<Attribute>) -> Arc<dyn Span>;
+    fn start_span(
+        &self,
+        name: &'static str,
+        kind: SpanKind,
+        attributes: Vec<Attribute>,
+    ) -> Arc<dyn Span>;
 
     /// Starts a new span with the given type, using the current span as the parent span.
     ///
@@ -63,7 +72,7 @@ pub trait Tracer: Send + Sync {
     ///
     fn start_span_with_current(
         &self,
-        name: &str,
+        name: &'static str,
         kind: SpanKind,
         attributes: Vec<Attribute>,
     ) -> Arc<dyn Span>;
@@ -82,7 +91,7 @@ pub trait Tracer: Send + Sync {
     ///
     fn start_span_with_parent(
         &self,
-        name: &str,
+        name: &'static str,
         kind: SpanKind,
         attributes: Vec<Attribute>,
         parent: Arc<dyn Span>,
