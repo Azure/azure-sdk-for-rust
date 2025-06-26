@@ -110,6 +110,18 @@ impl Method {
     pub fn is_safe(&self) -> bool {
         matches!(self, Method::Get | Method::Head)
     }
+
+    /// Returns the HTTP method as a static string slice.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Method::Delete => "DELETE",
+            Method::Get => "GET",
+            Method::Head => "HEAD",
+            Method::Patch => "PATCH",
+            Method::Post => "POST",
+            Method::Put => "PUT",
+        }
+    }
 }
 
 #[cfg(any(feature = "json", feature = "xml"))]

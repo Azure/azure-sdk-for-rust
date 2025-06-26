@@ -120,7 +120,8 @@ impl Policy for RequestInstrumentationPolicy {
                 });
             }
             // Get the method as a string to avoid lifetime issues
-            let method_str = request.method_as_str();
+            //            let method_str = request.method_as_str();
+            let method_str = request.method().as_str();
             let span = if let Some(parent_span) = ctx.value::<Arc<dyn Span>>() {
                 // If a parent span exists, start a new span with the parent.
                 tracer.start_span_with_parent(
