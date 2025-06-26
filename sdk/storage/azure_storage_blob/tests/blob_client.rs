@@ -7,12 +7,14 @@ use azure_core::{
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AccessTierOptional, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
-    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions,
-    LeaseState,
+    AccessTierOptional, BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResultHeaders,
+    BlobClientChangeLeaseResultHeaders, BlobClientDownloadResultHeaders,
+    BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
+    BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions, LeaseState,
 };
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, time::Duration};
+use tokio::time;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -272,6 +274,76 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     let access_tier = response.access_tier()?;
     assert_eq!(AccessTierOptional::Cold.to_string(), access_tier.unwrap());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(blob_name.clone());
+    let other_blob_client = container_client.blob_client(blob_name);
+    create_test_blob(&blob_client).await?;
+
+    // Acquire Lease
+    let acquire_lease_options = BlobClientAcquireLeaseOptions {
+        duration: Some(15),
+        ..Default::default()
+    };
+    let acquire_response = blob_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await?;
+    let lease_id = acquire_response.lease_id()?.unwrap();
+    let other_acquire_response = other_blob_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await;
+    // Assert
+    let error = other_acquire_response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Change Lease
+    let proposed_lease_id = "00000000-1111-2222-3333-444444444444".to_string();
+    let change_lease_response = blob_client
+        .change_lease(lease_id, proposed_lease_id.clone(), None)
+        .await?;
+    // Assert
+    let lease_id = change_lease_response.lease_id()?.unwrap();
+    assert_eq!(proposed_lease_id.clone().to_string(), lease_id);
+
+    // Sleep until lease expires
+    time::sleep(Duration::from_secs(15)).await;
+
+    // Renew Lease
+    blob_client
+        .renew_lease(proposed_lease_id.clone(), None)
+        .await?;
+    let other_acquire_response = other_blob_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await;
+    // Assert
+    let error = other_acquire_response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Break Lease
+    blob_client.break_lease(None).await?;
+    let other_acquire_response = other_blob_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await;
+    // Assert
+    let error = other_acquire_response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Release Lease
+    blob_client
+        .release_lease(proposed_lease_id.clone(), None)
+        .await?;
+    other_blob_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await?;
 
     container_client.delete_container(None).await?;
     Ok(())
