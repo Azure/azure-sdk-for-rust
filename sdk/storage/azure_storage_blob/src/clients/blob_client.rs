@@ -214,6 +214,11 @@ impl BlobClient {
         self.client.set_tier(tier, options).await
     }
 
+    /// Requests a new lease on a blob. The lease lock duration can be 15 to 60 seconds, or can be infinite.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
     pub async fn acquire_lease(
         &self,
         options: Option<BlobClientAcquireLeaseOptions<'_>>,
@@ -221,6 +226,12 @@ impl BlobClient {
         self.client.acquire_lease(options).await
     }
 
+    /// Ends a lease and ensures that another client can't acquire a new lease until the current lease
+    /// period has expired.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
     pub async fn break_lease(
         &self,
         options: Option<BlobClientBreakLeaseOptions<'_>>,
@@ -228,6 +239,14 @@ impl BlobClient {
         self.client.break_lease(options).await
     }
 
+    /// Changes the ID of an existing lease to the proposed lease ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `lease_id` - A lease ID for the source path. The source path must have an active lease and the
+    ///   lease ID must match.
+    /// * `proposed_lease_id` - The proposed lease ID for the blob.
+    /// * `options` - Optional configuration for the request.
     pub async fn change_lease(
         &self,
         lease_id: String,
@@ -239,6 +258,14 @@ impl BlobClient {
             .await
     }
 
+    /// Frees the lease so that another client can immediately acquire a lease
+    /// against the blob as soon as the release is complete.
+    ///
+    /// # Arguments
+    ///
+    /// * `lease_id` - A lease ID for the source path. The source path must have an active lease and the
+    ///   lease ID must match.
+    /// * `options` - Optional configuration for the request.
     pub async fn release_lease(
         &self,
         lease_id: String,
@@ -247,6 +274,13 @@ impl BlobClient {
         self.client.release_lease(lease_id, options).await
     }
 
+    /// Renews the lease on a blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `lease_id` - A lease ID for the source path. The source path must have an active lease and the
+    ///   lease ID must match.
+    /// * `options` - Optional configuration for the request.
     pub async fn renew_lease(
         &self,
         lease_id: String,
