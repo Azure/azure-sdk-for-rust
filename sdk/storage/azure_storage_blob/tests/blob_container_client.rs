@@ -4,12 +4,17 @@
 use azure_core::http::StatusCode;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
-    BlobContainerClientSetMetadataOptions, BlobType, LeaseState,
+    BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResultHeaders,
+    BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
+    BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientSetMetadataOptions, BlobType,
+    LeaseState,
 };
-use azure_storage_blob_test::{create_test_blob, get_container_client};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_service_client, get_container_client, get_container_name,
+};
 use futures::{StreamExt, TryStreamExt};
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, time::Duration};
+use tokio::time;
 
 #[recorded::test]
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -197,6 +202,80 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
             }
         }
     }
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let blob_service_client = get_blob_service_client(recording)?;
+    let container_name = get_container_name(recording);
+    let container_client = blob_service_client.blob_container_client(container_name.clone());
+    let other_container_client = blob_service_client.blob_container_client(container_name);
+    container_client.create_container(None).await?;
+
+    // Acquire Lease
+    let acquire_lease_options = BlobContainerClientAcquireLeaseOptions {
+        duration: Some(15),
+        ..Default::default()
+    };
+    let acquire_response = container_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await?;
+    let lease_id = acquire_response.lease_id()?.unwrap();
+    let other_acquire_response = other_container_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await;
+    // Assert
+    let error = other_acquire_response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Change Lease
+    let proposed_lease_id = "00000000-1111-2222-3333-444444444444".to_string();
+    let change_lease_response = container_client
+        .change_lease(lease_id, proposed_lease_id.clone(), None)
+        .await?;
+    // Assert
+    let lease_id = change_lease_response.lease_id()?.unwrap();
+    assert_eq!(proposed_lease_id.clone().to_string(), lease_id);
+
+    // Sleep until lease expires
+    time::sleep(Duration::from_secs(15)).await;
+
+    // Renew Lease
+    container_client
+        .renew_lease(proposed_lease_id.clone(), None)
+        .await?;
+    let other_acquire_response = other_container_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await;
+    // Assert
+    let error = other_acquire_response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Break Lease
+    container_client.break_lease(None).await?;
+    let other_acquire_response = other_container_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await;
+    // Assert
+    let error = other_acquire_response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Release Lease
+    container_client
+        .release_lease(proposed_lease_id.clone(), None)
+        .await?;
+    let other_acquire_response = other_container_client
+        .acquire_lease(Some(acquire_lease_options.clone()))
+        .await;
+    let lease_id = other_acquire_response?.lease_id().unwrap();
+    other_container_client
+        .release_lease(lease_id.unwrap(), None)
+        .await?;
 
     container_client.delete_container(None).await?;
     Ok(())
