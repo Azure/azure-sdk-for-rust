@@ -41,40 +41,40 @@ impl OpenTelemetrySpan {
 }
 
 impl Span for OpenTelemetrySpan {
-    fn end(&self) -> Result<()> {
+    fn is_recording(&self) -> bool {
+        self.context.span().is_recording()
+    }
+
+    fn end(&self) {
         self.context.span().end();
-        Ok(())
     }
 
     fn span_id(&self) -> [u8; 8] {
         self.context.span().span_context().span_id().to_bytes()
     }
 
-    fn set_attribute(&self, key: &'static str, value: AttributeValue) -> Result<()> {
+    fn set_attribute(&self, key: &'static str, value: AttributeValue) {
         let otel_value = opentelemetry::Value::from(ConversionAttributeValue(value));
         self.context
             .span()
             .set_attribute(opentelemetry::KeyValue::new(key, otel_value));
-        Ok(())
     }
 
-    fn record_error(&self, error: &dyn StdError) -> Result<()> {
+    fn record_error(&self, error: &dyn StdError) {
         self.context.span().record_error(error);
 
         self.context
             .span()
             .set_status(opentelemetry::trace::Status::error(error.to_string()));
-        Ok(())
     }
 
-    fn set_status(&self, status: SpanStatus) -> Result<()> {
+    fn set_status(&self, status: SpanStatus) {
         let otel_status = match status {
             SpanStatus::Unset => opentelemetry::trace::Status::Unset,
             SpanStatus::Ok => opentelemetry::trace::Status::Ok,
             SpanStatus::Error { description } => opentelemetry::trace::Status::error(description),
         };
         self.context.span().set_status(otel_status);
-        Ok(())
     }
 
     fn set_current(
@@ -117,7 +117,7 @@ impl Drop for OpenTelemetrySpanGuard {
 mod tests {
     use crate::telemetry::OpenTelemetryTracerProvider;
     use azure_core::http::Context as AzureContext;
-    use azure_core::tracing::{AttributeValue, SpanKind, SpanStatus, TracerProvider};
+    use azure_core::tracing::{Attribute, AttributeValue, SpanKind, SpanStatus, TracerProvider};
     use opentelemetry::trace::TraceContextExt;
     use opentelemetry::{Context, Key, KeyValue, Value};
     use opentelemetry_sdk::trace::{in_memory_exporter::InMemorySpanExporter, SdkTracerProvider};
@@ -140,8 +140,8 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span = tracer.start_span("test_span", SpanKind::Client);
-        assert!(span.end().is_ok());
+        let span = tracer.start_span("test_span", SpanKind::Client, vec![]);
+        span.end();
 
         let spans = otel_exporter.get_finished_spans().unwrap();
         assert_eq!(spans.len(), 1);
@@ -159,12 +159,16 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let parent_span = tracer.start_span("parent_span", SpanKind::Server);
-        let child_span =
-            tracer.start_span_with_parent("child_span", SpanKind::Client, parent_span.clone());
+        let parent_span = tracer.start_span("parent_span", SpanKind::Server, vec![]);
+        let child_span = tracer.start_span_with_parent(
+            "child_span",
+            SpanKind::Client,
+            vec![],
+            parent_span.clone(),
+        );
 
-        assert!(child_span.end().is_ok());
-        assert!(parent_span.end().is_ok());
+        child_span.end();
+        parent_span.end();
 
         let spans = otel_exporter.get_finished_spans().unwrap();
         assert_eq!(spans.len(), 2);
@@ -187,14 +191,14 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span1 = tracer.start_span("span1", SpanKind::Internal);
-        let span2 = tracer.start_span("span2", SpanKind::Server);
+        let span1 = tracer.start_span("span1", SpanKind::Internal, vec![]);
+        let span2 = tracer.start_span("span2", SpanKind::Server, vec![]);
         let child_span =
-            tracer.start_span_with_parent("child_span", SpanKind::Client, span1.clone());
+            tracer.start_span_with_parent("child_span", SpanKind::Client, vec![], span1.clone());
 
-        assert!(child_span.end().is_ok());
-        assert!(span2.end().is_ok());
-        assert!(span1.end().is_ok());
+        child_span.end();
+        span2.end();
+        span1.end();
 
         let spans = otel_exporter.get_finished_spans().unwrap();
         assert_eq!(spans.len(), 3);
@@ -217,16 +221,16 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span1 = tracer.start_span("span1", SpanKind::Internal);
-        let span2 = tracer.start_span("span2", SpanKind::Server);
+        let span1 = tracer.start_span("span1", SpanKind::Internal, vec![]);
+        let span2 = tracer.start_span("span2", SpanKind::Server, vec![]);
         let _span_guard = span2
             .set_current(&azure_core::http::Context::new())
             .unwrap();
-        let child_span = tracer.start_span_with_current("child_span", SpanKind::Client);
+        let child_span = tracer.start_span_with_current("child_span", SpanKind::Client, vec![]);
 
-        assert!(child_span.end().is_ok());
-        assert!(span2.end().is_ok());
-        assert!(span1.end().is_ok());
+        child_span.end();
+        span2.end();
+        span1.end();
 
         let spans = otel_exporter.get_finished_spans().unwrap();
         assert_eq!(spans.len(), 3);
@@ -249,12 +253,10 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span = tracer.start_span("test_span", SpanKind::Internal);
+        let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
 
-        assert!(span
-            .set_attribute("test_key", AttributeValue::String("test_value".to_string()))
-            .is_ok());
-        assert!(span.end().is_ok());
+        span.set_attribute("test_key", AttributeValue::String("test_value".to_string()));
+        span.end();
 
         let spans = otel_exporter.get_finished_spans().unwrap();
         assert_eq!(spans.len(), 1);
@@ -275,11 +277,11 @@ mod tests {
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
-        let span = tracer.start_span("test_span", SpanKind::Client);
+        let span = tracer.start_span("test_span", SpanKind::Client, vec![]);
 
         let error = Error::new(ErrorKind::NotFound, "resource not found");
-        assert!(span.record_error(&error).is_ok());
-        assert!(span.end().is_ok());
+        span.record_error(&error);
+        span.end();
 
         let spans = otel_exporter.get_finished_spans().unwrap();
         assert_eq!(spans.len(), 1);
@@ -304,18 +306,16 @@ mod tests {
         let tracer = tracer_provider.unwrap().get_tracer("test", "0.1.0");
 
         // Test Ok status
-        let span = tracer.start_span("test_span_ok", SpanKind::Server);
-        assert!(span.set_status(SpanStatus::Ok).is_ok());
-        assert!(span.end().is_ok());
+        let span = tracer.start_span("test_span_ok", SpanKind::Server, vec![]);
+        span.set_status(SpanStatus::Ok);
+        span.end();
 
         // Test Error status
-        let span = tracer.start_span("test_span_error", SpanKind::Server);
-        assert!(span
-            .set_status(SpanStatus::Error {
-                description: "test error".to_string()
-            })
-            .is_ok());
-        assert!(span.end().is_ok());
+        let span = tracer.start_span("test_span_error", SpanKind::Server, vec![]);
+        span.set_status(SpanStatus::Error {
+            description: "test error".to_string(),
+        });
+        span.end();
 
         let spans = otel_exporter.get_finished_spans().unwrap();
         assert_eq!(spans.len(), 2);
@@ -349,7 +349,14 @@ mod tests {
             42
         };
 
-        let span = tracer.start_span("test_span", SpanKind::Client);
+        let span = tracer.start_span(
+            "test_span",
+            SpanKind::Client,
+            vec![Attribute {
+                key: "test_key",
+                value: "test_value".into(),
+            }],
+        );
 
         let azure_context = AzureContext::new();
         let azure_context = azure_context.with_value(span.clone());
@@ -359,7 +366,7 @@ mod tests {
         let result = future.await;
 
         assert_eq!(result, 42);
-        span.end().unwrap();
+        span.end();
 
         let spans = otel_exporter.get_finished_spans().unwrap();
         assert_eq!(spans.len(), 1);

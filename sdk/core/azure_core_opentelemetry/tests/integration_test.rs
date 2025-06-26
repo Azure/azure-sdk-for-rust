@@ -17,20 +17,20 @@ async fn test_span_creation() -> Result<(), Box<dyn Error>> {
     let tracer = azure_provider.get_tracer("test_tracer", "1.0.0");
 
     // Create a span using the Azure tracer
-    let span = tracer.start_span("test_span", SpanKind::Internal);
+    let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
 
     // Add attributes to the span using individual set_attribute calls
     span.set_attribute(
         "test_key",
         azure_core::tracing::AttributeValue::String("test_value".to_string()),
-    )?;
+    );
     span.set_attribute(
         "service.name",
         azure_core::tracing::AttributeValue::String("azure-test".to_string()),
-    )?;
+    );
 
     // End the span
-    span.end()?;
+    span.end();
 
     Ok(())
 }
@@ -43,8 +43,8 @@ async fn test_tracer_provider_creation() -> Result<(), Box<dyn Error>> {
 
     // Get a tracer and verify it works
     let tracer = azure_provider.get_tracer("test_tracer", "1.0.0");
-    let span = tracer.start_span("test_span", SpanKind::Internal);
-    span.end()?;
+    let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
+    span.end();
 
     Ok(())
 }
@@ -59,24 +59,24 @@ async fn test_span_attributes() -> Result<(), Box<dyn Error>> {
     let tracer = azure_provider.get_tracer("test_tracer", "1.0.0");
 
     // Create span with multiple attributes
-    let span = tracer.start_span("test_span", SpanKind::Internal);
+    let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
 
     // Add attributes using individual set_attribute calls
     span.set_attribute(
         "service.name",
         azure_core::tracing::AttributeValue::String("test-service".to_string()),
-    )?;
+    );
     span.set_attribute(
         "operation.name",
         azure_core::tracing::AttributeValue::String("test-operation".to_string()),
-    )?;
+    );
     span.set_attribute(
         "request.id",
         azure_core::tracing::AttributeValue::String("req-123".to_string()),
-    )?;
+    );
 
     // End the span
-    span.end()?;
+    span.end();
 
     Ok(())
 }
