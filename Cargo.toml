@@ -19,6 +19,7 @@ members = [
   "sdk/template/azure_template",
   "sdk/storage/azure_storage_common",
   "sdk/storage/azure_storage_blob",
+  "sdk/storage/azure_storage_queue",
 ]
 exclude = [
   "eng/scripts",
