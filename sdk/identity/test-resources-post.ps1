@@ -72,3 +72,6 @@ az container create -g $rg -n $aciName --image $image `
   -e FUNCTIONS_CUSTOMHANDLER_PORT=80
 $aciIP = az container show -g $rg -n $aciName --query ipAddress.ip --output tsv
 Write-Host "##vso[task.setvariable variable=AZURE_IDENTITY_ACI_IP;]$aciIP"
+
+az container logs -g $rg -n $aciName
+Get-AzContainerInstanceLog -ResourceGroupName $rg -ContainerGroupName $aciName -ContainerName $aciName

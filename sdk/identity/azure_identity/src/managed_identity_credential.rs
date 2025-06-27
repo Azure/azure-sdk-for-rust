@@ -157,6 +157,7 @@ mod tests {
     use azure_core::Bytes;
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
+    use std::process::Command;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -335,6 +336,22 @@ mod tests {
         };
         let url =
             format!("http://{ip}/api?credential=mic&client-id={client_id}&storage-name={stg}");
+
+        println!("Requesting URL: {url}");
+        let rg =
+            std::env::var("IDENTITY_RESOURCE_GROUP").expect("IDENTITY_RESOURCE_GROUP must be set");
+        let command_line = format!("Get-AzContainerInstanceLog -ResourceGroupName {rg} -ContainerGroupName azure-identity-test -ContainerName azure-identity-test");
+        // let command_line = format!("az container logs -g {rg} -n azure-identity-test");
+
+        let output = Command::new("sh")
+            .arg("-c")
+            .arg(&command_line)
+            .output()
+            .expect("failed to execute process");
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let all_output = format!("{}\n{}", stdout, stderr);
+
         let u = Url::parse(&url).expect("valid URL");
         let client = azure_core::http::new_http_client();
         let req = Request::new(u, Method::Get);
@@ -342,8 +359,9 @@ mod tests {
         let res = client
             .execute_request(&req)
             .await
-            .expect("request should succeed");
-        assert_eq!(StatusCode::Ok, res.status());
+            .expect(all_output.as_str());
+
+        assert_eq!(StatusCode::Ok, res.status(), "{}", all_output);
     }
 
     #[tokio::test]
