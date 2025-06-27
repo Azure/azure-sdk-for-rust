@@ -4,12 +4,11 @@
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
+    helpers::format_page_range,
     models::{
         BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
-        PageBlobClientCreateOptions,
+        PageBlobClientCreateOptions, PageBlobClientCreateOptionsExt,
     },
-    storage_traits::PageBlobClientCreateOptionsExt,
-    StorageUtils,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client};
 use std::error::Error;
@@ -67,7 +66,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             512,
-            StorageUtils::format_http_range(0, 512),
+            format_page_range(0, 512)?,
             None,
         )
         .await?;
@@ -97,13 +96,13 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data),
             512,
-            StorageUtils::format_http_range(0, 512),
+            format_page_range(0, 512)?,
             None,
         )
         .await?;
 
     page_blob_client
-        .clear_page(StorageUtils::format_http_range(0, 512), None)
+        .clear_page(format_page_range(0, 512)?, None)
         .await?;
 
     // Assert
@@ -133,7 +132,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            StorageUtils::format_http_range(0, 1024),
+            format_page_range(0, 1024)?,
             None,
         )
         .await;
@@ -146,7 +145,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .upload_page(
             RequestContent::from(data.clone()),
             1024,
-            StorageUtils::format_http_range(0, 1024),
+            format_page_range(0, 1024)?,
             None,
         )
         .await?;
