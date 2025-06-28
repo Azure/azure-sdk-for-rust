@@ -7,10 +7,10 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
         ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request,
         RequestInstrumentationOptions, Url,
     },
+    tracing::{Attribute, Tracer},
     Result,
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
@@ -27,6 +27,7 @@ pub struct TestServiceClient {
     endpoint: Url,
     api_version: String,
     pipeline: Pipeline,
+    tracer: Option<Arc<dyn Tracer>>,
 }
 
 #[derive(Default, SafeDebug)]
@@ -37,7 +38,7 @@ pub struct TestServiceClientGetMethodOptions<'a> {
 impl TestServiceClient {
     pub fn new(
         endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
+        _credential: Arc<dyn TokenCredential>,
         options: Option<TestServiceClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -49,20 +50,23 @@ impl TestServiceClient {
             ));
         }
         endpoint.set_query(None);
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
-            credential,
-            vec!["https://vault.azure.net/.default"],
-        ));
-        let request_instrumentation_policy = Arc::new(
-            azure_core::http::policies::RequestInstrumentationPolicy::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options
-                    .azure_client_options
-                    .request_instrumentation
-                    .as_ref(),
-            ),
-        );
+
+        let tracer =
+            if let Some(tracer_options) = &options.azure_client_options.request_instrumentation {
+                tracer_options
+                    .tracing_provider
+                    .as_ref()
+                    .map(|tracing_provider| {
+                        tracing_provider.get_tracer(
+                            "Az.TestServiceClient",
+                            option_env!("CARGO_PKG_NAME").unwrap_or("test_service_client"),
+                            option_env!("CARGO_PKG_VERSION").unwrap_or("0.1.0"),
+                        )
+                    })
+            } else {
+                None
+            };
+
         Ok(Self {
             endpoint,
             api_version: options.api_version,
@@ -71,8 +75,9 @@ impl TestServiceClient {
                 option_env!("CARGO_PKG_VERSION"),
                 options.azure_client_options,
                 Vec::default(),
-                vec![auth_policy, request_instrumentation_policy],
+                Vec::default(),
             ),
+            tracer,
         })
     }
 
@@ -81,6 +86,11 @@ impl TestServiceClient {
         &self.endpoint
     }
 
+    /// Returns the result of a Get verb against the configured endpoint with the specified path.
+    ///
+    /// This method demonstrates a service client which does not have per-method spans but which will create
+    /// HTTP client spans if the `RequestInstrumentationOptions` are configured in the client options.
+    ///
     pub async fn get(
         &self,
         path: &str,
@@ -109,6 +119,60 @@ impl TestServiceClient {
         }
         Ok(response)
     }
+
+    /// Returns the result of a Get verb against the configured endpoint with the specified path.
+    ///
+    /// This method demonstrates a service client which has per-method spans and uses the configured tracing
+    /// tracing provider to create per-api spans for the function.
+    ///
+    /// To configure per-api spans, your service implementation needs to do the following:
+    /// 1. If the client is configured with a [`Tracer`], it will create a span whose name matches the function.
+    ///    1. The span should be created with the `SpanKind::Internal` kind, and
+    ///    2. The span should have the `az.namespace` attribute set to the namespace of the service client.
+    /// 2. The function should add the span created in step 1 to  the ClientMethodOptions context.
+    /// 3. The function should add the tracer to the ClientMethodOptions context so that the pipeline can use it to populate the `az.namespace` property in the request span.
+    /// 4. The function should then perform the normal client operations after setting up the context.
+    /// 5. After the client operation completes, if the function failed, it should add an `error.type` attribute to the span
+    ///    with the error type.
+    ///
+    /// # Note
+    /// This applies to most HTTP client operations, but not all. CosmosDB has its own set of conventions as listed
+    /// [here](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/cosmosdb.md)
+    ///
+    pub async fn get_with_function_tracing(
+        &self,
+        path: &str,
+        options: Option<TestServiceClientGetMethodOptions<'_>>,
+    ) -> Result<RawResponse> {
+        let mut options = options.unwrap_or_default();
+        let mut ctx = options.method_options.context.clone();
+        let span = if let Some(tracer) = &self.tracer {
+            let span = tracer.start_span(
+                "get_with_tracing",
+                azure_core::tracing::SpanKind::Internal,
+                vec![Attribute {
+                    key: "az.namespace",
+                    value: tracer.namespace().into(),
+                }],
+            );
+            // We need to add the span to the context because the pipeline will use it as the parent span
+            // for the request span.
+            ctx = ctx.with_value(span.clone());
+            // And we need to add the tracer to the context so that the pipeline can use it to populate the
+            // az.namespace property in the request span.
+            ctx = ctx.with_value(tracer.clone());
+            Some(span)
+        } else {
+            None
+        };
+        options.method_options.context = ctx;
+        let response = self.get(path, Some(options)).await;
+        if let Some(span) = span {
+            span.set_status(azure_core::tracing::SpanStatus::Ok);
+            span.end();
+        };
+        response
+    }
 }
 
 #[cfg(test)]
@@ -116,6 +180,10 @@ mod tests {
     use super::*;
     use azure_core::Result;
     use azure_core_test::{recorded, TestContext};
+    use opentelemetry::trace::{
+        SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus,
+    };
+    use opentelemetry::Value as OpenTelemetryAttributeValue;
     use tracing::{info, trace};
 
     fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
@@ -127,6 +195,57 @@ mod tests {
         (otel_tracer_provider, otel_exporter)
     }
 
+    // Span verification utility functions.
+
+    struct ExpectedSpan {
+        name: &'static str,
+        kind: OpenTelemetrySpanKind,
+        parent_span_id: Option<opentelemetry::trace::SpanId>,
+        status: OpenTelemetrySpanStatus,
+        attributes: Vec<(&'static str, OpenTelemetryAttributeValue)>,
+    }
+
+    fn verify_span(
+        span: &opentelemetry_sdk::trace::SpanData,
+        expected: ExpectedSpan,
+    ) -> Result<()> {
+        assert_eq!(span.name, expected.name);
+        assert_eq!(span.span_kind, expected.kind);
+        assert_eq!(span.status, expected.status);
+        assert_eq!(
+            span.parent_span_id,
+            expected
+                .parent_span_id
+                .unwrap_or(opentelemetry::trace::SpanId::INVALID)
+        );
+
+        for attr in span.attributes.iter() {
+            println!("Attribute: {} = {:?}", attr.key, attr.value);
+            let mut found = false;
+            for (key, value) in expected.attributes.iter() {
+                if attr.key.as_str() == (*key) {
+                    found = true;
+                    // Skip checking the value for "<ANY>" as it is a placeholder
+                    if *value != OpenTelemetryAttributeValue::String("<ANY>".into()) {
+                        assert_eq!(attr.value, *value, "Attribute mismatch for key: {}", *key);
+                    }
+                    break;
+                }
+            }
+            if !found {
+                panic!("Unexpected attribute: {} = {:?}", attr.key, attr.value);
+            }
+        }
+        for (key, value) in expected.attributes.iter() {
+            if !span.attributes.iter().any(|attr| attr.key == (*key).into()) {
+                panic!("Expected attribute not found: {} = {:?}", key, value);
+            }
+        }
+
+        Ok(())
+    }
+
+    // Basic functionality tests.
     #[recorded::test()]
     async fn test_service_client_new(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
@@ -144,17 +263,14 @@ mod tests {
         Ok(())
     }
 
+    // Ensure that the the test client actually does what it's supposed to do without telemetry.
     #[recorded::test()]
     async fn test_service_client_get(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
         let endpoint = "https://example.com";
         let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
-            api_version: "2023-10-01".to_string(),
-            ..Default::default()
-        };
 
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+        let client = TestServiceClient::new(endpoint, credential, None).unwrap();
         let response = client.get("index.html", None).await;
         info!("Response: {:?}", response);
         assert!(response.is_ok());
@@ -192,7 +308,167 @@ mod tests {
         assert_eq!(spans.len(), 1);
         for span in &spans {
             trace!("Span: {:?}", span);
+
+            verify_span(
+                span,
+                ExpectedSpan {
+                    name: "GET",
+                    kind: OpenTelemetrySpanKind::Client,
+                    status: OpenTelemetrySpanStatus::Unset,
+                    parent_span_id: None,
+                    attributes: vec![
+                        ("http.request.method", "GET".into()),
+                        ("az.namespace", "Unknown".into()),
+                        ("az.schema.url", "https".into()),
+                        ("az.client.request.id", "<ANY>".into()),
+                        (
+                            "url.full",
+                            format!(
+                                "{}{}",
+                                client.endpoint(),
+                                "index.html?api-version=2023-10-01"
+                            )
+                            .into(),
+                        ),
+                        ("server.address", "example.com".into()),
+                        ("server.port", 443.into()),
+                        ("http.request.resend.count", 0.into()),
+                        ("http.response.status_code", 200.into()),
+                    ],
+                },
+            )?;
         }
+
+        Ok(())
+    }
+
+    #[recorded::test()]
+    async fn test_service_client_get_with_tracing_error(ctx: TestContext) -> Result<()> {
+        let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
+        let azure_provider = Arc::new(OpenTelemetryTracerProvider::new(sdk_provider)?);
+
+        let recording = ctx.recording();
+        let endpoint = "https://example.com";
+        let credential = recording.credential().clone();
+        let options = TestServiceClientOptions {
+            api_version: "2023-10-01".to_string(),
+            azure_client_options: ClientOptions {
+                request_instrumentation: Some(RequestInstrumentationOptions {
+                    tracing_provider: Some(azure_provider),
+                }),
+                ..Default::default()
+            },
+        };
+
+        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+        let response = client.get("failing_url", None).await;
+        info!("Response: {:?}", response);
+
+        let spans = otel_exporter.get_finished_spans().unwrap();
+        assert_eq!(spans.len(), 1);
+        for span in &spans {
+            trace!("Span: {:?}", span);
+
+            verify_span(
+                span,
+                ExpectedSpan {
+                    name: "GET",
+                    kind: OpenTelemetrySpanKind::Client,
+                    parent_span_id: None,
+                    status: OpenTelemetrySpanStatus::Error {
+                        description: "HTTP request failed with status code 404: Not Found".into(),
+                    },
+                    attributes: vec![
+                        ("http.request.method", "GET".into()),
+                        ("az.namespace", "Unknown".into()),
+                        ("az.schema.url", "https".into()),
+                        ("az.client.request.id", "<ANY>".into()),
+                        (
+                            "url.full",
+                            format!(
+                                "{}{}",
+                                client.endpoint(),
+                                "failing_url?api-version=2023-10-01"
+                            )
+                            .into(),
+                        ),
+                        ("server.address", "example.com".into()),
+                        ("server.port", 443.into()),
+                        ("http.request.resend.count", 0.into()),
+                        ("http.response.status_code", 404.into()),
+                    ],
+                },
+            )?;
+        }
+
+        Ok(())
+    }
+
+    #[recorded::test()]
+    async fn test_service_client_get_with_full_tracing(ctx: TestContext) -> Result<()> {
+        let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
+        let azure_provider = Arc::new(OpenTelemetryTracerProvider::new(sdk_provider)?);
+
+        let recording = ctx.recording();
+        let endpoint = "https://example.com";
+        let credential = recording.credential().clone();
+        let options = TestServiceClientOptions {
+            api_version: "2023-10-01".to_string(),
+            azure_client_options: ClientOptions {
+                request_instrumentation: Some(RequestInstrumentationOptions {
+                    tracing_provider: Some(azure_provider),
+                }),
+                ..Default::default()
+            },
+        };
+
+        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+        let response = client.get_with_function_tracing("index.html", None).await;
+        info!("Response: {:?}", response);
+
+        let spans = otel_exporter.get_finished_spans().unwrap();
+        assert_eq!(spans.len(), 2);
+        for span in &spans {
+            trace!("Span: {:?}", span);
+        }
+        verify_span(
+            &spans[0],
+            ExpectedSpan {
+                name: "GET",
+                kind: OpenTelemetrySpanKind::Client,
+                parent_span_id: Some(spans[1].span_context.span_id()),
+                status: OpenTelemetrySpanStatus::Unset,
+                attributes: vec![
+                    ("http.request.method", "GET".into()),
+                    ("az.namespace", "Az.TestServiceClient".into()),
+                    ("az.schema.url", "https".into()),
+                    ("az.client.request.id", "<ANY>".into()),
+                    (
+                        "url.full",
+                        format!(
+                            "{}{}",
+                            client.endpoint(),
+                            "index.html?api-version=2023-10-01"
+                        )
+                        .into(),
+                    ),
+                    ("server.address", "example.com".into()),
+                    ("server.port", 443.into()),
+                    ("http.request.resend.count", 0.into()),
+                    ("http.response.status_code", 200.into()),
+                ],
+            },
+        )?;
+        verify_span(
+            &spans[1],
+            ExpectedSpan {
+                name: "get_with_tracing",
+                kind: OpenTelemetrySpanKind::Internal,
+                parent_span_id: None,
+                status: OpenTelemetrySpanStatus::Ok,
+                attributes: vec![("az.namespace", "Az.TestServiceClient".into())],
+            },
+        )?;
 
         Ok(())
     }

@@ -26,15 +26,18 @@ impl OpenTelemetryTracerProvider {
 impl TracerProvider for OpenTelemetryTracerProvider {
     fn get_tracer(
         &self,
-        name: &'static str,
+        namespace: &'static str,
+        package_name: &'static str,
         package_version: &'static str,
     ) -> Arc<dyn azure_core::tracing::Tracer> {
-        let scope = InstrumentationScope::builder(name)
+        let scope = InstrumentationScope::builder(package_name)
             .with_version(package_version)
+            .with_schema_url("https://opentelemetry.io/schemas/1.23.0")
             .build();
-        Arc::new(OpenTelemetryTracer::new(BoxedTracer::new(
-            self.inner.boxed_tracer(scope),
-        )))
+        Arc::new(OpenTelemetryTracer::new(
+            namespace,
+            BoxedTracer::new(self.inner.boxed_tracer(scope)),
+        ))
     }
 }
 

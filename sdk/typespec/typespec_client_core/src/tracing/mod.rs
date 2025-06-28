@@ -29,10 +29,14 @@ pub trait TracerProvider: Send + Sync {
     /// Returns a tracer for the given name.
     ///
     /// Arguments:
+    /// - `namespace_name`: The namespace of the package for which the tracer is requested. See
+    ///   [this page](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers)
+    ///   for more information on namespace names.
     /// - `package_name`: The name of the package for which the tracer is requested.
     /// - `package_version`: The version of the package for which the tracer is requested.
     fn get_tracer(
         &self,
+        namespace_name: &'static str,
         package_name: &'static str,
         package_version: &'static str,
     ) -> Arc<dyn Tracer>;
@@ -96,6 +100,9 @@ pub trait Tracer: Send + Sync {
         attributes: Vec<Attribute>,
         parent: Arc<dyn Span>,
     ) -> Arc<dyn Span>;
+
+    /// Returns the namespace the tracer was configured with.
+    fn namespace(&self) -> &'static str;
 }
 
 impl Debug for dyn Tracer {
@@ -104,7 +111,7 @@ impl Debug for dyn Tracer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum SpanStatus {
     Unset,
     Ok,
