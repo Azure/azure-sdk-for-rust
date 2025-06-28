@@ -3,7 +3,7 @@
 
 use super::policies::ClientRequestIdPolicy;
 use crate::http::{
-    policies::{Policy, UserAgentPolicy},
+    policies::{Policy, RequestInstrumentationPolicy, UserAgentPolicy},
     ClientOptions,
 };
 use std::{
@@ -51,9 +51,38 @@ impl Pipeline {
         let mut per_call_policies = per_call_policies.clone();
         push_unique(&mut per_call_policies, ClientRequestIdPolicy::default());
 
-        let (user_agent, options) = options.deconstruct();
-        let telemetry_policy = UserAgentPolicy::new(crate_name, crate_version, &user_agent);
-        push_unique(&mut per_call_policies, telemetry_policy);
+        let (core_client_options, options) = options.deconstruct();
+        let user_agent_policy =
+                UserAgentPolicy::new(crate_name, crate_version, &core_client_options.user_agent);
+        push_unique(&mut per_call_policies, user_agent_policy);
+
+
+        let mut per_try_policies = per_try_policies.clone();
+        if core_client_options
+            .request_instrumentation
+            .tracing_provider
+            .is_some()
+        {
+            // Note that the choice to use "None" as the namespace here
+            // is intentional.
+            // The `azure_namespace` parameter is used to populate the `az.namespace`
+            // span attribute, however that information is only known by the author of the
+            // client library, not the core library.
+            // It is also *not* a constant that can be derived from the crate information -
+            // it is a value that is determined from the list of resource providers
+            // listed [here](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers).
+            //
+            // This information can only come from the package owner. It doesn't make sense
+            // to burden all users of the azure_core pipeline with determining this
+            // information, so we use `None` here.
+            let request_instrumentation_policy = RequestInstrumentationPolicy::new(
+                None,
+                crate_name,
+                crate_version,
+                &core_client_options.request_instrumentation,
+            );
+            push_unique(&mut per_try_policies, request_instrumentation_policy);
+        }
 
         Self(http::Pipeline::new(
             options,

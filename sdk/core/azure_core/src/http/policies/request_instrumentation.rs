@@ -11,9 +11,7 @@ use typespec_client_core::{
     tracing::Attribute,
 };
 
-#[allow(dead_code)]
 const AZ_NAMESPACE_ATTRIBUTE: &str = "az.namespace";
-
 const AZ_SCHEMA_URL_ATTRIBUTE: &str = "az.schema.url";
 const AZ_CLIENT_REQUEST_ID_ATTRIBUTE: &str = "az.client.request.id";
 const ERROR_TYPE_ATTRIBUTE: &str = "error.type";
@@ -25,27 +23,47 @@ const SERVER_ADDRESS_ATTRIBUTE: &str = "server.address";
 const SERVER_PORT_ATTRIBUTE: &str = "server.port";
 const URL_FULL_ATTRIBUTE: &str = "url.full";
 
-/// Sets the User-Agent header with useful information in a typical format for Azure SDKs.
+/// Sets distributed tracing information for HTTP requests.
 #[derive(Clone, Debug)]
 pub struct RequestInstrumentationPolicy {
     tracer: Option<Arc<dyn crate::tracing::Tracer>>,
 }
 
 impl RequestInstrumentationPolicy {
+    /// Creates a new `RequestInstrumentationPolicy`.
+    ///
+    /// # Arguments
+    /// - `azure_namespace`: The Azure namespace for the tracer.
+    /// - `crate_name`: The name of the crate for which the tracer is created.
+    /// - `crate_version`: The version of the crate for which the tracer is created.
+    /// - `options`: Options for request instrumentation, including the tracing provider.
+    ///
+    /// # Returns
+    /// A new instance of `RequestInstrumentationPolicy`.
+    ///
+    /// # Note
+    /// This policy will only create a tracer if a tracing provider is provided in the options.
+    ///
+    /// This policy will create a tracer that can be used to instrument HTTP requests.
+    /// However this tracer is only used when the client method is NOT instrumented.
+    /// A part of the client method instrumentation sets a client-specific tracer into the
+    /// request `[Context]` which will be used instead of the tracer from this policy.
+    ///
     pub fn new(
+        azure_namespace: Option<&'static str>,
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
-        options: Option<&RequestInstrumentationOptions>,
+        options: &RequestInstrumentationOptions,
     ) -> Self {
-        if let Some(tracing_provider) = options.and_then(|o| o.tracing_provider.clone()) {
+        if let Some(tracing_provider) = &options.tracing_provider {
             Self {
                 tracer: Some(tracing_provider.get_tracer(
+                    azure_namespace.unwrap_or("Unknown"),
                     crate_name.unwrap_or("unknown"),
                     crate_version.unwrap_or("unknown"),
                 )),
             }
         } else {
-            // If no tracing provider is set, we return a policy with no tracer.
             Self { tracer: None }
         }
     }
@@ -60,11 +78,25 @@ impl Policy for RequestInstrumentationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        if let Some(tracer) = &self.tracer {
+        // If the context has a tracer (which happens when called from an instrumented method),
+        // we prefer the tracer from the context.
+        // Otherwise, we use the tracer from the policy itself.
+        // This allows for flexibility in using different tracers in different contexts.
+        let tracer = if ctx.value::<Arc<dyn crate::tracing::Tracer>>().is_some() {
+            ctx.value::<Arc<dyn crate::tracing::Tracer>>()
+        } else {
+            self.tracer.as_ref()
+        };
+
+        if let Some(tracer) = tracer {
             let mut span_attributes = vec![
                 Attribute {
                     key: HTTP_REQUEST_METHOD_ATTRIBUTE,
                     value: request.method().to_string().into(),
+                },
+                Attribute {
+                    key: AZ_NAMESPACE_ATTRIBUTE,
+                    value: tracer.namespace().into(),
                 },
                 Attribute {
                     key: AZ_SCHEMA_URL_ATTRIBUTE,
@@ -191,33 +223,17 @@ impl Policy for RequestInstrumentationPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Arc, Mutex};
-    use typespec_client_core::{
+    use crate::{
         http::{
             headers::Headers, policies::TransportPolicy, Method, RawResponse, StatusCode,
             TransportOptions,
         },
         tracing::{AsAny, AttributeValue, Span, SpanStatus, Tracer, TracerProvider},
+        Result,
     };
-
-    #[derive(Debug)]
-    struct MockTransport;
-
-    #[async_trait::async_trait]
-    impl Policy for MockTransport {
-        async fn send(
-            &self,
-            _ctx: &Context,
-            _request: &mut Request,
-            _next: &[Arc<dyn Policy>],
-        ) -> PolicyResult {
-            PolicyResult::Ok(RawResponse::from_bytes(
-                StatusCode::Ok,
-                Headers::new(),
-                Vec::new(),
-            ))
-        }
-    }
+    use azure_core_test::http::MockHttpClient;
+    use futures::future::BoxFuture;
+    use std::sync::{Arc, Mutex};
 
     #[derive(Debug)]
     struct MockTracingProvider {
@@ -234,13 +250,15 @@ mod tests {
     impl TracerProvider for MockTracingProvider {
         fn get_tracer(
             &self,
-            crate_name: &str,
-            crate_version: &str,
+            azure_namespace: &'static str,
+            crate_name: &'static str,
+            crate_version: &'static str,
         ) -> Arc<dyn crate::tracing::Tracer> {
             let mut tracers = self.tracers.lock().unwrap();
             let tracer = Arc::new(MockTracer {
-                name: crate_name.to_string(),
-                version: crate_version.to_string(),
+                namespace: azure_namespace,
+                name: crate_name,
+                version: crate_version,
                 spans: Mutex::new(Vec::new()),
             });
 
@@ -251,12 +269,17 @@ mod tests {
 
     #[derive(Debug)]
     struct MockTracer {
-        name: String,
-        version: String,
+        namespace: &'static str,
+        name: &'static str,
+        version: &'static str,
         spans: Mutex<Vec<Arc<MockSpan>>>,
     }
 
     impl Tracer for MockTracer {
+        fn namespace(&self) -> &'static str {
+            self.namespace
+        }
+
         fn start_span_with_current(
             &self,
             name: &str,
@@ -362,23 +385,30 @@ mod tests {
         }
     }
 
-    async fn run_instrumentation_test(
+    async fn run_instrumentation_test<C>(
+        test_namespace: Option<&'static str>,
         crate_name: Option<&'static str>,
         version: Option<&'static str>,
         request: &mut Request,
-    ) -> Arc<MockTracingProvider> {
+        callback: C,
+    ) -> Arc<MockTracingProvider>
+    where
+        C: FnMut(&Request) -> BoxFuture<'_, Result<RawResponse>> + Send + Sync + 'static,
+    {
         let mock_tracer = Arc::new(MockTracingProvider::new());
         let options = RequestInstrumentationOptions {
             tracing_provider: Some(mock_tracer.clone()),
         };
         let policy = Arc::new(RequestInstrumentationPolicy::new(
+            test_namespace,
             crate_name,
             version,
-            Some(&options),
+            &options,
         ));
 
-        let transport =
-            TransportPolicy::new(TransportOptions::new_custom_policy(Arc::new(MockTransport)));
+        let transport = TransportPolicy::new(TransportOptions::new(Arc::new(MockHttpClient::new(
+            callback,
+        ))));
 
         let ctx = Context::default();
         let next: Vec<Arc<dyn Policy>> = vec![Arc::new(transport)];
@@ -388,9 +418,11 @@ mod tests {
     }
     fn check_instrumentation_result(
         mock_tracer: Arc<MockTracingProvider>,
+        expected_namespace: &str,
         expected_name: &str,
         expected_version: &str,
         expected_method: &str,
+        expected_status: SpanStatus,
         expected_attributes: Vec<(&str, AttributeValue)>,
     ) {
         assert_eq!(
@@ -402,11 +434,13 @@ mod tests {
         let tracer = tracers.first().unwrap();
         assert_eq!(tracer.name, expected_name);
         assert_eq!(tracer.version, expected_version);
+        assert_eq!(tracer.namespace, expected_namespace);
         let spans = tracer.spans.lock().unwrap();
         assert_eq!(spans.len(), 1, "Expected one span to be created");
         println!("Spans: {:?}", spans);
         let span = spans.first().unwrap();
         assert_eq!(span.name, expected_method);
+        assert_eq!(*span.state.lock().unwrap(), expected_status);
         let attributes = span.attributes.lock().unwrap();
         for attr in attributes.iter() {
             println!("Attribute: {} = {:?}", attr.key, attr.value);
@@ -437,15 +471,37 @@ mod tests {
         let url = "http://example.com/path";
         let mut request = Request::new(url.parse().unwrap(), Method::Get);
 
-        let mock_tracer =
-            run_instrumentation_test(Some("test_crate"), Some("1.0.0"), &mut request).await;
+        let mock_tracer = run_instrumentation_test(
+            Some("test namespace"),
+            Some("test_crate"),
+            Some("1.0.0"),
+            &mut request,
+            |req| {
+                Box::pin(async move {
+                    assert_eq!(req.url().host_str(), Some("example.com"));
+                    assert_eq!(req.method(), &Method::Get);
+                    Ok(RawResponse::from_bytes(
+                        StatusCode::Ok,
+                        Headers::new(),
+                        vec![],
+                    ))
+                })
+            },
+        )
+        .await;
 
         check_instrumentation_result(
             mock_tracer,
+            "test namespace",
             "test_crate",
             "1.0.0",
             "GET",
+            SpanStatus::Unset,
             vec![
+                (
+                    AZ_NAMESPACE_ATTRIBUTE,
+                    AttributeValue::from("test namespace"),
+                ),
                 (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("http")),
                 (
                     HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
@@ -471,15 +527,37 @@ mod tests {
         let mut request = Request::new(url.parse().unwrap(), Method::Get);
         request.insert_header(headers::CLIENT_REQUEST_ID, "test-client-request-id");
 
-        let mock_tracer =
-            run_instrumentation_test(Some("test_crate"), Some("1.0.0"), &mut request).await;
+        let mock_tracer = run_instrumentation_test(
+            Some("test namespace"),
+            Some("test_crate"),
+            Some("1.0.0"),
+            &mut request,
+            |req| {
+                Box::pin(async move {
+                    assert_eq!(req.url().host_str(), Some("example.com"));
+                    assert_eq!(req.method(), &Method::Get);
+                    Ok(RawResponse::from_bytes(
+                        StatusCode::Ok,
+                        Headers::new(),
+                        vec![],
+                    ))
+                })
+            },
+        )
+        .await;
 
         check_instrumentation_result(
             mock_tracer.clone(),
+            "test namespace",
             "test_crate",
             "1.0.0",
             "GET",
+            SpanStatus::Unset,
             vec![
+                (
+                    AZ_NAMESPACE_ATTRIBUTE,
+                    AttributeValue::from("test namespace"),
+                ),
                 (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("https")),
                 (
                     AZ_CLIENT_REQUEST_ID_ATTRIBUTE,
@@ -508,14 +586,29 @@ mod tests {
         let url = "https://user:password@host:8080/path?query=value#fragment";
         let mut request = Request::new(url.parse().unwrap(), Method::Get);
 
-        let mock_tracer_provider = run_instrumentation_test(None, None, &mut request).await;
+        let mock_tracer_provider =
+            run_instrumentation_test(None, None, None, &mut request, |req| {
+                Box::pin(async move {
+                    assert_eq!(req.url().host_str(), Some("host"));
+                    assert_eq!(req.method(), &Method::Get);
+                    Ok(RawResponse::from_bytes(
+                        StatusCode::Ok,
+                        Headers::new(),
+                        vec![],
+                    ))
+                })
+            })
+            .await;
 
         check_instrumentation_result(
             mock_tracer_provider,
+            "Unknown",
             "unknown",
             "unknown",
             "GET",
+            SpanStatus::Unset,
             vec![
+                (AZ_NAMESPACE_ATTRIBUTE, AttributeValue::from("Unknown")),
                 (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("https")),
                 (
                     HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
@@ -527,6 +620,68 @@ mod tests {
                 (
                     URL_FULL_ATTRIBUTE,
                     AttributeValue::from("https://host:8080/path?query=value#fragment"),
+                ),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn request_failed() {
+        let url = "https://microsoft.com/request_failed.htm";
+        let mut request = Request::new(url.parse().unwrap(), Method::Put);
+        request.insert_header(headers::REQUEST_ID, "test-service-request-id");
+
+        let mock_tracer = run_instrumentation_test(
+            Some("test namespace"),
+            Some("test_crate"),
+            Some("1.0.0"),
+            &mut request,
+            |req| {
+                Box::pin(async move {
+                    assert_eq!(req.url().host_str(), Some("microsoft.com"));
+                    assert_eq!(req.method(), &Method::Put);
+                    Ok(RawResponse::from_bytes(
+                        StatusCode::NotFound,
+                        Headers::new(),
+                        vec![],
+                    ))
+                })
+            },
+        )
+        .await;
+
+        check_instrumentation_result(
+            mock_tracer.clone(),
+            "test namespace",
+            "test_crate",
+            "1.0.0",
+            "PUT",
+            SpanStatus::Error {
+                description: "HTTP request failed with status code 404: Not Found".to_string(),
+            },
+            vec![
+                (
+                    AZ_NAMESPACE_ATTRIBUTE,
+                    AttributeValue::from("test namespace"),
+                ),
+                (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("https")),
+                (
+                    AZ_SERVICE_REQUEST_ID_ATTRIBUTE,
+                    AttributeValue::from("test-service-request-id"),
+                ),
+                (
+                    HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
+                    AttributeValue::from(404),
+                ),
+                (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("PUT")),
+                (
+                    SERVER_ADDRESS_ATTRIBUTE,
+                    AttributeValue::from("microsoft.com"),
+                ),
+                (SERVER_PORT_ATTRIBUTE, AttributeValue::from(443)),
+                (
+                    URL_FULL_ATTRIBUTE,
+                    AttributeValue::from("https://microsoft.com/request_failed.htm"),
                 ),
             ],
         );
