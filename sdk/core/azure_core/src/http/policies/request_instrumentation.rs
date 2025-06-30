@@ -560,7 +560,7 @@ mod tests {
                     assert_eq!(req.method(), &Method::Get);
                     assert_eq!(
                         req.headers()
-                            .get_optional_str(HeaderName::from_static("traceparent")),
+                            .get_optional_str(&HeaderName::from_static("traceparent")),
                         Some("00-<trace_id>-<span_id>-01")
                     );
                     Ok(RawResponse::from_bytes(
