@@ -1,17 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::{
+    constants::{self},
+    models::ThroughputProperties,
+};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::http::{headers, ClientMethodOptions, ClientOptions, Etag};
 use serde_json::value::Index;
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::Display;
-
-use crate::{
-    constants::{self, CONSISTENCY_LEVEL},
-    models::ThroughputProperties,
-};
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 #[derive(Clone, Default)]
@@ -82,9 +81,9 @@ pub enum IndexingDirective {
 impl Display for IndexingDirective {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let value = match self {
-            IndexingDirective::Default => "default",
-            IndexingDirective::Include => "include",
-            IndexingDirective::Exclude => "exclude",
+            IndexingDirective::Default => "Default",
+            IndexingDirective::Include => "Include",
+            IndexingDirective::Exclude => "Exclude",
         };
         write!(f, "{}", value)
     }
@@ -114,7 +113,7 @@ pub struct ItemOptions<'a> {
     pub consistency_level: Option<ConsistencyLevel>,
     /// Sets indexing directive for the operation.
     ///
-    ///
+    /// See [Indexing Policies](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/index-policies) for more.
     pub indexing_directive: Option<IndexingDirective>,
     /// If specified, the operation will only be performed if the item matches the provided Etag.
     ///
@@ -249,8 +248,6 @@ mod tests {
         let headers_result: Vec<(HeaderName, HeaderValue)> =
             item_options.as_headers().unwrap().collect();
 
-        println!("{:?}", headers_result);
-
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
             (
                 constants::PRETRIGGER_INCLUDE,
@@ -262,7 +259,7 @@ mod tests {
             ),
             (constants::SESSION_TOKEN, "SessionToken".into()),
             (constants::CONSISTENCY_LEVEL, "Session".into()),
-            (constants::INDEXING_DIRECTIVE, "include".into()),
+            (constants::INDEXING_DIRECTIVE, "Include".into()),
             (headers::IF_MATCH, "etag_value".into()),
             (headers::PREFER, constants::PREFER_MINIMAL),
         ];
