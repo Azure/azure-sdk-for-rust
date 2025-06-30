@@ -209,6 +209,7 @@ dependencies = [
  "azure_core_test",
  "azure_core_test_macros",
  "opentelemetry 0.30.0",
+ "opentelemetry-http",
  "opentelemetry_sdk 0.30.0",
  "tokio",
  "tracing",
@@ -1789,6 +1790,18 @@ dependencies = [
  "pin-project-lite",
  "thiserror 2.0.12",
  "tracing",
+]
+
+[[package]]
+name = "opentelemetry-http"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50f6639e842a97dbea8886e3439710ae463120091e2e064518ba8e716e6ac36d"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "http",
+ "opentelemetry 0.30.0",
 ]
 
 [[package]]
