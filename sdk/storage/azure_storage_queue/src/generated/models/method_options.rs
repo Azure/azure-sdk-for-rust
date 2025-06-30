@@ -10,9 +10,9 @@ use azure_core::{
 };
 use std::collections::HashMap;
 
-/// Options to be passed to `QueueMessageIdOperationGroupClient::delete()`
+/// Options to be passed to `QueueClient::clear()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueMessageIdOperationGroupClientDeleteOptions<'a> {
+pub struct QueueClientClearOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -20,32 +20,51 @@ pub struct QueueMessageIdOperationGroupClientDeleteOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to `QueueMessageIdOperationGroupClient::update()`
+/// Options to be passed to `QueueClient::create()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueMessageIdOperationGroupClientUpdateOptions<'a> {
+pub struct QueueClientCreateOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// The metadata headers.
+    pub metadata: Option<HashMap<String, String>>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `QueueClient::delete()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct QueueClientDeleteOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// The metadata headers.
+    pub metadata: Option<HashMap<String, String>>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `QueueClient::delete_message()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct QueueClientDeleteMessageOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
-
-    /// A Message object which can be stored in a Queue
-    pub queue_message: Option<RequestContent<QueueMessage>>,
 }
 
-/// Options to be passed to `QueueMessagesOperationGroupClient::clear()`
+/// Options to be passed to `QueueClient::dequeue()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueMessagesOperationGroupClientClearOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-/// Options to be passed to `QueueMessagesOperationGroupClient::dequeue()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct QueueMessagesOperationGroupClientDequeueOptions<'a> {
+pub struct QueueClientDequeueOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -68,9 +87,9 @@ pub struct QueueMessagesOperationGroupClientDequeueOptions<'a> {
     pub visibility_timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueMessagesOperationGroupClient::enqueue()`
+/// Options to be passed to `QueueClient::enqueue()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueMessagesOperationGroupClientEnqueueOptions<'a> {
+pub struct QueueClientEnqueueOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -91,9 +110,35 @@ pub struct QueueMessagesOperationGroupClientEnqueueOptions<'a> {
     pub visibility_timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueMessagesOperationGroupClient::peek()`
+/// Options to be passed to `QueueClient::get_access_policy()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueMessagesOperationGroupClientPeekOptions<'a> {
+pub struct QueueClientGetAccessPolicyOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `QueueClient::get_metadata()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct QueueClientGetMetadataOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `QueueClient::peek()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct QueueClientPeekOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -107,9 +152,22 @@ pub struct QueueMessagesOperationGroupClientPeekOptions<'a> {
     pub number_of_messages: Option<i32>,
 }
 
-/// Options to be passed to `QueueQueueOperationGroupClient::create()`
+/// Options to be passed to `QueueClient::set_access_policy()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueQueueOperationGroupClientCreateOptions<'a> {
+pub struct QueueClientSetAccessPolicyOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `QueueClient::set_metadata()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct QueueClientSetMetadataOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -123,38 +181,22 @@ pub struct QueueQueueOperationGroupClientCreateOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueQueueOperationGroupClient::delete()`
+/// Options to be passed to `QueueClient::update()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueQueueOperationGroupClientDeleteOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// The metadata headers.
-    pub metadata: Option<HashMap<String, String>>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `QueueQueueOperationGroupClient::get_access_policy()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct QueueQueueOperationGroupClientGetAccessPolicyOptions<'a> {
+pub struct QueueClientUpdateOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
-    pub timeout: Option<i32>,
+    /// A Message object which can be stored in a Queue
+    pub queue_message: Option<RequestContent<QueueMessage>>,
 }
 
-/// Options to be passed to `QueueQueueOperationGroupClient::get_properties()`
+/// Options to be passed to `QueueServiceClient::get_properties()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueQueueOperationGroupClientGetPropertiesOptions<'a> {
+pub struct QueueServiceClientGetPropertiesOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -165,9 +207,9 @@ pub struct QueueQueueOperationGroupClientGetPropertiesOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueQueueOperationGroupClient::set_access_policy()`
+/// Options to be passed to `QueueServiceClient::get_statistics()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueQueueOperationGroupClientSetAccessPolicyOptions<'a> {
+pub struct QueueServiceClientGetStatisticsOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -178,51 +220,9 @@ pub struct QueueQueueOperationGroupClientSetAccessPolicyOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `QueueQueueOperationGroupClient::set_metadata()`
+/// Options to be passed to `QueueServiceClient::list_queues_segment()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueQueueOperationGroupClientSetMetadataOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// The metadata headers.
-    pub metadata: Option<HashMap<String, String>>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `QueueServiceOperationGroupClient::get_properties()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct QueueServiceOperationGroupClientGetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `QueueServiceOperationGroupClient::get_statistics()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct QueueServiceOperationGroupClientGetStatisticsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `QueueServiceOperationGroupClient::list_queues_segment()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct QueueServiceOperationGroupClientListQueuesSegmentOptions<'a> {
+pub struct QueueServiceClientListQueuesSegmentOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -249,9 +249,9 @@ pub struct QueueServiceOperationGroupClientListQueuesSegmentOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-impl QueueServiceOperationGroupClientListQueuesSegmentOptions<'_> {
-    pub fn into_owned(self) -> QueueServiceOperationGroupClientListQueuesSegmentOptions<'static> {
-        QueueServiceOperationGroupClientListQueuesSegmentOptions {
+impl QueueServiceClientListQueuesSegmentOptions<'_> {
+    pub fn into_owned(self) -> QueueServiceClientListQueuesSegmentOptions<'static> {
+        QueueServiceClientListQueuesSegmentOptions {
             client_request_id: self.client_request_id,
             include: self.include,
             marker: self.marker,
@@ -265,9 +265,9 @@ impl QueueServiceOperationGroupClientListQueuesSegmentOptions<'_> {
     }
 }
 
-/// Options to be passed to `QueueServiceOperationGroupClient::set_properties()`
+/// Options to be passed to `QueueServiceClient::set_properties()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct QueueServiceOperationGroupClientSetPropertiesOptions<'a> {
+pub struct QueueServiceClientSetPropertiesOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 

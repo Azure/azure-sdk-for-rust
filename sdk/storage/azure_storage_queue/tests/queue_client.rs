@@ -6,13 +6,12 @@ use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
     clients::{QueueClient, QueueClientOptions},
     models::{
-        QueueMessage, QueueMessageIdOperationGroupClientUpdateOptions,
-        QueueMessagesOperationGroupClientDequeueOptions,
-        QueueMessagesOperationGroupClientPeekOptions,
+        QueueClientDequeueOptions, QueueClientPeekOptions, QueueClientSetMetadataOptions,
+        QueueClientUpdateOptions, QueueMessage,
     },
 };
 
-use std::option::Option;
+use std::collections::HashMap;
 
 /// Creates a new queue under the given account.
 #[recorded::test]
@@ -129,23 +128,6 @@ async fn test_delete_queue_if_exists(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
-/// Retrieves the properties of a storage account's Queue service.
-#[recorded::test]
-async fn test_get_queue_properties(ctx: TestContext) -> Result<()> {
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "dummy").await;
-
-    let response = queue_client?.get_properties(None).await?;
-
-    assert!(
-        response.status() == 200,
-        "Expected status code 200, got {}",
-        response.status(),
-    );
-
-    Ok(())
-}
-
 /// Checks if a queue exists in the Azure Storage Queue service.
 #[recorded::test]
 async fn test_queue_exists(ctx: TestContext) -> Result<()> {
@@ -185,12 +167,16 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
 
     let test_result = async {
         // Set metadata for the queue
-        let metadata = Some(
-            vec![("key1", "value1"), ("key2", "value2")]
-                .into_iter()
-                .collect(),
-        );
-        let response = queue_client.set_metadata(metadata).await?;
+
+        let metadata_options = Some(QueueClientSetMetadataOptions {
+            metadata: Some(HashMap::from([
+                ("key1".to_string(), "value1".to_string()),
+                ("key2".to_string(), "value2".to_string()),
+            ])),
+            ..Default::default()
+        });
+
+        let response = queue_client.set_metadata(metadata_options).await?;
 
         assert_successful_response(&response);
 
@@ -291,7 +277,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
         let enqueued_message = enqueue_message_response.into_body().await?.unwrap();
 
         // Update the message in the queue
-        let option = Some(QueueMessageIdOperationGroupClientUpdateOptions {
+        let option = Some(QueueClientUpdateOptions {
             queue_message: Some(RequestContent::from(
                 quick_xml::se::to_string(&QueueMessage {
                     message_text: Some("Updated message text from Rust".to_string()),
@@ -399,7 +385,7 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let options = Some(QueueMessagesOperationGroupClientPeekOptions {
+        let options = Some(QueueClientPeekOptions {
             number_of_messages: Some(10),
             ..Default::default()
         });
@@ -510,7 +496,7 @@ async fn test_dequeue_messages(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let options = Some(QueueMessagesOperationGroupClientDequeueOptions {
+        let options = Some(QueueClientDequeueOptions {
             number_of_messages: Some(10),
             ..Default::default()
         });
@@ -579,14 +565,12 @@ async fn test_set_access_policies(ctx: TestContext) -> Result<()> {
     // Get the current access policies to set them back after the test
     let result = queue_client.get_access_policy(None).await?;
 
-    let properties = result.into_body().await?;
-    let properties_xml = quick_xml::se::to_string(&properties).unwrap();
-    let properties_bytes = properties_xml.into_bytes();
+    let signed_identifiers = result.into_body().await?;
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
         let response = queue_client
-            .set_access_policy(RequestContent::from(properties_bytes), None)
+            .set_access_policy(signed_identifiers.try_into()?, None)
             .await?;
         assert_successful_response(&response);
         Ok::<(), azure_core::Error>(())
@@ -604,7 +588,6 @@ async fn test_set_access_policies(ctx: TestContext) -> Result<()> {
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
-/// * `create` - An optional flag to determine whether the container should also be created.
 pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result<QueueClient> {
     let (options, endpoint) = recorded_test_setup(recording);
     let queue_client_options = QueueClientOptions {
@@ -676,7 +659,7 @@ async fn peek_and_assert<'a>(
     queue_client: &QueueClient,
     expected_messages: &[&str],
     count: usize,
-    options: Option<QueueMessagesOperationGroupClientPeekOptions<'a>>,
+    options: Option<QueueClientPeekOptions<'a>>,
 ) -> Result<()> {
     // Peek the messages in the queue
     let response = queue_client.peek_messages(options).await?;
