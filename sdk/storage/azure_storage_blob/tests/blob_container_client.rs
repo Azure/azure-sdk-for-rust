@@ -224,6 +224,16 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     let error = other_acquire_response.unwrap_err().http_status();
     assert_eq!(StatusCode::Conflict, error.unwrap());
 
+    let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
+    let set_metadata_options = BlobContainerClientSetMetadataOptions {
+        lease_id: Some(lease_id.clone()),
+        metadata: Some(update_metadata.clone()),
+        ..Default::default()
+    };
+    container_client
+        .set_metadata(Some(set_metadata_options))
+        .await?;
+
     // Change Lease
     let proposed_lease_id = "00000000-1111-2222-3333-444444444444".to_string();
     let change_lease_response = container_client
