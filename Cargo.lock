@@ -209,6 +209,7 @@ dependencies = [
  "azure_core",
  "azure_core_test",
  "azure_core_test_macros",
+ "azure_identity",
  "opentelemetry 0.30.0",
  "opentelemetry-http",
  "opentelemetry_sdk 0.30.0",

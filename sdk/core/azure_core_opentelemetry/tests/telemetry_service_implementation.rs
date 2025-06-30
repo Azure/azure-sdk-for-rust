@@ -314,7 +314,7 @@ mod tests {
     #[recorded::test()]
     async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
-        let azure_provider = Arc::new(OpenTelemetryTracerProvider::new(sdk_provider)?);
+        let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider)?;
 
         let recording = ctx.recording();
         let endpoint = "https://example.com";
@@ -376,7 +376,7 @@ mod tests {
     #[recorded::test()]
     async fn test_service_client_get_with_tracing_error(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
-        let azure_provider = Arc::new(OpenTelemetryTracerProvider::new(sdk_provider)?);
+        let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider)?;
 
         let recording = ctx.recording();
         let endpoint = "https://example.com";
@@ -438,7 +438,7 @@ mod tests {
     #[recorded::test()]
     async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
-        let azure_provider = Arc::new(OpenTelemetryTracerProvider::new(sdk_provider)?);
+        let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider)?;
 
         let recording = ctx.recording();
         let endpoint = "https://example.com";
@@ -507,7 +507,7 @@ mod tests {
     #[recorded::test()]
     async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
-        let azure_provider = Arc::new(OpenTelemetryTracerProvider::new(sdk_provider)?);
+        let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider)?;
 
         let recording = ctx.recording();
         let endpoint = "https://example.com";
