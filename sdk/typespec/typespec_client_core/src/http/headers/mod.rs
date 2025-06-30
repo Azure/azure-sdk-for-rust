@@ -218,6 +218,14 @@ impl Headers {
     pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
         self.0.iter()
     }
+
+    /// Remove a header by name, returning the previous value if present.
+    pub fn remove<K>(&mut self, key: K) -> Option<HeaderValue>
+    where
+        K: Into<HeaderName>,
+    {
+        self.0.remove(&key.into())
+    }
 }
 
 impl fmt::Debug for Headers {
@@ -460,5 +468,64 @@ mod tests {
         assert_eq!(&ErrorKind::DataConversion, err.kind());
         let inner: Box<url::ParseError> = err.into_inner().unwrap().downcast().unwrap();
         assert_eq!(Box::new(url::ParseError::RelativeUrlWithoutBase), inner)
+    }
+
+    #[test]
+    pub fn headers_remove_existing_header_returns_value() {
+        let mut headers = Headers::new();
+        headers.insert("test-header", "test-value");
+
+        // Verify the header is present
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from("test-header")),
+            Some("test-value")
+        );
+
+        // Remove the header and verify it returns the previous value
+        let removed_value = headers.remove("test-header");
+        assert!(removed_value.is_some());
+        assert_eq!(removed_value.unwrap().as_str(), "test-value");
+
+        // Verify the header is no longer present
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from("test-header")),
+            None
+        );
+    }
+
+    #[test]
+    pub fn headers_remove_nonexistent_header_returns_none() {
+        let mut headers = Headers::new();
+
+        // Try to remove a header that doesn't exist
+        let removed_value = headers.remove("nonexistent-header");
+        assert_eq!(removed_value, None);
+    }
+
+    #[test]
+    pub fn headers_remove_works_with_different_key_types() {
+        let mut headers = Headers::new();
+        headers.insert("test-header", "test-value");
+
+        // Test removing with &str
+        let removed_value = headers.remove("test-header");
+        assert!(removed_value.is_some());
+        assert_eq!(removed_value.unwrap().as_str(), "test-value");
+
+        // Re-add the header
+        headers.insert("test-header", "test-value");
+
+        // Test removing with HeaderName
+        let removed_value = headers.remove(HeaderName::from("test-header"));
+        assert!(removed_value.is_some());
+        assert_eq!(removed_value.unwrap().as_str(), "test-value");
+
+        // Re-add the header
+        headers.insert("test-header", "test-value");
+
+        // Test removing with String
+        let removed_value = headers.remove("test-header".to_string());
+        assert!(removed_value.is_some());
+        assert_eq!(removed_value.unwrap().as_str(), "test-value");
     }
 }
