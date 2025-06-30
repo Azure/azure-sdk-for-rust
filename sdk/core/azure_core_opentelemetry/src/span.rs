@@ -4,10 +4,7 @@
 //! OpenTelemetry implementation of typespec_client_core tracing traits.
 
 use crate::attributes::AttributeValue as ConversionAttributeValue;
-use azure_core::{
-    tracing::{AsAny, AttributeValue, Span, SpanGuard, SpanStatus},
-    Result,
-};
+use azure_core::tracing::{AsAny, AttributeValue, Span, SpanGuard, SpanStatus};
 use opentelemetry::{propagation::TextMapPropagator, trace::TraceContextExt};
 use opentelemetry_http::HeaderInjector;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
@@ -132,9 +129,8 @@ struct OpenTelemetrySpanGuard {
 }
 
 impl SpanGuard for OpenTelemetrySpanGuard {
-    fn end(self) -> Result<()> {
+    fn end(self) {
         // The span is ended when the guard is dropped, so no action needed here.
-        Ok(())
     }
 }
 

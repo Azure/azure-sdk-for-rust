@@ -136,9 +136,13 @@ pub enum SpanKind {
 
 pub trait SpanGuard {
     /// Ends the span when dropped.
-    fn end(self) -> crate::Result<()>;
+    fn end(self);
 }
 
+/// A trait that represents a span in distributed tracing.
+///
+/// This trait defines the methods that a span must implement to be used in distributed tracing.
+/// It includes methods for setting attributes, recording errors, and managing the span's lifecycle.
 pub trait Span: AsAny + Send + Sync {
     fn is_recording(&self) -> bool;
 
@@ -158,6 +162,11 @@ pub trait Span: AsAny + Send + Sync {
     fn set_status(&self, status: SpanStatus);
 
     /// Sets an attribute on the current span.
+    ///
+    /// # Arguments
+    /// - `key`: The key of the attribute to set.
+    /// - `value`: The value of the attribute to set.
+    ///
     fn set_attribute(&self, key: &'static str, value: attributes::AttributeValue);
 
     /// Records a Rust standard error on the current span.
@@ -171,6 +180,7 @@ pub trait Span: AsAny + Send + Sync {
     fn record_error(&self, error: &dyn std::error::Error);
 
     /// Temporarily sets the span as the current active span in the context.
+    ///
     /// # Arguments
     /// - `context`: The context in which to set the current span.
     ///
@@ -182,6 +192,15 @@ pub trait Span: AsAny + Send + Sync {
     ///
     fn set_current(&self, context: &Context) -> crate::Result<Box<dyn SpanGuard>>;
 
+    /// Adds telemetry headers to the request for distributed tracing.
+    ///
+    /// # Arguments
+    /// - `request`: A mutable reference to the request to which headers will be added.
+    ///
+    /// This method should be called before sending the request to ensure that the tracing information
+    /// is included in the request headers. It typically adds the [W3C Distributed Tracing](https://www.w3.org/TR/trace-context/)
+    /// headers to the request.
+    ///
     fn propagate_headers(&self, request: &mut Request);
 }
 
