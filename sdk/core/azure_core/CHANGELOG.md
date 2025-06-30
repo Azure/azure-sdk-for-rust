@@ -4,17 +4,22 @@
 
 ### Features Added
 
-- Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace
-the asynchronous runtime used by the Azure SDK.
+- Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace the asynchronous runtime used by the Azure SDK.
 
 ### Breaking Changes
 
+- `azure_core::http::Pipeline::new` now takes an `azure_core::http::ClientOptions` which is defined in `azure_core`, but convertible to `typespec_client_core::http::ClientOptions`.
 - Moved `process::Executor` to `azure_identity`.
+- Removed `Pipeline::replace_policy`.
 - Renamed `azure_core::date` to `azure_core::time` and added `azure_core::time::Duration` as the standard "duration" type for the SDK.
+- Renamed `TelemetryOptions` to `UserAgentOptions`.
+- Renamed `TelemetryPolicy` to `UserAgentPolicy`.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- The `CustomHeadersPolicy` is executed after the retry policy in the `Pipeline`.
 
 ## 0.25.0 (2025-06-06)
 

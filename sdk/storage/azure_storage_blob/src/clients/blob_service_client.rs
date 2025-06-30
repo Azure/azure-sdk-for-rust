@@ -3,7 +3,10 @@
 
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
-    models::{BlobServiceClientGetPropertiesOptions, StorageServiceProperties},
+    models::{
+        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
+        ListContainersSegmentResponse, StorageServiceProperties,
+    },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,
 };
@@ -11,7 +14,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        Response, Url, XmlFormat,
+        PageIterator, Response, Url, XmlFormat,
     },
     Result,
 };
@@ -88,5 +91,17 @@ impl BlobServiceClient {
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
         self.client.get_properties(options).await
+    }
+
+    /// Returns a list of the containers under the specified Storage account.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub fn list_containers(
+        &self,
+        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
+    ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
+        self.client.list_containers_segment(options)
     }
 }

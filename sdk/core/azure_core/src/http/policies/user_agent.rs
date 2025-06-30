@@ -3,24 +3,30 @@
 
 use crate::http::{
     headers::{HeaderValue, USER_AGENT},
-    options::TelemetryOptions,
+    options::UserAgentOptions,
 };
 use std::env::consts::{ARCH, OS};
 use std::sync::Arc;
 use typespec_client_core::http::policies::{Policy, PolicyResult};
 use typespec_client_core::http::{Context, Request};
 
-/// Sets the User-Agent header with useful information in a typical format for Azure SDKs.
+/// Sets the `User-Agent` header with useful information in a typical format for Azure SDKs.
 #[derive(Clone, Debug)]
-pub struct TelemetryPolicy {
+pub struct UserAgentPolicy {
     header: String,
 }
 
-impl<'a> TelemetryPolicy {
+impl<'a> UserAgentPolicy {
+    /// Create a new `UserAgentPolicy`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if [`UserAgentOptions::application_id`] is greater than 24 characters.
+    /// See [guidelines](https://azure.github.io/azure-sdk/general_azurecore.html#azurecore-http-telemetry-appid-length) for details.
     pub fn new(
         crate_name: Option<&'a str>,
         crate_version: Option<&'a str>,
-        options: &TelemetryOptions,
+        options: &UserAgentOptions,
     ) -> Self {
         Self::new_with_rustc_version(
             crate_name,
@@ -34,7 +40,7 @@ impl<'a> TelemetryPolicy {
         crate_name: Option<&'a str>,
         crate_version: Option<&'a str>,
         rustc_version: Option<&'a str>,
-        options: &TelemetryOptions,
+        options: &UserAgentOptions,
     ) -> Self {
         const UNKNOWN: &str = "unknown";
         let mut crate_name = crate_name.unwrap_or(UNKNOWN);
@@ -46,20 +52,27 @@ impl<'a> TelemetryPolicy {
             crate_name = name;
         }
 
+        const MAX_APPLICATION_ID_LEN: usize = 24;
         let header = match &options.application_id {
             Some(application_id) => {
+                if application_id.len() > MAX_APPLICATION_ID_LEN {
+                    panic!(
+                        "application_id must be shorter than {} characters",
+                        MAX_APPLICATION_ID_LEN + 1
+                    );
+                }
                 format!("{application_id} azsdk-rust-{crate_name}/{crate_version} {platform_info}")
             }
             None => format!("azsdk-rust-{crate_name}/{crate_version} {platform_info}"),
         };
 
-        TelemetryPolicy { header }
+        UserAgentPolicy { header }
     }
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl Policy for TelemetryPolicy {
+impl Policy for UserAgentPolicy {
     async fn send(
         &self,
         ctx: &Context,
@@ -78,11 +91,11 @@ mod tests {
 
     #[test]
     fn without_application_id() {
-        let policy = TelemetryPolicy::new_with_rustc_version(
+        let policy = UserAgentPolicy::new_with_rustc_version(
             Some("azure_test"), // Tests that "azure_" is removed.
             Some("1.2.3"),
             Some("4.5.6"),
-            &TelemetryOptions::default(),
+            &UserAgentOptions::default(),
         );
         assert_eq!(
             policy.header,
@@ -92,10 +105,10 @@ mod tests {
 
     #[test]
     fn with_application_id() {
-        let options = TelemetryOptions {
+        let options = UserAgentOptions {
             application_id: Some("my_app".to_string()),
         };
-        let policy = TelemetryPolicy::new_with_rustc_version(
+        let policy = UserAgentPolicy::new_with_rustc_version(
             Some("test"),
             Some("1.2.3"),
             Some("4.5.6"),
@@ -111,10 +124,43 @@ mod tests {
     fn missing_env() {
         // Would simulate if option_env!("CARGO_PKG_NAME"), for example, returned None.
         let policy =
-            TelemetryPolicy::new_with_rustc_version(None, None, None, &TelemetryOptions::default());
+            UserAgentPolicy::new_with_rustc_version(None, None, None, &UserAgentOptions::default());
         assert_eq!(
             policy.header,
             format!("azsdk-rust-unknown/unknown (unknown; {OS}; {ARCH})")
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "application_id must be shorter than 25 characters")]
+    fn panics_when_application_id_too_long() {
+        let options = UserAgentOptions {
+            application_id: Some(
+                "this_application_id_is_way_too_long_and_exceeds_limit".to_string(),
+            ), // 53 characters
+        };
+        let _policy = UserAgentPolicy::new_with_rustc_version(
+            Some("test"),
+            Some("1.2.3"),
+            Some("4.5.6"),
+            &options,
+        );
+    }
+
+    #[test]
+    fn works_with_application_id_at_limit() {
+        let options = UserAgentOptions {
+            application_id: Some("exactly_24_characters!".to_string()), // Exactly 24 characters
+        };
+        let policy = UserAgentPolicy::new_with_rustc_version(
+            Some("test"),
+            Some("1.2.3"),
+            Some("4.5.6"),
+            &options,
+        );
+        assert_eq!(
+            policy.header,
+            format!("exactly_24_characters! azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
         );
     }
 }

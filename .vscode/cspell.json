@@ -58,6 +58,8 @@
     "msrv",
     "newtonsoft",
     "oidc",
+    "otel",
+    "opentelemetry",
     "pageable",
     "pageables",
     "pkce",

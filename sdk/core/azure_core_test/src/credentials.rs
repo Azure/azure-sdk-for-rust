@@ -13,6 +13,13 @@ use std::{env, sync::Arc};
 #[derive(Clone, Debug, Default)]
 pub struct MockCredential;
 
+impl MockCredential {
+    /// Create a new `MockCredential`.
+    pub fn new() -> azure_core::Result<Arc<Self>> {
+        Ok(Arc::new(MockCredential {}))
+    }
+}
+
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for MockCredential {

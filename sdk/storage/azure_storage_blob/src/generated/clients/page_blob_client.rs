@@ -15,7 +15,7 @@ use crate::generated::models::{
     SequenceNumberActionType,
 };
 use azure_core::{
-    base64,
+    base64::encode,
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
@@ -23,7 +23,8 @@ use azure_core::{
         ClientOptions, Context, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
         XmlFormat,
     },
-    time, Bytes, Result,
+    time::to_rfc7231,
+    Bytes, Result,
 };
 use std::sync::Arc;
 
@@ -127,16 +128,13 @@ impl PageBlobClient {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", time::to_rfc7231(&if_modified_since));
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
         if let Some(if_none_match) = options.if_none_match {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                time::to_rfc7231(&if_unmodified_since),
-            );
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -225,16 +223,13 @@ impl PageBlobClient {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", time::to_rfc7231(&if_modified_since));
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
         if let Some(if_none_match) = options.if_none_match {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                time::to_rfc7231(&if_unmodified_since),
-            );
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -277,16 +272,13 @@ impl PageBlobClient {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", time::to_rfc7231(&if_modified_since));
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
         if let Some(if_none_match) = options.if_none_match {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                time::to_rfc7231(&if_unmodified_since),
-            );
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(tier) = options.tier {
             request.insert_header("x-ms-access-tier", tier.to_string());
@@ -305,7 +297,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-blob-content-length", blob_content_length.to_string());
         if let Some(blob_content_md5) = options.blob_content_md5 {
-            request.insert_header("x-ms-blob-content-md5", base64::encode(blob_content_md5));
+            request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
         }
         if let Some(blob_content_type) = options.blob_content_type {
             request.insert_header("x-ms-blob-content-type", blob_content_type);
@@ -347,7 +339,7 @@ impl PageBlobClient {
         if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
             request.insert_header(
                 "x-ms-immutability-policy-until-date",
-                time::to_rfc7231(&immutability_policy_expiry),
+                to_rfc7231(&immutability_policy_expiry),
             );
         }
         if let Some(lease_id) = options.lease_id {
@@ -406,16 +398,13 @@ impl PageBlobClient {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", time::to_rfc7231(&if_modified_since));
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
         if let Some(if_none_match) = options.if_none_match {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                time::to_rfc7231(&if_unmodified_since),
-            );
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -477,16 +466,13 @@ impl PageBlobClient {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", time::to_rfc7231(&if_modified_since));
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
         if let Some(if_none_match) = options.if_none_match {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                time::to_rfc7231(&if_unmodified_since),
-            );
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -540,16 +526,13 @@ impl PageBlobClient {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", time::to_rfc7231(&if_modified_since));
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
         if let Some(if_none_match) = options.if_none_match {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                time::to_rfc7231(&if_unmodified_since),
-            );
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         request.insert_header("x-ms-blob-content-length", blob_content_length.to_string());
         if let Some(client_request_id) = options.client_request_id {
@@ -614,16 +597,13 @@ impl PageBlobClient {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", time::to_rfc7231(&if_modified_since));
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
         if let Some(if_none_match) = options.if_none_match {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                time::to_rfc7231(&if_unmodified_since),
-            );
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(blob_sequence_number) = options.blob_sequence_number {
             request.insert_header(
@@ -679,32 +659,26 @@ impl PageBlobClient {
         request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", base64::encode(transactional_content_md5));
+            request.insert_header("content-md5", encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/octet-stream");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", time::to_rfc7231(&if_modified_since));
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
         if let Some(if_none_match) = options.if_none_match {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                time::to_rfc7231(&if_unmodified_since),
-            );
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
-            request.insert_header(
-                "x-ms-content-crc64",
-                base64::encode(transactional_content_crc64),
-            );
+            request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
         }
         if let Some(encryption_algorithm) = options.encryption_algorithm {
             request.insert_header(
@@ -806,16 +780,13 @@ impl PageBlobClient {
             request.insert_header("if-match", if_match);
         }
         if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", time::to_rfc7231(&if_modified_since));
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
         if let Some(if_none_match) = options.if_none_match {
             request.insert_header("if-none-match", if_none_match);
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header(
-                "if-unmodified-since",
-                time::to_rfc7231(&if_unmodified_since),
-            );
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -871,16 +842,10 @@ impl PageBlobClient {
         request.insert_header("x-ms-page-write", "update");
         request.insert_header("x-ms-range", range);
         if let Some(source_content_crc64) = options.source_content_crc64 {
-            request.insert_header(
-                "x-ms-source-content-crc64",
-                base64::encode(source_content_crc64),
-            );
+            request.insert_header("x-ms-source-content-crc64", encode(source_content_crc64));
         }
         if let Some(source_content_md5) = options.source_content_md5 {
-            request.insert_header(
-                "x-ms-source-content-md5",
-                base64::encode(source_content_md5),
-            );
+            request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
         }
         if let Some(source_if_match) = options.source_if_match {
             request.insert_header("x-ms-source-if-match", source_if_match);
@@ -888,7 +853,7 @@ impl PageBlobClient {
         if let Some(source_if_modified_since) = options.source_if_modified_since {
             request.insert_header(
                 "x-ms-source-if-modified-since",
-                time::to_rfc7231(&source_if_modified_since),
+                to_rfc7231(&source_if_modified_since),
             );
         }
         if let Some(source_if_none_match) = options.source_if_none_match {
@@ -897,7 +862,7 @@ impl PageBlobClient {
         if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
             request.insert_header(
                 "x-ms-source-if-unmodified-since",
-                time::to_rfc7231(&source_if_unmodified_since),
+                to_rfc7231(&source_if_unmodified_since),
             );
         }
         request.insert_header("x-ms-source-range", source_range);
