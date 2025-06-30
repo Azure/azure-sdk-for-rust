@@ -8,7 +8,10 @@ use azure_core::{
     tracing::{AsAny, AttributeValue, Span, SpanGuard, SpanStatus},
     Result,
 };
-use opentelemetry::trace::TraceContextExt;
+use opentelemetry::{propagation::TextMapPropagator, trace::TraceContextExt};
+use opentelemetry_http::HeaderInjector;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
+use reqwest::header::HeaderMap;
 use std::{error::Error as StdError, sync::Arc};
 
 /// newtype for Azure Core SpanKind to enable conversion to OpenTelemetry SpanKind
@@ -76,7 +79,34 @@ impl Span for OpenTelemetrySpan {
         self.context.span().set_status(otel_status);
     }
 
-    fn propagate_headers(&self, _request: &mut azure_core::http::Request) {}
+    fn propagate_headers(&self, request: &mut azure_core::http::Request) {
+        // A TraceContextPropagator is used to inject trace context information into HTTP headers.
+        let trace_propagator = TraceContextPropagator::new();
+        // We need to map between a reqwest header map (which is what the OpenTelemetry SDK requires)
+        // and the Azure Core request headers.
+        //
+        // We start with an empty header map and inject the OpenTelemetry headers into it.
+        let mut header_map = HeaderMap::new();
+        trace_propagator.inject_context(&self.context, &mut HeaderInjector(&mut header_map));
+
+        // We then insert each of the headers from the OpenTelemetry header map into the
+        // Request's header map.
+        for (key, value) in header_map.into_iter() {
+            // Note: The OpenTelemetry HeaderInjector will always produce unique header names, so we don't need to
+            // handle the multiple headers case here.
+            if let Some(key) = key {
+                // Convert HeaderName to &str for insertion.
+                let value_str = value.to_str().unwrap().to_string();
+                request.insert_header(
+                    azure_core::http::headers::HeaderName::from(key.to_string()),
+                    azure_core::http::headers::HeaderValue::from(value_str),
+                );
+            } else {
+                // If the key is invalid, we skip it
+                tracing::warn!("Invalid header key: {:?}", key);
+            }
+        }
+    }
 
     fn set_current(
         &self,
@@ -117,7 +147,7 @@ impl Drop for OpenTelemetrySpanGuard {
 #[cfg(test)]
 mod tests {
     use crate::telemetry::OpenTelemetryTracerProvider;
-    use azure_core::http::Context as AzureContext;
+    use azure_core::http::{Context as AzureContext, Url};
     use azure_core::tracing::{Attribute, AttributeValue, SpanKind, SpanStatus, TracerProvider};
     use opentelemetry::trace::TraceContextExt;
     use opentelemetry::{Context, Key, KeyValue, Value};
@@ -156,6 +186,34 @@ mod tests {
             assert_eq!(span.status, opentelemetry::trace::Status::Unset);
             assert!(span.attributes.is_empty());
         }
+    }
+
+    // cspell: ignore traceparent tracestate
+    #[test]
+    fn test_open_telemetry_span_propagate() {
+        let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
+
+        let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
+        assert!(tracer_provider.is_ok());
+        let tracer =
+            tracer_provider
+                .unwrap()
+                .get_tracer(Some("Microsoft.SpecialCase"), "test", "0.1.0");
+        let span = tracer.start_span("test_span", SpanKind::Client, vec![]);
+        let mut request = azure_core::http::Request::new(
+            Url::parse("http://example.com").unwrap(),
+            azure_core::http::Method::Get,
+        );
+        span.propagate_headers(&mut request);
+        trace!("Request headers after propagation: {:?}", request.headers());
+        let traceparent = azure_core::http::headers::HeaderName::from("traceparent");
+        let tracestate = azure_core::http::headers::HeaderName::from("tracestate");
+        request.headers().get_as::<String, _>(&traceparent).unwrap();
+        request.headers().get_as::<String, _>(&tracestate).unwrap();
+        span.end();
+
+        let finished_spans = otel_exporter.get_finished_spans().unwrap();
+        assert_eq!(finished_spans.len(), 1);
     }
 
     #[test]

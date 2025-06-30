@@ -188,6 +188,9 @@ impl Policy for RequestInstrumentationPolicy {
                 span.set_attribute(HTTP_REQUEST_RESEND_COUNT_ATTRIBUTE, retry_count.0.into());
             }
 
+            // Propagate the headers for distributed tracing into the request.
+            span.propagate_headers(request);
+
             let result = next[0].send(ctx, request, &next[1..]).await;
 
             if let Some(err) = result.as_ref().err() {
@@ -242,6 +245,7 @@ mod tests {
     use azure_core_test::http::MockHttpClient;
     use futures::future::BoxFuture;
     use std::sync::{Arc, Mutex};
+    use typespec_client_core::http::headers::HeaderName;
 
     #[derive(Debug)]
     struct MockTracingProvider {
@@ -386,7 +390,15 @@ mod tests {
             todo!()
         }
 
-        fn propagate_headers(&self, _request: &mut Request) {}
+        /// Insert two dummy headers for distributed tracing.
+        // cspell: ignore traceparent tracestate
+        fn propagate_headers(&self, request: &mut Request) {
+            request.insert_header(
+                HeaderName::from_static("traceparent"),
+                "00-<trace_id>-<span_id>-01",
+            );
+            request.insert_header(HeaderName::from_static("tracestate"), "<key>=<value>");
+        }
     }
 
     impl AsAny for MockSpan {
@@ -546,6 +558,11 @@ mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
                     assert_eq!(req.method(), &Method::Get);
+                    assert_eq!(
+                        req.headers()
+                            .get_optional_str(HeaderName::from_static("traceparent")),
+                        Some("00-<trace_id>-<span_id>-01")
+                    );
                     Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
