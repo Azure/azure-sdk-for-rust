@@ -120,14 +120,17 @@ impl Request {
         }
     }
 
+    /// Gets the request [`Url`].
     pub fn url(&self) -> &Url {
         &self.url
     }
 
+    /// Gets a mutable request [`Url`].
     pub fn url_mut(&mut self) -> &mut Url {
         &mut self.url
     }
 
+    /// Gets the request URL path and query string.
     pub fn path_and_query(&self) -> String {
         let mut result = self.url.path().to_owned();
         if let Some(query) = self.url.query() {
@@ -137,10 +140,12 @@ impl Request {
         result
     }
 
+    /// Gets the request HTTP method.
     pub fn method(&self) -> &Method {
         &self.method
     }
 
+    /// Inserts zero or more headers from a type that implements [`AsHeaders`].
     pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), T::Error> {
         for (name, value) in headers.as_headers()? {
             self.insert_header(name, value);
@@ -148,14 +153,22 @@ impl Request {
         Ok(())
     }
 
+    /// Gets the request [`Headers`].
     pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
+    /// Gets a mutable request [`Headers`].
+    pub fn headers_mut(&mut self) -> &mut Headers {
+        &mut self.headers
+    }
+
+    /// Gets the request body.
     pub fn body(&self) -> &Body {
         &self.body
     }
 
+    /// Sets request body JSON.
     pub fn set_json<T>(&mut self, data: &T) -> crate::Result<()>
     where
         T: ?Sized + Serialize,
@@ -164,10 +177,12 @@ impl Request {
         Ok(())
     }
 
+    /// Sets the request body.
     pub fn set_body(&mut self, body: impl Into<Body>) {
         self.body = body.into();
     }
 
+    /// Inserts a header from the `key` and `value`.
     pub fn insert_header<K, V>(&mut self, key: K, value: V)
     where
         K: Into<HeaderName>,
@@ -176,12 +191,14 @@ impl Request {
         self.headers.insert(key, value);
     }
 
+    /// Inserts a [`Header`] if `item` is `Some`.
     pub fn add_optional_header<T: Header>(&mut self, item: &Option<T>) {
         if let Some(item) = item {
             self.insert_header(item.name(), item.value());
         }
     }
 
+    /// Inserts a [`Header`].
     pub fn add_mandatory_header<T: Header>(&mut self, item: &T) {
         self.insert_header(item.name(), item.value());
     }

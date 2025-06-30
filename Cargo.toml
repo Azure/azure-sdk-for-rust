@@ -8,6 +8,7 @@ members = [
   "sdk/core/azure_core_amqp",
   "sdk/core/azure_core_test",
   "sdk/core/azure_core_test_macros",
+  "sdk/core/azure_core_opentelemetry",
   "sdk/cosmos/azure_data_cosmos",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
@@ -107,7 +108,7 @@ sha2 = { version = "0.10" }
 syn = { version = "2.0.87", features = ["full"] }
 tar = { version = "0.4.44", default-features = false }
 thiserror = "1.0"
-time = { version = "0.3.10", features = [
+time = { version = "0.3.41", features = [
   "serde-well-known",
   "macros",
   "wasm-bindgen",
