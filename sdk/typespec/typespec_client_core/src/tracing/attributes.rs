@@ -1,10 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use typespec_macros::SafeDebug;
+#[cfg(feature = "derive")]
+use crate::fmt::SafeDebug;
 
 /// An array of homogeneous attribute values.
-#[derive(SafeDebug, PartialEq)]
+#[cfg_attr(feature = "derive", derive(SafeDebug))]
+#[derive(PartialEq)]
 pub enum AttributeArray {
     /// An array of boolean values.
     Bool(Vec<bool>),
@@ -17,7 +19,8 @@ pub enum AttributeArray {
 }
 
 /// Represents a single attribute value, which can be of various types
-#[derive(SafeDebug, PartialEq)]
+#[cfg_attr(feature = "derive", derive(SafeDebug))]
+#[derive(PartialEq)]
 pub enum AttributeValue {
     /// A boolean attribute value.
     Bool(bool),
@@ -30,7 +33,8 @@ pub enum AttributeValue {
     /// An array of attribute values.
     Array(AttributeArray),
 }
-#[derive(SafeDebug)]
+
+#[cfg_attr(feature = "derive", derive(SafeDebug))]
 pub struct Attribute {
     /// A key-value pair attribute.
     pub key: &'static str,
