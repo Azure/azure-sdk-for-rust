@@ -27,6 +27,7 @@ typespec_client_core.workspace = true
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_core_test_macros.workspace = true
+azure_identity.workspace = true
 opentelemetry_sdk = { version = "0.30", features = ["testing"] }
 tokio.workspace = true
 tracing-opentelemetry = "0.26"

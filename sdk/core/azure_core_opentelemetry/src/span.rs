@@ -93,9 +93,12 @@ impl Span for OpenTelemetrySpan {
         for (key, value) in header_map.into_iter() {
             // Note: The OpenTelemetry HeaderInjector will always produce unique header names, so we don't need to
             // handle the multiple headers case here.
+
             if let Some(key) = key {
                 request.insert_header(
                     HeaderName::from(key.as_str().to_owned()),
+                    // The value is guaranteed to be a valid UTF-8 string by the OpenTelemetry SDK,
+                    // so we can safely unwrap it.
                     HeaderValue::from(value.to_str().unwrap().to_owned()),
                 );
             } else {

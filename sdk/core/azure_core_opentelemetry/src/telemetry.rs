@@ -18,8 +18,8 @@ pub struct OpenTelemetryTracerProvider {
 impl OpenTelemetryTracerProvider {
     /// Creates a new Azure telemetry provider with the given SDK tracer provider.
     #[allow(dead_code)]
-    pub fn new(provider: Arc<dyn ObjectSafeTracerProvider + Send + Sync>) -> Result<Self> {
-        Ok(Self { inner: provider })
+    pub fn new(provider: Arc<dyn ObjectSafeTracerProvider + Send + Sync>) -> Result<Arc<Self>> {
+        Ok(Arc::new(Self { inner: provider }))
     }
 }
 
