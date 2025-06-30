@@ -17,6 +17,7 @@ edition.workspace = true
 [dependencies]
 azure_core.workspace = true
 opentelemetry = { version = "0.30", features = ["trace"] }
+opentelemetry-http = "0.30.0"
 tracing.workspace = true
 typespec_client_core.workspace = true
 
