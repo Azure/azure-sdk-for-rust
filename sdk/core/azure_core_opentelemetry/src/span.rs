@@ -4,11 +4,13 @@
 //! OpenTelemetry implementation of typespec_client_core tracing traits.
 
 use crate::attributes::AttributeValue as ConversionAttributeValue;
-use azure_core::tracing::{AsAny, AttributeValue, Span, SpanGuard, SpanStatus};
+use azure_core::{
+    http::headers::{HeaderName, HeaderValue},
+    tracing::{AsAny, AttributeValue, Span, SpanGuard, SpanStatus},
+};
 use opentelemetry::{propagation::TextMapPropagator, trace::TraceContextExt};
 use opentelemetry_http::HeaderInjector;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use reqwest::header::HeaderMap;
 use std::{error::Error as StdError, sync::Arc};
 
 /// newtype for Azure Core SpanKind to enable conversion to OpenTelemetry SpanKind
@@ -83,7 +85,7 @@ impl Span for OpenTelemetrySpan {
         // and the Azure Core request headers.
         //
         // We start with an empty header map and inject the OpenTelemetry headers into it.
-        let mut header_map = HeaderMap::new();
+        let mut header_map = reqwest::header::HeaderMap::new();
         trace_propagator.inject_context(&self.context, &mut HeaderInjector(&mut header_map));
 
         // We then insert each of the headers from the OpenTelemetry header map into the
@@ -92,11 +94,9 @@ impl Span for OpenTelemetrySpan {
             // Note: The OpenTelemetry HeaderInjector will always produce unique header names, so we don't need to
             // handle the multiple headers case here.
             if let Some(key) = key {
-                // Convert HeaderName to &str for insertion.
-                let value_str = value.to_str().unwrap().to_string();
                 request.insert_header(
-                    azure_core::http::headers::HeaderName::from(key.to_string()),
-                    azure_core::http::headers::HeaderValue::from(value_str),
+                    HeaderName::from(key.as_str().to_owned()),
+                    HeaderValue::from(value.to_str().unwrap().to_owned()),
                 );
             } else {
                 // If the key is invalid, we skip it
