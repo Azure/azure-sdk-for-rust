@@ -7,7 +7,7 @@ use azure_core::{
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AccessTierOptional, BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResultHeaders,
+    AccessTierOptional, BlobClientAcquireLeaseResultHeaders,
     BlobClientChangeLeaseResultHeaders, BlobClientDownloadResultHeaders,
     BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
     BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions, LeaseState,
@@ -290,17 +290,9 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
     create_test_blob(&blob_client).await?;
 
     // Acquire Lease
-    let acquire_lease_options = BlobClientAcquireLeaseOptions {
-        duration: Some(15),
-        ..Default::default()
-    };
-    let acquire_response = blob_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
-        .await?;
+    let acquire_response = blob_client.acquire_lease(15, None).await?;
     let lease_id = acquire_response.lease_id()?.unwrap();
-    let other_acquire_response = other_blob_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
-        .await;
+    let other_acquire_response = other_blob_client.acquire_lease(15, None).await;
     // Assert
     let error = other_acquire_response.unwrap_err().http_status();
     assert_eq!(StatusCode::Conflict, error.unwrap());
@@ -322,7 +314,7 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
         .renew_lease(proposed_lease_id.clone(), None)
         .await?;
     let other_acquire_response = other_blob_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
+        .acquire_lease(15, None)
         .await;
     // Assert
     let error = other_acquire_response.unwrap_err().http_status();
@@ -331,7 +323,7 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
     // Break Lease
     blob_client.break_lease(None).await?;
     let other_acquire_response = other_blob_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
+        .acquire_lease(15, None)
         .await;
     // Assert
     let error = other_acquire_response.unwrap_err().http_status();
@@ -342,7 +334,7 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
         .release_lease(proposed_lease_id.clone(), None)
         .await?;
     other_blob_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
+        .acquire_lease(15, None)
         .await?;
 
     container_client.delete_container(None).await?;

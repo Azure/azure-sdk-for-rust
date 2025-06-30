@@ -4,10 +4,9 @@
 use azure_core::http::StatusCode;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResultHeaders,
-    BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
-    BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientSetMetadataOptions, BlobType,
-    LeaseState,
+    BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientChangeLeaseResultHeaders,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
+    BlobContainerClientSetMetadataOptions, BlobType, LeaseState,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_service_client, get_container_client, get_container_name,
@@ -218,17 +217,9 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     container_client.create_container(None).await?;
 
     // Acquire Lease
-    let acquire_lease_options = BlobContainerClientAcquireLeaseOptions {
-        duration: Some(15),
-        ..Default::default()
-    };
-    let acquire_response = container_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
-        .await?;
+    let acquire_response = container_client.acquire_lease(15, None).await?;
     let lease_id = acquire_response.lease_id()?.unwrap();
-    let other_acquire_response = other_container_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
-        .await;
+    let other_acquire_response = other_container_client.acquire_lease(15, None).await;
     // Assert
     let error = other_acquire_response.unwrap_err().http_status();
     assert_eq!(StatusCode::Conflict, error.unwrap());
@@ -249,18 +240,14 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     container_client
         .renew_lease(proposed_lease_id.clone(), None)
         .await?;
-    let other_acquire_response = other_container_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
-        .await;
+    let other_acquire_response = other_container_client.acquire_lease(15, None).await;
     // Assert
     let error = other_acquire_response.unwrap_err().http_status();
     assert_eq!(StatusCode::Conflict, error.unwrap());
 
     // Break Lease
     container_client.break_lease(None).await?;
-    let other_acquire_response = other_container_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
-        .await;
+    let other_acquire_response = other_container_client.acquire_lease(15, None).await;
     // Assert
     let error = other_acquire_response.unwrap_err().http_status();
     assert_eq!(StatusCode::Conflict, error.unwrap());
@@ -269,9 +256,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     container_client
         .release_lease(proposed_lease_id.clone(), None)
         .await?;
-    let other_acquire_response = other_container_client
-        .acquire_lease(Some(acquire_lease_options.clone()))
-        .await;
+    let other_acquire_response = other_container_client.acquire_lease(15, None).await;
     let lease_id = other_acquire_response?.lease_id().unwrap();
     other_container_client
         .release_lease(lease_id.unwrap(), None)

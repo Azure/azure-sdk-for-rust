@@ -169,13 +169,15 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
+    /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
+    ///   non-infinite lease can be between 15 and 60 seconds.
     /// * `options` - Optional configuration for the request.
     pub async fn acquire_lease(
         &self,
+        duration: i32,
         options: Option<BlobContainerClientAcquireLeaseOptions<'_>>,
     ) -> Result<Response<BlobContainerClientAcquireLeaseResult, NoFormat>> {
-        //TODO: Make duration a parameter
-        self.client.acquire_lease(options).await
+        self.client.acquire_lease(duration, options).await
     }
 
     /// Ends a lease and ensures that another client can't acquire a new lease until the current lease
