@@ -16,13 +16,11 @@ edition.workspace = true
 
 [dependencies]
 azure_core.workspace = true
-log.workspace = true
 opentelemetry = { version = "0.30", features = ["trace"] }
 tracing.workspace = true
 typespec_client_core.workspace = true
 
 [dev-dependencies]
-async-trait.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_core_test_macros.workspace = true
 opentelemetry_sdk = { version = "0.30", features = ["testing"] }
