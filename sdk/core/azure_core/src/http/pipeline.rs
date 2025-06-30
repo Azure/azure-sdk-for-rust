@@ -52,10 +52,8 @@ impl Pipeline {
         push_unique(&mut per_call_policies, ClientRequestIdPolicy::default());
 
         let (user_agent, options) = options.deconstruct();
-        if !user_agent.disabled {
-            let telemetry_policy = UserAgentPolicy::new(crate_name, crate_version, &user_agent);
-            push_unique(&mut per_call_policies, telemetry_policy);
-        }
+        let telemetry_policy = UserAgentPolicy::new(crate_name, crate_version, &user_agent);
+        push_unique(&mut per_call_policies, telemetry_policy);
 
         Self(http::Pipeline::new(
             options,
@@ -263,17 +261,24 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pipeline_with_user_agent_disabled() {
+    async fn pipeline_with_custom_application_id() {
         // Arrange
+        const CUSTOM_APPLICATION_ID: &str = "my-custom-app/2.1.0";
         let ctx = Context::new();
 
         let transport = TransportOptions::new(Arc::new(MockHttpClient::new(|req| {
             async {
                 // Assert
-                let user_agent = req.headers().get_optional_str(&headers::USER_AGENT);
+                let user_agent = req
+                    .headers()
+                    .get_optional_str(&headers::USER_AGENT)
+                    .expect("User-Agent header should be present");
+                // The user agent should contain the custom application_id followed by the standard Azure SDK format
+                // Expected format: my-custom-app/2.1.0 azsdk-rust-test-crate/1.0.0 (<rustc_version>; <OS>; <ARCH>)
                 assert!(
-                    user_agent.is_none(),
-                    "User-Agent header should not be present when disabled"
+                    user_agent.starts_with("my-custom-app/2.1.0 azsdk-rust-test-crate/1.0.0 "),
+                    "User-Agent header should start with custom application_id and expected prefix, got: {}",
+                    user_agent
                 );
 
                 Ok(RawResponse::from_bytes(
@@ -284,13 +289,14 @@ mod tests {
             }
             .boxed()
         })));
-        let user_agent = UserAgentOptions {
-            disabled: true,
-            ..Default::default()
+
+        let user_agent_options = UserAgentOptions {
+            application_id: Some(CUSTOM_APPLICATION_ID.to_string()),
         };
+
         let options = ClientOptions {
             transport: Some(transport),
-            user_agent: Some(user_agent),
+            user_agent: Some(user_agent_options),
             ..Default::default()
         };
 

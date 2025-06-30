@@ -8,6 +8,8 @@ pub mod http;
 pub mod proxy;
 pub mod recorded;
 mod recording;
+#[cfg(doctest)]
+mod root_readme;
 pub mod stream;
 
 use azure_core::Error;

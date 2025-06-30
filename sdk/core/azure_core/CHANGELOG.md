@@ -5,7 +5,6 @@
 ### Features Added
 
 - Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace the asynchronous runtime used by the Azure SDK.
-- Added `UserAgentOptions::enabled` to allow disabling sending the `User-Agent` header.
 
 ### Breaking Changes
 
