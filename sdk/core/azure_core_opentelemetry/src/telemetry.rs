@@ -26,7 +26,7 @@ impl OpenTelemetryTracerProvider {
 impl TracerProvider for OpenTelemetryTracerProvider {
     fn get_tracer(
         &self,
-        namespace: &'static str,
+        namespace: Option<&'static str>,
         package_name: &'static str,
         package_version: &'static str,
     ) -> Arc<dyn azure_core::tracing::Tracer> {
