@@ -58,7 +58,7 @@ impl RequestInstrumentationPolicy {
         if let Some(tracing_provider) = &options.tracing_provider {
             Self {
                 tracer: Some(tracing_provider.get_tracer(
-                    azure_namespace.unwrap_or("Unknown"),
+                    azure_namespace,
                     crate_name.unwrap_or("unknown"),
                     crate_version.unwrap_or("unknown"),
                 )),
@@ -95,14 +95,18 @@ impl Policy for RequestInstrumentationPolicy {
                     value: request.method().to_string().into(),
                 },
                 Attribute {
-                    key: AZ_NAMESPACE_ATTRIBUTE,
-                    value: tracer.namespace().into(),
-                },
-                Attribute {
                     key: AZ_SCHEMA_URL_ATTRIBUTE,
                     value: request.url().scheme().into(),
                 },
             ];
+
+            if let Some(namespace) = tracer.namespace() {
+                // If the tracer has a namespace, we set it as an attribute.
+                span_attributes.push(Attribute {
+                    key: AZ_NAMESPACE_ATTRIBUTE,
+                    value: namespace.into(),
+                });
+            }
 
             if !request.url().username().is_empty() || request.url().password().is_some() {
                 // If the URL contains a password, we do not log it for security reasons.
@@ -186,12 +190,17 @@ impl Policy for RequestInstrumentationPolicy {
 
             let result = next[0].send(ctx, request, &next[1..]).await;
 
-            if result.is_err() {
+            if let Some(err) = result.as_ref().err() {
                 // If the request failed, set an error type attribute.
-                span.set_attribute(
-                    ERROR_TYPE_ATTRIBUTE,
-                    result.as_ref().err().unwrap().to_string().into(),
-                );
+                let azure_error = err.downcast_ref::<crate::Error>();
+                if let Some(err_kind) = azure_error.map(|e| e.kind()) {
+                    // If the error is an Azure core error, we set the error type.
+                    span.set_attribute(ERROR_TYPE_ATTRIBUTE, err_kind.to_string().into());
+                } else {
+                    // Otherwise, we set the error type to the error's text. This should never happen
+                    // as the error should be an Azure core error.
+                    span.set_attribute(ERROR_TYPE_ATTRIBUTE, err.to_string().into());
+                }
             }
             if let Ok(response) = result.as_ref() {
                 // If the request was successful, set the HTTP response status code.
@@ -202,13 +211,12 @@ impl Policy for RequestInstrumentationPolicy {
 
                 if response.status().is_server_error() || response.status().is_client_error() {
                     // If the response status indicates an error, set the span status to error.
+                    // Since the reason can be inferred from the status code, description is left empty.
                     span.set_status(crate::tracing::SpanStatus::Error {
-                        description: format!(
-                            "HTTP request failed with status code {}: {}",
-                            response.status(),
-                            response.status().canonical_reason()
-                        ),
+                        description: "".to_string(),
                     });
+                    // Set the error type attribute for all HTTP 4XX or 5XX errors.
+                    span.set_attribute(ERROR_TYPE_ATTRIBUTE, response.status().to_string().into());
                 }
             }
 
@@ -250,7 +258,7 @@ mod tests {
     impl TracerProvider for MockTracingProvider {
         fn get_tracer(
             &self,
-            azure_namespace: &'static str,
+            azure_namespace: Option<&'static str>,
             crate_name: &'static str,
             crate_version: &'static str,
         ) -> Arc<dyn crate::tracing::Tracer> {
@@ -269,14 +277,14 @@ mod tests {
 
     #[derive(Debug)]
     struct MockTracer {
-        namespace: &'static str,
+        namespace: Option<&'static str>,
         name: &'static str,
         version: &'static str,
         spans: Mutex<Vec<Arc<MockSpan>>>,
     }
 
     impl Tracer for MockTracer {
-        fn namespace(&self) -> &'static str {
+        fn namespace(&self) -> Option<&'static str> {
             self.namespace
         }
 
@@ -420,7 +428,7 @@ mod tests {
     }
     fn check_instrumentation_result(
         mock_tracer: Arc<MockTracingProvider>,
-        expected_namespace: &str,
+        expected_namespace: Option<&str>,
         expected_name: &str,
         expected_version: &str,
         expected_method: &str,
@@ -494,7 +502,7 @@ mod tests {
 
         check_instrumentation_result(
             mock_tracer,
-            "test namespace",
+            Some("test namespace"),
             "test_crate",
             "1.0.0",
             "GET",
@@ -530,7 +538,7 @@ mod tests {
         request.insert_header(headers::CLIENT_REQUEST_ID, "test-client-request-id");
 
         let mock_tracer = run_instrumentation_test(
-            Some("test namespace"),
+            None,
             Some("test_crate"),
             Some("1.0.0"),
             &mut request,
@@ -550,16 +558,12 @@ mod tests {
 
         check_instrumentation_result(
             mock_tracer.clone(),
-            "test namespace",
+            None,
             "test_crate",
             "1.0.0",
             "GET",
             SpanStatus::Unset,
             vec![
-                (
-                    AZ_NAMESPACE_ATTRIBUTE,
-                    AttributeValue::from("test namespace"),
-                ),
                 (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("https")),
                 (
                     AZ_CLIENT_REQUEST_ID_ATTRIBUTE,
@@ -604,13 +608,12 @@ mod tests {
 
         check_instrumentation_result(
             mock_tracer_provider,
-            "Unknown",
+            None,
             "unknown",
             "unknown",
             "GET",
             SpanStatus::Unset,
             vec![
-                (AZ_NAMESPACE_ATTRIBUTE, AttributeValue::from("Unknown")),
                 (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("https")),
                 (
                     HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
@@ -654,14 +657,19 @@ mod tests {
 
         check_instrumentation_result(
             mock_tracer.clone(),
-            "test namespace",
+            Some("test namespace"),
             "test_crate",
             "1.0.0",
             "PUT",
             SpanStatus::Error {
-                description: "HTTP request failed with status code 404: Not Found".to_string(),
+                description: "".to_string(),
             },
             vec![
+                (ERROR_TYPE_ATTRIBUTE, AttributeValue::from("404")),
+                (
+                    AZ_SERVICE_REQUEST_ID_ATTRIBUTE,
+                    AttributeValue::from("test-service-request-id"),
+                ),
                 (
                     AZ_NAMESPACE_ATTRIBUTE,
                     AttributeValue::from("test namespace"),

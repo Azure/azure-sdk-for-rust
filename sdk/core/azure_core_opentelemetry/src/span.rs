@@ -71,7 +71,6 @@ impl Span for OpenTelemetrySpan {
     fn set_status(&self, status: SpanStatus) {
         let otel_status = match status {
             SpanStatus::Unset => opentelemetry::trace::Status::Unset,
-            SpanStatus::Ok => opentelemetry::trace::Status::Ok,
             SpanStatus::Error { description } => opentelemetry::trace::Status::error(description),
         };
         self.context.span().set_status(otel_status);
@@ -142,9 +141,10 @@ mod tests {
 
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
         assert!(tracer_provider.is_ok());
-        let tracer = tracer_provider
-            .unwrap()
-            .get_tracer("Microsoft.SpecialCase", "test", "0.1.0");
+        let tracer =
+            tracer_provider
+                .unwrap()
+                .get_tracer(Some("Microsoft.SpecialCase"), "test", "0.1.0");
         let span = tracer.start_span("test_span", SpanKind::Client, vec![]);
         span.end();
 
@@ -165,7 +165,7 @@ mod tests {
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider
             .unwrap()
-            .get_tracer("Special Name", "test", "0.1.0");
+            .get_tracer(Some("Special Name"), "test", "0.1.0");
         let parent_span = tracer.start_span("parent_span", SpanKind::Server, vec![]);
         let child_span = tracer.start_span_with_parent(
             "child_span",
@@ -199,7 +199,7 @@ mod tests {
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider
             .unwrap()
-            .get_tracer("MyNamespace", "test", "0.1.0");
+            .get_tracer(Some("MyNamespace"), "test", "0.1.0");
         let span1 = tracer.start_span("span1", SpanKind::Internal, vec![]);
         let span2 = tracer.start_span("span2", SpanKind::Server, vec![]);
         let child_span =
@@ -231,7 +231,7 @@ mod tests {
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider
             .unwrap()
-            .get_tracer("Namespace", "test", "0.1.0");
+            .get_tracer(Some("Namespace"), "test", "0.1.0");
         let span1 = tracer.start_span("span1", SpanKind::Internal, vec![]);
         let span2 = tracer.start_span("span2", SpanKind::Server, vec![]);
         let _span_guard = span2
@@ -265,7 +265,7 @@ mod tests {
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider
             .unwrap()
-            .get_tracer("ThisNamespace", "test", "0.1.0");
+            .get_tracer(Some("ThisNamespace"), "test", "0.1.0");
         let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
 
         span.set_attribute("test_key", AttributeValue::String("test_value".to_string()));
@@ -291,7 +291,7 @@ mod tests {
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider
             .unwrap()
-            .get_tracer("namespace", "test", "0.1.0");
+            .get_tracer(Some("namespace"), "test", "0.1.0");
         let span = tracer.start_span("test_span", SpanKind::Client, vec![]);
 
         let error = Error::new(ErrorKind::NotFound, "resource not found");
@@ -320,11 +320,10 @@ mod tests {
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider
             .unwrap()
-            .get_tracer("Namespace", "test", "0.1.0");
+            .get_tracer(Some("Namespace"), "test", "0.1.0");
 
-        // Test Ok status
-        let span = tracer.start_span("test_span_ok", SpanKind::Server, vec![]);
-        span.set_status(SpanStatus::Ok);
+        // Test Unset status
+        let span = tracer.start_span("test_span_unset", SpanKind::Server, vec![]);
         span.end();
 
         // Test Error status
@@ -337,14 +336,13 @@ mod tests {
         let spans = otel_exporter.get_finished_spans().unwrap();
         assert_eq!(spans.len(), 2);
 
-        let ok_span = spans.iter().find(|s| s.name == "test_span_ok").unwrap();
-        assert_eq!(ok_span.status, opentelemetry::trace::Status::Ok);
-
         let error_span = spans.iter().find(|s| s.name == "test_span_error").unwrap();
         assert_eq!(
             error_span.status,
             opentelemetry::trace::Status::error("test error")
         );
+        let unset_span = spans.iter().find(|s| s.name == "test_span_unset").unwrap();
+        assert_eq!(unset_span.status, opentelemetry::trace::Status::Unset);
     }
 
     #[tokio::test]
@@ -354,7 +352,7 @@ mod tests {
         assert!(tracer_provider.is_ok());
         let tracer = tracer_provider
             .unwrap()
-            .get_tracer("Namespace", "test", "0.1.0");
+            .get_tracer(Some("Namespace"), "test", "0.1.0");
 
         let future = async {
             let context = Context::current();

@@ -35,7 +35,7 @@ pub trait TracerProvider: Send + Sync {
     /// - `package_version`: The version of the package for which the tracer is requested.
     fn get_tracer(
         &self,
-        namespace_name: &'static str,
+        namespace_name: Option<&'static str>,
         package_name: &'static str,
         package_version: &'static str,
     ) -> Arc<dyn Tracer>;
@@ -101,7 +101,7 @@ pub trait Tracer: Send + Sync {
     ) -> Arc<dyn Span>;
 
     /// Returns the namespace the tracer was configured with.
-    fn namespace(&self) -> &'static str;
+    fn namespace(&self) -> Option<&'static str>;
 }
 
 impl Debug for dyn Tracer {
@@ -110,10 +110,17 @@ impl Debug for dyn Tracer {
     }
 }
 
+/// The status of a span.
+///
+/// This enum represents the possible statuses of a span in distributed tracing.
+/// It can be either `Unset`, indicating that the span has not been set to any specific status,
+/// or `Error`, which contains a description of the error that occurred during the span's execution
+///
+/// Note that OpenTelemetry defines an `Ok` status but that status is reserved for application and service developers,
+/// so libraries should never set it.
 #[derive(Debug, PartialEq)]
 pub enum SpanStatus {
     Unset,
-    Ok,
     Error { description: String },
 }
 
