@@ -314,10 +314,6 @@ pub struct BlobClientAcquireLeaseOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
-    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
-    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
-    pub duration: Option<i32>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -1138,10 +1134,6 @@ pub struct BlobClientUndeleteOptions<'a> {
 pub struct BlobContainerClientAcquireLeaseOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
-
-    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
-    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
-    pub duration: Option<i32>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
