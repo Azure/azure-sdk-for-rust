@@ -1,9 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::generated::{
-    clients::{QueueClient as GeneratedQueueClient, QueueClientOptions},
-    models::*,
+use crate::{
+    clients::QueueClient,
+    generated::{
+        clients::{QueueServiceClient as GeneratedQueueClient, QueueServiceClientOptions},
+        models::*,
+    },
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -46,7 +49,7 @@ impl QueueServiceClient {
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        options: Option<QueueClientOptions>,
+        options: Option<QueueServiceClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
 
@@ -55,6 +58,22 @@ impl QueueServiceClient {
             endpoint: endpoint.parse()?,
             client,
         })
+    }
+
+    /// Returns a new instance of QueueClient.
+    ///
+    /// # Arguments
+    ///
+    /// * `queue_name` - The name of the queue.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `QueueClient` that can be used to interact with the specified queue.
+    pub fn queue_client(&self, queue_name: String) -> QueueClient {
+        QueueClient {
+            endpoint: self.endpoint.clone(),
+            client: self.client.get_queue_client(queue_name),
+        }
     }
 
     /// Creates a new queue under the given account.
@@ -74,11 +93,11 @@ impl QueueServiceClient {
     pub async fn create_queue(
         &self,
         queue_name: &str,
-        options: Option<QueueQueueOperationGroupClientCreateOptions<'_>>,
+        options: Option<QueueClientCreateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
-            .get_queue_queue_operation_group_client()
-            .create(queue_name, options)
+            .get_queue_client(queue_name.to_string())
+            .create(options)
             .await
     }
 
@@ -99,11 +118,11 @@ impl QueueServiceClient {
     pub async fn delete_queue(
         &self,
         queue_name: &str,
-        options: Option<QueueQueueOperationGroupClientDeleteOptions<'_>>,
+        options: Option<QueueClientDeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
-            .get_queue_queue_operation_group_client()
-            .delete(queue_name, options)
+            .get_queue_client(queue_name.to_string())
+            .delete(options)
             .await
     }
 
@@ -122,12 +141,9 @@ impl QueueServiceClient {
     /// This returns properties for the entire service, not just a single queue.
     pub async fn get_properties(
         &self,
-        options: Option<QueueServiceOperationGroupClientGetPropertiesOptions<'_>>,
+        options: Option<QueueServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
-        self.client
-            .get_queue_service_operation_group_client()
-            .get_properties(options)
-            .await
+        self.client.get_properties(options).await
     }
 
     /// Sets the properties of the queue service.
@@ -144,10 +160,9 @@ impl QueueServiceClient {
     pub async fn set_properties(
         &self,
         storage_service_properties: RequestContent<StorageServiceProperties>,
-        options: Option<QueueServiceOperationGroupClientSetPropertiesOptions<'_>>,
+        options: Option<QueueServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
-            .get_queue_service_operation_group_client()
             .set_properties(storage_service_properties, options)
             .await
     }
@@ -165,10 +180,25 @@ impl QueueServiceClient {
     /// The `PageIterator` can be used to iterate through the results page by page.
     pub fn list_queues_segment(
         &self,
-        options: Option<QueueServiceOperationGroupClientListQueuesSegmentOptions<'_>>,
+        options: Option<QueueServiceClientListQueuesSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListQueuesSegmentResponse, XmlFormat>>> {
-        self.client
-            .get_queue_service_operation_group_client()
-            .list_queues_segment(options)
+        self.client.list_queues_segment(options)
+    }
+
+    /// Retrieves statistics related to replication for the Queue service. It is only available on the secondary location endpoint
+    /// when read-access geo-redundant replication is enabled for the storage account.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing the service statistics response if successful.
+    pub async fn get_statistics(
+        &self,
+        options: Option<QueueServiceClientGetStatisticsOptions<'_>>,
+    ) -> Result<Response<StorageServiceStats, XmlFormat>> {
+        self.client.get_statistics(options).await
     }
 }

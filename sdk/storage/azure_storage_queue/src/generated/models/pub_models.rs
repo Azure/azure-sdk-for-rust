@@ -328,6 +328,14 @@ pub struct PeekedMessage {
     pub message_text: Option<String>,
 }
 
+/// Contains results for `QueueClient::get_metadata()`
+#[derive(SafeDebug)]
+pub struct QueueClientGetMetadataResult;
+
+/// Contains results for `QueueClient::set_access_policy()`
+#[derive(SafeDebug)]
+pub struct QueueClientSetAccessPolicyResult;
+
 /// An Azure Storage Queue.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -349,14 +357,6 @@ pub struct QueueMessage {
     #[serde(rename = "MessageText", skip_serializing_if = "Option::is_none")]
     pub message_text: Option<String>,
 }
-
-/// Contains results for `QueueQueueOperationGroupClient::get_properties()`
-#[derive(SafeDebug)]
-pub struct QueueQueueOperationGroupClientGetPropertiesResult;
-
-/// Contains results for `QueueQueueOperationGroupClient::set_access_policy()`
-#[derive(SafeDebug)]
-pub struct QueueQueueOperationGroupClientSetAccessPolicyResult;
 
 /// The retention policy.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]

@@ -3,7 +3,11 @@ use azure_core::http::{
 };
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
-use azure_storage_queue::clients::{QueueClientOptions, QueueServiceClient};
+use azure_storage_queue::models::QueueServiceClientListQueuesSegmentOptions;
+use azure_storage_queue::{
+    clients::{QueueServiceClient, QueueServiceClientOptions},
+    models::GeoReplicationStatusType,
+};
 use futures::StreamExt;
 
 use std::option::Option;
@@ -109,11 +113,10 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     let queue_name = "test-service-list-queues";
     queue_service_client.create_queue(queue_name, None).await?;
 
-    let options =
-        azure_storage_queue::models::QueueServiceOperationGroupClientListQueuesSegmentOptions {
-            maxresults: Some(1),
-            ..Default::default()
-        };
+    let options = QueueServiceClientListQueuesSegmentOptions {
+        maxresults: Some(1),
+        ..Default::default()
+    };
 
     let mut page_iterator = queue_service_client.list_queues_segment(Some(options))?;
     let mut all_queue_names = Vec::new();
@@ -145,15 +148,64 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     Ok(())
 }
 
+/// Gets statistics for the Queue service, ensuring that the service is available and returns a successful response.
+#[recorded::test]
+pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let queue_service_client = get_queue_service_client_secondary(recording).await?;
+
+    let response = queue_service_client.get_statistics(None).await?;
+    assert!(
+        response.status() == 200,
+        "Expected status code 200, got {}",
+        response.status(),
+    );
+    let stats = response.into_body().await?;
+    let geo_replication = stats.geo_replication.as_ref().unwrap();
+    assert!(
+        geo_replication.status.as_ref().unwrap() == &GeoReplicationStatusType::Live,
+        "Geo-replication status should be Live"
+    );
+    // assert that last_sync_time is greater than Fri, 1 Jun 2025 00:00:00 GMT
+    assert!(
+        geo_replication.last_sync_time.unwrap()
+            > time::OffsetDateTime::from_unix_timestamp(1748728800).unwrap(),
+        "Last sync time should be after 2025-06-01T00:00:00Z"
+    );
+
+    Ok(())
+}
+
 /// Returns an instance of a QueueServiceClient.
 ///
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
-/// * `create` - An optional flag to determine whether the container should also be created.
 pub async fn get_queue_service_client(recording: &Recording) -> Result<QueueServiceClient> {
-    let (options, endpoint) = recorded_test_setup(recording);
-    let queue_client_options = QueueClientOptions {
+    let (options, endpoint, _) = recorded_test_setup(recording);
+    let queue_client_options = QueueServiceClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    let queue_client = QueueServiceClient::new(
+        &endpoint,
+        recording.credential(),
+        Option::Some(queue_client_options),
+    )?;
+
+    Ok(queue_client)
+}
+
+/// Returns an instance of a QueueServiceClient on the secondary endpoint.
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
+pub async fn get_queue_service_client_secondary(
+    recording: &Recording,
+) -> Result<QueueServiceClient> {
+    let (options, _, endpoint) = recorded_test_setup(recording);
+    let queue_client_options = QueueServiceClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };
@@ -171,7 +223,7 @@ pub async fn get_queue_service_client(recording: &Recording) -> Result<QueueServ
 /// # Arguments
 ///
 /// * `recording` - A reference to a Recording instance.
-fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
+fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String, String) {
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
     let endpoint = format!(
@@ -180,8 +232,14 @@ fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
             .var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME", None)
             .as_str()
     );
+    let secondary_endpoint = format!(
+        "https://{}-secondary.queue.core.windows.net/",
+        recording
+            .var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME", None)
+            .as_str()
+    );
 
-    (client_options, endpoint)
+    (client_options, endpoint, secondary_endpoint)
 }
 
 /// Helper function to verify a successful response
