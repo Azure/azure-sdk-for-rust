@@ -153,14 +153,38 @@ mod tests {
     use crate::env::Env;
     use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
     use azure_core::http::headers::Headers;
-    use azure_core::http::{Method, RawResponse, Request, StatusCode};
+    use azure_core::http::{Method, RawResponse, Request, StatusCode, Url};
     use azure_core::Bytes;
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
+    use std::env;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
+
+    async fn run_deployed_test(authority: &str, storage_name: &str, id: Option<UserAssignedId>) {
+        let id_param = id.map_or("".to_string(), |id| match id {
+            UserAssignedId::ClientId(id) => format!("client-id={id}&"),
+            UserAssignedId::ObjectId(id) => format!("object-id={id}&"),
+            UserAssignedId::ResourceId(id) => format!("resource-id={id}&"),
+        });
+        let url = format!(
+            "http://{authority}/api?test=managed-identity&{id_param}storage-name={storage_name}"
+        );
+        let u = Url::parse(&url).expect("invalid URL");
+        let client = azure_core::http::new_http_client();
+        let req = Request::new(u, Method::Get);
+
+        let res = client.execute_request(&req).await.expect("request failed");
+        let status = res.status();
+        let body = res
+            .into_body()
+            .collect_string()
+            .await
+            .unwrap_or("<empty body>".to_string());
+        assert_eq!(StatusCode::Ok, status, "Test app responded with '{body}'");
+    }
 
     async fn run_supported_source_test(
         env: Env,
@@ -254,6 +278,36 @@ mod tests {
             matches!(result, Err(ref e) if *e.kind() == azure_core::error::ErrorKind::Credential),
             "Expected constructor error"
         );
+    }
+
+    #[tokio::test]
+    async fn aci_system_assigned_live() {
+        if env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
+            return;
+        }
+        let ip =
+            env::var("IDENTITY_ACI_IP_SYSTEM_ASSIGNED").expect("IDENTITY_ACI_IP_SYSTEM_ASSIGNED");
+        let storage_name = env::var("IDENTITY_STORAGE_NAME_SYSTEM_ASSIGNED")
+            .expect("IDENTITY_STORAGE_NAME_SYSTEM_ASSIGNED");
+        run_deployed_test(&format!("{}:8080", ip), &storage_name, None).await;
+    }
+
+    #[tokio::test]
+    async fn aci_user_assigned_live() {
+        if env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
+            return;
+        }
+        let ip = env::var("IDENTITY_ACI_IP_USER_ASSIGNED").expect("IDENTITY_ACI_IP_USER_ASSIGNED");
+        let storage_name = env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED")
+            .expect("IDENTITY_STORAGE_NAME_USER_ASSIGNED");
+        let client_id = env::var("IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID")
+            .expect("IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID");
+        run_deployed_test(
+            &format!("{}:8080", ip),
+            &storage_name,
+            Some(UserAssignedId::ClientId(client_id)),
+        )
+        .await;
     }
 
     async fn run_app_service_test(options: Option<ManagedIdentityCredentialOptions>) {
