@@ -5,4 +5,4 @@
 
 pub mod clients;
 pub mod models;
-pub use clients::{QueueClient, QueueClientOptions};
+pub use clients::{QueueClient, QueueClientOptions, QueueServiceClient, QueueServiceClientOptions};

@@ -7,19 +7,14 @@ use crate::generated::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
-        Context, Method, NoFormat, RawResponse, Request, RequestContent, Response, StatusCode, Url,
-        XmlFormat,
-    },
+    http::{NoFormat, RawResponse, RequestContent, Response, StatusCode, Url, XmlFormat},
     xml, Bytes, Result,
 };
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
 pub struct QueueClient {
     pub(super) endpoint: Url,
-    pub(super) queue_name: String,
     pub(super) client: GeneratedQueueClient,
 }
 
@@ -39,7 +34,7 @@ impl QueueClient {
     ///
     /// A reference to the name of the queue.
     pub fn queue_name(&self) -> &str {
-        &self.queue_name
+        &self.client.queue_name
     }
 
     /// Creates a new QueueClient using Entra ID authentication.
@@ -62,10 +57,14 @@ impl QueueClient {
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
 
-        let client = GeneratedQueueClient::new(endpoint, credential.clone(), Some(options))?;
+        let client = GeneratedQueueClient::new(
+            endpoint,
+            credential.clone(),
+            queue_name.to_string(),
+            Some(options),
+        )?;
         Ok(Self {
             endpoint: endpoint.parse()?,
-            queue_name: queue_name.to_string(),
             client,
         })
     }
@@ -85,12 +84,9 @@ impl QueueClient {
     /// Returns an error if the queue already exists or if the request fails
     pub async fn create(
         &self,
-        options: Option<QueueQueueOperationGroupClientCreateOptions<'_>>,
+        options: Option<QueueClientCreateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client
-            .get_queue_queue_operation_group_client()
-            .create(&self.queue_name, options)
-            .await
+        self.client.create(options).await
     }
 
     /// Creates a new queue under the given account if it doesn't already exist.
@@ -105,7 +101,7 @@ impl QueueClient {
     /// returns a success response with no content (204 No Content)
     pub async fn create_if_not_exists(
         &self,
-        options: Option<QueueQueueOperationGroupClientCreateOptions<'_>>,
+        options: Option<QueueClientCreateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         // Attempt to create the queue, if it already exists, this will return an error.
         match self.create(options).await {
@@ -137,12 +133,9 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn delete(
         &self,
-        options: Option<QueueQueueOperationGroupClientDeleteOptions<'_>>,
+        options: Option<QueueClientDeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client
-            .get_queue_queue_operation_group_client()
-            .delete(&self.queue_name, options)
-            .await
+        self.client.delete(options).await
     }
 
     /// Deletes the specified queue if it exists.
@@ -157,7 +150,7 @@ impl QueueClient {
     /// returns a success response with no content (204 No Content)
     pub async fn delete_if_exists(
         &self,
-        options: Option<QueueQueueOperationGroupClientDeleteOptions<'_>>,
+        options: Option<QueueClientDeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         // Attempt to delete the queue, if it does not exist, this will return an error.
         match self.delete(options).await {
@@ -174,29 +167,6 @@ impl QueueClient {
         }
     }
 
-    /// Retrieves the properties of the queue service.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the service properties response if successful
-    ///
-    /// # Note
-    ///
-    /// This returns properties for the entire service, not just a single queue.
-    pub async fn get_properties(
-        &self,
-        options: Option<QueueServiceOperationGroupClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
-        self.client
-            .get_queue_service_operation_group_client()
-            .get_properties(options)
-            .await
-    }
-
     /// Checks if the queue exists.
     ///
     /// # Returns
@@ -209,7 +179,7 @@ impl QueueClient {
     ///
     /// Returns an error if the request fails for any reason other than a non-existent queue
     pub async fn exists(&self) -> Result<bool> {
-        match self.get_metadata().await {
+        match self.get_metadata(None).await {
             Ok(_) => Ok(true),
             Err(e) if e.http_status().unwrap() == StatusCode::NotFound => {
                 // If the queue does not exist, we return false.
@@ -237,11 +207,9 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn clear(
         &self,
-        options: Option<QueueMessagesOperationGroupClientClearOptions<'_>>,
+        options: Option<QueueClientClearOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        let messages_client = self.client.get_queue_messages_operation_group_client();
-
-        let result = messages_client.clear(&self.queue_name, options).await?;
+        let result = self.client.clear(options).await?;
         Ok(result)
     }
 
@@ -249,7 +217,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `metadata` - A map of metadata key-value pairs to set for the queue. If `None`, all metadata will be removed
+    /// * `options` - Optional parameters for the request, including the metadata to set for the queue
     ///
     /// # Returns
     ///
@@ -260,36 +228,16 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn set_metadata(
         &self,
-        metadata: Option<HashMap<&str, &str>>,
-    ) -> Result<Response<()>> {
-        let mut url = self.client.endpoint.clone();
-        let ctx = Context::new();
-
-        url.path_segments_mut()
-            .expect("Invalid URL")
-            .push(&self.queue_name);
-        url.query_pairs_mut().append_pair("comp", "metadata");
-
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-
-        request.insert_header("x-ms-version", self.client.version.to_string());
-
-        if let Some(metadata) = metadata {
-            for (key, value) in metadata {
-                let header_name = format!("x-ms-meta-{}", key);
-                request.insert_header(header_name.to_string(), value.to_string());
-            }
-        }
-
-        self.client
-            .pipeline
-            .send(&ctx, &mut request)
-            .await
-            .map(Into::into)
+        options: Option<QueueClientSetMetadataOptions<'_>>,
+    ) -> Result<Response<(), NoFormat>> {
+        self.client.set_metadata(options).await
     }
 
     /// Retrieves the metadata of the specified queue.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request
     ///
     /// # Returns
     ///
@@ -298,26 +246,11 @@ impl QueueClient {
     /// # Errors
     ///
     /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn get_metadata(&self) -> Result<Response<StorageServiceProperties, XmlFormat>> {
-        let mut url = self.client.endpoint.clone();
-
-        let ctx = Context::new();
-
-        url.path_segments_mut()
-            .expect("Invalid URL")
-            .push(&self.queue_name);
-        url.query_pairs_mut().append_pair("comp", "metadata");
-
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
-
-        request.insert_header("x-ms-version", self.client.version.to_string());
-
-        self.client
-            .pipeline
-            .send(&ctx, &mut request)
-            .await
-            .map(Into::into)
+    pub async fn get_metadata(
+        &self,
+        options: Option<QueueClientGetMetadataOptions<'_>>,
+    ) -> Result<Response<QueueClientGetMetadataResult, NoFormat>> {
+        self.client.get_metadata(options).await
     }
 
     /// Enqueues a message to the specified queue.
@@ -337,22 +270,15 @@ impl QueueClient {
     pub async fn enqueue_message(
         &self,
         message: &str,
-        options: Option<QueueMessagesOperationGroupClientEnqueueOptions<'_>>,
+        options: Option<QueueClientEnqueueOptions<'_>>,
     ) -> Result<Response<Option<EnqueuedMessage>, XmlFormat>> {
         let queue_message = QueueMessage {
             message_text: Some(message.to_owned()),
         };
 
-        let xml_body = xml::to_xml(&queue_message)?;
-
         let response = self
             .client
-            .get_queue_messages_operation_group_client()
-            .enqueue(
-                &self.queue_name,
-                RequestContent::try_from(xml_body)?,
-                options,
-            )
+            .enqueue(queue_message.try_into()?, options)
             .await?;
 
         Self::extract_first_message(response, |list: &ListOfEnqueuedMessage| list.items.clone())
@@ -379,11 +305,10 @@ impl QueueClient {
         &self,
         message_id: &str,
         pop_receipt: &str,
-        options: Option<QueueMessageIdOperationGroupClientDeleteOptions<'_>>,
+        options: Option<QueueClientDeleteMessageOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
-            .get_queue_message_id_operation_group_client()
-            .delete(&self.queue_name, message_id, pop_receipt, options)
+            .delete_message(message_id, pop_receipt, options)
             .await
     }
 
@@ -409,17 +334,10 @@ impl QueueClient {
         message_id: &str,
         pop_receipt: &str,
         visibility_timeout: i32,
-        options: Option<QueueMessageIdOperationGroupClientUpdateOptions<'_>>,
+        options: Option<QueueClientUpdateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
-            .get_queue_message_id_operation_group_client()
-            .update(
-                &self.queue_name,
-                message_id,
-                pop_receipt,
-                visibility_timeout,
-                options,
-            )
+            .update(message_id, pop_receipt, visibility_timeout, options)
             .await
     }
 
@@ -440,9 +358,9 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn dequeue_message(
         &self,
-        options: Option<QueueMessagesOperationGroupClientDequeueOptions<'_>>,
+        options: Option<QueueClientDequeueOptions<'_>>,
     ) -> Result<Response<Option<DequeuedMessage>, XmlFormat>> {
-        let options = Some(QueueMessagesOperationGroupClientDequeueOptions {
+        let options = Some(QueueClientDequeueOptions {
             number_of_messages: Some(1),
             ..options.unwrap_or_default()
         });
@@ -469,12 +387,9 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn dequeue_messages(
         &self,
-        options: Option<QueueMessagesOperationGroupClientDequeueOptions<'_>>,
+        options: Option<QueueClientDequeueOptions<'_>>,
     ) -> Result<Response<ListOfDequeuedMessage, XmlFormat>> {
-        self.client
-            .get_queue_messages_operation_group_client()
-            .dequeue(&self.queue_name, options)
-            .await
+        self.client.dequeue(options).await
     }
 
     /// Peeks a single message from the front of the queue without removing it.
@@ -494,9 +409,9 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn peek_message(
         &self,
-        options: Option<QueueMessagesOperationGroupClientPeekOptions<'_>>,
+        options: Option<QueueClientPeekOptions<'_>>,
     ) -> Result<Response<Option<PeekedMessage>, XmlFormat>> {
-        let options = Some(QueueMessagesOperationGroupClientPeekOptions {
+        let options = Some(QueueClientPeekOptions {
             number_of_messages: Some(1),
             ..options.unwrap_or_default()
         });
@@ -522,12 +437,9 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn peek_messages(
         &self,
-        options: Option<QueueMessagesOperationGroupClientPeekOptions<'_>>,
+        options: Option<QueueClientPeekOptions<'_>>,
     ) -> Result<Response<ListOfPeekedMessage, XmlFormat>> {
-        self.client
-            .get_queue_messages_operation_group_client()
-            .peek(&self.queue_name, options)
-            .await
+        self.client.peek(options).await
     }
 
     /// Retrieves the access policy for the specified queue.
@@ -545,37 +457,31 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn get_access_policy(
         &self,
-        options: Option<QueueQueueOperationGroupClientGetAccessPolicyOptions<'_>>,
+        options: Option<QueueClientGetAccessPolicyOptions<'_>>,
     ) -> Result<Response<ListOfSignedIdentifier, XmlFormat>> {
-        self.client
-            .get_queue_queue_operation_group_client()
-            .get_access_policy(&self.queue_name, options)
-            .await
+        self.client.get_access_policy(options).await
     }
 
     /// Sets the access policy for the specified queue.
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request, including the list of signed identifiers
+    /// * `queue_acl` - The access control list containing signed identifiers for the queue
+    /// * `options` - Optional parameters for the request
     ///
     /// # Returns
     ///
     /// Returns a `Result` containing the response if successful
     ///
     /// # Errors
-    /// ///
+    ///
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn set_access_policy(
         &self,
         queue_acl: RequestContent<ListOfSignedIdentifier>,
-        options: Option<QueueQueueOperationGroupClientSetAccessPolicyOptions<'_>>,
-        // TODO: Validate return
-    ) -> Result<Response<QueueQueueOperationGroupClientSetAccessPolicyResult, NoFormat>> {
-        self.client
-            .get_queue_queue_operation_group_client()
-            .set_access_policy(&self.queue_name, queue_acl, options)
-            .await
+        options: Option<QueueClientSetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<QueueClientSetAccessPolicyResult, NoFormat>> {
+        self.client.set_access_policy(queue_acl, options).await
     }
 
     /// Helper function to extract the first message from a list response and convert it to a single message response

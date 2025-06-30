@@ -1,18 +1,32 @@
 pub fn get_endpoint() -> String {
     // Retrieve the storage account endpoint from environment variable.
-    let endpoint = std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT");
-    let endpoint = match endpoint {
+    let storage_account_name = std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME");
+    let storage_account_name = match storage_account_name {
         Ok(url) => url,
         Err(_) => {
-            eprintln!("Environment variable AZURE_QUEUE_STORAGE_ACCOUNT is not set");
+            eprintln!("Environment variable AZURE_QUEUE_STORAGE_ACCOUNT_NAME is not set");
             std::process::exit(1);
         }
     };
 
-    // Validate endpoint format
-    if !endpoint.ends_with("/") || !endpoint.starts_with("https://") {
-        eprintln!("Endpoint must start with 'https://' and end with '/'");
-        std::process::exit(1);
-    }
-    endpoint
+    format!("https://{}.queue.core.windows.net/", storage_account_name)
+}
+
+// This function is used only for the queue service client example, hence the `allow(dead_code)` attribute.
+#[allow(dead_code)]
+pub fn get_secondary_endpoint() -> String {
+    // Retrieve the storage account endpoint from environment variable.
+    let storage_account_name = std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME");
+    let storage_account_name = match storage_account_name {
+        Ok(url) => url,
+        Err(_) => {
+            eprintln!("Environment variable AZURE_QUEUE_STORAGE_ACCOUNT_NAME is not set");
+            std::process::exit(1);
+        }
+    };
+
+    format!(
+        "https://{}-secondary.queue.core.windows.net/",
+        storage_account_name
+    )
 }
