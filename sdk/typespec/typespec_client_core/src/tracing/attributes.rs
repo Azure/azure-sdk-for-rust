@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::fmt::SafeDebug;
+use typespec_macros::SafeDebug;
 
 /// An array of homogeneous attribute values.
 #[derive(SafeDebug, PartialEq)]

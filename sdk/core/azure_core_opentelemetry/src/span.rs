@@ -77,6 +77,8 @@ impl Span for OpenTelemetrySpan {
         self.context.span().set_status(otel_status);
     }
 
+    fn propagate_headers(&self, _request: &mut azure_core::http::Request) {}
+
     fn set_current(
         &self,
         _context: &azure_core::http::Context,
