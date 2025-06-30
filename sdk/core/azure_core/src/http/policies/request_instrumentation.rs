@@ -377,6 +377,8 @@ mod tests {
         {
             todo!()
         }
+
+        fn propagate_headers(&self, request: &mut Request) {}
     }
 
     impl AsAny for MockSpan {

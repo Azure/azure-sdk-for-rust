@@ -3,9 +3,8 @@
 
 //! Distributed tracing trait definitions
 //!
-use crate::http::Context;
-use std::fmt::Debug;
-use std::sync::Arc;
+use crate::http::{Context, Request};
+use std::{fmt::Debug, sync::Arc};
 
 /// Overall architecture for distributed tracing in the SDK.
 ///
@@ -175,6 +174,8 @@ pub trait Span: AsAny + Send + Sync {
     /// enabling it to be used for tracing operations within that context.
     ///
     fn set_current(&self, context: &Context) -> crate::Result<Box<dyn SpanGuard>>;
+
+    fn propagate_headers(&self, request: &mut Request);
 }
 
 /// A trait that allows an object to be downcast to a reference of type `Any`.
