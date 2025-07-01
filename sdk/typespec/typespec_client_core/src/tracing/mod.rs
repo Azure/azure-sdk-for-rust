@@ -50,9 +50,12 @@ impl Debug for dyn TracerProvider {
 pub trait Tracer: Send + Sync {
     /// Starts a new span with the given name and type.
     ///
+    ///  The newly created span will not have a parent span.
+    ///
     /// # Arguments
     /// - `name`: The name of the span to start.
     /// - `kind`: The type of the span to start.
+    /// - `attributes`: A vector of attributes to associate with the span.
     ///
     /// # Returns
     /// An `Arc<dyn Span>` representing the started span.
@@ -64,11 +67,15 @@ pub trait Tracer: Send + Sync {
         attributes: Vec<Attribute>,
     ) -> Arc<dyn Span>;
 
-    /// Starts a new span with the given type, using the current span as the parent span.
+    /// Starts a new span with the given name and type.
+    ///
+    /// The parent span of the newly created span will be the current span (if one
+    /// exists).
     ///
     /// # Arguments
     /// - `name`: The name of the span to start.
     /// - `kind`: The type of the span to start.
+    /// - `attributes`: A vector of attributes to associate with the span.
     ///
     /// # Returns
     /// An `Arc<dyn Span>` representing the started span.
@@ -85,6 +92,7 @@ pub trait Tracer: Send + Sync {
     /// # Arguments
     /// - `name`: The name of the span to start.
     /// - `kind`: The type of the span to start.
+    /// - `attributes`: A vector of attributes to associate with the span.
     /// - `parent`: The parent span to use for the new span.
     ///
     /// # Returns
@@ -100,7 +108,10 @@ pub trait Tracer: Send + Sync {
         parent: Arc<dyn Span>,
     ) -> Arc<dyn Span>;
 
-    /// Returns the namespace the tracer was configured with.
+    /// Returns the namespace the tracer was configured with (if any).
+    ///
+    /// # Returns
+    /// An `Option<&'static str>` representing the namespace of the tracer,
     fn namespace(&self) -> Option<&'static str>;
 }
 
