@@ -25,7 +25,38 @@ use std::sync::Arc;
 // Create an OpenTelemetry tracer provider adapter from an OpenTelemetry TracerProvider
 let otel_tracer_provider = Arc::new(SdkTracerProvider::builder().build());
 
-let azure_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider)?;
+let azure_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
+
+let options = ServiceClientOptions {
+    azure_client_options: ClientOptions {
+        request_instrumentation: Some(RequestInstrumentationOptions {
+            tracing_provider: Some(azure_provider),
+        }),
+        ..Default::default()
+    },
+    ..Default::default()
+    };
+
+#   Ok(())
+# }
+```
+
+If it is more convenient to use the global OpenTelemetry provider, then the [`OpenTelemetryTracerProvider::new_from_global_provider`] method will configure the OpenTelemetry support to use the global provider instead of a custom configured provider.
+
+```rust no_run
+# use azure_identity::DefaultAzureCredential;
+# use azure_core::{http::{ClientOptions, RequestInstrumentationOptions}};
+# #[derive(Default)]
+# struct ServiceClientOptions {
+#    azure_client_options: ClientOptions,
+# }
+use azure_core_opentelemetry::OpenTelemetryTracerProvider;
+use opentelemetry_sdk::trace::SdkTracerProvider;
+use std::sync::Arc;
+
+# fn test_fn() -> azure_core::Result<()> {
+
+let azure_provider = OpenTelemetryTracerProvider::new_from_global_provider();
 
 let options = ServiceClientOptions {
     azure_client_options: ClientOptions {

@@ -55,7 +55,7 @@ pub trait Tracer: Send + Sync {
     /// - `kind`: The type of the span to start.
     ///
     /// # Returns
-    /// An `Arc<dyn Span + Send + Sync>` representing the started span.
+    /// An `Arc<dyn Span>` representing the started span.
     ///
     fn start_span(
         &self,
@@ -71,7 +71,7 @@ pub trait Tracer: Send + Sync {
     /// - `kind`: The type of the span to start.
     ///
     /// # Returns
-    /// An `Arc<dyn Span + Send + Sync>` representing the started span.
+    /// An `Arc<dyn Span>` representing the started span.
     ///
     fn start_span_with_current(
         &self,
@@ -88,7 +88,7 @@ pub trait Tracer: Send + Sync {
     /// - `parent`: The parent span to use for the new span.
     ///
     /// # Returns
-    /// An `Arc<dyn Span + Send + Sync>` representing the started span
+    /// An `Arc<dyn Span>` representing the started span
     ///
     /// Note: This method may panic if the parent span cannot be downcasted to the expected type.
     ///
@@ -190,7 +190,7 @@ pub trait Span: AsAny + Send + Sync {
     /// This method allows the span to be set as the current span in the context,
     /// enabling it to be used for tracing operations within that context.
     ///
-    fn set_current(&self, context: &Context) -> crate::Result<Box<dyn SpanGuard>>;
+    fn set_current(&self, context: &Context) -> Box<dyn SpanGuard>;
 
     /// Adds telemetry headers to the request for distributed tracing.
     ///
