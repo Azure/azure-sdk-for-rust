@@ -111,7 +111,7 @@ mod tests {
     #[test]
     fn test_create_tracer() {
         let noop_tracer = NoopTracerProvider::new();
-        let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(noop_tracer)).unwrap();
+        let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(noop_tracer));
         let tracer = otel_provider.get_tracer(Some("name"), "test_tracer", "1.0.0");
         let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
         span.end();
@@ -120,14 +120,14 @@ mod tests {
     #[test]
     fn test_create_tracer_with_sdk_tracer() {
         let provider = SdkTracerProvider::builder().build();
-        let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(provider)).unwrap();
+        let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(provider));
         let _tracer = otel_provider.get_tracer(Some("My.Namespace"), "test_tracer", "1.0.0");
     }
 
     #[test]
     fn test_create_span_from_tracer() {
         let provider = SdkTracerProvider::builder().build();
-        let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(provider)).unwrap();
+        let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(provider));
         let tracer = otel_provider.get_tracer(Some("My.Namespace"), "test_tracer", "1.0.0");
         let _span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
     }

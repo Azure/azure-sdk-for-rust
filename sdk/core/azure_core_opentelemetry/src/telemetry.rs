@@ -3,7 +3,6 @@
 
 use crate::tracer::OpenTelemetryTracer;
 use azure_core::tracing::TracerProvider;
-use azure_core::Result;
 use opentelemetry::{
     global::{BoxedTracer, ObjectSafeTracerProvider},
     InstrumentationScope,
@@ -12,14 +11,36 @@ use std::sync::Arc;
 
 /// Enum to hold different OpenTelemetry tracer provider implementations.
 pub struct OpenTelemetryTracerProvider {
-    inner: Arc<dyn ObjectSafeTracerProvider + Send + Sync>,
+    inner: Option<Arc<dyn ObjectSafeTracerProvider + Send + Sync>>,
 }
 
 impl OpenTelemetryTracerProvider {
     /// Creates a new Azure telemetry provider with the given SDK tracer provider.
-    #[allow(dead_code)]
-    pub fn new(provider: Arc<dyn ObjectSafeTracerProvider + Send + Sync>) -> Result<Arc<Self>> {
-        Ok(Arc::new(Self { inner: provider }))
+    ///
+    /// # Arguments
+    /// - `provider`: An `Arc` to an object-safe tracer provider that implements the
+    ///   `ObjectSafeTracerProvider` trait.
+    ///
+    /// # Returns
+    /// An `Arc` to the newly created `OpenTelemetryTracerProvider`.
+    ///
+    ///
+    pub fn new(provider: Arc<dyn ObjectSafeTracerProvider + Send + Sync>) -> Arc<Self> {
+        Arc::new(Self {
+            inner: Some(provider),
+        })
+    }
+
+    /// Creates a new Azure telemetry provider that uses the global OpenTelemetry tracer provider.
+    ///
+    /// This is useful when you want to use the global OpenTelemetry provider without
+    /// explicitly instantiating a specific provider.
+    ///
+    /// # Returns
+    /// An `Arc` to the newly created `OpenTelemetryTracerProvider` that uses the global provider.
+    ///
+    pub fn new_from_global_provider() -> Arc<Self> {
+        Arc::new(Self { inner: None })
     }
 }
 
@@ -34,10 +55,19 @@ impl TracerProvider for OpenTelemetryTracerProvider {
             .with_version(package_version)
             .with_schema_url("https://opentelemetry.io/schemas/1.23.0")
             .build();
-        Arc::new(OpenTelemetryTracer::new(
-            namespace,
-            BoxedTracer::new(self.inner.boxed_tracer(scope)),
-        ))
+        if let Some(provider) = &self.inner {
+            // If we have a specific provider set, use it to create the tracer.
+            Arc::new(OpenTelemetryTracer::new(
+                namespace,
+                BoxedTracer::new(provider.boxed_tracer(scope)),
+            ))
+        } else {
+            // Use the global tracer if no specific provider has been set.
+            Arc::new(OpenTelemetryTracer::new(
+                namespace,
+                opentelemetry::global::tracer_with_scope(scope),
+            ))
+        }
     }
 }
 
@@ -50,14 +80,27 @@ mod tests {
     #[test]
     fn test_create_tracer_provider_sdk_tracer() {
         let provider = Arc::new(SdkTracerProvider::builder().build());
-        let tracer_provider = OpenTelemetryTracerProvider::new(provider);
-        assert!(tracer_provider.is_ok());
+        let _tracer_provider = OpenTelemetryTracerProvider::new(provider);
     }
 
     #[test]
     fn test_create_tracer_provider_noop_tracer() {
         let provider = Arc::new(NoopTracerProvider::new());
-        let tracer_provider = OpenTelemetryTracerProvider::new(provider);
-        assert!(tracer_provider.is_ok());
+        let _tracer_provider = OpenTelemetryTracerProvider::new(provider);
+    }
+
+    #[test]
+    fn test_create_tracer_provider_from_global() {
+        let tracer_provider = OpenTelemetryTracerProvider::new_from_global_provider();
+        let _tracer = tracer_provider.get_tracer(Some("My Namespace"), "test", "0.1.0");
+    }
+
+    #[test]
+    fn test_create_tracer_provider_from_global_provider_set() {
+        let provider = SdkTracerProvider::builder().build();
+        opentelemetry::global::set_tracer_provider(provider);
+
+        let tracer_provider = OpenTelemetryTracerProvider::new_from_global_provider();
+        let _tracer = tracer_provider.get_tracer(Some("My Namespace"), "test", "0.1.0");
     }
 }

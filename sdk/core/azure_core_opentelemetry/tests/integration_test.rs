@@ -11,7 +11,7 @@ use std::sync::Arc;
 async fn test_span_creation() -> Result<(), Box<dyn Error>> {
     // Set up a tracer provider for testing
     let sdk_provider = Arc::new(SdkTracerProvider::builder().build());
-    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider)?;
+    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
     // Get a tracer from the Azure provider
     let tracer = azure_provider.get_tracer(Some("test_namespace"), "test_tracer", "1.0.0");
@@ -39,7 +39,7 @@ async fn test_span_creation() -> Result<(), Box<dyn Error>> {
 async fn test_tracer_provider_creation() -> Result<(), Box<dyn Error>> {
     // Create multiple tracer provider instances to test initialization
     let sdk_provider = Arc::new(SdkTracerProvider::builder().build());
-    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider)?;
+    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
     // Get a tracer and verify it works
     let tracer = azure_provider.get_tracer(Some("test.namespace"), "test_tracer", "1.0.0");
@@ -53,7 +53,7 @@ async fn test_tracer_provider_creation() -> Result<(), Box<dyn Error>> {
 async fn test_span_attributes() -> Result<(), Box<dyn Error>> {
     // Set up a tracer provider for testing
     let sdk_provider = Arc::new(SdkTracerProvider::builder().build());
-    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider)?;
+    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
     // Get a tracer from the Azure provider
     let tracer = azure_provider.get_tracer(Some("test.namespace"), "test_tracer", "1.0.0");

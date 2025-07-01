@@ -399,8 +399,7 @@ mod tests {
         fn set_current(
             &self,
             _context: &Context,
-        ) -> typespec_client_core::Result<Box<dyn typespec_client_core::tracing::SpanGuard>>
-        {
+        ) -> Box<dyn typespec_client_core::tracing::SpanGuard> {
             todo!()
         }
 
