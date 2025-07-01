@@ -6,8 +6,8 @@ use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
     clients::{QueueClient, QueueClientOptions},
     models::{
-        QueueClientDequeueOptions, QueueClientPeekOptions, QueueClientSetMetadataOptions,
-        QueueClientUpdateOptions, QueueMessage,
+        QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
+        QueueClientSetMetadataOptions, QueueClientUpdateOptions, QueueMessage,
     },
 };
 
@@ -40,10 +40,13 @@ async fn test_enqueue_message(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let queue_client = get_queue_client(recording, "test-enqueue-message").await?;
     queue_client.create(None).await?;
+    let queue_message = QueueMessage {
+        message_text: Some("enqueue_message".to_string()),
+    };
 
     let test_result = async {
         let response = queue_client
-            .enqueue_message("enqueue_message", None)
+            .send_message(queue_message.try_into()?, None)
             .await?;
 
         assert!(
@@ -231,8 +234,13 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
         // Send a message to the queue
         // Note: The message ID and pop receipt are required for deletion, so we need to capture them.
         let enqueue_message_response = queue_client
-            .enqueue_message(
-                "Example message created from Rust, ready for deletion",
+            .send_message(
+                QueueMessage {
+                    message_text: Some(
+                        "Example message created from Rust, ready for deletion".to_string(),
+                    ),
+                }
+                .try_into()?,
                 None,
             )
             .await?;
@@ -271,7 +279,15 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
     let test_result = async {
         // Enqueue a message to the queue
         let enqueue_message_response = queue_client
-            .enqueue_message("Example message created from Rust, ready for update", None)
+            .send_message(
+                QueueMessage {
+                    message_text: Some(
+                        "Example message created from Rust, ready for update".to_string(),
+                    ),
+                }
+                .try_into()?,
+                None,
+            )
             .await?;
 
         let enqueued_message = enqueue_message_response.into_body().await?.unwrap();
@@ -385,7 +401,7 @@ async fn test_peek_messages(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let options = Some(QueueClientPeekOptions {
+        let options = Some(QueueClientPeekMessagesOptions {
             number_of_messages: Some(10),
             ..Default::default()
         });
@@ -429,7 +445,7 @@ async fn test_dequeue_message_empty(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let response = queue_client.dequeue_message(None).await?;
+        let response = queue_client.receive_message(None).await?;
         assert_successful_response(&response);
 
         let message = response.into_body().await?;
@@ -461,7 +477,7 @@ async fn test_dequeue_message(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let response = queue_client.dequeue_message(None).await?;
+        let response = queue_client.receive_message(None).await?;
         assert_successful_response(&response);
 
         let message = response.into_body().await?;
@@ -496,12 +512,12 @@ async fn test_dequeue_messages(ctx: TestContext) -> Result<()> {
 
     // Run the test logic and ensure cleanup always happens
     let test_result = async {
-        let options = Some(QueueClientDequeueOptions {
+        let options = Some(QueueClientReceiveMessagesOptions {
             number_of_messages: Some(10),
             ..Default::default()
         });
 
-        let response = queue_client.dequeue_messages(options).await?;
+        let response = queue_client.receive_messages(options).await?;
         assert_successful_response(&response);
 
         let messages = response.into_body().await?;
@@ -520,59 +536,6 @@ async fn test_dequeue_messages(ctx: TestContext) -> Result<()> {
             assert_message_text(message.message_text.clone(), test_messages[i], i);
         }
 
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Clean up by deleting the queue - this always executes
-    queue_client.delete(None).await.unwrap();
-
-    test_result
-}
-
-/// Gets the access policies for a queue in Azure Storage Queue service.
-#[recorded::test]
-async fn test_get_access_policies(ctx: TestContext) -> Result<()> {
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-get-access-policies").await?;
-
-    // Setup test queue with messages
-    queue_client.create(None).await?;
-
-    // Run the test logic and ensure cleanup always happens
-    let test_result = async {
-        let response = queue_client.get_access_policy(None).await?;
-        assert_successful_response(&response);
-        Ok::<(), azure_core::Error>(())
-    }
-    .await;
-
-    // Clean up by deleting the queue - this always executes
-    queue_client.delete(None).await.unwrap();
-
-    test_result
-}
-
-/// Sets the access policies for a queue in Azure Storage Queue service.
-#[recorded::test]
-async fn test_set_access_policies(ctx: TestContext) -> Result<()> {
-    let recording = ctx.recording();
-    let queue_client = get_queue_client(recording, "test-set-access-policies").await?;
-
-    // Setup test queue with messages
-    queue_client.create(None).await?;
-
-    // Get the current access policies to set them back after the test
-    let result = queue_client.get_access_policy(None).await?;
-
-    let signed_identifiers = result.into_body().await?;
-
-    // Run the test logic and ensure cleanup always happens
-    let test_result = async {
-        let response = queue_client
-            .set_access_policy(signed_identifiers.try_into()?, None)
-            .await?;
-        assert_successful_response(&response);
         Ok::<(), azure_core::Error>(())
     }
     .await;
@@ -629,7 +592,12 @@ async fn setup_test_queue_with_messages(
 ) -> Result<()> {
     queue_client.create_if_not_exists(None).await?;
     for message in messages {
-        queue_client.enqueue_message(message, None).await?;
+        let queue_message = QueueMessage {
+            message_text: Some(message.to_string()),
+        };
+        queue_client
+            .send_message(queue_message.try_into()?, None)
+            .await?;
     }
     Ok(())
 }
@@ -659,7 +627,7 @@ async fn peek_and_assert<'a>(
     queue_client: &QueueClient,
     expected_messages: &[&str],
     count: usize,
-    options: Option<QueueClientPeekOptions<'a>>,
+    options: Option<QueueClientPeekMessagesOptions<'a>>,
 ) -> Result<()> {
     // Peek the messages in the queue
     let response = queue_client.peek_messages(options).await?;

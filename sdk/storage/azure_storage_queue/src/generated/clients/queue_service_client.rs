@@ -6,8 +6,8 @@
 use crate::generated::{
     clients::QueueClient,
     models::{
-        ListQueuesSegmentResponse, QueueServiceClientGetPropertiesOptions,
-        QueueServiceClientGetStatisticsOptions, QueueServiceClientListQueuesSegmentOptions,
+        ListQueuesResponse, QueueServiceClientGetPropertiesOptions,
+        QueueServiceClientGetStatisticsOptions, QueueServiceClientListQueuesOptions,
         QueueServiceClientSetPropertiesOptions, StorageServiceProperties, StorageServiceStats,
     },
 };
@@ -157,15 +157,15 @@ impl QueueServiceClient {
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
-    /// The List Queues Segment operation returns a list of the queues under the specified account
+    /// returns a list of the queues under the specified account
     ///
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    pub fn list_queues_segment(
+    pub fn list_queues(
         &self,
-        options: Option<QueueServiceClientListQueuesSegmentOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListQueuesSegmentResponse, XmlFormat>>> {
+        options: Option<QueueServiceClientListQueuesOptions<'_>>,
+    ) -> Result<PageIterator<Response<ListQueuesResponse, XmlFormat>>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -224,7 +224,7 @@ impl QueueServiceClient {
                     let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
-                    let res: ListQueuesSegmentResponse = xml::read_xml(&bytes)?;
+                    let res: ListQueuesResponse = xml::read_xml(&bytes)?;
                     let rsp = RawResponse::from_bytes(status, headers, bytes).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
