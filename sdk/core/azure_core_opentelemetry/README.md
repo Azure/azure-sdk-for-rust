@@ -1,10 +1,10 @@
 # Azure Core OpenTelemetry Tracing
 
 This crate provides OpenTelemetry distributed tracing support for the Azure SDK for Rust.
+It bridges the standardized azure_core tracing traits with OpenTelemetry implementation,
+enabling automatic span creation, context propagation, and telemetry collection for Azure services.
 
-It allows Rust applications which use the [OpenTelemetry](https://opentelemetry.io/) APIs to generated OpenTelemetry spans for Azure SDK for Rust Clients.
-
-It implements the [Rust OpenTelemetry](https://opentelemetry.io/docs/languages/rust/) APIs for the Azure SDK distributed tracing traits.
+It allows Rust applications which use the [OpenTelemetry](https://opentelemetry.io/) APIs to generate OpenTelemetry spans for Azure SDK for Rust Clients.
 
 ## OpenTelemetry integration with the Azure SDK for Rust
 
