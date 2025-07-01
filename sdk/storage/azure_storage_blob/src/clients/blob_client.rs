@@ -2,11 +2,14 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::BlobClient as GeneratedBlobClient,
-    generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadResult,
+    clients::hierarchical_client::{Directory, File},
+    generated::{
+        clients::BlobClient as GeneratedBlobClient,
+        models::{
+            BlobClientDownloadResult, BlobClientGetPropertiesResult,
+            BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+            BlockBlobClientUploadResult,
+        },
     },
     models::{
         AccessTierOptional, BlobClientDeleteOptions, BlobClientDownloadOptions,
@@ -16,7 +19,7 @@ use crate::{
         BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
-    BlobClientOptions, BlockBlobClient,
+    BlobClientOptions, BlockBlobClient, HierarchicalClient,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -26,7 +29,7 @@ use azure_core::{
     },
     Bytes, Result,
 };
-use std::sync::Arc;
+use std::{marker::PhantomData, sync::Arc};
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
@@ -90,6 +93,32 @@ impl BlobClient {
             endpoint: self.client.endpoint.clone(),
             client: self.client.get_block_blob_client(),
         }
+    }
+
+    /// Returns a new instance of file-state HierarchicalClient.
+    ///
+    /// # Arguments
+    ///
+    pub fn file_hns_client(&self) -> HierarchicalClient<File> {
+        HierarchicalClient {
+            endpoint: self.client.endpoint.clone(),
+            client: self.client.get_hierarchical_client(),
+            _marker: PhantomData,
+        }
+        .file()
+    }
+
+    /// Returns a new instance of directory-state HierarchicalClient.
+    ///
+    /// # Arguments
+    ///
+    pub fn directory_hns_client(&self) -> HierarchicalClient<Directory> {
+        HierarchicalClient {
+            endpoint: self.client.endpoint.clone(),
+            client: self.client.get_hierarchical_client(),
+            _marker: PhantomData,
+        }
+        .directory()
     }
 
     /// Gets the endpoint of the Storage account this client is connected to.

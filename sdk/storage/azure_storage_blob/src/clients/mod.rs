@@ -7,12 +7,15 @@ mod blob_client;
 mod blob_container_client;
 mod blob_service_client;
 mod block_blob_client;
+mod hierarchical_client;
 
 pub use blob_client::BlobClient;
 pub use blob_container_client::BlobContainerClient;
 pub use blob_service_client::BlobServiceClient;
 pub use block_blob_client::BlockBlobClient;
+pub use hierarchical_client::HierarchicalClient;
 
 pub use crate::generated::clients::{
-    BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions, BlockBlobClientOptions,
+    BlobClientOptions, BlobContainerClientOptions, BlobServiceClientOptions,
+    BlockBlobClientOptions, HierarchicalClientOptions,
 };
