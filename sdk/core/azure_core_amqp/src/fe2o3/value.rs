@@ -137,6 +137,12 @@ impl From<&AmqpSimpleValue> for fe2o3_amqp_types::primitives::SimpleValue {
             AmqpSimpleValue::Decimal32(d) => fe2o3_amqp_types::primitives::SimpleValue::Decimal32(
                 serde_amqp::primitives::Dec32::from(*d),
             ),
+            AmqpSimpleValue::Described(d) => fe2o3_amqp_types::primitives::SimpleValue::Described(
+                Box::new(serde_amqp::described::Described {
+                    descriptor: d.descriptor().into(),
+                    value: d.value().into(),
+                }),
+            ),
         }
     }
 }
@@ -181,6 +187,12 @@ impl From<AmqpSimpleValue> for fe2o3_amqp_types::primitives::SimpleValue {
             ),
             AmqpSimpleValue::Decimal32(d) => fe2o3_amqp_types::primitives::SimpleValue::Decimal32(
                 serde_amqp::primitives::Dec32::from(d),
+            ),
+            AmqpSimpleValue::Described(d) => fe2o3_amqp_types::primitives::SimpleValue::Described(
+                Box::new(serde_amqp::described::Described {
+                    descriptor: d.descriptor().into(),
+                    value: d.value().into(),
+                }),
             ),
         }
     }
@@ -230,6 +242,12 @@ impl From<&fe2o3_amqp_types::primitives::SimpleValue> for AmqpSimpleValue {
             fe2o3_amqp_types::primitives::SimpleValue::Decimal128(dec128) => {
                 AmqpSimpleValue::Decimal128(dec128.clone().into_inner())
             }
+            fe2o3_amqp_types::primitives::SimpleValue::Described(desc) => {
+                AmqpSimpleValue::Described(Box::new(AmqpDescribed::new(
+                    AmqpDescriptor::from(&desc.descriptor),
+                    desc.value.clone(),
+                )))
+            }
         }
     }
 }
@@ -275,6 +293,12 @@ impl From<fe2o3_amqp_types::primitives::SimpleValue> for AmqpSimpleValue {
             }
             fe2o3_amqp_types::primitives::SimpleValue::Decimal128(dec128) => {
                 AmqpSimpleValue::Decimal128(dec128.into_inner())
+            }
+            fe2o3_amqp_types::primitives::SimpleValue::Described(desc) => {
+                AmqpSimpleValue::Described(Box::new(AmqpDescribed::new(
+                    AmqpDescriptor::from(&desc.descriptor),
+                    desc.value,
+                )))
             }
         }
     }
@@ -799,8 +823,7 @@ impl From<Fe2o3SerializationError> for azure_core::Error {
             | serde_amqp::Error::InvalidUtf8Encoding
             | serde_amqp::Error::SequenceLengthMismatch
             | serde_amqp::Error::InvalidLength
-            | serde_amqp::Error::InvalidValue
-            | serde_amqp::Error::IsDescribedType => {
+            | serde_amqp::Error::InvalidValue => {
                 AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(err.0))).into()
             }
         }

@@ -63,7 +63,7 @@ impl LoadBalancer {
             processor_strategy,
             duration,
             consumer_client_details,
-            rng: Mutex::new(rng.unwrap_or_else(|| Box::new(ChaCha20Rng::from_entropy()))),
+            rng: Mutex::new(rng.unwrap_or_else(|| Box::new(ChaCha20Rng::from_os_rng()))),
         }
     }
 
@@ -241,7 +241,7 @@ impl LoadBalancer {
             let index = self
                 .rng()?
                 .as_mut()
-                .gen_range(0..load_balancer_info.unowned_or_expired.len());
+                .random_range(0..load_balancer_info.unowned_or_expired.len());
             let mut ownership = load_balancer_info.unowned_or_expired[index].clone();
             self.reset_ownership(&mut ownership);
             return Ok(Some(ownership));
@@ -251,7 +251,7 @@ impl LoadBalancer {
             let index = self
                 .rng()?
                 .as_mut()
-                .gen_range(0..load_balancer_info.above_max.len());
+                .random_range(0..load_balancer_info.above_max.len());
             let mut ownership = load_balancer_info.above_max[index].clone();
             self.reset_ownership(&mut ownership);
             return Ok(Some(ownership));

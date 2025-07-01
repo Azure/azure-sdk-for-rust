@@ -6,7 +6,7 @@
 //! and are used to represent simple values such as integers, strings, and booleans.
 //!
 
-use crate::value::{AmqpSymbol, AmqpTimestamp};
+use crate::value::{AmqpDescribed, AmqpSymbol, AmqpTimestamp};
 use azure_core::Uuid;
 
 /// A simple value type in AMQP 1.0.
@@ -67,6 +67,9 @@ pub enum AmqpSimpleValue {
     Symbol(AmqpSymbol),
     /// A binary value.
     Binary(Vec<u8>),
+
+    /// A described value.
+    Described(Box<AmqpDescribed>),
 }
 
 // Note: There is intentionally no conversion from AmqpValue to AmqpSimpleValue. This is because we want a compile time error if you attempt to pass an AmqpValue into something expecting an AmqpSimpleValue.
