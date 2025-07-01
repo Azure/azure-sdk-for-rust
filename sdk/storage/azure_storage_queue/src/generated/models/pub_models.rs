@@ -19,7 +19,7 @@ pub struct AccessPolicy {
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "azure_core::time::rfc3339::option"
     )]
     pub expiry: Option<OffsetDateTime>,
 
@@ -32,7 +32,7 @@ pub struct AccessPolicy {
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "azure_core::time::rfc3339::option"
     )]
     pub start: Option<OffsetDateTime>,
 }
@@ -63,98 +63,6 @@ pub struct CorsRule {
     pub max_age_in_seconds: Option<i32>,
 }
 
-/// The object returned in the QueueMessageList array when calling Get Messages on
-/// a Queue.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct DequeuedMessage {
-    /// The number of times the message has been dequeued.
-    #[serde(rename = "DequeueCount", skip_serializing_if = "Option::is_none")]
-    pub dequeue_count: Option<i64>,
-
-    /// The time that the Message will expire and be automatically deleted.
-    #[serde(
-        default,
-        rename = "ExpirationTime",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub expiration_time: Option<OffsetDateTime>,
-
-    /// The time the Message was inserted into the Queue.
-    #[serde(
-        default,
-        rename = "InsertionTime",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub insertion_time: Option<OffsetDateTime>,
-
-    /// The Id of the Message.
-    #[serde(rename = "MessageId", skip_serializing_if = "Option::is_none")]
-    pub message_id: Option<String>,
-
-    /// The content of the message
-    #[serde(rename = "MessageText", skip_serializing_if = "Option::is_none")]
-    pub message_text: Option<String>,
-
-    /// This value is required to delete the Message. If deletion fails using this
-    /// PopReceipt then the message has been dequeued by another client.
-    #[serde(rename = "PopReceipt", skip_serializing_if = "Option::is_none")]
-    pub pop_receipt: Option<String>,
-
-    /// The time that the message will again become visible in the Queue.
-    #[serde(
-        default,
-        rename = "TimeNextVisible",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub time_next_visible: Option<OffsetDateTime>,
-}
-
-/// The object returned in the QueueMessageList array when calling Put Message on a
-/// Queue
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct EnqueuedMessage {
-    /// The time that the Message will expire and be automatically deleted.
-    #[serde(
-        default,
-        rename = "ExpirationTime",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub expiration_time: Option<OffsetDateTime>,
-
-    /// The time the Message was inserted into the Queue.
-    #[serde(
-        default,
-        rename = "InsertionTime",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub insertion_time: Option<OffsetDateTime>,
-
-    /// The Id of the Message.
-    #[serde(rename = "MessageId", skip_serializing_if = "Option::is_none")]
-    pub message_id: Option<String>,
-
-    /// This value is required to delete the Message. If deletion fails using this
-    /// PopReceipt then the message has been dequeued by another client.
-    #[serde(rename = "PopReceipt", skip_serializing_if = "Option::is_none")]
-    pub pop_receipt: Option<String>,
-
-    /// The time that the message will again become visible in the Queue.
-    #[serde(
-        default,
-        rename = "TimeNextVisible",
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
-    )]
-    pub time_next_visible: Option<OffsetDateTime>,
-}
-
 /// Geo-Replication information for the Secondary Storage Service
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -174,26 +82,6 @@ pub struct GeoReplication {
     pub status: Option<GeoReplicationStatusType>,
 }
 
-/// List wrapper for DequeuedMessageItem array
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-#[serde(rename = "QueueMessagesList")]
-pub struct ListOfDequeuedMessage {
-    /// The list of dequeued messages.
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<DequeuedMessage>>,
-}
-
-/// List wrapper for EnqueuedMessage array
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-#[serde(rename = "QueueMessagesList")]
-pub struct ListOfEnqueuedMessage {
-    /// The list of enqueued messages.
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<EnqueuedMessage>>,
-}
-
 /// List wrapper for PeekedMessageItem array
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -202,6 +90,26 @@ pub struct ListOfPeekedMessage {
     /// The list of peeked messages.
     #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<PeekedMessage>>,
+}
+
+/// List wrapper for DequeuedMessageItem array
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "QueueMessagesList")]
+pub struct ListOfReceivedMessage {
+    /// The list of dequeued messages.
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<ReceivedMessage>>,
+}
+
+/// List wrapper for EnqueuedMessage array
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "QueueMessagesList")]
+pub struct ListOfSentMessage {
+    /// The list of enqueued messages.
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<SentMessage>>,
 }
 
 /// Represents an array of signed identifiers
@@ -217,7 +125,7 @@ pub struct ListOfSignedIdentifier {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-pub struct ListQueuesSegmentResponse {
+pub struct ListQueuesResponse {
     /// The marker of the queues.
     #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
     pub marker: Option<String>,
@@ -358,6 +266,56 @@ pub struct QueueMessage {
     pub message_text: Option<String>,
 }
 
+/// The object returned in the QueueMessageList array when calling Get Messages on
+/// a Queue.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+pub struct ReceivedMessage {
+    /// The number of times the message has been dequeued.
+    #[serde(rename = "DequeueCount", skip_serializing_if = "Option::is_none")]
+    pub dequeue_count: Option<i64>,
+
+    /// The time that the Message will expire and be automatically deleted.
+    #[serde(
+        default,
+        rename = "ExpirationTime",
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::time::rfc7231::option"
+    )]
+    pub expiration_time: Option<OffsetDateTime>,
+
+    /// The time the Message was inserted into the Queue.
+    #[serde(
+        default,
+        rename = "InsertionTime",
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::time::rfc7231::option"
+    )]
+    pub insertion_time: Option<OffsetDateTime>,
+
+    /// The Id of the Message.
+    #[serde(rename = "MessageId", skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+
+    /// The content of the message
+    #[serde(rename = "MessageText", skip_serializing_if = "Option::is_none")]
+    pub message_text: Option<String>,
+
+    /// This value is required to delete the Message. If deletion fails using this
+    /// PopReceipt then the message has been dequeued by another client.
+    #[serde(rename = "PopReceipt", skip_serializing_if = "Option::is_none")]
+    pub pop_receipt: Option<String>,
+
+    /// The time that the message will again become visible in the Queue.
+    #[serde(
+        default,
+        rename = "TimeNextVisible",
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::time::rfc7231::option"
+    )]
+    pub time_next_visible: Option<OffsetDateTime>,
+}
+
 /// The retention policy.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct RetentionPolicy {
@@ -368,6 +326,48 @@ pub struct RetentionPolicy {
     /// Whether to enable the retention policy.
     #[serde(rename = "Enabled", skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+
+/// The object returned in the QueueMessageList array when calling Put Message on a
+/// Queue
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+pub struct SentMessage {
+    /// The time that the Message will expire and be automatically deleted.
+    #[serde(
+        default,
+        rename = "ExpirationTime",
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::time::rfc7231::option"
+    )]
+    pub expiration_time: Option<OffsetDateTime>,
+
+    /// The time the Message was inserted into the Queue.
+    #[serde(
+        default,
+        rename = "InsertionTime",
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::time::rfc7231::option"
+    )]
+    pub insertion_time: Option<OffsetDateTime>,
+
+    /// The Id of the Message.
+    #[serde(rename = "MessageId", skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+
+    /// This value is required to delete the Message. If deletion fails using this
+    /// PopReceipt then the message has been dequeued by another client.
+    #[serde(rename = "PopReceipt", skip_serializing_if = "Option::is_none")]
+    pub pop_receipt: Option<String>,
+
+    /// The time that the message will again become visible in the Queue.
+    #[serde(
+        default,
+        rename = "TimeNextVisible",
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::time::rfc7231::option"
+    )]
+    pub time_next_visible: Option<OffsetDateTime>,
 }
 
 /// The signed identifier.

@@ -5,21 +5,38 @@ use helpers::endpoint::get_endpoint;
 use helpers::logs::log_operation_result;
 use helpers::random_queue_name::get_random_queue_name;
 
+use azure_core::{
+    http::{Response, XmlFormat},
+    Error,
+};
 use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::{
     clients::QueueClient,
     models::{
-        ListOfSignedIdentifier, QueueClientDequeueOptions, QueueClientGetMetadataResultHeaders,
-        QueueClientPeekOptions, QueueClientSetMetadataOptions, QueueClientUpdateOptions,
-        QueueMessage,
+        QueueClientGetMetadataResultHeaders, QueueClientPeekMessagesOptions,
+        QueueClientReceiveMessagesOptions, QueueClientSetMetadataOptions, QueueClientUpdateOptions,
+        QueueMessage, SentMessage,
     },
 };
+
+async fn send_message(
+    queue_client: &QueueClient,
+    message: &str,
+) -> Result<Response<Option<SentMessage>, XmlFormat>, Error> {
+    let queue_message = QueueMessage {
+        message_text: Some(message.to_owned()),
+    };
+
+    queue_client
+        .send_message(queue_message.try_into()?, None)
+        .await
+}
 
 async fn send_and_delete_message(
     queue_client: &QueueClient,
     message: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let result = queue_client.enqueue_message(message, None).await;
+    let result = send_message(queue_client, message).await;
 
     if let Ok(response) = result {
         let message = response.into_body().await?;
@@ -46,7 +63,7 @@ async fn send_and_update_message(
     queue_client: &QueueClient,
     message: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let result = queue_client.enqueue_message(message, None).await;
+    let result = send_message(queue_client, message).await;
 
     if let Ok(response) = result {
         let message = response.into_body().await?;
@@ -72,66 +89,6 @@ async fn send_and_update_message(
                 log_operation_result(&update_result, "update_message");
             }
         }
-    }
-
-    Ok(())
-}
-
-async fn set_and_get_access_policies(
-    queue_client: &QueueClient,
-) -> Result<(), Box<dyn std::error::Error>> {
-    //     .checked_add(std::time::Duration::from_secs(3600)) // 1 hour from now
-    //     .ok_or("Failed to calculate expiry time")?;
-    // let acl = ListOfSignedIdentifier {
-    //     items: Some(vec![SignedIdentifier {
-    //         id: Some("policy1".to_string()),
-    //         access_policy: Some(AccessPolicy {
-    //             start: Some(OffsetDateTime::now_utc()),
-    //             expiry: Some(expiry_time.into()),
-    //             permission: Some("raup".to_string()),
-    //         }),
-    //     }]),
-    // };
-
-    //     let acl_xml = quick_xml::se::to_string(&acl);
-    //     println!("Access Policy XML: {}", acl_xml?);
-
-    //     let acl_xml = "<SignedIdentifiers>
-    //   <SignedIdentifier>
-    //     <AccessPolicy>
-    //       <Expiry>2025-06-27T15:02:39.351158345Z</Expiry>
-    //       <Permission>raup</Permission>
-    //       <Start>2025-06-26T14:02:39.351160525Z</Start>
-    //     </AccessPolicy>
-    //     <Id>MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=</Id>
-    //   </SignedIdentifier>
-    // </SignedIdentifiers>";
-
-    //     let result = queue_client
-    //         .set_access_policy(acl_xml.try_into()?, None)
-    //         .await;
-    // TODO: Fix set and get access policies
-    let acl = ListOfSignedIdentifier {
-        ..Default::default()
-    };
-    let result = queue_client.set_access_policy(acl.try_into()?, None).await;
-    log_operation_result(&result, "set_access_policy");
-
-    let result = queue_client.get_access_policy(None).await;
-    log_operation_result(&result, "get_access_policy");
-    let properties = result.unwrap().into_body().await?;
-    if let Some(policies) = properties.items {
-        for policy in policies {
-            println!(
-                "Access Policy - Id: {}, Start: {:?}, Expiry: {:?}, Permissions: {}",
-                &policy.id.unwrap_or_default(),
-                policy.access_policy.clone().unwrap().start.unwrap(),
-                policy.access_policy.clone().unwrap().expiry.unwrap(),
-                policy.access_policy.clone().unwrap().permission.unwrap()
-            );
-        }
-    } else {
-        println!("No access policies found.");
     }
 
     Ok(())
@@ -164,14 +121,10 @@ async fn set_and_get_metadata(
 async fn peek_and_receive_messages(
     queue_client: &QueueClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    _ = queue_client
-        .enqueue_message("Message 1 from Rust Queue SDK", None)
-        .await;
-    _ = queue_client
-        .enqueue_message("Message 2 from Rust Queue SDK", None)
-        .await;
+    _ = send_message(queue_client, "Message 1 from Rust Queue SDK").await;
+    _ = send_message(queue_client, "Message 2 from Rust Queue SDK").await;
 
-    let options = QueueClientPeekOptions {
+    let options = QueueClientPeekMessagesOptions {
         number_of_messages: Some(5),
         ..Default::default()
     };
@@ -192,13 +145,13 @@ async fn peek_and_receive_messages(
         }
     }
 
-    let options = QueueClientDequeueOptions {
+    let options = QueueClientReceiveMessagesOptions {
         number_of_messages: Some(5),
         ..Default::default()
     };
 
-    let result = queue_client.dequeue_messages(Some(options)).await;
-    log_operation_result(&result, "dequeue_messages");
+    let result = queue_client.receive_messages(Some(options)).await;
+    log_operation_result(&result, "receive_messages");
 
     if let Ok(response) = result {
         let messages = response.into_body().await?;
@@ -210,6 +163,56 @@ async fn peek_and_receive_messages(
                     msg.message_text.unwrap_or_default()
                 );
             }
+        }
+    }
+
+    Ok(())
+}
+
+async fn peek_and_receive_message(
+    queue_client: &QueueClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    _ = send_message(queue_client, "Message 1 from Rust Queue SDK").await;
+    _ = send_message(queue_client, "Message 2 from Rust Queue SDK").await;
+
+    let options = QueueClientPeekMessagesOptions {
+        number_of_messages: Some(5),
+        ..Default::default()
+    };
+
+    let result = queue_client.peek_message(Some(options)).await;
+    log_operation_result(&result, "peek_message");
+
+    if let Ok(response) = result {
+        let message = response.into_body().await?;
+        if let Some(message) = message {
+            println!(
+                "Successfully peeked message ({}): {}",
+                message.message_id.unwrap(),
+                message.message_text.unwrap_or_default()
+            );
+        }
+    }
+
+    loop {
+        let result = queue_client.receive_message(None).await;
+        log_operation_result(&result, "receive_message");
+
+        if let Ok(response) = result {
+            let message = response.into_body().await?;
+            if let Some(msg) = message {
+                println!(
+                    "Successfully received message ({}): {}",
+                    msg.message_id.unwrap(),
+                    msg.message_text.unwrap_or_default()
+                );
+            } else {
+                // No more messages available
+                break;
+            }
+        } else {
+            // Error occurred, break the loop
+            break;
         }
     }
 
@@ -239,8 +242,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set and get queue metadata
     set_and_get_metadata(&queue_client).await?;
 
-    let result = queue_client.enqueue_message("Example Message", None).await;
-    log_operation_result(&result, "enqueue_message");
+    let result = send_message(&queue_client, "Example Message").await;
+    log_operation_result(&result, "send_message");
 
     send_and_update_message(
         &queue_client,
@@ -259,11 +262,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    // Receive messages
+    // Peek and Receive messages
     peek_and_receive_messages(&queue_client).await?;
 
-    // Set and get access policies
-    set_and_get_access_policies(&queue_client).await?;
+    // Peek and Receive message
+    peek_and_receive_message(&queue_client).await?;
 
     // Cleanup
     let result = queue_client.delete(None).await;

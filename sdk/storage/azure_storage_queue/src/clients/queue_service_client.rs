@@ -178,11 +178,11 @@ impl QueueServiceClient {
     /// Returns a `Result` containing a `PageIterator` for paginated results, or an error if the request fails.
     ///
     /// The `PageIterator` can be used to iterate through the results page by page.
-    pub fn list_queues_segment(
+    pub fn list_queues(
         &self,
-        options: Option<QueueServiceClientListQueuesSegmentOptions<'_>>,
-    ) -> Result<PageIterator<Response<ListQueuesSegmentResponse, XmlFormat>>> {
-        self.client.list_queues_segment(options)
+        options: Option<QueueServiceClientListQueuesOptions<'_>>,
+    ) -> Result<PageIterator<Response<ListQueuesResponse, XmlFormat>>> {
+        self.client.list_queues(options)
     }
 
     /// Retrieves statistics related to replication for the Queue service. It is only available on the secondary location endpoint

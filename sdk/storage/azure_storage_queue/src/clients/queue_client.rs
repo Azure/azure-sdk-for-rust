@@ -267,22 +267,14 @@ impl QueueClient {
     /// # Errors
     ///
     /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn enqueue_message(
+    pub async fn send_message(
         &self,
-        message: &str,
-        options: Option<QueueClientEnqueueOptions<'_>>,
-    ) -> Result<Response<Option<EnqueuedMessage>, XmlFormat>> {
-        let queue_message = QueueMessage {
-            message_text: Some(message.to_owned()),
-        };
+        queue_message: RequestContent<QueueMessage>,
+        options: Option<QueueClientSendMessageOptions<'_>>,
+    ) -> Result<Response<Option<SentMessage>, XmlFormat>> {
+        let response = self.client.send_message(queue_message, options).await?;
 
-        let response = self
-            .client
-            .enqueue(queue_message.try_into()?, options)
-            .await?;
-
-        Self::extract_first_message(response, |list: &ListOfEnqueuedMessage| list.items.clone())
-            .await
+        Self::extract_first_message(response, |list: &ListOfSentMessage| list.items.clone()).await
     }
 
     /// Deletes a specific message from the queue.
@@ -356,17 +348,17 @@ impl QueueClient {
     /// # Errors
     ///
     /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn dequeue_message(
+    pub async fn receive_message(
         &self,
-        options: Option<QueueClientDequeueOptions<'_>>,
-    ) -> Result<Response<Option<DequeuedMessage>, XmlFormat>> {
-        let options = Some(QueueClientDequeueOptions {
+        options: Option<QueueClientReceiveMessagesOptions<'_>>,
+    ) -> Result<Response<Option<ReceivedMessage>, XmlFormat>> {
+        let options = Some(QueueClientReceiveMessagesOptions {
             number_of_messages: Some(1),
             ..options.unwrap_or_default()
         });
 
-        let response = self.dequeue_messages(options).await?;
-        Self::extract_first_message(response, |list: &ListOfDequeuedMessage| list.items.clone())
+        let response = self.receive_messages(options).await?;
+        Self::extract_first_message(response, |list: &ListOfReceivedMessage| list.items.clone())
             .await
     }
 
@@ -385,11 +377,11 @@ impl QueueClient {
     /// # Errors
     ///
     /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn dequeue_messages(
+    pub async fn receive_messages(
         &self,
-        options: Option<QueueClientDequeueOptions<'_>>,
-    ) -> Result<Response<ListOfDequeuedMessage, XmlFormat>> {
-        self.client.dequeue(options).await
+        options: Option<QueueClientReceiveMessagesOptions<'_>>,
+    ) -> Result<Response<ListOfReceivedMessage, XmlFormat>> {
+        self.client.receive_messages(options).await
     }
 
     /// Peeks a single message from the front of the queue without removing it.
@@ -409,9 +401,9 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn peek_message(
         &self,
-        options: Option<QueueClientPeekOptions<'_>>,
+        options: Option<QueueClientPeekMessagesOptions<'_>>,
     ) -> Result<Response<Option<PeekedMessage>, XmlFormat>> {
-        let options = Some(QueueClientPeekOptions {
+        let options = Some(QueueClientPeekMessagesOptions {
             number_of_messages: Some(1),
             ..options.unwrap_or_default()
         });
@@ -437,51 +429,9 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn peek_messages(
         &self,
-        options: Option<QueueClientPeekOptions<'_>>,
+        options: Option<QueueClientPeekMessagesOptions<'_>>,
     ) -> Result<Response<ListOfPeekedMessage, XmlFormat>> {
-        self.client.peek(options).await
-    }
-
-    /// Retrieves the access policy for the specified queue.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the access policy response if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn get_access_policy(
-        &self,
-        options: Option<QueueClientGetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<ListOfSignedIdentifier, XmlFormat>> {
-        self.client.get_access_policy(options).await
-    }
-
-    /// Sets the access policy for the specified queue.
-    ///
-    /// # Arguments
-    ///
-    /// * `queue_acl` - The access control list containing signed identifiers for the queue
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the response if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn set_access_policy(
-        &self,
-        queue_acl: RequestContent<ListOfSignedIdentifier>,
-        options: Option<QueueClientSetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<QueueClientSetAccessPolicyResult, NoFormat>> {
-        self.client.set_access_policy(queue_acl, options).await
+        self.client.peek_messages(options).await
     }
 
     /// Helper function to extract the first message from a list response and convert it to a single message response

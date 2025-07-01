@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use azure_storage_queue::models::{
-    CorsRule, ListQueuesSegmentResponse, QueueServiceClientListQueuesSegmentOptions,
+    CorsRule, ListQueuesIncludeType, ListQueuesResponse, QueueServiceClientListQueuesOptions,
     StorageServiceProperties,
 };
 
@@ -65,14 +65,13 @@ async fn set_and_get_properties(
     Ok(())
 }
 
-async fn list_queues_segment(
-    queue_client: &QueueServiceClient,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let options = QueueServiceClientListQueuesSegmentOptions {
+async fn list_queues(queue_client: &QueueServiceClient) -> Result<(), Box<dyn std::error::Error>> {
+    let options = QueueServiceClientListQueuesOptions {
         maxresults: Some(1),
+        include: Some(vec![ListQueuesIncludeType::Metadata]), // Include metadata in the response
         ..Default::default()
     };
-    let result = queue_client.list_queues_segment(Some(options));
+    let result = queue_client.list_queues(Some(options));
     log_operation_result(&result, "list_queues_segment");
 
     if let Ok(mut pager_response) = result {
@@ -80,9 +79,12 @@ async fn list_queues_segment(
             println!("Processing next page of queues...");
             match response_result {
                 Ok(response) => {
-                    let queue_list: ListQueuesSegmentResponse = response.into_body().await?;
+                    let queue_list: ListQueuesResponse = response.into_body().await?;
                     for queue in queue_list.queue_items {
                         println!("Queue: {}", queue.name.unwrap_or_default());
+                        for (key, value) in queue.metadata.unwrap_or_default() {
+                            println!("  Metadata - {}: {}", key, value);
+                        }
                     }
                 }
                 Err(e) => {
@@ -136,7 +138,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     set_and_get_properties(&queue_client).await?;
 
     // List queues
-    list_queues_segment(&queue_client).await?;
+    list_queues(&queue_client).await?;
 
     // Get statistics
     get_statistics(credential.clone()).await?;
