@@ -15,3 +15,10 @@ create_extensible_enum!(
     #[doc = r#"/// The geo replication is unavailable."#]
     (Unavailable, "unavailable")
 );
+
+create_enum!(
+    #[doc = r#"/// Include this parameter to specify that the queue's metadata be returned as part of the response body."#]
+    ListQueuesIncludeType,
+    #[doc = r#"/// Include metadata"#]
+    (Metadata, "metadata")
+);

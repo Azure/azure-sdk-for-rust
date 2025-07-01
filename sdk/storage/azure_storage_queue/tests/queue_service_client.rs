@@ -3,10 +3,9 @@ use azure_core::http::{
 };
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
-use azure_storage_queue::models::QueueServiceClientListQueuesSegmentOptions;
 use azure_storage_queue::{
     clients::{QueueServiceClient, QueueServiceClientOptions},
-    models::GeoReplicationStatusType,
+    models::{GeoReplicationStatusType, QueueServiceClientListQueuesOptions},
 };
 use futures::StreamExt;
 
@@ -113,12 +112,12 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     let queue_name = "test-service-list-queues";
     queue_service_client.create_queue(queue_name, None).await?;
 
-    let options = QueueServiceClientListQueuesSegmentOptions {
+    let options = QueueServiceClientListQueuesOptions {
         maxresults: Some(1),
         ..Default::default()
     };
 
-    let mut page_iterator = queue_service_client.list_queues_segment(Some(options))?;
+    let mut page_iterator = queue_service_client.list_queues(Some(options))?;
     let mut all_queue_names = Vec::new();
 
     // Iterate through all pages

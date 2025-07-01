@@ -62,25 +62,63 @@ You may need to specify RBAC roles to access Queues via Microsoft Entra ID. Plea
 
 ## Features
 
-The following methods are available on the ```QueueClient``` class:
+### QueueServiceClient
 
-- ```new```: Create a new instance of the ```QueueClient```.
-- ```create```: Creates a new queue, will fail if the queue already exists.
-- ```create_if_not_exists```: Creates a new queue, will _not_ fail if the queue already exists.
-- ```delete```: Deletes a queue, will fail if the queue does not exist.
-- ```delete_if_exists```: Deletes a queue, will _not_ fail if the queue does not exist.
-- ```delete_message```: Deletes a single message from the queue.
-- ```delete_messages```: Deletes all the messages in a queue. Requires Account Owner permission or it will fail.
-- ```exists```: Returns bool representing whether the queue exists or not.
-- ```get_metadata```: Returns metadata for the queue.
-- ```get_properties```: Returns the properties of the queue service.
-- ```peek_message```: Peeks a single message from the front of the queue without removing it.
-- ```peek_messages```: Peeks multiple messages from the front of the queue without removing them.
-- ```receive_message```: Receive a single message from the queue.
-- ```receive_messages```: Receive multiple messages from the queue. The number of messages to return is determined by the ```AzureQueueStorageMessagesOperationsClientDequeueOptions::number_of_messages``` property.
-- ```send_message```: Sends a message to the queue.
-- ```set_metadata```: Sets metadata on the queue.
-- ```update_message```: Updates a specific message in the queue.
+The `QueueServiceClient` provides operations to interact with the Azure Storage Queue service at the account level.
+
+| Method                | Parameters                                                                                                                                         | Return Type                                                            | Description                                                                                                                                                                                              |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `new`                 | `endpoint: &str`<br>`credential: Arc<dyn TokenCredential>`<br>`options: Option<QueueServiceClientOptions>`                                         | `Result<Self>`                                                         | Creates a new QueueServiceClient using Entra ID authentication                                                                                                                                           |
+| `endpoint`            | `&self`                                                                                                                                            | `&Url`                                                                 | Returns the endpoint URL of the Azure storage account                                                                                                                                                    |
+| `queue_client`        | `&self`<br>`queue_name: String`                                                                                                                    | `QueueClient`                                                          | Returns a new QueueClient instance for a specific queue                                                                                                                                                  |
+| `create_queue`        | `&self`<br>`queue_name: &str`<br>`options: Option<QueueClientCreateOptions<'_>>`                                                                   | `Result<Response<(), NoFormat>>`                                       | Creates a new queue under the account                                                                                                                                                                    |
+| `delete_queue`        | `&self`<br>`queue_name: &str`<br>`options: Option<QueueClientDeleteOptions<'_>>`                                                                   | `Result<Response<(), NoFormat>>`                                       | Permanently deletes the specified queue                                                                                                                                                                  |
+| `get_properties`      | `&self`<br>`options: Option<QueueServiceClientGetPropertiesOptions<'_>>`                                                                           | `Result<Response<StorageServiceProperties, XmlFormat>>`                | Retrieves the properties of the queue service                                                                                                                                                            |
+| `set_properties`      | `&self`<br>`storage_service_properties: RequestContent<StorageServiceProperties>`<br>`options: Option<QueueServiceClientSetPropertiesOptions<'_>>` | `Result<Response<(), NoFormat>>`                                       | Sets the properties of the queue service                                                                                                                                                                 |
+| `list_queues`         | `&self`<br>`options: Option<QueueServiceClientListQueuesOptions<'_>>`                                                                              | `Result<PageIterator<Response<ListQueuesResponse, XmlFormat>>>`        | Lists queues in the storage account with pagination                                                                                                                                                      |
+| `get_statistics`      | `&self`<br>`options: Option<QueueServiceClientGetStatisticsOptions<'_>>`                                                                           | `Result<Response<StorageServiceStats, XmlFormat>>`                     | Retrieves statistics related to replication for the Queue service. It is only available on the secondary location endpoint when read-access geo-redundant replication is enabled for the storage account |
+
+---
+
+### QueueClient
+
+The `QueueClient` provides operations to interact with a specific Azure Storage Queue.
+
+| Method       | Parameters                                                                                                                | Return Type    | Description                                                  |
+|--------------|---------------------------------------------------------------------------------------------------------------------------|----------------|--------------------------------------------------------------|
+| `new`        | `endpoint: &str`<br>`queue_name: &str`<br>`credential: Arc<dyn TokenCredential>`<br>`options: Option<QueueClientOptions>` | `Result<Self>` | Creates a new QueueClient using Entra ID authentication      |
+| `endpoint`   | `&self`                                                                                                                   | `&Url`         | Returns the endpoint URL of the Azure storage account        |
+| `queue_name` | `&self`                                                                                                                   | `&str`         | Returns the name of the queue this client is associated with |
+
+#### Queue Management
+
+| Method                 | Parameters                                                 | Return Type                      | Description                                 |
+|------------------------|------------------------------------------------------------|----------------------------------|---------------------------------------------|
+| `create`               | `&self`<br>`options: Option<QueueClientCreateOptions<'_>>` | `Result<Response<(), NoFormat>>` | Creates a new queue                         |
+| `create_if_not_exists` | `&self`<br>`options: Option<QueueClientCreateOptions<'_>>` | `Result<Response<(), NoFormat>>` | Creates a queue if it doesn't already exist |
+| `delete`               | `&self`<br>`options: Option<QueueClientDeleteOptions<'_>>` | `Result<Response<(), NoFormat>>` | Permanently deletes the queue               |
+| `delete_if_exists`     | `&self`<br>`options: Option<QueueClientDeleteOptions<'_>>` | `Result<Response<(), NoFormat>>` | Deletes the queue if it exists              |
+| `exists`               | `&self`                                                    | `Result<bool>`                   | Checks if the queue exists                  |
+| `clear`                | `&self`<br>`options: Option<QueueClientClearOptions<'_>>`  | `Result<Response<(), NoFormat>>` | Clears all messages in the queue            |
+
+#### Metadata Operations
+
+| Method         | Parameters                                                      | Return Type                                                | Description                         |
+|----------------|-----------------------------------------------------------------|------------------------------------------------------------|-------------------------------------|
+| `set_metadata` | `&self`<br>`options: Option<QueueClientSetMetadataOptions<'_>>` | `Result<Response<(), NoFormat>>`                           | Sets the metadata for the queue     |
+| `get_metadata` | `&self`<br>`options: Option<QueueClientGetMetadataOptions<'_>>` | `Result<Response<QueueClientGetMetadataResult, NoFormat>>` | Retrieves the metadata of the queue |
+
+#### Message Operations
+
+| Method             | Parameters                                                                                                                                       | Return Type                                                      | Description                                             |
+|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|---------------------------------------------------------|
+| `send_message`     | `&self`<br>`queue_message: RequestContent<QueueMessage>`<br>`options: Option<QueueClientSendMessageOptions<'_>>`                                 | `Result<Response<Option<SentMessage>, XmlFormat>>`               | Sends a message to the queue                            |
+| `receive_message`  | `&self`<br>`options: Option<QueueClientReceiveMessagesOptions<'_>>`                                                                              | `Result<Response<Option<ReceivedMessage>, XmlFormat>>`           | Retrieves a single message from the front of the queue  |
+| `receive_messages` | `&self`<br>`options: Option<QueueClientReceiveMessagesOptions<'_>>`                                                                              | `Result<Response<ListOfReceivedMessage, XmlFormat>>`             | Retrieves multiple messages from the front of the queue |
+| `peek_message`     | `&self`<br>`options: Option<QueueClientPeekMessagesOptions<'_>>`                                                                                 | `Result<Response<Option<PeekedMessage>, XmlFormat>>`             | Peeks a single message without removing it              |
+| `peek_messages`    | `&self`<br>`options: Option<QueueClientPeekMessagesOptions<'_>>`                                                                                 | `Result<Response<ListOfPeekedMessage, XmlFormat>>`               | Peeks multiple messages without removing them           |
+| `delete_message`   | `&self`<br>`message_id: &str`<br>`pop_receipt: &str`<br>`options: Option<QueueClientDeleteMessageOptions<'_>>`                                   | `Result<Response<(), NoFormat>>`                                 | Deletes a specific message from the queue               |
+| `update_message`   | `&self`<br>`message_id: &str`<br>`pop_receipt: &str`<br>`visibility_timeout: i32`<br>`options: Option<QueueClientUpdateOptions<'_>>`             | `Result<Response<(), NoFormat>>`                                 | Updates a specific message in the queue                 |
 
 ## Examples
 
