@@ -1141,7 +1141,7 @@ pub(crate) mod tests {
             assert_eq!(3, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!("...bbb", load_balance_result);
+            assert_eq!("..b.bb", load_balance_result);
         }
         {
             info!("deficit, multiple partitions");
@@ -1156,7 +1156,7 @@ pub(crate) mod tests {
             assert_eq!(2, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!(".......d.d", load_balance_result);
+            assert_eq!("........dd", load_balance_result);
         }
 
         {
@@ -1172,7 +1172,7 @@ pub(crate) mod tests {
             assert_eq!(2, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!(".d......d.", load_balance_result);
+            assert_eq!("..d.....d.", load_balance_result);
         }
 
         {
@@ -1188,7 +1188,7 @@ pub(crate) mod tests {
             assert_eq!(3, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!("...bbb.", load_balance_result);
+            assert_eq!("..b.bb.", load_balance_result);
         }
 
         Ok(())
