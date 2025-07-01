@@ -73,8 +73,6 @@ impl Display for ConsistencyLevel {
 }
 
 /// Specifies indexing directives that can be used when working with Cosmos APIs.
-///
-/// Learn more at [Indexing Policies](https://learn.microsoft.com/azure/cosmos-db/index-policy?source=docs)
 #[derive(Clone)]
 pub enum IndexingDirective {
     Default,
@@ -109,7 +107,7 @@ pub struct ItemOptions<'a> {
     /// Each new write request to Azure Cosmos DB is assigned a new Session Token.
     /// The client instance will use this token internally with each read/query request to ensure that the set consistency level is maintained.
     ///
-    /// See [Session Tokens](https://docs.azure.cn/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
+    /// See [Session Tokens](https://learn.microsoft.com/azure/cosmos-db/nosql/how-to-manage-consistency?tabs=portal%2Cdotnetv2%2Capi-async#utilize-session-tokens) for more.
     pub session_token: Option<String>,
     /// Used to specify the consistency level for the operation.
     ///
@@ -117,8 +115,6 @@ pub struct ItemOptions<'a> {
     /// See [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
     pub consistency_level: Option<ConsistencyLevel>,
     /// Sets indexing directive for the operation.
-    ///
-    /// See [Indexing Policies](https://learn.microsoft.com/azure/cosmos-db/index-policy?source=docs) for more.
     pub indexing_directive: Option<IndexingDirective>,
     /// If specified, the operation will only be performed if the item matches the provided Etag.
     ///
@@ -273,7 +269,7 @@ mod tests {
     }
 
     #[test]
-    fn item_options_empty_as_headers() {
+    fn item_options_empty_as_headers_with_content_response() {
         let item_options = ItemOptions::default();
 
         let headers_result: Vec<(HeaderName, HeaderValue)> =
@@ -281,6 +277,21 @@ mod tests {
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> =
             vec![(headers::PREFER, constants::PREFER_MINIMAL)];
+
+        assert_eq!(headers_result, headers_expected);
+    }
+
+    #[test]
+    fn item_options_empty_as_headers() {
+        let item_options = ItemOptions {
+            enable_content_response_on_write: true,
+            ..Default::default()
+        };
+
+        let headers_result: Vec<(HeaderName, HeaderValue)> =
+            item_options.as_headers().unwrap().collect();
+
+        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
 
         assert_eq!(headers_result, headers_expected);
     }

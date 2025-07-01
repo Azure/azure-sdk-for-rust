@@ -12,7 +12,6 @@ use crate::{
 };
 
 use azure_core::http::{
-    headers::{self},
     request::{options::ContentType, Request},
     response::Response,
     Method,
