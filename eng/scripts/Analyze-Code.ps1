@@ -15,7 +15,7 @@ Set-StrictMode -Version 2.0
 
 if ($CheckWasm) {
   # This is needed to ensure that the `getrandom` crate uses the `wasm_js` backend
-  $env:RUSTFLAGS = ${env:RUSTFLAGS} + '--cfg getrandom_backend="wasm_js"'
+  $env:RUSTFLAGS = ${env:RUSTFLAGS} + ' --cfg getrandom_backend="wasm_js"'
 }
 
 Write-Host @"
