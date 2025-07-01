@@ -12,15 +12,15 @@ use typespec_client_core::{
 };
 
 const AZ_NAMESPACE_ATTRIBUTE: &str = "az.namespace";
-const AZ_SCHEMA_URL_ATTRIBUTE: &str = "az.schema.url";
 const AZ_CLIENT_REQUEST_ID_ATTRIBUTE: &str = "az.client.request.id";
 const ERROR_TYPE_ATTRIBUTE: &str = "error.type";
-const AZ_SERVICE_REQUEST_ID_ATTRIBUTE: &str = "az.service.request.id";
-const HTTP_REQUEST_RESEND_COUNT_ATTRIBUTE: &str = "http.request.resend.count";
+const AZ_SERVICE_REQUEST_ID_ATTRIBUTE: &str = "az.service_request.id";
+const HTTP_REQUEST_RESEND_COUNT_ATTRIBUTE: &str = "http.request.resend_count";
 const HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE: &str = "http.response.status_code";
 const HTTP_REQUEST_METHOD_ATTRIBUTE: &str = "http.request.method";
 const SERVER_ADDRESS_ATTRIBUTE: &str = "server.address";
 const SERVER_PORT_ATTRIBUTE: &str = "server.port";
+const URL_SCHEME_ATTRIBUTE: &str = "url.scheme";
 const URL_FULL_ATTRIBUTE: &str = "url.full";
 
 /// Sets distributed tracing information for HTTP requests.
@@ -88,6 +88,15 @@ impl Policy for RequestInstrumentationPolicy {
             self.tracer.as_ref()
         };
 
+        // If there is a span in the context, if it's not recording, just forward the request
+        // without instrumentation.
+        if let Some(span) = ctx.value::<Arc<dyn Span>>() {
+            if !span.is_recording() {
+                // If the span is not recording, we skip instrumentation.
+                return next[0].send(ctx, request, &next[1..]).await;
+            }
+        }
+
         if let Some(tracer) = tracer {
             let mut span_attributes = vec![
                 Attribute {
@@ -95,7 +104,7 @@ impl Policy for RequestInstrumentationPolicy {
                     value: request.method().to_string().into(),
                 },
                 Attribute {
-                    key: AZ_SCHEMA_URL_ATTRIBUTE,
+                    key: URL_SCHEME_ATTRIBUTE,
                     value: request.url().scheme().into(),
                 },
             ];
@@ -170,6 +179,11 @@ impl Policy for RequestInstrumentationPolicy {
                 // If no parent span exists, start a new span without a parent.
                 tracer.start_span_with_current(method_str, SpanKind::Client, span_attributes)
             };
+
+            if !span.is_recording() {
+                // If the span is not recording, we skip instrumentation.
+                return next[0].send(ctx, request, &next[1..]).await;
+            }
 
             if let Some(client_request_id) = request
                 .headers()
@@ -524,7 +538,7 @@ mod tests {
                     AZ_NAMESPACE_ATTRIBUTE,
                     AttributeValue::from("test namespace"),
                 ),
-                (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("http")),
+                (URL_SCHEME_ATTRIBUTE, AttributeValue::from("http")),
                 (
                     HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
                     AttributeValue::from(200),
@@ -581,7 +595,7 @@ mod tests {
             "GET",
             SpanStatus::Unset,
             vec![
-                (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("https")),
+                (URL_SCHEME_ATTRIBUTE, AttributeValue::from("https")),
                 (
                     AZ_CLIENT_REQUEST_ID_ATTRIBUTE,
                     AttributeValue::from("test-client-request-id"),
@@ -631,7 +645,7 @@ mod tests {
             "GET",
             SpanStatus::Unset,
             vec![
-                (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("https")),
+                (URL_SCHEME_ATTRIBUTE, AttributeValue::from("https")),
                 (
                     HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
                     AttributeValue::from(200),
@@ -691,7 +705,7 @@ mod tests {
                     AZ_NAMESPACE_ATTRIBUTE,
                     AttributeValue::from("test namespace"),
                 ),
-                (AZ_SCHEMA_URL_ATTRIBUTE, AttributeValue::from("https")),
+                (URL_SCHEME_ATTRIBUTE, AttributeValue::from("https")),
                 (
                     AZ_SERVICE_REQUEST_ID_ATTRIBUTE,
                     AttributeValue::from("test-service-request-id"),

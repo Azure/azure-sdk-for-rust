@@ -350,7 +350,7 @@ mod tests {
                     parent_span_id: None,
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("az.schema.url", "https".into()),
+                        ("url.scheme", "https".into()),
                         ("az.client.request.id", "<ANY>".into()),
                         (
                             "url.full",
@@ -363,7 +363,7 @@ mod tests {
                         ),
                         ("server.address", "example.com".into()),
                         ("server.port", 443.into()),
-                        ("http.request.resend.count", 0.into()),
+                        ("http.request.resend_count", 0.into()),
                         ("http.response.status_code", 200.into()),
                     ],
                 },
@@ -411,7 +411,7 @@ mod tests {
                     },
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("az.schema.url", "https".into()),
+                        ("url.scheme", "https".into()),
                         ("az.client.request.id", "<ANY>".into()),
                         (
                             "url.full",
@@ -425,7 +425,7 @@ mod tests {
                         ("server.address", "example.com".into()),
                         ("server.port", 443.into()),
                         ("error.type", "404".into()),
-                        ("http.request.resend.count", 0.into()),
+                        ("http.request.resend_count", 0.into()),
                         ("http.response.status_code", 404.into()),
                     ],
                 },
@@ -472,7 +472,7 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("az.schema.url", "https".into()),
+                    ("url.scheme", "https".into()),
                     ("az.client.request.id", "<ANY>".into()),
                     (
                         "url.full",
@@ -485,7 +485,7 @@ mod tests {
                     ),
                     ("server.address", "example.com".into()),
                     ("server.port", 443.into()),
-                    ("http.request.resend.count", 0.into()),
+                    ("http.request.resend_count", 0.into()),
                     ("http.response.status_code", 200.into()),
                 ],
             },
@@ -543,7 +543,7 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("az.schema.url", "https".into()),
+                    ("url.scheme", "https".into()),
                     ("az.client.request.id", "<ANY>".into()),
                     (
                         "url.full",
@@ -556,7 +556,7 @@ mod tests {
                     ),
                     ("server.address", "example.com".into()),
                     ("server.port", 443.into()),
-                    ("http.request.resend.count", 0.into()),
+                    ("http.request.resend_count", 0.into()),
                     ("http.response.status_code", 404.into()),
                     ("error.type", "404".into()),
                 ],
