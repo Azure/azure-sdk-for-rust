@@ -13,11 +13,6 @@ Set-StrictMode -Version 2.0
 
 . (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
 
-if ($CheckWasm) {
-  # This is needed to ensure that the `getrandom` crate uses the `wasm_js` backend
-  $env:RUSTFLAGS = ${env:RUSTFLAGS} + ' --cfg getrandom_backend="wasm_js"'
-}
-
 Write-Host @"
 Analyzing code with
     RUSTFLAGS: '${env:RUSTFLAGS}'
@@ -39,6 +34,9 @@ Invoke-LoggedCommand "cargo fmt --all -- --check"
 Invoke-LoggedCommand "cargo clippy --workspace --all-features --all-targets --keep-going --no-deps"
 
 if ($CheckWasm) {
+  # This is needed to ensure that the `getrandom` crate uses the `wasm_js` backend
+  $env:RUSTFLAGS = ${env:RUSTFLAGS} + ' --cfg getrandom_backend="wasm_js"'
+
   Invoke-LoggedCommand "cargo clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
 }
 
