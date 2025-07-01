@@ -160,8 +160,8 @@ impl Request {
         }
     }
 
-   /// Inserts zero or more headers from a type that implements [`AsHeaders`].
-   pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), T::Error> {
+    /// Inserts zero or more headers from a type that implements [`AsHeaders`].
+    pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), T::Error> {
         for (name, value) in headers.as_headers()? {
             self.insert_header(name, value);
         }
