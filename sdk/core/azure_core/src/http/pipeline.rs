@@ -53,9 +53,8 @@ impl Pipeline {
 
         let (core_client_options, options) = options.deconstruct();
         let user_agent_policy =
-                UserAgentPolicy::new(crate_name, crate_version, &core_client_options.user_agent);
+            UserAgentPolicy::new(crate_name, crate_version, &core_client_options.user_agent);
         push_unique(&mut per_call_policies, user_agent_policy);
-
 
         let mut per_try_policies = per_try_policies.clone();
         if core_client_options
