@@ -34,10 +34,15 @@ Invoke-LoggedCommand "cargo fmt --all -- --check"
 Invoke-LoggedCommand "cargo clippy --workspace --all-features --all-targets --keep-going --no-deps"
 
 if ($CheckWasm) {
+  # Save the original RUSTFLAGS to restore later
+  $OriginalRustFlags = $env:RUSTFLAGS
   # This is needed to ensure that the `getrandom` crate uses the `wasm_js` backend
   $env:RUSTFLAGS = ${env:RUSTFLAGS} + ' --cfg getrandom_backend="wasm_js"'
 
   Invoke-LoggedCommand "cargo clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
+
+  # Restore the original RUSTFLAGS, since the getrandom config option can only be set for wasm32-unknown-unknown builds.
+  $env:RUSTFLAGS = $OriginalRustFlags
 }
 
 if ($Deny) {
