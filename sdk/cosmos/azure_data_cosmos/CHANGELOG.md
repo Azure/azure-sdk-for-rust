@@ -6,7 +6,6 @@
 * Added `if_match_etag` to `ItemOptions` ([#2705](https://github.com/Azure/azure-sdk-for-rust/pull/2705))
 * Added `as_headers` to `ItemOptions` ([#2744](https://github.com/Azure/azure-sdk-for-rust/pull/2744))
 
-
 ### Breaking Changes
 
 ### Bugs Fixed
