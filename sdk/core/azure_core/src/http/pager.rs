@@ -16,9 +16,9 @@ use typespec::Error;
 use typespec_client_core::http::{DeserializeWith, Format, JsonFormat};
 
 /// The result of fetching a single page from a [`Pager`], whether there are more pages or paging is done.
-pub enum PagerResult<P, N: AsRef<str>> {
-    /// There are more pages the [`Pager`] may fetch using the `next` token.
-    More { response: P, next: N },
+pub enum PagerResult<P, C: AsRef<str>> {
+    /// There are more pages the [`Pager`] may fetch using the `continuation` token.
+    More { response: P, continuation: C },
     /// The [`Pager`] is done and there are no additional pages to fetch.
     Done { response: P },
 }
@@ -30,18 +30,21 @@ impl<P, F> PagerResult<Response<P, F>, String> {
     /// If the provided response does not have a header with the matching name, this returns [`PagerResult::Done`].
     pub fn from_response_header(response: Response<P, F>, header_name: &HeaderName) -> Self {
         match response.headers().get_optional_string(header_name) {
-            Some(next) => PagerResult::More { response, next },
+            Some(continuation) => PagerResult::More {
+                response,
+                continuation,
+            },
             None => PagerResult::Done { response },
         }
     }
 }
 
-impl<P, N: fmt::Debug + AsRef<str>> fmt::Debug for PagerResult<P, N> {
+impl<P, C: fmt::Debug + AsRef<str>> fmt::Debug for PagerResult<P, C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::More { next, .. } => f
+            Self::More { continuation, .. } => f
                 .debug_struct("More")
-                .field("next", &next)
+                .field("continuation", &continuation)
                 .finish_non_exhaustive(),
             Self::Done { .. } => f.debug_struct("Done").finish_non_exhaustive(),
         }
@@ -101,11 +104,11 @@ pub struct ItemIterator<P: Page> {
 impl<P: Page> ItemIterator<P> {
     /// Creates a [`ItemIterator<P>`] from a callback that will be called repeatedly to request each page.
     ///
-    /// This method expect a callback that accepts a single `Option<N>` parameter, and returns a [`PagerResult<T, N>`] value asynchronously.
-    /// The `N` type parameter is the type of the next link/token. It may be any [`Send`]able type.
+    /// This method expect a callback that accepts a single `Option<C>` parameter, and returns a [`PagerResult<T, C>`] value asynchronously.
+    /// The `C` type parameter is the type of the next link/continuation token. It may be any [`Send`]able type.
     /// The result will be an asynchronous stream of [`Result<T>`](typespec::Result<T>) values.
     ///
-    /// The first time your callback is called, it will be called with [`Option::None`], indicating no next link/token is present.
+    /// The first time your callback is called, it will be called with [`Option::None`], indicating no next link/continuation token is present.
     ///
     /// Your callback must return one of:
     /// * `Ok(result)` - The request succeeded, and the provided [`PagerResult`] indicates the value to return and if there are more pages.
@@ -163,7 +166,7 @@ impl<P: Page> ItemIterator<P> {
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
-    ///                 next: next_link.parse()?,
+    ///                 continuation: next_link.parse()?,
     ///             },
     ///             None => PagerResult::Done { response: resp }
     ///         })
@@ -209,12 +212,12 @@ impl<P: Page> ItemIterator<P> {
     /// ```
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] N: AsRef<str> + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<N>) -> Fut + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<P, N>, typespec::Error>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] N: AsRef<str> + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(Option<N>) -> Fut + 'static,
-        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, N>, typespec::Error>> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] C: AsRef<str> + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + 'static,
     >(
         make_request: F,
     ) -> Self {
@@ -245,7 +248,7 @@ impl<P: Page> ItemIterator<P> {
     pub fn into_pages(self) -> PageIterator<P> {
         PageIterator {
             stream: self.stream,
-            next: Default::default(),
+            continuation_token: Default::default(),
         }
     }
 }
@@ -297,17 +300,17 @@ impl<P: Page> fmt::Debug for ItemIterator<P> {
 pub struct PageIterator<P> {
     #[pin]
     stream: Pin<BoxedStream<P>>,
-    next: Arc<Mutex<Option<String>>>,
+    continuation_token: Arc<Mutex<Option<String>>>,
 }
 
 impl<P> PageIterator<P> {
     /// Creates a [`PageIterator<P>`] from a callback that will be called repeatedly to request each page.
     ///
-    /// This method expect a callback that accepts a single `Option<N>` parameter, and returns a [`PagerResult<T, N>`] value asynchronously.
-    /// The `N` type parameter is the type of the next link/token. It may be any [`Send`]able type.
+    /// This method expect a callback that accepts a single `Option<C>` parameter, and returns a [`PagerResult<T, C>`] value asynchronously.
+    /// The `C` type parameter is the type of the next link/continuation token. It may be any [`Send`]able type.
     /// The result will be an asynchronous stream of [`Result<T>`](typespec::Result<T>) values.
     ///
-    /// The first time your callback is called, it will be called with [`Option::None`], indicating no next link/token is present.
+    /// The first time your callback is called, it will be called with [`Option::None`], indicating no next link/continuation token is present.
     ///
     /// Your callback must return one of:
     /// * `Ok(result)` - The request succeeded, and the provided [`PagerResult`] indicates the value to return and if there are more pages.
@@ -356,7 +359,7 @@ impl<P> PageIterator<P> {
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
-    ///                 next: next_link.parse()?,
+    ///                 continuation: next_link.parse()?,
     ///             },
     ///             None => PagerResult::Done { response: resp }
     ///         })
@@ -393,43 +396,43 @@ impl<P> PageIterator<P> {
     /// ```
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] N: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<N>) -> Fut + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<P, N>, typespec::Error>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] N: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(Option<N>) -> Fut + 'static,
-        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, N>, typespec::Error>> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + 'static,
     >(
         make_request: F,
     ) -> Self
     where
-        <N as FromStr>::Err: fmt::Debug,
+        <C as FromStr>::Err: fmt::Debug,
     {
-        let next = Arc::new(Mutex::new(None::<String>));
+        let continuation_token = Arc::new(Mutex::new(None::<String>));
 
-        let get_clone = next.clone();
-        let set_clone = next.clone();
+        let get_clone = continuation_token.clone();
+        let set_clone = continuation_token.clone();
         let stream = iter_from_callback(
             make_request,
             move || {
-                if let Ok(next_guard) = get_clone.lock() {
-                    return next_guard
+                if let Ok(token_guard) = get_clone.lock() {
+                    return token_guard
                         .clone()
-                        .map(|n| n.parse().expect("valid next link"));
+                        .map(|n| n.parse().expect("valid continuation_token"));
                 }
 
                 None
             },
             move |next_token| {
-                if let Ok(mut next_guard) = set_clone.lock() {
-                    *next_guard = next_token.map(Into::into);
+                if let Ok(mut token_guard) = set_clone.lock() {
+                    *token_guard = next_token.map(Into::into);
                 }
             },
         );
 
         Self {
             stream: Box::pin(stream),
-            next,
+            continuation_token,
         }
     }
 
@@ -445,17 +448,17 @@ impl<P> PageIterator<P> {
     ) -> Self {
         Self {
             stream: Box::pin(stream),
-            next: Default::default(),
+            continuation_token: Default::default(),
         }
     }
 
-    /// Advance the `PageIterator` to the page referenced by `next_link`.
+    /// Advance the `PageIterator` to the page referenced by `continuation_token`.
     ///
     /// You should call this before iterating the [`Stream`] or results may be unpredictable.
     ///
     /// # Examples
     ///
-    /// Using a result of a call to [`PageIterator::next_link`] in another process, you can create a new `PageIterator`
+    /// Using a result of a call to [`PageIterator::continuation_token`] in another process, you can create a new `PageIterator`
     /// that, when first iterated, will get the next page of results.
     ///
     /// ``` no_run
@@ -466,9 +469,14 @@ impl<P> PageIterator<P> {
     /// # #[tokio::main]
     /// # async fn main() -> azure_core::Result<()> {
     /// let client = SecretClient::new("https://my-vault.vault.azure.net", DefaultAzureCredential::new()?, None)?;
+    ///
+    /// // Advance first pager to first page.
+    /// let mut pager = client.list_secret_properties(None)?
+    ///     .into_pages();
+    ///
     /// let mut pager = client.list_secret_properties(None)?
     ///     .into_pages()
-    ///     .with_next_link("next_link_from_another_pager".to_string());
+    ///     .with_continuation_token("continuation_token_from_another_pager".to_string());
     ///
     /// while let Some(secrets) = pager.try_next().await? {
     ///     let secrets = secrets.into_body().await?;
@@ -479,21 +487,21 @@ impl<P> PageIterator<P> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn with_next_link(self, next_link: String) -> Self {
-        if let Ok(mut next_guard) = self.next.lock() {
-            *next_guard = Some(next_link);
+    pub fn with_continuation_token(self, continuation_token: String) -> Self {
+        if let Ok(mut token_guard) = self.continuation_token.lock() {
+            *token_guard = Some(continuation_token);
         }
 
         self
     }
 
-    /// Gets the next link or continuation token for the current page.
+    /// Gets the continuation token for the current page.
     ///
-    /// Pass this to [`PageIterator::with_next_link`] to create a `PageIterator` that, when first iterated,
+    /// Pass this to [`PageIterator::with_continuation_token`] to create a `PageIterator` that, when first iterated,
     /// will return the next page. You can use this to page results across separate processes.
-    pub fn next_link(&self) -> Option<String> {
-        if let Ok(next) = self.next.lock() {
-            return next.clone();
+    pub fn continuation_token(&self) -> Option<String> {
+        if let Ok(token) = self.continuation_token.lock() {
+            return token.clone();
         }
 
         None
@@ -527,15 +535,15 @@ enum State<T> {
 fn iter_from_callback<
     P,
     // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-    #[cfg(not(target_arch = "wasm32"))] N: AsRef<str> + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<N>) -> Fut + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<P, N>, typespec::Error>> + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] G: Fn() -> Option<N> + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] G: Fn() -> Option<C> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] S: Fn(Option<&str>) + Send + 'static,
-    #[cfg(target_arch = "wasm32")] N: AsRef<str> + 'static,
-    #[cfg(target_arch = "wasm32")] F: Fn(Option<N>) -> Fut + 'static,
-    #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, N>, typespec::Error>> + 'static,
-    #[cfg(target_arch = "wasm32")] G: Fn() -> Option<N> + 'static,
+    #[cfg(target_arch = "wasm32")] C: AsRef<str> + 'static,
+    #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + 'static,
+    #[cfg(target_arch = "wasm32")] G: Fn() -> Option<C> + 'static,
     #[cfg(target_arch = "wasm32")] S: Fn(Option<&str>) + 'static,
 >(
     make_request: F,
@@ -546,8 +554,8 @@ fn iter_from_callback<
         // We flow the `make_request` callback, 'get_next', and `set_next` through the state value so that we can avoid cloning.
         (State::Init, make_request, get_next, set_next),
         |(mut state, make_request, get_next, set_next)| async move {
-            if let Some(next_link) = get_next() {
-                state = State::More(next_link);
+            if let Some(next_token) = get_next() {
+                state = State::More(next_token);
             }
             let result = match state {
                 State::Init => make_request(None).await,
@@ -561,7 +569,7 @@ fn iter_from_callback<
                 Err(e) => return Some((Err(e), (State::Done, make_request, get_next, set_next))),
                 Ok(PagerResult::More {
                     response,
-                    next: next_token,
+                    continuation: next_token,
                 }) => {
                     set_next(Some(next_token.as_ref()));
                     (Ok(response), State::More(next_token))
@@ -621,7 +629,7 @@ mod tests {
                         r#"{"items":[1],"page":1}"#,
                     )
                     .into(),
-                    next: "1",
+                    continuation: "1",
                 }),
                 Some("1") => Ok(PagerResult::More {
                     response: RawResponse::from_bytes(
@@ -634,7 +642,7 @@ mod tests {
                         r#"{"items":[2],"page":2}"#,
                     )
                     .into(),
-                    next: "2",
+                    continuation: "2",
                 }),
                 Some("2") => Ok(PagerResult::Done {
                     response: RawResponse::from_bytes(
@@ -672,7 +680,7 @@ mod tests {
                         r#"{"items":[1],"page":1}"#,
                     )
                     .into(),
-                    next: "1",
+                    continuation: "1",
                 }),
                 Some("1") => Err(typespec::Error::message(
                     typespec::error::ErrorKind::Other,
@@ -714,7 +722,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn page_iterator_with_next_link_and_tracking() {
+    async fn page_iterator_with_continuation_token() {
         let make_callback = || {
             |continuation: Option<String>| async move {
                 match continuation.as_deref() {
@@ -725,7 +733,7 @@ mod tests {
                             r#"{"items":[1],"page":1}"#,
                         )
                         .into(),
-                        next: "next-token-1".to_string(),
+                        continuation: "next-token-1".to_string(),
                     }),
                     Some("next-token-1") => Ok(PagerResult::More {
                         response: RawResponse::from_bytes(
@@ -738,7 +746,7 @@ mod tests {
                             r#"{"items":[2],"page":2}"#,
                         )
                         .into(),
-                        next: "next-token-2".to_string(),
+                        continuation: "next-token-2".to_string(),
                     }),
                     Some("next-token-2") => Ok(PagerResult::Done {
                         response: RawResponse::from_bytes(
@@ -763,8 +771,8 @@ mod tests {
         let mut first_pager: PageIterator<Response<Page>> =
             PageIterator::from_callback(make_callback());
 
-        // Should start with no next_link.
-        assert_eq!(first_pager.next_link(), None);
+        // Should start with no continuation_token.
+        assert_eq!(first_pager.continuation_token(), None);
 
         // Advance to the first page.
         let first_page = first_pager
@@ -778,18 +786,22 @@ mod tests {
         assert_eq!(first_page.page, Some(1));
         assert_eq!(first_page.items, vec![1]);
 
-        // next_link should point to second page.
-        let next_link = first_pager
-            .next_link()
-            .expect("expected next_link from first page");
-        assert_eq!(next_link, "next-token-1");
+        // continuation_token should point to second page.
+        let continuation_token = first_pager
+            .continuation_token()
+            .expect("expected continuation_token from first page");
+        assert_eq!(continuation_token, "next-token-1");
 
         // Create the second PageIterator.
         let mut second_pager: PageIterator<Response<Page>> =
-            PageIterator::from_callback(make_callback()).with_next_link(next_link);
+            PageIterator::from_callback(make_callback())
+                .with_continuation_token(continuation_token);
 
         // Should start with link to second page.
-        assert_eq!(second_pager.next_link(), Some("next-token-1".into()));
+        assert_eq!(
+            second_pager.continuation_token(),
+            Some("next-token-1".into())
+        );
 
         // Advance to second page.
         let second_page = second_pager
@@ -802,7 +814,10 @@ mod tests {
             .expect("expected page");
         assert_eq!(second_page.page, Some(2));
         assert_eq!(second_page.items, vec![2]);
-        assert_eq!(second_pager.next_link(), Some("next-token-2".into()));
+        assert_eq!(
+            second_pager.continuation_token(),
+            Some("next-token-2".into())
+        );
 
         // Advance to last page.
         let last_page = second_pager
@@ -815,6 +830,6 @@ mod tests {
             .expect("expected page");
         assert_eq!(last_page.page, None);
         assert_eq!(last_page.items, vec![3]);
-        assert_eq!(second_pager.next_link(), None);
+        assert_eq!(second_pager.continuation_token(), None);
     }
 }
