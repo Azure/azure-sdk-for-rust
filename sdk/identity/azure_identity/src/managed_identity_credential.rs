@@ -159,6 +159,7 @@ mod tests {
     use futures::FutureExt;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+    use time::OffsetDateTime;
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
 
@@ -369,6 +370,28 @@ mod tests {
         );
     }
 
+    async fn run_imds_live_test(id: Option<UserAssignedId>) {
+        if std::env::var("IDENTITY_IMDS_AVAILABLE").is_err() {
+            println!("Skipped: IMDS isn't available");
+            return;
+        }
+
+        let credential = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+            user_assigned_id: id,
+            ..Default::default()
+        }))
+        .expect("valid credential");
+
+        let token = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect("authentication should succeed");
+
+        assert!(!token.token.secret().is_empty());
+        assert_eq!(time::UtcOffset::UTC, token.expires_on.offset());
+        assert!(token.expires_on.unix_timestamp() > OffsetDateTime::now_utc().unix_timestamp());
+    }
+
     async fn run_imds_test(options: Option<ManagedIdentityCredentialOptions>) {
         let mut model = Request::new(
             "http://169.254.169.254/metadata/identity/oauth2/token"
@@ -440,6 +463,11 @@ mod tests {
             ..Default::default()
         }))
         .await;
+    }
+
+    #[tokio::test]
+    async fn imds_system_assigned_live() {
+        run_imds_live_test(None).await;
     }
 
     #[tokio::test]
