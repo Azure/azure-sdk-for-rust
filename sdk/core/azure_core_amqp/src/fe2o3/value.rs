@@ -698,15 +698,6 @@ impl From<&fe2o3_amqp_types::definitions::Fields> for AmqpOrderedMap<AmqpSymbol,
     }
 }
 
-impl From<fe2o3_amqp_types::definitions::Fields> for AmqpOrderedMap<AmqpSymbol, AmqpValue> {
-    fn from(fields: fe2o3_amqp_types::definitions::Fields) -> Self {
-        fields
-            .into_iter()
-            .map(|(k, v)| (k.into(), v.into()))
-            .collect()
-    }
-}
-
 impl
     From<
         &fe2o3_amqp_types::primitives::OrderedMap<
