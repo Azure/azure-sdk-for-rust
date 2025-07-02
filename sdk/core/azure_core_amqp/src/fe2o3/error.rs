@@ -104,7 +104,7 @@ impl From<fe2o3_amqp_types::definitions::Error> for AmqpDescribedError {
         AmqpDescribedError::new(
             (&e.condition).into(),
             e.description,
-            (&(*e.info.unwrap_or_default())).into(),
+            e.info.map(|boxed| (*boxed).into()).unwrap_or_default(),
         )
     }
 }

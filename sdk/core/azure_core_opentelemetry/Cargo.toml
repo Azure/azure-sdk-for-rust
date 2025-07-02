@@ -24,7 +24,6 @@ typespec_client_core.workspace = true
 [dev-dependencies]
 opentelemetry_sdk = { version = "0.30", features = ["testing"] }
 tokio.workspace = true
-#tracing-opentelemetry = "0.26"
 tracing-subscriber.workspace = true
 
 [lints]

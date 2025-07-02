@@ -82,9 +82,8 @@ fe2o3-amqp-cbs = { version = "0.14" }
 fe2o3-amqp-types = { version = "0.14" }
 flate2 = "1.1.0"
 futures = "0.3"
-getrandom = { version = "0.3", features = ["wasm_js"] }
+getrandom = { version = "0.3" }
 hmac = { version = "0.12" }
-js_sys = "3.77"
 litemap = "0.7.4"
 log = "0.4"
 openssl = { version = "0.10.72" }
