@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace the asynchronous runtime used by the Azure SDK.
+- Added `PageIterator::with_next_link()` to support reconstructing a `PageIterator` in another process or on another machine to continue paging.
 
 ### Breaking Changes
 
