@@ -4,12 +4,11 @@
 use crate::http::{headers::HeaderName, response::Response};
 use async_trait::async_trait;
 use futures::{stream::unfold, FutureExt, Stream};
-#[cfg(not(target_arch = "wasm32"))]
-use std::str::FromStr;
 use std::{
     fmt,
     future::Future,
     pin::Pin,
+    str::FromStr,
     sync::{Arc, Mutex},
     task,
 };
