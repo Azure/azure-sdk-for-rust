@@ -134,12 +134,15 @@ impl AsHeaders for ItemOptions<'_> {
         let mut headers = Vec::new();
 
         if let Some(pre_triggers) = &self.pre_triggers {
-            headers.push((constants::PRETRIGGER_INCLUDE, pre_triggers.join(",").into()));
+            headers.push((
+                constants::PRE_TRIGGER_INCLUDE,
+                pre_triggers.join(",").into(),
+            ));
         }
 
         if let Some(post_triggers) = &self.post_triggers {
             headers.push((
-                constants::POSTTRIGGER_INCLUDE,
+                constants::POST_TRIGGER_INCLUDE,
                 post_triggers.join(",").into(),
             ));
         }
@@ -251,11 +254,11 @@ mod tests {
 
         let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
             (
-                constants::PRETRIGGER_INCLUDE,
+                constants::PRE_TRIGGER_INCLUDE,
                 "PreTrigger1,PreTrigger2".into(),
             ),
             (
-                constants::POSTTRIGGER_INCLUDE,
+                constants::POST_TRIGGER_INCLUDE,
                 "PostTrigger1,PostTrigger2".into(),
             ),
             (constants::SESSION_TOKEN, "SessionToken".into()),
