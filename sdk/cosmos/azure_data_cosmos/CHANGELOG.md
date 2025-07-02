@@ -7,6 +7,8 @@
 
 ### Breaking Changes
 
+- Minimum supported Rust version (MSRV) is now 1.85.
+
 ### Bugs Fixed
 
 ### Other Changes

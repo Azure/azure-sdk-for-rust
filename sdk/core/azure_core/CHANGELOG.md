@@ -9,6 +9,7 @@
 
 ### Breaking Changes
 
+- Minimum supported Rust version (MSRV) is now 1.85.
 - `azure_core::http::Pipeline::new` now takes an `azure_core::http::ClientOptions` which is defined in `azure_core`, but convertible to `typespec_client_core::http::ClientOptions`.
 - Moved `process::Executor` to `azure_identity`.
 - Removed `Pipeline::replace_policy`.
