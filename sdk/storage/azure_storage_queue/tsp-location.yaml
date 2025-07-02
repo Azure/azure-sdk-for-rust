@@ -1,0 +1,4 @@
+directory: specification/storage/Azure.Storage.Queues
+commit: 2eb1b4c6d753c911aaef72c0e66da60e822004c0
+repo: Azure/azure-rest-api-specs
+additionalDirectories:
