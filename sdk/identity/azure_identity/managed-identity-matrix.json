@@ -8,6 +8,7 @@
                     "Pool": "env:LINUXPOOL"
                 }
             },
+            "IDENTITY_IMDS_AVAILABLE": "1",
             "RustToolchainName": [
                 "stable"
             ]

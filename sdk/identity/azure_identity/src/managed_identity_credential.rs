@@ -163,6 +163,10 @@ mod tests {
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
 
+    fn imds_available() -> bool {
+        std::env::var("IDENTITY_IMDS_AVAILABLE").is_ok()
+    }
+
     async fn run_deployed_test(authority: &str, storage_name: &str, id: Option<UserAssignedId>) {
         let id_param = id.map_or("".to_string(), |id| match id {
             UserAssignedId::ClientId(id) => format!("client-id={id}&"),
@@ -462,6 +466,29 @@ mod tests {
         ).await;
     }
 
+    async fn run_imds_live_test(id: Option<UserAssignedId>) {
+        if !imds_available() {
+            println!("Skipped: IMDS isn't available.");
+            return;
+        }
+
+        let credential = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+            user_assigned_id: id,
+            ..Default::default()
+        }))
+        .expect("valid credential");
+
+        let token = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect("authentication should succeed");
+
+        assert!(!token.token.secret().is_empty());
+        assert!(token.expires_on.unix_timestamp() > 0);
+        assert_eq!(time::UtcOffset::UTC, token.expires_on.offset());
+        panic!("it worked");
+    }
+
     #[tokio::test]
     async fn imds() {
         run_imds_test(None).await;
@@ -494,6 +521,11 @@ mod tests {
             ..Default::default()
         }))
         .await;
+    }
+
+    #[tokio::test]
+    async fn imds_system_assigned_live() {
+        run_imds_live_test(None).await;
     }
 
     #[tokio::test]
