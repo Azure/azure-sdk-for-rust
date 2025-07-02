@@ -5,6 +5,7 @@ use crate::{
     generated::clients::{
         HierarchicalClient as GeneratedHierarchicalClient, HierarchicalClientOptions,
     },
+    models::HierarchicalClientCreateOptions,
     pipeline::StorageHeadersPolicy,
     BlobClientOptions,
 };
@@ -12,7 +13,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url,
+        NoFormat, RawResponse, RequestContent, Response, Url,
     },
     Bytes, Result,
 };
@@ -54,14 +55,20 @@ impl HierarchicalClient<()> {
 
 // File state specific functions
 impl HierarchicalClient<File> {
-    pub fn foo(&self) {
-        println!("File-specific");
+    pub async fn create(
+        &self,
+        options: Option<HierarchicalClientCreateOptions<'_>>,
+    ) -> Result<RawResponse> {
+        self.client.create("file".to_string(), options).await
     }
 }
 
 // Directory state specific functions
 impl HierarchicalClient<Directory> {
-    pub fn foo(&self) {
-        println!("Directory-specific");
+    pub async fn create(
+        &self,
+        options: Option<HierarchicalClientCreateOptions<'_>>,
+    ) -> Result<RawResponse> {
+        self.client.create("directory".to_string(), options).await
     }
 }

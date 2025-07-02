@@ -14,6 +14,7 @@ mod pipeline;
 pub use clients::*;
 
 pub mod models {
+    pub use crate::generated::clients::HierarchicalClientCreateOptions;
     pub use crate::generated::models::{
         AccessTierOptional, ArchiveStatus, BlobClientDeleteOptions, BlobClientDownloadOptions,
         BlobClientDownloadResult, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,

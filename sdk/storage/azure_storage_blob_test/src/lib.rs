@@ -21,7 +21,8 @@ fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     recording.instrument(&mut client_options);
     let endpoint = format!(
         "https://{}.blob.core.windows.net/",
-        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
+        //recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
+        "ruststoragedevhns"
     );
 
     (client_options, endpoint)
