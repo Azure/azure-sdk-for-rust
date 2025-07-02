@@ -3,17 +3,25 @@
 trigger:
   branches:
     include:
-    - main
-    - hotfix/*
-    - release/*
+      - main
+      - hotfix/*
+      - release/*
   paths:
     include:
-    - sdk/identity/
+      - sdk/identity/
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: identity
     Artifacts:
-    - name: azure_identity
-      safeName: AzureIdentity
+      - name: azure_identity
+        safeName: AzureIdentity
+
+    ${{ if endsWith(variables['Build.DefinitionName'], 'weekly') }}:
+      RunLiveTests: true
+      MatrixConfigs:
+        - Name: managed_identity_matrix
+          GenerateVMJobs: true
+          Path: sdk/identity/azure_identity/managed-identity-matrix.json
+          Selection: sparse

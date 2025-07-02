@@ -162,6 +162,10 @@ mod tests {
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
 
+    fn imds_available() -> bool {
+        std::env::var("IDENTITY_IMDS_AVAILABLE").is_ok()
+    }
+
     async fn run_supported_source_test(
         env: Env,
         options: Option<ManagedIdentityCredentialOptions>,
@@ -440,6 +444,33 @@ mod tests {
             ..Default::default()
         }))
         .await;
+    }
+
+    async fn run_live_imds_test(id: Option<UserAssignedId>) {
+        if !imds_available() {
+            println!("Skipped: IMDS isn't available");
+            return;
+        }
+
+        let credential = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+            user_assigned_id: id,
+            ..Default::default()
+        }))
+        .expect("valid credential");
+
+        let token = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect("authentication should succeed");
+
+        assert!(!token.token.secret().is_empty());
+        assert!(token.expires_on.unix_timestamp() > 0);
+        assert_eq!(time::UtcOffset::UTC, token.expires_on.offset());
+    }
+
+    #[tokio::test]
+    async fn imds_system_assigned_live() {
+        run_live_imds_test(None).await;
     }
 
     #[tokio::test]
