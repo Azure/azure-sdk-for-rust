@@ -68,6 +68,11 @@ pub fn get_retry_after(headers: &Headers, now: DateTimeFn) -> Option<Duration> {
         })
 }
 
+/// A wrapper around a retry count to be used in the context of a retry policy.
+///
+/// This allows a post-retry policy to access the retry count
+pub struct RetryPolicyCount(pub u32);
+
 /// A retry policy.
 ///
 /// In the simple form, the policies need only differ in how
@@ -131,7 +136,8 @@ where
                     "failed to reset body stream before retrying request",
                 )?;
             }
-            let result = next[0].send(ctx, request, &next[1..]).await;
+            let try_context = ctx.clone().with_value(RetryPolicyCount(retry_count));
+            let result = next[0].send(&try_context, request, &next[1..]).await;
             // only start keeping track of time after the first request is made
             let start = start.get_or_insert_with(OffsetDateTime::now_utc);
             let (last_error, retry_after) = match result {
