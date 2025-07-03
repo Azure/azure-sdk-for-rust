@@ -19,6 +19,16 @@ pub struct CertificateClientCreateCertificateOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+impl CertificateClientCreateCertificateOptions<'_> {
+    pub fn into_owned(self) -> CertificateClientCreateCertificateOptions<'static> {
+        CertificateClientCreateCertificateOptions {
+            method_options: ClientMethodOptions {
+                context: self.method_options.context.into_owned(),
+            },
+        }
+    }
+}
+
 /// Options to be passed to [`CertificateClient::delete_certificate()`](crate::generated::clients::CertificateClient::delete_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientDeleteCertificateOptions<'a> {
