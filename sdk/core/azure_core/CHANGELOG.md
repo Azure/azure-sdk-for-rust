@@ -5,13 +5,16 @@
 ### Features Added
 
 - Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace the asynchronous runtime used by the Azure SDK.
+- Added `PageIterator::continuation_token()` and `PageIterator::with_continuation_token()` to support reconstructing a `PageIterator` in another process or on another machine to continue paging.
 
 ### Breaking Changes
 
+- Minimum supported Rust version (MSRV) is now 1.85.
 - `azure_core::http::Pipeline::new` now takes an `azure_core::http::ClientOptions` which is defined in `azure_core`, but convertible to `typespec_client_core::http::ClientOptions`.
 - Moved `process::Executor` to `azure_identity`.
 - Removed `Pipeline::replace_policy`.
 - Renamed `azure_core::date` to `azure_core::time` and added `azure_core::time::Duration` as the standard "duration" type for the SDK.
+- Renamed `PagerResult::More { next }` to `continuation`.
 - Renamed `TelemetryOptions` to `UserAgentOptions`.
 - Renamed `TelemetryPolicy` to `UserAgentPolicy`.
 

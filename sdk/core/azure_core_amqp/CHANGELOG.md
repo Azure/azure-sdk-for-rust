@@ -6,6 +6,7 @@
 
 ### Breaking Changes
 
+- Minimum supported Rust version (MSRV) is now 1.85.
 - Converted all `time::Duration` references to be `azure_core::time::Duration`.
 
 ### Bugs Fixed

@@ -4,7 +4,7 @@
 // cspell: ignore retryable backoff
 
 use azure_core::{error::Result, time::Duration};
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use std::fmt::Debug;
 use tracing::{info, warn};
 
@@ -97,7 +97,7 @@ where
                 // Apply jitter to the delay
                 let jittered_delay = if options.jitter > 0.0 {
                     let jitter_range = options.jitter * current_delay.as_seconds_f64();
-                    let jitter_amount = thread_rng().gen_range(-jitter_range..jitter_range);
+                    let jitter_amount = rng().random_range(-jitter_range..jitter_range);
                     let jittered_secs = current_delay.as_seconds_f64() + jitter_amount;
                     Duration::seconds_f64(jittered_secs.max(0.001)) // Ensure we don't go negative
                 } else {

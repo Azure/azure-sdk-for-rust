@@ -6,6 +6,7 @@
 
 ### Breaking Changes
 
+- Minimum supported Rust version (MSRV) is now 1.85.
 - Converted all `time::Duration` types to `azure_core::time::Duration`
 - Replaced `azure_core::process::Executor` with `azure_identity::process::Executor`.
 - Renamed `azure_core::date` module to `azure_core::time`
