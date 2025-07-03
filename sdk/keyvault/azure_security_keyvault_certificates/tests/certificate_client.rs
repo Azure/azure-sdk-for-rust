@@ -3,15 +3,14 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::{http::StatusCode, sleep::sleep, time::Duration, Result};
-use azure_core_test::{recorded, Recording, TestContext, TestMode, SANITIZE_BODY_NAME};
+use azure_core::{http::StatusCode, Result};
+use azure_core_test::{recorded, TestContext, TestMode, SANITIZE_BODY_NAME};
 use azure_security_keyvault_certificates::{
     models::{
-        CertificateOperation, CertificatePolicy, CreateCertificateParameters, CurveName,
-        IssuerParameters, KeyProperties, KeyType, UpdateCertificatePropertiesParameters,
-        X509CertificateProperties,
+        CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
+        KeyType, UpdateCertificatePropertiesParameters, X509CertificateProperties,
     },
-    CertificateClient, CertificateClientOptions, ResourceExt as _, ResourceId,
+    CertificateClient, CertificateClientOptions, ResourceExt as _,
 };
 use azure_security_keyvault_keys::{
     models::{SignParameters, SignatureAlgorithm},
@@ -53,12 +52,10 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
         certificate_policy: Some(DEFAULT_POLICY.clone()),
         ..Default::default()
     };
-    let operation = client
-        .create_certificate("certificate-roundtrip", body.try_into()?, None)
-        .await?
-        .into_body()
+    client
+        .create_certificate("certificate-roundtrip", body.try_into()?, None)?
+        .wait()
         .await?;
-    wait_for_certificate_completion(recording, &client, operation).await?;
 
     // Get the latest version of the certificate we just created.
     let certificate = client
@@ -93,12 +90,10 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         certificate_policy: Some(DEFAULT_POLICY.clone()),
         ..Default::default()
     };
-    let operation = client
-        .create_certificate("update-properties", body.try_into()?, None)
-        .await?
-        .into_body()
+    client
+        .create_certificate("update-properties", body.try_into()?, None)?
+        .wait()
         .await?;
-    wait_for_certificate_completion(recording, &client, operation).await?;
 
     // Get the latest version of the certificate we just created.
     let certificate = client
@@ -156,19 +151,14 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
         certificate_policy: Some(DEFAULT_POLICY.clone()),
         ..Default::default()
     };
-    let operation1 = client
-        .create_certificate("list-certificates-1", body.clone().try_into()?, None)
-        .await?
-        .into_body()
+    client
+        .create_certificate("list-certificates-1", body.clone().try_into()?, None)?
+        .wait()
         .await?;
-    wait_for_certificate_completion(recording, &client, operation1).await?;
-
-    let operation2 = client
-        .create_certificate("list-certificates-2", body.try_into()?, None)
-        .await?
-        .into_body()
+    client
+        .create_certificate("list-certificates-2", body.try_into()?, None)?
+        .wait()
         .await?;
-    wait_for_certificate_completion(recording, &client, operation2).await?;
 
     // List certificates.
     let mut pager = client.list_certificate_properties(None)?.into_stream();
@@ -203,16 +193,14 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
         certificate_policy: Some(DEFAULT_POLICY.clone()),
         ..Default::default()
     };
-    let operation = client
-        .create_certificate("purge-certificate", body.try_into()?, None)
-        .await?
-        .into_body()
+    const NAME: &str = "purge-certificate";
+    client
+        .create_certificate(NAME, body.try_into()?, None)?
+        .wait()
         .await?;
-    let name = operation.resource_id()?.name;
-    wait_for_certificate_completion(recording, &client, operation).await?;
 
     // Delete the certificate.
-    client.delete_certificate(name.as_ref(), None).await?;
+    client.delete_certificate(NAME.as_ref(), None).await?;
 
     // Because deletes may not happen right away, try purging in a loop.
     let mut retry = match recording.test_mode() {
@@ -221,9 +209,9 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
     };
 
     loop {
-        match client.purge_deleted_certificate(name.as_ref(), None).await {
+        match client.purge_deleted_certificate(NAME.as_ref(), None).await {
             Ok(_) => {
-                println!("{name} has been purged");
+                println!("{NAME} has been purged");
                 break;
             }
             Err(err) if matches!(err.http_status(), Some(StatusCode::Conflict)) => {
@@ -279,21 +267,21 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         certificate_policy: Some(policy),
         ..Default::default()
     };
-    let operation = client
-        .create_certificate("ec-certificate-signer", body.try_into()?, None)
-        .await?
-        .into_body()
+    const NAME: &str = "ec-certificate-signer";
+    client
+        .create_certificate(NAME, body.try_into()?, None)?
+        .wait()
         .await?;
-    let ResourceId {
-        vault_url, name, ..
-    } = operation.resource_id()?;
-    wait_for_certificate_completion(recording, &client, operation).await?;
 
     let mut key_options = KeyClientOptions::default();
     recording.instrument(&mut key_options.client_options);
 
     // Sign a JWT.
-    let key_client = KeyClient::new(&vault_url, recording.credential(), Some(key_options))?;
+    let key_client = KeyClient::new(
+        client.endpoint().as_str(),
+        recording.credential(),
+        Some(key_options),
+    )?;
 
     // cspell:disable
     const JWT: &[u8] =
@@ -305,47 +293,13 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         value: Some(digest),
     };
     let signature = key_client
-        .sign(&name, "", body.try_into()?, None)
+        .sign(NAME, "", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
     assert!(signature.result.is_some());
     // example: 6AIg-utePBdmCU-uGvpjh4uKb3UV0yvdWKNLSp-EivC4oavdqpfxmfMB9GsR6dBMM1Ekp8ZBrzUMaCvShXWyog
     // cspell:enable
-
-    Ok(())
-}
-
-async fn wait_for_certificate_completion(
-    recording: &Recording,
-    client: &CertificateClient,
-    operation: CertificateOperation,
-) -> azure_core::Result<()> {
-    let mut operation = operation;
-    let name = operation.resource_id()?.name;
-    loop {
-        if matches!(operation.status, Some(ref status) if status == "completed") {
-            break;
-        }
-
-        if let Some(err) = operation.error {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                err.message
-                    .unwrap_or_else(|| "failed to create certificate".into()),
-            ));
-        }
-
-        if recording.test_mode() != TestMode::Playback {
-            sleep(Duration::seconds(3)).await;
-        }
-
-        operation = client
-            .get_certificate_operation(&name, None)
-            .await?
-            .into_body()
-            .await?;
-    }
 
     Ok(())
 }

@@ -77,6 +77,16 @@ where
     }
 }
 
+impl From<&Body> for Bytes {
+    fn from(value: &Body) -> Self {
+        match value {
+            Body::Bytes(bytes) => bytes.clone(),
+            #[cfg(not(target_arch = "wasm32"))]
+            Body::SeekableStream(_) => unimplemented!(),
+        }
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 impl From<Box<dyn SeekableStream>> for Body {
     fn from(seekable_stream: Box<dyn SeekableStream>) -> Self {

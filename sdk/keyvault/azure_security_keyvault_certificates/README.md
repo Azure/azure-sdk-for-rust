@@ -116,35 +116,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let mut operation = client
-        .create_certificate("certificate-name", body.try_into()?, None)
-        .await?
-        .into_body()
-        .await?;
-    let name = operation.resource_id()?.name;
-
     // Wait for the certificate operation to complete.
-    loop {
-        if matches!(operation.status, Some(ref status) if status == "completed") {
-            break;
-        }
-
-        if let Some(err) = operation.error {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                err.message
-                    .unwrap_or_else(|| "failed to create certificate".into()),
-            ))?;
-        }
-
-        sleep(Duration::from_secs(3)).await;
-
-        operation = client
-            .get_certificate_operation(&name, None)
-            .await?
-            .into_body()
-            .await?;
-    }
+    client
+        .create_certificate("certificate-name", body.try_into()?, None)?
+        .wait()
+        .await?;
 
     Ok(())
 }
@@ -339,52 +315,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         certificate_policy: Some(policy),
         ..Default::default()
     };
-    let mut operation = certificate_client
-        .create_certificate("ec-signing-certificate", body.try_into()?, None)
-        .await?
-        .into_body()
-        .await?;
-    let ResourceId {
-        vault_url,
-        name: certificate_name,
-        ..
-    } = operation.resource_id()?;
 
     // Wait for the certificate operation to complete.
-    loop {
-        if matches!(operation.status, Some(ref status) if status == "completed") {
-            break;
-        }
-
-        if let Some(err) = operation.error {
-            Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                err.message
-                    .unwrap_or_else(|| "failed to create certificate".into()),
-            ))?;
-        }
-
-        sleep(Duration::from_secs(3)).await;
-
-        operation = certificate_client
-            .get_certificate_operation(&certificate_name, None)
-            .await?
-            .into_body()
-            .await?;
-    }
+    certificate_client
+        .create_certificate("ec-signing-certificate", body.try_into()?, None)?
+        .wait()
+        .await?;
 
     // Hash the plaintext to be signed.
     let digest = sha256(plaintext.as_bytes()).to_vec();
 
     // Create a KeyClient using the certificate to sign the digest.
-    let key_client = KeyClient::new(&vault_url, DefaultAzureCredential::new()?, None)?;
+    let key_client = KeyClient::new(
+        certificate_client.endpoint().as_str(),
+        DefaultAzureCredential::new()?,
+        None,
+    )?;
     let body = SignParameters {
         algorithm: Some(SignatureAlgorithm::ES256),
         value: Some(digest),
     };
 
     let signature = key_client
-        .sign(&certificate_name, "", body.try_into()?, None)
+        .sign("ec-signing-certificate", "", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
