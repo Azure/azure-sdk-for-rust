@@ -143,7 +143,24 @@ pub struct AppendBlobClientAppendBlockFromUrlOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+    
+    ///DUPLICATE FUNCTION
+    pub fn duplicatereplace(inputs: &str) -> String {
+        let mut output = "";
+            for x in inputs.split(" "){
+               for y in inputs.split(" "){
+                   if x == y{
+                      output = x;
+               }
+           }
+        }
+        return output.to_string();
+    }
 
+    pub fn regex(input: &str) -> String
+    {
+         return input.replace("0123456789", "").to_string();
+    }
     /// Specify the crc64 calculated for the range of bytes that must be read from the copy source.
     pub source_content_crc64: Option<Vec<u8>>,
 
