@@ -3,30 +3,35 @@
 
 use crate::{
     constants,
-    models::{ContainerProperties, PatchDocument, ThroughputProperties},
+    models::{
+        ContainerProperties, FeedRange, PartitionKeyRange, PatchDocument, ThroughputProperties,
+    },
     options::{QueryOptions, ReadContainerOptions},
-    pipeline::CosmosPipeline,
+    pipeline::{self, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
-    DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
-    ThroughputOptions,
+    DeleteContainerOptions, FeedPager, FeedRangeOptions, ItemOptions, PartitionKey, Query,
+    ReplaceContainerOptions, ThroughputOptions,
 };
 
 use azure_core::http::{
     headers::{self},
-    request::{options::ContentType, Request},
+    request::{
+        options::{self, ContentType},
+        Request,
+    },
     response::Response,
-    Method,
+    Context, Method, RawResponse,
 };
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 #[derive(Clone)]
 pub struct ContainerClient {
-    link: ResourceLink,
-    items_link: ResourceLink,
-    pipeline: CosmosPipeline,
+    pub(crate) link: ResourceLink,
+    pub(crate) pipeline: CosmosPipeline,
+    pub(crate) items_link: ResourceLink,
 }
 
 impl ContainerClient {
@@ -708,8 +713,7 @@ impl ContainerClient {
         if partition_key.is_empty() {
             if let Some(query_engine) = options.query_engine.take() {
                 return crate::query::executor::QueryExecutor::new(
-                    self.pipeline.clone(),
-                    self.link.clone(),
+                    self.clone(),
                     query,
                     options,
                     query_engine,
@@ -726,5 +730,90 @@ impl ContainerClient {
             self.items_link.clone(),
             |r| r.insert_headers(&partition_key),
         )
+    }
+
+    /// Gets the partition key ranges for this container.
+    ///
+    /// This is used internally to retrieve the partition key ranges, which are then
+    /// mapped to public `FeedRange` objects.
+    ///
+    /// This method is used by the query executor to determine the partition key ranges, and is not intended for direct use by applications.
+    /// Applications should use the [`get_feed_ranges()`](ContainerClient::get_feed_ranges) method to retrieve the partition key ranges as `FeedRange` objects.
+    pub(crate) async fn get_partition_key_ranges(
+        &self,
+        context: Context<'_>,
+    ) -> azure_core::Result<Vec<PartitionKeyRange>> {
+        /// Response model for partition key ranges from the Cosmos DB service.
+        #[derive(Deserialize, Serialize)]
+        struct PartitionKeyRangesResult {
+            #[serde(rename = "PartitionKeyRanges")]
+            pub ranges: Vec<PartitionKeyRange>,
+        }
+        let pkranges_link = self.link.feed(ResourceType::PartitionKeyRanges);
+        let url = self.pipeline.url(&pkranges_link);
+        let mut request = Request::new(url, Method::Get);
+
+        let response = self
+            .pipeline
+            .send::<PartitionKeyRangesResult>(context, &mut request, pkranges_link)
+            .await?
+            .into_body()
+            .await?;
+
+        Ok(response.ranges)
+    }
+
+    /// Gets the feed ranges for this container.
+    ///
+    /// Feed ranges represent the partition key ranges for the container and can be used
+    /// to scope queries or change feed operations to specific subsets of data.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+    /// let feed_ranges = container_client.get_feed_ranges().await?;
+    /// for range in feed_ranges {
+    ///     println!("Range: {} to {}", range.min_inclusive, range.max_exclusive);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn get_feed_ranges(
+        &self,
+        options: Option<FeedRangeOptions<'_>>,
+    ) -> azure_core::Result<Vec<FeedRange>> {
+        let options = options.unwrap_or_default();
+        let context = options.method_options.context;
+        let partition_key_ranges = self.get_partition_key_ranges(context).await?;
+
+        let feed_ranges = partition_key_ranges
+            .into_iter()
+            .map(|pkrange| pkrange.range)
+            .collect();
+
+        Ok(feed_ranges)
+    }
+
+    #[tracing::instrument(skip_all)]
+    pub(crate) async fn get_query_plan(
+        &self,
+        context: Context<'_>,
+        query: &Query,
+        supported_features: &str,
+    ) -> azure_core::Result<RawResponse> {
+        let url = self.pipeline.url(&self.items_link);
+        let mut request = pipeline::create_base_query_request(url, query)?;
+        request.insert_header(constants::QUERY_ENABLE_CROSS_PARTITION, "True");
+        request.insert_header(constants::IS_QUERY_PLAN_REQUEST, "True");
+        request.insert_header(
+            constants::SUPPORTED_QUERY_FEATURES,
+            supported_features.to_string(),
+        );
+
+        self.pipeline
+            .send_raw(context, &mut request, self.items_link.clone())
+            .await
     }
 }

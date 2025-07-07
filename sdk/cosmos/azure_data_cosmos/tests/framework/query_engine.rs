@@ -5,20 +5,11 @@ use std::{collections::VecDeque, sync::Mutex};
 
 use serde::{Deserialize, Serialize};
 
-use azure_data_cosmos::query::{PipelineResult, QueryEngine, QueryPipeline};
+use azure_data_cosmos::{
+    models::PartitionKeyRange,
+    query::{PipelineResult, QueryEngine, QueryPipeline},
+};
 use serde_json::value::RawValue;
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PartitionKeyRange {
-    pub id: String,
-}
-
-#[derive(Deserialize)]
-struct PkRanges {
-    #[serde(rename = "PartitionKeyRanges")]
-    pub ranges: Vec<PartitionKeyRange>,
-}
 
 #[derive(Deserialize)]
 struct DocumentPayload<T> {
@@ -65,7 +56,7 @@ impl QueryEngine for MockQueryEngine {
         &self,
         query: &str,
         _plan: &[u8],
-        pkranges: &[u8],
+        pkranges: &[PartitionKeyRange],
     ) -> azure_core::Result<Box<dyn QueryPipeline + Send>> {
         {
             if let Some(err) = self.create_error.lock().unwrap().take() {
@@ -73,11 +64,8 @@ impl QueryEngine for MockQueryEngine {
             }
         }
 
-        // Deserialize the partition key ranges.
-        let pkranges: PkRanges = serde_json::from_slice(pkranges)?;
-
         // Create a mock pipeline with the partition key ranges.
-        let pipeline = MockQueryPipeline::new(query.to_string(), pkranges.ranges);
+        let pipeline = MockQueryPipeline::new(query.to_string(), pkranges.to_vec());
 
         Ok(Box::new(pipeline))
     }

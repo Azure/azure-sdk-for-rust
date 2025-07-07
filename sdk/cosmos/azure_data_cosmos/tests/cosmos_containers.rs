@@ -7,12 +7,14 @@ use std::error::Error;
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{
     models::{
-        ContainerProperties, IndexingMode, IndexingPolicy, PartitionKeyKind, PropertyPath,
-        ThroughputProperties,
+        ContainerProperties, FeedRange, IndexingMode, IndexingPolicy, PartitionKeyKind,
+        PropertyPath, ThroughputProperties,
     },
-    CreateContainerOptions, Query,
+    CreateContainerOptions, FeedRangeOptions, Query,
 };
 use futures::TryStreamExt;
+use serde::{Deserialize, Serialize};
+use typespec_client_core::{sleep, time::Duration};
 
 use framework::{test_data, TestAccount};
 
@@ -239,6 +241,45 @@ pub async fn container_crud_hierarchical_pk(context: TestContext) -> Result<(), 
         PartitionKeyKind::MultiHash,
         created_properties.partition_key.kind
     );
+
+    account.cleanup().await?;
+
+    Ok(())
+}
+
+#[recorded::test]
+pub async fn container_feed_ranges_test(context: TestContext) -> Result<(), Box<dyn Error>> {
+    let account = TestAccount::from_env(context, None).await?;
+    let cosmos_client = account.connect_with_key(None)?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+
+    // Create the container with 30,000 RUs of manual throughput
+    let properties = ContainerProperties {
+        id: "FeedRanges".into(),
+        partition_key: "/id".into(),
+        ..Default::default()
+    };
+
+    let throughput = ThroughputProperties::manual(30000);
+
+    db_client
+        .create_container(
+            properties.clone(),
+            Some(CreateContainerOptions {
+                throughput: Some(throughput),
+                ..Default::default()
+            }),
+        )
+        .await?
+        .into_body()
+        .await?;
+
+    let container_client = db_client.container_client(&properties.id);
+
+    // Fetch and check the feed ranges.
+    // We don't make any assumptions about the number of ranges, just that we get results back
+    let initial_feed_ranges = container_client.get_feed_ranges(None).await?;
+    assert!(!initial_feed_ranges.is_empty());
 
     account.cleanup().await?;
 

@@ -7,12 +7,14 @@ use azure_core::{http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Deserializer, Serialize};
 
 mod container_properties;
+mod feed_range;
 mod indexing_policy;
 mod partition_key_definition;
 mod patch_operations;
 mod throughput_properties;
 
 pub use container_properties::*;
+pub use feed_range::*;
 pub use indexing_policy::*;
 pub use partition_key_definition::*;
 pub use patch_operations::*;

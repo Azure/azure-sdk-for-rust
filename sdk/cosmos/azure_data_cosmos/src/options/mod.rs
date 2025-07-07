@@ -111,3 +111,9 @@ pub struct ReadDatabaseOptions<'a> {
 pub struct ThroughputOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
+
+/// Options to be passed to [`ContainerClient::get_feed_ranges()`](crate::clients::ContainerClient::get_feed_ranges()).
+#[derive(Clone, Default)]
+pub struct FeedRangeOptions<'a> {
+    pub method_options: ClientMethodOptions<'a>,
+}

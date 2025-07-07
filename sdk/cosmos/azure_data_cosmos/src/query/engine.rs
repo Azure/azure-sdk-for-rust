@@ -1,3 +1,5 @@
+use crate::models::PartitionKeyRange;
+
 /// Represents a request from the query pipeline for data from a specific partition key range.
 pub struct QueryRequest {
     /// The ID of the partition key range to query.
@@ -53,7 +55,7 @@ pub trait QueryEngine {
     /// ## Arguments
     /// * `query` - The query to be executed.
     /// * `plan` - The JSON-encoded query plan describing the query (usually provided by the gateway).
-    /// * `pkranges` - The JSON-encoded partition key ranges to be queried (usually provided by the gateway).
+    /// * `pkranges` - A slice of [`PartitionKeyRange`]s that the query should be executed against.
     ///
     /// ## Shared Access
     ///
@@ -65,7 +67,7 @@ pub trait QueryEngine {
         &self,
         query: &str,
         plan: &[u8],
-        pkranges: &[u8],
+        pkranges: &[PartitionKeyRange],
     ) -> azure_core::Result<OwnedQueryPipeline>;
 
     /// Gets a comma-separates list of features supported by this query engine, suitable for use in the `x-ms-cosmos-supported-query-features` header when requesting a query plan.
