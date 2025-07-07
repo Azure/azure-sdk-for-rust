@@ -63,7 +63,7 @@ impl LoadBalancer {
             processor_strategy,
             duration,
             consumer_client_details,
-            rng: Mutex::new(rng.unwrap_or_else(|| Box::new(ChaCha20Rng::from_entropy()))),
+            rng: Mutex::new(rng.unwrap_or_else(|| Box::new(ChaCha20Rng::from_os_rng()))),
         }
     }
 
@@ -241,7 +241,7 @@ impl LoadBalancer {
             let index = self
                 .rng()?
                 .as_mut()
-                .gen_range(0..load_balancer_info.unowned_or_expired.len());
+                .random_range(0..load_balancer_info.unowned_or_expired.len());
             let mut ownership = load_balancer_info.unowned_or_expired[index].clone();
             self.reset_ownership(&mut ownership);
             return Ok(Some(ownership));
@@ -251,7 +251,7 @@ impl LoadBalancer {
             let index = self
                 .rng()?
                 .as_mut()
-                .gen_range(0..load_balancer_info.above_max.len());
+                .random_range(0..load_balancer_info.above_max.len());
             let mut ownership = load_balancer_info.above_max[index].clone();
             self.reset_ownership(&mut ownership);
             return Ok(Some(ownership));
@@ -1141,7 +1141,7 @@ pub(crate) mod tests {
             assert_eq!(3, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!("...bbb", load_balance_result);
+            assert_eq!("..b.bb", load_balance_result);
         }
         {
             info!("deficit, multiple partitions");
@@ -1156,7 +1156,7 @@ pub(crate) mod tests {
             assert_eq!(2, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!(".......d.d", load_balance_result);
+            assert_eq!("........dd", load_balance_result);
         }
 
         {
@@ -1172,7 +1172,7 @@ pub(crate) mod tests {
             assert_eq!(2, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!(".d......d.", load_balance_result);
+            assert_eq!("..d.....d.", load_balance_result);
         }
 
         {
@@ -1188,7 +1188,7 @@ pub(crate) mod tests {
             assert_eq!(3, load_balancer_info.max_allowed);
             let load_balance_result =
                 greedy_load_balance(&load_balancer, &load_balancer_info, partitions.len()).await?;
-            assert_eq!("...bbb.", load_balance_result);
+            assert_eq!("..b.bb.", load_balance_result);
         }
 
         Ok(())

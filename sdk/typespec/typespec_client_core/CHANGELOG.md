@@ -9,11 +9,15 @@ the default asynchronous runtime with another.
 
 ### Breaking Changes
 
+- Minimum supported Rust version (MSRV) is now 1.85.
+- Removed `Pipeline::replace_policy`.
 - Renamed `typespec_client_core::date` to `typespec_client_core::time` and added `typespec_client_core::time::Duration`
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- The `CustomHeadersPolicy` is executed after the retry policy in the `Pipeline`.
 
 ## 0.4.0 (2025-06-06)
 

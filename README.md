@@ -39,6 +39,52 @@ Building each crate should be as straight forward as `cargo build`, but check ea
 - Have a question, or find a bug? File an issue via [GitHub Issues](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
 - Check [previous questions](https://stackoverflow.com/questions/tagged/azure+rust) or ask new ones on StackOverflow using the `azure` and `rust` tags.
 
+## Data Collection
+
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described below. You can learn more about data collection and use in the help documentation and Microsoft’s [privacy statement](https://go.microsoft.com/fwlink/?LinkID=824704). For more information on the data collected by the Azure SDK, please visit the [Telemetry Guidelines](https://azure.github.io/azure-sdk/general_azurecore.html#telemetry-policy) page.
+
+### Telemetry Configuration
+
+A `User-Agent` header is sent in requests by default with a value similar to:
+
+> azsdk-rust-security_keyvault_secrets/0.4.0 (1.86.0; linux; aarch64)
+
+You can assign an optional application ID for your own telemetry by setting `UserPolicyOptions::application_id`. This will appear at the beginning of the `User-Agent` header.
+
+To disable sending the `User-Agent` header entirely, you can write a `Policy` that will remove it:
+
+```rust no_run
+use async_trait::async_trait;
+use azure_core::http::{
+    policies::{Policy, PolicyResult},
+    Context, Request,
+};
+use std::sync::Arc;
+
+// Define a policy that will remove the User-Agent header.
+#[derive(Debug)]
+struct RemoveUserAgent;
+
+#[async_trait]
+impl Policy for RemoveUserAgent {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        let headers = request.headers_mut();
+
+        // Note: HTTP headers are case-insensitive but client-added headers are normalized to lowercase.
+        headers.remove("user-agent");
+
+        next[0].send(ctx, request, &next[1..]).await
+    }
+}
+```
+
+For a complete example, see our [`azure_core` example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_remove_user_agent.rs).
+
 ### Reporting security issues and security bugs
 
 Security issues and bugs should be reported privately, via email, to the Microsoft Security Response Center (MSRC) <secure@microsoft.com>. You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we received your original message. Further information, including the MSRC PGP key, can be found in the [Security TechCenter](https://www.microsoft.com/msrc/faqs-report-an-issue).

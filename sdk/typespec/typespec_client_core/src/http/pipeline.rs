@@ -13,17 +13,14 @@ use std::sync::Arc;
 ///
 /// 1. Client library-specified per-call policies are executed. Per-call policies can fail and bail out of the pipeline
 ///    immediately.
-/// 2. User-specified per-call policies are executed.
-/// 3. Built-in per-call policies are executed.
-/// 4. The retry policy is executed. It allows to re-execute the following policies.
-/// 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are re-executed
-///    in case of retries.
-/// 6. User-specified per-retry policies are executed.
-/// 7. The authorization policy is executed. Authorization can depend on the HTTP headers and/or the request body so it
-///    must be executed right before sending the request to the transport. Also, the authorization
-///    can depend on the current time so it must be executed at every retry.
-/// 8. The transport policy is executed. Transport policy is always the last policy and is the policy that
-///    actually constructs the `Response` to be passed up the pipeline.
+/// 2. User-specified per-call policies in [`ClientOptions::per_call_policies`] are executed.
+/// 3. The retry policy is executed. It allows to re-execute the following policies.
+/// 4. The [`CustomHeadersPolicy`] is executed
+/// 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are
+///    re-executed in case of retries.
+/// 6. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
+/// 7. The transport policy is executed. Transport policy is always the last policy and is the policy that
+///    actually constructs the [`RawResponse`] to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
 /// policy of fail and return to the calling policy. Arbitrary policy "skip" must be avoided (but
@@ -35,49 +32,45 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    /// Creates a new pipeline given the client library crate name and version,
-    /// along with user-specified and client library-specified policies.
+    /// Creates a new pipeline with user-specified and client library-specified policies.
     pub fn new(
         options: ClientOptions,
         per_call_policies: Vec<Arc<dyn Policy>>,
-        per_retry_policies: Vec<Arc<dyn Policy>>,
+        per_try_policies: Vec<Arc<dyn Policy>>,
     ) -> Self {
         let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
             options.per_call_policies.len()
                 + per_call_policies.len()
                 + options.per_try_policies.len()
-                + per_retry_policies.len()
+                + per_try_policies.len()
                 + 2,
         );
 
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.extend_from_slice(&options.per_call_policies);
 
-        pipeline.push(Arc::new(CustomHeadersPolicy::default()));
-
         // TODO: Consider whether this should be initially customizable as we onboard more services.
         let retry_policy = RetryOptions::default().to_policy();
         pipeline.push(retry_policy);
 
-        pipeline.extend_from_slice(&per_retry_policies);
+        pipeline.push(Arc::new(CustomHeadersPolicy::default()));
+
+        pipeline.extend_from_slice(&per_try_policies);
         pipeline.extend_from_slice(&options.per_try_policies);
 
         let transport: Arc<dyn Policy> =
             Arc::new(TransportPolicy::new(options.transport.unwrap_or_default()));
-
         pipeline.push(transport);
 
         Self { pipeline }
     }
 
-    pub fn replace_policy(&mut self, policy: Arc<dyn Policy>, position: usize) -> Arc<dyn Policy> {
-        std::mem::replace(&mut self.pipeline[position], policy)
-    }
-
+    /// Gets the policies in the order a [`Request`] is processed.
     pub fn policies(&self) -> &[Arc<dyn Policy>] {
         &self.pipeline
     }
 
+    /// Sends a [`Request`] through each configured [`Policy`] and gets a [`RawResponse`] that is processed by each policy in reverse.
     pub async fn send(
         &self,
         ctx: &Context<'_>,
