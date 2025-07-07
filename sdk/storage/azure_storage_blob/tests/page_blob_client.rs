@@ -4,7 +4,7 @@
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
-    helpers::format_page_range,
+    format_page_range,
     models::{
         BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
         PageBlobClientCreateOptions, PageBlobClientCreateOptionsExt,
