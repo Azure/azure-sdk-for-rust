@@ -25,7 +25,7 @@
 /**                      @heaths @RickWinter @ronniegeraghty @LarryOsterman
 
 # Allow service owners to approve crate version updates, which impact Cargo.lock
-/Cargo.lock              @azure-sdk-write
+/Cargo.lock              @Azure/azure-sdk-write
 
 ##################
 # Automation
