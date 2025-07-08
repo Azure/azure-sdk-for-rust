@@ -3,6 +3,8 @@
 
 //! The [`Recording`] and other types used in recorded tests.
 
+mod policy;
+
 // cspell:ignore csprng seedable tpbwhbkhckmk
 use crate::{
     credentials::{self, MockCredential},
@@ -14,6 +16,7 @@ use crate::{
         policy::RecordingPolicy,
         Proxy, ProxyExt, RecordingId,
     },
+    recording::policy::RecordingModePolicy,
     Matcher, Sanitizer,
 };
 use azure_core::{
@@ -48,7 +51,8 @@ pub struct Recording {
     #[allow(dead_code)]
     span: EnteredSpan,
     proxy: Option<Arc<Proxy>>,
-    policy: OnceCell<Arc<RecordingPolicy>>,
+    test_mode_policy: OnceCell<Arc<RecordingModePolicy>>,
+    recording_policy: OnceCell<Arc<RecordingPolicy>>,
     service_directory: String,
     recording_file: String,
     recording_assets_file: Option<String>,
@@ -120,8 +124,23 @@ impl Recording {
             return;
         };
 
-        let policy = self
-            .policy
+        if self.test_mode == TestMode::Playback || self.test_mode == TestMode::Record {
+            let test_mode_policy = self
+                .test_mode_policy
+                .get_or_init(|| {
+                    Arc::new(RecordingModePolicy::new(
+                        self.test_mode
+                            .try_into()
+                            .expect("supports only `Playback` and `Record`"),
+                    ))
+                })
+                .clone();
+
+            options.per_call_policies.push(test_mode_policy);
+        }
+
+        let recording_policy = self
+            .recording_policy
             .get_or_init(|| {
                 Arc::new(RecordingPolicy {
                     test_mode: self.test_mode,
@@ -132,7 +151,7 @@ impl Recording {
             })
             .clone();
 
-        options.per_try_policies.push(policy);
+        options.per_try_policies.push(recording_policy);
     }
 
     /// Get random data from the OS or recording.
@@ -335,7 +354,8 @@ impl Recording {
             test_mode,
             span,
             proxy,
-            policy: OnceCell::new(),
+            test_mode_policy: OnceCell::new(),
+            recording_policy: OnceCell::new(),
             service_directory: service_directory.into(),
             recording_file,
             recording_assets_file,
@@ -353,7 +373,8 @@ impl Recording {
             test_mode: TestMode::Playback,
             span: span.entered(),
             proxy: None,
-            policy: OnceCell::new(),
+            test_mode_policy: OnceCell::new(),
+            recording_policy: OnceCell::new(),
             service_directory: String::from("sdk/core"),
             recording_file: String::from("none"),
             recording_assets_file: None,
@@ -418,7 +439,7 @@ impl Recording {
     }
 
     fn set_skip(&self, skip: Option<Skip>) -> azure_core::Result<()> {
-        let Some(policy) = self.policy.get() else {
+        let Some(policy) = self.recording_policy.get() else {
             return Ok(());
         };
 

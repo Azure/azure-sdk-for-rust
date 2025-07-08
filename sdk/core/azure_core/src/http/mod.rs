@@ -16,6 +16,7 @@ pub use models::*;
 pub use options::*;
 pub use pager::*;
 pub use pipeline::*;
+pub use poller::{Poller, PollerStatus};
 pub use request::{Body, Request, RequestContent};
 pub use response::{RawResponse, Response};
 

@@ -7,6 +7,8 @@
 ### Breaking Changes
 
 - Minimum supported Rust version (MSRV) is now 1.85.
+- Returns `Poller<CertificateOperation>` from `CertificateClient::create_certificate`.
+- Returns `Poller<CertificateOperation>` from `CertificateClient::get_certificate_operation`.
 
 ### Bugs Fixed
 

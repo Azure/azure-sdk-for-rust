@@ -11,7 +11,7 @@ use std::{fmt, marker::PhantomData, pin::Pin};
 use typespec::error::{ErrorKind, ResultExt};
 
 #[cfg(not(target_arch = "wasm32"))]
-pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
+pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send>>;
 #[cfg(target_arch = "wasm32")]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 

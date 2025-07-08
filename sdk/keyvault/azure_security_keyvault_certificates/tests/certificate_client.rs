@@ -303,3 +303,53 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
 
     Ok(())
 }
+
+#[recorded::test]
+async fn get_certificate_operation(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
+
+    let mut options = CertificateClientOptions::default();
+    recording.instrument(&mut options.client_options);
+
+    let client = CertificateClient::new(
+        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+        recording.credential(),
+        Some(options),
+    )?;
+
+    const CERTIFICATE_NAME: &str = "get-certificate-operation";
+
+    // Start creating a self-signed certificate but do not wait until completed.
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        ..Default::default()
+    };
+    client
+        .create_certificate(CERTIFICATE_NAME, body.try_into()?, None)?
+        // Request not sent until first execution of pipeline.
+        .try_next()
+        .await?;
+
+    // Now get and wait on the pending operation.
+    let operation = client
+        .get_certificate_operation(CERTIFICATE_NAME, None)?
+        .wait()
+        .await?
+        .into_body()
+        .await?;
+    assert_eq!(operation.status, Some("completed".into()));
+
+    // Get the latest version of the certificate we just created.
+    let certificate = client
+        .get_certificate(CERTIFICATE_NAME, "", None)
+        .await?
+        .into_body()
+        .await?;
+    let version = certificate.resource_id()?.version;
+
+    assert!(certificate.id.is_some());
+    assert!(version.is_some());
+
+    Ok(())
+}

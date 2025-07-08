@@ -86,6 +86,7 @@ use azure_security_keyvault_certificates::{
     models::{CertificatePolicy, CreateCertificateParameters, IssuerParameters, X509CertificateProperties},
     ResourceExt, CertificateClient,
 };
+use futures::stream::TryStreamExt as _;
 use std::{sync::LazyLock, time::Duration};
 use tokio::time::sleep;
 
@@ -117,10 +118,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Wait for the certificate operation to complete.
-    client
-        .create_certificate("certificate-name", body.try_into()?, None)?
-        .wait()
-        .await?;
+    // The Poller implements futures::Stream and automatically waits between polls.
+    let mut poller = client.create_certificate("certificate-name", body.try_into()?, None)?;
+    while let Some(operation) = poller.try_next().await? {
+        let operation = operation.into_body().await?;
+        match operation.status.as_deref().unwrap_or("unknown") {
+            "inProgress" => continue,
+            "completed" => {
+                let target = operation.target.ok_or("expected target")?;
+                println!("Created certificate {}", target);
+                break;
+            },
+            status => Err(format!("operation terminated with status {status}"))?,
+        }
+    }
 
     Ok(())
 }
