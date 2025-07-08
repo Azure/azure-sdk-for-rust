@@ -19,6 +19,11 @@ extends:
         safeName: AzureIdentity
 
     ${{ if endsWith(variables['Build.DefinitionName'], 'weekly') }}:
+      CloudConfig:
+        Public:
+          Location: westus2
+          SubscriptionConfigurations:
+            - $(sub-config-identity-test-resources)
       RunLiveTests: true
       MatrixConfigs:
         - Name: managed_identity_matrix

@@ -494,4 +494,12 @@ mod tests {
             ManagedIdentitySource::ServiceFabric,
         );
     }
+
+    #[test]
+    fn cloud_config() {
+        for (key, value) in std::env::vars() {
+            println!("{}: {}", key, value);
+        }
+        panic!("Cloud config is not implemented yet");
+    }
 }
