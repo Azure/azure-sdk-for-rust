@@ -83,24 +83,11 @@ Before we can create a new certificate, though, we need to define a certificate 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
-    models::{CertificatePolicy, CreateCertificateParameters, IssuerParameters, X509CertificateProperties},
-    ResourceExt, CertificateClient,
+    CertificateClient,
+    models::{CreateCertificateParameters, DEFAULT_POLICY},
 };
 use futures::stream::TryStreamExt as _;
-use std::{sync::LazyLock, time::Duration};
 use tokio::time::sleep;
-
-static DEFAULT_POLICY: LazyLock<CertificatePolicy> = LazyLock::new(|| CertificatePolicy {
-    x509_certificate_properties: Some(X509CertificateProperties {
-        subject: Some("CN=DefaultPolicy".into()),
-        ..Default::default()
-    }),
-    issuer_parameters: Some(IssuerParameters {
-        name: Some("Self".into()),
-        ..Default::default()
-    }),
-    ..Default::default()
-});
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -4,7 +4,8 @@
 #![doc = include_str!("../README.md")]
 
 mod generated;
+pub mod models;
 mod resource;
 
-pub use generated::*;
+pub use generated::{clients, CertificateClient, CertificateClientOptions};
 pub use resource::*;

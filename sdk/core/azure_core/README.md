@@ -246,6 +246,101 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### Consuming service methods returning `Poller<T>`
+
+If a service call may take a while to process, it would return `Result<Poller<T>>` as a result, representing a long-running operation (LRO).
+The `Poller<T>` implements `futures::Stream` so you can asynchronously iterate over each status monitor update:
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::{
+    CertificateClient,
+    models::{CreateCertificateParameters, DEFAULT_POLICY},
+};
+use futures::stream::TryStreamExt as _;
+use tokio::time::sleep;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Create a self-signed certificate.
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        ..Default::default()
+    };
+
+    // Wait for the certificate operation to complete.
+    // The Poller implements futures::Stream and automatically waits between polls.
+    let mut poller = client.create_certificate("certificate-name", body.try_into()?, None)?;
+    while let Some(operation) = poller.try_next().await? {
+        let operation = operation.into_body().await?;
+        match operation.status.as_deref().unwrap_or("unknown") {
+            "inProgress" => continue,
+            "completed" => {
+                let target = operation.target.ok_or("expected target")?;
+                println!("Created certificate {}", target);
+                break;
+            },
+            status => Err(format!("operation terminated with status {status}"))?,
+        }
+    }
+
+    Ok(())
+}
+```
+
+If you just want to wait until the `Poller<T>` is complete and get the last status monitor, you can await `wait()`:
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::{
+    CertificateClient,
+    models::{CreateCertificateParameters, DEFAULT_POLICY},
+};
+use futures::stream::TryStreamExt as _;
+use tokio::time::sleep;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Create a self-signed certificate.
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        ..Default::default()
+    };
+
+    // Wait for the certificate operation to complete and get the last status monitor.
+    let operation = client
+        .create_certificate("certificate-name", body.try_into()?, None)?
+        .wait()
+        .await?
+        // Deserialize the CertificateOperation:
+        .into_body()
+        .await?;
+
+    if matches!(operation.status, Some(status) if status == "completed") {
+        let target = operation.target.ok_or("expected target")?;
+        println!("Created certificate {}", target);
+    }
+
+    Ok(())
+}
+```
+
+Awaiting `wait()` will only fail if the HTTP status code does not indicate successfully fetching the status monitor.
+
 ### Replacing the async runtime
 
 Internally, the Azure SDK uses either the `tokio` async runtime (with the `tokio` feature), or it implements asynchronous functionality using functions in the `std` namespace.

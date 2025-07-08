@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `models::DEFAULT_POLICY` that returns a default self-signed `CertificatePolicy`.
+
 ### Breaking Changes
 
 - Minimum supported Rust version (MSRV) is now 1.85.
