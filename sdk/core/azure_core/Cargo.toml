@@ -16,6 +16,7 @@ rust-version.workspace = true
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
+azure_core_macros.workspace = true
 bytes.workspace = true
 futures.workspace = true
 hmac = { workspace = true, optional = true }

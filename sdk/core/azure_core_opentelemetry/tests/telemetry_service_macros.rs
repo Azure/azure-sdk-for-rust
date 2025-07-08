@@ -10,7 +10,8 @@ use azure_core::{
         ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request,
         RequestInstrumentationOptions, Url,
     },
-    tracing::{Attribute, Span, Tracer},
+    tracing,
+    tracing::Attribute,
     Result,
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
@@ -19,24 +20,26 @@ use std::sync::Arc;
 
 #[derive(Clone, SafeDebug)]
 pub struct TestServiceClientOptions {
-    pub azure_client_options: ClientOptions,
+    pub client_options: ClientOptions,
     pub api_version: Option<String>,
 }
 
 impl Default for TestServiceClientOptions {
     fn default() -> Self {
         Self {
-            azure_client_options: ClientOptions::default(),
+            client_options: ClientOptions::default(),
             api_version: Some("2023-10-01".to_string()),
         }
     }
 }
 
+/// Define a TestServiceClient which is a fake service client for testing purposes.
+/// This client demonstrates how to implement a service client using the tracing convenience proc macros.
+#[tracing::client]
 pub struct TestServiceClient {
     endpoint: Url,
     api_version: String,
     pipeline: Pipeline,
-    tracer: Option<Arc<dyn Tracer>>,
 }
 
 #[derive(Default, SafeDebug)]
@@ -45,6 +48,16 @@ pub struct TestServiceClientGetMethodOptions<'a> {
 }
 
 impl TestServiceClient {
+    /// Creates a new instance of the TestServiceClient.
+    ///
+    /// This function demonstrates how to create a service client using the tracing convenience proc macros.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The endpoint URL for the service.
+    /// * `_credential` - The credential used for authentication (not used in this example).
+    /// * `options` - Optional client options to configure the client.
+    ///
+    #[tracing::new("Az.TestServiceClient")]
     pub fn new(
         endpoint: &str,
         _credential: Arc<dyn TokenCredential>,
@@ -60,33 +73,16 @@ impl TestServiceClient {
         }
         endpoint.set_query(None);
 
-        let tracer =
-            if let Some(tracer_options) = &options.azure_client_options.request_instrumentation {
-                tracer_options
-                    .tracing_provider
-                    .as_ref()
-                    .map(|tracing_provider| {
-                        tracing_provider.get_tracer(
-                            Some("Az.TestServiceClient"),
-                            option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                            option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
-                        )
-                    })
-            } else {
-                None
-            };
-
         Ok(Self {
             endpoint,
             api_version: options.api_version.unwrap_or_default(),
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
-                options.azure_client_options,
+                options.client_options,
                 Vec::default(),
                 Vec::default(),
             ),
-            tracer,
         })
     }
 
@@ -148,6 +144,7 @@ impl TestServiceClient {
     /// This applies to most HTTP client operations, but not all. CosmosDB has its own set of conventions as listed
     /// [here](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/cosmosdb.md)
     ///
+    #[tracing::function]
     pub async fn get_with_function_tracing(
         &self,
         path: &str,
@@ -155,7 +152,7 @@ impl TestServiceClient {
     ) -> Result<RawResponse> {
         let mut options = options.unwrap_or_default();
         let mut ctx = options.method_options.context.clone();
-        let span = if ctx.value::<Arc<dyn Span>>().is_none() {
+        let span = if ctx.value::<Arc<dyn crate::tracing::Span>>().is_none() {
             if let Some(tracer) = &self.tracer {
                 let mut attributes = Vec::new();
                 if let Some(namespace) = tracer.namespace() {
@@ -324,7 +321,7 @@ mod tests {
         let endpoint = "https://example.com";
         let credential = recording.credential().clone();
         let options = TestServiceClientOptions {
-            azure_client_options: ClientOptions {
+            client_options: ClientOptions {
                 request_instrumentation: Some(RequestInstrumentationOptions {
                     tracing_provider: Some(azure_provider),
                 }),
@@ -386,7 +383,7 @@ mod tests {
         let endpoint = "https://example.com";
         let credential = recording.credential().clone();
         let options = TestServiceClientOptions {
-            azure_client_options: ClientOptions {
+            client_options: ClientOptions {
                 request_instrumentation: Some(RequestInstrumentationOptions {
                     tracing_provider: Some(azure_provider),
                 }),
@@ -448,7 +445,7 @@ mod tests {
         let endpoint = "https://example.com";
         let credential = recording.credential().clone();
         let options = TestServiceClientOptions {
-            azure_client_options: ClientOptions {
+            client_options: ClientOptions {
                 request_instrumentation: Some(RequestInstrumentationOptions {
                     tracing_provider: Some(azure_provider),
                 }),
@@ -517,7 +514,7 @@ mod tests {
         let endpoint = "https://example.com";
         let credential = recording.credential().clone();
         let options = TestServiceClientOptions {
-            azure_client_options: ClientOptions {
+            client_options: ClientOptions {
                 request_instrumentation: Some(RequestInstrumentationOptions {
                     tracing_provider: Some(azure_provider),
                 }),

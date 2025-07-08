@@ -15,7 +15,7 @@ To integrate the OpenTelemetry APIs with the Azure SDK for Rust, you create a [`
 # use azure_core::{http::{ClientOptions, RequestInstrumentationOptions}};
 # #[derive(Default)]
 # struct ServiceClientOptions {
-#    azure_client_options: ClientOptions,
+#    client_options: ClientOptions,
 # }
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::SdkTracerProvider;
@@ -28,7 +28,7 @@ let otel_tracer_provider = Arc::new(SdkTracerProvider::builder().build());
 let azure_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
 
 let options = ServiceClientOptions {
-    azure_client_options: ClientOptions {
+    client_options: ClientOptions {
         request_instrumentation: Some(RequestInstrumentationOptions {
             tracing_provider: Some(azure_provider),
         }),
@@ -48,7 +48,7 @@ If it is more convenient to use the global OpenTelemetry provider, then the [`Op
 # use azure_core::{http::{ClientOptions, RequestInstrumentationOptions}};
 # #[derive(Default)]
 # struct ServiceClientOptions {
-#    azure_client_options: ClientOptions,
+#    client_options: ClientOptions,
 # }
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::SdkTracerProvider;
@@ -59,7 +59,7 @@ use std::sync::Arc;
 let azure_provider = OpenTelemetryTracerProvider::new_from_global_provider();
 
 let options = ServiceClientOptions {
-    azure_client_options: ClientOptions {
+    client_options: ClientOptions {
         request_instrumentation: Some(RequestInstrumentationOptions {
             tracing_provider: Some(azure_provider),
         }),
