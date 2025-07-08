@@ -3,7 +3,10 @@
 
 //! Sleep functions.
 
-use crate::{async_runtime::get_async_runtime, time::Duration};
+use crate::time::Duration;
+
+#[cfg(not(target_family = "wasm"))]
+use crate::async_runtime::get_async_runtime;
 
 #[cfg(not(target_family = "wasm"))]
 /// Sleeps for the specified duration using the configured async runtime.
