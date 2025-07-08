@@ -4,7 +4,10 @@
 mod extensions;
 
 pub use crate::generated::models::{
-    AccessTierOptional, AppendBlobClientCreateOptions, AppendBlobClientCreateResult, ArchiveStatus,
+    AccessTierOptional, AppendBlobClientAppendBlockFromUrlOptions,
+    AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockOptions,
+    AppendBlobClientAppendBlockResult, AppendBlobClientCreateOptions, AppendBlobClientCreateResult,
+    AppendBlobClientSealOptions, AppendBlobClientSealResult, ArchiveStatus,
     BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientDownloadResult,
     BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions, BlobClientGetPropertiesResult,
     BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
