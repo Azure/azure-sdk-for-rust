@@ -34,9 +34,9 @@ uuid.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-getrandom = { workspace = true, features = ["wasm_js"] }
+getrandom.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
-gloo-timers.workspace = true
+gloo-timers = { workspace = true, features = ["futures"] }
 
 [dev-dependencies]
 tokio.workspace = true
