@@ -34,5 +34,10 @@ pub async fn sleep(duration: Duration) {
 
 #[cfg(target_family = "wasm")]
 pub async fn sleep(duration: Duration) {
-    gloo_timers::future::sleep(duration.try_into().unwrap()).await;
+    if let Ok(d) = duration.try_into::<std::time::Duration>() {
+        gloo_timers::future::sleep(d).await;
+    } else {
+        // This means the duration is negative, don't sleep at all.
+        return;
+    }
 }
