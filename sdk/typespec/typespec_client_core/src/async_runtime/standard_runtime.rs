@@ -14,6 +14,7 @@ use std::{
     task::{Context, Poll, Waker},
     thread,
 };
+#[cfg(not(target_arch = "wasm32"))]
 use std::{future::Future, pin::Pin};
 #[cfg(not(target_arch = "wasm32"))]
 use tracing::debug;

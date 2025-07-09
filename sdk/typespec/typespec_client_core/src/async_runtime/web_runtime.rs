@@ -3,7 +3,6 @@
 
 use super::{AsyncRuntime, SpawnedTask, TaskFuture};
 use crate::time::Duration;
-use std::pin::Pin;
 
 /// An [`AsyncRuntime`] using `tokio` based APIs.
 pub(crate) struct WebRuntime;
