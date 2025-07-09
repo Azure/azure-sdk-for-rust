@@ -25,7 +25,7 @@ use typespec_client_core::{
 pub struct PublicApiInstrumentationInformation {
     /// The name of the API being instrumented.
     ///
-    /// The API name should be in the form of <client>.<api>, where
+    /// The API name should be in the form of `<client>.<api>`, where
     /// `<client>` is the name of the service client and `<api>` is the name of the API.
     ///
     /// For example, if the service client is `MyClient` and the API is `my_api`,
