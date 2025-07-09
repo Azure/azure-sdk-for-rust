@@ -180,7 +180,6 @@ mod tests {
         SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus,
     };
     use opentelemetry::Value as OpenTelemetryAttributeValue;
-    use tracing::{info, trace};
 
     fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
         let otel_exporter = InMemorySpanExporter::default();
@@ -313,7 +312,6 @@ mod tests {
                     parent_span_id: None,
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("url.scheme", "https".into()),
                         ("az.client.request.id", "<ANY>".into()),
                         (
                             "url.full",
@@ -374,7 +372,6 @@ mod tests {
                     },
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("url.scheme", "https".into()),
                         ("az.client.request.id", "<ANY>".into()),
                         (
                             "url.full",
@@ -435,7 +432,6 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("url.scheme", "https".into()),
                     ("az.client.request.id", "<ANY>".into()),
                     (
                         "url.full",

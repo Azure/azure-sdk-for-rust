@@ -11,7 +11,7 @@ use azure_core::{
         RequestInstrumentationOptions, Url,
     },
     tracing,
-    tracing::Attribute,
+    tracing::PublicApiInstrumentationInformation,
     Result,
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
@@ -19,12 +19,12 @@ use opentelemetry_sdk::trace::{InMemorySpanExporter, SdkTracerProvider};
 use std::sync::Arc;
 
 #[derive(Clone, SafeDebug)]
-pub struct TestServiceClientOptions {
+pub struct TestServiceClientWithMacrosOptions {
     pub client_options: ClientOptions,
     pub api_version: Option<String>,
 }
 
-impl Default for TestServiceClientOptions {
+impl Default for TestServiceClientWithMacrosOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
@@ -36,18 +36,18 @@ impl Default for TestServiceClientOptions {
 /// Define a TestServiceClient which is a fake service client for testing purposes.
 /// This client demonstrates how to implement a service client using the tracing convenience proc macros.
 #[tracing::client]
-pub struct TestServiceClient {
+pub struct TestServiceClientWithMacros {
     endpoint: Url,
     api_version: String,
     pipeline: Pipeline,
 }
 
 #[derive(Default, SafeDebug)]
-pub struct TestServiceClientGetMethodOptions<'a> {
+pub struct TestServiceClientWithMacrosGetMethodOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-impl TestServiceClient {
+impl TestServiceClientWithMacros {
     /// Creates a new instance of the TestServiceClient.
     ///
     /// This function demonstrates how to create a service client using the tracing convenience proc macros.
@@ -61,7 +61,7 @@ impl TestServiceClient {
     pub fn new(
         endpoint: &str,
         _credential: Arc<dyn TokenCredential>,
-        options: Option<TestServiceClientOptions>,
+        options: Option<TestServiceClientWithMacrosOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
         let mut endpoint = Url::parse(endpoint)?;
@@ -91,15 +91,10 @@ impl TestServiceClient {
         &self.endpoint
     }
 
-    /// Returns the result of a Get verb against the configured endpoint with the specified path.
-    ///
-    /// This method demonstrates a service client which does not have per-method spans but which will create
-    /// HTTP client spans if the `RequestInstrumentationOptions` are configured in the client options.
-    ///
     pub async fn get(
         &self,
         path: &str,
-        options: Option<TestServiceClientGetMethodOptions<'_>>,
+        options: Option<TestServiceClientWithMacrosGetMethodOptions<'_>>,
     ) -> Result<RawResponse> {
         let options = options.unwrap_or_default();
         let mut url = self.endpoint.clone();
@@ -144,68 +139,43 @@ impl TestServiceClient {
     /// This applies to most HTTP client operations, but not all. CosmosDB has its own set of conventions as listed
     /// [here](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/cosmosdb.md)
     ///
-    #[tracing::function]
+    // #[tracing::function]
     pub async fn get_with_function_tracing(
         &self,
         path: &str,
-        options: Option<TestServiceClientGetMethodOptions<'_>>,
+        options: Option<TestServiceClientWithMacrosGetMethodOptions<'_>>,
     ) -> Result<RawResponse> {
-        let mut options = options.unwrap_or_default();
-        let mut ctx = options.method_options.context.clone();
-        let span = if ctx.value::<Arc<dyn crate::tracing::Span>>().is_none() {
-            if let Some(tracer) = &self.tracer {
-                let mut attributes = Vec::new();
-                if let Some(namespace) = tracer.namespace() {
-                    // If the tracer has a namespace, we set it as an attribute.
-                    attributes.push(Attribute {
-                        key: "az.namespace",
-                        value: namespace.into(),
-                    });
-                }
-                let span = tracer.start_span(
-                    "get_with_tracing",
-                    azure_core::tracing::SpanKind::Internal,
-                    attributes,
-                );
-                // We need to add the span to the context because the pipeline will use it as the parent span
-                // for the request span.
-                ctx = ctx.with_value(span.clone());
-                // And we need to add the tracer to the context so that the pipeline can use it to populate the
-                // az.namespace property in the request span.
-                ctx = ctx.with_value(tracer.clone());
-                Some(span)
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-        options.method_options.context = ctx;
-        let response = self.get(path, Some(options)).await;
-        if let Some(span) = span {
-            if let Err(e) = &response {
-                // If the request failed, we set the error type on the span.
-                match e.kind() {
-                    azure_core::error::ErrorKind::HttpResponse { status, .. } => {
-                        span.set_attribute("error.type", status.to_string().into());
-                        if status.is_server_error() || status.is_client_error() {
-                            span.set_status(azure_core::tracing::SpanStatus::Error {
-                                description: "".to_string(),
-                            });
-                        }
-                    }
-                    _ => {
-                        span.set_attribute("error.type", e.kind().to_string().into());
-                        span.set_status(azure_core::tracing::SpanStatus::Error {
-                            description: e.kind().to_string(),
-                        });
-                    }
-                }
-            }
+        let options = options.unwrap_or_default();
 
-            span.end();
+        let public_api_info = PublicApiInstrumentationInformation {
+            api_name: "macros_get_with_tracing",
+            attributes: vec![],
         };
-        response
+        // Add the span to the tracer.
+        let mut ctx = options.method_options.context.with_value(public_api_info);
+        // If the service has a tracer, we add it to the context.
+        if let Some(tracer) = &self.tracer {
+            ctx = ctx.with_value(tracer.clone());
+        }
+
+        let mut url = self.endpoint.clone();
+        url.set_path(path);
+        url.query_pairs_mut()
+            .append_pair("api-version", &self.api_version);
+
+        let mut request = Request::new(url, azure_core::http::Method::Get);
+
+        let response = self.pipeline.send(&ctx, &mut request).await?;
+        if !response.status().is_success() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::HttpResponse {
+                    status: response.status(),
+                    error_code: None,
+                },
+                format!("Failed to GET {}: {}", request.url(), response.status()),
+            ));
+        }
+        Ok(response)
     }
 }
 
@@ -213,6 +183,7 @@ impl TestServiceClient {
 mod tests {
     use super::*;
     use ::tracing::{info, trace};
+    use azure_core::tracing::TracerProvider;
     use azure_core::Result;
     use azure_core_test::{recorded, TestContext};
     use opentelemetry::trace::{
@@ -227,6 +198,26 @@ mod tests {
             .build();
         let otel_tracer_provider = Arc::new(otel_tracer_provider);
         (otel_tracer_provider, otel_exporter)
+    }
+
+    fn create_service_client(
+        ctx: TestContext,
+        azure_provider: Arc<dyn TracerProvider>,
+    ) -> TestServiceClientWithMacros {
+        let recording = ctx.recording();
+        let endpoint = "https://example.com";
+        let credential = recording.credential().clone();
+        let options = TestServiceClientWithMacrosOptions {
+            client_options: ClientOptions {
+                request_instrumentation: Some(RequestInstrumentationOptions {
+                    tracing_provider: Some(azure_provider),
+                }),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap()
     }
 
     // Span verification utility functions.
@@ -281,56 +272,28 @@ mod tests {
 
     // Basic functionality tests.
     #[recorded::test()]
-    async fn test_service_client_new(ctx: TestContext) -> Result<()> {
+    async fn test_macro_service_client_new(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
         let endpoint = "https://example.com";
         let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
+        let options = TestServiceClientWithMacrosOptions {
             ..Default::default()
         };
 
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+        let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
         assert_eq!(client.endpoint().as_str(), "https://example.com/");
         assert_eq!(client.api_version, "2023-10-01");
 
         Ok(())
     }
 
-    // Ensure that the the test client actually does what it's supposed to do without telemetry.
     #[recorded::test()]
-    async fn test_service_client_get(ctx: TestContext) -> Result<()> {
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-
-        let client = TestServiceClient::new(endpoint, credential, None).unwrap();
-        let response = client.get("index.html", None).await;
-        info!("Response: {:?}", response);
-        assert!(response.is_ok());
-        let response = response.unwrap();
-        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
-        Ok(())
-    }
-
-    #[recorded::test()]
-    async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
+    async fn test_macro_service_client_get(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
-            client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracing_provider: Some(azure_provider),
-                }),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
+        let client = create_service_client(ctx, azure_provider.clone());
 
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
         let response = client.get("index.html", None).await;
         info!("Response: {:?}", response);
         assert!(response.is_ok());
@@ -351,7 +314,6 @@ mod tests {
                     parent_span_id: None,
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("url.scheme", "https".into()),
                         ("az.client.request.id", "<ANY>".into()),
                         (
                             "url.full",
@@ -375,24 +337,12 @@ mod tests {
     }
 
     #[recorded::test()]
-    async fn test_service_client_get_with_tracing_error(ctx: TestContext) -> Result<()> {
+    async fn test_macro_service_client_get_with_error(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
-            client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracing_provider: Some(azure_provider),
-                }),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
+        let client = create_service_client(ctx, azure_provider.clone());
 
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
         let response = client.get("failing_url", None).await;
         info!("Response: {:?}", response);
 
@@ -412,7 +362,6 @@ mod tests {
                     },
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("url.scheme", "https".into()),
                         ("az.client.request.id", "<ANY>".into()),
                         (
                             "url.full",
@@ -437,24 +386,12 @@ mod tests {
     }
 
     #[recorded::test()]
-    async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Result<()> {
+    async fn test_macro_service_client_get_with_function_tracing(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
-            client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracing_provider: Some(azure_provider),
-                }),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
+        let client = create_service_client(ctx, azure_provider.clone());
 
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
         let response = client.get_with_function_tracing("index.html", None).await;
         info!("Response: {:?}", response);
 
@@ -473,7 +410,6 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("url.scheme", "https".into()),
                     ("az.client.request.id", "<ANY>".into()),
                     (
                         "url.full",
@@ -494,7 +430,7 @@ mod tests {
         verify_span(
             &spans[1],
             ExpectedSpan {
-                name: "get_with_tracing",
+                name: "macros_get_with_tracing",
                 kind: OpenTelemetrySpanKind::Internal,
                 parent_span_id: None,
                 status: OpenTelemetrySpanStatus::Unset,
@@ -506,14 +442,16 @@ mod tests {
     }
 
     #[recorded::test()]
-    async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -> Result<()> {
+    async fn test_macro_service_client_get_with_function_tracing_error(
+        ctx: TestContext,
+    ) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
         let recording = ctx.recording();
         let endpoint = "https://example.com";
         let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
+        let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
                 request_instrumentation: Some(RequestInstrumentationOptions {
                     tracing_provider: Some(azure_provider),
@@ -523,7 +461,7 @@ mod tests {
             ..Default::default()
         };
 
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+        let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
         let response = client.get_with_function_tracing("failing_url", None).await;
         info!("Response: {:?}", response);
 
@@ -544,7 +482,6 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("url.scheme", "https".into()),
                     ("az.client.request.id", "<ANY>".into()),
                     (
                         "url.full",
@@ -566,12 +503,10 @@ mod tests {
         verify_span(
             &spans[1],
             ExpectedSpan {
-                name: "get_with_tracing",
+                name: "macros_get_with_tracing",
                 kind: OpenTelemetrySpanKind::Internal,
                 parent_span_id: None,
-                status: OpenTelemetrySpanStatus::Error {
-                    description: "".into(),
-                },
+                status: OpenTelemetrySpanStatus::Unset,
                 attributes: vec![
                     ("az.namespace", "Az.TestServiceClient".into()),
                     ("error.type", "404".into()),

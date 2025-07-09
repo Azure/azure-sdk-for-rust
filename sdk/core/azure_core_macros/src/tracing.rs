@@ -5,8 +5,6 @@
 pub(crate) mod tests {
     use proc_macro2::{TokenStream, TokenTree};
 
-    use super::*;
-
     // cspell: ignore punct
 
     pub(crate) fn compare_token_tree(token: &TokenTree, expected_token: &TokenTree) -> bool {
@@ -90,6 +88,7 @@ pub(crate) mod tests {
 
     #[derive(Default)]
     pub struct MyServiceClientOptions {
+        #[allow(dead_code)]
         pub client_options: ClientOptions,
     }
 

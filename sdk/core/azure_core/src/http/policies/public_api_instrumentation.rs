@@ -5,6 +5,7 @@ use crate::{
     http::{Context, Request},
     tracing::{Span, SpanKind, Tracer},
 };
+use ::tracing::trace;
 use std::sync::Arc;
 use typespec_client_core::{
     http::policies::{Policy, PolicyResult},
@@ -81,6 +82,7 @@ impl Policy for PublicApiInstrumentationPolicy {
     ) -> PolicyResult {
         // If there is a span in the context, we're a nested call, so we just want to forward the request.
         if ctx.value::<Arc<dyn Span>>().is_some() {
+            trace!("PublicApiPolicy: Nested call detected, forwarding request without instrumentation.");
             return next[0].send(ctx, request, &next[1..]).await;
         }
 
@@ -129,9 +131,12 @@ impl Policy for PublicApiInstrumentationPolicy {
                 ))
             } else {
                 // If no tracer is available, we skip instrumentation.
+                trace!("PublicApiPolicy: No tracer available, skipping instrumentation.");
                 None
             }
         } else {
+            // If there is no public API information, we skip instrumentation.
+            trace!("PublicApiPolicy: No public API information found, skipping instrumentation.");
             None
         };
 
@@ -146,9 +151,11 @@ impl Policy for PublicApiInstrumentationPolicy {
 
         if let Some(span) = span {
             if let Err(e) = &result {
+                trace!("Request failed: {}: {:?}", e, e.kind());
                 // If the request failed, we set the error type on the span.
                 match e.kind() {
                     crate::error::ErrorKind::HttpResponse { status, .. } => {
+                        trace!("Adding error type to span");
                         span.set_attribute(ERROR_TYPE_ATTRIBUTE, status.to_string().into());
 
                         // 5xx status codes SHOULD set status to Error.
@@ -167,6 +174,7 @@ impl Policy for PublicApiInstrumentationPolicy {
                     }
                 }
             } else if let Ok(response) = &result {
+                trace!("Request succeeded: {}", response.status());
                 // 5xx status codes SHOULD set status to Error.
                 // The description should not be set because it can be inferred from "http.response.status_code".
                 if response.status().is_server_error() {

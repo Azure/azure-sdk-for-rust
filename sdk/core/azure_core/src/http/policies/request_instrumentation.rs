@@ -20,7 +20,6 @@ const HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE: &str = "http.response.status_code";
 const HTTP_REQUEST_METHOD_ATTRIBUTE: &str = "http.request.method";
 const SERVER_ADDRESS_ATTRIBUTE: &str = "server.address";
 const SERVER_PORT_ATTRIBUTE: &str = "server.port";
-const URL_SCHEME_ATTRIBUTE: &str = "url.scheme";
 const URL_FULL_ATTRIBUTE: &str = "url.full";
 
 /// Sets distributed tracing information for HTTP requests.
@@ -279,8 +278,8 @@ pub(crate) mod tests {
             let mut tracers = self.tracers.lock().unwrap();
             let tracer = Arc::new(MockTracer {
                 namespace: azure_namespace,
-                name: crate_name,
-                version: crate_version,
+                package_name: crate_name,
+                package_version: crate_version,
                 spans: Mutex::new(Vec::new()),
             });
 

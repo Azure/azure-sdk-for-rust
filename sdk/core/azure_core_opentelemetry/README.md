@@ -46,6 +46,7 @@ If it is more convenient to use the global OpenTelemetry provider, then the [`Op
 ```rust no_run
 # use azure_identity::DefaultAzureCredential;
 # use azure_core::{http::{ClientOptions, RequestInstrumentationOptions}};
+
 # #[derive(Default)]
 # struct ServiceClientOptions {
 #    client_options: ClientOptions,
@@ -59,13 +60,13 @@ use std::sync::Arc;
 let azure_provider = OpenTelemetryTracerProvider::new_from_global_provider();
 
 let options = ServiceClientOptions {
+    client_options: ClientOptions {
         request_instrumentation: Some(RequestInstrumentationOptions {
             tracing_provider: Some(azure_provider),
         }),
         ..Default::default()
     },
-    ..Default::default()
-    };
+};
 
 #   Ok(())
 # }
