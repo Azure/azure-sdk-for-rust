@@ -149,7 +149,7 @@ impl AsyncRuntime for StdRuntime {
     /// Uses a simple thread based implementation for sleep. A more efficient
     /// implementation is available by using the `tokio` crate feature.
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
-    fn sleep(&self, duration: Duration) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
+    fn sleep(&self, duration: Duration) -> TaskFuture {
         #[cfg(target_arch = "wasm32")]
         {
             panic!("sleep is not supported on wasm32")

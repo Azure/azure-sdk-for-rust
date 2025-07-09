@@ -3,12 +3,9 @@
 
 //! Sleep functions.
 
+use crate::async_runtime::get_async_runtime;
 use crate::time::Duration;
 
-#[cfg(not(target_family = "wasm"))]
-use crate::async_runtime::get_async_runtime;
-
-#[cfg(not(target_family = "wasm"))]
 /// Sleeps for the specified duration using the configured async runtime.
 ///
 /// # Arguments
@@ -30,14 +27,4 @@ use crate::async_runtime::get_async_runtime;
 /// ```
 pub async fn sleep(duration: Duration) {
     get_async_runtime().sleep(duration).await
-}
-
-#[cfg(target_family = "wasm")]
-pub async fn sleep(duration: Duration) {
-    if let Ok(d) = duration.try_into() {
-        gloo_timers::future::sleep(d).await;
-    } else {
-        // This means the duration is negative, don't sleep at all.
-        return;
-    }
 }
