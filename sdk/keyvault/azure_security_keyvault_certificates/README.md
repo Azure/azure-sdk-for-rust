@@ -84,7 +84,7 @@ Before we can create a new certificate, though, we need to define a certificate 
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
     CertificateClient, CertificateClientExt,
-    models::{CreateCertificateParameters, DEFAULT_POLICY},
+    models::{CreateCertificateParameters, DEFAULT_CERTIFICATE_POLICY},
 };
 use futures::stream::TryStreamExt as _;
 
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a self-signed certificate.
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
 
@@ -129,7 +129,7 @@ If you just want to wait until the `Poller<CertificateOperation>` is complete an
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
     CertificateClient, CertificateClientExt,
-    models::{CreateCertificateParameters, DEFAULT_POLICY},
+    models::{CreateCertificateParameters, DEFAULT_CERTIFICATE_POLICY},
 };
 
 #[tokio::main]
@@ -143,7 +143,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a self-signed certificate.
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
 

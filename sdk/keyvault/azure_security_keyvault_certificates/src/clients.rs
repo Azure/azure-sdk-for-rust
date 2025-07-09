@@ -33,7 +33,7 @@ pub trait CertificateClientExt: private::Sealed {
     /// use azure_identity::DefaultAzureCredential;
     /// use azure_security_keyvault_certificates::{
     ///     CertificateClient, CertificateClientExt,
-    ///     models::{CreateCertificateParameters, DEFAULT_POLICY},
+    ///     models::{CreateCertificateParameters, DEFAULT_CERTIFICATE_POLICY},
     /// };
     ///
     /// # #[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,7 +46,7 @@ pub trait CertificateClientExt: private::Sealed {
     ///
     /// // Create a self-signed certificate.
     /// let body = CreateCertificateParameters {
-    ///     certificate_policy: Some(DEFAULT_POLICY.clone()),
+    ///     certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
     ///     ..Default::default()
     /// };
     ///
@@ -88,7 +88,7 @@ pub trait CertificateClientExt: private::Sealed {
     /// use azure_identity::DefaultAzureCredential;
     /// use azure_security_keyvault_certificates::{
     ///     CertificateClient, CertificateClientExt,
-    ///     models::{CreateCertificateParameters, DEFAULT_POLICY},
+    ///     models::{CreateCertificateParameters, DEFAULT_CERTIFICATE_POLICY},
     /// };
     ///
     /// # #[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -101,7 +101,7 @@ pub trait CertificateClientExt: private::Sealed {
     ///
     /// // Create a self-signed certificate.
     /// let body = CreateCertificateParameters {
-    ///     certificate_policy: Some(DEFAULT_POLICY.clone()),
+    ///     certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
     ///     ..Default::default()
     /// };
     ///

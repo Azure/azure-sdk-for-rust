@@ -12,17 +12,18 @@ use azure_core::{
 use std::sync::LazyLock;
 
 /// Gets the default self-signed [`CertificatePolicy`].
-pub static DEFAULT_POLICY: LazyLock<CertificatePolicy> = LazyLock::new(|| CertificatePolicy {
-    x509_certificate_properties: Some(X509CertificateProperties {
-        subject: Some("CN=DefaultPolicy".into()),
+pub static DEFAULT_CERTIFICATE_POLICY: LazyLock<CertificatePolicy> =
+    LazyLock::new(|| CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=DefaultPolicy".into()),
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
         ..Default::default()
-    }),
-    issuer_parameters: Some(IssuerParameters {
-        name: Some("Self".into()),
-        ..Default::default()
-    }),
-    ..Default::default()
-});
+    });
 
 impl StatusMonitor for CertificateOperation {
     type Output = Certificate;

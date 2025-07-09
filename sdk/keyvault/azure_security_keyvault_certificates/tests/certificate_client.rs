@@ -8,7 +8,8 @@ use azure_core_test::{recorded, ErrorKind, TestContext, TestMode, SANITIZE_BODY_
 use azure_security_keyvault_certificates::{
     models::{
         CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
-        KeyType, UpdateCertificatePropertiesParameters, X509CertificateProperties, DEFAULT_POLICY,
+        KeyType, UpdateCertificatePropertiesParameters, X509CertificateProperties,
+        DEFAULT_CERTIFICATE_POLICY,
     },
     CertificateClient, CertificateClientExt as _, CertificateClientOptions, ResourceExt as _,
 };
@@ -37,7 +38,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
 
     // Create a self-signed certificate.
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
     client
@@ -75,7 +76,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
 
     // Create a self-signed certificate.
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
     client
@@ -136,7 +137,7 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
     // Create several self-signed certificates.
     let mut names = vec!["list-certificates-1", "list-certificates-2"];
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
     client
@@ -178,7 +179,7 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
 
     // Create a self-signed certificate.
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
     const NAME: &str = "purge-certificate";
@@ -310,7 +311,7 @@ async fn get_certificate_operation(ctx: TestContext) -> Result<()> {
 
     // Start creating a self-signed certificate but do not wait until completed.
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
     client
@@ -357,7 +358,7 @@ async fn create_invalid_certificate(ctx: TestContext) -> Result<()> {
     )?;
 
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
     let err = client
