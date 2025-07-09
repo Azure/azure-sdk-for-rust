@@ -1,8 +1,10 @@
-use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
-use serde::de::DeserializeOwned;
+use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request, Response};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::{
+    clients::ContainerClient,
     constants,
+    models::PartitionKeyRange,
     pipeline::{self, CosmosPipeline},
     query::{OwnedQueryPipeline, QueryEngineRef, QueryResult},
     resource_context::{ResourceLink, ResourceType},
@@ -10,9 +12,7 @@ use crate::{
 };
 
 pub struct QueryExecutor<T: DeserializeOwned> {
-    http_pipeline: CosmosPipeline,
-    container_link: ResourceLink,
-    items_link: ResourceLink,
+    container_client: ContainerClient,
     context: Context<'static>,
     query_engine: QueryEngineRef,
     base_request: Option<Request>,
@@ -29,18 +29,14 @@ pub struct QueryExecutor<T: DeserializeOwned> {
 
 impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     pub fn new(
-        http_pipeline: CosmosPipeline,
-        container_link: ResourceLink,
+        container_client: ContainerClient,
         query: Query,
         options: QueryOptions<'_>,
         query_engine: QueryEngineRef,
     ) -> azure_core::Result<Self> {
-        let items_link = container_link.feed(ResourceType::Items);
         let context = options.method_options.context.into_owned();
         Ok(Self {
-            http_pipeline,
-            container_link,
-            items_link,
+            container_client,
             context,
             query_engine,
             base_request: None,
@@ -76,33 +72,30 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
             ),
             None => {
                 // Initialize the pipeline.
-                let query_plan = get_query_plan(
-                    &self.http_pipeline,
-                    &self.items_link,
-                    Context::with_context(&self.context),
-                    &self.query,
-                    self.query_engine.supported_features()?,
-                )
-                .await?
-                .into_body()
-                .collect()
-                .await?;
-                let pkranges = get_pkranges(
-                    &self.http_pipeline,
-                    &self.container_link,
-                    Context::with_context(&self.context),
-                )
-                .await?
-                .into_body()
-                .collect()
-                .await?;
+                let query_plan = self
+                    .container_client
+                    .get_query_plan(
+                        Context::with_context(&self.context),
+                        &self.query,
+                        self.query_engine.supported_features()?,
+                    )
+                    .await?
+                    .into_body()
+                    .collect()
+                    .await?;
+                let pkranges = self
+                    .container_client
+                    .get_partition_key_ranges(Context::with_context(&self.context))
+                    .await?;
 
                 let pipeline =
                     self.query_engine
                         .create_pipeline(&self.query.text, &query_plan, &pkranges)?;
                 self.query.text = pipeline.query().into();
                 self.base_request = Some(crate::pipeline::create_base_query_request(
-                    self.http_pipeline.url(&self.items_link),
+                    self.container_client
+                        .pipeline
+                        .url(&self.container_client.items_link),
                     &self.query,
                 )?);
                 self.pipeline = Some(pipeline);
@@ -143,11 +136,12 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                 }
 
                 let resp = self
-                    .http_pipeline
+                    .container_client
+                    .pipeline
                     .send_raw(
                         Context::with_context(&self.context),
                         &mut query_request,
-                        self.items_link.clone(),
+                        self.container_client.items_link.clone(),
                     )
                     .await?;
 
@@ -171,43 +165,4 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         // If we get here, the pipeline is complete and we have no items to return.
         Ok(None)
     }
-}
-
-// This isn't an inherent method on QueryExecutor because that would force the whole executor to be Sync, which would force the pipeline to be Sync.
-#[tracing::instrument(skip_all)]
-async fn get_query_plan(
-    http_pipeline: &CosmosPipeline,
-    items_link: &ResourceLink,
-    context: Context<'_>,
-    query: &Query,
-    supported_features: &str,
-) -> azure_core::Result<RawResponse> {
-    let url = http_pipeline.url(items_link);
-    let mut request = pipeline::create_base_query_request(url, query)?;
-    request.insert_header(constants::QUERY_ENABLE_CROSS_PARTITION, "True");
-    request.insert_header(constants::IS_QUERY_PLAN_REQUEST, "True");
-    request.insert_header(
-        constants::SUPPORTED_QUERY_FEATURES,
-        supported_features.to_string(),
-    );
-
-    http_pipeline
-        .send_raw(context, &mut request, items_link.clone())
-        .await
-}
-
-// This isn't an inherent method on QueryExecutor because that would force the whole executor to be Sync, which would force the pipeline to be Sync.
-#[tracing::instrument(skip_all)]
-async fn get_pkranges(
-    http_pipeline: &CosmosPipeline,
-    container_link: &ResourceLink,
-    context: Context<'_>,
-) -> azure_core::Result<RawResponse> {
-    let pkranges_link = container_link.feed(ResourceType::PartitionKeyRanges);
-    let url = http_pipeline.url(&pkranges_link);
-    let mut base_request = Request::new(url, Method::Get);
-
-    http_pipeline
-        .send_raw(context, &mut base_request, pkranges_link)
-        .await
 }
