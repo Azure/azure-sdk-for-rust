@@ -5,9 +5,12 @@ use crate::{
     generated::clients::PageBlobClient as GeneratedPageBlobClient,
     models::{
         PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
-        PageBlobClientCreateOptions, PageBlobClientCreateResult, PageBlobClientResizeOptions,
-        PageBlobClientResizeResult, PageBlobClientUploadPagesOptions,
-        PageBlobClientUploadPagesResult,
+        PageBlobClientCreateOptions, PageBlobClientCreateResult,
+        PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
+        PageBlobClientResizeResult, PageBlobClientUpdateSequenceNumberOptions,
+        PageBlobClientUpdateSequenceNumberResult, PageBlobClientUploadPagesFromUrlOptions,
+        PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesOptions,
+        PageBlobClientUploadPagesResult, PageList, SequenceNumberActionType,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions, PageBlobClientOptions,
@@ -16,7 +19,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url,
+        NoFormat, RequestContent, Response, Url, XmlFormat,
     },
     Bytes, Result,
 };
@@ -135,7 +138,7 @@ impl PageBlobClient {
         self.client.resize(size, options).await
     }
 
-    /// The Upload Pages operation writes a range of pages to a Page blob.
+    /// Writes a range of pages to a Page blob.
     ///
     /// # Arguments
     ///
@@ -154,5 +157,57 @@ impl PageBlobClient {
         self.client
             .upload_pages(data, content_length, range, options)
             .await
+    }
+
+    /// Sets the blob's sequence number. The operation will fail if the specified sequence
+    /// number is less than the current sequence number of the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `sequence_number_action` - This property indicates how the service should modify the blob's sequence number. See
+    ///   [SequenceNumberActionType](crate::models::SequenceNumberActionType) for more information.
+    /// * `options` - Optional parameters for the request.
+    pub async fn set_sequence_number(
+        &self,
+        sequence_number_action: SequenceNumberActionType,
+        options: Option<PageBlobClientUpdateSequenceNumberOptions<'_>>,
+    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult, NoFormat>> {
+        self.client
+            .update_sequence_number(sequence_number_action, options)
+            .await
+    }
+
+    /// Writes a range of pages to a Page blob where the contents are read from a URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `source_url` - The URL of the copy source.
+    /// * `source_range` - Range of bytes from the source to be uploaded.
+    /// * `content_length` - Total length of the blob data to be uploaded.
+    /// * `range` - Range of bytes where the source data should be written on the destination Page blob.
+    /// * `options` - Optional parameters for the request.
+    pub async fn upload_pages_from_url(
+        &self,
+        source_url: String,
+        source_range: String,
+        content_length: u64,
+        range: String,
+        options: Option<PageBlobClientUploadPagesFromUrlOptions<'_>>,
+    ) -> Result<Response<PageBlobClientUploadPagesFromUrlResult, NoFormat>> {
+        self.client
+            .upload_pages_from_url(source_url, source_range, content_length, range, options)
+            .await
+    }
+
+    /// Returns the list of valid page ranges for a Page blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    pub async fn get_page_ranges(
+        &self,
+        options: Option<PageBlobClientGetPageRangesOptions<'_>>,
+    ) -> Result<Response<PageList, XmlFormat>> {
+        self.client.get_page_ranges(options).await
     }
 }

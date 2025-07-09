@@ -22,8 +22,12 @@ pub use crate::generated::models::{
     BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockList, BlockListType,
     BlockLookupList, CopyStatus, LeaseState, LeaseStatus, ListBlobsFlatSegmentResponse,
     ListContainersSegmentResponse, PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
-    PageBlobClientCreateOptions, PageBlobClientCreateResult, PageBlobClientResizeOptions,
-    PageBlobClientResizeResult, PageBlobClientUploadPagesOptions, PageBlobClientUploadPagesResult,
-    PublicAccessType, RehydratePriority, StorageServiceProperties,
+    PageBlobClientCreateOptions, PageBlobClientCreateResult, PageBlobClientGetPageRangesOptions,
+    PageBlobClientResizeOptions, PageBlobClientResizeResult,
+    PageBlobClientUpdateSequenceNumberOptions, PageBlobClientUpdateSequenceNumberResult,
+    PageBlobClientUpdateSequenceNumberResultHeaders, PageBlobClientUploadPagesFromUrlOptions,
+    PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesOptions,
+    PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
+    SequenceNumberActionType, StorageServiceProperties,
 };
 pub use extensions::*;
