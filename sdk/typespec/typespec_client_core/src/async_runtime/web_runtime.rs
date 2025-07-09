@@ -3,16 +3,21 @@
 
 use super::{AsyncRuntime, SpawnedTask, TaskFuture};
 use crate::time::Duration;
+use futures::channel::oneshot;
 
 /// An [`AsyncRuntime`] using `tokio` based APIs.
 pub(crate) struct WebRuntime;
 
 impl AsyncRuntime for WebRuntime {
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {
-        Box::pin(async {
-            wasm_bindgen_futures::spawn_local(f);
-            Ok(())
-        })
+        let (tx, rx) = oneshot::channel();
+
+        wasm_bindgen_futures::spawn_local(async move {
+            let result = f.await;
+            let _ = tx.send(result);
+        });
+
+        Box::pin(async { Ok(rx.await?) })
     }
 
     fn sleep(&self, duration: Duration) -> TaskFuture {
