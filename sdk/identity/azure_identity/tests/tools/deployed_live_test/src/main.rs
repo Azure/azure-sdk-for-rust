@@ -15,16 +15,12 @@ use serde::Deserialize;
 use std::sync::Arc;
 
 #[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
 struct Params {
-    #[serde(rename = "client-id")]
     client_id: Option<String>,
-    #[serde(rename = "object-id")]
     object_id: Option<String>,
-    #[serde(rename = "resource-id")]
     resource_id: Option<String>,
-    #[serde(rename = "storage-name")]
     storage_name: String,
-    #[serde()]
     test: String,
 }
 
