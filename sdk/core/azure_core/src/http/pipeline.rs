@@ -3,7 +3,9 @@
 
 use super::policies::ClientRequestIdPolicy;
 use crate::http::{
-    policies::{Policy, RequestInstrumentationPolicy, UserAgentPolicy},
+    policies::{
+        Policy, PublicApiInstrumentationPolicy, RequestInstrumentationPolicy, UserAgentPolicy,
+    },
     ClientOptions,
 };
 use std::{
@@ -48,20 +50,41 @@ impl Pipeline {
         per_call_policies: Vec<Arc<dyn Policy>>,
         per_try_policies: Vec<Arc<dyn Policy>>,
     ) -> Self {
+        let (core_client_options, options) = options.deconstruct();
+
+        let install_instrumentation_policies = core_client_options
+            .request_instrumentation
+            .tracing_provider
+            .is_some();
+
+        let tracer = if install_instrumentation_policies {
+            core_client_options
+                .request_instrumentation
+                .tracing_provider
+                .as_ref()
+                .map(|tracing_provider| {
+                    tracing_provider.get_tracer(
+                        None,
+                        crate_name.unwrap_or("unknown"),
+                        crate_version.unwrap_or("unknown"),
+                    )
+                })
+        } else {
+            None
+        };
         let mut per_call_policies = per_call_policies.clone();
         push_unique(&mut per_call_policies, ClientRequestIdPolicy::default());
+        if install_instrumentation_policies {
+            let public_api_policy = PublicApiInstrumentationPolicy::new(tracer.clone());
+            push_unique(&mut per_call_policies, public_api_policy);
+        }
 
-        let (core_client_options, options) = options.deconstruct();
         let user_agent_policy =
             UserAgentPolicy::new(crate_name, crate_version, &core_client_options.user_agent);
         push_unique(&mut per_call_policies, user_agent_policy);
 
         let mut per_try_policies = per_try_policies.clone();
-        if core_client_options
-            .request_instrumentation
-            .tracing_provider
-            .is_some()
-        {
+        if install_instrumentation_policies {
             // Note that the choice to use "None" as the namespace here
             // is intentional.
             // The `azure_namespace` parameter is used to populate the `az.namespace`
@@ -74,12 +97,7 @@ impl Pipeline {
             // This information can only come from the package owner. It doesn't make sense
             // to burden all users of the azure_core pipeline with determining this
             // information, so we use `None` here.
-            let request_instrumentation_policy = RequestInstrumentationPolicy::new(
-                None,
-                crate_name,
-                crate_version,
-                &core_client_options.request_instrumentation,
-            );
+            let request_instrumentation_policy = RequestInstrumentationPolicy::new(tracer);
             push_unique(&mut per_try_policies, request_instrumentation_policy);
         }
 

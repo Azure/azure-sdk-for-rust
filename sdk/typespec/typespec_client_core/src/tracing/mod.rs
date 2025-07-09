@@ -135,7 +135,7 @@ pub enum SpanStatus {
     Error { description: String },
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum SpanKind {
     #[default]
     Internal,

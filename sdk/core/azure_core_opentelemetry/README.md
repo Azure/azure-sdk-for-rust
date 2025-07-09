@@ -59,7 +59,6 @@ use std::sync::Arc;
 let azure_provider = OpenTelemetryTracerProvider::new_from_global_provider();
 
 let options = ServiceClientOptions {
-    client_options: ClientOptions {
         request_instrumentation: Some(RequestInstrumentationOptions {
             tracing_provider: Some(azure_provider),
         }),

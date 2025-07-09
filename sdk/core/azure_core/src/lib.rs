@@ -28,7 +28,7 @@ pub use typespec_client_core::{
 };
 
 pub mod tracing {
-    pub use azure_core_macros::*;
+    pub use crate::http::policies::PublicApiInstrumentationInformation;
     pub use typespec_client_core::tracing::*;
 }
 

@@ -27,7 +27,7 @@ use azure_core::{
     test::TestMode,
 };
 use rand::{
-    distributions::{Alphanumeric, DistString, Distribution, Standard},
+    distr::{Alphanumeric, Distribution, SampleString, StandardUniform},
     Rng, SeedableRng,
 };
 use rand_chacha::ChaCha20Rng;
@@ -175,14 +175,14 @@ impl Recording {
     ///
     pub fn random<T>(&self) -> T
     where
-        Standard: Distribution<T>,
+        StandardUniform: Distribution<T>,
     {
         let rng = self.rng();
         let Ok(mut rng) = rng.lock() else {
             panic!("failed to lock RNG");
         };
 
-        rng.gen()
+        rng.random()
     }
 
     /// Generate a random string with optional prefix.
@@ -381,7 +381,7 @@ impl Recording {
     fn rng(&self) -> &Mutex<ChaCha20Rng> {
         // Use ChaCha20 for a deterministic, portable CSPRNG.
         self.rand.get_or_init(|| match self.test_mode {
-            TestMode::Live => ChaCha20Rng::from_entropy().into(),
+            TestMode::Live => ChaCha20Rng::from_os_rng().into(),
             TestMode::Playback => {
                 let variables = self
                     .variables
@@ -401,7 +401,7 @@ impl Recording {
                 ChaCha20Rng::from_seed(*seed).into()
             }
             TestMode::Record => {
-                let rng = ChaCha20Rng::from_entropy();
+                let rng = ChaCha20Rng::from_os_rng();
                 let seed = rng.get_seed();
                 let seed = base64::encode(seed);
 

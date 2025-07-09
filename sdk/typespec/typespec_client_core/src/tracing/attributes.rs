@@ -1,12 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#[cfg(feature = "derive")]
-use crate::fmt::SafeDebug;
-
 /// An array of homogeneous attribute values.
-#[cfg_attr(feature = "derive", derive(SafeDebug))]
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum AttributeArray {
     /// An array of boolean values.
     Bool(Vec<bool>),
@@ -19,8 +15,7 @@ pub enum AttributeArray {
 }
 
 /// Represents a single attribute value, which can be of various types
-#[cfg_attr(feature = "derive", derive(SafeDebug))]
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum AttributeValue {
     /// A boolean attribute value.
     Bool(bool),
@@ -34,7 +29,7 @@ pub enum AttributeValue {
     Array(AttributeArray),
 }
 
-#[cfg_attr(feature = "derive", derive(SafeDebug))]
+#[derive(Debug, PartialEq)]
 pub struct Attribute {
     /// A key-value pair attribute.
     pub key: &'static str,

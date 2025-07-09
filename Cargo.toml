@@ -30,7 +30,7 @@ authors = ["Microsoft"]
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
-rust-version = "1.81"
+rust-version = "1.85"
 
 [workspace.dependencies.typespec]
 default-features = false
@@ -81,14 +81,14 @@ cargo_metadata = "0.18.1"
 clap = { version = "4.4.16", features = ["derive"] }
 criterion = { version = "0.5", features = ["async_tokio"] }
 dyn-clone = "1.0"
-fe2o3-amqp = { version = "0.12", features = ["native-tls", "tracing", "uuid"] }
-fe2o3-amqp-ext = { version = "0.12" }
-fe2o3-amqp-management = { version = "0.12", features = ["tracing"] }
-fe2o3-amqp-cbs = { version = "0.12" }
-fe2o3-amqp-types = { version = "0.12" }
+fe2o3-amqp = { version = "0.14", features = ["native-tls", "tracing", "uuid"] }
+fe2o3-amqp-ext = { version = "0.14" }
+fe2o3-amqp-management = { version = "0.14", features = ["tracing"] }
+fe2o3-amqp-cbs = { version = "0.14" }
+fe2o3-amqp-types = { version = "0.14" }
 flate2 = "1.1.0"
 futures = "0.3"
-getrandom = { version = "0.2", features = ["js"] }
+getrandom = { version = "0.3" }
 hmac = { version = "0.12" }
 litemap = "0.7.4"
 log = "0.4"
@@ -97,15 +97,15 @@ pin-project = "1.0"
 proc-macro2 = "1.0.86"
 quick-xml = { version = "0.31", features = ["serialize", "serde-types"] }
 quote = "1.0.37"
-rand = "0.8"
-rand_chacha = "0.3"
-reqwest = { version = "0.12", features = [
+rand = "0.9.1"
+rand_chacha = "0.9"
+reqwest = { version = "0.12.22", features = [
   "json",
   "stream",
 ], default-features = false }
 rustc_version = "0.4"
 serde = { version = "1.0", features = ["derive"] }
-serde_amqp = { version = "0.12", features = ["uuid"] }
+serde_amqp = { version = "0.14", features = ["uuid"] }
 serde_bytes = { version = "0.11" }
 serde_json = "1.0"
 serde_test = "1"
@@ -126,7 +126,7 @@ tokio = { version = "1.0", default-features = false, features = [
 tracing = "0.1.40"
 tracing-subscriber = "0.3"
 url = "2.2"
-uuid = { version = "1.0", features = ["v4"] }
+uuid = { version = "1.17", features = ["v4"] }
 zerofrom = "0.1.5"
 zip = { version = "4.0.0", default-features = false, features = ["deflate"] }
 
