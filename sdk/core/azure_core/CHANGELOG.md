@@ -18,9 +18,11 @@
 - `azure_core::http::Pipeline::new` now takes an `azure_core::http::ClientOptions` which is defined in `azure_core`, but convertible to `typespec_client_core::http::ClientOptions`.
 - Moved `process::Executor` to `azure_identity`.
 - Removed `Pipeline::replace_policy`.
+- Removed unused `location` and `body` modules from `http::poller`.
 - Renamed `azure_core::date` to `azure_core::time` and added `azure_core::time::Duration` as the standard "duration" type for the SDK.
 - Renamed `http::poller::body_content` to `http::poller::body`.
 - Renamed `PagerResult::More { next }` to `continuation`.
+- Renamed `PollerStatus::Other` to `PollerStatus::UnknownValue` following [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html#rust-enum-extensible).
 - Renamed `TelemetryOptions` to `UserAgentOptions`.
 - Renamed `TelemetryPolicy` to `UserAgentPolicy`.
 

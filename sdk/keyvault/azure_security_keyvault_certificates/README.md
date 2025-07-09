@@ -77,17 +77,16 @@ The following section provides several code snippets using the `CertificateClien
 
 ### Create a certificate
 
-`create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
+`begin_create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
 Before we can create a new certificate, though, we need to define a certificate policy. This is used for the first certificate version and all subsequent versions of that certificate until changed.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
-    CertificateClient,
+    CertificateClient, CertificateClientExt,
     models::{CreateCertificateParameters, DEFAULT_POLICY},
 };
 use futures::stream::TryStreamExt as _;
-use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -106,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete.
     // The Poller implements futures::Stream and automatically waits between polls.
-    let mut poller = client.create_certificate("certificate-name", body.try_into()?, None)?;
+    let mut poller = client.begin_create_certificate("certificate-name", body.try_into()?, None)?;
     while let Some(operation) = poller.try_next().await? {
         let operation = operation.into_body().await?;
         match operation.status.as_deref().unwrap_or("unknown") {
@@ -123,6 +122,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+If you just want to wait until the `Poller<CertificateOperation>` is complete and get the last status monitor, you can await `wait()`:
+
+```rust no_run
+use azure_identity::DefaultAzureCredential;
+use azure_security_keyvault_certificates::{
+    CertificateClient, CertificateClientExt,
+    models::{CreateCertificateParameters, DEFAULT_POLICY},
+};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DefaultAzureCredential::new()?;
+    let client = CertificateClient::new(
+        "https://your-key-vault-name.vault.azure.net/",
+        credential.clone(),
+        None,
+    )?;
+
+    // Create a self-signed certificate.
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        ..Default::default()
+    };
+
+    // Wait for the certificate operation to complete and get the last status monitor.
+    let operation = client
+        .begin_create_certificate("certificate-name", body.try_into()?, None)?
+        .wait()
+        .await?
+        // Deserialize the CertificateOperation:
+        .into_body()
+        .await?;
+
+    if matches!(operation.status, Some(status) if status == "completed") {
+        let target = operation.target.ok_or("expected target")?;
+        println!("Created certificate {}", target);
+    }
+
+    Ok(())
+}
+```
+
+Awaiting `wait()` will only fail if the HTTP status code does not indicate successfully fetching the status monitor.
 
 ### Retrieve a certificate
 
@@ -268,7 +311,7 @@ use azure_security_keyvault_certificates::{
         CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
         KeyType, KeyUsageType, X509CertificateProperties,
     },
-    CertificateClient, ResourceExt, ResourceId,
+    CertificateClient, CertificateClientExt, ResourceExt, ResourceId,
 };
 use azure_security_keyvault_keys::{
     models::{SignParameters, SignatureAlgorithm},
@@ -316,7 +359,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete.
     certificate_client
-        .create_certificate("ec-signing-certificate", body.try_into()?, None)?
+        .begin_create_certificate("ec-signing-certificate", body.try_into()?, None)?
         .wait()
         .await?;
 

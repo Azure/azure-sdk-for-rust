@@ -32,8 +32,7 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        poller::{get_retry_after, Poller, PollerResult, PollerStatus, StatusMonitor},
-        Body, ClientOptions, Context, Method, NoFormat, Pager, PagerResult, Pipeline, RawResponse,
+        ClientOptions, Context, Method, NoFormat, Pager, PagerResult, Pipeline, RawResponse,
         Request, RequestContent, Response, Url,
     },
     json, Result,
@@ -138,70 +137,25 @@ impl CertificateClient {
     ///   the service. The value provided should not include personally identifiable or sensitive information.
     /// * `parameters` - The parameters to create a certificate.
     /// * `options` - Optional parameters for the request.
-    pub fn create_certificate(
+    pub async fn create_certificate(
         &self,
         certificate_name: &str,
         parameters: RequestContent<CreateCertificateParameters>,
         options: Option<CertificateClientCreateCertificateOptions<'_>>,
-    ) -> Result<Poller<CertificateOperation>> {
-        let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
-
+    ) -> Result<Response<CertificateOperation>> {
+        let options = options.unwrap_or_default();
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/create");
         path = path.replace("{certificate-name}", certificate_name);
-        url = url.join(&path).unwrap();
+        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-
-        let certificate_name = certificate_name.to_owned();
-        let parameters: Body = parameters.into();
-
-        Ok(Poller::from_callback(
-            move |next_link: Option<Url>| {
-                let (mut request, next_link) = match next_link {
-                    Some(next_link) => {
-                        let mut request = Request::new(next_link.clone(), Method::Get);
-                        request.insert_header("accept", "application/json");
-                        (request, next_link)
-                    }
-                    None => {
-                        let mut request = Request::new(url.clone(), Method::Post);
-                        request.insert_header("accept", "application/json");
-                        request.insert_header("content-type", "application/json");
-                        request.set_body(&parameters);
-
-                        let mut url = url.clone();
-                        let mut path = String::from("certificates/{certificate-name}/pending");
-                        path = path.replace("{certificate-name}", &certificate_name);
-                        url.set_path(&path);
-
-                        (request, url)
-                    }
-                };
-
-                let ctx = options.method_options.context.clone();
-                let pipeline = pipeline.clone();
-                async move {
-                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let retry_after = get_retry_after(&headers, &options.poller_options);
-                    let bytes = body.collect().await?;
-                    let res: CertificateOperation = json::from_json(&bytes)?;
-                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-
-                    Ok(match res.status() {
-                        PollerStatus::InProgress => PollerResult::InProgress {
-                            response: rsp,
-                            retry_after,
-                            next: next_link,
-                        },
-                        _ => PollerResult::Done { response: rsp },
-                    })
-                }
-            },
-            None,
-        ))
+        let mut request = Request::new(url, Method::Post);
+        request.insert_header("accept", "application/json");
+        request.insert_header("content-type", "application/json");
+        request.set_body(parameters);
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Deletes a certificate from a specified key vault.
@@ -346,46 +300,22 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the certificate.
     /// * `options` - Optional parameters for the request.
-    pub fn get_certificate_operation(
+    pub async fn get_certificate_operation(
         &self,
         certificate_name: &str,
         options: Option<CertificateClientGetCertificateOperationOptions<'_>>,
-    ) -> Result<Poller<CertificateOperation>> {
-        let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
+    ) -> Result<Response<CertificateOperation>> {
+        let options = options.unwrap_or_default();
+        let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/pending");
         path = path.replace("{certificate-name}", certificate_name);
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
-        Ok(Poller::from_callback(
-            move |_| {
-                let url = url.clone();
-                let mut request = Request::new(url.clone(), Method::Get);
-                request.insert_header("accept", "application/json");
-                let ctx = options.method_options.context.clone();
-                let pipeline = pipeline.clone();
-                async move {
-                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let retry_after = get_retry_after(&headers, &options.poller_options);
-                    let bytes = body.collect().await?;
-                    let res: CertificateOperation = json::from_json(&bytes)?;
-                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
-
-                    Ok(match res.status() {
-                        PollerStatus::InProgress => PollerResult::InProgress {
-                            response: rsp,
-                            retry_after,
-                            next: url,
-                        },
-                        _ => PollerResult::Done { response: rsp },
-                    })
-                }
-            },
-            None,
-        ))
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header("accept", "application/json");
+        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
 
     /// Lists the policy for a certificate.

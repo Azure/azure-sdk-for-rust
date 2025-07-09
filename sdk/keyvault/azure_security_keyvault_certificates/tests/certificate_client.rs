@@ -4,13 +4,13 @@
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
 use azure_core::{http::StatusCode, Result};
-use azure_core_test::{recorded, TestContext, TestMode, SANITIZE_BODY_NAME};
+use azure_core_test::{recorded, ErrorKind, TestContext, TestMode, SANITIZE_BODY_NAME};
 use azure_security_keyvault_certificates::{
     models::{
         CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
         KeyType, UpdateCertificatePropertiesParameters, X509CertificateProperties, DEFAULT_POLICY,
     },
-    CertificateClient, CertificateClientOptions, ResourceExt as _,
+    CertificateClient, CertificateClientExt as _, CertificateClientOptions, ResourceExt as _,
 };
 use azure_security_keyvault_keys::{
     models::{SignParameters, SignatureAlgorithm},
@@ -41,7 +41,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     client
-        .create_certificate("certificate-roundtrip", body.try_into()?, None)?
+        .begin_create_certificate("certificate-roundtrip", body.try_into()?, None)?
         .wait()
         .await?;
 
@@ -79,7 +79,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     client
-        .create_certificate("update-properties", body.try_into()?, None)?
+        .begin_create_certificate("update-properties", body.try_into()?, None)?
         .wait()
         .await?;
 
@@ -140,11 +140,11 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     client
-        .create_certificate("list-certificates-1", body.clone().try_into()?, None)?
+        .begin_create_certificate("list-certificates-1", body.clone().try_into()?, None)?
         .wait()
         .await?;
     client
-        .create_certificate("list-certificates-2", body.try_into()?, None)?
+        .begin_create_certificate("list-certificates-2", body.try_into()?, None)?
         .wait()
         .await?;
 
@@ -183,7 +183,7 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
     };
     const NAME: &str = "purge-certificate";
     client
-        .create_certificate(NAME, body.try_into()?, None)?
+        .begin_create_certificate(NAME, body.try_into()?, None)?
         .wait()
         .await?;
 
@@ -257,7 +257,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     };
     const NAME: &str = "ec-certificate-signer";
     client
-        .create_certificate(NAME, body.try_into()?, None)?
+        .begin_create_certificate(NAME, body.try_into()?, None)?
         .wait()
         .await?;
 
@@ -314,14 +314,14 @@ async fn get_certificate_operation(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     client
-        .create_certificate(CERTIFICATE_NAME, body.try_into()?, None)?
+        .begin_create_certificate(CERTIFICATE_NAME, body.try_into()?, None)?
         // Request not sent until first execution of pipeline.
         .try_next()
         .await?;
 
     // Now get and wait on the pending operation.
     let operation = client
-        .get_certificate_operation(CERTIFICATE_NAME, None)?
+        .resume_certificate_operation(CERTIFICATE_NAME, None)?
         .wait()
         .await?
         .into_body()
@@ -338,6 +338,38 @@ async fn get_certificate_operation(ctx: TestContext) -> Result<()> {
 
     assert!(certificate.id.is_some());
     assert!(version.is_some());
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn create_invalid_certificate(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
+
+    let mut options = CertificateClientOptions::default();
+    recording.instrument(&mut options.client_options);
+
+    let client = CertificateClient::new(
+        recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+        recording.credential(),
+        Some(options),
+    )?;
+
+    let body = CreateCertificateParameters {
+        certificate_policy: Some(DEFAULT_POLICY.clone()),
+        ..Default::default()
+    };
+    let err = client
+        .begin_create_certificate("create_invalid_certificate", body.try_into()?, None)?
+        .wait()
+        .await
+        .expect_err("expected HTTP error");
+
+    assert!(matches!(
+        err.kind(),
+        ErrorKind::HttpResponse { status, .. } if *status == StatusCode::BadRequest
+    ));
 
     Ok(())
 }

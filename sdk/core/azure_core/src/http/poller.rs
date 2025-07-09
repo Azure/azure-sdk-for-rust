@@ -44,7 +44,7 @@ pub enum PollerStatus {
     Canceled,
 
     /// Another status not otherwise defined.
-    Other(String),
+    UnknownValue(String),
 }
 
 impl From<&str> for PollerStatus {
@@ -71,7 +71,7 @@ impl From<&str> for PollerStatus {
             return PollerStatus::Canceled;
         }
 
-        PollerStatus::Other(value.to_owned())
+        PollerStatus::UnknownValue(value.to_owned())
     }
 }
 
@@ -442,12 +442,10 @@ where
 }
 
 /// Get the retry duration from the operation response or [`PollerOptions`].
-///
-/// This function always returns [`Some`] for convenience when calling other functions in this module, defaulting to 30 seconds.
 pub fn get_retry_after(headers: &Headers, options: &PollerOptions) -> Option<Duration> {
     #[cfg_attr(feature = "test", allow(unused_mut))]
     let duration = crate::http::policies::get_retry_after(headers, OffsetDateTime::now_utc)
-        .unwrap_or_else(|| options.frequency.unwrap_or(DEFAULT_RETRY_TIME));
+        .or(options.frequency);
 
     #[cfg(feature = "test")]
     {
@@ -455,17 +453,23 @@ pub fn get_retry_after(headers: &Headers, options: &PollerOptions) -> Option<Dur
 
         // Even though test-proxy will zero an existing `after-retry` (or similar proprietary) header during playback,
         // we need to override the frequency for services which do not send back supported headers in their response.
-        if matches!(headers.get_optional::<RecordingMode>(), Ok(Some(mode)) if mode == RecordingMode::Playback && duration > Duration::ZERO)
+        if matches!(headers.get_optional::<RecordingMode>(), Ok(Some(mode)) if mode == RecordingMode::Playback)
         {
-            tracing::debug!(
-                "overriding {}s poller retry in playback",
-                duration.whole_seconds()
-            );
+            match duration {
+                Some(duration) if duration > Duration::ZERO => {
+                    tracing::debug!(
+                        "overriding {}s poller retry in playback",
+                        duration.whole_seconds()
+                    );
+                }
+                _ => {}
+            }
+
             return Some(Duration::ZERO);
         }
     }
 
-    Some(duration)
+    duration
 }
 
 #[inline]
@@ -480,106 +484,6 @@ fn check_status_code<T, F: Format>(response: &Response<T, F>) -> crate::Result<(
             error_code: None,
         }
         .into_error()),
-    }
-}
-
-/// Types and methods for getting long-running operation (LRO) resource locations.
-///
-/// This is more common for data plane operations.
-pub mod location {
-    use crate::{
-        http::{
-            headers::{Headers, AZURE_ASYNCOPERATION, LOCATION, OPERATION_LOCATION},
-            poller::PollerStatus,
-            Url,
-        },
-        json::from_json,
-    };
-
-    /// How to find the final resource URL.
-    #[derive(Debug, Clone, Copy)]
-    pub enum FinalState {
-        /// The final resource URL is found in the `azure-asyncoperation` header.
-        AzureAsyncOperation,
-
-        /// The final resource URL is found in the `location` header.
-        Location,
-
-        /// The final resource URL is found in the `operation-location` header.
-        OperationLocation,
-    }
-
-    /// Get the location from the `headers` based on the `final_state` location.
-    pub fn get_location(headers: &Headers, final_state: FinalState) -> crate::Result<Option<Url>> {
-        match final_state {
-            FinalState::AzureAsyncOperation => headers.get_optional_as(&AZURE_ASYNCOPERATION),
-            FinalState::Location => headers.get_optional_as(&LOCATION),
-            FinalState::OperationLocation => headers.get_optional_as(&OPERATION_LOCATION),
-        }
-    }
-
-    /// Get the [`PollerStatus`] from the response body.
-    pub fn get_operation_state(body: &[u8]) -> Option<PollerStatus> {
-        #[derive(serde::Deserialize)]
-        struct Body {
-            status: String,
-        }
-
-        let body: Body = from_json(body).ok()?;
-        body.status.parse().ok()
-    }
-}
-
-/// Types and methods for getting operation status from the body.
-///
-/// This is more common for control plane (management) operations.
-pub mod body {
-    use crate::http::{poller::PollerStatus, StatusCode};
-    use crate::json::{from_json, to_json};
-    use serde::{Deserialize, Serialize};
-
-    /// Extract the long-running operation (LRO) state based on the status code and response body.
-    pub fn get_operation_state<S>(status_code: StatusCode, body: &S) -> crate::Result<PollerStatus>
-    where
-        S: Serialize,
-    {
-        match status_code {
-            StatusCode::Accepted => Ok(PollerStatus::InProgress),
-            StatusCode::Created => {
-                Ok(get_provisioning_state_from_body(body).unwrap_or(PollerStatus::InProgress))
-            }
-            StatusCode::Ok => {
-                Ok(get_provisioning_state_from_body(body).unwrap_or(PollerStatus::Succeeded))
-            }
-            StatusCode::NoContent => Ok(PollerStatus::Succeeded),
-            _ => Err(crate::error::Error::from(
-                crate::error::ErrorKind::HttpResponse {
-                    status: status_code,
-                    error_code: Some("invalid status found in LRO response".to_owned()),
-                },
-            )),
-        }
-    }
-
-    #[derive(Deserialize)]
-    #[serde(rename_all = "snake_case")]
-    struct Properties {
-        provisioning_state: String,
-    }
-
-    #[derive(Deserialize)]
-    struct Body {
-        properties: Properties,
-    }
-
-    // TODO: Can we use the StatusMonitor here to avoid re-serializing and deserializing; or, do we even need this anymore?
-    fn get_provisioning_state_from_body<S>(body: &S) -> Option<PollerStatus>
-    where
-        S: Serialize,
-    {
-        let json = to_json(&body).ok()?;
-        let body: Body = from_json(json).ok()?;
-        body.properties.provisioning_state.parse().ok()
     }
 }
 

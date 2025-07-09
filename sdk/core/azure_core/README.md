@@ -254,11 +254,10 @@ The `Poller<T>` implements `futures::Stream` so you can asynchronously iterate o
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
-    CertificateClient,
+    CertificateClient, CertificateClientExt,
     models::{CreateCertificateParameters, DEFAULT_POLICY},
 };
 use futures::stream::TryStreamExt as _;
-use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -277,7 +276,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete.
     // The Poller implements futures::Stream and automatically waits between polls.
-    let mut poller = client.create_certificate("certificate-name", body.try_into()?, None)?;
+    let mut poller = client.begin_create_certificate("certificate-name", body.try_into()?, None)?;
     while let Some(operation) = poller.try_next().await? {
         let operation = operation.into_body().await?;
         match operation.status.as_deref().unwrap_or("unknown") {
@@ -300,11 +299,9 @@ If you just want to wait until the `Poller<T>` is complete and get the last stat
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
-    CertificateClient,
+    CertificateClient, CertificateClientExt,
     models::{CreateCertificateParameters, DEFAULT_POLICY},
 };
-use futures::stream::TryStreamExt as _;
-use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -323,7 +320,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wait for the certificate operation to complete and get the last status monitor.
     let operation = client
-        .create_certificate("certificate-name", body.try_into()?, None)?
+        .begin_create_certificate("certificate-name", body.try_into()?, None)?
         .wait()
         .await?
         // Deserialize the CertificateOperation:
