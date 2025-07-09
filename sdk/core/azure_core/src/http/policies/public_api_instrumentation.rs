@@ -11,9 +11,34 @@ use typespec_client_core::{
     tracing::Attribute,
 };
 
+/// Information about the public API being instrumented.
+///
+/// This struct is used to pass information about the public API being instrumented
+/// to the `PublicApiInstrumentationPolicy`.
+///
+/// It contains the name of the API, which is used to create a span for distributed tracing
+/// and any additional per-API attributes that might be needed for instrumentation.
+///
+/// If the `PublicApiInstrumentationPolicy` policy detects a `PublicApiInstrumentationInformation` in the context,
+/// it will create a span with the API name and any additional attributes.
 #[derive(Debug)]
 pub struct PublicApiInstrumentationInformation {
+    /// The name of the API being instrumented.
+    ///
+    /// The API name should be in the form of <client>.<api>, where
+    /// `<client>` is the name of the service client and `<api>` is the name of the API.
+    ///
+    /// For example, if the service client is `MyClient` and the API is `my_api`,
+    /// the API name should be `MyClient.my_api`.
     pub api_name: &'static str,
+
+    /// Additional attributes to be added to the span for this API.
+    ///
+    /// These attributes can provide additional information about the API being instrumented.
+    /// See [Library-specific attributes](https://github.com/Azure/azure-sdk/blob/main/docs/tracing/distributed-tracing-conventions.md#library-specific-attributes)
+    /// for more information.
+    ///
+    pub attributes: Vec<Attribute>,
 }
 
 const AZ_NAMESPACE_ATTRIBUTE: &str = "az.namespace";
@@ -71,6 +96,14 @@ impl Policy for PublicApiInstrumentationPolicy {
             // Otherwise, we use the tracer from the policy itself.
             // This allows for flexibility in using different tracers in different contexts.
             let mut span_attributes = vec![];
+
+            for attr in &info.attributes {
+                // Add the attributes from the public API information to the span.
+                span_attributes.push(Attribute {
+                    key: attr.key,
+                    value: attr.value.clone(),
+                });
+            }
 
             if let Some(tracer) = ctx.value::<Arc<dyn Tracer>>() {
                 if let Some(namespace) = tracer.namespace() {
@@ -183,6 +216,7 @@ mod tests {
     {
         let public_api_information = PublicApiInstrumentationInformation {
             api_name: api_name.unwrap_or("unknown"),
+            attributes: Vec::new(),
         };
         // Add the public API information and tracer to the context so that it can be used by the policy.
         let mock_tracer_provider = Arc::new(MockTracingProvider::new());
@@ -238,6 +272,10 @@ mod tests {
         ];
         let public_api_information = PublicApiInstrumentationInformation {
             api_name: api_name.unwrap_or("unknown"),
+            attributes: vec![Attribute {
+                key: "az.fake_attribute",
+                value: "attribute value".into(),
+            }],
         };
 
         // Add the public API information and tracer to the context so that it can be used by the policy.
@@ -394,7 +432,11 @@ mod tests {
             Some("MyClient.MyApi"),
             SpanKind::Internal,
             SpanStatus::Unset,
-            vec![(AZ_NAMESPACE_ATTRIBUTE, "test.namespace".into())],
+            vec![
+                (AZ_NAMESPACE_ATTRIBUTE, "test.namespace".into()),
+                // Attribute comes from the public API information.
+                ("az.fake_attribute", "attribute value".into()),
+            ],
         );
 
         check_request_instrumentation_result(

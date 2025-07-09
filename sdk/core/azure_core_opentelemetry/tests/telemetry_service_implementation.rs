@@ -157,6 +157,7 @@ impl TestServiceClient {
 
         let public_api_info = PublicApiInstrumentationInformation {
             api_name: "get_with_tracing",
+            attributes: vec![],
         };
         // Add the span to the tracer.
         let mut ctx = options.method_options.context.with_value(public_api_info);
