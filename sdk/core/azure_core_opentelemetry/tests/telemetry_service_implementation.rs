@@ -10,7 +10,7 @@ use azure_core::{
         ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request,
         RequestInstrumentationOptions, Url,
     },
-    tracing::{Attribute, Tracer},
+    tracing::{PublicApiInstrumentationInformation, Tracer},
     Result,
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
@@ -154,57 +154,18 @@ impl TestServiceClient {
         options: Option<TestServiceClientGetMethodOptions<'_>>,
     ) -> Result<RawResponse> {
         let mut options = options.unwrap_or_default();
-        let mut ctx = options.method_options.context.clone();
-        let span = if let Some(tracer) = &self.tracer {
-            let mut attributes = Vec::new();
-            if let Some(namespace) = tracer.namespace() {
-                // If the tracer has a namespace, we set it as an attribute.
-                attributes.push(Attribute {
-                    key: "az.namespace",
-                    value: namespace.into(),
-                });
-            }
-            let span = tracer.start_span(
-                "get_with_tracing",
-                azure_core::tracing::SpanKind::Internal,
-                attributes,
-            );
-            // We need to add the span to the context because the pipeline will use it as the parent span
-            // for the request span.
-            ctx = ctx.with_value(span.clone());
-            // And we need to add the tracer to the context so that the pipeline can use it to populate the
-            // az.namespace property in the request span.
-            ctx = ctx.with_value(tracer.clone());
-            Some(span)
-        } else {
-            None
-        };
-        options.method_options.context = ctx;
-        let response = self.get(path, Some(options)).await;
-        if let Some(span) = span {
-            if let Err(e) = &response {
-                // If the request failed, we set the error type on the span.
-                match e.kind() {
-                    azure_core::error::ErrorKind::HttpResponse { status, .. } => {
-                        span.set_attribute("error.type", status.to_string().into());
-                        if status.is_server_error() || status.is_client_error() {
-                            span.set_status(azure_core::tracing::SpanStatus::Error {
-                                description: "".to_string(),
-                            });
-                        }
-                    }
-                    _ => {
-                        span.set_attribute("error.type", e.kind().to_string().into());
-                        span.set_status(azure_core::tracing::SpanStatus::Error {
-                            description: e.kind().to_string(),
-                        });
-                    }
-                }
-            }
 
-            span.end();
+        let public_api_info = PublicApiInstrumentationInformation {
+            api_name: "get_with_tracing",
         };
-        response
+        // Add the span to the tracer.
+        let mut ctx = options.method_options.context.with_value(public_api_info);
+        // If the service has a tracer, we add it to the context.
+        if let Some(tracer) = &self.tracer {
+            ctx = ctx.with_value(tracer.clone());
+        }
+        options.method_options.context = ctx;
+        self.get(path, Some(options)).await
     }
 }
 
@@ -350,7 +311,6 @@ mod tests {
                     parent_span_id: None,
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("url.scheme", "https".into()),
                         ("az.client.request.id", "<ANY>".into()),
                         (
                             "url.full",
@@ -411,7 +371,6 @@ mod tests {
                     },
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("url.scheme", "https".into()),
                         ("az.client.request.id", "<ANY>".into()),
                         (
                             "url.full",
@@ -472,7 +431,6 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("url.scheme", "https".into()),
                     ("az.client.request.id", "<ANY>".into()),
                     (
                         "url.full",
@@ -543,7 +501,6 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("url.scheme", "https".into()),
                     ("az.client.request.id", "<ANY>".into()),
                     (
                         "url.full",
@@ -568,9 +525,7 @@ mod tests {
                 name: "get_with_tracing",
                 kind: OpenTelemetrySpanKind::Internal,
                 parent_span_id: None,
-                status: OpenTelemetrySpanStatus::Error {
-                    description: "".into(),
-                },
+                status: OpenTelemetrySpanStatus::Unset,
                 attributes: vec![
                     ("az.namespace", "Az.TestServiceClient".into()),
                     ("error.type", "404".into()),
