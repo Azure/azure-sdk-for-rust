@@ -17,7 +17,10 @@ impl AsyncRuntime for WebRuntime {
             let _ = tx.send(result);
         });
 
-        Box::pin(async { Ok(rx.await?) })
+        Box::pin(async {
+            rx.await
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+        })
     }
 
     fn sleep(&self, duration: Duration) -> TaskFuture {
