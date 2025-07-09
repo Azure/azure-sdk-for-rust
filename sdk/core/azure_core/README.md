@@ -180,7 +180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Consuming service methods returning `Pager<T>`
 
-If a service call returns multiple values in pages, it would return `Result<Pager<T>>` as a result. You can iterate all items from all pages.
+If a service call returns multiple values in pages, it should return `Result<Pager<T>>` as a result. You can iterate all items from all pages.
 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
@@ -248,7 +248,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Consuming service methods returning `Poller<T>`
 
-If a service call may take a while to process, it would return `Result<Poller<T>>` as a result, representing a long-running operation (LRO).
+If a service call may take a while to process, it should return `Result<Poller<T>>` as a result, representing a long-running operation (LRO).
 The `Poller<T>` implements `futures::Stream` so you can asynchronously iterate over each status monitor update:
 
 ```rust no_run

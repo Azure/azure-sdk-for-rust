@@ -11,7 +11,6 @@ use azure_core::{
     },
     test::RecordingMode,
 };
-use futures::StreamExt;
 use std::sync::Arc;
 
 /// Adds the `x-recording-mode` header to test responses.
@@ -40,6 +39,6 @@ impl Policy for RecordingModePolicy {
         let (status, mut headers, body) = resp.deconstruct();
         headers.add(self.mode)?;
 
-        Ok(RawResponse::new(status, headers, body.boxed()))
+        Ok(RawResponse::new(status, headers, Box::pin(body)))
     }
 }

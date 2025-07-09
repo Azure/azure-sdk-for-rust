@@ -23,7 +23,7 @@ use std::{
 /// Default retry time for long-running operations if no retry-after header is present
 ///
 /// This value is the same as the default used in other Azure SDKs e.g.,
-/// <https://github.com/Azure/azure-sdk-for-python/blob/azure-mgmt-core_1.5.0/sdk/core/azure-mgmt-core/azure/mgmt/core/polling/arm_polling.py#L191>
+/// <https://github.com/Azure/azure-sdk-for-python/blob/azure-core_1.35.0/sdk/core/azure-core/azure/core/polling/base_polling.py#L586>
 const DEFAULT_RETRY_TIME: Duration = Duration::seconds(30);
 const MIN_RETRY_TIME: Duration = Duration::seconds(1);
 
