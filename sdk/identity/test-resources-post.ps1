@@ -41,8 +41,9 @@ if ($CI) {
   az account set --subscription $SubscriptionId
 }
 
+Set-Location "$(git rev-parse --show-toplevel)/sdk/identity/azure_identity/tests/tools/deployed_live_test"
+
 Write-Host "##[group]Building test app"
-Set-Location "$(git rev-parse --show-toplevel)/sdk/identity/azure_identity/tools/deployed_live_test"
 cargo install --path . --root .
 Write-Host "##[endgroup]"
 

@@ -3,12 +3,13 @@ name = "deployed_live_test"
 version = "0.1.0"
 edition = "2021"
 publish = false
+
 [workspace]
 
 [dependencies]
-azure_identity = { path = "../../" }
-azure_storage_blob = { path = "../../../../storage/azure_storage_blob" }
-azure_core = { path = "../../../../core/azure_core" }
+azure_identity = { path = "../../../" }
+azure_storage_blob = { path = "../../../../../storage/azure_storage_blob" }
+azure_core = { path = "../../../../../core/azure_core" }
 openssl = { version = "0.10", features = ["vendored"]}
 tokio = { version = "1.0", features = ["full"] }
 url = "2.5"
