@@ -2860,6 +2860,7 @@ dependencies = [
  "typespec_macros",
  "url",
  "uuid",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]

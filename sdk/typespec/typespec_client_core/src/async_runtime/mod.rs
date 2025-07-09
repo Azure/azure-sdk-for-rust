@@ -41,6 +41,9 @@ mod standard_runtime;
 #[cfg(feature = "tokio")]
 mod tokio_runtime;
 
+#[cfg(target_arch = "wasm32")]
+mod web_runtime;
+
 #[cfg(test)]
 mod tests;
 
@@ -107,7 +110,7 @@ pub trait AsyncRuntime: Send + Sync {
     ///
     fn spawn(&self, f: TaskFuture) -> SpawnedTask;
 
-    fn sleep(&self, duration: Duration) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
+    fn sleep(&self, duration: Duration) -> TaskFuture;
 }
 
 static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock::new();
@@ -189,12 +192,16 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
 }
 
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
-    #[cfg(not(feature = "tokio"))]
+    #[cfg(target_arch = "wasm32")]
     {
-        Arc::new(standard_runtime::StdRuntime)
+        Arc::new(web_runtime::WebRuntime) as Arc<dyn AsyncRuntime>
     }
     #[cfg(feature = "tokio")]
     {
         Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>
+    }
+    #[cfg(not(any(feature = "tokio", target_arch = "wasm32")))]
+    {
+        Arc::new(standard_runtime::StdRuntime)
     }
 }
