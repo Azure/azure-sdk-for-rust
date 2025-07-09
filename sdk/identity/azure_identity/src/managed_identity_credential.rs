@@ -156,7 +156,7 @@ mod tests {
     use azure_core::http::{Method, RawResponse, Request, StatusCode, Url};
     use azure_core::time::OffsetDateTime;
     use azure_core::Bytes;
-    use azure_core_test::http::MockHttpClient;
+    use azure_core_test::{http::MockHttpClient, recorded};
     use futures::FutureExt;
     use std::env;
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -164,7 +164,11 @@ mod tests {
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
 
-    async fn run_deployed_test(authority: &str, storage_name: &str, id: Option<UserAssignedId>) {
+    async fn run_deployed_test(
+        authority: &str,
+        storage_name: &str,
+        id: Option<UserAssignedId>,
+    ) -> azure_core::Result<()> {
         let id_param = id.map_or("".to_string(), |id| match id {
             UserAssignedId::ClientId(id) => format!("client-id={id}&"),
             UserAssignedId::ObjectId(id) => format!("object-id={id}&"),
@@ -179,12 +183,10 @@ mod tests {
 
         let res = client.execute_request(&req).await.expect("request failed");
         let status = res.status();
-        let body = res
-            .into_body()
-            .collect_string()
-            .await
-            .unwrap_or("<empty body>".to_string());
+        let body = res.into_body().collect_string().await?;
         assert_eq!(StatusCode::Ok, status, "Test app responded with '{body}'");
+
+        Ok(())
     }
 
     async fn run_supported_source_test(
@@ -281,11 +283,11 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn aci_user_assigned_live() {
+    #[recorded::test(live)]
+    async fn aci_user_assigned_live() -> azure_core::Result<()> {
         if env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
             println!("Skipped: ACI live tests require deployed resources");
-            return;
+            return Ok(());
         }
         let ip = env::var("IDENTITY_ACI_IP_USER_ASSIGNED").expect("IDENTITY_ACI_IP_USER_ASSIGNED");
         let storage_name = env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED")
@@ -297,7 +299,9 @@ mod tests {
             &storage_name,
             Some(UserAssignedId::ClientId(client_id)),
         )
-        .await;
+        .await?;
+
+        Ok(())
     }
 
     async fn run_app_service_test(options: Option<ManagedIdentityCredentialOptions>) {
@@ -413,10 +417,10 @@ mod tests {
         );
     }
 
-    async fn run_imds_live_test(id: Option<UserAssignedId>) {
+    async fn run_imds_live_test(id: Option<UserAssignedId>) -> azure_core::Result<()> {
         if std::env::var("IDENTITY_IMDS_AVAILABLE").is_err() {
             println!("Skipped: IMDS isn't available");
-            return;
+            return Ok(());
         }
 
         let credential = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
@@ -425,14 +429,13 @@ mod tests {
         }))
         .expect("valid credential");
 
-        let token = credential
-            .get_token(LIVE_TEST_SCOPES, None)
-            .await
-            .expect("authentication should succeed");
+        let token = credential.get_token(LIVE_TEST_SCOPES, None).await?;
 
         assert!(!token.token.secret().is_empty());
         assert_eq!(time::UtcOffset::UTC, token.expires_on.offset());
         assert!(token.expires_on.unix_timestamp() > OffsetDateTime::now_utc().unix_timestamp());
+
+        Ok(())
     }
 
     async fn run_imds_test(options: Option<ManagedIdentityCredentialOptions>) {
@@ -508,9 +511,9 @@ mod tests {
         run_imds_test(None).await;
     }
 
-    #[tokio::test]
-    async fn imds_system_assigned_live() {
-        run_imds_live_test(None).await;
+    #[recorded::test(live)]
+    async fn imds_system_assigned_live() -> azure_core::Result<()> {
+        run_imds_live_test(None).await
     }
 
     #[tokio::test]
