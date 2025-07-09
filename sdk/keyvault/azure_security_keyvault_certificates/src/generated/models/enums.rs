@@ -6,110 +6,110 @@
 use azure_core::{create_enum, create_extensible_enum};
 
 create_enum!(
-    #[doc = r#"/// The type of the action."#]
+    #[doc = r#"The type of the action."#]
     CertificatePolicyAction,
-    #[doc = r#"/// A certificate policy that will auto-renew a certificate."#]
+    #[doc = r#"A certificate policy that will auto-renew a certificate."#]
     (AutoRenew, "AutoRenew"),
-    #[doc = r#"/// A certificate policy that will email certificate contacts."#]
+    #[doc = r#"A certificate policy that will email certificate contacts."#]
     (EmailContacts, "EmailContacts")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// Elliptic curve name. For valid values, see JsonWebKeyCurveName."#]
+    #[doc = r#"Elliptic curve name. For valid values, see JsonWebKeyCurveName."#]
     CurveName,
-    #[doc = r#"/// The NIST P-256 elliptic curve, AKA SECG curve SECP256R1."#]
+    #[doc = r#"The NIST P-256 elliptic curve, AKA SECG curve SECP256R1."#]
     (P256, "P-256"),
-    #[doc = r#"/// The SECG SECP256K1 elliptic curve."#]
+    #[doc = r#"The SECG SECP256K1 elliptic curve."#]
     (P256K, "P-256K"),
-    #[doc = r#"/// The NIST P-384 elliptic curve, AKA SECG curve SECP384R1."#]
+    #[doc = r#"The NIST P-384 elliptic curve, AKA SECG curve SECP384R1."#]
     (P384, "P-384"),
-    #[doc = r#"/// The NIST P-521 elliptic curve, AKA SECG curve SECP521R1."#]
+    #[doc = r#"The NIST P-521 elliptic curve, AKA SECG curve SECP521R1."#]
     (P521, "P-521")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// Reflects the deletion recovery level currently in effect for secrets in the current vault. If it contains 'Purgeable',
-/// the secret can be permanently deleted by a privileged user; otherwise, only the system can purge the secret, at the end
-/// of the retention interval."#]
+    #[doc = r#"Reflects the deletion recovery level currently in effect for secrets in the current vault. If it contains 'Purgeable',
+the secret can be permanently deleted by a privileged user; otherwise, only the system can purge the secret, at the end
+of the retention interval."#]
     DeletionRecoveryLevel,
-    #[doc = r#"/// Denotes a vault state in which deletion is recoverable without the possibility for immediate and permanent deletion (i.e.
-/// purge when 7 <= SoftDeleteRetentionInDays < 90).This level guarantees the recoverability of the deleted entity during
-/// the retention interval and while the subscription is still available."#]
+    #[doc = r#"Denotes a vault state in which deletion is recoverable without the possibility for immediate and permanent deletion (i.e.
+purge when 7 <= SoftDeleteRetentionInDays < 90).This level guarantees the recoverability of the deleted entity during
+the retention interval and while the subscription is still available."#]
     (CustomizedRecoverable, "CustomizedRecoverable"),
-    #[doc = r#"/// Denotes a vault and subscription state in which deletion is recoverable, immediate and permanent deletion (i.e. purge)
-/// is not permitted, and in which the subscription itself cannot be permanently canceled when 7 <= SoftDeleteRetentionInDays
-/// < 90. This level guarantees the recoverability of the deleted entity during the retention interval, and also reflects
-/// the fact that the subscription itself cannot be cancelled."#]
+    #[doc = r#"Denotes a vault and subscription state in which deletion is recoverable, immediate and permanent deletion (i.e. purge)
+is not permitted, and in which the subscription itself cannot be permanently canceled when 7 <= SoftDeleteRetentionInDays
+< 90. This level guarantees the recoverability of the deleted entity during the retention interval, and also reflects
+the fact that the subscription itself cannot be cancelled."#]
     (
         CustomizedRecoverableProtectedSubscription,
         "CustomizedRecoverable+ProtectedSubscription"
     ),
-    #[doc = r#"/// Denotes a vault state in which deletion is recoverable, and which also permits immediate and permanent deletion (i.e.
-/// purge when 7 <= SoftDeleteRetentionInDays < 90). This level guarantees the recoverability of the deleted entity during
-/// the retention interval, unless a Purge operation is requested, or the subscription is cancelled."#]
+    #[doc = r#"Denotes a vault state in which deletion is recoverable, and which also permits immediate and permanent deletion (i.e.
+purge when 7 <= SoftDeleteRetentionInDays < 90). This level guarantees the recoverability of the deleted entity during
+the retention interval, unless a Purge operation is requested, or the subscription is cancelled."#]
     (
         CustomizedRecoverablePurgeable,
         "CustomizedRecoverable+Purgeable"
     ),
-    #[doc = r#"/// Denotes a vault state in which deletion is an irreversible operation, without the possibility for recovery. This level
-/// corresponds to no protection being available against a Delete operation; the data is irretrievably lost upon accepting
-/// a Delete operation at the entity level or higher (vault, resource group, subscription etc.)"#]
+    #[doc = r#"Denotes a vault state in which deletion is an irreversible operation, without the possibility for recovery. This level
+corresponds to no protection being available against a Delete operation; the data is irretrievably lost upon accepting
+a Delete operation at the entity level or higher (vault, resource group, subscription etc.)"#]
     (Purgeable, "Purgeable"),
-    #[doc = r#"/// Denotes a vault state in which deletion is recoverable without the possibility for immediate and permanent deletion (i.e.
-/// purge). This level guarantees the recoverability of the deleted entity during the retention interval (90 days) and while
-/// the subscription is still available. System wil permanently delete it after 90 days, if not recovered"#]
+    #[doc = r#"Denotes a vault state in which deletion is recoverable without the possibility for immediate and permanent deletion (i.e.
+purge). This level guarantees the recoverability of the deleted entity during the retention interval (90 days) and while
+the subscription is still available. System wil permanently delete it after 90 days, if not recovered"#]
     (Recoverable, "Recoverable"),
-    #[doc = r#"/// Denotes a vault and subscription state in which deletion is recoverable within retention interval (90 days), immediate
-/// and permanent deletion (i.e. purge) is not permitted, and in which the subscription itself cannot be permanently canceled.
-/// System wil permanently delete it after 90 days, if not recovered"#]
+    #[doc = r#"Denotes a vault and subscription state in which deletion is recoverable within retention interval (90 days), immediate
+and permanent deletion (i.e. purge) is not permitted, and in which the subscription itself cannot be permanently canceled.
+System wil permanently delete it after 90 days, if not recovered"#]
     (
         RecoverableProtectedSubscription,
         "Recoverable+ProtectedSubscription"
     ),
-    #[doc = r#"/// Denotes a vault state in which deletion is recoverable, and which also permits immediate and permanent deletion (i.e.
-/// purge). This level guarantees the recoverability of the deleted entity during the retention interval (90 days), unless
-/// a Purge operation is requested, or the subscription is cancelled. System wil permanently delete it after 90 days, if not
-/// recovered"#]
+    #[doc = r#"Denotes a vault state in which deletion is recoverable, and which also permits immediate and permanent deletion (i.e.
+purge). This level guarantees the recoverability of the deleted entity during the retention interval (90 days), unless
+a Purge operation is requested, or the subscription is cancelled. System wil permanently delete it after 90 days, if not
+recovered"#]
     (RecoverablePurgeable, "Recoverable+Purgeable")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// The type of key pair to be used for the certificate."#]
+    #[doc = r#"The type of key pair to be used for the certificate."#]
     KeyType,
-    #[doc = r#"/// Elliptic Curve."#]
+    #[doc = r#"Elliptic Curve."#]
     (EC, "EC"),
-    #[doc = r#"/// Elliptic Curve with a private key which is not exportable from the HSM."#]
+    #[doc = r#"Elliptic Curve with a private key which is not exportable from the HSM."#]
     (EcHsm, "EC-HSM"),
-    #[doc = r#"/// Octet sequence (used to represent symmetric keys)."#]
+    #[doc = r#"Octet sequence (used to represent symmetric keys)."#]
     (Oct, "oct"),
-    #[doc = r#"/// Octet sequence with a private key which is not exportable from the HSM."#]
+    #[doc = r#"Octet sequence with a private key which is not exportable from the HSM."#]
     (OctHsm, "oct-HSM"),
-    #[doc = r#"/// RSA (https://tools.ietf.org/html/rfc3447)."#]
+    #[doc = r#"RSA (https://tools.ietf.org/html/rfc3447)."#]
     (RSA, "RSA"),
-    #[doc = r#"/// RSA with a private key which is not exportable from the HSM."#]
+    #[doc = r#"RSA with a private key which is not exportable from the HSM."#]
     (RsaHsm, "RSA-HSM")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// Supported usages of a certificate key."#]
+    #[doc = r#"Supported usages of a certificate key."#]
     KeyUsageType,
-    #[doc = r#"/// Indicates that the certificate key can be used to sign a certificate revocation list."#]
+    #[doc = r#"Indicates that the certificate key can be used to sign a certificate revocation list."#]
     (CRLSign, "cRLSign"),
-    #[doc = r#"/// Indicates that the certificate key can be used for data encryption."#]
+    #[doc = r#"Indicates that the certificate key can be used for data encryption."#]
     (DataEncipherment, "dataEncipherment"),
-    #[doc = r#"/// Indicates that the certificate key can be used for decryption only."#]
+    #[doc = r#"Indicates that the certificate key can be used for decryption only."#]
     (DecipherOnly, "decipherOnly"),
-    #[doc = r#"/// Indicates that the certificate key can be used as a digital signature."#]
+    #[doc = r#"Indicates that the certificate key can be used as a digital signature."#]
     (DigitalSignature, "digitalSignature"),
-    #[doc = r#"/// Indicates that the certificate key can be used for encryption only."#]
+    #[doc = r#"Indicates that the certificate key can be used for encryption only."#]
     (EncipherOnly, "encipherOnly"),
-    #[doc = r#"/// Indicates that the certificate key can be used to determine key agreement, such as a key created using the Diffie-Hellman
-/// key agreement algorithm."#]
+    #[doc = r#"Indicates that the certificate key can be used to determine key agreement, such as a key created using the Diffie-Hellman
+key agreement algorithm."#]
     (KeyAgreement, "keyAgreement"),
-    #[doc = r#"/// Indicates that the certificate key can be used to sign certificates."#]
+    #[doc = r#"Indicates that the certificate key can be used to sign certificates."#]
     (KeyCertSign, "keyCertSign"),
-    #[doc = r#"/// Indicates that the certificate key can be used for key encryption."#]
+    #[doc = r#"Indicates that the certificate key can be used for key encryption."#]
     (KeyEncipherment, "keyEncipherment"),
-    #[doc = r#"/// Indicates that the certificate key can be used for authentication."#]
+    #[doc = r#"Indicates that the certificate key can be used for authentication."#]
     (NonRepudiation, "nonRepudiation")
 );
