@@ -205,7 +205,7 @@ impl BlockBlobClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         if let Some(blob_tags_string) = options.blob_tags_string {
@@ -375,7 +375,7 @@ impl BlockBlobClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         if let Some(source_content_md5) = options.source_content_md5 {
@@ -761,7 +761,7 @@ impl BlockBlobClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         if let Some(structured_body_type) = options.structured_body_type {

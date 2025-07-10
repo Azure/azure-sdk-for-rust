@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::http::{headers::HeaderName, response::Response};
+use crate::http::{headers::HeaderName, response::Response, DeserializeWith, Format, JsonFormat};
 use async_trait::async_trait;
 use futures::{stream::unfold, FutureExt, Stream};
 use std::{
@@ -12,8 +12,6 @@ use std::{
     sync::{Arc, Mutex},
     task,
 };
-use typespec::Error;
-use typespec_client_core::http::{DeserializeWith, Format, JsonFormat};
 
 /// The result of fetching a single page from a [`Pager`], whether there are more pages or paging is done.
 pub enum PagerResult<P, C: AsRef<str>> {
@@ -85,10 +83,10 @@ where
 pub type Pager<P, F = JsonFormat> = ItemIterator<Response<P, F>>;
 
 #[cfg(not(target_arch = "wasm32"))]
-type BoxedStream<P> = Box<dyn Stream<Item = Result<P, Error>> + Send>;
+type BoxedStream<P> = Box<dyn Stream<Item = crate::Result<P>> + Send>;
 
 #[cfg(target_arch = "wasm32")]
-type BoxedStream<P> = Box<dyn Stream<Item = Result<P, Error>>>;
+type BoxedStream<P> = Box<dyn Stream<Item = crate::Result<P>>>;
 
 /// Iterates over a collection of items or individual pages of items from a service.
 ///
@@ -214,23 +212,23 @@ impl<P: Page> ItemIterator<P> {
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + 'static,
         #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
-        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + 'static,
+        #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
     ) -> Self {
         Self::from_stream(iter_from_callback(make_request, || None, |_| {}))
     }
 
-    /// Creates a [`ItemIterator<P>`] from a raw stream of [`Result<P>`](typespec::Result<P>) values.
+    /// Creates a [`ItemIterator<P>`] from a raw stream of [`Result<P>`](crate::Result<P>) values.
     ///
     /// This constructor is used when you are implementing a completely custom stream and want to use it as a pager.
     pub fn from_stream<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = Result<P, Error>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] S: Stream<Item = Result<P, Error>> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = crate::Result<P>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] S: Stream<Item = crate::Result<P>> + 'static,
     >(
         stream: S,
     ) -> Self {
@@ -254,7 +252,7 @@ impl<P: Page> ItemIterator<P> {
 }
 
 impl<P: Page> futures::Stream for ItemIterator<P> {
-    type Item = Result<P::Item, Error>;
+    type Item = crate::Result<P::Item>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -398,10 +396,10 @@ impl<P> PageIterator<P> {
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
         #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
-        #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + 'static,
+        #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
     ) -> Self
@@ -441,8 +439,8 @@ impl<P> PageIterator<P> {
     /// This constructor is used when you are implementing a completely custom stream and want to use it as a pager.
     pub fn from_stream<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
-        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = Result<P, Error>> + Send + 'static,
-        #[cfg(target_arch = "wasm32")] S: Stream<Item = Result<P, Error>> + 'static,
+        #[cfg(not(target_arch = "wasm32"))] S: Stream<Item = crate::Result<P>> + Send + 'static,
+        #[cfg(target_arch = "wasm32")] S: Stream<Item = crate::Result<P>> + 'static,
     >(
         stream: S,
     ) -> Self {
@@ -509,7 +507,7 @@ impl<P> PageIterator<P> {
 }
 
 impl<P> futures::Stream for PageIterator<P> {
-    type Item = Result<P, Error>;
+    type Item = crate::Result<P>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -537,19 +535,19 @@ fn iter_from_callback<
     // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
     #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] G: Fn() -> Option<C> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] S: Fn(Option<&str>) + Send + 'static,
     #[cfg(target_arch = "wasm32")] C: AsRef<str> + 'static,
     #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
-    #[cfg(target_arch = "wasm32")] Fut: Future<Output = Result<PagerResult<P, C>, typespec::Error>> + 'static,
+    #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     #[cfg(target_arch = "wasm32")] G: Fn() -> Option<C> + 'static,
     #[cfg(target_arch = "wasm32")] S: Fn(Option<&str>) + 'static,
 >(
     make_request: F,
     get_next: G,
     set_next: S,
-) -> impl Stream<Item = Result<P, Error>> + 'static {
+) -> impl Stream<Item = crate::Result<P>> + 'static {
     unfold(
         // We flow the `make_request` callback, 'get_next', and `set_next` through the state value so that we can avoid cloning.
         (State::Init, make_request, get_next, set_next),

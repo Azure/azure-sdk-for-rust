@@ -50,7 +50,7 @@ impl HttpError {
     /// This searches the entire ["source" chain](https://doc.rust-lang.org/std/error/trait.Error.html#method.source)
     /// looking for an `HttpError`.
     pub fn try_from(error: &Error) -> Option<&Self> {
-        let mut error = error.get_ref()? as &(dyn std::error::Error);
+        let mut error = error.get_ref()? as &dyn std::error::Error;
         loop {
             match error.downcast_ref::<Self>() {
                 Some(e) => return Some(e),
