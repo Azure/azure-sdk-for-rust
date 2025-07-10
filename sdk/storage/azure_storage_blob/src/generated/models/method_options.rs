@@ -2212,9 +2212,6 @@ pub struct PageBlobClientClearPagesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
-    /// Return only the bytes of the blob in the specified range.
-    pub range: Option<String>,
-
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
 }
@@ -2581,9 +2578,6 @@ pub struct PageBlobClientUploadPagesOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
-
-    /// Return only the bytes of the blob in the specified range.
-    pub range: Option<String>,
 
     /// Required if the request body is a structured message. Specifies the message schema version and properties.
     pub structured_body_type: Option<String>,

@@ -18,7 +18,7 @@ use crate::{
         BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
-    BlobClientOptions, BlockBlobClient,
+    AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -83,6 +83,17 @@ impl BlobClient {
         })
     }
 
+    /// Returns a new instance of AppendBlobClient.
+    ///
+    /// # Arguments
+    ///
+    pub fn append_blob_client(&self) -> AppendBlobClient {
+        AppendBlobClient {
+            endpoint: self.client.endpoint.clone(),
+            client: self.client.get_append_blob_client(),
+        }
+    }
+
     /// Returns a new instance of BlockBlobClient.
     ///
     /// # Arguments
@@ -91,6 +102,17 @@ impl BlobClient {
         BlockBlobClient {
             endpoint: self.client.endpoint.clone(),
             client: self.client.get_block_blob_client(),
+        }
+    }
+
+    /// Returns a new instance of PageBlobClient.
+    ///
+    /// # Arguments
+    ///
+    pub fn page_blob_client(&self) -> PageBlobClient {
+        PageBlobClient {
+            endpoint: self.client.endpoint.clone(),
+            client: self.client.get_page_blob_client(),
         }
     }
 

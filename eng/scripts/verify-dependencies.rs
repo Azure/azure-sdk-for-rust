@@ -20,6 +20,9 @@ use std::{
 static EXEMPTIONS: &[(&str, &str)] = &[
     ("azure_core_test", "dotenvy"),
     ("azure_template", "serde"),
+    ("azure_core_opentelemetry", "opentelemetry"),
+    ("azure_core_opentelemetry", "opentelemetry_sdk"),
+    ("azure_core_opentelemetry", "tracing-opentelemetry"),
 ];
 
 fn main() {

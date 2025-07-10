@@ -9,38 +9,8 @@
 
 pub mod clients;
 mod generated;
+mod parsers;
 mod pipeline;
-
 pub use clients::*;
-
-pub mod models {
-    pub use crate::generated::models::{
-        AccessTierOptional, ArchiveStatus, BlobClientAcquireLeaseOptions,
-        BlobClientAcquireLeaseResult, BlobClientAcquireLeaseResultHeaders,
-        BlobClientBreakLeaseOptions, BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions,
-        BlobClientChangeLeaseResult, BlobClientChangeLeaseResultHeaders, BlobClientDeleteOptions,
-        BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientDownloadResultHeaders,
-        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResult,
-        BlobClientGetPropertiesResultHeaders, BlobClientReleaseLeaseOptions,
-        BlobClientReleaseLeaseResult, BlobClientRenewLeaseOptions, BlobClientRenewLeaseResult,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
-        BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientBreakLeaseOptions,
-        BlobContainerClientBreakLeaseResult, BlobContainerClientChangeLeaseOptions,
-        BlobContainerClientChangeLeaseResult, BlobContainerClientChangeLeaseResultHeaders,
-        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-        BlobContainerClientGetPropertiesResultHeaders,
-        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
-        BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
-        BlobContainerClientRenewLeaseResult, BlobContainerClientSetMetadataOptions,
-        BlobImmutabilityPolicyMode, BlobServiceClientGetPropertiesOptions,
-        BlobServiceClientListContainersSegmentOptions, BlobType,
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
-        BlockList, BlockListType, BlockLookupList, CopyStatus, LeaseState, LeaseStatus,
-        ListBlobsFlatSegmentResponse, ListContainersSegmentResponse, PublicAccessType,
-        RehydratePriority, StorageServiceProperties,
-    };
-}
+pub use parsers::*;
+pub mod models;

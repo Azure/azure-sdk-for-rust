@@ -13,7 +13,7 @@ use azure_core::{
     Result,
 };
 use azure_core_amqp::AmqpClaimsBasedSecurityApis as _;
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
@@ -250,7 +250,7 @@ impl Authorizer {
                 let jitter_min = token_refresh_times.jitter_min.whole_milliseconds() as i64;
                 let jitter_max = token_refresh_times.jitter_max.whole_milliseconds() as i64;
                 let expiration_jitter =
-                    Duration::milliseconds(thread_rng().gen_range(jitter_min..jitter_max));
+                    Duration::milliseconds(rng().random_range(jitter_min..jitter_max));
                 debug!("Expiration jitter: {expiration_jitter:?}");
 
                 token_refresh_bias = token_refresh_times

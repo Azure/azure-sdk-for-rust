@@ -100,11 +100,11 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `content_length` - The length of the request.
+    /// * `range` - Bytes of data in the specified range.
     /// * `options` - Optional parameters for the request.
     pub async fn clear_pages(
         &self,
-        content_length: u64,
+        range: String,
         options: Option<PageBlobClientClearPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -123,7 +123,7 @@ impl PageBlobClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-length", content_length.to_string());
+        request.insert_header("content-length", "0");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -136,6 +136,7 @@ impl PageBlobClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
+        request.insert_header("range", range);
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
@@ -181,9 +182,6 @@ impl PageBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-page-write", "clear");
-        if let Some(range) = options.range {
-            request.insert_header("x-ms-range", range);
-        }
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
     }
@@ -350,7 +348,7 @@ impl PageBlobClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         if let Some(blob_tags_string) = options.blob_tags_string {
@@ -406,6 +404,9 @@ impl PageBlobClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
+        if let Some(range) = options.range {
+            request.insert_header("range", range);
+        }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
@@ -414,9 +415,6 @@ impl PageBlobClient {
         }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(range) = options.range {
-            request.insert_header("x-ms-range", range);
         }
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
@@ -474,6 +472,9 @@ impl PageBlobClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
+        if let Some(range) = options.range {
+            request.insert_header("range", range);
+        }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
@@ -485,9 +486,6 @@ impl PageBlobClient {
         }
         if let Some(prev_snapshot_url) = options.prev_snapshot_url {
             request.insert_header("x-ms-previous-snapshot-url", prev_snapshot_url);
-        }
-        if let Some(range) = options.range {
-            request.insert_header("x-ms-range", range);
         }
         request.insert_header("x-ms-version", &self.version);
         self.pipeline.send(&ctx, &mut request).await.map(Into::into)
@@ -634,11 +632,13 @@ impl PageBlobClient {
     ///
     /// * `body` - The body of the request.
     /// * `content_length` - The length of the request.
+    /// * `range` - Bytes of data in the specified range.
     /// * `options` - Optional parameters for the request.
     pub async fn upload_pages(
         &self,
         body: RequestContent<Bytes>,
         content_length: u64,
+        range: String,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
     ) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -674,6 +674,7 @@ impl PageBlobClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
+        request.insert_header("range", range);
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
@@ -722,9 +723,6 @@ impl PageBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-page-write", "update");
-        if let Some(range) = options.range {
-            request.insert_header("x-ms-range", range);
-        }
         if let Some(structured_body_type) = options.structured_body_type {
             request.insert_header("x-ms-structured-body", structured_body_type);
         }

@@ -4,7 +4,12 @@
 
 ### Features Added
 
+- Added the `CertificateClientExt` trait for `CertificateClient` with `begin_create_certificate` and `resume_certificate_operation` methods that return the new `Poller<CertificateOperation>`.
+  These extension methods are likely temporary until `Poller` support is added to the TypeSpec emitter and we update `CertificateClient::create_certificate` and `get_certificate_operation` to return a `Poller<CertificateOperation>`.
+
 ### Breaking Changes
+
+- Minimum supported Rust version (MSRV) is now 1.85.
 
 ### Bugs Fixed
 

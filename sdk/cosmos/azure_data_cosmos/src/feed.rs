@@ -70,7 +70,7 @@ impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>, String> {
         match continuation {
             Some(continuation) => PagerResult::More {
                 response: value,
-                next: continuation,
+                continuation,
             },
             None => PagerResult::Done { response: value },
         }
