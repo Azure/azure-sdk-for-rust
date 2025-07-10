@@ -6,6 +6,7 @@
 
 - Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace
 the default asynchronous runtime with another.
+- Added `Request::set_method()` to allow changing the HTTP method of a request.
 
 ### Breaking Changes
 
