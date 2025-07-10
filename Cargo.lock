@@ -327,7 +327,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -347,7 +347,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -367,7 +367,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "azure_core",
