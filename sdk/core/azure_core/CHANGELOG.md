@@ -1,6 +1,6 @@
 # Release History
 
-## 0.26.0 (Unreleased)
+## 0.26.0 (2025-07-10)
 
 ### Features Added
 
@@ -25,8 +25,6 @@
 - Renamed `PollerStatus::Other` to `PollerStatus::UnknownValue` following [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html#rust-enum-extensible).
 - Renamed `TelemetryOptions` to `UserAgentOptions`.
 - Renamed `TelemetryPolicy` to `UserAgentPolicy`.
-
-### Bugs Fixed
 
 ### Other Changes
 
