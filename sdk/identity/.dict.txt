@@ -6,6 +6,8 @@ clientcertificate
 clientsecret
 cloudshell
 imds
+LINUXPOOL
+LINUXVMIMAGE
 managedidentity
 msal
 replacen
