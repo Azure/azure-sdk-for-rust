@@ -9,22 +9,6 @@ use azure_core::{
         ClientMethodOptions, PollerStatus,
     },
 };
-use std::sync::LazyLock;
-
-/// Gets the default self-signed [`CertificatePolicy`].
-pub static DEFAULT_CERTIFICATE_POLICY: LazyLock<CertificatePolicy> =
-    LazyLock::new(|| CertificatePolicy {
-        x509_certificate_properties: Some(X509CertificateProperties {
-            subject: Some("CN=DefaultPolicy".into()),
-            ..Default::default()
-        }),
-        issuer_parameters: Some(IssuerParameters {
-            name: Some("Self".into()),
-            ..Default::default()
-        }),
-        ..Default::default()
-    });
-
 impl StatusMonitor for CertificateOperation {
     type Output = Certificate;
     fn status(&self) -> PollerStatus {

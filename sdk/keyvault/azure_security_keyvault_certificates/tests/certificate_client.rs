@@ -9,7 +9,6 @@ use azure_security_keyvault_certificates::{
     models::{
         CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
         KeyType, UpdateCertificatePropertiesParameters, X509CertificateProperties,
-        DEFAULT_CERTIFICATE_POLICY,
     },
     CertificateClient, CertificateClientExt as _, CertificateClientOptions, ResourceExt as _,
 };
@@ -20,7 +19,20 @@ use azure_security_keyvault_keys::{
 use azure_security_keyvault_test::Retry;
 use futures::TryStreamExt;
 use openssl::sha::sha256;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::LazyLock};
+
+static DEFAULT_CERTIFICATE_POLICY: LazyLock<CertificatePolicy> =
+    LazyLock::new(|| CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=DefaultPolicy".into()),
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    });
 
 #[recorded::test]
 async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {

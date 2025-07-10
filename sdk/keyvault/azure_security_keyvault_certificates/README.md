@@ -84,7 +84,7 @@ Before we can create a new certificate, though, we need to define a certificate 
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
     CertificateClient, CertificateClientExt,
-    models::{CreateCertificateParameters, DEFAULT_CERTIFICATE_POLICY},
+    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
 use futures::stream::TryStreamExt as _;
 
@@ -98,8 +98,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create a self-signed certificate.
+    let policy = CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=DefaultPolicy".into()),
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
+        certificate_policy: Some(policy),
         ..Default::default()
     };
 
@@ -129,7 +140,7 @@ If you just want to wait until the `Poller<CertificateOperation>` is complete an
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
     CertificateClient, CertificateClientExt,
-    models::{CreateCertificateParameters, DEFAULT_CERTIFICATE_POLICY},
+    models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
 
 #[tokio::main]
@@ -142,8 +153,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Create a self-signed certificate.
+    let policy = CertificatePolicy {
+        x509_certificate_properties: Some(X509CertificateProperties {
+            subject: Some("CN=DefaultPolicy".into()),
+            ..Default::default()
+        }),
+        issuer_parameters: Some(IssuerParameters {
+            name: Some("Self".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
     let body = CreateCertificateParameters {
-        certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
+        certificate_policy: Some(policy),
         ..Default::default()
     };
 
