@@ -193,15 +193,15 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
 }
 
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(feature = "wasm-bindgen")]
     {
-        Arc::new(web_runtime::WebRuntime) as Arc<dyn AsyncRuntime>
+        Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>
     }
     #[cfg(feature = "tokio")]
     {
         Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>
     }
-    #[cfg(not(any(feature = "tokio", target_arch = "wasm32")))]
+    #[cfg(not(any(feature = "tokio", feature = "wasm-bindgen")))]
     {
         Arc::new(standard_runtime::StdRuntime)
     }

@@ -6,9 +6,9 @@ use crate::time::Duration;
 use futures::channel::oneshot;
 
 /// An [`AsyncRuntime`] using `tokio` based APIs.
-pub(crate) struct WebRuntime;
+pub(crate) struct WasmBindgenRuntime;
 
-impl AsyncRuntime for WebRuntime {
+impl AsyncRuntime for WasmBindgenRuntime {
     fn spawn(&self, f: TaskFuture) -> SpawnedTask {
         let (tx, rx) = oneshot::channel();
 

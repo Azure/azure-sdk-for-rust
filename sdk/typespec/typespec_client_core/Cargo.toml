@@ -16,6 +16,7 @@ base64.workspace = true
 bytes.workspace = true
 dyn-clone.workspace = true
 futures.workspace = true
+gloo-timers = { workspace = true, optional = true }
 pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
 rand.workspace = true
@@ -30,6 +31,7 @@ typespec = { workspace = true, default-features = false }
 typespec_macros = { workspace = true, optional = true }
 url.workspace = true
 uuid.workspace = true
+wasm-bindgen-futures = { workspace = true, optional = true }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
@@ -37,8 +39,6 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 [target.'cfg(target_family = "wasm")'.dependencies]
 getrandom.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
-gloo-timers = { workspace = true, features = ["futures"] }
-wasm-bindgen-futures.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["fs"] }
@@ -61,6 +61,7 @@ reqwest_rustls = [
 ] # Remove dependency on banned `ring` crate; requires manually configuring crypto provider.
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
+wasm-bindgen = ["dep:wasm-bindgen-futures", "gloo-timers/futures"]
 xml = ["dep:quick-xml"]
 
 [[example]]
