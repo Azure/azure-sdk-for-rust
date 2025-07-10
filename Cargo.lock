@@ -2826,7 +2826,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "base64",
