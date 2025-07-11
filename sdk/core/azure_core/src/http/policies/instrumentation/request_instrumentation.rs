@@ -418,6 +418,7 @@ pub(crate) mod tests {
                 })
             })
             .await;
+        // Because the URL contains a username and password, we do not set the URL_FULL_ATTRIBUTE.
         check_request_instrumentation_result(
             mock_tracer_provider,
             1,
@@ -437,10 +438,6 @@ pub(crate) mod tests {
                     (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
                     (SERVER_ADDRESS_ATTRIBUTE, AttributeValue::from("host")),
                     (SERVER_PORT_ATTRIBUTE, AttributeValue::from(8080)),
-                    (
-                        URL_FULL_ATTRIBUTE,
-                        AttributeValue::from("https://host:8080/path?query=value#fragment"),
-                    ),
                 ],
             },
         );
