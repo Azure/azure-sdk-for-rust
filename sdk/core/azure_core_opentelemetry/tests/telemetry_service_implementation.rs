@@ -170,8 +170,6 @@ impl TestServiceClient {
     }
 }
 
-use super::*;
-use azure_core::Result;
 use azure_core_test::{recorded, TestContext};
 use opentelemetry::trace::{SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus};
 use opentelemetry::Value as OpenTelemetryAttributeValue;
