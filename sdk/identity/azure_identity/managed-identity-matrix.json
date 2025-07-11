@@ -1,0 +1,17 @@
+{
+    "include": [
+        {
+            "Agent": {
+                "msi_image": {
+                    "ArmTemplateParameters": "@{deployResources = $true}",
+                    "OSVmImage": "env:LINUXVMIMAGE",
+                    "Pool": "env:LINUXPOOL"
+                }
+            },
+            "IDENTITY_IMDS_AVAILABLE": "1",
+            "RustToolchainName": [
+                "stable"
+            ]
+        }
+    ]
+}

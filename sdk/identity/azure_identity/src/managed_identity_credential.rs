@@ -153,14 +153,41 @@ mod tests {
     use crate::env::Env;
     use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
     use azure_core::http::headers::Headers;
-    use azure_core::http::{Method, RawResponse, Request, StatusCode};
+    use azure_core::http::{Method, RawResponse, Request, StatusCode, Url};
+    use azure_core::time::OffsetDateTime;
     use azure_core::Bytes;
-    use azure_core_test::http::MockHttpClient;
+    use azure_core_test::{http::MockHttpClient, recorded};
     use futures::FutureExt;
+    use std::env;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     const EXPIRES_ON: &str = "EXPIRES_ON";
+
+    async fn run_deployed_test(
+        authority: &str,
+        storage_name: &str,
+        id: Option<UserAssignedId>,
+    ) -> azure_core::Result<()> {
+        let id_param = id.map_or("".to_string(), |id| match id {
+            UserAssignedId::ClientId(id) => format!("client-id={id}&"),
+            UserAssignedId::ObjectId(id) => format!("object-id={id}&"),
+            UserAssignedId::ResourceId(id) => format!("resource-id={id}&"),
+        });
+        let url = format!(
+            "http://{authority}/api?test=managed-identity&{id_param}storage-name={storage_name}"
+        );
+        let u = Url::parse(&url).expect("invalid URL");
+        let client = azure_core::http::new_http_client();
+        let req = Request::new(u, Method::Get);
+
+        let res = client.execute_request(&req).await.expect("request failed");
+        let status = res.status();
+        let body = res.into_body().collect_string().await?;
+        assert_eq!(StatusCode::Ok, status, "Test app responded with '{body}'");
+
+        Ok(())
+    }
 
     async fn run_supported_source_test(
         env: Env,
@@ -254,6 +281,27 @@ mod tests {
             matches!(result, Err(ref e) if *e.kind() == azure_core::error::ErrorKind::Credential),
             "Expected constructor error"
         );
+    }
+
+    #[recorded::test(live)]
+    async fn aci_user_assigned_live() -> azure_core::Result<()> {
+        if env::var("CI_HAS_DEPLOYED_RESOURCES").is_err() {
+            println!("Skipped: ACI live tests require deployed resources");
+            return Ok(());
+        }
+        let ip = env::var("IDENTITY_ACI_IP_USER_ASSIGNED").expect("IDENTITY_ACI_IP_USER_ASSIGNED");
+        let storage_name = env::var("IDENTITY_STORAGE_NAME_USER_ASSIGNED")
+            .expect("IDENTITY_STORAGE_NAME_USER_ASSIGNED");
+        let client_id = env::var("IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID")
+            .expect("IDENTITY_USER_ASSIGNED_IDENTITY_CLIENT_ID");
+        run_deployed_test(
+            &format!("{}:8080", ip),
+            &storage_name,
+            Some(UserAssignedId::ClientId(client_id)),
+        )
+        .await?;
+
+        Ok(())
     }
 
     async fn run_app_service_test(options: Option<ManagedIdentityCredentialOptions>) {
@@ -369,6 +417,27 @@ mod tests {
         );
     }
 
+    async fn run_imds_live_test(id: Option<UserAssignedId>) -> azure_core::Result<()> {
+        if std::env::var("IDENTITY_IMDS_AVAILABLE").is_err() {
+            println!("Skipped: IMDS isn't available");
+            return Ok(());
+        }
+
+        let credential = ManagedIdentityCredential::new(Some(ManagedIdentityCredentialOptions {
+            user_assigned_id: id,
+            ..Default::default()
+        }))
+        .expect("valid credential");
+
+        let token = credential.get_token(LIVE_TEST_SCOPES, None).await?;
+
+        assert!(!token.token.secret().is_empty());
+        assert_eq!(time::UtcOffset::UTC, token.expires_on.offset());
+        assert!(token.expires_on.unix_timestamp() > OffsetDateTime::now_utc().unix_timestamp());
+
+        Ok(())
+    }
+
     async fn run_imds_test(options: Option<ManagedIdentityCredentialOptions>) {
         let mut model = Request::new(
             "http://169.254.169.254/metadata/identity/oauth2/token"
@@ -409,11 +478,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn imds() {
-        run_imds_test(None).await;
-    }
-
-    #[tokio::test]
     async fn imds_client_id() {
         run_imds_test(Some(ManagedIdentityCredentialOptions {
             user_assigned_id: Some(UserAssignedId::ClientId("expected client ID".to_string())),
@@ -440,6 +504,16 @@ mod tests {
             ..Default::default()
         }))
         .await;
+    }
+
+    #[tokio::test]
+    async fn imds_system_assigned() {
+        run_imds_test(None).await;
+    }
+
+    #[recorded::test(live)]
+    async fn imds_system_assigned_live() -> azure_core::Result<()> {
+        run_imds_live_test(None).await
     }
 
     #[tokio::test]

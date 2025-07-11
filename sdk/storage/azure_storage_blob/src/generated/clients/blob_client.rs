@@ -153,9 +153,12 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
+    /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
+    ///   non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
     /// * `options` - Optional parameters for the request.
     pub async fn acquire_lease(
         &self,
+        duration: i32,
         options: Option<BlobClientAcquireLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -193,9 +196,7 @@ impl BlobClient {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-lease-action", "acquire");
-        if let Some(duration) = options.duration {
-            request.insert_header("x-ms-lease-duration", duration.to_string());
-        }
+        request.insert_header("x-ms-lease-duration", duration.to_string());
         if let Some(proposed_lease_id) = options.proposed_lease_id {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }
@@ -397,7 +398,7 @@ impl BlobClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         request.insert_header("x-ms-requires-sync", "true");
@@ -491,7 +492,7 @@ impl BlobClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         request.insert_header("x-ms-version", &self.version);
@@ -646,6 +647,9 @@ impl BlobClient {
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
         }
+        if let Some(range) = options.range {
+            request.insert_header("range", range);
+        }
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
@@ -666,9 +670,6 @@ impl BlobClient {
         }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(range) = options.range {
-            request.insert_header("x-ms-range", range);
         }
         if let Some(range_get_content_crc64) = options.range_get_content_crc64 {
             request.insert_header(
@@ -1164,7 +1165,7 @@ impl BlobClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         request.insert_header("x-ms-version", &self.version);
@@ -1409,7 +1410,7 @@ impl BlobClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         if let Some(rehydrate_priority) = options.rehydrate_priority {

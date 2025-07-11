@@ -106,9 +106,12 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
+    /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
+    ///   non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
     /// * `options` - Optional parameters for the request.
     pub async fn acquire_lease(
         &self,
+        duration: i32,
         options: Option<BlobContainerClientAcquireLeaseOptions<'_>>,
     ) -> Result<Response<BlobContainerClientAcquireLeaseResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -135,9 +138,7 @@ impl BlobContainerClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-lease-action", "acquire");
-        if let Some(duration) = options.duration {
-            request.insert_header("x-ms-lease-duration", duration.to_string());
-        }
+        request.insert_header("x-ms-lease-duration", duration.to_string());
         if let Some(proposed_lease_id) = options.proposed_lease_id {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }
@@ -271,7 +272,7 @@ impl BlobContainerClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         request.insert_header("x-ms-version", &self.version);
@@ -894,7 +895,7 @@ impl BlobContainerClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         request.insert_header("x-ms-version", &self.version);

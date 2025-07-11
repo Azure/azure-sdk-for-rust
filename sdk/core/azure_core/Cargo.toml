@@ -40,6 +40,7 @@ rustc_version.workspace = true
 [dev-dependencies]
 azure_core_test.workspace = true
 azure_identity.workspace = true
+azure_security_keyvault_certificates.path = "../../keyvault/azure_security_keyvault_certificates"
 azure_security_keyvault_secrets.path = "../../keyvault/azure_security_keyvault_secrets"
 criterion.workspace = true
 thiserror.workspace = true

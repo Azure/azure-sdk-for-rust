@@ -314,10 +314,6 @@ pub struct BlobClientAcquireLeaseOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
-    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
-    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
-    pub duration: Option<i32>,
-
     /// A condition that must be met in order for the request to be processed.
     pub if_match: Option<String>,
 
@@ -1138,10 +1134,6 @@ pub struct BlobClientUndeleteOptions<'a> {
 pub struct BlobContainerClientAcquireLeaseOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
-
-    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
-    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
-    pub duration: Option<i32>,
 
     /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
     pub if_modified_since: Option<OffsetDateTime>,
@@ -2220,9 +2212,6 @@ pub struct PageBlobClientClearPagesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
-    /// Return only the bytes of the blob in the specified range.
-    pub range: Option<String>,
-
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
 }
@@ -2589,9 +2578,6 @@ pub struct PageBlobClientUploadPagesOptions<'a> {
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
-
-    /// Return only the bytes of the blob in the specified range.
-    pub range: Option<String>,
 
     /// Required if the request body is a structured message. Specifies the message schema version and properties.
     pub structured_body_type: Option<String>,
