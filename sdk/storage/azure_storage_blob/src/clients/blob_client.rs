@@ -4,14 +4,16 @@
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
-        BlobClientDownloadResult, BlobClientGetPropertiesResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadResult,
+        BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
+        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
+        BlobClientRenewLeaseResult, BlockBlobClientCommitBlockListResult,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult,
     },
     models::{
-        AccessTierOptional, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetPropertiesOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+        AccessTierOptional, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
+        BlobClientChangeLeaseOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        BlobClientGetPropertiesOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList,
     },
@@ -232,5 +234,83 @@ impl BlobClient {
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.set_tier(tier, options).await
+    }
+
+    /// Requests a new lease on a blob. The lease lock duration can be 15 to 60 seconds, or can be infinite.
+    ///
+    /// # Arguments
+    ///
+    /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
+    ///   non-infinite lease can be between 15 and 60 seconds.
+    /// * `options` - Optional configuration for the request.
+    pub async fn acquire_lease(
+        &self,
+        duration: i32,
+        options: Option<BlobClientAcquireLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>> {
+        self.client.acquire_lease(duration, options).await
+    }
+
+    /// Ends a lease and ensures that another client can't acquire a new lease until the current lease
+    /// period has expired.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn break_lease(
+        &self,
+        options: Option<BlobClientBreakLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientBreakLeaseResult, NoFormat>> {
+        self.client.break_lease(options).await
+    }
+
+    /// Changes the ID of an existing lease to the proposed lease ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `lease_id` - A lease ID for the source path. The source path must have an active lease and the
+    ///   lease ID must match.
+    /// * `proposed_lease_id` - The proposed lease ID for the blob.
+    /// * `options` - Optional configuration for the request.
+    pub async fn change_lease(
+        &self,
+        lease_id: String,
+        proposed_lease_id: String,
+        options: Option<BlobClientChangeLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientChangeLeaseResult, NoFormat>> {
+        self.client
+            .change_lease(lease_id, proposed_lease_id, options)
+            .await
+    }
+
+    /// Frees the lease so that another client can immediately acquire a lease
+    /// against the blob as soon as the release is complete.
+    ///
+    /// # Arguments
+    ///
+    /// * `lease_id` - A lease ID for the source path. The source path must have an active lease and the
+    ///   lease ID must match.
+    /// * `options` - Optional configuration for the request.
+    pub async fn release_lease(
+        &self,
+        lease_id: String,
+        options: Option<BlobClientReleaseLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientReleaseLeaseResult, NoFormat>> {
+        self.client.release_lease(lease_id, options).await
+    }
+
+    /// Renews the lease on a blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `lease_id` - A lease ID for the source path. The source path must have an active lease and the
+    ///   lease ID must match.
+    /// * `options` - Optional configuration for the request.
+    pub async fn renew_lease(
+        &self,
+        lease_id: String,
+        options: Option<BlobClientRenewLeaseOptions<'_>>,
+    ) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>> {
+        self.client.renew_lease(lease_id, options).await
     }
 }
