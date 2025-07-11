@@ -10,9 +10,7 @@ use azure_core::{
         ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request,
         RequestInstrumentationOptions, Url,
     },
-    tracing,
-    tracing::PublicApiInstrumentationInformation,
-    Result,
+    tracing, Result,
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::{InMemorySpanExporter, SdkTracerProvider};
@@ -139,24 +137,13 @@ impl TestServiceClientWithMacros {
     /// This applies to most HTTP client operations, but not all. CosmosDB has its own set of conventions as listed
     /// [here](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/cosmosdb.md)
     ///
-    // #[tracing::function]
+    #[tracing::function("macros_get_with_tracing",(a.b=1,az.telemetry="Abc","string attribute"=path))]
     pub async fn get_with_function_tracing(
         &self,
         path: &str,
         options: Option<TestServiceClientWithMacrosGetMethodOptions<'_>>,
     ) -> Result<RawResponse> {
         let options = options.unwrap_or_default();
-
-        let public_api_info = PublicApiInstrumentationInformation {
-            api_name: "macros_get_with_tracing",
-            attributes: vec![],
-        };
-        // Add the span to the tracer.
-        let mut ctx = options.method_options.context.with_value(public_api_info);
-        // If the service has a tracer, we add it to the context.
-        if let Some(tracer) = &self.tracer {
-            ctx = ctx.with_value(tracer.clone());
-        }
 
         let mut url = self.endpoint.clone();
         url.set_path(path);
@@ -165,7 +152,10 @@ impl TestServiceClientWithMacros {
 
         let mut request = Request::new(url, azure_core::http::Method::Get);
 
-        let response = self.pipeline.send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline
+            .send(&options.method_options.context, &mut request)
+            .await?;
         if !response.status().is_success() {
             return Err(azure_core::Error::message(
                 azure_core::error::ErrorKind::HttpResponse {
@@ -434,7 +424,12 @@ mod tests {
                 kind: OpenTelemetrySpanKind::Internal,
                 parent_span_id: None,
                 status: OpenTelemetrySpanStatus::Unset,
-                attributes: vec![("az.namespace", "Az.TestServiceClient".into())],
+                attributes: vec![
+                    ("az.namespace", "Az.TestServiceClient".into()),
+                    ("a.b", 1.into()),              // added by tracing macro.
+                    ("az.telemetry", "Abc".into()), // added by tracing macro
+                    ("string attribute", "index.html".into()), // added by tracing macro.
+                ],
             },
         )?;
 
@@ -510,6 +505,9 @@ mod tests {
                 attributes: vec![
                     ("az.namespace", "Az.TestServiceClient".into()),
                     ("error.type", "404".into()),
+                    ("a.b", 1.into()),              // added by tracing macro.
+                    ("az.telemetry", "Abc".into()), // added by tracing macro
+                    ("string attribute", "failing_url".into()), // added by tracing macro.
                 ],
             },
         )?;
