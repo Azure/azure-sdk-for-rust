@@ -1,18 +1,18 @@
 # Release History
 
-## 0.5.0 (Unreleased)
+## 0.5.0 (2025-07-10)
 
 ### Features Added
 
 - Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace
 the default asynchronous runtime with another.
+- Added `Request::set_method()` to allow changing the HTTP method of a request.
 
 ### Breaking Changes
 
+- Minimum supported Rust version (MSRV) is now 1.85.
 - Removed `Pipeline::replace_policy`.
 - Renamed `typespec_client_core::date` to `typespec_client_core::time` and added `typespec_client_core::time::Duration`
-
-### Bugs Fixed
 
 ### Other Changes
 

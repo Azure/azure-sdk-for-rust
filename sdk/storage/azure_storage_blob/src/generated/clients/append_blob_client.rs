@@ -391,7 +391,7 @@ impl AppendBlobClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         if let Some(blob_tags_string) = options.blob_tags_string {
