@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use super::{AZ_NAMESPACE_ATTRIBUTE, ERROR_TYPE_ATTRIBUTE};
 use crate::{
     http::{Context, Request},
     tracing::{Span, SpanKind, Tracer},
 };
 use std::sync::Arc;
 use typespec_client_core::{
+    fmt::SafeDebug,
     http::policies::{Policy, PolicyResult},
     tracing::Attribute,
 };
@@ -21,7 +23,7 @@ use typespec_client_core::{
 ///
 /// If the `PublicApiInstrumentationPolicy` policy detects a `PublicApiInstrumentationInformation` in the context,
 /// it will create a span with the API name and any additional attributes.
-#[derive(Debug)]
+#[derive(SafeDebug)]
 pub struct PublicApiInstrumentationInformation {
     /// The name of the API being instrumented.
     ///
@@ -30,6 +32,7 @@ pub struct PublicApiInstrumentationInformation {
     ///
     /// For example, if the service client is `MyClient` and the API is `my_api`,
     /// the API name should be `MyClient.my_api`.
+    #[safe(true)]
     pub api_name: &'static str,
 
     /// Additional attributes to be added to the span for this API.
@@ -40,9 +43,6 @@ pub struct PublicApiInstrumentationInformation {
     ///
     pub attributes: Vec<Attribute>,
 }
-
-const AZ_NAMESPACE_ATTRIBUTE: &str = "az.namespace";
-const ERROR_TYPE_ATTRIBUTE: &str = "error.type";
 
 /// Sets distributed tracing information for HTTP requests.
 #[derive(Clone, Debug)]
@@ -89,51 +89,48 @@ impl Policy for PublicApiInstrumentationPolicy {
         // If it does, we use that information to create a span for the request.
         // If it doesn't, we skip instrumentation.
         let public_api_information = ctx.value::<PublicApiInstrumentationInformation>();
-        let span: Option<Arc<dyn Span>> = if let Some(info) = public_api_information {
-            // Use the public API information for instrumentation.
-            // If the context has a tracer (which happens when called from an instrumented method),
-            // we prefer the tracer from the context.
-            // Otherwise, we use the tracer from the policy itself.
-            // This allows for flexibility in using different tracers in different contexts.
-            let mut span_attributes = vec![];
+        let span: Option<Arc<dyn Span>> = public_api_information
+            .map(|info| {
+                // Use the public API information for instrumentation.
+                // If the context has a tracer (which happens when called from an instrumented method),
+                // we prefer the tracer from the context.
+                // Otherwise, we use the tracer from the policy itself.
+                // This allows for flexibility in using different tracers in different contexts.
+                let mut span_attributes = vec![];
 
-            for attr in &info.attributes {
-                // Add the attributes from the public API information to the span.
-                span_attributes.push(Attribute {
-                    key: attr.key,
-                    value: attr.value.clone(),
-                });
-            }
-
-            if let Some(tracer) = ctx.value::<Arc<dyn Tracer>>() {
-                if let Some(namespace) = tracer.namespace() {
-                    // If the tracer has a namespace, we set it as an attribute.
+                for attr in &info.attributes {
+                    // Add the attributes from the public API information to the span.
                     span_attributes.push(Attribute {
-                        key: AZ_NAMESPACE_ATTRIBUTE,
-                        value: namespace.into(),
+                        key: attr.key,
+                        value: attr.value.clone(),
                     });
                 }
-                // Create a span with the public API information.
-                Some(tracer.start_span_with_current(
-                    info.api_name,
-                    SpanKind::Internal,
-                    span_attributes,
-                ))
-            } else if let Some(tracer) = &self.tracer {
-                // We didn't have a span from the context, but we do have a Tracer from the
-                // pipeline construction, so use that.
-                Some(tracer.start_span_with_current(
-                    info.api_name,
-                    SpanKind::Internal,
-                    span_attributes,
-                ))
-            } else {
-                // If no tracer is available, we skip instrumentation.
-                None
-            }
-        } else {
-            None
-        };
+
+                if let Some(tracer) = ctx.value::<Arc<dyn Tracer>>() {
+                    if let Some(namespace) = tracer.namespace() {
+                        // If the tracer has a namespace, we set it as an attribute.
+                        span_attributes.push(Attribute {
+                            key: AZ_NAMESPACE_ATTRIBUTE,
+                            value: namespace.into(),
+                        });
+                    }
+                    // Create a span with the public API information.
+                    Some(tracer.start_span_with_current(
+                        info.api_name,
+                        SpanKind::Internal,
+                        span_attributes,
+                    ))
+                } else {
+                    self.tracer.as_ref().map(|tracer| {
+                        tracer.start_span_with_current(
+                            info.api_name,
+                            SpanKind::Internal,
+                            span_attributes,
+                        )
+                    })
+                }
+            })
+            .unwrap();
 
         // Now add the span to the context, so that it can be used by the next policies.
         let mut ctx = ctx.clone();
@@ -145,37 +142,43 @@ impl Policy for PublicApiInstrumentationPolicy {
         let result = next[0].send(&ctx, request, &next[1..]).await;
 
         if let Some(span) = span {
-            if let Err(e) = &result {
-                // If the request failed, we set the error type on the span.
-                match e.kind() {
-                    crate::error::ErrorKind::HttpResponse { status, .. } => {
-                        span.set_attribute(ERROR_TYPE_ATTRIBUTE, status.to_string().into());
+            match &result {
+                Err(e) => {
+                    // If the request failed, we set the error type on the span.
+                    match e.kind() {
+                        crate::error::ErrorKind::HttpResponse { status, .. } => {
+                            span.set_attribute(ERROR_TYPE_ATTRIBUTE, status.to_string().into());
 
-                        // 5xx status codes SHOULD set status to Error.
-                        // The description should not be set because it can be inferred from "http.response.status_code".
-                        if status.is_server_error() {
+                            // 5xx status codes SHOULD set status to Error.
+                            // The description should not be set because it can be inferred from "http.response.status_code".
+                            if status.is_server_error() {
+                                span.set_status(crate::tracing::SpanStatus::Error {
+                                    description: "".to_string(),
+                                });
+                            }
+                        }
+                        _ => {
+                            span.set_attribute(ERROR_TYPE_ATTRIBUTE, e.kind().to_string().into());
                             span.set_status(crate::tracing::SpanStatus::Error {
-                                description: "".to_string(),
+                                description: e.kind().to_string(),
                             });
                         }
                     }
-                    _ => {
-                        span.set_attribute(ERROR_TYPE_ATTRIBUTE, e.kind().to_string().into());
+                }
+                Ok(response) => {
+                    // 5xx status codes SHOULD set status to Error.
+                    // The description should not be set because it can be inferred from "http.response.status_code".
+                    if response.status().is_server_error() {
                         span.set_status(crate::tracing::SpanStatus::Error {
-                            description: e.kind().to_string(),
+                            description: "".to_string(),
                         });
                     }
-                }
-            } else if let Ok(response) = &result {
-                // 5xx status codes SHOULD set status to Error.
-                // The description should not be set because it can be inferred from "http.response.status_code".
-                if response.status().is_server_error() {
-                    span.set_status(crate::tracing::SpanStatus::Error {
-                        description: "".to_string(),
-                    });
-                }
-                if response.status().is_client_error() || response.status().is_server_error() {
-                    span.set_attribute(ERROR_TYPE_ATTRIBUTE, response.status().to_string().into());
+                    if response.status().is_client_error() || response.status().is_server_error() {
+                        span.set_attribute(
+                            ERROR_TYPE_ATTRIBUTE,
+                            response.status().to_string().into(),
+                        );
+                    }
                 }
             }
 
@@ -188,10 +191,10 @@ impl Policy for PublicApiInstrumentationPolicy {
 #[cfg(test)]
 mod tests {
     // cspell: ignore traceparent
-    use super::super::request_instrumentation::tests::{
+    use super::*;
+    use crate::http::policies::instrumentation::tests::{
         check_request_instrumentation_result, InstrumentationExpectation, MockTracingProvider,
     };
-    use super::*;
     use crate::{
         http::{
             headers::Headers,

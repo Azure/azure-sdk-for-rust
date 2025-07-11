@@ -112,7 +112,7 @@ impl Method {
     }
 
     /// Returns the HTTP method as a static string slice.
-    pub fn as_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
             Method::Delete => "DELETE",
             Method::Get => "GET",

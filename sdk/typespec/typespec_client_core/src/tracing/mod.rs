@@ -24,30 +24,24 @@ pub use with_context::{FutureExt, WithContext};
 /// The TracerProvider trait is the entrypoint for distributed tracing in the SDK.
 ///
 /// It provides a method to get a tracer for a specific name and package version.
-pub trait TracerProvider: Send + Sync {
+pub trait TracerProvider: Send + Sync + Debug {
     /// Returns a tracer for the given name.
     ///
     /// Arguments:
     /// - `namespace_name`: The namespace of the package for which the tracer is requested. See
     ///   [this page](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers)
     ///   for more information on namespace names.
-    /// - `package_name`: The name of the package for which the tracer is requested.
-    /// - `package_version`: The version of the package for which the tracer is requested.
+    /// - `crate_name`: The name of the crate for which the tracer is requested.
+    /// - `crate_version`: The version of the crate for which the tracer is requested.
     fn get_tracer(
         &self,
         namespace_name: Option<&'static str>,
-        package_name: &'static str,
-        package_version: &'static str,
+        crate_name: &'static str,
+        crate_version: &'static str,
     ) -> Arc<dyn Tracer>;
 }
 
-impl Debug for dyn TracerProvider {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TracerProvider").finish_non_exhaustive()
-    }
-}
-
-pub trait Tracer: Send + Sync {
+pub trait Tracer: Send + Sync + Debug {
     /// Starts a new span with the given name and type.
     ///
     ///  The newly created span will not have a parent span.
@@ -115,12 +109,6 @@ pub trait Tracer: Send + Sync {
     fn namespace(&self) -> Option<&'static str>;
 }
 
-impl Debug for dyn Tracer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Tracer").finish_non_exhaustive()
-    }
-}
-
 /// The status of a span.
 ///
 /// This enum represents the possible statuses of a span in distributed tracing.
@@ -135,7 +123,7 @@ pub enum SpanStatus {
     Error { description: String },
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub enum SpanKind {
     #[default]
     Internal,

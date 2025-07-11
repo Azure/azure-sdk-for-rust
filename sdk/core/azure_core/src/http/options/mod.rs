@@ -30,6 +30,10 @@ pub struct ClientOptions {
     /// User-Agent telemetry options.
     pub user_agent: Option<UserAgentOptions>,
 
+    /// Options for request instrumentation, such as distributed tracing.
+    ///
+    /// If not specified, defaults to no instrumentation.
+    ///
     pub request_instrumentation: Option<RequestInstrumentationOptions>,
 }
 

@@ -90,7 +90,7 @@ impl Span for OpenTelemetrySpan {
 
         // We then insert each of the headers from the OpenTelemetry header map into the
         // Request's header map.
-        for (key, value) in header_map.into_iter() {
+        for (key, value) in header_map {
             // Note: The OpenTelemetry HeaderInjector will always produce unique header names, so we don't need to
             // handle the multiple headers case here.
 

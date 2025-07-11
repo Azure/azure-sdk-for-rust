@@ -29,7 +29,14 @@ pub enum AttributeValue {
     Array(AttributeArray),
 }
 
-#[derive(Debug, PartialEq)]
+/// Represents a key-value pair attribute, which is used for tracing and telemetry.
+///
+/// Attributes are used to provide additional context and metadata about a span or event.
+/// They can be of various types, including strings, integers, booleans, and arrays.
+///
+/// Attributes are typically used to enrich telemetry data with additional information
+/// that can be useful for debugging, monitoring, and analysis.
+#[derive(Debug, PartialEq, Clone)]
 pub struct Attribute {
     /// A key-value pair attribute.
     pub key: &'static str,
