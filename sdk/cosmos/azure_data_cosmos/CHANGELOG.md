@@ -4,7 +4,7 @@
 
 ### Features Added
 * Added `if_match_etag` to `ItemOptions` ([#2705](https://github.com/Azure/azure-sdk-for-rust/pull/2705))
-* Added `as_headers` to `ItemOptions` ([#2744](https://github.com/Azure/azure-sdk-for-rust/pull/2744))
+* Added several more options to `ItemOptions`: `pre_triggers`, `post_triggers`, `session_token`, `consistency_level`, and `indexing_directive` ([#2744](https://github.com/Azure/azure-sdk-for-rust/pull/2744))
 
 ### Breaking Changes
 
