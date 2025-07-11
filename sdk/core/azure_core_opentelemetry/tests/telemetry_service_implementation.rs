@@ -170,268 +170,141 @@ impl TestServiceClient {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use azure_core::Result;
-    use azure_core_test::{recorded, TestContext};
-    use opentelemetry::trace::{
-        SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus,
-    };
-    use opentelemetry::Value as OpenTelemetryAttributeValue;
-    use tracing::{info, trace};
+use super::*;
+use azure_core::Result;
+use azure_core_test::{recorded, TestContext};
+use opentelemetry::trace::{SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus};
+use opentelemetry::Value as OpenTelemetryAttributeValue;
+use tracing::{info, trace};
 
-    fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
-        let otel_exporter = InMemorySpanExporter::default();
-        let otel_tracer_provider = SdkTracerProvider::builder()
-            .with_simple_exporter(otel_exporter.clone())
-            .build();
-        let otel_tracer_provider = Arc::new(otel_tracer_provider);
-        (otel_tracer_provider, otel_exporter)
-    }
+fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
+    let otel_exporter = InMemorySpanExporter::default();
+    let otel_tracer_provider = SdkTracerProvider::builder()
+        .with_simple_exporter(otel_exporter.clone())
+        .build();
+    let otel_tracer_provider = Arc::new(otel_tracer_provider);
+    (otel_tracer_provider, otel_exporter)
+}
 
-    // Span verification utility functions.
+// Span verification utility functions.
 
-    struct ExpectedSpan {
-        name: &'static str,
-        kind: OpenTelemetrySpanKind,
-        parent_span_id: Option<opentelemetry::trace::SpanId>,
-        status: OpenTelemetrySpanStatus,
-        attributes: Vec<(&'static str, OpenTelemetryAttributeValue)>,
-    }
+struct ExpectedSpan {
+    name: &'static str,
+    kind: OpenTelemetrySpanKind,
+    parent_span_id: Option<opentelemetry::trace::SpanId>,
+    status: OpenTelemetrySpanStatus,
+    attributes: Vec<(&'static str, OpenTelemetryAttributeValue)>,
+}
 
-    fn verify_span(
-        span: &opentelemetry_sdk::trace::SpanData,
-        expected: ExpectedSpan,
-    ) -> Result<()> {
-        assert_eq!(span.name, expected.name);
-        assert_eq!(span.span_kind, expected.kind);
-        assert_eq!(span.status, expected.status);
-        assert_eq!(
-            span.parent_span_id,
-            expected
-                .parent_span_id
-                .unwrap_or(opentelemetry::trace::SpanId::INVALID)
-        );
+fn verify_span(span: &opentelemetry_sdk::trace::SpanData, expected: ExpectedSpan) -> Result<()> {
+    assert_eq!(span.name, expected.name);
+    assert_eq!(span.span_kind, expected.kind);
+    assert_eq!(span.status, expected.status);
+    assert_eq!(
+        span.parent_span_id,
+        expected
+            .parent_span_id
+            .unwrap_or(opentelemetry::trace::SpanId::INVALID)
+    );
 
-        for attr in span.attributes.iter() {
-            println!("Attribute: {} = {:?}", attr.key, attr.value);
-            let mut found = false;
-            for (key, value) in expected.attributes.iter() {
-                if attr.key.as_str() == (*key) {
-                    found = true;
-                    // Skip checking the value for "<ANY>" as it is a placeholder
-                    if *value != OpenTelemetryAttributeValue::String("<ANY>".into()) {
-                        assert_eq!(attr.value, *value, "Attribute mismatch for key: {}", *key);
-                    }
-                    break;
-                }
-            }
-            if !found {
-                panic!("Unexpected attribute: {} = {:?}", attr.key, attr.value);
-            }
-        }
+    for attr in span.attributes.iter() {
+        println!("Attribute: {} = {:?}", attr.key, attr.value);
+        let mut found = false;
         for (key, value) in expected.attributes.iter() {
-            if !span.attributes.iter().any(|attr| attr.key == (*key).into()) {
-                panic!("Expected attribute not found: {} = {:?}", key, value);
+            if attr.key.as_str() == (*key) {
+                found = true;
+                // Skip checking the value for "<ANY>" as it is a placeholder
+                if *value != OpenTelemetryAttributeValue::String("<ANY>".into()) {
+                    assert_eq!(attr.value, *value, "Attribute mismatch for key: {}", *key);
+                }
+                break;
             }
         }
-
-        Ok(())
-    }
-
-    // Basic functionality tests.
-    #[recorded::test()]
-    async fn test_service_client_new(ctx: TestContext) -> Result<()> {
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
-            ..Default::default()
-        };
-
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
-        assert_eq!(client.endpoint().as_str(), "https://example.com/");
-        assert_eq!(client.api_version, "2023-10-01");
-
-        Ok(())
-    }
-
-    // Ensure that the the test client actually does what it's supposed to do without telemetry.
-    #[recorded::test()]
-    async fn test_service_client_get(ctx: TestContext) -> Result<()> {
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-
-        let client = TestServiceClient::new(endpoint, credential, None).unwrap();
-        let response = client.get("index.html", None).await;
-        info!("Response: {:?}", response);
-        assert!(response.is_ok());
-        let response = response.unwrap();
-        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
-        Ok(())
-    }
-
-    #[recorded::test()]
-    async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
-        let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
-        let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
-
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
-            azure_client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracing_provider: Some(azure_provider),
-                }),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
-        let response = client.get("index.html", None).await;
-        info!("Response: {:?}", response);
-        assert!(response.is_ok());
-        let response = response.unwrap();
-        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
-
-        let spans = otel_exporter.get_finished_spans().unwrap();
-        assert_eq!(spans.len(), 1);
-        for span in &spans {
-            trace!("Span: {:?}", span);
-
-            verify_span(
-                span,
-                ExpectedSpan {
-                    name: "GET",
-                    kind: OpenTelemetrySpanKind::Client,
-                    status: OpenTelemetrySpanStatus::Unset,
-                    parent_span_id: None,
-                    attributes: vec![
-                        ("http.request.method", "GET".into()),
-                        ("az.client.request.id", "<ANY>".into()),
-                        (
-                            "url.full",
-                            format!(
-                                "{}{}",
-                                client.endpoint(),
-                                "index.html?api-version=2023-10-01"
-                            )
-                            .into(),
-                        ),
-                        ("server.address", "example.com".into()),
-                        ("server.port", 443.into()),
-                        ("http.request.resend_count", 0.into()),
-                        ("http.response.status_code", 200.into()),
-                    ],
-                },
-            )?;
+        if !found {
+            panic!("Unexpected attribute: {} = {:?}", attr.key, attr.value);
         }
-
-        Ok(())
+    }
+    for (key, value) in expected.attributes.iter() {
+        if !span.attributes.iter().any(|attr| attr.key == (*key).into()) {
+            panic!("Expected attribute not found: {} = {:?}", key, value);
+        }
     }
 
-    #[recorded::test()]
-    async fn test_service_client_get_with_tracing_error(ctx: TestContext) -> Result<()> {
-        let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
-        let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+    Ok(())
+}
 
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
-            azure_client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracing_provider: Some(azure_provider),
-                }),
-                ..Default::default()
-            },
+// Basic functionality tests.
+#[recorded::test()]
+async fn test_service_client_new(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let endpoint = "https://example.com";
+    let credential = recording.credential().clone();
+    let options = TestServiceClientOptions {
+        ..Default::default()
+    };
+
+    let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+    assert_eq!(client.endpoint().as_str(), "https://example.com/");
+    assert_eq!(client.api_version, "2023-10-01");
+
+    Ok(())
+}
+
+// Ensure that the the test client actually does what it's supposed to do without telemetry.
+#[recorded::test()]
+async fn test_service_client_get(ctx: TestContext) -> Result<()> {
+    let recording = ctx.recording();
+    let endpoint = "https://example.com";
+    let credential = recording.credential().clone();
+
+    let client = TestServiceClient::new(endpoint, credential, None).unwrap();
+    let response = client.get("index.html", None).await;
+    info!("Response: {:?}", response);
+    assert!(response.is_ok());
+    let response = response.unwrap();
+    assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+    Ok(())
+}
+
+#[recorded::test()]
+async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
+    let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
+    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+
+    let recording = ctx.recording();
+    let endpoint = "https://example.com";
+    let credential = recording.credential().clone();
+    let options = TestServiceClientOptions {
+        azure_client_options: ClientOptions {
+            request_instrumentation: Some(RequestInstrumentationOptions {
+                tracing_provider: Some(azure_provider),
+            }),
             ..Default::default()
-        };
+        },
+        ..Default::default()
+    };
 
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
-        let response = client.get("failing_url", None).await;
-        info!("Response: {:?}", response);
+    let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+    let response = client.get("index.html", None).await;
+    info!("Response: {:?}", response);
+    assert!(response.is_ok());
+    let response = response.unwrap();
+    assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
 
-        let spans = otel_exporter.get_finished_spans().unwrap();
-        assert_eq!(spans.len(), 1);
-        for span in &spans {
-            trace!("Span: {:?}", span);
+    let spans = otel_exporter.get_finished_spans().unwrap();
+    assert_eq!(spans.len(), 1);
+    for span in &spans {
+        trace!("Span: {:?}", span);
 
-            verify_span(
-                span,
-                ExpectedSpan {
-                    name: "GET",
-                    kind: OpenTelemetrySpanKind::Client,
-                    parent_span_id: None,
-                    status: OpenTelemetrySpanStatus::Error {
-                        description: "".into(),
-                    },
-                    attributes: vec![
-                        ("http.request.method", "GET".into()),
-                        ("az.client.request.id", "<ANY>".into()),
-                        (
-                            "url.full",
-                            format!(
-                                "{}{}",
-                                client.endpoint(),
-                                "failing_url?api-version=2023-10-01"
-                            )
-                            .into(),
-                        ),
-                        ("server.address", "example.com".into()),
-                        ("server.port", 443.into()),
-                        ("error.type", "404".into()),
-                        ("http.request.resend_count", 0.into()),
-                        ("http.response.status_code", 404.into()),
-                    ],
-                },
-            )?;
-        }
-
-        Ok(())
-    }
-
-    #[recorded::test()]
-    async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Result<()> {
-        let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
-        let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
-
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
-            azure_client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracing_provider: Some(azure_provider),
-                }),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
-        let response = client.get_with_function_tracing("index.html", None).await;
-        info!("Response: {:?}", response);
-
-        let spans = otel_exporter.get_finished_spans().unwrap();
-        assert_eq!(spans.len(), 2);
-        for span in &spans {
-            trace!("Span: {:?}", span);
-        }
         verify_span(
-            &spans[0],
+            span,
             ExpectedSpan {
                 name: "GET",
                 kind: OpenTelemetrySpanKind::Client,
-                parent_span_id: Some(spans[1].span_context.span_id()),
                 status: OpenTelemetrySpanStatus::Unset,
+                parent_span_id: None,
                 attributes: vec![
                     ("http.request.method", "GET".into()),
-                    ("az.namespace", "Az.TestServiceClient".into()),
                     ("az.client.request.id", "<ANY>".into()),
                     (
                         "url.full",
@@ -449,59 +322,49 @@ mod tests {
                 ],
             },
         )?;
-        verify_span(
-            &spans[1],
-            ExpectedSpan {
-                name: "get_with_tracing",
-                kind: OpenTelemetrySpanKind::Internal,
-                parent_span_id: None,
-                status: OpenTelemetrySpanStatus::Unset,
-                attributes: vec![("az.namespace", "Az.TestServiceClient".into())],
-            },
-        )?;
-
-        Ok(())
     }
 
-    #[recorded::test()]
-    async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -> Result<()> {
-        let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
-        let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+    Ok(())
+}
 
-        let recording = ctx.recording();
-        let endpoint = "https://example.com";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientOptions {
-            azure_client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracing_provider: Some(azure_provider),
-                }),
-                ..Default::default()
-            },
+#[recorded::test()]
+async fn test_service_client_get_with_tracing_error(ctx: TestContext) -> Result<()> {
+    let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
+    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+
+    let recording = ctx.recording();
+    let endpoint = "https://example.com";
+    let credential = recording.credential().clone();
+    let options = TestServiceClientOptions {
+        azure_client_options: ClientOptions {
+            request_instrumentation: Some(RequestInstrumentationOptions {
+                tracing_provider: Some(azure_provider),
+            }),
             ..Default::default()
-        };
+        },
+        ..Default::default()
+    };
 
-        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
-        let response = client.get_with_function_tracing("failing_url", None).await;
-        info!("Response: {:?}", response);
+    let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+    let response = client.get("failing_url", None).await;
+    info!("Response: {:?}", response);
 
-        let spans = otel_exporter.get_finished_spans().unwrap();
-        assert_eq!(spans.len(), 2);
-        for span in &spans {
-            trace!("Span: {:?}", span);
-        }
+    let spans = otel_exporter.get_finished_spans().unwrap();
+    assert_eq!(spans.len(), 1);
+    for span in &spans {
+        trace!("Span: {:?}", span);
+
         verify_span(
-            &spans[0],
+            span,
             ExpectedSpan {
                 name: "GET",
                 kind: OpenTelemetrySpanKind::Client,
-                parent_span_id: Some(spans[1].span_context.span_id()),
+                parent_span_id: None,
                 status: OpenTelemetrySpanStatus::Error {
                     description: "".into(),
                 },
                 attributes: vec![
                     ("http.request.method", "GET".into()),
-                    ("az.namespace", "Az.TestServiceClient".into()),
                     ("az.client.request.id", "<ANY>".into()),
                     (
                         "url.full",
@@ -514,26 +377,155 @@ mod tests {
                     ),
                     ("server.address", "example.com".into()),
                     ("server.port", 443.into()),
+                    ("error.type", "404".into()),
                     ("http.request.resend_count", 0.into()),
                     ("http.response.status_code", 404.into()),
-                    ("error.type", "404".into()),
                 ],
             },
         )?;
-        verify_span(
-            &spans[1],
-            ExpectedSpan {
-                name: "get_with_tracing",
-                kind: OpenTelemetrySpanKind::Internal,
-                parent_span_id: None,
-                status: OpenTelemetrySpanStatus::Unset,
-                attributes: vec![
-                    ("az.namespace", "Az.TestServiceClient".into()),
-                    ("error.type", "404".into()),
-                ],
-            },
-        )?;
-
-        Ok(())
     }
+
+    Ok(())
+}
+
+#[recorded::test()]
+async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Result<()> {
+    let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
+    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+
+    let recording = ctx.recording();
+    let endpoint = "https://example.com";
+    let credential = recording.credential().clone();
+    let options = TestServiceClientOptions {
+        azure_client_options: ClientOptions {
+            request_instrumentation: Some(RequestInstrumentationOptions {
+                tracing_provider: Some(azure_provider),
+            }),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+    let response = client.get_with_function_tracing("index.html", None).await;
+    info!("Response: {:?}", response);
+
+    let spans = otel_exporter.get_finished_spans().unwrap();
+    assert_eq!(spans.len(), 2);
+    for span in &spans {
+        trace!("Span: {:?}", span);
+    }
+    verify_span(
+        &spans[0],
+        ExpectedSpan {
+            name: "GET",
+            kind: OpenTelemetrySpanKind::Client,
+            parent_span_id: Some(spans[1].span_context.span_id()),
+            status: OpenTelemetrySpanStatus::Unset,
+            attributes: vec![
+                ("http.request.method", "GET".into()),
+                ("az.namespace", "Az.TestServiceClient".into()),
+                ("az.client.request.id", "<ANY>".into()),
+                (
+                    "url.full",
+                    format!(
+                        "{}{}",
+                        client.endpoint(),
+                        "index.html?api-version=2023-10-01"
+                    )
+                    .into(),
+                ),
+                ("server.address", "example.com".into()),
+                ("server.port", 443.into()),
+                ("http.request.resend_count", 0.into()),
+                ("http.response.status_code", 200.into()),
+            ],
+        },
+    )?;
+    verify_span(
+        &spans[1],
+        ExpectedSpan {
+            name: "get_with_tracing",
+            kind: OpenTelemetrySpanKind::Internal,
+            parent_span_id: None,
+            status: OpenTelemetrySpanStatus::Unset,
+            attributes: vec![("az.namespace", "Az.TestServiceClient".into())],
+        },
+    )?;
+
+    Ok(())
+}
+
+#[recorded::test()]
+async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -> Result<()> {
+    let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
+    let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+
+    let recording = ctx.recording();
+    let endpoint = "https://example.com";
+    let credential = recording.credential().clone();
+    let options = TestServiceClientOptions {
+        azure_client_options: ClientOptions {
+            request_instrumentation: Some(RequestInstrumentationOptions {
+                tracing_provider: Some(azure_provider),
+            }),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+    let response = client.get_with_function_tracing("failing_url", None).await;
+    info!("Response: {:?}", response);
+
+    let spans = otel_exporter.get_finished_spans().unwrap();
+    assert_eq!(spans.len(), 2);
+    for span in &spans {
+        trace!("Span: {:?}", span);
+    }
+    verify_span(
+        &spans[0],
+        ExpectedSpan {
+            name: "GET",
+            kind: OpenTelemetrySpanKind::Client,
+            parent_span_id: Some(spans[1].span_context.span_id()),
+            status: OpenTelemetrySpanStatus::Error {
+                description: "".into(),
+            },
+            attributes: vec![
+                ("http.request.method", "GET".into()),
+                ("az.namespace", "Az.TestServiceClient".into()),
+                ("az.client.request.id", "<ANY>".into()),
+                (
+                    "url.full",
+                    format!(
+                        "{}{}",
+                        client.endpoint(),
+                        "failing_url?api-version=2023-10-01"
+                    )
+                    .into(),
+                ),
+                ("server.address", "example.com".into()),
+                ("server.port", 443.into()),
+                ("http.request.resend_count", 0.into()),
+                ("http.response.status_code", 404.into()),
+                ("error.type", "404".into()),
+            ],
+        },
+    )?;
+    verify_span(
+        &spans[1],
+        ExpectedSpan {
+            name: "get_with_tracing",
+            kind: OpenTelemetrySpanKind::Internal,
+            parent_span_id: None,
+            status: OpenTelemetrySpanStatus::Unset,
+            attributes: vec![
+                ("az.namespace", "Az.TestServiceClient".into()),
+                ("error.type", "404".into()),
+            ],
+        },
+    )?;
+
+    Ok(())
 }
