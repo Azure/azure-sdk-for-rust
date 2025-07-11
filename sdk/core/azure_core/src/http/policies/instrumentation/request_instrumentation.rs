@@ -318,6 +318,23 @@ pub(crate) mod tests {
         );
     }
 
+    #[test]
+    fn test_request_instrumentation_policy_creation() {
+        let policy = RequestInstrumentationPolicy::new(None);
+        assert!(policy.tracer.is_none());
+
+        let mock_tracer_provider = Arc::new(MockTracingProvider::new());
+        let tracer = mock_tracer_provider.get_tracer(Some("test namespace"), "test_crate", "1.0.0");
+        let policy_with_tracer = RequestInstrumentationPolicy::new(Some(tracer));
+        assert!(policy_with_tracer.tracer.is_some());
+    }
+
+    #[test]
+    fn test_request_instrumentation_policy_without_tracer() {
+        let policy = RequestInstrumentationPolicy::new(None);
+        assert!(policy.tracer.is_none());
+    }
+
     #[tokio::test]
     async fn client_request_id() {
         let url = "https://example.com/client_request_id";
