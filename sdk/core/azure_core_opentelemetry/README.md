@@ -74,13 +74,13 @@ let options = ServiceClientOptions {
 
 Once the `OpenTelemetryTracerProvider` is integrated with the Azure Service ClientOptions, the Azure SDK will be configured to capture per-API and per-HTTP operation tracing options, and the HTTP requests will be annotated with [W3C Trace Context headers](https://www.w3.org/TR/trace-context/).
 
-# Troubleshooting
+## Troubleshooting
 
 ## General
 
 ## Logging
 
-# Contributing
+## Contributing
 
 See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
 
@@ -101,6 +101,5 @@ Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sd
 <!-- LINKS -->
 
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[Cargo]: https://crates.io/
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
