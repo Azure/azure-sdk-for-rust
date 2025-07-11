@@ -5,14 +5,11 @@
 
 mod bearer_token_policy;
 mod client_request_id;
-mod public_api_instrumentation;
-mod request_instrumentation;
+mod instrumentation;
 mod user_agent;
 
 pub use bearer_token_policy::BearerTokenCredentialPolicy;
 pub use client_request_id::*;
-pub use public_api_instrumentation::PublicApiInstrumentationInformation;
-pub(crate) use public_api_instrumentation::PublicApiInstrumentationPolicy;
-pub(crate) use request_instrumentation::*;
+pub use instrumentation::*;
 pub use typespec_client_core::http::policies::*;
 pub use user_agent::*;

@@ -7,7 +7,7 @@ use opentelemetry::{
     global::{BoxedTracer, ObjectSafeTracerProvider},
     InstrumentationScope,
 };
-use std::sync::Arc;
+use std::{fmt::Debug, sync::Arc};
 
 /// Enum to hold different OpenTelemetry tracer provider implementations.
 pub struct OpenTelemetryTracerProvider {
@@ -44,15 +44,22 @@ impl OpenTelemetryTracerProvider {
     }
 }
 
+impl Debug for OpenTelemetryTracerProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OpenTelemetryTracerProvider")
+            .finish_non_exhaustive()
+    }
+}
+
 impl TracerProvider for OpenTelemetryTracerProvider {
     fn get_tracer(
         &self,
         namespace: Option<&'static str>,
-        package_name: &'static str,
-        package_version: &'static str,
+        crate_name: &'static str,
+        crate_version: &'static str,
     ) -> Arc<dyn azure_core::tracing::Tracer> {
-        let scope = InstrumentationScope::builder(package_name)
-            .with_version(package_version)
+        let scope = InstrumentationScope::builder(crate_name)
+            .with_version(crate_version)
             .with_schema_url("https://opentelemetry.io/schemas/1.23.0")
             .build();
         if let Some(provider) = &self.inner {

@@ -12,7 +12,7 @@ use opentelemetry::{
     trace::{TraceContextExt, Tracer as OpenTelemetryTracerTrait},
     Context, KeyValue,
 };
-use std::sync::Arc;
+use std::{fmt::Debug, sync::Arc};
 
 pub struct OpenTelemetryTracer {
     namespace: Option<&'static str>,
@@ -26,6 +26,14 @@ impl OpenTelemetryTracer {
             namespace,
             inner: tracer,
         }
+    }
+}
+
+impl Debug for OpenTelemetryTracer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OpenTelemetryTracer")
+            .field("namespace", &self.namespace)
+            .finish_non_exhaustive()
     }
 }
 
@@ -44,8 +52,8 @@ impl Tracer for OpenTelemetryTracer {
             .with_kind(OpenTelemetrySpanKind(kind).into())
             .with_attributes(
                 attributes
-                    .into_iter()
-                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr))),
+                    .iter()
+                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr.clone()))),
             );
         let context = Context::new();
         let span = self.inner.build_with_context(span_builder, &context);
@@ -63,8 +71,8 @@ impl Tracer for OpenTelemetryTracer {
             .with_kind(OpenTelemetrySpanKind(kind).into())
             .with_attributes(
                 attributes
-                    .into_iter()
-                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr))),
+                    .iter()
+                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr.clone()))),
             );
         let context = Context::current();
         let span = self.inner.build_with_context(span_builder, &context);
@@ -83,8 +91,8 @@ impl Tracer for OpenTelemetryTracer {
             .with_kind(OpenTelemetrySpanKind(kind).into())
             .with_attributes(
                 attributes
-                    .into_iter()
-                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr))),
+                    .iter()
+                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr.clone()))),
             );
 
         // Cast the parent span to Any type

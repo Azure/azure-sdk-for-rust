@@ -65,8 +65,8 @@ impl Pipeline {
                 .map(|tracing_provider| {
                     tracing_provider.get_tracer(
                         None,
-                        crate_name.unwrap_or("unknown"),
-                        crate_version.unwrap_or("unknown"),
+                        crate_name.unwrap_or("Unknown"),
+                        crate_version.unwrap_or("0.1.0"),
                     )
                 })
         } else {
