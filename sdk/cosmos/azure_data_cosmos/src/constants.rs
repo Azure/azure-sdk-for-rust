@@ -28,6 +28,13 @@ pub const IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-up
 pub const OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
 pub const OFFER_AUTOPILOT_SETTINGS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
+pub const CONSISTENCY_LEVEL: HeaderName = HeaderName::from_static("x-ms-consistency-level");
+pub const PRE_TRIGGER_INCLUDE: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-pre-trigger-include");
+pub const POST_TRIGGER_INCLUDE: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-post-trigger-include");
+pub const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
+pub const INDEXING_DIRECTIVE: HeaderName = HeaderName::from_static("x-ms-indexing-directive");
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
 
