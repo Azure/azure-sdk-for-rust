@@ -13,10 +13,14 @@ use crate::{
         Method, Url,
     },
     json::to_json,
+    time::OffsetDateTime,
 };
 use bytes::Bytes;
 use serde::Serialize;
-use std::{fmt, marker::PhantomData, str::FromStr};
+use serde_json::Value;
+use std::{fmt, collections::HashMap, marker::PhantomData, str::FromStr};
+use rust_decimal::Decimal;
+use time::format_description::well_known::Rfc3339;
 
 /// An HTTP Body.
 #[derive(Clone)]
@@ -286,6 +290,257 @@ impl<T> TryFrom<&'static str> for RequestContent<T> {
     fn try_from(body: &'static str) -> Result<Self, Self::Error> {
         Ok(Self {
             body: Bytes::from_static(body.as_bytes()).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Value> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Value) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(serde_json::to_string(&body)?).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<bool> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: bool) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(body.to_string()).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Option<Decimal>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Option<Decimal>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(body.map(|d| d.to_string()).unwrap_or_default()).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Vec<bool>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Vec<bool>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(format!("[{}]", body.iter().map(|b| b.to_string()).collect::<Vec<_>>().join(","))).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Vec<OffsetDateTime>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Vec<OffsetDateTime>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(format!(r#"["{}"]"#, body.iter().map(|dt|
+                if let Ok(formatted) = dt.format(&Rfc3339) {
+                    formatted.to_string()
+                } else {
+                    dt.to_string()
+                }).collect::<Vec<_>>().join(","))).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Vec<String>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Vec<String>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(format!(r#"[{}]"#, body.iter().map(|s| format!(r#""{}""#, s)).collect::<Vec<_>>().join(","))).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Vec<&str>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Vec<&str>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(format!(r#"[{}]"#, body.iter().map(|s| format!(r#""{}""#, s)).collect::<Vec<_>>().join(","))).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Vec<f32>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Vec<f32>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(format!("[{}]", body.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(","))).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Vec<f64>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Vec<f64>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(format!("[{}]", body.iter().map(|f| f.to_string()).collect::<Vec<_>>().join(","))).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Vec<i32>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Vec<i32>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(format!("[{}]", body.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(","))).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Vec<i64>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Vec<i64>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(format!("[{}]", body.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(","))).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<Vec<Value>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: Vec<Value>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            body: Bytes::from(serde_json::to_string(&body)?).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<HashMap<String, bool>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: HashMap<String, bool>) -> Result<Self, Self::Error> {
+        let body_str = body
+            .into_iter()
+            .map(|(k, v)| format!(r#""{}":{}"#, k, v))
+            .collect::<Vec<_>>()
+            .join(",");
+        Ok(Self {
+            body: Bytes::from(format!(r#"{{{}}}"#, body_str)).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<HashMap<String, OffsetDateTime>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: HashMap<String, OffsetDateTime>) -> Result<Self, Self::Error> {
+        let body_str = body
+            .into_iter()
+            .map(|(k, v)| {
+                if let Ok(formatted) = v.format(&Rfc3339) {
+                    format!(r#""{}":"{}""#, k, formatted)
+                } else {
+                    format!(r#""{}":"{}""#, k, v.to_string())
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        Ok(Self {
+            body: Bytes::from(format!(r#"{{{}}}"#, body_str)).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<HashMap<String, String>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: HashMap<String, String>) -> Result<Self, Self::Error> {
+        let body_str = body
+            .into_iter()
+            .map(|(k, v)| format!(r#""{}":"{}""#, k, v))
+            .collect::<Vec<_>>()
+            .join(",");
+        Ok(Self {
+            body: Bytes::from(format!(r#"{{{}}}"#, body_str)).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<HashMap<String, f32>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: HashMap<String, f32>) -> Result<Self, Self::Error> {
+        let body_str = body
+            .into_iter()
+            .map(|(k, v)| format!(r#""{}":{}"#, k, v))
+            .collect::<Vec<_>>()
+            .join(",");
+        Ok(Self {
+            body: Bytes::from(format!(r#"{{{}}}"#, body_str)).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<HashMap<String, f64>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: HashMap<String, f64>) -> Result<Self, Self::Error> {
+        let body_str = body
+            .into_iter()
+            .map(|(k, v)| format!(r#""{}":{}"#, k, v))
+            .collect::<Vec<_>>()
+            .join(",");
+        Ok(Self {
+            body: Bytes::from(format!(r#"{{{}}}"#, body_str)).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<HashMap<String, i32>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: HashMap<String, i32>) -> Result<Self, Self::Error> {
+        let body_str = body
+            .into_iter()
+            .map(|(k, v)| format!(r#""{}":{}"#, k, v))
+            .collect::<Vec<_>>()
+            .join(",");
+        Ok(Self {
+            body: Bytes::from(format!(r#"{{{}}}"#, body_str)).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<HashMap<String, i64>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: HashMap<String, i64>) -> Result<Self, Self::Error> {
+        let body_str = body
+            .into_iter()
+            .map(|(k, v)| format!(r#""{}":{}"#, k, v))
+            .collect::<Vec<_>>()
+            .join(",");
+        Ok(Self {
+            body: Bytes::from(format!(r#"{{{}}}"#, body_str)).into(),
+            phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> TryFrom<HashMap<String, Value>> for RequestContent<T> {
+    type Error = crate::Error;
+    fn try_from(body: HashMap<String, Value>) -> Result<Self, Self::Error> {
+        let body_str = body
+            .into_iter()
+            .map(|(k, v)| format!(r#""{}":{}"#, k, v))
+            .collect::<Vec<_>>()
+            .join(",");
+        Ok(Self {
+            body: Bytes::from(format!(r#"{{{}}}"#, body_str)).into(),
             phantom: PhantomData,
         })
     }
