@@ -95,7 +95,7 @@ impl AppendBlobClient {
     /// # Arguments
     ///
     /// * `content_length` - Total length of the blob data to be uploaded.
-    /// * `options` - Optional configuration for the request.
+    /// * `options` - Optional configuration for the request. See [`AppendBlobClientCreateOptionsExt`](crate::models::AppendBlobClientCreateOptionsExt) for additional usage helpers.
     pub async fn create(
         &self,
         options: Option<AppendBlobClientCreateOptions<'_>>,
@@ -144,7 +144,7 @@ impl AppendBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     pub async fn seal(
         &self,
         options: Option<AppendBlobClientSealOptions<'_>>,

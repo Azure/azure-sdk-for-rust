@@ -6,7 +6,7 @@
 use crate::generated::{
     clients::{AppendBlobClient, BlockBlobClient, PageBlobClient},
     models::{
-        AccessTierOptional, BlobClientAbortCopyFromUrlOptions, BlobClientAbortCopyFromUrlResult,
+        AccessTier, BlobClientAbortCopyFromUrlOptions, BlobClientAbortCopyFromUrlResult,
         BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResult, BlobClientBreakLeaseOptions,
         BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
         BlobClientCopyFromUrlOptions, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotOptions,
@@ -1300,7 +1300,7 @@ impl BlobClient {
     /// * `options` - Optional parameters for the request.
     pub async fn set_tier(
         &self,
-        tier: AccessTierOptional,
+        tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
