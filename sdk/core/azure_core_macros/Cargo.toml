@@ -23,5 +23,5 @@ syn.workspace = true
 typespec_client_core.workspace = true
 
 [dev-dependencies]
-#azure_core.workspace = true
+azure_core.workspace = true
 tokio.workspace = true

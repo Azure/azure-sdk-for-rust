@@ -105,7 +105,7 @@ pub fn new(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// impl MyServiceClient {
 ///
 ///     #[tracing::function("MyServiceClient.PublicFunction")]
-///     pub async fn public_function(&self, param: &str,  options: Option<MyServiceClientMethodOptions>) -> Result<()> {
+///     pub async fn public_function(&self, param: &str,  options: Option<MyServiceClientMethodOptions<'_>>) -> Result<()> {
 ///         let options = options.unwrap_or_default();
 ///         Ok(())
 ///     }
