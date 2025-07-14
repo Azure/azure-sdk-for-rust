@@ -499,7 +499,7 @@ impl<T> TryFrom<HashMap<String, OffsetDateTime>> for RequestContent<T> {
                 if let Ok(formatted) = v.format(&Rfc3339) {
                     format!(r#""{}":"{}""#, k, formatted)
                 } else {
-                    format!(r#""{}":"{}""#, k, v.to_string())
+                    format!(r#""{}":"{}""#, k, v)
                 }
             })
             .collect::<Vec<_>>()
