@@ -74,34 +74,4 @@ pub(crate) mod tests {
         }
         true
     }
-
-    use azure_core::{
-        http::{ClientOptions, Url},
-        tracing,
-    };
-    use std::sync::Arc;
-
-    #[tracing::client]
-    pub struct MyServiceClient {
-        endpoint: Url,
-    }
-
-    #[derive(Default)]
-    pub struct MyServiceClientOptions {
-        #[allow(dead_code)]
-        pub client_options: ClientOptions,
-    }
-
-    impl MyServiceClient {
-        #[tracing::new("MyServiceClientNamespace")]
-        pub fn new(
-            endpoint: &str,
-            _credential: Arc<dyn azure_core::credentials::TokenCredential>,
-            options: Option<MyServiceClientOptions>,
-        ) -> Self {
-            let options = options.unwrap_or_default();
-            let url = Url::parse(endpoint).expect("Invalid endpoint URL");
-            Self { endpoint: url }
-        }
-    }
 }

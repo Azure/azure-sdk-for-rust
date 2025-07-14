@@ -208,7 +208,6 @@ dependencies = [
 name = "azure_core_macros"
 version = "0.1.0"
 dependencies = [
- "azure_core",
  "proc-macro2",
  "quote",
  "syn",

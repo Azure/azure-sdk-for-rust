@@ -19,7 +19,7 @@ The job of a "Tracer Provider" is to be a factory for tracers. It is the "gatewa
 
 A "tracer" is a factory for "Spans". A `Tracer` is configured with three parameters:
 
-* `namespace` - the "namespace" for the service client. The namespace for all azure services are listed [on this page](https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/azure-services-resource-providers).
+* `namespace` - the "namespace" for the service client. The namespace for all azure services are listed [on this page](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers).
 * `package name` - this is typically the Cargo package name for the service client (`env!("CARGO_PKG_NAME")`)
 * `package version` - this is typically the version of the Cargo package for the service client (`env!("CARGO_PKG_VERSION")`)
 
