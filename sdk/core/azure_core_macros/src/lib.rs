@@ -32,7 +32,7 @@ pub fn client(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// The `#[tracing::new]` attribute takes a single argument, which is a string
 /// representing the Azure Namespace name for the service being traced.
 ///
-/// The list of Azure Namespaces can be found [on this page](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers
+/// The list of Azure Namespaces can be found [on this page](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers)
 ///
 #[proc_macro_attribute]
 pub fn new(attr: TokenStream, item: TokenStream) -> TokenStream {
