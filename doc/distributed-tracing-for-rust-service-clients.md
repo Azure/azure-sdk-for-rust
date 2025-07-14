@@ -148,7 +148,7 @@ pub struct MyServiceClient {
 
 Arguably this attribute is unnecessary, but it can be incredibly helpful especially if we need to add more elements to each service client in the future.
 
-### `#[tracing::new(<namespace>)]`
+### `#[tracing::new(<Service Namespace>)]`
 
 Annotates a `new` service client function to initialize the `tracer` field in the structure.
 
@@ -156,7 +156,7 @@ Annotates a `new` service client function to initialize the `tracer` field in th
 
 from:
 
-```diff
+```rust
 pub fn new(
     endpoint: &str,
     credential: Arc<dyn TokenCredential>,
@@ -210,10 +210,21 @@ pub fn new(
         credential,
         vec!["https://vault.azure.net/.default"],
     ));
-+    let tracer = tracing::create_tracer(Some("<Service Namespace>"),
-+        option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-+        option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
-+        &options.client_options);
++    let tracer =
++    if let Some(tracer_options) = &options.client_options.request_instrumentation {
++        tracer_options
++            .tracer_provider
++            .as_ref()
++            .map(|tracer_provider| {
++                tracer_provider.get_tracer(
++                    Some(#client_namespace),
++                    option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
++                    option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
++                )
++            })
++    } else {
++        None
++    };
     Ok(Self {
 +            tracer,
            endpoint,
@@ -229,39 +240,13 @@ pub fn new(
 }
 ```
 
-Note that this implementation takes advantage of a helper function `create_tracer` - without this function, the logic to create the per-client tracer looks like:
+Note that if the service client uses the `builder` pattern, it cannot use the `tracing::new` attribute.
 
-```rust
-let tracer =
-    if let Some(tracer_options) = &options.azure_client_options.request_instrumentation {
-        tracer_options
-            .tracing_provider
-            .as_ref()
-            .map(|tracing_provider| {
-                tracing_provider.get_tracer(
-                    Some("<Service Namespace>"),
-                    option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                    option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
-                )
-            })
-    } else {
-        None
-    };
-```
-
-#### Pros
-
-* Simple implementation for clients
-* Adds ability for centralized implementation
-
-#### Cons
-
-* Potentially fragile - there are several patterns for implementing the `Self` element within a `new` function, each of which needs to be handled - the current macro handles `Self{}` and `Ok(Self{})` but there are other patterns like `let this = Self {}; this` or similar constructs which would be skipped.
-* Does not handle `builder` patterns at all.
-
-### `#[tracing::function(<client_name>::<function_name>)]`
+### `#[tracing::function(<client_name>.<function_name>)]`
 
 Applied to all public functions in the service client ("public APIs" in distributed tracing terms). This macro creates the client span for each service client method, and updates the client span if appropriate.
+
+Note that the `<client_name>` and `<function_name>` should be the values from the client typespec - that way the public API span names align for all client languages.
 
 #### Modification introduced by this macro
 
@@ -305,20 +290,19 @@ pub async fn get(
     path: &str,
     options: Option<TestServiceClientGetMethodOptions<'_>>,
 ) -> Result<RawResponse> {
-+    let mut options = options.unwrap_or_default();
-
-+    let public_api_info = PublicApiInstrumentationInformation {
-+        api_name: "get_with_tracing",
-+        attributes: vec![],
++    let options = {
++        let mut options = options.unwrap_or_default();
++        let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
++            api_name: "TestFunction",
++            attributes: Vec::new(),
++        };
++        let mut ctx = options.method_options.context.with_value(public_api_info);
++        if let Some(tracer) = &self.tracer {
++            ctx = ctx.with_value(tracer.clone());
++        }
++        options.method_options.context = ctx;
++        Some(options)
 +    };
-+
-+    // Add the span to the tracer.
-+    let mut ctx = options.method_options.context.with_value(public_api_info);
-+    // If the service has a tracer, we add it to the context.
-+    if let Some(tracer) = &self.tracer {
-+        ctx = ctx.with_value(tracer.clone());
-+    }
-
     let mut url = self.endpoint.clone();
     url.set_path(path);
     url.query_pairs_mut()
@@ -342,3 +326,28 @@ pub async fn get(
     response
 }
 ```
+
+The `tracing::function` has a separate form which can be used for service clients which
+implement per-service-client distributed tracing attributes.
+
+The parameters for the `tracing::function` roughly follow the following BNF:
+
+```bnf
+tracing_parameters = quoted_string [ ',' '( attribute_list ')']
+quoted_string = `"` <characters> `"`
+attribute_list = attribute | attribute [`,`] attribute_list
+attribute = key '=' value
+key = identifier | quoted_string
+identifier = rust-identifier | rust-identifier '.' identifier
+rust-identifier = <any Rust language identifier>
+value = <any Rust expression>
+```
+
+This means that the following are valid parameters for `tracing::function`:
+
+* `#[tracing::function("MyServiceClient.MyApi")]` - specifies a public API name.
+* `#[tracing::function("Name", (az.namespace="namespace"))]` - specifies a public API name and creates a span with an attribute named "az.namespace" and a value of "namespace".
+* `#[tracing::function("Name", (api_count=23, "my_attribute" = "Abc"))]` - specifies a public API name and creates a span with two attributes, one named  "api_count" with a value of "23" and the other with the name "my_attribute" and a value of "Abc"
+* `#[tracing::function("Name", ("API path"=path))]` - specifies a public API name and creates a span with an attribute named "API path" and the value of the parameter named "path".
+
+This allows a generator to pass in simple attribute annotations to the public API spans created by the pipeline.
