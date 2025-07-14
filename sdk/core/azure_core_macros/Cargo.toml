@@ -23,5 +23,4 @@ syn.workspace = true
 typespec_client_core = { workspace = true, features = ["http", "json"] }
 
 [dev-dependencies]
-azure_core.workspace = true
 tokio.workspace = true

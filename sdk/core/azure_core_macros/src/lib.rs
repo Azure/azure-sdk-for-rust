@@ -12,22 +12,8 @@ use proc_macro::TokenStream;
 
 /// Attribute client struct declarations to enable distributed tracing.
 ///
-/// # Examples
-///
-///
-///
-/// For example, to declare a client that will be traced, you should use the `#[trace::client]` attribute.
-///
-/// ```
-/// use azure_core::tracing;
-/// use azure_core::http::Url;
-/// use std::sync::Arc;
-///
-/// #[tracing::client]
-/// pub struct MyServiceClient {
-///    endpoint: Url,
-/// }
-/// ```
+/// To declare a client that will be traced, you should use the `#[tracing::client]` attribute
+/// exported from azure_core.
 ///
 #[proc_macro_attribute]
 pub fn client(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -37,37 +23,16 @@ pub fn client(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 /// Attribute client struct instantiation to enable distributed tracing.
 ///
-/// # Examples
+/// To enable tracing for a client instantiation, you should use the `#[tracing::new]` attribute
+/// exported from azure_core.
 ///
-/// To declare a client that will be traced, you should use the `#[traced::client]` attribute.
-/// To instantiate a client, use the `[traced::new]` which generates a distributed tracing tracer associated with the client namespace.
+/// This macro will automatically instrument the client instantiation with tracing information.
+/// It will also ensure that the client is created with the necessary tracing context.
 ///
-/// ```
-/// use azure_core::{tracing, http::{Url, ClientOptions}};
-/// use std::sync::Arc;
+/// The `#[tracing::new]` attribute takes a single argument, which is a string
+/// representing the Azure Namespace name for the service being traced.
 ///
-/// #[tracing::client]
-/// pub struct MyServiceClient {
-///    endpoint: Url,
-/// }
-///
-/// #[derive(Default)]
-/// pub struct MyServiceClientOptions {
-///     pub client_options: ClientOptions,
-/// }
-///
-/// impl MyServiceClient {
-///
-///     #[tracing::new("MyServiceClientNamespace")]
-///     pub fn new(endpoint: &str, _credential: Arc<dyn azure_core::credentials::TokenCredential>, options: Option<MyServiceClientOptions>) -> Self {
-///         let options = options.unwrap_or_default();
-///         let url = Url::parse(endpoint).expect("Invalid endpoint URL");
-///         Self {
-///             endpoint: url,
-///         }
-///     }
-/// }
-/// ```
+/// The list of Azure Namespaces can be found [on this page](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers
 ///
 #[proc_macro_attribute]
 pub fn new(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -77,40 +42,6 @@ pub fn new(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 /// Attribute client struct instantiation to enable distributed tracing.
 ///
-/// # Examples
-///
-/// To declare a client that will be traced, you should use the `#[traced::client]` attribute.
-/// To instantiate a client, use the `[traced::new]` which generates a distributed tracing tracer associated with the client namespace.
-///
-/// ```
-/// use azure_core::{tracing, http::{Url, ClientOptions}, Result};
-/// use azure_core::http::ClientMethodOptions;
-/// use std::sync::Arc;
-///
-/// #[tracing::client]
-/// pub struct MyServiceClient {
-///    endpoint: Url,
-/// }
-///
-/// #[derive(Default)]
-/// pub struct MyServiceClientOptions {
-///     pub client_options: ClientOptions,
-/// }
-///
-/// #[derive(Default)]
-/// pub struct MyServiceClientMethodOptions<'a> {
-///     pub method_options: ClientMethodOptions<'a>,
-/// }
-///
-/// impl MyServiceClient {
-///
-///     #[tracing::function("MyServiceClient.PublicFunction")]
-///     pub async fn public_function(&self, param: &str,  options: Option<MyServiceClientMethodOptions<'_>>) -> Result<()> {
-///         let options = options.unwrap_or_default();
-///         Ok(())
-///     }
-/// }
-/// ```
 ///
 #[proc_macro_attribute]
 pub fn function(attr: TokenStream, item: TokenStream) -> TokenStream {
