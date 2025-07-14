@@ -351,3 +351,23 @@ This means that the following are valid parameters for `tracing::function`:
 * `#[tracing::function("Name", ("API path"=path))]` - specifies a public API name and creates a span with an attribute named "API path" and the value of the parameter named "path".
 
 This allows a generator to pass in simple attribute annotations to the public API spans created by the pipeline.
+
+## Special cases
+
+For the most part, the three tracing attribute macros provide functionality that should allow most generated and wrapped clients to create all the required distributed tracing span attributes.
+
+However there are some cases where having additional control over the traces is needed. This functionality is primarily intended for wrapped service clients to handle span attributes which cannot be easily determined from the operation.
+
+### Service Client needs to add attributes *before* the pipeline
+
+If your service client needs to define attributes in the client span before the pipeline and the attributes cannot be determined by reflecting the contents of service parameters, then the service client can create its own `PublicApiInstrumentationInformation` structure and add the desired attributes manually. If this `PublicApiInstrumentationInformation` is added to the request Context, it will be reflected in the spans created by the `PublicApiInstrumentationPolicy`.
+
+### Service Client needs to add attributes before and after the pipeline
+
+For some operations, a service client cannot easily express the information needed to generate the span (or needs to add attributes based on the response to the public API). In that case, the service client should create its own span.
+
+The `PublicApiInstrumentationPolicy` struct has a convenience method `create_public_api_span` which allows a service client to create a span based on the current context. The function signature for `create_public_api_span` is `create_public_api_span(ctx: &Context, tracer: Option<Arc<dyn Tracer>>) -> Option<Arc<dyn Span>>`. It assumes that the `Context`in `ctx` has already had a `PublicApiInstrumentationInformation` attribute added and returns an optional span - if the span has the value of Some, it is a tracer which can be used for the public API, if it has the value of None, then there is no public API span created (this can happen if there is no `PublicApiInstrumentationInformation` provided, or if the `Context` already contains a public API span).
+
+The client can then add whatever attributes to the span it needs, and after the pipeline has run, can add any additional attributes to the span.
+
+Note that in this model, the client is responsible for ending the span.

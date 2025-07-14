@@ -69,39 +69,48 @@ impl PublicApiInstrumentationPolicy {
     pub fn new(tracer: Option<Arc<dyn crate::tracing::Tracer>>) -> Self {
         Self { tracer }
     }
-}
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl Policy for PublicApiInstrumentationPolicy {
-    async fn send(
-        &self,
+    /// Creates a span for the public API instrumentation policy.
+    ///
+    /// This function creates a span for the public API instrumentation policy based on the
+    /// public API information in the context.
+    ///
+    /// This function assumes that the `Context` already has a `PublicApiInstrumentationInformation` value,
+    /// if it is not present, it will return `None`.
+    ///
+    /// # Arguments
+    /// - `ctx`: The context containing the public API information.
+    /// - `tracer`: An optional tracer to use for creating the span.
+    ///
+    /// # Returns
+    /// An optional span if the public API information is present and a tracer is available.
+    ///
+    /// If the context already has a span, it will return `None` to avoid nested spans.
+    /// If the context does not have a tracer it will use the value of the `tracer` argument.
+    /// If no tracer can be determined, it will return `None`.
+    ///
+    pub fn create_public_api_span(
         ctx: &Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
-    ) -> PolicyResult {
+        tracer: Option<Arc<dyn Tracer>>,
+    ) -> Option<Arc<dyn Span>> {
         // If there is a span in the context, we're a nested call, so we just want to forward the request.
         if ctx.value::<Arc<dyn Span>>().is_some() {
             trace!("PublicApiPolicy: Nested call detected, forwarding request without instrumentation.");
-            return next[0].send(ctx, request, &next[1..]).await;
+            return None;
         }
 
         // We next confirm if the context has public API instrumentation information.
         // Without a public API information, we skip instrumentation.
-        let Some(info) = ctx.value::<PublicApiInstrumentationInformation>() else {
-            return next[0].send(ctx, request, &next[1..]).await;
-        };
+        let info = ctx.value::<PublicApiInstrumentationInformation>()?;
 
         // Get the tracer from either the context or the policy.
         let tracer = match ctx.value::<Arc<dyn Tracer>>() {
             Some(tracer) => Some(tracer),
-            None => self.tracer.as_ref(),
+            None => tracer.as_ref(),
         };
 
         // If we don't have a tracer, skip instrumentation
-        let Some(tracer) = tracer else {
-            return next[0].send(ctx, request, &next[1..]).await;
-        };
+        let tracer = tracer?;
 
         // We now have public API information and a tracer.
         // Calculate the span attributes based on the public API information and
@@ -130,8 +139,25 @@ impl Policy for PublicApiInstrumentationPolicy {
 
         // If nothing is listening to the span, we skip instrumentation.
         if !span.is_recording() {
-            return next[0].send(ctx, request, &next[1..]).await;
+            return None;
         }
+        Some(span)
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl Policy for PublicApiInstrumentationPolicy {
+    async fn send(
+        &self,
+        ctx: &Context,
+        request: &mut Request,
+        next: &[Arc<dyn Policy>],
+    ) -> PolicyResult {
+        let Some(span) = Self::create_public_api_span(ctx, self.tracer.clone()) else {
+            return next[0].send(ctx, request, &next[1..]).await;
+        };
+
         // Now add the span to the context, so that it can be used by the next policies.
         let ctx = ctx.clone().with_value(span.clone());
 
