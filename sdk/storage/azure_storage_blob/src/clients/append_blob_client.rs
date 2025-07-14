@@ -144,7 +144,7 @@ impl AppendBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     pub async fn seal(
         &self,
         options: Option<AppendBlobClientSealOptions<'_>>,
