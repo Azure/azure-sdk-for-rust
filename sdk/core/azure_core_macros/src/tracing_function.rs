@@ -349,11 +349,43 @@ mod tests {
 
         let actual = parse_function(attr, item)?;
         let expected = quote! {
-            pub async fn my_function() -> Result<(), Box<dyn std::error::Error>> {
-                let mut options = None;
-                let result = tracing::function("TestFunction", options);
-                Ok(())
+        pub async fn my_function(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+            let options = {
+                let mut options = options.unwrap_or_default();
+                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
+                    api_name: "TestFunction",
+                    attributes: Vec::new(),
+                };
+                let mut ctx = options.method_options.context.with_value(public_api_info);
+                if let Some(tracer) = &self.tracer {
+                    ctx = ctx.with_value(tracer.clone());
+                }
+                options.method_options.context = ctx;
+                Some(options)
+            };
+            {
+                let options = options.unwrap_or_default();
+                let mut url = self.endpoint.clone();
+                url.set_path(path);
+                url.query_pairs_mut()
+                    .append_pair("api-version", &self.api_version);
+                let mut request = Request::new(url, azure_core::http::Method::Get);
+                let response = self
+                    .pipeline
+                    .send(&options.method_options.context, &mut request)
+                    .await?;
+                if !response.status().is_success() {
+                    return Err(azure_core::Error::message(
+                        azure_core::error::ErrorKind::HttpResponse {
+                            status: response.status(),
+                            error_code: None,
+                        },
+                        format!("Failed to GET {}: {}", request.url(), response.status()),
+                    ));
+                }
+                Ok(response)
             }
+        }
         };
 
         println!("Parsed tokens: {:?}", actual.to_string());
