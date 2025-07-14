@@ -374,6 +374,73 @@ mod tests {
         }
     }
 
+    // Tests for the create_public_api_span function.
+    #[test]
+    fn create_public_api_span() {
+        let tracer = Arc::new(MockTracingProvider::new()).get_tracer(Some("test"), "test", "1.0.0");
+
+        // Test when context has no PublicApiInstrumentationInformation
+        {
+            let ctx = Context::default();
+            let span =
+                PublicApiInstrumentationPolicy::create_public_api_span(&ctx, Some(tracer.clone()));
+            assert!(span.is_none(), "Should return None when no API info exists");
+        }
+        // Test when context already has a span
+        {
+            let existing_span = tracer.start_span("existing", SpanKind::Internal, vec![]);
+            let ctx = Context::default().with_value(existing_span.clone());
+            let span =
+                PublicApiInstrumentationPolicy::create_public_api_span(&ctx, Some(tracer.clone()));
+            assert!(
+                span.is_none(),
+                "Should return None when context already has a span"
+            );
+        }
+        // Test with API info but no tracer
+        {
+            let api_info = PublicApiInstrumentationInformation {
+                api_name: "TestClient.test_api",
+                attributes: vec![],
+            };
+            let ctx = Context::default().with_value(api_info);
+            let span = PublicApiInstrumentationPolicy::create_public_api_span(&ctx, None);
+            assert!(
+                span.is_none(),
+                "Should return None when no tracer is available"
+            );
+        }
+        // Test with API info and tracer from context
+        {
+            let api_info = PublicApiInstrumentationInformation {
+                api_name: "TestClient.test_api",
+                attributes: vec![],
+            };
+            let ctx = Context::default()
+                .with_value(api_info)
+                .with_value(tracer.clone());
+            let span = PublicApiInstrumentationPolicy::create_public_api_span(&ctx, None);
+            assert!(
+                span.is_some(),
+                "Should create span when API info and tracer are available"
+            );
+        }
+        // Test with API info, tracer from parameter, and attributes
+        {
+            let api_info = PublicApiInstrumentationInformation {
+                api_name: "TestClient.test_api",
+                attributes: vec![Attribute {
+                    key: "test.attribute",
+                    value: "test_value".into(),
+                }],
+            };
+            let ctx = Context::default().with_value(api_info);
+            let span =
+                PublicApiInstrumentationPolicy::create_public_api_span(&ctx, Some(tracer.clone()));
+            assert!(span.is_some(), "Should create span with attributes");
+        }
+    }
+
     #[tokio::test]
     async fn public_api_instrumentation_no_public_api_info() {
         let url = "http://example.com/path";
