@@ -5,7 +5,7 @@ use crate::models::{AppendBlobClientCreateOptions, PageBlobClientCreateOptions};
 
 /// Provides usage helpers for setting the `PageBlobClientCreateOptions` optional configurations.
 pub trait PageBlobClientCreateOptionsExt {
-    /// Augments the current options bag to only create if the Page blob does not already exists.
+    /// Augments the current options bag to only create if the Page blob does not already exist.
     /// # Arguments
     ///
     /// * `self` - The options bag to be modified.
@@ -23,7 +23,7 @@ impl PageBlobClientCreateOptionsExt for PageBlobClientCreateOptions<'_> {
 
 /// Provides usage helpers for setting the `AppendBlobClientCreateOptions` optional configurations.
 pub trait AppendBlobClientCreateOptionsExt {
-    /// Augments the current options bag to only create if the Append blob does not already exists.
+    /// Augments the current options bag to only create if the Append blob does not already exist.
     /// # Arguments
     ///
     /// * `self` - The options bag to be modified.
