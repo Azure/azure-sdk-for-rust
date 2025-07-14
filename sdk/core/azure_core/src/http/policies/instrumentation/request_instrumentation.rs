@@ -27,41 +27,18 @@ impl RequestInstrumentationPolicy {
     /// Creates a new `RequestInstrumentationPolicy`.
     ///
     /// # Arguments
-    /// - `azure_namespace`: The Azure namespace for the tracer.
-    /// - `crate_name`: The name of the crate for which the tracer is created.
-    /// - `crate_version`: The version of the crate for which the tracer is created.
-    /// - `options`: Options for request instrumentation, including the tracing provider.
+    /// - `tracer`: Pre-configured tracer to use for instrumentation.
     ///
     /// # Returns
     /// A new instance of `RequestInstrumentationPolicy`.
     ///
     /// # Note
-    /// This policy will only create a tracer if a tracing provider is provided in the options.
     ///
-    /// This policy will create a tracer that can be used to instrument HTTP requests.
-    /// However this tracer is only used when the client method is NOT instrumented.
-    /// A part of the client method instrumentation sets a client-specific tracer into the
-    /// request `[Context]` which will be used instead of the tracer from this policy.
+    /// The tracer provided is a "fallback" tracer which is used if the `ctx` parameter
+    /// to the `send` method does not contain a tracer.
     ///
-    pub fn new(
-        tracer: Option<Arc<dyn crate::tracing::Tracer>>,
-        // azure_namespace: Option<&'static str>,
-        // crate_name: Option<&'static str>,
-        // crate_version: Option<&'static str>,
-        // options: &RequestInstrumentationOptions,
-    ) -> Self {
+    pub fn new(tracer: Option<Arc<dyn crate::tracing::Tracer>>) -> Self {
         Self { tracer }
-        // if let Some(tracing_provider) = &options.tracing_provider {
-        //     Self {
-        //         tracer: Some(tracing_provider.get_tracer(
-        //             azure_namespace,
-        //             crate_name.unwrap_or("unknown"),
-        //             crate_version.unwrap_or("unknown"),
-        //         )),
-        //     }
-        // } else {
-        //     Self { tracer: None }
-        // }
     }
 }
 
@@ -96,6 +73,7 @@ impl Policy for RequestInstrumentationPolicy {
         let Some(tracer) = tracer else {
             return next[0].send(ctx, request, &next[1..]).await;
         };
+
         let mut span_attributes = vec![Attribute {
             key: HTTP_REQUEST_METHOD_ATTRIBUTE,
             value: request.method().to_string().into(),
@@ -132,7 +110,6 @@ impl Policy for RequestInstrumentationPolicy {
             });
         }
         // Get the method as a string to avoid lifetime issues
-        //            let method_str = request.method_as_str();
         let method_str = request.method().as_str();
         let span = if let Some(parent_span) = ctx.value::<Arc<dyn Span>>() {
             // If a parent span exists, start a new span with the parent.
@@ -143,7 +120,8 @@ impl Policy for RequestInstrumentationPolicy {
                 parent_span.clone(),
             )
         } else {
-            // If no parent span exists, start a new span without a parent.
+            // If no parent span exists, start a new span with the "current" span (if any).
+            // It is up to the tracer implementation to determine what "current" means.
             tracer.start_span_with_current(method_str, SpanKind::Client, span_attributes)
         };
 
