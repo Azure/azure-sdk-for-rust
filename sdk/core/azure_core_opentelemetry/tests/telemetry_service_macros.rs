@@ -200,7 +200,7 @@ mod tests {
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
                 request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracing_provider: Some(azure_provider),
+                    tracer_provider: Some(azure_provider),
                 }),
                 ..Default::default()
             },
@@ -449,7 +449,7 @@ mod tests {
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
                 request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracing_provider: Some(azure_provider),
+                    tracer_provider: Some(azure_provider),
                 }),
                 ..Default::default()
             },

@@ -6,6 +6,6 @@ use std::sync::Arc;
 /// Policy options to enable distributed tracing.
 #[derive(Clone, Debug, Default)]
 pub struct RequestInstrumentationOptions {
-    /// Set the tracing provider for distributed tracing.
-    pub tracing_provider: Option<Arc<dyn crate::tracing::TracerProvider>>,
+    /// Set the tracer provider for distributed tracing.
+    pub tracer_provider: Option<Arc<dyn crate::tracing::TracerProvider>>,
 }

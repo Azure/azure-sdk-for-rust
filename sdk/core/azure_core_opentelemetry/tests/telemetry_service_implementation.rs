@@ -63,10 +63,10 @@ impl TestServiceClient {
         let tracer =
             if let Some(tracer_options) = &options.azure_client_options.request_instrumentation {
                 tracer_options
-                    .tracing_provider
+                    .tracer_provider
                     .as_ref()
-                    .map(|tracing_provider| {
-                        tracing_provider.get_tracer(
+                    .map(|tracer_provider| {
+                        tracer_provider.get_tracer(
                             Some("Az.TestServiceClient"),
                             option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
                             option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
@@ -275,7 +275,7 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
     let options = TestServiceClientOptions {
         azure_client_options: ClientOptions {
             request_instrumentation: Some(RequestInstrumentationOptions {
-                tracing_provider: Some(azure_provider),
+                tracer_provider: Some(azure_provider),
             }),
             ..Default::default()
         },
@@ -336,7 +336,7 @@ async fn test_service_client_get_with_tracing_error(ctx: TestContext) -> Result<
     let options = TestServiceClientOptions {
         azure_client_options: ClientOptions {
             request_instrumentation: Some(RequestInstrumentationOptions {
-                tracing_provider: Some(azure_provider),
+                tracer_provider: Some(azure_provider),
             }),
             ..Default::default()
         },
@@ -397,7 +397,7 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
     let options = TestServiceClientOptions {
         azure_client_options: ClientOptions {
             request_instrumentation: Some(RequestInstrumentationOptions {
-                tracing_provider: Some(azure_provider),
+                tracer_provider: Some(azure_provider),
             }),
             ..Default::default()
         },
@@ -465,7 +465,7 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
     let options = TestServiceClientOptions {
         azure_client_options: ClientOptions {
             request_instrumentation: Some(RequestInstrumentationOptions {
-                tracing_provider: Some(azure_provider),
+                tracer_provider: Some(azure_provider),
             }),
             ..Default::default()
         },

@@ -54,16 +54,18 @@ impl Pipeline {
 
         let install_instrumentation_policies = core_client_options
             .request_instrumentation
-            .tracing_provider
+            .tracer_provider
             .is_some();
 
+        // Create a fallback tracer if no tracer provider is set.
+        // This is useful for service clients that have not yet been instrumented.
         let tracer = if install_instrumentation_policies {
             core_client_options
                 .request_instrumentation
-                .tracing_provider
+                .tracer_provider
                 .as_ref()
-                .map(|tracing_provider| {
-                    tracing_provider.get_tracer(
+                .map(|tracer_provider| {
+                    tracer_provider.get_tracer(
                         None,
                         crate_name.unwrap_or("Unknown"),
                         crate_version.unwrap_or("0.1.0"),
@@ -72,6 +74,7 @@ impl Pipeline {
         } else {
             None
         };
+
         let mut per_call_policies = per_call_policies.clone();
         push_unique(&mut per_call_policies, ClientRequestIdPolicy::default());
         if install_instrumentation_policies {

@@ -20,10 +20,10 @@ fn parse_struct_expr(
             let tracer =
             if let Some(tracer_options) = &options.client_options.request_instrumentation {
                 tracer_options
-                    .tracing_provider
+                    .tracer_provider
                     .as_ref()
-                    .map(|tracing_provider| {
-                        tracing_provider.get_tracer(
+                    .map(|tracer_provider| {
+                        tracer_provider.get_tracer(
                             Some(#client_namespace),
                             option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
                             option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
@@ -186,10 +186,10 @@ mod tests {
                     &options.client_options.request_instrumentation
                 {
                     tracer_options
-                        .tracing_provider
+                        .tracer_provider
                         .as_ref()
-                        .map(|tracing_provider| {
-                            tracing_provider.get_tracer(
+                        .map(|tracer_provider| {
+                            tracer_provider.get_tracer(
                                 Some("Az.Namespace"),
                                 option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
                                 option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
@@ -276,10 +276,10 @@ mod tests {
                     &options.client_options.request_instrumentation
                 {
                     tracer_options
-                        .tracing_provider
+                        .tracer_provider
                         .as_ref()
-                        .map(|tracing_provider| {
-                            tracing_provider.get_tracer(
+                        .map(|tracer_provider| {
+                            tracer_provider.get_tracer(
                                 Some("Az.GeneratedNamespace"),
                                 option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
                                 option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
