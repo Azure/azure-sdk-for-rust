@@ -326,7 +326,6 @@ impl BlobClient {
     ///   If the source is in another account, the source must either be public
     ///   or must be authenticated via a shared access signature. If the source
     ///   is public, no authentication is required.
-    ///   Example: https://myaccount.blob.core.windows.net/mycontainer/myblob
     /// * `options` - Optional configuration for the request.
     pub async fn start_copy_from_url(
         &self,
