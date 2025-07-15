@@ -59,6 +59,7 @@ reqwest_rustls = [
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/fs", "tokio/sync", "tokio/time", "tokio/io-util"]
 xml = ["dep:quick-xml"]
+rust_decimal = ["dep:rust_decimal"]
 
 [[example]]
 name = "core_binary_data_request"

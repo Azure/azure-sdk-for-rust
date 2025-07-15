@@ -16,11 +16,13 @@ use crate::{
     time::OffsetDateTime,
 };
 use bytes::Bytes;
-use rust_decimal::Decimal;
 use serde::Serialize;
 use serde_json::Value;
 use std::{collections::HashMap, fmt, marker::PhantomData, str::FromStr};
 use time::format_description::well_known::Rfc3339;
+
+#[cfg(feature = "rust_decimal")]
+use rust_decimal::Decimal;
 
 /// An HTTP Body.
 #[derive(Clone)]
@@ -315,6 +317,7 @@ impl<T> TryFrom<bool> for RequestContent<T> {
     }
 }
 
+#[cfg(feature = "rust_decimal")]
 impl<T> TryFrom<Option<Decimal>> for RequestContent<T> {
     type Error = crate::Error;
     fn try_from(body: Option<Decimal>) -> Result<Self, Self::Error> {
