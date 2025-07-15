@@ -140,8 +140,10 @@ fn is_new_declaration(item: &TokenStream) -> bool {
         return false;
     }
 
-    // Service clients new functions must have a name that starts with `new_`.
-    if !item_fn.sig.ident.to_string().starts_with("new") {
+    // Service clients new functions must have a name that starts with `new_` or "with_".
+    if !item_fn.sig.ident.to_string().starts_with("new")
+        && !item_fn.sig.ident.to_string().starts_with("with")
+    {
         return false;
     }
 
