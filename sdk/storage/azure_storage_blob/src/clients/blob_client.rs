@@ -6,16 +6,17 @@ use crate::{
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
         BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
-        BlobClientRenewLeaseResult, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult,
+        BlobClientRenewLeaseResult, BlobClientStartCopyFromUrlResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
         BlobClientChangeLeaseOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
         BlobClientGetPropertiesOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
-        BlockListType, BlockLookupList,
+        BlobClientStartCopyFromUrlOptions, BlockBlobClientCommitBlockListOptions,
+        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -312,5 +313,24 @@ impl BlobClient {
         options: Option<BlobClientRenewLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>> {
         self.client.renew_lease(lease_id, options).await
+    }
+
+    /// Copies a blob or an internet resource to a new blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `copy_source` - A URL of up to 2 KB in length that specifies a file or blob.
+    ///   The value should be URL-encoded as it would appear in a request URI.
+    ///   If the source is in another account, the source must either be public
+    ///   or must be authenticated via a shared access signature. If the source
+    ///   is public, no authentication is required.
+    ///   Example: https://myaccount.blob.core.windows.net/mycontainer/myblob
+    /// * `options` - Optional configuration for the request.
+    pub async fn start_copy_from_url(
+        &self,
+        copy_source: String,
+        options: Option<BlobClientStartCopyFromUrlOptions<'_>>,
+    ) -> Result<Response<BlobClientStartCopyFromUrlResult, NoFormat>> {
+        self.client.start_copy_from_url(copy_source, options).await
     }
 }

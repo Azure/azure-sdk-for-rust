@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::http::RequestContent;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
+    StorageServiceProperties,
 };
 use azure_storage_blob_test::{get_blob_service_client, get_container_name};
 use futures::StreamExt;
@@ -120,5 +122,29 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
         container_client.delete_container(None).await?;
     }
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+
+    // Storage Service Properties
+    let storage_service_properties = StorageServiceProperties {
+        default_service_version: Some("2022-11-02".to_string()),
+        ..Default::default()
+    };
+    let request_content: RequestContent<StorageServiceProperties> =
+        storage_service_properties.try_into()?;
+
+    service_client.set_properties(request_content, None).await?;
+
+    // Assert
+    let response = service_client.get_properties(None).await?;
+    let storage_service_properties = response.into_body().await?;
+    let default_service_version = storage_service_properties.default_service_version;
+    assert_eq!("2022-11-02".to_string(), default_service_version.unwrap());
     Ok(())
 }
