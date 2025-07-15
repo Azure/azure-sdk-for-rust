@@ -6,9 +6,9 @@ use crate::{
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
         BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlobClientSetTagsResult,
-        BlobClientStartCopyFromUrlResult, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult,
+        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlobClientStartCopyFromUrlResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
@@ -351,7 +351,7 @@ impl BlobClient {
         &self,
         tags: HashMap<String, String>,
         options: Option<BlobClientSetTagsOptions<'_>>,
-    ) -> Result<Response<BlobClientSetTagsResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let blob_tags = serialize_blob_tags(tags);
         self.client
             .set_tags(RequestContent::try_from(blob_tags)?, options)
