@@ -173,16 +173,13 @@ impl Parse for FunctionNameAndAttributes {
 fn is_function_declaration(item: &TokenStream) -> bool {
     let item_fn: ItemFn = match syn::parse2(item.clone()) {
         Ok(fn_item) => fn_item,
-        Err(_) => return false,
+        Err(_) => {
+            return false;
+        }
     };
 
     // Function must be public.
     if !matches!(item_fn.vis, syn::Visibility::Public(_)) {
-        return false;
-    }
-
-    // Function must be public.
-    if item_fn.sig.asyncness.is_none() {
         return false;
     }
 
@@ -308,7 +305,7 @@ mod tests {
             }
         };
         let invalid_fn = quote! {
-            pub fn my_function() -> Result<(), Box<dyn std::error::Error>> {
+            pub fn my_function() {
             }
         };
 
@@ -384,6 +381,148 @@ mod tests {
                     ));
                 }
                 Ok(response)
+            }
+        }
+        };
+
+        println!("Parsed tokens: {:?}", actual.to_string());
+        println!("Expected tokens: {:?}", expected.to_string());
+
+        assert!(
+            crate::tracing::tests::compare_token_stream(actual, expected),
+            "Parsed tokens do not match expected tokens"
+        );
+        Ok(())
+    }
+
+    // cspell: ignore deletedsecrets
+    #[test]
+    fn test_parse_pageable_function() -> std::result::Result<(), syn::Error> {
+        let attr = quote! { "TestFunction" };
+        let item = quote! {
+        pub fn list_deleted_secret_properties(
+            &self,
+            options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>,
+        ) -> Result<Pager<ListDeletedSecretPropertiesResult>> {
+            let options = options.unwrap_or_default().into_owned();
+            let pipeline = self.pipeline.clone();
+            let mut first_url = self.endpoint.clone();
+            first_url = first_url.join("deletedsecrets")?;
+            first_url
+                .query_pairs_mut()
+                .append_pair("api-version", &self.api_version);
+            if let Some(maxresults) = options.maxresults {
+                first_url
+                    .query_pairs_mut()
+                    .append_pair("maxresults", &maxresults.to_string());
+            }
+            let api_version = self.api_version.clone();
+            Ok(Pager::from_callback(move |next_link: Option<Url>| {
+                let url = match next_link {
+                    Some(next_link) => {
+                        let qp = next_link
+                            .query_pairs()
+                            .filter(|(name, _)| name.ne("api-version"));
+                        let mut next_link = next_link.clone();
+                        next_link
+                            .query_pairs_mut()
+                            .clear()
+                            .extend_pairs(qp)
+                            .append_pair("api-version", &api_version);
+                        next_link
+                    }
+                    None => first_url.clone(),
+                };
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", "application/json");
+                let ctx = options.method_options.context.clone();
+                let pipeline = pipeline.clone();
+                async move {
+                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                    let (status, headers, body) = rsp.deconstruct();
+                    let bytes = body.collect().await?;
+                    let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
+                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                    Ok(match res.next_link {
+                        Some(next_link) if !next_link.is_empty() => PagerResult::More {
+                            response: rsp,
+                            continuation: next_link.parse()?,
+                        },
+                        _ => PagerResult::Done { response: rsp },
+                    })
+                }
+            }))
+        }
+        };
+
+        let actual = parse_function(attr, item)?;
+        let expected = quote! {
+        pub fn list_deleted_secret_properties(
+            &self,
+            options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>,
+        ) -> Result<Pager<ListDeletedSecretPropertiesResult>> {
+            let options = {
+                let mut options = options.unwrap_or_default();
+                let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
+                    api_name: "TestFunction",
+                    attributes: Vec::new(),
+                };
+                let mut ctx = options.method_options.context.with_value(public_api_info);
+                if let Some(tracer) = &self.tracer {
+                    ctx = ctx.with_value(tracer.clone());
+                }
+                options.method_options.context = ctx;
+                Some(options)
+            };
+            {
+               let options = options.unwrap_or_default().into_owned();
+                let pipeline = self.pipeline.clone();
+                let mut first_url = self.endpoint.clone();
+                first_url = first_url.join("deletedsecrets")?;
+                first_url
+                    .query_pairs_mut()
+                    .append_pair("api-version", &self.api_version);
+                if let Some(maxresults) = options.maxresults {
+                    first_url
+                        .query_pairs_mut()
+                        .append_pair("maxresults", &maxresults.to_string());
+                }
+                let api_version = self.api_version.clone();
+                Ok(Pager::from_callback(move |next_link: Option<Url>| {
+                    let url = match next_link {
+                        Some(next_link) => {
+                            let qp = next_link
+                                .query_pairs()
+                                .filter(|(name, _)| name.ne("api-version"));
+                            let mut next_link = next_link.clone();
+                            next_link
+                                .query_pairs_mut()
+                                .clear()
+                                .extend_pairs(qp)
+                                .append_pair("api-version", &api_version);
+                            next_link
+                        }
+                        None => first_url.clone(),
+                    };
+                    let mut request = Request::new(url, Method::Get);
+                    request.insert_header("accept", "application/json");
+                    let ctx = options.method_options.context.clone();
+                    let pipeline = pipeline.clone();
+                    async move {
+                        let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                        let (status, headers, body) = rsp.deconstruct();
+                        let bytes = body.collect().await?;
+                        let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
+                        let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                        Ok(match res.next_link {
+                            Some(next_link) if !next_link.is_empty() => PagerResult::More {
+                                response: rsp,
+                                continuation: next_link.parse()?,
+                            },
+                            _ => PagerResult::Done { response: rsp },
+                        })
+                    }
+                }))
             }
         }
         };
