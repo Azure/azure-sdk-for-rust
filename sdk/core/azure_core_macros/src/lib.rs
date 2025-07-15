@@ -7,6 +7,7 @@ mod tracing;
 mod tracing_client;
 mod tracing_function;
 mod tracing_new;
+mod tracing_subclient;
 
 use proc_macro::TokenStream;
 
@@ -40,8 +41,13 @@ pub fn new(attr: TokenStream, item: TokenStream) -> TokenStream {
         .map_or_else(|e| e.into_compile_error().into(), |v| v.into())
 }
 
-/// Attribute client struct instantiation to enable distributed tracing.
-///
+#[proc_macro_attribute]
+pub fn subclient(attr: TokenStream, item: TokenStream) -> TokenStream {
+    tracing_subclient::parse_subclient(attr.into(), item.into())
+        .map_or_else(|e| e.into_compile_error().into(), |v| v.into())
+}
+
+/// Attribute client public APIs to enable distributed tracing.
 ///
 #[proc_macro_attribute]
 pub fn function(attr: TokenStream, item: TokenStream) -> TokenStream {
