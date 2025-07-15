@@ -27,7 +27,7 @@ pub fn parse_client(_attr: TokenStream, item: TokenStream) -> Result<TokenStream
         #vis
         struct #ident {
             #(#fields),*,
-            tracer: Option<std::sync::Arc<dyn azure_core::tracing::Tracer>>,
+            pub(crate) tracer: Option<std::sync::Arc<dyn azure_core::tracing::Tracer>>,
         }
     })
 }
@@ -65,7 +65,7 @@ mod tests {
             pub struct ServiceClient {
                 name: &'static str,
                 endpoint: Url,
-                tracer: Option<std::sync::Arc<dyn azure_core::tracing::Tracer>>,
+                pub(crate) tracer: Option<std::sync::Arc<dyn azure_core::tracing::Tracer>>,
             }
         };
         //        println!("Parsed tokens: {:?}", tokens);
