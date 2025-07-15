@@ -4,6 +4,7 @@
 use azure_core::http::RequestContent;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
+    AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
     BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
     StorageServiceProperties,
 };
@@ -146,5 +147,24 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
     let storage_service_properties = response.into_body().await?;
     let default_service_version = storage_service_properties.default_service_version;
     assert_eq!("2022-11-02".to_string(), default_service_version.unwrap());
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+
+    // Act
+    let response = service_client.get_account_info(None).await?;
+
+    // Assert
+    let sku_name = response.sku_name()?;
+    let account_kind = response.account_kind()?;
+
+    assert!(sku_name.is_some());
+    assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
+
     Ok(())
 }

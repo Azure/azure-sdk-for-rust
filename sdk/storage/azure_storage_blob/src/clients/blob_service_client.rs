@@ -3,10 +3,11 @@
 
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
+    generated::models::BlobServiceClientGetAccountInfoResult,
     models::{
-        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-        BlobServiceClientSetPropertiesOptions, ListContainersSegmentResponse,
-        StorageServiceProperties,
+        BlobServiceClientGetAccountInfoOptions, BlobServiceClientGetPropertiesOptions,
+        BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
+        ListContainersSegmentResponse, StorageServiceProperties,
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,
@@ -120,5 +121,18 @@ impl BlobServiceClient {
         self.client
             .set_properties(storage_service_properties, options)
             .await
+    }
+
+    /// Gets information related to the Storage account.
+    /// This includes the `sku_name` and `account_kind`.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_account_info(
+        &self,
+        options: Option<BlobServiceClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobServiceClientGetAccountInfoResult, NoFormat>> {
+        self.client.get_account_info(options).await
     }
 }

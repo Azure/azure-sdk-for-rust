@@ -4,7 +4,8 @@
 use azure_core::http::StatusCode;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientChangeLeaseResultHeaders,
+    AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
+    BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
     BlobContainerClientSetMetadataOptions, BlobType, LeaseState,
 };
@@ -273,5 +274,24 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
         .await?;
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+
+    // Act
+    let response = container_client.get_account_info(None).await?;
+
+    // Assert
+    let sku_name = response.sku_name()?;
+    let account_kind = response.account_kind()?;
+
+    assert!(sku_name.is_some());
+    assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
+
     Ok(())
 }

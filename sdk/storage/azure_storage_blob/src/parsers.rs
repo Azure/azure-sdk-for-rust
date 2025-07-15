@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::generated::models::{BlobTag, BlobTags};
+use azure_core::http::RequestContent;
+use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
 
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
@@ -34,4 +37,24 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     let end_range = offset + length - 1;
     let content_range = format!("bytes={}-{}", offset, end_range);
     Ok(content_range)
+}
+
+/// Takes in an offset and a length and returns the HTTP range in string format.
+///
+/// # Arguments
+///
+/// * `tags` - A hash map containing the name-value pairs associated with the blob as tags.
+pub fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
+    let mut blob_tags: Vec<BlobTag> = vec![];
+
+    for (k, v) in tags.into_iter() {
+        let blob_tag = BlobTag {
+            key: Some(k),
+            value: Some(v),
+        };
+        blob_tags.push(blob_tag);
+    }
+    BlobTags {
+        blob_tag_set: Some(blob_tags),
+    }
 }
