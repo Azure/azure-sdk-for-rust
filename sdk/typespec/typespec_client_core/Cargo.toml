@@ -20,7 +20,7 @@ pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
 rand.workspace = true
 reqwest = { workspace = true, optional = true }
-rust_decimal = "1.37.2"
+rust_decimal = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
