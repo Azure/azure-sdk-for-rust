@@ -1,6 +1,6 @@
 <!-- Copyright(C) Microsoft Corp. All Rights Reserved. -->
 
-<!-- cspell: ignore liudmila -->
+<!-- cspell: ignore liudmila subclients -->
 # Distributed tracing options in Rust service clients
 
 ## Distributed tracing fundamentals
@@ -371,3 +371,37 @@ The `PublicApiInstrumentationPolicy` struct has a convenience method `create_pub
 The client can then add whatever attributes to the span it needs, and after the pipeline has run, can add any additional attributes to the span.
 
 Note that in this model, the client is responsible for ending the span.
+
+### Service implementations with "subclients"
+
+Service clients can sometimes contain "subclients" - clients which have their own pipelines and endpoint which contain subclient specific functionality.
+
+Such subclients often have an accessor function to create a new subclient instance which looks like this:
+
+```rust
+
+pub fn get_operation_templates_lro_client(&self) -> OperationTemplatesLroClient {
+    OperationTemplatesLroClient {
+        api_version: self.api_version.clone(),
+        endpoint: self.endpoint.clone(),
+        pipeline: self.pipeline.clone(),
+        subscription_id: self.subscription_id.clone(),
+    }
+}
+```
+
+To support subclient instantiation, the `azure_core` crate defines an attribute macro named `tracing::subclient` to support subclient instantiation.
+
+```rust
+#[tracing::subclient]
+pub fn get_operation_templates_lro_client(&self) -> OperationTemplatesLroClient {
+    OperationTemplatesLroClient {
+        api_version: self.api_version.clone(),
+        endpoint: self.endpoint.clone(),
+        pipeline: self.pipeline.clone(),
+        subscription_id: self.subscription_id.clone(),
+    }
+}
+```
+
+This adds a clone of the parent client's `tracer` to the subclient - it functions similarly to `#[tracing::new]` but for subclient instantiation.
