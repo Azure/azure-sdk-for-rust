@@ -43,8 +43,11 @@ tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
+default = ["native_tls"]
 test = []
 blob_checkpoint_store = []
+native_tls = ["azure_core_amqp/native_tls"]
+rustls = ["azure_core_amqp/rustls"]
 
 [[bench]]
 name = "benchmarks"

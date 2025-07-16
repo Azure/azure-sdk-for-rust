@@ -49,6 +49,8 @@ fe2o3_amqp = [
   "serde_amqp",
   "serde_bytes",
 ]
+native_tls = ["fe2o3-amqp?/native-tls"]
+rustls = ["fe2o3-amqp?/rustls"]
 
 [lints]
 workspace = true
