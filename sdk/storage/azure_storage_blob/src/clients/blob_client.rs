@@ -83,6 +83,32 @@ impl BlobClient {
         })
     }
 
+    pub fn new_no_credential(
+        endpoint: &str,
+        container_name: String,
+        blob_name: String,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let mut options = options.unwrap_or_default();
+
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+
+        let client = GeneratedBlobClient::new_no_credential(
+            endpoint,
+            container_name.clone(),
+            blob_name.clone(),
+            Some(options),
+        )?;
+        Ok(Self {
+            endpoint: endpoint.parse()?,
+            client,
+        })
+    }
+
     /// Returns a new instance of AppendBlobClient.
     ///
     /// # Arguments

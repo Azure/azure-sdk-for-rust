@@ -102,6 +102,35 @@ impl BlobClient {
         })
     }
 
+    pub fn new_no_credential(
+        endpoint: &str,
+        container_name: String,
+        blob_name: String,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let options = options.unwrap_or_default();
+        let endpoint = Url::parse(endpoint)?;
+        if !endpoint.scheme().starts_with("http") {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                format!("{endpoint} must use http(s)"),
+            ));
+        }
+        Ok(Self {
+            blob_name,
+            container_name,
+            endpoint,
+            version: options.version,
+            pipeline: Pipeline::new(
+                option_env!("CARGO_PKG_NAME"),
+                option_env!("CARGO_PKG_VERSION"),
+                options.client_options,
+                Vec::default(),
+                Vec::default(),
+            ),
+        })
+    }
+
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -770,10 +799,15 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
+        // let mut path = String::from("{containerName}/{blobName}");
+        // path = path.replace("{blobName}", &self.blob_name);
+        // path = path.replace("{containerName}", &self.container_name);
+        // url = url.join(&path)?;
+        {
+            let mut path_segments = url.path_segments_mut().expect("Cannot be base");
+            path_segments.push(&self.container_name);
+            path_segments.push(&self.blob_name);
+        }
         if let Some(snapshot) = options.snapshot {
             url.query_pairs_mut().append_pair("snapshot", &snapshot);
         }
