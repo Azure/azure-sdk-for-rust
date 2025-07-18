@@ -7,13 +7,17 @@ use azure_core::{
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
-    BlobClientDownloadOptions, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
+    AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
+    BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
+    BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
     BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
-    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-    LeaseState,
+    BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+    BlobClientStartCopyFromUrlResultHeaders, BlockBlobClientUploadOptions, CopyStatus, LeaseState,
 };
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use azure_storage_blob::serialize_blob_tags;
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, test_blob_tag_equality,
+};
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
@@ -421,5 +425,91 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
 
     blob_client.break_lease(None).await?;
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_start_copy_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let source_blob_client = container_client.blob_client(get_blob_name(recording));
+    create_test_blob(&source_blob_client).await?;
+
+    let blob_client = container_client.blob_client("destination_blob".to_string());
+    let source_url = format!(
+        "{}{}/{}",
+        source_blob_client.endpoint().as_str(),
+        source_blob_client.container_name(),
+        source_blob_client.blob_name()
+    );
+    let response = blob_client.start_copy_from_url(source_url, None).await?;
+    let (_, _, source_content) = source_blob_client.download(None).await?.deconstruct();
+    let (_, _, copied_content) = blob_client.download(None).await?.deconstruct();
+
+    // Assert
+    let copy_status = response.copy_status()?;
+    let copy_id = response.copy_id()?;
+    assert_eq!(CopyStatus::Success, copy_status.unwrap());
+    assert!(copy_id.is_some());
+    assert_eq!(
+        source_content.collect().await?,
+        copied_content.collect().await?
+    );
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+    create_test_blob(&blob_client).await?;
+
+    // Set Tags with Tags Specified
+    let blob_tags = HashMap::from([
+        ("hello".to_string(), "world".to_string()),
+        ("ferris".to_string(), "crab".to_string()),
+    ]);
+    blob_client.set_tags(blob_tags.clone(), None).await?;
+
+    // Assert
+    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    assert!(test_blob_tag_equality(
+        serialize_blob_tags(blob_tags),
+        response_tags
+    ));
+
+    // Set Tags with No Tags (Clear Tags)
+    blob_client.set_tags(HashMap::new(), None).await?;
+
+    // Assert
+    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    assert!(response_tags.blob_tag_set.is_none());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+
+    // Act
+    let response = blob_client.get_account_info(None).await?;
+
+    // Assert
+    let sku_name = response.sku_name()?;
+    let account_kind = response.account_kind()?;
+
+    assert!(sku_name.is_some());
+    assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
+
     Ok(())
 }
