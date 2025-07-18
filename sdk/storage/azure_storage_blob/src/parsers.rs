@@ -39,13 +39,13 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     Ok(content_range)
 }
 
-/// Takes in an offset and a length and returns the HTTP range in string format.
+/// Takes in a HashMap of blob tags and serializes them into the `BlobTags` model.
 ///
 /// # Arguments
 ///
 /// * `tags` - A hash map containing the name-value pairs associated with the blob as tags.
 pub fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
-    let mut blob_tags: Vec<BlobTag> = vec![];
+    let mut blob_tags = vec![];
 
     for (k, v) in tags.into_iter() {
         let blob_tag = BlobTag {
