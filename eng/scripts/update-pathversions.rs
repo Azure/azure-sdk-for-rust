@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("requires 'add' or 'update' mode argument");
 
     let script_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
-    let repo_root = script_root.join("../../..").canonicalize()?;
+    let repo_root = script_root.join("../..").canonicalize()?;
 
     // find all Cargo.toml files in the repo_root directory
     let exclude_dirs = vec![
@@ -38,13 +38,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for mut toml_file in toml_files {
         let should_add = add_mode && !toml_file.is_publish_disabled;
-
-        update_package_versions(toml_file.document.as_table_mut(), &package_versions, should_add);
+        println!("Processing {}", toml_file.path.display());
+        update_package_versions(toml_file.document.as_table_mut(), &package_versions, None, should_add);
 
         // if the toml file has a workspace table, update the workspace table
         if let Some(workspace) = toml_file.document.get_mut("workspace") {
             if let Some(table) = workspace.as_table_mut() {
-                update_package_versions(table, &package_versions, should_add);
+                update_package_versions(table, &package_versions, Some("workspace"), should_add);
             }
         }
 
@@ -57,6 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn load_cargo_toml_files(repo_root: &PathBuf, exclude_dirs: &Vec<PathBuf>) -> Result<Vec<TomlInfo>, Box<dyn Error>> {
+    println!("Loading Cargo.toml files in {}", repo_root.display());
     let mut toml_paths = Vec::new();
     find_cargo_toml_files(repo_root, exclude_dirs, &mut toml_paths)?;
 
@@ -109,7 +110,7 @@ fn get_package_versions(toml_files: &Vec<TomlInfo>) -> Vec<(String, String, bool
     package_versions
 }
 
-fn update_package_versions(toml: &mut Table, package_versions: &Vec<(String, String, bool)>, add: bool) {
+fn update_package_versions(toml: &mut Table, package_versions: &Vec<(String, String, bool)>, prefix: Option<&str>, add: bool) {
     // for each dependency table, for each package in package_versions
     // if the package is in the dependency table
     //   if the dependency has both path and version properties, update the version property
@@ -121,16 +122,26 @@ fn update_package_versions(toml: &mut Table, package_versions: &Vec<(String, Str
     let dependency_tables = get_dependency_tables(toml);
 
     for (table_name, table) in dependency_tables {
+        let table_display_name = if prefix.is_some() {
+            format!("{}.{}", prefix.unwrap(), table_name)
+        } else {
+            table_name.clone()
+        };
         for (package, version, is_publish_disabled) in package_versions {
             if let Some(dependency) = table.get_mut(package) {
                 // azure_idenentity will only be a transitive dev-dependency
                 let should_add = add && table_name != "dev-dependencies" && !is_publish_disabled && package != "azure_identity";
 
-                let has_path_property = dependency.get("path").is_some();
-                let has_version_property = dependency.get("version").is_some();
-
-                if has_path_property && (has_version_property || should_add) {
-                    dependency["version"] = value(version);
+                if dependency.get("path").is_some() {
+                    if let Some(current_version) = dependency.get("version") {
+                        if current_version.as_str() != Some(version) {
+                            dependency["version"] = value(version);
+                            println!("  Updating {table_display_name}.{package} to {version}");
+                        }
+                    } else if should_add {
+                        dependency["version"] = value(version);
+                        println!("  Adding {table_display_name}.{package} version {version}");
+                    }
                 }
             }
         }

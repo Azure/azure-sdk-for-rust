@@ -22,6 +22,7 @@ members = [
 ]
 exclude = [
   "eng/scripts",
+  "target",
 ]
 
 [workspace.package]
