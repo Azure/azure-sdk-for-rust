@@ -104,26 +104,23 @@ impl PublicApiInstrumentationPolicy {
         let info = ctx.value::<PublicApiInstrumentationInformation>()?;
 
         // Get the tracer from either the context or the policy.
-        let tracer = match ctx.value::<Arc<dyn Tracer>>() {
-            Some(tracer) => Some(tracer),
-            None => tracer.as_ref(),
-        };
-
-        // If we don't have a tracer, skip instrumentation
-        let tracer = tracer?;
+        #[allow(clippy::unnecessary_lazy_evaluations)]
+        let tracer = ctx.value::<Arc<dyn Tracer>>().or_else(|| tracer.as_ref())?;
 
         // We now have public API information and a tracer.
         // Calculate the span attributes based on the public API information and
         // tracer.
-        let mut span_attributes = vec![];
-
-        for attr in &info.attributes {
-            // Add the attributes from the public API information to the span.
-            span_attributes.push(Attribute {
-                key: attr.key,
-                value: attr.value.clone(),
-            });
-        }
+        let mut span_attributes = info
+            .attributes
+            .iter()
+            .map(|attr| {
+                // Convert the attribute to a span attribute.
+                Attribute {
+                    key: attr.key,
+                    value: attr.value.clone(),
+                }
+            })
+            .collect::<Vec<_>>();
 
         if let Some(namespace) = tracer.namespace() {
             // If the tracer has a namespace, we set it as an attribute.
@@ -208,19 +205,22 @@ impl Policy for PublicApiInstrumentationPolicy {
 mod tests {
     // cspell: ignore traceparent
     use super::*;
-    use crate::http::policies::instrumentation::tests::{
-        check_request_instrumentation_result, InstrumentationExpectation, MockTracingProvider,
-    };
     use crate::{
         http::{
             headers::Headers,
             policies::{RequestInstrumentationPolicy, TransportPolicy},
             Method, RawResponse, StatusCode, TransportOptions,
         },
-        tracing::{AttributeValue, SpanStatus, TracerProvider},
+        tracing::{SpanStatus, TracerProvider},
         Result,
     };
-    use azure_core_test::http::MockHttpClient;
+    use azure_core_test::{
+        http::MockHttpClient,
+        tracing::{
+            check_instrumentation_result, ExpectedSpanInformation, ExpectedTracerInformation,
+            MockTracingProvider,
+        },
+    };
     use futures::future::BoxFuture;
     use std::sync::Arc;
 
@@ -326,54 +326,6 @@ mod tests {
         mock_tracer_provider
     }
 
-    fn check_public_api_instrumentation_result(
-        mock_tracer: Arc<MockTracingProvider>,
-        span_count: usize,
-        span_index: usize,
-        expected_api_name: Option<&str>,
-        expected_kind: SpanKind,
-        expected_status: SpanStatus,
-        expected_attributes: Vec<(&str, AttributeValue)>,
-    ) {
-        assert_eq!(
-            mock_tracer.tracers.lock().unwrap().len(),
-            1,
-            "Expected one tracer to be created",
-        );
-        let tracers = mock_tracer.tracers.lock().unwrap();
-        let tracer = tracers.first().unwrap();
-        let spans = tracer.spans.lock().unwrap();
-        assert_eq!(spans.len(), span_count, "Expected one span to be created");
-        println!("Spans: {:?}", spans);
-        let span = spans[span_index].as_ref();
-        assert_eq!(span.name, expected_api_name.unwrap_or("unknown"));
-        assert_eq!(span.kind, expected_kind);
-        assert_eq!(*span.state.lock().unwrap(), expected_status);
-        let attributes = span.attributes.lock().unwrap();
-        for attr in attributes.iter() {
-            println!("Attribute: {} = {:?}", attr.key, attr.value);
-            let mut found = false;
-            for (key, value) in &expected_attributes {
-                if attr.key == *key {
-                    assert_eq!(attr.value, *value, "Attribute mismatch for key: {}", key);
-                    found = true;
-                    break;
-                }
-            }
-            if !found {
-                panic!("Unexpected attribute: {} = {:?}", attr.key, attr.value);
-            }
-        }
-        for (key, value) in &expected_attributes {
-            if !attributes
-                .iter()
-                .any(|attr| attr.key == *key && attr.value == *value)
-            {
-                panic!("Expected attribute not found: {} = {:?}", key, value);
-            }
-        }
-    }
-
     // Tests for the create_public_api_span function.
     #[test]
     fn create_public_api_span() {
@@ -465,17 +417,14 @@ mod tests {
         )
         .await;
 
-        assert_eq!(
-            mock_tracer.tracers.lock().unwrap().len(),
-            1,
-            "Expected one tracer to be created",
-        );
-        let tracers = mock_tracer.tracers.lock().unwrap();
-        let tracer = tracers.first().unwrap();
-        assert_eq!(
-            tracer.spans.lock().unwrap().len(),
-            0,
-            "Expected no spans to be created"
+        check_instrumentation_result(
+            mock_tracer,
+            vec![ExpectedTracerInformation {
+                name: "test_crate",
+                version: "1.0.0",
+                namespace: Some("test namespace"),
+                spans: vec![],
+            }],
         );
     }
 
@@ -506,11 +455,8 @@ mod tests {
         )
         .await;
 
-        assert_eq!(
-            mock_tracer.tracers.lock().unwrap().len(),
-            0,
-            "Expected no tracers to be created",
-        );
+        // No tracer should be created, so we expect no spans.
+        check_instrumentation_result(mock_tracer, vec![]);
     }
 
     #[tokio::test]
@@ -540,15 +486,20 @@ mod tests {
         )
         .await;
 
-        check_public_api_instrumentation_result(
-            mock_tracer.clone(),
-            1,
-            0,
-            Some("MyClient.MyApi"),
-            SpanKind::Internal,
-            SpanStatus::Unset,
-            vec![],
-        );
+        check_instrumentation_result(
+            mock_tracer,
+            vec![ExpectedTracerInformation {
+                name: "test_crate",
+                version: "1.0.0",
+                namespace: None,
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "MyClient.MyApi",
+                    status: SpanStatus::Unset,
+                    kind: SpanKind::Internal,
+                    attributes: vec![],
+                }],
+            }],
+        )
     }
 
     #[tokio::test]
@@ -578,14 +529,19 @@ mod tests {
         )
         .await;
 
-        check_public_api_instrumentation_result(
+        check_instrumentation_result(
             mock_tracer,
-            1,
-            0,
-            Some("MyClient.MyApi"),
-            SpanKind::Internal,
-            SpanStatus::Unset,
-            vec![(AZ_NAMESPACE_ATTRIBUTE, "test namespace".into())],
+            vec![ExpectedTracerInformation {
+                name: "test_crate",
+                version: "1.0.0",
+                namespace: Some("test namespace"),
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "MyClient.MyApi",
+                    status: SpanStatus::Unset,
+                    kind: SpanKind::Internal,
+                    attributes: vec![(AZ_NAMESPACE_ATTRIBUTE, "test namespace".into())],
+                }],
+            }],
         );
     }
 
@@ -616,19 +572,24 @@ mod tests {
         )
         .await;
 
-        check_public_api_instrumentation_result(
-            mock_tracer,
-            1,
-            0,
-            Some("MyClient.MyApi"),
-            SpanKind::Internal,
-            SpanStatus::Error {
-                description: "".to_string(),
-            },
-            vec![
-                (AZ_NAMESPACE_ATTRIBUTE, "test namespace".into()),
-                (ERROR_TYPE_ATTRIBUTE, "500".into()),
-            ],
+        check_instrumentation_result(
+            mock_tracer.clone(),
+            vec![ExpectedTracerInformation {
+                name: "test_crate",
+                version: "1.0.0",
+                namespace: Some("test namespace"),
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "MyClient.MyApi",
+                    status: SpanStatus::Error {
+                        description: "".to_string(),
+                    },
+                    kind: SpanKind::Internal,
+                    attributes: vec![
+                        (AZ_NAMESPACE_ATTRIBUTE, "test namespace".into()),
+                        (ERROR_TYPE_ATTRIBUTE, "500".into()),
+                    ],
+                }],
+            }],
         );
     }
 
@@ -657,40 +618,37 @@ mod tests {
         )
         .await;
 
-        check_public_api_instrumentation_result(
+        check_instrumentation_result(
             mock_tracer.clone(),
-            2,
-            0,
-            Some("MyClient.MyApi"),
-            SpanKind::Internal,
-            SpanStatus::Unset,
-            vec![
-                (AZ_NAMESPACE_ATTRIBUTE, "test.namespace".into()),
-                // Attribute comes from the public API information.
-                ("az.fake_attribute", "attribute value".into()),
-            ],
-        );
-
-        check_request_instrumentation_result(
-            mock_tracer.clone(),
-            2,
-            1,
-            InstrumentationExpectation {
-                namespace: Some("test.namespace"),
+            vec![ExpectedTracerInformation {
                 name: "test_crate",
                 version: "1.0.0",
-                span_name: "PUT",
-                kind: SpanKind::Client,
-                status: SpanStatus::Unset,
-                attributes: vec![
-                    (AZ_NAMESPACE_ATTRIBUTE, "test.namespace".into()),
-                    ("http.request.method", "PUT".into()),
-                    ("url.full", "http://example.com/path_with_request".into()),
-                    ("server.address", "example.com".into()),
-                    ("server.port", 80.into()),
-                    ("http.response.status_code", 200.into()),
+                namespace: Some("test.namespace"),
+                spans: vec![
+                    ExpectedSpanInformation {
+                        span_name: "MyClient.MyApi",
+                        status: SpanStatus::Unset,
+                        kind: SpanKind::Internal,
+                        attributes: vec![
+                            (AZ_NAMESPACE_ATTRIBUTE, "test.namespace".into()),
+                            ("az.fake_attribute", "attribute value".into()),
+                        ],
+                    },
+                    ExpectedSpanInformation {
+                        span_name: "PUT",
+                        status: SpanStatus::Unset,
+                        kind: SpanKind::Client,
+                        attributes: vec![
+                            (AZ_NAMESPACE_ATTRIBUTE, "test.namespace".into()),
+                            ("http.request.method", "PUT".into()),
+                            ("url.full", "http://example.com/path_with_request".into()),
+                            ("server.address", "example.com".into()),
+                            ("server.port", 80.into()),
+                            ("http.response.status_code", 200.into()),
+                        ],
+                    },
                 ],
-            },
+            }],
         );
     }
 }

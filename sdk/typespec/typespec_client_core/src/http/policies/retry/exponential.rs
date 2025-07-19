@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use tracing::trace;
+
 use super::RetryPolicy;
 use crate::time::Duration;
 
@@ -26,6 +28,7 @@ impl ExponentialRetryPolicy {
         max_elapsed: Duration,
         max_delay: Duration,
     ) -> Self {
+        trace!("ExponentialRetryPolicy::new called with initial_delay: {initial_delay:?}, max_retries: {max_retries}, max_elapsed: {max_elapsed:?}, max_delay: {max_delay:?}");
         Self {
             initial_delay: initial_delay.max(Duration::milliseconds(1)),
             max_retries,

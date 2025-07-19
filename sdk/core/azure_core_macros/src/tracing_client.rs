@@ -5,7 +5,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{spanned::Spanned, ItemStruct, Result};
 
-const INVALID_SERVICE_CLIENT_MESSAGE: &str = "client attribute must be applied to a public struct";
+const INVALID_SERVICE_CLIENT_MESSAGE: &str =
+    "client attribute must be applied to a public struct with no generic type parameters";
 
 /// Parse the token stream for an Azure Service client declaration.
 ///

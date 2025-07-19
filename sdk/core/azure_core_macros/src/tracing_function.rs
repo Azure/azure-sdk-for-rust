@@ -6,7 +6,7 @@ use quote::{quote, ToTokens};
 use syn::{parse::Parse, spanned::Spanned, ItemFn, Member, Result, Token};
 
 const INVALID_PUBLIC_FUNCTION_MESSAGE: &str =
-    "function attribute must be applied to a public function returning a Result.";
+    "function attribute must be applied to a public function returning a Result";
 
 // cspell: ignore asyncness
 
@@ -197,100 +197,116 @@ fn is_function_declaration(item: &TokenStream) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
     use syn::parse_quote;
 
     use super::*;
 
     #[test]
     fn test_parse_function_name_and_attributes() {
-        let types = [
-            quote! { "Text String" },
-            quote! { "Text String", (a = 1, b = 2) },
-        ];
-
-        for stream in types.iter() {
-            let parsed: FunctionNameAndAttributes =
-                syn::parse2(stream.clone()).expect("Failed to parse");
-            assert_eq!(parsed.function_name, "Text String");
-            if !parsed.arguments.is_empty() {
-                assert_eq!(parsed.arguments.len(), 2);
-                assert_eq!(parsed.arguments[0].0, "a");
-                assert_eq!(parsed.arguments[1].0, "b");
-            }
-        }
-
         {
             let test_stream = quote! { "Test Function", (arg1 = 42, arg2 = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
-            assert_eq!(parsed.arguments.len(), 2);
-            assert_eq!(parsed.arguments[0].0, "arg1");
-            assert_eq!(parsed.arguments[0].1, parse_quote!(42));
-            assert_eq!(parsed.arguments[1].0, "arg2");
-            assert_eq!(parsed.arguments[1].1, parse_quote!("value"));
+            assert_eq!(
+                parsed.arguments,
+                vec![
+                    ("arg1".to_string(), parse_quote!(42)),
+                    ("arg2".to_string(), parse_quote!("value"))
+                ]
+            );
         }
+    }
+    #[test]
+    fn test_parse_function_name_and_attributes_with_string_name() {
         {
             let test_stream = quote! { "Test Function", ("az.namespace" = "my namespace", az.test_value = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
-            assert_eq!(parsed.arguments.len(), 2);
-            assert_eq!(parsed.arguments[0].0, "az.namespace");
-            assert_eq!(parsed.arguments[0].1, parse_quote!("my namespace"));
-            assert_eq!(parsed.arguments[1].0, "az.test_value");
-            assert_eq!(parsed.arguments[1].1, parse_quote!("value"));
+            assert_eq!(
+                parsed.arguments,
+                vec![
+                    ("az.namespace".to_string(), parse_quote!("my namespace")),
+                    ("az.test_value".to_string(), parse_quote!("value")),
+                ]
+            );
         }
+    }
+    #[test]
+    fn test_parse_function_name_and_attributes_with_dotted_name() {
         {
             let test_stream = quote! { "Test Function", (az.namespace = "my namespace", az.test_value = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
-            assert_eq!(parsed.arguments.len(), 2);
-            assert_eq!(parsed.arguments[0].0, "az.namespace");
-            assert_eq!(parsed.arguments[0].1, parse_quote!("my namespace"));
-            assert_eq!(parsed.arguments[1].0, "az.test_value");
-            assert_eq!(parsed.arguments[1].1, parse_quote!("value"));
+            assert_eq!(
+                parsed.arguments,
+                vec![
+                    ("az.namespace".to_string(), parse_quote!("my namespace")),
+                    ("az.test_value".to_string(), parse_quote!("value"))
+                ]
+            );
         }
+    }
+    #[test]
+    fn test_parse_function_name_and_attributes_with_identifier_argument() {
         {
             let test_stream = quote! {"macros_get_with_tracing", (az.path = path, az.info = "Test", az.number = 42)};
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "macros_get_with_tracing");
-            assert_eq!(parsed.arguments.len(), 3);
-            assert_eq!(parsed.arguments[0].0, "az.path");
-            assert_eq!(parsed.arguments[0].1, parse_quote!(path));
-
-            assert_eq!(parsed.arguments[1].0, "az.info");
-            assert_eq!(parsed.arguments[1].1, parse_quote!("Test"));
-
-            assert_eq!(parsed.arguments[2].0, "az.number");
-            assert_eq!(parsed.arguments[2].1, parse_quote!(42));
+            assert_eq!(
+                parsed.arguments,
+                vec![
+                    ("az.path".to_string(), parse_quote!(path)),
+                    ("az.info".to_string(), parse_quote!("Test")),
+                    ("az.number".to_string(), parse_quote!(42)),
+                ]
+            );
         }
+    }
+    #[test]
+    fn test_parse_function_name_and_attributes_with_identifier_name() {
         {
             let test_stream = quote! { "Test Function", (az.foo.bar.namespace = "my namespace", az.test_value = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
-            assert_eq!(parsed.arguments.len(), 2);
-            assert_eq!(parsed.arguments[0].0, "az.foo.bar.namespace");
-            assert_eq!(parsed.arguments[0].1, parse_quote!("my namespace"));
-            assert_eq!(parsed.arguments[1].0, "az.test_value");
-            assert_eq!(parsed.arguments[1].1, parse_quote!("value"));
+            assert_eq!(
+                parsed.arguments,
+                vec![
+                    (
+                        "az.foo.bar.namespace".to_string(),
+                        parse_quote!("my namespace")
+                    ),
+                    ("az.test_value".to_string(), parse_quote!("value"))
+                ]
+            );
         }
-
+    }
+    #[test]
+    fn test_parse_function_name_and_attributes_with_comma_no_attributes() {
         {
             let test_stream = quote! { "Test Function", };
 
             syn::parse2::<FunctionNameAndAttributes>(test_stream)
                 .expect_err("Should fail to parse.");
         }
+    }
+    #[test]
+    fn test_parse_function_name_and_attributes_invalid_attribute_name() {
         {
             let test_stream = quote! { "Test Function",(23.5= "value") };
 
             syn::parse2::<FunctionNameAndAttributes>(test_stream)
                 .expect_err("Should fail to parse.");
         }
+    }
+    #[test]
+    fn test_parse_function_name_and_attributes_empty_attributes() {
         {
             let test_stream = quote! { "Test Function", ()};
 

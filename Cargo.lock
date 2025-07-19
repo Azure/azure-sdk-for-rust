@@ -212,6 +212,8 @@ dependencies = [
  "quote",
  "syn",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "typespec_client_core",
 ]
 

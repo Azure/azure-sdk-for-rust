@@ -173,6 +173,7 @@ impl TestServiceClientWithMacros {
 mod tests {
     use super::*;
     use ::tracing::{info, trace};
+    use azure_core::http::{ExponentialRetryOptions, RetryOptions};
     use azure_core::tracing::TracerProvider;
     use azure_core::Result;
     use azure_core_test::{recorded, TestContext};
@@ -505,6 +506,170 @@ mod tests {
                 attributes: vec![
                     ("az.namespace", "Az.TestServiceClient".into()),
                     ("error.type", "404".into()),
+                    ("a.b", 1.into()),              // added by tracing macro.
+                    ("az.telemetry", "Abc".into()), // added by tracing macro
+                    ("string attribute", "failing_url".into()), // added by tracing macro.
+                ],
+            },
+        )?;
+
+        Ok(())
+    }
+
+    #[recorded::test()]
+    async fn test_macro_service_client_get_with_function_tracing_dns_error(
+        ctx: TestContext,
+    ) -> Result<()> {
+        let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
+        let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+
+        let recording = ctx.recording();
+        let endpoint = "https://example.invalid_top_level_domain";
+        let credential = recording.credential().clone();
+        let options = TestServiceClientWithMacrosOptions {
+            client_options: ClientOptions {
+                request_instrumentation: Some(RequestInstrumentationOptions {
+                    tracer_provider: Some(azure_provider),
+                }),
+                retry: Some(RetryOptions::exponential(ExponentialRetryOptions {
+                    max_retries: 3,
+                    ..Default::default()
+                })),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
+        let response = client.get_with_function_tracing("failing_url", None).await;
+        info!("Response: {:?}", response);
+
+        let spans = otel_exporter.get_finished_spans().unwrap();
+        assert_eq!(spans.len(), 5);
+        for span in &spans {
+            trace!("Span: {:?}", span);
+        }
+        verify_span(
+            &spans[0],
+            ExpectedSpan {
+                name: "GET",
+                kind: OpenTelemetrySpanKind::Client,
+                parent_span_id: Some(spans[4].span_context.span_id()),
+                status: OpenTelemetrySpanStatus::Unset,
+                attributes: vec![
+                    ("http.request.method", "GET".into()),
+                    ("az.namespace", "Az.TestServiceClient".into()),
+                    ("az.client.request.id", "<ANY>".into()),
+                    (
+                        "url.full",
+                        format!(
+                            "{}{}",
+                            client.endpoint(),
+                            "failing_url?api-version=2023-10-01"
+                        )
+                        .into(),
+                    ),
+                    ("server.address", "example.invalid_top_level_domain".into()),
+                    ("server.port", 443.into()),
+                    ("http.request.resend_count", 0.into()),
+                    ("error.type", "Io".into()),
+                ],
+            },
+        )?;
+        verify_span(
+            &spans[1],
+            ExpectedSpan {
+                name: "GET",
+                kind: OpenTelemetrySpanKind::Client,
+                parent_span_id: Some(spans[4].span_context.span_id()),
+                status: OpenTelemetrySpanStatus::Unset,
+                attributes: vec![
+                    ("http.request.method", "GET".into()),
+                    ("az.namespace", "Az.TestServiceClient".into()),
+                    ("az.client.request.id", "<ANY>".into()),
+                    (
+                        "url.full",
+                        format!(
+                            "{}{}",
+                            client.endpoint(),
+                            "failing_url?api-version=2023-10-01"
+                        )
+                        .into(),
+                    ),
+                    ("server.address", "example.invalid_top_level_domain".into()),
+                    ("server.port", 443.into()),
+                    ("http.request.resend_count", 1.into()),
+                    ("error.type", "Io".into()),
+                ],
+            },
+        )?;
+        verify_span(
+            &spans[2],
+            ExpectedSpan {
+                name: "GET",
+                kind: OpenTelemetrySpanKind::Client,
+                parent_span_id: Some(spans[4].span_context.span_id()),
+                status: OpenTelemetrySpanStatus::Unset,
+                attributes: vec![
+                    ("http.request.method", "GET".into()),
+                    ("az.namespace", "Az.TestServiceClient".into()),
+                    ("az.client.request.id", "<ANY>".into()),
+                    (
+                        "url.full",
+                        format!(
+                            "{}{}",
+                            client.endpoint(),
+                            "failing_url?api-version=2023-10-01"
+                        )
+                        .into(),
+                    ),
+                    ("server.address", "example.invalid_top_level_domain".into()),
+                    ("server.port", 443.into()),
+                    ("http.request.resend_count", 2.into()),
+                    ("error.type", "Io".into()),
+                ],
+            },
+        )?;
+        verify_span(
+            &spans[3],
+            ExpectedSpan {
+                name: "GET",
+                kind: OpenTelemetrySpanKind::Client,
+                parent_span_id: Some(spans[4].span_context.span_id()),
+                status: OpenTelemetrySpanStatus::Unset,
+                attributes: vec![
+                    ("http.request.method", "GET".into()),
+                    ("az.namespace", "Az.TestServiceClient".into()),
+                    ("az.client.request.id", "<ANY>".into()),
+                    (
+                        "url.full",
+                        format!(
+                            "{}{}",
+                            client.endpoint(),
+                            "failing_url?api-version=2023-10-01"
+                        )
+                        .into(),
+                    ),
+                    ("server.address", "example.invalid_top_level_domain".into()),
+                    ("server.port", 443.into()),
+                    ("http.request.resend_count", 3.into()),
+                    ("error.type", "Io".into()),
+                ],
+            },
+        )?;
+
+        verify_span(
+            &spans[4],
+            ExpectedSpan {
+                name: "macros_get_with_tracing",
+                kind: OpenTelemetrySpanKind::Internal,
+                parent_span_id: None,
+                status: OpenTelemetrySpanStatus::Error {
+                    description: "Io".into(),
+                },
+                attributes: vec![
+                    ("az.namespace", "Az.TestServiceClient".into()),
+                    ("error.type", "Io".into()),
                     ("a.b", 1.into()),              // added by tracing macro.
                     ("az.telemetry", "Abc".into()), // added by tracing macro
                     ("string attribute", "failing_url".into()), // added by tracing macro.

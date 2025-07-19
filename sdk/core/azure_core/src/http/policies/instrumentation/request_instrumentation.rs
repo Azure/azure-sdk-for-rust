@@ -55,11 +55,13 @@ impl Policy for RequestInstrumentationPolicy {
         // we prefer the tracer from the context.
         // Otherwise, we use the tracer from the policy itself.
         // This allows for flexibility in using different tracers in different contexts.
-        let tracer = if ctx.value::<Arc<dyn crate::tracing::Tracer>>().is_some() {
-            ctx.value::<Arc<dyn crate::tracing::Tracer>>()
-        } else {
-            self.tracer.as_ref()
-        };
+
+        // We use `.or_else` here instead of `.or` because `.or` eagerly evaluates the right-hand side,
+        // which can lead to unnecessary overhead if the tracer is not needed.
+        #[allow(clippy::unnecessary_lazy_evaluations)]
+        let tracer = ctx
+            .value::<Arc<dyn crate::tracing::Tracer>>()
+            .or_else(|| self.tracer.as_ref());
 
         // If there is a span in the context, if it's not recording, just forward the request
         // without instrumentation.
@@ -152,15 +154,7 @@ impl Policy for RequestInstrumentationPolicy {
 
         if let Some(err) = result.as_ref().err() {
             // If the request failed, set an error type attribute.
-            let azure_error = err.downcast_ref::<crate::Error>();
-            if let Some(err_kind) = azure_error.map(|e| e.kind()) {
-                // If the error is an Azure core error, we set the error type.
-                span.set_attribute(ERROR_TYPE_ATTRIBUTE, err_kind.to_string().into());
-            } else {
-                // Otherwise, we set the error type to the error's text. This should never happen
-                // as the error should be an Azure core error.
-                span.set_attribute(ERROR_TYPE_ATTRIBUTE, err.to_string().into());
-            }
+            span.set_attribute(ERROR_TYPE_ATTRIBUTE, err.kind().to_string().into());
         }
         if let Ok(response) = result.as_ref() {
             // If the request was successful, set the HTTP response status code.
@@ -190,20 +184,19 @@ pub(crate) mod tests {
     use super::*;
     use crate::{
         http::{
-            headers::Headers,
-            policies::{
-                instrumentation::tests::{
-                    check_request_instrumentation_result, InstrumentationExpectation,
-                    MockTracingProvider,
-                },
-                TransportPolicy,
-            },
-            Method, RawResponse, StatusCode, TransportOptions,
+            headers::Headers, policies::TransportPolicy, Method, RawResponse, StatusCode,
+            TransportOptions,
         },
         tracing::{AttributeValue, SpanStatus, TracerProvider},
         Result,
     };
-    use azure_core_test::http::MockHttpClient;
+    use azure_core_test::{
+        http::MockHttpClient,
+        tracing::{
+            check_instrumentation_result, ExpectedSpanInformation, ExpectedTracerInformation,
+            MockTracingProvider,
+        },
+    };
     use futures::future::BoxFuture;
     use std::sync::Arc;
     use typespec_client_core::http::headers::HeaderName;
@@ -261,38 +254,38 @@ pub(crate) mod tests {
         )
         .await;
 
-        check_request_instrumentation_result(
+        check_instrumentation_result(
             mock_tracer,
-            1,
-            0,
-            InstrumentationExpectation {
+            vec![ExpectedTracerInformation {
                 namespace: Some("test namespace"),
                 name: "test_crate",
                 version: "1.0.0",
-                span_name: "GET",
-                status: SpanStatus::Unset,
-                kind: SpanKind::Client,
-                attributes: vec![
-                    (
-                        AZ_NAMESPACE_ATTRIBUTE,
-                        AttributeValue::from("test namespace"),
-                    ),
-                    (
-                        HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
-                        AttributeValue::from(200),
-                    ),
-                    (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
-                    (
-                        SERVER_ADDRESS_ATTRIBUTE,
-                        AttributeValue::from("example.com"),
-                    ),
-                    (SERVER_PORT_ATTRIBUTE, AttributeValue::from(80)),
-                    (
-                        URL_FULL_ATTRIBUTE,
-                        AttributeValue::from("http://example.com/path"),
-                    ),
-                ],
-            },
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "GET",
+                    status: SpanStatus::Unset,
+                    kind: SpanKind::Client,
+                    attributes: vec![
+                        (
+                            AZ_NAMESPACE_ATTRIBUTE,
+                            AttributeValue::from("test namespace"),
+                        ),
+                        (
+                            HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
+                            AttributeValue::from(200),
+                        ),
+                        (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
+                        (
+                            SERVER_ADDRESS_ATTRIBUTE,
+                            AttributeValue::from("example.com"),
+                        ),
+                        (SERVER_PORT_ATTRIBUTE, AttributeValue::from(80)),
+                        (
+                            URL_FULL_ATTRIBUTE,
+                            AttributeValue::from("http://example.com/path"),
+                        ),
+                    ],
+                }],
+            }],
         );
     }
 
@@ -343,38 +336,38 @@ pub(crate) mod tests {
         )
         .await;
 
-        check_request_instrumentation_result(
-            mock_tracer.clone(),
-            1,
-            0,
-            InstrumentationExpectation {
+        check_instrumentation_result(
+            mock_tracer,
+            vec![ExpectedTracerInformation {
                 namespace: None,
                 name: "test_crate",
                 version: "1.0.0",
-                span_name: "GET",
-                status: SpanStatus::Unset,
-                kind: SpanKind::Client,
-                attributes: vec![
-                    (
-                        AZ_CLIENT_REQUEST_ID_ATTRIBUTE,
-                        AttributeValue::from("test-client-request-id"),
-                    ),
-                    (
-                        HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
-                        AttributeValue::from(200),
-                    ),
-                    (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
-                    (
-                        SERVER_ADDRESS_ATTRIBUTE,
-                        AttributeValue::from("example.com"),
-                    ),
-                    (SERVER_PORT_ATTRIBUTE, AttributeValue::from(443)),
-                    (
-                        URL_FULL_ATTRIBUTE,
-                        AttributeValue::from("https://example.com/client_request_id"),
-                    ),
-                ],
-            },
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "GET",
+                    status: SpanStatus::Unset,
+                    kind: SpanKind::Client,
+                    attributes: vec![
+                        (
+                            AZ_CLIENT_REQUEST_ID_ATTRIBUTE,
+                            AttributeValue::from("test-client-request-id"),
+                        ),
+                        (
+                            HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
+                            AttributeValue::from(200),
+                        ),
+                        (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
+                        (
+                            SERVER_ADDRESS_ATTRIBUTE,
+                            AttributeValue::from("example.com"),
+                        ),
+                        (SERVER_PORT_ATTRIBUTE, AttributeValue::from(443)),
+                        (
+                            URL_FULL_ATTRIBUTE,
+                            AttributeValue::from("https://example.com/client_request_id"),
+                        ),
+                    ],
+                }],
+            }],
         );
     }
 
@@ -397,27 +390,27 @@ pub(crate) mod tests {
             })
             .await;
         // Because the URL contains a username and password, we do not set the URL_FULL_ATTRIBUTE.
-        check_request_instrumentation_result(
+        check_instrumentation_result(
             mock_tracer_provider,
-            1,
-            0,
-            InstrumentationExpectation {
+            vec![ExpectedTracerInformation {
                 namespace: None,
                 name: "unknown",
                 version: "unknown",
-                span_name: "GET",
-                status: SpanStatus::Unset,
-                kind: SpanKind::Client,
-                attributes: vec![
-                    (
-                        HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
-                        AttributeValue::from(200),
-                    ),
-                    (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
-                    (SERVER_ADDRESS_ATTRIBUTE, AttributeValue::from("host")),
-                    (SERVER_PORT_ATTRIBUTE, AttributeValue::from(8080)),
-                ],
-            },
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "GET",
+                    status: SpanStatus::Unset,
+                    kind: SpanKind::Client,
+                    attributes: vec![
+                        (
+                            HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
+                            AttributeValue::from(200),
+                        ),
+                        (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("GET")),
+                        (SERVER_ADDRESS_ATTRIBUTE, AttributeValue::from("host")),
+                        (SERVER_PORT_ATTRIBUTE, AttributeValue::from(8080)),
+                    ],
+                }],
+            }],
         );
     }
 
@@ -445,49 +438,46 @@ pub(crate) mod tests {
             },
         )
         .await;
-        check_request_instrumentation_result(
+
+        check_instrumentation_result(
             mock_tracer,
-            1,
-            0,
-            InstrumentationExpectation {
+            vec![ExpectedTracerInformation {
                 namespace: Some("test namespace"),
                 name: "test_crate",
                 version: "1.0.0",
-                span_name: "PUT",
-                status: SpanStatus::Error {
-                    description: "".to_string(),
-                },
-                kind: SpanKind::Client,
-                attributes: vec![
-                    (ERROR_TYPE_ATTRIBUTE, AttributeValue::from("404")),
-                    (
-                        AZ_SERVICE_REQUEST_ID_ATTRIBUTE,
-                        AttributeValue::from("test-service-request-id"),
-                    ),
-                    (
-                        AZ_NAMESPACE_ATTRIBUTE,
-                        AttributeValue::from("test namespace"),
-                    ),
-                    (
-                        AZ_SERVICE_REQUEST_ID_ATTRIBUTE,
-                        AttributeValue::from("test-service-request-id"),
-                    ),
-                    (
-                        HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
-                        AttributeValue::from(404),
-                    ),
-                    (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("PUT")),
-                    (
-                        SERVER_ADDRESS_ATTRIBUTE,
-                        AttributeValue::from("microsoft.com"),
-                    ),
-                    (SERVER_PORT_ATTRIBUTE, AttributeValue::from(443)),
-                    (
-                        URL_FULL_ATTRIBUTE,
-                        AttributeValue::from("https://microsoft.com/request_failed.htm"),
-                    ),
-                ],
-            },
+                spans: vec![ExpectedSpanInformation {
+                    span_name: "PUT",
+                    status: SpanStatus::Error {
+                        description: "".to_string(),
+                    },
+                    kind: SpanKind::Client,
+                    attributes: vec![
+                        (ERROR_TYPE_ATTRIBUTE, AttributeValue::from("404")),
+                        (
+                            AZ_SERVICE_REQUEST_ID_ATTRIBUTE,
+                            AttributeValue::from("test-service-request-id"),
+                        ),
+                        (
+                            AZ_NAMESPACE_ATTRIBUTE,
+                            AttributeValue::from("test namespace"),
+                        ),
+                        (
+                            HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
+                            AttributeValue::from(404),
+                        ),
+                        (HTTP_REQUEST_METHOD_ATTRIBUTE, AttributeValue::from("PUT")),
+                        (
+                            SERVER_ADDRESS_ATTRIBUTE,
+                            AttributeValue::from("microsoft.com"),
+                        ),
+                        (SERVER_PORT_ATTRIBUTE, AttributeValue::from(443)),
+                        (
+                            URL_FULL_ATTRIBUTE,
+                            AttributeValue::from("https://microsoft.com/request_failed.htm"),
+                        ),
+                    ],
+                }],
+            }],
         );
     }
 }
