@@ -18,6 +18,7 @@ extends:
         safeName: AzureIdentity
 
     ${{ if endsWith(variables['Build.DefinitionName'], 'weekly') }}:
+      Location: uksouth
       RunLiveTests: true
       PersistOidcToken: true
       MatrixConfigs:
