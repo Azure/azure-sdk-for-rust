@@ -2,6 +2,16 @@ use std::collections::HashMap;
 
 use url::Url;
 
+pub struct AccountRegion {
+    pub region: String,
+    pub endpoint: Url,
+}
+
+pub enum RequestOperation {
+    Read,
+    Write,
+}
+
 #[derive(Clone)]
 pub struct DatabaseAccountLocationsInfo {
     pub preferred_locations: Vec<String>,
@@ -29,7 +39,6 @@ impl Default for DatabaseAccountLocationsInfo {
 
 pub struct LocationCache {
     pub default_endpoint: Url,
-    pub preferred_locations: Vec<String>,
     pub locations_info: DatabaseAccountLocationsInfo,
 }
 
@@ -37,7 +46,6 @@ impl LocationCache {
     pub fn new(default_endpoint: Url, preferred_locations: Vec<String>) -> Self {
         Self {
             default_endpoint,
-            preferred_locations,
             locations_info: DatabaseAccountLocationsInfo {
                 preferred_locations,
                 ..Default::default()
@@ -73,6 +81,8 @@ impl LocationCache {
             locations_info_copy.available_read_locations = available_read_locations;
         }
 
+        //call get_preferred_available_endpoints
+
         self.locations_info = locations_info_copy;
     }
 
@@ -91,5 +101,34 @@ impl LocationCache {
         }
 
         (endpoints_by_location, parsed_locations)
+    }
+
+    pub fn get_preferred_available_endpoints(
+        &mut self,
+        endpoints_by_location: HashMap<String, Url>,
+        locations: Vec<String>,
+        request: RequestOperation,
+        default_endpoint: Url,
+    ) -> Vec<Url> {
+        let mut endpoints: Vec<Url> = Vec::new();
+        let mut unavailable_endpoints: Vec<Url> = Vec::new();
+
+        if !self.locations_info.preferred_locations.is_empty() {
+            for location in &self.locations_info.preferred_locations {
+                if let Some(endpoint) = endpoints_by_location.get(location) {
+                    //check if endpoint is available, if not add to unavailable_endpoints
+
+                    //if it is then add to endpoints
+                }
+            }
+        }
+
+        for location in locations {
+            if let Some(endpoint) = endpoints_by_location.get(&location) {
+                endpoints.push(endpoint.clone());
+            }
+        }
+
+        endpoints
     }
 }
