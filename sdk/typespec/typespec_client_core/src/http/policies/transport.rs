@@ -36,7 +36,10 @@ impl Policy for TransportPolicy {
         assert_eq!(0, next.len());
 
         if request.body().is_empty()
-            && matches!(request.method(), Method::Patch | Method::Post | Method::Put)
+            && matches!(
+                *request.method(),
+                Method::Patch | Method::Post | Method::Put
+            )
         {
             request.add_mandatory_header(EMPTY_CONTENT_LENGTH);
         }
