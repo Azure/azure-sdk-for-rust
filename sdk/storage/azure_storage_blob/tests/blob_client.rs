@@ -430,11 +430,9 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
 #[recorded::test]
 async fn test_sassy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // SAS
-    let endpoint = "endpoint_with_sas";
-    let container_name = "acontainer108f32e8";
-    let blob_name = "goodbye.txt";
-    let sas_blob_client =
-        BlobClient::new_no_credential(endpoint, container_name.into(), blob_name.into(), None)?;
+    let blob_url = "https://vincenttranstock.blob.core.windows.net/acontainer108f32e8/goodbye.txt?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig=e7QwWlj42eY%2FqDMSdSppRqSSqlkinW00%2Bymu03LAuek%3D";
+
+    let sas_blob_client = BlobClient::from_blob_url(blob_url, None)?;
 
     let blob_properties = sas_blob_client.get_properties(None).await?;
     let content_length = blob_properties.content_length()?;

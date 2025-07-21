@@ -83,12 +83,7 @@ impl BlobClient {
         })
     }
 
-    pub fn new_no_credential(
-        endpoint: &str,
-        container_name: String,
-        blob_name: String,
-        options: Option<BlobClientOptions>,
-    ) -> Result<Self> {
+    pub fn from_blob_url(blob_url: &str, options: Option<BlobClientOptions>) -> Result<Self> {
         let mut options = options.unwrap_or_default();
 
         let storage_headers_policy = Arc::new(StorageHeadersPolicy);
@@ -97,14 +92,35 @@ impl BlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
+        // TODO: We would abstract this out to a helper that is fancier and can handle edge-cases, which Url crate may not have been designed to handle
+        // Parse out container name and blob name, then remove them from the path
+        let mut container_name = "";
+        let mut blob_name = "";
+        let mut url = Url::parse(blob_url)?;
+        // URL BEFORE: https://vincenttranstock.blob.core.windows.net/acontainer108f32e8/goodbye.txt?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig
+        // println!("URL BEFORE: {}", url.clone());
+
+        let url_for_path_segments = url.clone();
+        if let Some(mut segments) = url_for_path_segments.path_segments() {
+            container_name = segments.next().unwrap();
+            blob_name = segments.next().unwrap();
+        }
+        url.set_path("");
+        // URL AFTER NULLED PATH: https://vincenttranstock.blob.core.windows.net/?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig
+        // println!("URL AFTER NULLED PATH: {}", url.clone());
+
+        // Therefore, given the current design, the endpoint passed to the generated client will have query parameters on it.
         let client = GeneratedBlobClient::new_no_credential(
-            endpoint,
-            container_name.clone(),
-            blob_name.clone(),
+            url.as_str(),
+            container_name.to_string(),
+            blob_name.to_string(),
             Some(options),
         )?;
+
+        // Consequently that means currently endpoint() will have all the query parameters in it.
+        // We could strip it out here before saving on this client, but that would mean a mismatch of endpoint values between our client and generated.
         Ok(Self {
-            endpoint: endpoint.parse()?,
+            endpoint: url,
             client,
         })
     }

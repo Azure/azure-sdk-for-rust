@@ -803,11 +803,16 @@ impl BlobClient {
         // path = path.replace("{blobName}", &self.blob_name);
         // path = path.replace("{containerName}", &self.container_name);
         // url = url.join(&path)?;
+
+        // request uri before: https://vincenttranstock.blob.core.windows.net/?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig=
+        // println!("request uri before: {}", url);
         {
-            let mut path_segments = url.path_segments_mut().expect("Cannot be base");
-            path_segments.push(&self.container_name);
-            path_segments.push(&self.blob_name);
+            url.path_segments_mut()
+                .expect("Cannot be base")
+                .extend([&self.container_name, &self.blob_name]);
         }
+        // request uri after: https://vincenttranstock.blob.core.windows.net/acontainer108f32e8/goodbye.txt?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig=
+        // println!("request uri after: {}", url);
         if let Some(snapshot) = options.snapshot {
             url.query_pairs_mut().append_pair("snapshot", &snapshot);
         }
