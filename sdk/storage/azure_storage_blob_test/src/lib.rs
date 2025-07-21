@@ -114,28 +114,3 @@ pub async fn create_test_blob(
         )
         .await
 }
-
-/// Takes in two separate BlobTags instances and compares their contents to check for equality.
-///
-/// # Arguments
-///
-/// * `tags1` - The first BlobTags to be compared.
-/// * `tags2` - The second BlobTags to be compared.
-pub fn test_blob_tag_equality(tags1: BlobTags, tags2: BlobTags) -> bool {
-    let mut count_map = HashMap::new();
-    // Iterate through first set of tags, populate HashMap
-    for blob_tag in tags1.blob_tag_set.unwrap() {
-        count_map.insert(blob_tag.key.unwrap(), blob_tag.value.unwrap());
-    }
-    // Iterate through second set of tags
-    for blob_tag in tags2.blob_tag_set.unwrap() {
-        // If tag is not found, return false
-        if !count_map.contains_key(&blob_tag.key.clone().unwrap()) {
-            return false;
-        } else {
-            count_map.remove(&blob_tag.key.unwrap());
-        }
-    }
-    // Ensure HashMap has been completely consumed
-    count_map.is_empty()
-}

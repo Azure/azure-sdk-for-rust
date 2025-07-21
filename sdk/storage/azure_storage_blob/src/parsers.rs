@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::generated::models::{BlobTag, BlobTags};
-use azure_core::http::RequestContent;
+use azure_core::http::{RawResponse, RequestContent, Response, XmlFormat};
+use azure_core::xml;
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
 
@@ -44,7 +45,7 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
 /// # Arguments
 ///
 /// * `tags` - A hash map containing the name-value pairs associated with the blob as tags.
-pub fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
+pub(crate) fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
     let mut blob_tags = vec![];
 
     for (k, v) in tags.into_iter() {
@@ -57,4 +58,30 @@ pub fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
     BlobTags {
         blob_tag_set: Some(blob_tags),
     }
+}
+
+/// Takes in a `get_tags()` response and deserializes the `BlobTags` model into a HashMap of blob tags.
+///
+/// # Arguments
+///
+/// * `response` - The `get_tags()` response to be deserialized.
+pub(crate) async fn deserialize_blob_tags(
+    response: Response<BlobTags, XmlFormat>,
+) -> azure_core::Result<Response<HashMap<String, String>, XmlFormat>>
+where
+{
+    let mut blob_tags_map = HashMap::new();
+    let status = response.status();
+    let headers = response.headers().clone();
+    let blob_tags = response.into_body().await?;
+
+    if let Some(blob_tag_set) = blob_tags.blob_tag_set {
+        for blob_tag in blob_tag_set {
+            blob_tags_map.insert(blob_tag.key, blob_tag.value);
+        }
+    }
+
+    let xml_body = xml::to_xml_with_root("HashMap", &blob_tags_map)?;
+    let raw_response = RawResponse::from_bytes(status, headers, xml_body);
+    Ok(raw_response.into())
 }

@@ -2,11 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::{
+    deserialize_blob_tags,
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
         BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
-        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlobClientStartCopyFromUrlResult,
+        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadResult,
     },
@@ -16,8 +17,8 @@ use crate::{
         BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
         BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-        BlobClientStartCopyFromUrlOptions, BlobTags, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
+        BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
+        BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     serialize_blob_tags, AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -317,24 +318,6 @@ impl BlobClient {
         self.client.renew_lease(lease_id, options).await
     }
 
-    /// Copies a blob or an internet resource to a new blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `copy_source` - A URL of up to 2 KB in length that specifies a file or blob.
-    ///   The value should be URL-encoded as it would appear in a request URI.
-    ///   If the source is in another account, the source must either be public
-    ///   or must be authenticated via a shared access signature. If the source
-    ///   is public, no authentication is required.
-    /// * `options` - Optional configuration for the request.
-    pub async fn start_copy_from_url(
-        &self,
-        copy_source: String,
-        options: Option<BlobClientStartCopyFromUrlOptions<'_>>,
-    ) -> Result<Response<BlobClientStartCopyFromUrlResult, NoFormat>> {
-        self.client.start_copy_from_url(copy_source, options).await
-    }
-
     /// Sets tags on a blob. Note that each call to this operation replaces all existing tags. To remove
     /// all tags from the blob, call this operation with no tags specified.
     ///
@@ -365,8 +348,9 @@ impl BlobClient {
     pub async fn get_tags(
         &self,
         options: Option<BlobClientGetTagsOptions<'_>>,
-    ) -> Result<Response<BlobTags, XmlFormat>> {
-        self.client.get_tags(options).await
+    ) -> Result<Response<HashMap<String, String>, XmlFormat>> {
+        let response = self.client.get_tags(options).await?;
+        deserialize_blob_tags(response).await
     }
 
     /// Gets information related to the Storage account in which the blob resides.
