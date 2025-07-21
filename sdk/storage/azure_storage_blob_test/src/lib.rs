@@ -7,11 +7,9 @@ use azure_core::{
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    models::{BlobTags, BlockBlobClientUploadResult},
-    BlobClient, BlobContainerClient, BlobContainerClientOptions, BlobServiceClient,
-    BlobServiceClientOptions,
+    models::BlockBlobClientUploadResult, BlobClient, BlobContainerClient,
+    BlobContainerClientOptions, BlobServiceClient, BlobServiceClientOptions,
 };
-use std::collections::HashMap;
 
 /// Takes in a Recording instance and returns an instrumented options bag and endpoint.
 ///
