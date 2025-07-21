@@ -63,28 +63,19 @@ impl Policy for RequestInstrumentationPolicy {
             .value::<Arc<dyn crate::tracing::Tracer>>()
             .or_else(|| self.tracer.as_ref());
 
-        // If there is a span in the context, if it's not recording, just forward the request
-        // without instrumentation.
-        if let Some(span) = ctx.value::<Arc<dyn Span>>() {
-            if !span.is_recording() {
-                // If the span is not recording, we skip instrumentation.
-                return next[0].send(ctx, request, &next[1..]).await;
-            }
-        }
-
         let Some(tracer) = tracer else {
             return next[0].send(ctx, request, &next[1..]).await;
         };
 
         let mut span_attributes = vec![Attribute {
-            key: HTTP_REQUEST_METHOD_ATTRIBUTE,
+            key: HTTP_REQUEST_METHOD_ATTRIBUTE.into(),
             value: request.method().to_string().into(),
         }];
 
         if let Some(namespace) = tracer.namespace() {
             // If the tracer has a namespace, we set it as an attribute.
             span_attributes.push(Attribute {
-                key: AZ_NAMESPACE_ATTRIBUTE,
+                key: AZ_NAMESPACE_ATTRIBUTE.into(),
                 value: namespace.into(),
             });
         }
@@ -94,20 +85,20 @@ impl Policy for RequestInstrumentationPolicy {
         // the url contains a username or password, we simply omit the URL_FULL_ATTRIBUTE.
         if request.url().username().is_empty() && request.url().password().is_none() {
             span_attributes.push(Attribute {
-                key: URL_FULL_ATTRIBUTE,
+                key: URL_FULL_ATTRIBUTE.into(),
                 value: request.url().to_string().into(),
             });
         }
 
         if let Some(host) = request.url().host() {
             span_attributes.push(Attribute {
-                key: SERVER_ADDRESS_ATTRIBUTE,
+                key: SERVER_ADDRESS_ATTRIBUTE.into(),
                 value: host.to_string().into(),
             });
         }
         if let Some(port) = request.url().port_or_known_default() {
             span_attributes.push(Attribute {
-                key: SERVER_PORT_ATTRIBUTE,
+                key: SERVER_PORT_ATTRIBUTE.into(),
                 value: port.into(),
             });
         }
@@ -124,27 +115,28 @@ impl Policy for RequestInstrumentationPolicy {
         } else {
             // If no parent span exists, start a new span with the "current" span (if any).
             // It is up to the tracer implementation to determine what "current" means.
-            tracer.start_span_with_current(method_str, SpanKind::Client, span_attributes)
+            tracer.start_span(method_str, SpanKind::Client, span_attributes)
         };
 
-        if !span.is_recording() {
-            // If the span is not recording, we skip instrumentation.
-            return next[0].send(ctx, request, &next[1..]).await;
-        }
+        if (span.is_recording()) {
+            if let Some(client_request_id) = request
+                .headers()
+                .get_optional_str(&headers::CLIENT_REQUEST_ID)
+            {
+                span.set_attribute(AZ_CLIENT_REQUEST_ID_ATTRIBUTE, client_request_id.into());
+            }
 
-        if let Some(client_request_id) = request
-            .headers()
-            .get_optional_str(&headers::CLIENT_REQUEST_ID)
-        {
-            span.set_attribute(AZ_CLIENT_REQUEST_ID_ATTRIBUTE, client_request_id.into());
-        }
+            if let Some(service_request_id) =
+                request.headers().get_optional_str(&headers::REQUEST_ID)
+            {
+                span.set_attribute(AZ_SERVICE_REQUEST_ID_ATTRIBUTE, service_request_id.into());
+            }
 
-        if let Some(service_request_id) = request.headers().get_optional_str(&headers::REQUEST_ID) {
-            span.set_attribute(AZ_SERVICE_REQUEST_ID_ATTRIBUTE, service_request_id.into());
-        }
-
-        if let Some(retry_count) = ctx.value::<RetryPolicyCount>() {
-            span.set_attribute(HTTP_REQUEST_RESEND_COUNT_ATTRIBUTE, (**retry_count).into());
+            if let Some(retry_count) = ctx.value::<RetryPolicyCount>() {
+                if **retry_count > 0 {
+                    span.set_attribute(HTTP_REQUEST_RESEND_COUNT_ATTRIBUTE, (**retry_count).into());
+                }
+            }
         }
 
         // Propagate the headers for distributed tracing into the request.
@@ -152,28 +144,29 @@ impl Policy for RequestInstrumentationPolicy {
 
         let result = next[0].send(ctx, request, &next[1..]).await;
 
-        if let Some(err) = result.as_ref().err() {
-            // If the request failed, set an error type attribute.
-            span.set_attribute(ERROR_TYPE_ATTRIBUTE, err.kind().to_string().into());
-        }
-        if let Ok(response) = result.as_ref() {
-            // If the request was successful, set the HTTP response status code.
-            span.set_attribute(
-                HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
-                u16::from(response.status()).into(),
-            );
+        if (span.is_recording()) {
+            if let Some(err) = result.as_ref().err() {
+                // If the request failed, set an error type attribute.
+                span.set_attribute(ERROR_TYPE_ATTRIBUTE, err.kind().to_string().into());
+            }
+            if let Ok(response) = result.as_ref() {
+                // If the request was successful, set the HTTP response status code.
+                span.set_attribute(
+                    HTTP_RESPONSE_STATUS_CODE_ATTRIBUTE,
+                    u16::from(response.status()).into(),
+                );
 
-            if response.status().is_server_error() || response.status().is_client_error() {
-                // If the response status indicates an error, set the span status to error.
-                // Since the reason can be inferred from the status code, description is left empty.
-                span.set_status(crate::tracing::SpanStatus::Error {
-                    description: "".to_string(),
-                });
-                // Set the error type attribute for all HTTP 4XX or 5XX errors.
-                span.set_attribute(ERROR_TYPE_ATTRIBUTE, response.status().to_string().into());
+                if response.status().is_server_error() || response.status().is_client_error() {
+                    // If the response status indicates an error, set the span status to error.
+                    // Since the reason can be inferred from the status code, description is left empty.
+                    span.set_status(crate::tracing::SpanStatus::Error {
+                        description: "".to_string(),
+                    });
+                    // Set the error type attribute for all HTTP 4XX or 5XX errors.
+                    span.set_attribute(ERROR_TYPE_ATTRIBUTE, response.status().to_string().into());
+                }
             }
         }
-
         span.end();
         return result;
     }
@@ -215,7 +208,7 @@ pub(crate) mod tests {
         let tracer = mock_tracer_provider.get_tracer(
             test_namespace,
             crate_name.unwrap_or("unknown"),
-            version.unwrap_or("unknown"),
+            version,
         );
         let policy = Arc::new(RequestInstrumentationPolicy::new(Some(tracer.clone())));
 
@@ -259,7 +252,7 @@ pub(crate) mod tests {
             vec![ExpectedTracerInformation {
                 namespace: Some("test namespace"),
                 name: "test_crate",
-                version: "1.0.0",
+                version: Some("1.0.0"),
                 spans: vec![ExpectedSpanInformation {
                     span_name: "GET",
                     status: SpanStatus::Unset,
@@ -295,7 +288,8 @@ pub(crate) mod tests {
         assert!(policy.tracer.is_none());
 
         let mock_tracer_provider = Arc::new(MockTracingProvider::new());
-        let tracer = mock_tracer_provider.get_tracer(Some("test namespace"), "test_crate", "1.0.0");
+        let tracer =
+            mock_tracer_provider.get_tracer(Some("test namespace"), "test_crate", Some("1.0.0"));
         let policy_with_tracer = RequestInstrumentationPolicy::new(Some(tracer));
         assert!(policy_with_tracer.tracer.is_some());
     }
@@ -341,7 +335,7 @@ pub(crate) mod tests {
             vec![ExpectedTracerInformation {
                 namespace: None,
                 name: "test_crate",
-                version: "1.0.0",
+                version: Some("1.0.0"),
                 spans: vec![ExpectedSpanInformation {
                     span_name: "GET",
                     status: SpanStatus::Unset,
@@ -395,7 +389,7 @@ pub(crate) mod tests {
             vec![ExpectedTracerInformation {
                 namespace: None,
                 name: "unknown",
-                version: "unknown",
+                version: None,
                 spans: vec![ExpectedSpanInformation {
                     span_name: "GET",
                     status: SpanStatus::Unset,
@@ -444,7 +438,7 @@ pub(crate) mod tests {
             vec![ExpectedTracerInformation {
                 namespace: Some("test namespace"),
                 name: "test_crate",
-                version: "1.0.0",
+                version: Some("1.0.0"),
                 spans: vec![ExpectedSpanInformation {
                     span_name: "PUT",
                     status: SpanStatus::Error {

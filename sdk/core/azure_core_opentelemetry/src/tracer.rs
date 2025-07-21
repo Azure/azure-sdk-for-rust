@@ -6,7 +6,7 @@ use crate::{
     span::{OpenTelemetrySpan, OpenTelemetrySpanKind},
 };
 
-use azure_core::tracing::{Attribute, SpanKind, Tracer};
+use azure_core::tracing::{SpanKind, Tracer};
 use opentelemetry::{
     global::BoxedTracer,
     trace::{TraceContextExt, Tracer as OpenTelemetryTracerTrait},
@@ -43,25 +43,6 @@ impl Tracer for OpenTelemetryTracer {
     }
 
     fn start_span(
-        &self,
-        name: &'static str,
-        kind: SpanKind,
-        attributes: Vec<Attribute>,
-    ) -> Arc<dyn azure_core::tracing::Span> {
-        let span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
-            .with_kind(OpenTelemetrySpanKind(kind).into())
-            .with_attributes(
-                attributes
-                    .iter()
-                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr.clone()))),
-            );
-        let context = Context::new();
-        let span = self.inner.build_with_context(span_builder, &context);
-
-        OpenTelemetrySpan::new(context.with_span(span))
-    }
-
-    fn start_span_with_current(
         &self,
         name: &'static str,
         kind: SpanKind,
@@ -120,7 +101,7 @@ mod tests {
     fn test_create_tracer() {
         let noop_tracer = NoopTracerProvider::new();
         let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(noop_tracer));
-        let tracer = otel_provider.get_tracer(Some("name"), "test_tracer", "1.0.0");
+        let tracer = otel_provider.get_tracer(Some("name"), "test_tracer", Some("1.0.0"));
         let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
         span.end();
     }
@@ -129,14 +110,14 @@ mod tests {
     fn test_create_tracer_with_sdk_tracer() {
         let provider = SdkTracerProvider::builder().build();
         let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(provider));
-        let _tracer = otel_provider.get_tracer(Some("My.Namespace"), "test_tracer", "1.0.0");
+        let _tracer = otel_provider.get_tracer(Some("My.Namespace"), "test_tracer", Some("1.0.0"));
     }
 
     #[test]
     fn test_create_span_from_tracer() {
         let provider = SdkTracerProvider::builder().build();
         let otel_provider = OpenTelemetryTracerProvider::new(Arc::new(provider));
-        let tracer = otel_provider.get_tracer(Some("My.Namespace"), "test_tracer", "1.0.0");
+        let tracer = otel_provider.get_tracer(Some("My.Namespace"), "test_tracer", Some("1.0.0"));
         let _span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
     }
 }

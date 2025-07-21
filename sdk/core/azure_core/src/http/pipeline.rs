@@ -65,11 +65,7 @@ impl Pipeline {
                 .tracer_provider
                 .as_ref()
                 .map(|tracer_provider| {
-                    tracer_provider.get_tracer(
-                        None,
-                        crate_name.unwrap_or("Unknown"),
-                        crate_version.unwrap_or("0.1.0"),
-                    )
+                    tracer_provider.get_tracer(None, crate_name.unwrap_or("Unknown"), crate_version)
                 })
         } else {
             None

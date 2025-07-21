@@ -166,7 +166,8 @@ mod tests {
         let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
 
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        let tracer = tracer_provider.get_tracer(Some("Microsoft.SpecialCase"), "test", "0.1.0");
+        let tracer =
+            tracer_provider.get_tracer(Some("Microsoft.SpecialCase"), "test", Some("0.1.0"));
         let span = tracer.start_span("test_span", SpanKind::Client, vec![]);
         span.end();
 
@@ -186,7 +187,7 @@ mod tests {
         let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
 
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        let tracer = tracer_provider.get_tracer(Some("Microsoft.SpecialCase"), "test", "0.1.0");
+        let tracer = tracer_provider.get_tracer(Some("Microsoft.SpecialCase"), "test", None);
         let span = tracer.start_span("test_span", SpanKind::Client, vec![]);
         let mut request = azure_core::http::Request::new(
             Url::parse("http://example.com").unwrap(),
@@ -208,7 +209,7 @@ mod tests {
     fn test_open_telemetry_span_hierarchy() {
         let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        let tracer = tracer_provider.get_tracer(Some("Special Name"), "test", "0.1.0");
+        let tracer = tracer_provider.get_tracer(Some("Special Name"), "test", Some("0.1.0"));
         let parent_span = tracer.start_span("parent_span", SpanKind::Server, vec![]);
         let child_span = tracer.start_span_with_parent(
             "child_span",
@@ -239,7 +240,7 @@ mod tests {
     fn test_open_telemetry_span_start_with_parent() {
         let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        let tracer = tracer_provider.get_tracer(Some("MyNamespace"), "test", "0.1.0");
+        let tracer = tracer_provider.get_tracer(Some("MyNamespace"), "test", Some("0.1.0"));
         let span1 = tracer.start_span("span1", SpanKind::Internal, vec![]);
         let span2 = tracer.start_span("span2", SpanKind::Server, vec![]);
         let child_span =
@@ -268,11 +269,11 @@ mod tests {
     fn test_open_telemetry_span_start_with_current() {
         let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        let tracer = tracer_provider.get_tracer(Some("Namespace"), "test", "0.1.0");
+        let tracer = tracer_provider.get_tracer(Some("Namespace"), "test", Some("0.1.0"));
         let span1 = tracer.start_span("span1", SpanKind::Internal, vec![]);
         let span2 = tracer.start_span("span2", SpanKind::Server, vec![]);
         let _span_guard = span2.set_current(&azure_core::http::Context::new());
-        let child_span = tracer.start_span_with_current("child_span", SpanKind::Client, vec![]);
+        let child_span = tracer.start_span("child_span", SpanKind::Client, vec![]);
 
         child_span.end();
         span2.end();
@@ -297,7 +298,7 @@ mod tests {
     fn test_open_telemetry_span_set_attribute() {
         let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        let tracer = tracer_provider.get_tracer(Some("ThisNamespace"), "test", "0.1.0");
+        let tracer = tracer_provider.get_tracer(Some("ThisNamespace"), "test", Some("0.1.0"));
         let span = tracer.start_span("test_span", SpanKind::Internal, vec![]);
 
         span.set_attribute("test_key", AttributeValue::String("test_value".to_string()));
@@ -320,7 +321,7 @@ mod tests {
     fn test_open_telemetry_span_record_error() {
         let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        let tracer = tracer_provider.get_tracer(Some("namespace"), "test", "0.1.0");
+        let tracer = tracer_provider.get_tracer(Some("namespace"), "test", Some("0.1.0"));
         let span = tracer.start_span("test_span", SpanKind::Client, vec![]);
 
         let error = Error::new(ErrorKind::NotFound, "resource not found");
@@ -346,7 +347,7 @@ mod tests {
     fn test_open_telemetry_span_set_status() {
         let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        let tracer = tracer_provider.get_tracer(Some("Namespace"), "test", "0.1.0");
+        let tracer = tracer_provider.get_tracer(Some("Namespace"), "test", Some("0.1.0"));
 
         // Test Unset status
         let span = tracer.start_span("test_span_unset", SpanKind::Server, vec![]);
@@ -375,7 +376,7 @@ mod tests {
     async fn test_open_telemetry_span_futures() {
         let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
         let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
-        let tracer = tracer_provider.get_tracer(Some("Namespace"), "test", "0.1.0");
+        let tracer = tracer_provider.get_tracer(Some("Namespace"), "test", Some("0.1.0"));
 
         let future = async {
             let context = Context::current();
@@ -393,7 +394,7 @@ mod tests {
             "test_span",
             SpanKind::Client,
             vec![Attribute {
-                key: "test_key",
+                key: "test_key".into(),
                 value: "test_value".into(),
             }],
         );

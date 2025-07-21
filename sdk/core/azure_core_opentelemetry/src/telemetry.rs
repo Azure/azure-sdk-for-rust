@@ -56,10 +56,13 @@ impl TracerProvider for OpenTelemetryTracerProvider {
         &self,
         namespace: Option<&'static str>,
         crate_name: &'static str,
-        crate_version: &'static str,
+        crate_version: Option<&'static str>,
     ) -> Arc<dyn azure_core::tracing::Tracer> {
-        let scope = InstrumentationScope::builder(crate_name)
-            .with_version(crate_version)
+        let mut builder = InstrumentationScope::builder(crate_name);
+        if let Some(crate_version) = crate_version {
+            builder = builder.with_version(crate_version);
+        }
+        let scope = builder
             .with_schema_url("https://opentelemetry.io/schemas/1.23.0")
             .build();
         if let Some(provider) = &self.inner {
@@ -99,7 +102,7 @@ mod tests {
     #[test]
     fn test_create_tracer_provider_from_global() {
         let tracer_provider = OpenTelemetryTracerProvider::new_from_global_provider();
-        let _tracer = tracer_provider.get_tracer(Some("My Namespace"), "test", "0.1.0");
+        let _tracer = tracer_provider.get_tracer(Some("My Namespace"), "test", Some("0.1.0"));
     }
 
     #[test]
@@ -108,6 +111,6 @@ mod tests {
         opentelemetry::global::set_tracer_provider(provider);
 
         let tracer_provider = OpenTelemetryTracerProvider::new_from_global_provider();
-        let _tracer = tracer_provider.get_tracer(Some("My Namespace"), "test", "0.1.0");
+        let _tracer = tracer_provider.get_tracer(Some("My Namespace"), "test", Some("0.1.0"));
     }
 }

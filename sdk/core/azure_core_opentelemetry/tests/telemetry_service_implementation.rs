@@ -69,7 +69,7 @@ impl TestServiceClient {
                         tracer_provider.get_tracer(
                             Some("Az.TestServiceClient"),
                             option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                            option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
+                            option_env!("CARGO_PKG_VERSION"),
                         )
                     })
             } else {
@@ -303,7 +303,7 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
                 parent_span_id: None,
                 attributes: vec![
                     ("http.request.method", "GET".into()),
-                    ("az.client.request.id", "<ANY>".into()),
+                    ("az.client_request_id", "<ANY>".into()),
                     (
                         "url.full",
                         format!(
@@ -315,7 +315,6 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
                     ),
                     ("server.address", "example.com".into()),
                     ("server.port", 443.into()),
-                    ("http.request.resend_count", 0.into()),
                     ("http.response.status_code", 200.into()),
                 ],
             },
@@ -363,7 +362,7 @@ async fn test_service_client_get_with_tracing_error(ctx: TestContext) -> Result<
                 },
                 attributes: vec![
                     ("http.request.method", "GET".into()),
-                    ("az.client.request.id", "<ANY>".into()),
+                    ("az.client_request_id", "<ANY>".into()),
                     (
                         "url.full",
                         format!(
@@ -376,7 +375,6 @@ async fn test_service_client_get_with_tracing_error(ctx: TestContext) -> Result<
                     ("server.address", "example.com".into()),
                     ("server.port", 443.into()),
                     ("error.type", "404".into()),
-                    ("http.request.resend_count", 0.into()),
                     ("http.response.status_code", 404.into()),
                 ],
             },
@@ -423,7 +421,7 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
             attributes: vec![
                 ("http.request.method", "GET".into()),
                 ("az.namespace", "Az.TestServiceClient".into()),
-                ("az.client.request.id", "<ANY>".into()),
+                ("az.client_request_id", "<ANY>".into()),
                 (
                     "url.full",
                     format!(
@@ -435,7 +433,6 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
                 ),
                 ("server.address", "example.com".into()),
                 ("server.port", 443.into()),
-                ("http.request.resend_count", 0.into()),
                 ("http.response.status_code", 200.into()),
             ],
         },
@@ -493,7 +490,7 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
             attributes: vec![
                 ("http.request.method", "GET".into()),
                 ("az.namespace", "Az.TestServiceClient".into()),
-                ("az.client.request.id", "<ANY>".into()),
+                ("az.client_request_id", "<ANY>".into()),
                 (
                     "url.full",
                     format!(
@@ -505,7 +502,6 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
                 ),
                 ("server.address", "example.com".into()),
                 ("server.port", 443.into()),
-                ("http.request.resend_count", 0.into()),
                 ("http.response.status_code", 404.into()),
                 ("error.type", "404".into()),
             ],

@@ -35,7 +35,7 @@ impl TracerProvider for MockTracingProvider {
         &self,
         azure_namespace: Option<&'static str>,
         crate_name: &'static str,
-        crate_version: &'static str,
+        crate_version: Option<&'static str>,
     ) -> Arc<dyn crate::tracing::Tracer> {
         let mut tracers = self.tracers.lock().unwrap();
         let tracer = Arc::new(MockTracer {
@@ -54,24 +54,13 @@ impl TracerProvider for MockTracingProvider {
 pub struct MockTracer {
     pub namespace: Option<&'static str>,
     pub package_name: &'static str,
-    pub package_version: &'static str,
+    pub package_version: Option<&'static str>,
     pub spans: Mutex<Vec<Arc<MockSpan>>>,
 }
 
 impl Tracer for MockTracer {
     fn namespace(&self) -> Option<&'static str> {
         self.namespace
-    }
-
-    fn start_span_with_current(
-        &self,
-        name: &str,
-        kind: SpanKind,
-        attributes: Vec<Attribute>,
-    ) -> Arc<dyn crate::tracing::Span> {
-        let span = Arc::new(MockSpan::new(name, kind, attributes));
-        self.spans.lock().unwrap().push(span.clone());
-        span
     }
 
     fn start_span_with_parent(
@@ -81,12 +70,24 @@ impl Tracer for MockTracer {
         attributes: Vec<Attribute>,
         _parent: Arc<dyn crate::tracing::Span>,
     ) -> Arc<dyn crate::tracing::Span> {
-        let span = Arc::new(MockSpan::new(name, kind, attributes));
+        let span = Arc::new(MockSpan::new(name, kind, attributes.clone()));
         self.spans.lock().unwrap().push(span.clone());
         span
     }
 
-    fn start_span(&self, name: &str, kind: SpanKind, attributes: Vec<Attribute>) -> Arc<dyn Span> {
+    fn start_span(
+        &self,
+        name: &'static str,
+        kind: SpanKind,
+        attributes: Vec<Attribute>,
+    ) -> Arc<dyn Span> {
+        let attributes = attributes
+            .into_iter()
+            .map(|attr| Attribute {
+                key: attr.key.clone(),
+                value: attr.value.clone(),
+            })
+            .collect();
         let span = Arc::new(MockSpan::new(name, kind, attributes));
         self.spans.lock().unwrap().push(span.clone());
         span
@@ -105,6 +106,7 @@ impl MockSpan {
     fn new(name: &str, kind: SpanKind, attributes: Vec<Attribute>) -> Self {
         println!("Creating MockSpan: {}", name);
         println!("Attributes: {:?}", attributes);
+        println!("Converted attributes: {:?}", attributes);
         Self {
             name: name.to_string(),
             kind,
@@ -119,7 +121,10 @@ impl Span for MockSpan {
     fn set_attribute(&self, key: &'static str, value: AttributeValue) {
         println!("{}: Setting attribute {}: {:?}", self.name, key, value);
         let mut attributes = self.attributes.lock().unwrap();
-        attributes.push(Attribute { key, value });
+        attributes.push(Attribute {
+            key: key.into(),
+            value,
+        });
     }
 
     fn set_status(&self, status: crate::tracing::SpanStatus) {
@@ -163,14 +168,16 @@ impl Span for MockSpan {
 
 impl AsAny for MockSpan {
     fn as_any(&self) -> &dyn std::any::Any {
-        self
+        // Convert to an object that doesn't expose the lifetime parameter
+        // We're essentially erasing the lifetime here to satisfy the static requirement
+        self as &dyn std::any::Any
     }
 }
 
 #[derive(Debug)]
 pub struct ExpectedTracerInformation<'a> {
     pub name: &'a str,
-    pub version: &'a str,
+    pub version: Option<&'a str>,
     pub namespace: Option<&'a str>,
     pub spans: Vec<ExpectedSpanInformation<'a>>,
 }
@@ -193,40 +200,40 @@ pub fn check_instrumentation_result(
         "Unexpected number of tracers",
     );
     let tracers = mock_tracer.tracers.lock().unwrap();
-    for (index, expectation) in expected_tracers.iter().enumerate() {
-        trace!("Checking tracer {}: {}", index, expectation.name);
+    for (index, expected) in expected_tracers.iter().enumerate() {
+        trace!("Checking tracer {}: {}", index, expected.name);
         let tracer = &tracers[index];
-        assert_eq!(tracer.package_name, expectation.name);
-        assert_eq!(tracer.package_version, expectation.version);
-        assert_eq!(tracer.namespace, expectation.namespace);
+        assert_eq!(tracer.package_name, expected.name);
+        assert_eq!(tracer.package_version, expected.version);
+        assert_eq!(tracer.namespace, expected.namespace);
 
         let spans = tracer.spans.lock().unwrap();
         assert_eq!(
             spans.len(),
-            expectation.spans.len(),
+            expected.spans.len(),
             "Unexpected number of spans for tracer {}",
-            expectation.name
+            expected.name
         );
 
-        for (span_index, span_expectation) in expectation.spans.iter().enumerate() {
+        for (span_index, span_expected) in expected.spans.iter().enumerate() {
             println!(
                 "Checking span {} of tracer {}: {}",
-                span_index, expectation.name, span_expectation.span_name
+                span_index, expected.name, span_expected.span_name
             );
-            check_span_information(&spans[span_index], span_expectation);
+            check_span_information(&spans[span_index], span_expected);
         }
     }
 }
 
-fn check_span_information(span: &Arc<MockSpan>, expectation: &ExpectedSpanInformation<'_>) {
-    assert_eq!(span.name, expectation.span_name);
-    assert_eq!(span.kind, expectation.kind);
-    assert_eq!(*span.state.lock().unwrap(), expectation.status);
+fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformation<'_>) {
+    assert_eq!(span.name, expected.span_name);
+    assert_eq!(span.kind, expected.kind);
+    assert_eq!(*span.state.lock().unwrap(), expected.status);
     let attributes = span.attributes.lock().unwrap();
     for (index, attr) in attributes.iter().enumerate() {
         println!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
         let mut found = false;
-        for (key, value) in &expectation.attributes {
+        for (key, value) in &expected.attributes {
             if attr.key == *key {
                 assert_eq!(attr.value, *value, "Attribute mismatch for key: {}", key);
                 found = true;
@@ -237,7 +244,7 @@ fn check_span_information(span: &Arc<MockSpan>, expectation: &ExpectedSpanInform
             panic!("Unexpected attribute: {} = {:?}", attr.key, attr.value);
         }
     }
-    for (key, value) in &expectation.attributes {
+    for (key, value) in expected.attributes.iter() {
         if !attributes
             .iter()
             .any(|attr| attr.key == *key && attr.value == *value)

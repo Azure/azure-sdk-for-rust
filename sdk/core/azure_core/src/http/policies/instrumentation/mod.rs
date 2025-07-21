@@ -10,7 +10,7 @@ mod request_instrumentation;
 // [OpenTelemetrySpans](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/http/http-spans.md)
 // and [Azure conventions for open telemetry spans](https://github.com/Azure/azure-sdk/blob/main/docs/tracing/distributed-tracing-conventions.md)
 const AZ_NAMESPACE_ATTRIBUTE: &str = "az.namespace";
-const AZ_CLIENT_REQUEST_ID_ATTRIBUTE: &str = "az.client.request.id";
+const AZ_CLIENT_REQUEST_ID_ATTRIBUTE: &str = "az.client_request_id";
 const ERROR_TYPE_ATTRIBUTE: &str = "error.type";
 const AZ_SERVICE_REQUEST_ID_ATTRIBUTE: &str = "az.service_request.id";
 const HTTP_REQUEST_RESEND_COUNT_ATTRIBUTE: &str = "http.request.resend_count";
@@ -20,6 +20,6 @@ const SERVER_ADDRESS_ATTRIBUTE: &str = "server.address";
 const SERVER_PORT_ATTRIBUTE: &str = "server.port";
 const URL_FULL_ATTRIBUTE: &str = "url.full";
 
-pub use public_api_instrumentation::PublicApiInstrumentationInformation;
 pub(crate) use public_api_instrumentation::PublicApiInstrumentationPolicy;
+pub use public_api_instrumentation::{create_public_api_span, PublicApiInstrumentationInformation};
 pub(crate) use request_instrumentation::*;

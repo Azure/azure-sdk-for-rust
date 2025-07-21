@@ -19,11 +19,11 @@ pub fn parse_client(_attr: TokenStream, item: TokenStream) -> Result<TokenStream
         return Err(syn::Error::new(item.span(), INVALID_SERVICE_CLIENT_MESSAGE));
     }
 
-    let client_struct: ItemStruct = syn::parse2(item.clone())?;
+    let ItemStruct {
+        vis, ident, fields, ..
+    } = syn::parse2(item.clone())?;
 
-    let vis = &client_struct.vis;
-    let ident = &client_struct.ident;
-    let fields = client_struct.fields.iter();
+    let fields = fields.iter();
     Ok(quote! {
         #vis
         struct #ident {
@@ -35,13 +35,18 @@ pub fn parse_client(_attr: TokenStream, item: TokenStream) -> Result<TokenStream
 
 /// Returns true if the item at the head of the token stream is a valid service client declaration.
 fn is_client_declaration(item: &TokenStream) -> bool {
-    let item_struct: ItemStruct = match syn::parse2(item.clone()) {
+    let ItemStruct { vis, generics, .. } = match syn::parse2(item.clone()) {
         Ok(struct_item) => struct_item,
         Err(_) => return false,
     };
 
+    if !generics.params.is_empty() {
+        // Service clients must not have generic type parameters.
+        return false;
+    }
+
     // Service clients must be public structs.
-    if !matches!(item_struct.vis, syn::Visibility::Public(_)) {
+    if !matches!(vis, syn::Visibility::Public(_)) {
         return false;
     }
     true

@@ -305,7 +305,7 @@ mod tests {
                     parent_span_id: None,
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("az.client.request.id", "<ANY>".into()),
+                        ("az.client_request_id", "<ANY>".into()),
                         (
                             "url.full",
                             format!(
@@ -353,7 +353,7 @@ mod tests {
                     },
                     attributes: vec![
                         ("http.request.method", "GET".into()),
-                        ("az.client.request.id", "<ANY>".into()),
+                        ("az.client_request_id", "<ANY>".into()),
                         (
                             "url.full",
                             format!(
@@ -401,7 +401,7 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("az.client.request.id", "<ANY>".into()),
+                    ("az.client_request_id", "<ANY>".into()),
                     (
                         "url.full",
                         format!(
@@ -478,7 +478,7 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("az.client.request.id", "<ANY>".into()),
+                    ("az.client_request_id", "<ANY>".into()),
                     (
                         "url.full",
                         format!(
@@ -559,7 +559,7 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("az.client.request.id", "<ANY>".into()),
+                    ("az.client_request_id", "<ANY>".into()),
                     (
                         "url.full",
                         format!(
@@ -586,7 +586,7 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("az.client.request.id", "<ANY>".into()),
+                    ("az.client_request_id", "<ANY>".into()),
                     (
                         "url.full",
                         format!(
@@ -613,7 +613,7 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("az.client.request.id", "<ANY>".into()),
+                    ("az.client_request_id", "<ANY>".into()),
                     (
                         "url.full",
                         format!(
@@ -640,7 +640,7 @@ mod tests {
                 attributes: vec![
                     ("http.request.method", "GET".into()),
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("az.client.request.id", "<ANY>".into()),
+                    ("az.client_request_id", "<ANY>".into()),
                     (
                         "url.full",
                         format!(

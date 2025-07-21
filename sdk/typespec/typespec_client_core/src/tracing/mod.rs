@@ -37,14 +37,14 @@ pub trait TracerProvider: Send + Sync + Debug {
         &self,
         namespace_name: Option<&'static str>,
         crate_name: &'static str,
-        crate_version: &'static str,
+        crate_version: Option<&'static str>,
     ) -> Arc<dyn Tracer>;
 }
 
 pub trait Tracer: Send + Sync + Debug {
     /// Starts a new span with the given name and type.
     ///
-    ///  The newly created span will not have a parent span.
+    ///  The newly created span will have the "current" span as a parent.
     ///
     /// # Arguments
     /// - `name`: The name of the span to start.
@@ -55,26 +55,6 @@ pub trait Tracer: Send + Sync + Debug {
     /// An `Arc<dyn Span>` representing the started span.
     ///
     fn start_span(
-        &self,
-        name: &'static str,
-        kind: SpanKind,
-        attributes: Vec<Attribute>,
-    ) -> Arc<dyn Span>;
-
-    /// Starts a new span with the given name and type.
-    ///
-    /// The parent span of the newly created span will be the current span (if one
-    /// exists).
-    ///
-    /// # Arguments
-    /// - `name`: The name of the span to start.
-    /// - `kind`: The type of the span to start.
-    /// - `attributes`: A vector of attributes to associate with the span.
-    ///
-    /// # Returns
-    /// An `Arc<dyn Span>` representing the started span.
-    ///
-    fn start_span_with_current(
         &self,
         name: &'static str,
         kind: SpanKind,

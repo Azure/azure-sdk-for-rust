@@ -39,7 +39,7 @@ fn parse_struct_expr(
                         tracer_provider.get_tracer(
                             Some(#client_namespace),
                             option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                            option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
+                            option_env!("CARGO_PKG_VERSION"),
                         )
                     })
             } else {
@@ -330,10 +330,10 @@ fn is_valid_ok_call(
                 }
             } else {
                 error!(
-                "Invalid new function body: expected call to function with one argument, found {:?}",
-                args[0]
-            );
-                Err("expected call to functions with one argument".to_string())
+                    "Invalid new function body: expected call to function with one argument, found {:?}",
+                    args[0]
+                );
+                Err("expected call to Arc with one argument".to_string())
             }
         }
         _ => {
@@ -602,7 +602,7 @@ mod tests {
                                 tracer_provider.get_tracer(
                                     Some("Az.Namespace"),
                                     option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                                    option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
+                                    option_env!("CARGO_PKG_VERSION"),
                                 )
                             })
                     } else {
@@ -692,7 +692,7 @@ mod tests {
                                 tracer_provider.get_tracer(
                                     Some("Az.GeneratedNamespace"),
                                     option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                                    option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
+                                    option_env!("CARGO_PKG_VERSION"),
                                 )
                             })
                     } else {
@@ -789,7 +789,7 @@ mod tests {
                                 tracer_provider.get_tracer(
                                     Some("Az.GeneratedNamespace"),
                                     option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                                    option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
+                                    option_env!("CARGO_PKG_VERSION"),
                                 )
                             })
                     } else {

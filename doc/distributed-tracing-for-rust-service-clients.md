@@ -23,9 +23,8 @@ A "tracer" is a factory for "Spans". A `Tracer` is configured with three paramet
 * `package name` - this is typically the Cargo package name for the service client (`env!("CARGO_PKG_NAME")`)
 * `package version` - this is typically the version of the Cargo package for the service client (`env!("CARGO_PKG_VERSION")`)
 
-Tracers have three mechanisms for creating spans:
+Tracers have two mechanisms for creating spans:
 
-* Create a new root span.
 * Create a new child span from a parent span.
 * Create a new child span from the "current" span (where the "current" span is tracer implementation specific).
 
@@ -115,13 +114,16 @@ Since the namespace attribute is service-client wide, it makes sense to capture 
 
 ## Convenience Macros
 
-To facilitate the implementation of the three core requirements above, three attribute-like macros are defined for the use of each service.
+To facilitate the implementation of the three core requirements above, three attribute-like macros are defined for the use of each service client.
+
+NOTE: These attributes are only for client library development and are not intended for external customers use - they depend heavily on code which follows the Rust API design guidelines.
 
 Those macros are:
 
 * `#[tracing::client]` - applied to each service client `struct` declaration.
-* `#[tracing::new]` - applied to each service client "constructor".
+* `#[tracing::new]` - applied to each service client "constructor" function.
 * `#[tracing::function]` - applied to each service client "public API".
+* `#[tracing::subclient]` - applied to a subclient "constructor" function.
 
 ### `#[tracing::client]`
 

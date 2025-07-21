@@ -24,7 +24,7 @@ use typespec_client_core::{
 ///
 /// If the `PublicApiInstrumentationPolicy` policy detects a `PublicApiInstrumentationInformation` in the context,
 /// it will create a span with the API name and any additional attributes.
-#[derive(SafeDebug)]
+#[derive(SafeDebug, Clone)]
 pub struct PublicApiInstrumentationInformation {
     /// The name of the API being instrumented.
     ///
@@ -69,77 +69,77 @@ impl PublicApiInstrumentationPolicy {
     pub fn new(tracer: Option<Arc<dyn crate::tracing::Tracer>>) -> Self {
         Self { tracer }
     }
+}
 
-    /// Creates a span for the public API instrumentation policy.
-    ///
-    /// This function creates a span for the public API instrumentation policy based on the
-    /// public API information in the context.
-    ///
-    /// This function assumes that the `Context` already has a `PublicApiInstrumentationInformation` value,
-    /// if it is not present, it will return `None`.
-    ///
-    /// # Arguments
-    /// - `ctx`: The context containing the public API information.
-    /// - `tracer`: An optional tracer to use for creating the span.
-    ///
-    /// # Returns
-    /// An optional span if the public API information is present and a tracer is available.
-    ///
-    /// If the context already has a span, it will return `None` to avoid nested spans.
-    /// If the context does not have a tracer it will use the value of the `tracer` argument.
-    /// If no tracer can be determined, it will return `None`.
-    ///
-    pub fn create_public_api_span(
-        ctx: &Context,
-        tracer: Option<Arc<dyn Tracer>>,
-    ) -> Option<Arc<dyn Span>> {
-        // If there is a span in the context, we're a nested call, so we just want to forward the request.
-        if ctx.value::<Arc<dyn Span>>().is_some() {
-            trace!("PublicApiPolicy: Nested call detected, forwarding request without instrumentation.");
-            return None;
-        }
-
-        // We next confirm if the context has public API instrumentation information.
-        // Without a public API information, we skip instrumentation.
-        let info = ctx.value::<PublicApiInstrumentationInformation>()?;
-
-        // Get the tracer from either the context or the policy.
-        #[allow(clippy::unnecessary_lazy_evaluations)]
-        let tracer = ctx.value::<Arc<dyn Tracer>>().or_else(|| tracer.as_ref())?;
-
-        // We now have public API information and a tracer.
-        // Calculate the span attributes based on the public API information and
-        // tracer.
-        let mut span_attributes = info
-            .attributes
-            .iter()
-            .map(|attr| {
-                // Convert the attribute to a span attribute.
-                Attribute {
-                    key: attr.key,
-                    value: attr.value.clone(),
-                }
-            })
-            .collect::<Vec<_>>();
-
-        if let Some(namespace) = tracer.namespace() {
-            // If the tracer has a namespace, we set it as an attribute.
-            span_attributes.push(Attribute {
-                key: AZ_NAMESPACE_ATTRIBUTE,
-                value: namespace.into(),
-            });
-        }
-
-        // Create a span with the public API information and attributes.
-        let span =
-            tracer.start_span_with_current(info.api_name, SpanKind::Internal, span_attributes);
-
-        // If nothing is listening to the span, we skip instrumentation.
-        if !span.is_recording() {
-            return None;
-        }
-        Some(span)
+/// Creates a span for the public API instrumentation policy.
+///
+/// This function creates a span for the public API instrumentation policy based on the
+/// public API information in the context.
+///
+/// If no PublicApiInstrumentationInformation is provided, then this function will look in the `Context`
+/// for a `PublicApiInstrumentationInformation` value, if it is not present, it will return `None`.
+///
+/// # Arguments
+/// - `ctx`: The context containing the public API information.
+/// - `tracer`: An optional tracer to use for creating the span.
+/// - `public_api_instrumentation`: Optional public API instrumentation information.
+///
+/// # Returns
+/// An optional span if the public API information is present and a tracer is available.
+///
+/// If the context already has a span, it will return `None` to avoid nested spans.
+/// If the context does not have a tracer it will use the value of the `tracer` argument.
+/// If no tracer can be determined, it will return `None`.
+///
+pub fn create_public_api_span(
+    ctx: &Context,
+    tracer: Option<Arc<dyn Tracer>>,
+    public_api_instrumentation: Option<PublicApiInstrumentationInformation>,
+) -> Option<Arc<dyn Span>> {
+    // If there is a span in the context, we're a nested call, so we just want to forward the request.
+    if ctx.value::<Arc<dyn Span>>().is_some() {
+        trace!(
+            "PublicApiPolicy: Nested call detected, forwarding request without instrumentation."
+        );
+        return None;
     }
+
+    // We next confirm if the context has public API instrumentation information.
+    // Without a public API information, we skip instrumentation.
+    let info = public_api_instrumentation
+        .or_else(|| ctx.value::<PublicApiInstrumentationInformation>().cloned())?;
+
+    // Get the tracer from either the context or the policy.
+    let tracer = match ctx.value::<Arc<dyn Tracer>>() {
+        Some(t) => t.clone(),
+        None => tracer?,
+    };
+
+    // We now have public API information and a tracer.
+    // Calculate the span attributes based on the public API information and
+    // tracer.
+    let mut span_attributes = info
+        .attributes
+        .iter()
+        .map(|attr| {
+            // Convert the attribute to a span attribute.
+            Attribute {
+                key: attr.key.clone(),
+                value: attr.value.clone(),
+            }
+        })
+        .collect::<Vec<_>>();
+
+    if let Some(namespace) = tracer.namespace() {
+        // If the tracer has a namespace, we set it as an attribute.
+        span_attributes.push(Attribute {
+            key: AZ_NAMESPACE_ATTRIBUTE.into(),
+            value: namespace.into(),
+        });
+    }
+
+    // Create a span with the public API information and attributes.
+    Some(tracer.start_span(info.api_name, SpanKind::Internal, span_attributes))
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -151,7 +151,7 @@ impl Policy for PublicApiInstrumentationPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        let Some(span) = Self::create_public_api_span(ctx, self.tracer.clone()) else {
+        let Some(span) = create_public_api_span(ctx, self.tracer.clone(), None) else {
             return next[0].send(ctx, request, &next[1..]).await;
         };
 
@@ -160,39 +160,45 @@ impl Policy for PublicApiInstrumentationPolicy {
 
         let result = next[0].send(&ctx, request, &next[1..]).await;
 
-        match &result {
-            Err(e) => {
-                // If the request failed, we set the error type on the span.
-                match e.kind() {
-                    crate::error::ErrorKind::HttpResponse { status, .. } => {
-                        span.set_attribute(ERROR_TYPE_ATTRIBUTE, status.to_string().into());
+        // Don't bother setting attributes if the span isn't recording.
+        if span.is_recording() {
+            match &result {
+                Err(e) => {
+                    // If the request failed, we set the error type on the span.
+                    match e.kind() {
+                        crate::error::ErrorKind::HttpResponse { status, .. } => {
+                            span.set_attribute(ERROR_TYPE_ATTRIBUTE, status.to_string().into());
 
-                        // 5xx status codes SHOULD set status to Error.
-                        // The description should not be set because it can be inferred from "http.response.status_code".
-                        if status.is_server_error() {
+                            // 5xx status codes SHOULD set status to Error.
+                            // The description should not be set because it can be inferred from "http.response.status_code".
+                            if status.is_server_error() {
+                                span.set_status(crate::tracing::SpanStatus::Error {
+                                    description: "".to_string(),
+                                });
+                            }
+                        }
+                        _ => {
+                            span.set_attribute(ERROR_TYPE_ATTRIBUTE, e.kind().to_string().into());
                             span.set_status(crate::tracing::SpanStatus::Error {
-                                description: "".to_string(),
+                                description: e.kind().to_string(),
                             });
                         }
                     }
-                    _ => {
-                        span.set_attribute(ERROR_TYPE_ATTRIBUTE, e.kind().to_string().into());
+                }
+                Ok(response) => {
+                    // 5xx status codes SHOULD set status to Error.
+                    // The description should not be set because it can be inferred from "http.response.status_code".
+                    if response.status().is_server_error() {
                         span.set_status(crate::tracing::SpanStatus::Error {
-                            description: e.kind().to_string(),
+                            description: "".to_string(),
                         });
                     }
-                }
-            }
-            Ok(response) => {
-                // 5xx status codes SHOULD set status to Error.
-                // The description should not be set because it can be inferred from "http.response.status_code".
-                if response.status().is_server_error() {
-                    span.set_status(crate::tracing::SpanStatus::Error {
-                        description: "".to_string(),
-                    });
-                }
-                if response.status().is_client_error() || response.status().is_server_error() {
-                    span.set_attribute(ERROR_TYPE_ATTRIBUTE, response.status().to_string().into());
+                    if response.status().is_client_error() || response.status().is_server_error() {
+                        span.set_attribute(
+                            ERROR_TYPE_ATTRIBUTE,
+                            response.status().to_string().into(),
+                        );
+                    }
                 }
             }
         }
@@ -208,7 +214,7 @@ mod tests {
     use crate::{
         http::{
             headers::Headers,
-            policies::{RequestInstrumentationPolicy, TransportPolicy},
+            policies::{create_public_api_span, RequestInstrumentationPolicy, TransportPolicy},
             Method, RawResponse, StatusCode, TransportOptions,
         },
         tracing::{SpanStatus, TracerProvider},
@@ -242,7 +248,7 @@ mod tests {
             Some(mock_tracer_provider.get_tracer(
                 add_tracer_to_context.then_some("test namespace"),
                 "test_crate",
-                "1.0.0",
+                Some("1.0.0"),
             ))
         } else {
             None
@@ -288,11 +294,8 @@ mod tests {
         C: FnMut(&Request) -> BoxFuture<'_, Result<RawResponse>> + Send + Sync + 'static,
     {
         let mock_tracer_provider = Arc::new(MockTracingProvider::new());
-        let mock_tracer = mock_tracer_provider.get_tracer(
-            namespace,
-            crate_name.unwrap_or("unknown"),
-            version.unwrap_or("unknown"),
-        );
+        let mock_tracer =
+            mock_tracer_provider.get_tracer(namespace, crate_name.unwrap_or("unknown"), version);
 
         let public_api_policy = Arc::new(PublicApiInstrumentationPolicy::new(Some(
             mock_tracer.clone(),
@@ -312,7 +315,7 @@ mod tests {
         let public_api_information = PublicApiInstrumentationInformation {
             api_name: api_name.unwrap_or("unknown"),
             attributes: vec![Attribute {
-                key: "az.fake_attribute",
+                key: "az.fake_attribute".into(),
                 value: "attribute value".into(),
             }],
         };
@@ -328,41 +331,79 @@ mod tests {
 
     // Tests for the create_public_api_span function.
     #[test]
-    fn create_public_api_span() {
-        let tracer = Arc::new(MockTracingProvider::new()).get_tracer(Some("test"), "test", "1.0.0");
+    fn create_public_api_span_tests() {
+        let tracer =
+            Arc::new(MockTracingProvider::new()).get_tracer(Some("test"), "test", Some("1.0.0"));
 
         // Test when context has no PublicApiInstrumentationInformation
         {
             let ctx = Context::default();
-            let span =
-                PublicApiInstrumentationPolicy::create_public_api_span(&ctx, Some(tracer.clone()));
+            let span = create_public_api_span(&ctx, Some(tracer.clone()), None);
             assert!(span.is_none(), "Should return None when no API info exists");
         }
-        // Test when context already has a span
+    }
+
+    // Test when context already has a span
+    #[test]
+    fn create_public_api_span_tests_context_has_span() {
+        let tracer =
+            Arc::new(MockTracingProvider::new()).get_tracer(Some("test"), "test", Some("1.0.0"));
         {
             let existing_span = tracer.start_span("existing", SpanKind::Internal, vec![]);
             let ctx = Context::default().with_value(existing_span.clone());
-            let span =
-                PublicApiInstrumentationPolicy::create_public_api_span(&ctx, Some(tracer.clone()));
+            let span = create_public_api_span(&ctx, Some(tracer.clone()), None);
             assert!(
                 span.is_none(),
                 "Should return None when context already has a span"
             );
         }
-        // Test with API info but no tracer
+    }
+
+    // Tests for the create_public_api_span function.
+    #[test]
+    fn create_public_api_span_tests_public_api_information_from_param() {
+        let tracer =
+            Arc::new(MockTracingProvider::new()).get_tracer(Some("test"), "test", Some("1.0.0"));
+
+        // Test when context has no PublicApiInstrumentationInformation
+        {
+            let ctx = Context::default();
+            let span = create_public_api_span(
+                &ctx,
+                Some(tracer.clone()),
+                Some(PublicApiInstrumentationInformation {
+                    api_name: "TestClient.test_api",
+                    attributes: vec![],
+                }),
+            );
+            assert!(
+                span.is_some(),
+                "Should return Some when info exists as param"
+            );
+        }
+    }
+
+    // Test with API info but no tracer
+    #[test]
+    fn create_public_api_span_tests_public_api_info_no_tracer() {
         {
             let api_info = PublicApiInstrumentationInformation {
                 api_name: "TestClient.test_api",
                 attributes: vec![],
             };
             let ctx = Context::default().with_value(api_info);
-            let span = PublicApiInstrumentationPolicy::create_public_api_span(&ctx, None);
+            let span = create_public_api_span(&ctx, None, None);
             assert!(
                 span.is_none(),
                 "Should return None when no tracer is available"
             );
         }
-        // Test with API info and tracer from context
+    }
+    // Test with API info and tracer from context
+    #[test]
+    fn create_public_api_span_tests_api_info_and_tracer_from_context() {
+        let tracer =
+            Arc::new(MockTracingProvider::new()).get_tracer(Some("test"), "test", Some("1.0.0"));
         {
             let api_info = PublicApiInstrumentationInformation {
                 api_name: "TestClient.test_api",
@@ -371,24 +412,28 @@ mod tests {
             let ctx = Context::default()
                 .with_value(api_info)
                 .with_value(tracer.clone());
-            let span = PublicApiInstrumentationPolicy::create_public_api_span(&ctx, None);
+            let span = create_public_api_span(&ctx, None, None);
             assert!(
                 span.is_some(),
                 "Should create span when API info and tracer are available"
             );
         }
-        // Test with API info, tracer from parameter, and attributes
+    }
+    // Test with API info, tracer from parameter, and attributes
+    #[test]
+    fn create_public_api_span_tests_tracer_from_parameter() {
+        let tracer =
+            Arc::new(MockTracingProvider::new()).get_tracer(Some("test"), "test", Some("1.0.0"));
         {
             let api_info = PublicApiInstrumentationInformation {
                 api_name: "TestClient.test_api",
                 attributes: vec![Attribute {
-                    key: "test.attribute",
+                    key: "test.attribute".into(),
                     value: "test_value".into(),
                 }],
             };
             let ctx = Context::default().with_value(api_info);
-            let span =
-                PublicApiInstrumentationPolicy::create_public_api_span(&ctx, Some(tracer.clone()));
+            let span = create_public_api_span(&ctx, Some(tracer.clone()), None);
             assert!(span.is_some(), "Should create span with attributes");
         }
     }
@@ -421,7 +466,7 @@ mod tests {
             mock_tracer,
             vec![ExpectedTracerInformation {
                 name: "test_crate",
-                version: "1.0.0",
+                version: Some("1.0.0"),
                 namespace: Some("test namespace"),
                 spans: vec![],
             }],
@@ -490,7 +535,7 @@ mod tests {
             mock_tracer,
             vec![ExpectedTracerInformation {
                 name: "test_crate",
-                version: "1.0.0",
+                version: Some("1.0.0"),
                 namespace: None,
                 spans: vec![ExpectedSpanInformation {
                     span_name: "MyClient.MyApi",
@@ -533,7 +578,7 @@ mod tests {
             mock_tracer,
             vec![ExpectedTracerInformation {
                 name: "test_crate",
-                version: "1.0.0",
+                version: Some("1.0.0"),
                 namespace: Some("test namespace"),
                 spans: vec![ExpectedSpanInformation {
                     span_name: "MyClient.MyApi",
@@ -576,7 +621,7 @@ mod tests {
             mock_tracer.clone(),
             vec![ExpectedTracerInformation {
                 name: "test_crate",
-                version: "1.0.0",
+                version: Some("1.0.0"),
                 namespace: Some("test namespace"),
                 spans: vec![ExpectedSpanInformation {
                     span_name: "MyClient.MyApi",
@@ -622,7 +667,7 @@ mod tests {
             mock_tracer.clone(),
             vec![ExpectedTracerInformation {
                 name: "test_crate",
-                version: "1.0.0",
+                version: Some("1.0.0"),
                 namespace: Some("test.namespace"),
                 spans: vec![
                     ExpectedSpanInformation {

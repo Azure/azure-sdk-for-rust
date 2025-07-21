@@ -66,7 +66,7 @@ impl From<Vec<String>> for AttributeArray {
 impl From<OpenTelemetryAttribute> for KeyValue {
     fn from(attr: OpenTelemetryAttribute) -> Self {
         KeyValue::new(
-            attr.0.key,
+            opentelemetry::Key::from(attr.0.key.to_string()),
             opentelemetry::Value::from(AttributeValue(attr.0.value)),
         )
     }

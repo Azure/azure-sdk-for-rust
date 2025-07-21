@@ -4,8 +4,10 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{spanned::Spanned, ExprStruct, ItemFn, Result};
+use tracing::error;
 
-const INVALID_SUBCLIENT_MESSAGE: &str = "subclient attribute must be applied to a public function named `get_<subclient_name>_client` that returns a client type";
+const INVALID_SUBCLIENT_MESSAGE: &str =
+    "subclient attribute must be applied to a public function which returns a client type";
 
 /// Parse the token stream for an Azure Service subclient declaration.
 ///
@@ -42,29 +44,30 @@ pub fn parse_subclient(_attr: TokenStream, item: TokenStream) -> Result<TokenStr
 }
 
 fn is_subclient_declaration(item: &TokenStream) -> bool {
-    let fn_struct: ItemFn = match syn::parse2(item.clone()) {
+    let ItemFn {
+        vis, block, sig, ..
+    } = match syn::parse2(item.clone()) {
         Ok(fn_item) => fn_item,
-        Err(_) => return false,
+        Err(e) => {
+            error!("Failed to parse function: {}", e);
+            return false;
+        }
     };
 
     // Subclient constructors must be public functions.
-    if !matches!(fn_struct.vis, syn::Visibility::Public(_)) {
+    if !matches!(vis, syn::Visibility::Public(_)) {
+        error!("Subclient constructors must be public functions");
         return false;
     }
 
-    let fn_body = fn_struct.block;
     // Subclient constructors must have a body with a single statement.
-    if fn_body.stmts.len() != 1 {
-        return false;
-    }
-
-    // Subclient constructors must have a name that starts with `get_`.
-    if !fn_struct.sig.ident.to_string().starts_with("get_") {
+    if block.stmts.len() != 1 {
+        error!("Subclient constructors must have a single statement in their body");
         return false;
     }
 
     // Subclient constructors must have a return type that is a client type.
-    if let syn::ReturnType::Type(_, ty) = &fn_struct.sig.output {
+    if let syn::ReturnType::Type(_, ty) = &sig.output {
         if !matches!(ty.as_ref(), syn::Type::Path(p) if p.path.segments.last().unwrap().ident.to_string().ends_with("Client"))
         {
             return false;
@@ -79,11 +82,14 @@ fn is_subclient_declaration(item: &TokenStream) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tracing::tests::setup_tracing;
     use proc_macro2::TokenStream;
     use quote::quote;
+    use tracing::trace;
 
     #[test]
     fn test_is_subclient_declaration() {
+        setup_tracing();
         assert!(is_subclient_declaration(&quote! {
             pub fn get_operation_templates_lro_client(&self) -> OperationTemplatesLroClient {
                 OperationTemplatesLroClient {
@@ -99,7 +105,7 @@ mod tests {
             pub fn not_a_subclient() {}
         }));
 
-        assert!(!is_subclient_declaration(&quote! {
+        assert!(is_subclient_declaration(&quote! {
             pub fn operation_templates_lro_client() -> OperationTemplatesLroClient {
                 OperationTemplatesLroClient {
                     api_version: "2021-01-01".to_string(),
@@ -113,6 +119,7 @@ mod tests {
 
     #[test]
     fn test_parse_subclient() {
+        setup_tracing();
         let attr = TokenStream::new();
         let item = quote! {
             pub fn get_operation_templates_lro_client(&self) -> OperationTemplatesLroClient {
@@ -127,7 +134,7 @@ mod tests {
 
         let actual = parse_subclient(attr.clone(), item.clone())
             .expect("Failed to parse subclient declaration");
-        println!("Actual:{actual}");
+        trace!("Actual:{actual}");
         let expected = quote! {
             pub fn get_operation_templates_lro_client(&self) -> OperationTemplatesLroClient {
                 OperationTemplatesLroClient {

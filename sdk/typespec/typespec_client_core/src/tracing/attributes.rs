@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::borrow::Cow;
+
 /// An array of homogeneous attribute values.
 #[derive(Debug, PartialEq, Clone)]
 pub enum AttributeArray {
@@ -39,7 +41,7 @@ pub enum AttributeValue {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Attribute {
     /// A key-value pair attribute.
-    pub key: &'static str,
+    pub key: Cow<'static, str>,
     pub value: AttributeValue,
 }
 
@@ -130,5 +132,60 @@ impl From<Vec<f64>> for AttributeValue {
 impl From<Vec<String>> for AttributeValue {
     fn from(value: Vec<String>) -> Self {
         AttributeValue::Array(AttributeArray::String(value))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_attribute_value_equality() {
+        let attr1 = AttributeValue::String("test".into());
+        let attr2 = AttributeValue::String("test".into());
+        let attr3 = AttributeValue::String("different".into());
+
+        assert_eq!(attr1, attr2);
+        assert_ne!(attr1, attr3);
+    }
+
+    #[test]
+    fn test_attribute_array_equality() {
+        let array1 = AttributeArray::String(vec!["test".into(), "test2".into()]);
+        let array2 = AttributeArray::String(vec!["test".into(), "test2".into()]);
+        let array3 = AttributeArray::String(vec!["different".into()]);
+
+        assert_eq!(array1, array2);
+        assert_ne!(array1, array3);
+    }
+
+    #[test]
+    fn test_attribute_key_from_string() {
+        let key = "test_key".to_string();
+        let key = key + " value";
+        let attr = Attribute {
+            key: key.into(),
+            value: AttributeValue::String("test_value".into()),
+        };
+        assert_eq!(attr.key, "test_key value");
+    }
+
+    #[test]
+    fn test_attribute_equality() {
+        let attr1 = Attribute {
+            key: "test".into(),
+            value: AttributeValue::String("value".into()),
+        };
+        let attr2 = Attribute {
+            key: "test".into(),
+            value: AttributeValue::String("value".into()),
+        };
+        let attr3 = Attribute {
+            key: "test".into(),
+            value: AttributeValue::String("different".into()),
+        };
+
+        assert_eq!(attr1, attr2);
+        assert_ne!(attr1, attr3);
     }
 }
