@@ -6,10 +6,21 @@ use quote::{quote, ToTokens};
 use syn::{
     parse::Parse, spanned::Spanned, AngleBracketedGenericArguments, ExprStruct, ItemFn, Result,
 };
-use tracing::trace;
+use tracing::{error, trace};
 
 const INVALID_SERVICE_CLIENT_NEW_MESSAGE: &str =
     "new attribute must be applied to a public function which returns Self, a Result and/or Arc containing Self";
+
+struct NamespaceAttribute {
+    client_namespace: String,
+}
+
+impl Parse for NamespaceAttribute {
+    fn parse(input: syn::parse::ParseStream) -> Result<Self> {
+        let client_namespace = input.parse::<syn::LitStr>()?.value();
+        Ok(NamespaceAttribute { client_namespace })
+    }
+}
 
 fn parse_struct_expr(
     client_namespace: &str,
@@ -55,14 +66,75 @@ fn parse_struct_expr(
     }
 }
 
-struct NamespaceAttribute {
-    client_namespace: String,
+fn is_arc_new_call(func: &syn::Expr) -> bool {
+    if let syn::Expr::Path(path) = func {
+        if path.path.segments.len() < 2 {
+            return false;
+        }
+        if path.path.segments[path.path.segments.len() - 2].ident != "Arc" {
+            return false;
+        }
+        if path.path.segments.last().unwrap().ident != "new" {
+            return false;
+        }
+        return true;
+    }
+    false
 }
 
-impl Parse for NamespaceAttribute {
-    fn parse(input: syn::parse::ParseStream) -> Result<Self> {
-        let client_namespace = input.parse::<syn::LitStr>()?.value();
-        Ok(NamespaceAttribute { client_namespace })
+// Parse a function call expression statement that initializes a struct with `Arc::new(Self {})` or `Ok(Arc::new(Self {}))`.
+fn parse_call_expr(namespace: &str, call: &syn::ExprCall) -> TokenStream {
+    debug_assert_eq!(
+        call.args.len(),
+        1,
+        "Call expression must have exactly one argument"
+    );
+    if let syn::Expr::Path(path) = call.func.as_ref() {
+        if path.path.segments.last().unwrap().ident == "Ok" {
+            match call.args.first().unwrap() {
+                syn::Expr::Struct(struct_body) => {
+                    parse_struct_expr(namespace, struct_body, call.to_token_stream(), true)
+                }
+                syn::Expr::Call(call) => {
+                    // Let's make sure that we're doing a call to Arc::new before we recurse.
+                    // Arc::new takes only a single argument, so we can check that first.
+                    if call.args.len() != 1 {
+                        trace!("Call expression does not have exactly one argument, emitting expression: {call:?}");
+                        return call.to_token_stream();
+                    }
+                    if is_arc_new_call(call.func.as_ref()) {
+                        let call_expr = parse_call_expr(namespace, call);
+                        quote!(Ok(#call_expr))
+                    } else {
+                        trace!("Call expression is not Arc::new(), emitting expression: {call:?}");
+                        call.to_token_stream()
+                    }
+                }
+                _ => {
+                    trace!(
+                        "Call expression is not a struct or call, emitting expression: {call:?}"
+                    );
+                    call.to_token_stream()
+                }
+            }
+        } else if is_arc_new_call(call.func.as_ref()) {
+            if let syn::Expr::Struct(struct_body) = call.args.first().unwrap() {
+                let struct_expr =
+                    parse_struct_expr(namespace, struct_body, call.to_token_stream(), false);
+                quote! {
+                    Arc::new(#struct_expr)
+                }
+            } else {
+                trace!("Call expression is not a struct, emitting expression: {call:?}");
+                call.to_token_stream()
+            }
+        } else {
+            trace!("Call expression is not an Arc or Ok, emitting expression: {call:?}");
+            call.to_token_stream()
+        }
+    } else {
+        trace!("Call expression is not a path, emitting expression: {call:?}");
+        call.to_token_stream()
     }
 }
 
@@ -78,12 +150,13 @@ impl Parse for NamespaceAttribute {
 /// 1) `Result<Arc<Self>, E>`
 ///
 pub fn parse_new(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
-    if !is_new_declaration(&item) {
+    if let Err(reason) = is_new_declaration(&item) {
         return Err(syn::Error::new(
             item.span(),
-            INVALID_SERVICE_CLIENT_NEW_MESSAGE,
+            format!("{INVALID_SERVICE_CLIENT_NEW_MESSAGE}: {reason}"),
         ));
     }
+
     let namespace_attrs: NamespaceAttribute = syn::parse2(attr)?;
 
     let ItemFn {
@@ -98,28 +171,39 @@ pub fn parse_new(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     let body =block.stmts.iter().map(|stmt| {
         // Ensure that the body of the new function initializes the `tracer` field.
 
-        if let syn::Stmt::Expr(expr, _) = stmt {
-            if let syn::Expr::Call(c) = expr {
-                // If the expression is a call, we need to check if it is a struct initialization.
-                if c.args.len() != 1 {
-                    trace!("Call expression does not have exactly one argument, emitting expression: {stmt:?}");
-                    // If the call does not have exactly one argument, just return it as is.
-                    stmt.to_token_stream()
-                } else if let syn::Expr::Struct(struct_body) = &c.args[0] {
-                    parse_struct_expr(namespace_attrs.client_namespace.as_str(), struct_body, stmt.to_token_stream(), true)
-                } else {
-                    trace!("Call expression is not a struct, emitting expression: {stmt:?}");
-                    // If the expression is not a struct, just return it as is.
-                    stmt.to_token_stream()
+        match stmt {
+            syn::Stmt::Expr(expr, _) =>
+                match expr {
+                    syn::Expr::Call(c) => {
+                        // If the expression is a call, we need to check if it is a struct initialization.
+                        if c.args.len() != 1 {
+                            trace!("Call expression does not have exactly one argument, emitting statement: {stmt:?}");
+                            // If the call does not have exactly one argument, just return it as is.
+                             stmt.to_token_stream()
+                        }
+                        else {
+                            parse_call_expr(namespace_attrs.client_namespace.as_str(), c)
+                        }
+                    }
+                    syn::Expr::Struct(struct_body) => {
+                        // If the expression is a struct, we need to parse it.
+                        parse_struct_expr(
+                            namespace_attrs.client_namespace.as_str(),
+                            struct_body,
+                            stmt.to_token_stream(),
+                            false,
+                        )
+                    }
+                    _ => {
+                        // If the expression is not a struct or call, just return it as is (for
+                        // instance an "if" statement is an expression)
+                        stmt.to_token_stream()
+                    }
                 }
-            } else if let syn::Expr::Struct(struct_body) = expr {
-                parse_struct_expr(namespace_attrs.client_namespace.as_str(), struct_body, stmt.to_token_stream(), false)
-            } else {
-                // If the expression is not a struct, just return it as is.
+            _ => {
+                // If the statement is not an expression, just return it as is.
                 stmt.to_token_stream()
             }
-        } else {
-            stmt.to_token_stream()
         }
     });
     let output = &sig.output;
@@ -132,62 +216,203 @@ pub fn parse_new(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
     })
 }
 
-fn is_arc_of_self(path: &syn::Path) -> bool {
+fn is_arc_of_self(path: &syn::Path) -> std::result::Result<(), String> {
     let segment = path.segments.last().unwrap();
     if segment.ident != "Arc" {
-        eprintln!(
+        error!(
             "Invalid return type for new function: Arc must be the first segment, found {:?}",
             segment.ident
         );
-        return false;
+        return Err(
+            "Invalid return type for new function: Arc must be the first segment".to_string(),
+        );
     }
     if segment.arguments.is_empty() {
-        eprintln!(
+        error!(
             "Invalid return type for new function: Arc must have arguments, found {:?}",
             segment.arguments
         );
-        return false;
+        return Err("Invalid return type for new function: Arc must have arguments".to_string());
     }
     match &segment.arguments {
         syn::PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) => {
             if args.len() != 1 {
-                eprintln!(
+                error!(
                     "Invalid return type for new function: Arc must have one argument, found {args:?}",
                 );
-                return false;
+                return Err(
+                    "Invalid return type for new function: Arc must have one argument".to_string(),
+                );
             }
             if let syn::GenericArgument::Type(syn::Type::Path(path)) = &args[0] {
-                path.path.is_ident("Self")
+                if path.path.is_ident("Self") {
+                    Ok(())
+                } else {
+                    error!(
+                        "Invalid return type for new function: Arc argument must be Self, found {:?}",
+                        path.path
+                    );
+                    Err(
+                        "Invalid return type for new function: Arc argument must be Self"
+                            .to_string(),
+                    )
+                }
             } else {
-                eprintln!(
+                error!(
                     "Invalid return type for new function: Arc argument must be Self, found {:?}",
                     args[0]
                 );
-                false
+                Err("Invalid return type for new function: Arc argument must be Self".to_string())
             }
         }
         _ => {
-            eprintln!(
+            error!("Invalid return type for new function: Arc arguments must be angle bracketed");
+            Err(
                 "Invalid return type for new function: Arc arguments must be angle bracketed"
-            );
-            false
+                    .to_string(),
+            )
         }
     }
 }
-fn is_valid_new_return(return_type: &syn::ReturnType) -> bool {
+
+fn is_valid_arc_of_self_call(expr: &syn::Expr) -> std::result::Result<(), String> {
+    if let syn::Expr::Struct(struct_body) = expr {
+        if struct_body.path.is_ident("Self") {
+            Ok(())
+        } else {
+            error!(
+                "Invalid new function body: expected struct initialization with Self, found {:?}",
+                struct_body.path
+            );
+            Err("expected struct initialization with Self".to_string())
+        }
+    } else {
+        error!(
+            "Invalid new function body: expected call to `Arc`, found {:?}",
+            expr
+        );
+        Err("expected last parameter to Arc to be Self".to_string())
+    }
+}
+fn is_valid_ok_call(
+    args: &syn::punctuated::Punctuated<syn::Expr, syn::token::Comma>,
+) -> std::result::Result<(), String> {
+    if args.len() != 1 {
+        error!(
+            "Invalid new function body: expected call to `Ok` with one argument, found {args:?}"
+        );
+        return Err(
+            "Invalid new function body: expected call to `Ok` with one argument".to_string(),
+        );
+    }
+    match &args[0] {
+        syn::Expr::Struct(struct_body) => {
+            if struct_body.path.is_ident("Self") {
+                Ok(())
+            } else {
+                error!(
+                    "Invalid new function body: expected struct initialization with Self, found {:?}",
+                    struct_body.path
+                );
+                Err("expected struct initialization with Self".to_string())
+            }
+        }
+        syn::Expr::Call(call) => {
+            if call.args.len() == 1 {
+                if is_arc_new_call(call.func.as_ref()) {
+                    is_valid_arc_of_self_call(call.args.last().unwrap())
+                } else {
+                    error!(
+                        "Invalid new function body: expected function named Arc, found {:?}",
+                        call.func.as_ref()
+                    );
+                    Err("expected Arc path".to_string())
+                }
+            } else {
+                error!(
+                "Invalid new function body: expected call to function with one argument, found {:?}",
+                args[0]
+            );
+                Err("expected call to functions with one argument".to_string())
+            }
+        }
+        _ => {
+            error!(
+                "Invalid new function body: expected a structure or call to function, found {:?}",
+                args[0]
+            );
+            Err("Invalid new function body: expected a structure or call to function".to_string())
+        }
+    }
+}
+
+fn is_valid_new_body(stmts: &[syn::Stmt]) -> std::result::Result<(), String> {
+    if stmts.is_empty() {
+        return Err("New function body must have at least one statement".to_string());
+    }
+    let last_stmt = stmts.last().unwrap();
+    if let syn::Stmt::Expr(expr, _) = last_stmt {
+        match expr {
+            syn::Expr::Struct(struct_body) => {
+                if struct_body.path.is_ident("Self") {
+                    Ok(())
+                } else {
+                    error!("Invalid new function body: expected struct initialization with Self, found {:?}", struct_body.path);
+                    Err("Expected struct initialization with Self".to_string())
+                }
+            }
+            syn::Expr::Call(call) => {
+                if let syn::Expr::Path(path) = call.func.as_ref() {
+                    if path.path.is_ident("Ok") {
+                        is_valid_ok_call(&call.args)
+                    } else if is_arc_new_call(call.func.as_ref()) {
+                        is_valid_arc_of_self_call(call.args.last().unwrap())
+                    } else {
+                        error!(
+                            "Invalid new function body: expected call to `Ok` or `Arc`, found {:?}",
+                            path
+                        );
+                        Err("Invalid new function body: expected call to `Ok` or `Arc`".to_string())
+                    }
+                } else {
+                    error!(
+                        "Invalid new function body - expected Path, got {:?}",
+                        call.func
+                    );
+                    Err("Invalid new function body - expected Path".to_string())
+                }
+            }
+            _ => {
+                error!(
+                    "Invalid new function body: expected call or struct statement, found {:?}",
+                    last_stmt
+                );
+                Err("Expected call or struct statement".to_string())
+            }
+        }
+    } else {
+        error!(
+            "Invalid new function body: expected expression statement, found {:?}",
+            last_stmt
+        );
+        Err("Expected final statement to be an expression".to_string())
+    }
+}
+
+fn is_valid_new_return(return_type: &syn::ReturnType) -> std::result::Result<(), String> {
     match return_type {
-        syn::ReturnType::Default => false,
+        syn::ReturnType::Default => Err("Default return type is not allowed".to_string()),
         syn::ReturnType::Type(_, ty) => {
             let syn::Type::Path(p) = ty.as_ref() else {
-                println!("Invalid return type for new function, expected path: {ty:?}");
-                return false;
+                error!("Invalid return type for new function, expected path: {ty:?}");
+                return Err("Invalid return type for new function, expected path".to_string());
             };
             if p.path.segments.is_empty() {
-                println!("Invalid return type for new function: Path is empty");
-                return false;
+                error!("Invalid return type for new function: Path is empty");
+                return Err("Invalid return type for new function: Path is empty".to_string());
             }
             if p.path.is_ident("Self") {
-                true
+                Ok(())
             } else {
                 // segments.last to allow for std::arc::Arc or azure_core::Result
                 let segment = p.path.segments.last().unwrap();
@@ -199,29 +424,29 @@ fn is_valid_new_return(return_type: &syn::ReturnType) -> bool {
                             ..
                         }) => {
                             if args.len() != 1 && args.len() != 2 {
-                                eprintln!("Invalid return type for new function: Result must have one or two arguments");
-                                return false;
+                                error!("Invalid return type for new function: Result must have one or two arguments");
+                                return Err("Invalid return type for new function: Result must have one or two arguments".to_string());
                             }
                             if let syn::GenericArgument::Type(syn::Type::Path(path)) = &args[0] {
                                 if path.path.is_ident("Self") {
-                                    true
+                                    Ok(())
                                 } else {
                                     is_arc_of_self(&path.path)
                                 }
                             } else {
-                                eprintln!("Invalid return type for new function: Result first argument must be Self, found {:?}", args[0]);
-                                false
+                                error!("Invalid return type for new function: Result first argument must be Self, found {:?}", args[0]);
+                                Err("Invalid return type for new function: Result first argument must be Self".to_string())
                             }
                         }
                         _ => {
-                            eprintln!("Invalid return type for new function: Result arguments must be angle bracketed");
-                            false
+                            error!("Invalid return type for new function: Result arguments must be angle bracketed");
+                            Err("Invalid return type for new function: Result arguments must be angle bracketed".to_string())
                         }
                     }
                 } else if segment.ident == "Arc" {
                     is_arc_of_self(&p.path)
                 } else {
-                    false
+                    Err("Invalid return type for new function: Expected Self, Result<Self>, or Arc<Self>".to_string())
                 }
             }
         }
@@ -229,34 +454,27 @@ fn is_valid_new_return(return_type: &syn::ReturnType) -> bool {
 }
 
 /// Returns true if the item at the head of the token stream is a valid service client declaration.
-fn is_new_declaration(item: &TokenStream) -> bool {
+///
+/// # Returns
+/// - None if the item is a valid service new declaration.
+/// - Some(String) if the item is NOT a valid service new declaration
+fn is_new_declaration(item: &TokenStream) -> std::result::Result<(), String> {
     // The item must be a function declaration.
-    let item_fn: ItemFn = match syn::parse2(item.clone()) {
-        Ok(fn_item) => fn_item,
-        Err(e) => {
-            eprintln!("could not parse new: {e}");
-            return false;
-        }
-    };
+    let item_fn: ItemFn = syn::parse2(item.clone())
+        .map_err(|e| format!("Failed to parse item as function declaration: {e}"))?;
 
     // Service clients new functions must be public.
     if !matches!(item_fn.vis, syn::Visibility::Public(_)) {
-        eprintln!("Service client new function must be public");
-        return false;
+        error!("Service client new function must be public");
+        Err("`tracing::new` function must be public".to_string())
+    } else {
+        // Verify that this function returns a type that is either Self, Result<Self, E>, Arc<Self>, or Result<Arc<Self>, E>.
+        is_valid_new_return(&item_fn.sig.output)?;
+        // Look at the function body to ensure that the last statement is a struct initialization.
+        is_valid_new_body(&item_fn.block.stmts)?;
+
+        Ok(())
     }
-
-    // Verify that this function returns a type that is either Self, Result<Self, E>, Arc<Self>, or Result<Arc<Self>, E>.
-
-    if !is_valid_new_return(&item_fn.sig.output) {
-        eprintln!(
-            "Invalid return type for new function: {:?}",
-            item_fn.sig.output
-        );
-        return false;
-    }
-    // Look at the function body to ensure that the last statement is a struct initialization.
-
-    true
 }
 
 #[cfg(test)]
@@ -265,36 +483,80 @@ mod tests {
     use crate::tracing::tests::setup_tracing;
 
     #[test]
-    fn is_new_declaration_valid() {
+    fn is_new_declaration_simple_self() {
+        setup_tracing();
+        assert!(is_new_declaration(&quote! {pub fn new_client(a:u32)-> Self { Self {}}}).is_ok());
+    }
+    #[test]
+    fn is_new_declaration_arc_self() {
         setup_tracing();
         assert!(is_new_declaration(
-            &quote! {pub fn new_client(a:u32)-> Self { Self {}}}
-        ));
-        assert!(is_new_declaration(
             &quote! {pub fn new_client(a:u32)-> Arc<Self> { Arc::new(Self {})}}
-        ));
+        )
+        .is_ok());
+    }
+    #[test]
+    fn is_new_declaration_arc_self_long() {
+        setup_tracing();
         assert!(is_new_declaration(
             &quote! {pub fn new_client(a:u32)-> std::sync::Arc<Self> { std::sync::Arc::new(Self {})}}
-        ));
+        ).is_ok());
+    }
+    #[test]
+    fn is_new_declaration_result_self() {
+        setup_tracing();
         assert!(is_new_declaration(
             &quote! {pub fn new_client(a:u32)-> Result<Self> { Ok(Self {})}}
-        ));
+        )
+        .is_ok());
+    }
+    #[test]
+    fn is_new_declaration_result_self_std_result() {
+        setup_tracing();
         assert!(is_new_declaration(
             &quote! {pub fn new_client(a:u32)-> std::result::Result<Self, std::convert::Infallible> { Ok(Self {})}}
-        ));
+        ).is_ok());
+    }
+    #[test]
+    fn is_new_declaration_result_arc_self() {
+        setup_tracing();
         assert!(is_new_declaration(
             &quote! {pub fn new_client(a:u32)-> Result<Arc<Self>> { Ok(Arc::new(Self {}) )}}
-        ));
+        )
+        .is_ok());
+    }
+    #[test]
+    fn is_new_declaration_result_arc_self_long() {
+        setup_tracing();
+        assert!(is_new_declaration(
+            &quote! {pub fn new_client(a:u32)-> Result<std::sync::Arc<Self>> { Ok(std::sync::Arc::new(Self {}) )}}
+        )
+        .is_ok());
+    }
+    #[test]
+    fn is_new_declaration_invalid_return_type() {
+        setup_tracing();
 
-        assert!(!is_new_declaration(
+        assert!(is_new_declaration(
             &quote! {pub fn new_client(a:u32)-> u64 { Ok(Arc::new(Self {}) )}}
-        ));
-        assert!(!is_new_declaration(
+        )
+        .is_err());
+    }
+    #[test]
+    fn is_new_declaration_result_not_self() {
+        setup_tracing();
+        assert!(is_new_declaration(
             &quote! {pub fn new_client(a:u32)-> Result<u64> { Ok(Arc::new(Self {}) )}}
-        ));
-        assert!(!is_new_declaration(
+        )
+        .is_err());
+    }
+    #[test]
+    fn is_new_declaration_result_not_arc_self() {
+        setup_tracing();
+        assert!(is_new_declaration(
             &quote! {pub fn new_client(a:u32)-> Result<Arc<u64>> { Ok(Arc::new(Self {}) )}}
-        ));
+        )
+        .is_err());
     }
 
     #[test]
