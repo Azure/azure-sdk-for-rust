@@ -1,6 +1,7 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell: ignore azuresdkforcpp invalidtopleveldomain
 //! This file contains an Azure SDK for Rust fake service client API.
 //!
 use azure_core::{
@@ -196,7 +197,7 @@ mod tests {
         azure_provider: Arc<dyn TracerProvider>,
     ) -> TestServiceClientWithMacros {
         let recording = ctx.recording();
-        let endpoint = "https://example.com";
+        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
         let credential = recording.credential().clone();
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
@@ -265,14 +266,14 @@ mod tests {
     #[recorded::test()]
     async fn test_macro_service_client_new(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
-        let endpoint = "https://example.com";
+        let endpoint = "https://microsoft.com";
         let credential = recording.credential().clone();
         let options = TestServiceClientWithMacrosOptions {
             ..Default::default()
         };
 
         let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
-        assert_eq!(client.endpoint().as_str(), "https://example.com/");
+        assert_eq!(client.endpoint().as_str(), "https://microsoft.com/");
         assert_eq!(client.api_version, "2023-10-01");
 
         Ok(())
@@ -285,7 +286,7 @@ mod tests {
 
         let client = create_service_client(ctx, azure_provider.clone());
 
-        let response = client.get("index.html", None).await;
+        let response = client.get("get", None).await;
         info!("Response: {:?}", response);
         assert!(response.is_ok());
         let response = response.unwrap();
@@ -308,16 +309,10 @@ mod tests {
                         ("az.client_request_id", "<ANY>".into()),
                         (
                             "url.full",
-                            format!(
-                                "{}{}",
-                                client.endpoint(),
-                                "index.html?api-version=2023-10-01"
-                            )
-                            .into(),
+                            format!("{}{}", client.endpoint(), "get?api-version=2023-10-01").into(),
                         ),
-                        ("server.address", "example.com".into()),
+                        ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
                         ("server.port", 443.into()),
-                        ("http.request.resend_count", 0.into()),
                         ("http.response.status_code", 200.into()),
                     ],
                 },
@@ -363,10 +358,9 @@ mod tests {
                             )
                             .into(),
                         ),
-                        ("server.address", "example.com".into()),
+                        ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
                         ("server.port", 443.into()),
                         ("error.type", "404".into()),
-                        ("http.request.resend_count", 0.into()),
                         ("http.response.status_code", 404.into()),
                     ],
                 },
@@ -383,7 +377,7 @@ mod tests {
 
         let client = create_service_client(ctx, azure_provider.clone());
 
-        let response = client.get_with_function_tracing("index.html", None).await;
+        let response = client.get_with_function_tracing("get", None).await;
         info!("Response: {:?}", response);
 
         let spans = otel_exporter.get_finished_spans().unwrap();
@@ -404,16 +398,10 @@ mod tests {
                     ("az.client_request_id", "<ANY>".into()),
                     (
                         "url.full",
-                        format!(
-                            "{}{}",
-                            client.endpoint(),
-                            "index.html?api-version=2023-10-01"
-                        )
-                        .into(),
+                        format!("{}{}", client.endpoint(), "get?api-version=2023-10-01").into(),
                     ),
-                    ("server.address", "example.com".into()),
+                    ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
                     ("server.port", 443.into()),
-                    ("http.request.resend_count", 0.into()),
                     ("http.response.status_code", 200.into()),
                 ],
             },
@@ -427,9 +415,9 @@ mod tests {
                 status: OpenTelemetrySpanStatus::Unset,
                 attributes: vec![
                     ("az.namespace", "Az.TestServiceClient".into()),
-                    ("a.b", 1.into()),              // added by tracing macro.
-                    ("az.telemetry", "Abc".into()), // added by tracing macro
-                    ("string attribute", "index.html".into()), // added by tracing macro.
+                    ("a.b", 1.into()),                  // added by tracing macro.
+                    ("az.telemetry", "Abc".into()),     // added by tracing macro
+                    ("string attribute", "get".into()), // added by tracing macro.
                 ],
             },
         )?;
@@ -438,14 +426,12 @@ mod tests {
     }
 
     #[recorded::test()]
-    async fn test_macro_service_client_get_with_function_tracing_error(
-        ctx: TestContext,
-    ) -> Result<()> {
+    async fn test_macro_service_client_get_function_tracing_error(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
         let recording = ctx.recording();
-        let endpoint = "https://example.com";
+        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
         let credential = recording.credential().clone();
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
@@ -488,9 +474,8 @@ mod tests {
                         )
                         .into(),
                     ),
-                    ("server.address", "example.com".into()),
+                    ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
                     ("server.port", 443.into()),
-                    ("http.request.resend_count", 0.into()),
                     ("http.response.status_code", 404.into()),
                     ("error.type", "404".into()),
                 ],
@@ -517,14 +502,14 @@ mod tests {
     }
 
     #[recorded::test()]
-    async fn test_macro_service_client_get_with_function_tracing_dns_error(
+    async fn test_macro_service_client_get_function_tracing_dns_error(
         ctx: TestContext,
     ) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
         let recording = ctx.recording();
-        let endpoint = "https://example.invalid_top_level_domain";
+        let endpoint = "https://azuresdkforcpp.azurewebsites.invalidtopleveldomain";
         let credential = recording.credential().clone();
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
@@ -569,9 +554,11 @@ mod tests {
                         )
                         .into(),
                     ),
-                    ("server.address", "example.invalid_top_level_domain".into()),
+                    (
+                        "server.address",
+                        "azuresdkforcpp.azurewebsites.invalidtopleveldomain".into(),
+                    ),
                     ("server.port", 443.into()),
-                    ("http.request.resend_count", 0.into()),
                     ("error.type", "Io".into()),
                 ],
             },
@@ -596,7 +583,10 @@ mod tests {
                         )
                         .into(),
                     ),
-                    ("server.address", "example.invalid_top_level_domain".into()),
+                    (
+                        "server.address",
+                        "azuresdkforcpp.azurewebsites.invalidtopleveldomain".into(),
+                    ),
                     ("server.port", 443.into()),
                     ("http.request.resend_count", 1.into()),
                     ("error.type", "Io".into()),
@@ -623,7 +613,10 @@ mod tests {
                         )
                         .into(),
                     ),
-                    ("server.address", "example.invalid_top_level_domain".into()),
+                    (
+                        "server.address",
+                        "azuresdkforcpp.azurewebsites.invalidtopleveldomain".into(),
+                    ),
                     ("server.port", 443.into()),
                     ("http.request.resend_count", 2.into()),
                     ("error.type", "Io".into()),
@@ -650,7 +643,10 @@ mod tests {
                         )
                         .into(),
                     ),
-                    ("server.address", "example.invalid_top_level_domain".into()),
+                    (
+                        "server.address",
+                        "azuresdkforcpp.azurewebsites.invalidtopleveldomain".into(),
+                    ),
                     ("server.port", 443.into()),
                     ("http.request.resend_count", 3.into()),
                     ("error.type", "Io".into()),
