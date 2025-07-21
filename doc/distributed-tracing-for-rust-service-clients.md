@@ -106,7 +106,7 @@ When an `azure_core::http::Pipeline` is constructed, if the client options inclu
 The `RequestInstrumentationPolicy` will do the following:
 
 1) If the `Context` parameter for the  `RequestInstrumentationPolicy` contains a `Tracer` value, then the `RequestInstrumentationPolicy` will use that `Tracer` value to create the span, otherwise it will use the pre-configured tracer from when the policy was created.
-2) If the `Context` parameter for the `RequestInstrumentationPolicy contains a`Span` value, then the policy will use that span as the parent span for the newly created HTTP request span, otherwise it will create a new span.
+2) If the `Context` parameter for the `RequestInstrumentationPolicy` contains a `Span` value, then the policy will use that span as the parent span for the newly created HTTP request span, otherwise it will create a new span.
 
 This design means that even if a service public API is not fully instrumented with a `Tracer` or a `Span`, it will still generate some HTTP request traces.
 
