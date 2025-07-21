@@ -118,7 +118,7 @@ impl Policy for RequestInstrumentationPolicy {
             tracer.start_span(method_str, SpanKind::Client, span_attributes)
         };
 
-        if (span.is_recording()) {
+        if span.is_recording() {
             if let Some(client_request_id) = request
                 .headers()
                 .get_optional_str(&headers::CLIENT_REQUEST_ID)
@@ -144,7 +144,7 @@ impl Policy for RequestInstrumentationPolicy {
 
         let result = next[0].send(ctx, request, &next[1..]).await;
 
-        if (span.is_recording()) {
+        if span.is_recording() {
             if let Some(err) = result.as_ref().err() {
                 // If the request failed, set an error type attribute.
                 span.set_attribute(ERROR_TYPE_ATTRIBUTE, err.kind().to_string().into());

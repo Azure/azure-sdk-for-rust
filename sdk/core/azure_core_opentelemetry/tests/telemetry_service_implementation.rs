@@ -290,36 +290,35 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
     assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
 
     let spans = otel_exporter.get_finished_spans().unwrap();
-    assert_eq!(spans.len(), 1);
-    for span in &spans {
-        trace!("Span: {:?}", span);
-
-        verify_span(
-            span,
-            ExpectedSpan {
-                name: "GET",
-                kind: OpenTelemetrySpanKind::Client,
-                status: OpenTelemetrySpanStatus::Unset,
-                parent_span_id: None,
-                attributes: vec![
-                    ("http.request.method", "GET".into()),
-                    ("az.client_request_id", "<ANY>".into()),
-                    (
-                        "url.full",
-                        format!(
-                            "{}{}",
-                            client.endpoint(),
-                            "index.html?api-version=2023-10-01"
-                        )
-                        .into(),
-                    ),
-                    ("server.address", "example.com".into()),
-                    ("server.port", 443.into()),
-                    ("http.response.status_code", 200.into()),
-                ],
-            },
-        )?;
+    for (i, span) in spans.iter().enumerate() {
+        trace!("Span {i}: {span:?}");
     }
+    assert_eq!(spans.len(), 1);
+    verify_span(
+        &spans[0],
+        ExpectedSpan {
+            name: "GET",
+            kind: OpenTelemetrySpanKind::Client,
+            status: OpenTelemetrySpanStatus::Unset,
+            parent_span_id: None,
+            attributes: vec![
+                ("http.request.method", "GET".into()),
+                ("az.client_request_id", "<ANY>".into()),
+                (
+                    "url.full",
+                    format!(
+                        "{}{}",
+                        client.endpoint(),
+                        "index.html?api-version=2023-10-01"
+                    )
+                    .into(),
+                ),
+                ("server.address", "example.com".into()),
+                ("server.port", 443.into()),
+                ("http.response.status_code", 200.into()),
+            ],
+        },
+    )?;
 
     Ok(())
 }
@@ -347,39 +346,39 @@ async fn test_service_client_get_with_tracing_error(ctx: TestContext) -> Result<
     info!("Response: {:?}", response);
 
     let spans = otel_exporter.get_finished_spans().unwrap();
-    assert_eq!(spans.len(), 1);
-    for span in &spans {
-        trace!("Span: {:?}", span);
-
-        verify_span(
-            span,
-            ExpectedSpan {
-                name: "GET",
-                kind: OpenTelemetrySpanKind::Client,
-                parent_span_id: None,
-                status: OpenTelemetrySpanStatus::Error {
-                    description: "".into(),
-                },
-                attributes: vec![
-                    ("http.request.method", "GET".into()),
-                    ("az.client_request_id", "<ANY>".into()),
-                    (
-                        "url.full",
-                        format!(
-                            "{}{}",
-                            client.endpoint(),
-                            "failing_url?api-version=2023-10-01"
-                        )
-                        .into(),
-                    ),
-                    ("server.address", "example.com".into()),
-                    ("server.port", 443.into()),
-                    ("error.type", "404".into()),
-                    ("http.response.status_code", 404.into()),
-                ],
-            },
-        )?;
+    for (i, span) in spans.iter().enumerate() {
+        trace!("Span {i}: {span:?}");
     }
+    assert_eq!(spans.len(), 1);
+
+    verify_span(
+        &spans[0],
+        ExpectedSpan {
+            name: "GET",
+            kind: OpenTelemetrySpanKind::Client,
+            parent_span_id: None,
+            status: OpenTelemetrySpanStatus::Error {
+                description: "".into(),
+            },
+            attributes: vec![
+                ("http.request.method", "GET".into()),
+                ("az.client_request_id", "<ANY>".into()),
+                (
+                    "url.full",
+                    format!(
+                        "{}{}",
+                        client.endpoint(),
+                        "failing_url?api-version=2023-10-01"
+                    )
+                    .into(),
+                ),
+                ("server.address", "example.com".into()),
+                ("server.port", 443.into()),
+                ("error.type", "404".into()),
+                ("http.response.status_code", 404.into()),
+            ],
+        },
+    )?;
 
     Ok(())
 }
@@ -407,10 +406,10 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
     info!("Response: {:?}", response);
 
     let spans = otel_exporter.get_finished_spans().unwrap();
-    assert_eq!(spans.len(), 2);
-    for span in &spans {
-        trace!("Span: {:?}", span);
+    for (i, span) in spans.iter().enumerate() {
+        trace!("Span {i}: {span:?}");
     }
+    assert_eq!(spans.len(), 2);
     verify_span(
         &spans[0],
         ExpectedSpan {
@@ -474,10 +473,10 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
     info!("Response: {:?}", response);
 
     let spans = otel_exporter.get_finished_spans().unwrap();
-    assert_eq!(spans.len(), 2);
-    for span in &spans {
-        trace!("Span: {:?}", span);
+    for (i, span) in spans.iter().enumerate() {
+        trace!("Span {i}: {span:?}");
     }
+    assert_eq!(spans.len(), 2);
     verify_span(
         &spans[0],
         ExpectedSpan {
