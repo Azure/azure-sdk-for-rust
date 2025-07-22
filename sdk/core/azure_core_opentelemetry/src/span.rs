@@ -103,7 +103,7 @@ impl Span for OpenTelemetrySpan {
                 );
             } else {
                 // If the key is invalid, we skip it
-                tracing::warn!("Invalid header key: {:?}", key);
+                tracing::warn!("Encountered an invalid header key (key is None). Skipping this header.");
             }
         }
     }
