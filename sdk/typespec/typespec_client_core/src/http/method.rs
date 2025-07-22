@@ -110,6 +110,18 @@ impl Method {
     pub fn is_safe(&self) -> bool {
         matches!(self, Method::Get | Method::Head)
     }
+
+    /// Returns the HTTP method as a static string slice.
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Method::Delete => "DELETE",
+            Method::Get => "GET",
+            Method::Head => "HEAD",
+            Method::Patch => "PATCH",
+            Method::Post => "POST",
+            Method::Put => "PUT",
+        }
+    }
 }
 
 #[cfg(any(feature = "json", feature = "xml"))]
@@ -194,7 +206,7 @@ impl<'a> std::convert::TryFrom<&'a str> for Method {
 }
 
 impl AsRef<str> for Method {
-    fn as_ref(&self) -> &str {
+    fn as_ref(&self) -> &'static str {
         match self {
             Self::Delete => "DELETE",
             Self::Get => "GET",

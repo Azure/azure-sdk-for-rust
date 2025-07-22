@@ -160,6 +160,7 @@ version = "0.27.0"
 dependencies = [
  "async-lock",
  "async-trait",
+ "azure_core_macros",
  "azure_core_test",
  "azure_identity",
  "azure_security_keyvault_certificates",
@@ -204,17 +205,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "azure_core_opentelemetry"
+name = "azure_core_macros"
 version = "0.1.0"
 dependencies = [
- "azure_core",
- "log",
- "opentelemetry",
- "opentelemetry_sdk",
+ "proc-macro2",
+ "quote",
+ "syn",
  "tokio",
  "tracing",
  "tracing-subscriber",
  "typespec_client_core",
+]
+
+[[package]]
+name = "azure_core_opentelemetry"
+version = "0.1.0"
+dependencies = [
+ "azure_core",
+ "azure_core_test",
+ "azure_core_test_macros",
+ "azure_identity",
+ "opentelemetry",
+ "opentelemetry-http",
+ "opentelemetry_sdk",
+ "reqwest",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "typespec_client_core",
+ "url",
 ]
 
 [[package]]
@@ -1716,6 +1735,18 @@ dependencies = [
  "pin-project-lite",
  "thiserror 2.0.12",
  "tracing",
+]
+
+[[package]]
+name = "opentelemetry-http"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50f6639e842a97dbea8886e3439710ae463120091e2e064518ba8e716e6ac36d"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "http",
+ "opentelemetry",
 ]
 
 [[package]]
