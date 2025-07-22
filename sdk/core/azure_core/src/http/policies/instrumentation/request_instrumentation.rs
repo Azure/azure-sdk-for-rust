@@ -236,7 +236,7 @@ pub(crate) mod tests {
             |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
-                    assert_eq!(req.method(), &Method::Get);
+                    assert_eq!(req.method(), Method::Get);
                     Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
@@ -314,7 +314,7 @@ pub(crate) mod tests {
             |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
-                    assert_eq!(req.method(), &Method::Get);
+                    assert_eq!(req.method(), Method::Get);
                     assert_eq!(
                         req.headers()
                             .get_optional_str(&HeaderName::from_static("traceparent")),
@@ -374,7 +374,7 @@ pub(crate) mod tests {
             run_instrumentation_test(None, None, None, &mut request, |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("host"));
-                    assert_eq!(req.method(), &Method::Get);
+                    assert_eq!(req.method(), Method::Get);
                     Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
@@ -422,7 +422,7 @@ pub(crate) mod tests {
             |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("microsoft.com"));
-                    assert_eq!(req.method(), &Method::Put);
+                    assert_eq!(req.method(), Method::Put);
                     Ok(RawResponse::from_bytes(
                         StatusCode::NotFound,
                         Headers::new(),

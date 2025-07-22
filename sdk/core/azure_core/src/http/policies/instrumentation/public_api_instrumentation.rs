@@ -451,7 +451,7 @@ mod tests {
             |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
-                    assert_eq!(req.method(), &Method::Get);
+                    assert_eq!(req.method(), Method::Get);
                     Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
@@ -489,7 +489,7 @@ mod tests {
             |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
-                    assert_eq!(req.method(), &Method::Get);
+                    assert_eq!(req.method(), Method::Get);
                     Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
@@ -520,7 +520,7 @@ mod tests {
             |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
-                    assert_eq!(req.method(), &Method::Get);
+                    assert_eq!(req.method(), Method::Get);
                     Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
@@ -563,7 +563,7 @@ mod tests {
             |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
-                    assert_eq!(req.method(), &Method::Get);
+                    assert_eq!(req.method(), Method::Get);
                     Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
@@ -606,7 +606,7 @@ mod tests {
             |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
-                    assert_eq!(req.method(), &Method::Get);
+                    assert_eq!(req.method(), Method::Get);
                     Ok(RawResponse::from_bytes(
                         StatusCode::InternalServerError,
                         Headers::new(),
@@ -652,7 +652,7 @@ mod tests {
             |req| {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
-                    assert_eq!(req.method(), &Method::Put);
+                    assert_eq!(req.method(), Method::Put);
                     Ok(RawResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
