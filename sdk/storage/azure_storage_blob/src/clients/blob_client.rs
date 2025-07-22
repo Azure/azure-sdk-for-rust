@@ -146,7 +146,7 @@ impl BlobClient {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_storage_blob::{BlobClient, BlobClientGetPropertiesResultHeaders};
+    /// use azure_storage_blob::{BlobClient, models::BlobClientGetPropertiesResultHeaders};
     /// # use azure_core::Result;
     /// # async fn example(blob_client: BlobClient) -> Result<()> {
     /// 
@@ -168,7 +168,7 @@ impl BlobClient {
     /// # }
     /// ```
     ///
-    /// [`BlobClientGetPropertiesResultHeaders`]: crate::generated::models::BlobClientGetPropertiesResultHeaders
+    /// [`BlobClientGetPropertiesResultHeaders`]: crate::models::BlobClientGetPropertiesResultHeaders
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,

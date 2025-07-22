@@ -871,7 +871,7 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
 /// # Usage
 ///
 /// ```no_run
-/// use azure_storage_blob::{BlobClient, BlobClientGetPropertiesResultHeaders};
+/// use azure_storage_blob::{BlobClient, models::BlobClientGetPropertiesResultHeaders};
 /// # use azure_core::Result;
 /// # async fn example(blob_client: BlobClient) -> Result<()> {
 /// 
@@ -879,7 +879,6 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
 /// 
 /// // Access blob content properties
 /// let content_length = response.content_length()?;
-/// let content_type = response.content_type()?;  // Available via content headers
 /// let last_modified = response.last_modified()?;
 /// let etag = response.etag()?;
 /// 

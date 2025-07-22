@@ -112,11 +112,11 @@ pub struct BlobClientAbortCopyFromUrlResult;
 /// # Usage
 ///
 /// ```no_run
-/// use azure_storage_blob::{BlobClient, BlobClientAcquireLeaseResultHeaders};
+/// use azure_storage_blob::{BlobClient, models::BlobClientAcquireLeaseResultHeaders};
 /// # use azure_core::Result;
 /// # async fn example(blob_client: BlobClient) -> Result<()> {
 /// 
-/// let response = blob_client.acquire_lease(None).await?;
+/// let response = blob_client.acquire_lease(30, None).await?;
 /// 
 /// // Access lease information
 /// let lease_id = response.lease_id()?;
@@ -135,7 +135,7 @@ pub struct BlobClientAbortCopyFromUrlResult;
 /// - Lease information: `lease_id()` - The unique lease identifier
 /// - Blob state: `etag()`, `last_modified()` - Current blob state after lease acquisition
 ///
-/// [`BlobClientAcquireLeaseResultHeaders`]: crate::generated::models::BlobClientAcquireLeaseResultHeaders
+/// [`BlobClientAcquireLeaseResultHeaders`]: crate::models::BlobClientAcquireLeaseResultHeaders
 #[derive(SafeDebug)]
 pub struct BlobClientAcquireLeaseResult;
 
@@ -168,18 +168,20 @@ pub struct BlobClientDeleteImmutabilityPolicyResult;
 /// # Usage
 ///
 /// ```no_run
-/// use azure_storage_blob::{BlobClient, BlobClientDownloadResultHeaders};
+/// use azure_storage_blob::{BlobClient, models::BlobClientDownloadResultHeaders};
 /// # use azure_core::Result;
 /// # async fn example(blob_client: BlobClient) -> Result<()> {
 /// 
 /// let response = blob_client.download(None).await?;
 /// 
-/// // Access downloaded content
-/// let body = response.into_body();
-/// // Convert body to bytes, string, or stream as needed
+/// // Access metadata about the downloaded blob
+/// let content_length = response.content_length()?;
+/// let etag = response.etag()?;
+/// let blob_type = response.blob_type()?;
 /// 
-/// // Or access metadata about the downloaded blob
-/// // (Note: you'd need to access headers before consuming the body)
+/// // Access the response body separately
+/// // let body = response.into_body(); // Available for consuming response content
+/// 
 /// # Ok(())
 /// # }
 /// ```
@@ -192,7 +194,7 @@ pub struct BlobClientDeleteImmutabilityPolicyResult;
 /// - Download-specific properties: `accept_ranges()`, `content_md5()`
 /// - And all the same properties available from `get_properties()`
 ///
-/// [`BlobClientDownloadResultHeaders`]: crate::generated::models::BlobClientDownloadResultHeaders
+/// [`BlobClientDownloadResultHeaders`]: crate::models::BlobClientDownloadResultHeaders
 #[derive(SafeDebug)]
 pub struct BlobClientDownloadResult;
 
@@ -210,7 +212,7 @@ pub struct BlobClientGetAccountInfoResult;
 /// # Usage
 ///
 /// ```no_run
-/// use azure_storage_blob::{BlobClient, BlobClientGetPropertiesResultHeaders};
+/// use azure_storage_blob::{BlobClient, models::BlobClientGetPropertiesResultHeaders};
 /// # use azure_core::Result;
 /// # async fn example(blob_client: BlobClient) -> Result<()> {
 /// 
@@ -240,7 +242,7 @@ pub struct BlobClientGetAccountInfoResult;
 /// See the [`BlobClientGetPropertiesResultHeaders`] trait documentation for the complete list
 /// of available properties and their descriptions.
 ///
-/// [`BlobClientGetPropertiesResultHeaders`]: crate::generated::models::BlobClientGetPropertiesResultHeaders
+/// [`BlobClientGetPropertiesResultHeaders`]: crate::models::BlobClientGetPropertiesResultHeaders
 #[derive(SafeDebug)]
 pub struct BlobClientGetPropertiesResult;
 
@@ -301,7 +303,7 @@ pub struct BlobContainerClientGetAccountInfoResult;
 /// # Usage
 ///
 /// ```no_run
-/// use azure_storage_blob::{BlobContainerClient, BlobContainerClientGetPropertiesResultHeaders};
+/// use azure_storage_blob::{BlobContainerClient, models::BlobContainerClientGetPropertiesResultHeaders};
 /// # use azure_core::Result;
 /// # async fn example(container_client: BlobContainerClient) -> Result<()> {
 /// 
@@ -328,7 +330,7 @@ pub struct BlobContainerClientGetAccountInfoResult;
 /// - Access control: `public_access()` - Public access level for the container
 /// - And other container-specific properties
 ///
-/// [`BlobContainerClientGetPropertiesResultHeaders`]: crate::generated::models::BlobContainerClientGetPropertiesResultHeaders
+/// [`BlobContainerClientGetPropertiesResultHeaders`]: crate::models::BlobContainerClientGetPropertiesResultHeaders
 #[derive(SafeDebug)]
 pub struct BlobContainerClientGetPropertiesResult;
 
@@ -758,7 +760,7 @@ pub struct BlockBlobClientStageBlockFromUrlResult;
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockResult;
 
-/// Contains results for `BlockBlobClient::upload()`
+/// Contains results for `BlobClient::upload()`
 ///
 /// This struct represents the result of uploading content to a block blob. While this struct itself is empty,
 /// the returned `Response<BlockBlobClientUploadResult, NoFormat>` implements the
@@ -767,13 +769,14 @@ pub struct BlockBlobClientStageBlockResult;
 /// # Usage
 ///
 /// ```no_run
-/// use azure_storage_blob::{BlockBlobClient, BlockBlobClientUploadResultHeaders};
-/// use azure_core::RequestContent;
+/// use azure_storage_blob::{BlobClient, models::BlockBlobClientUploadResultHeaders};
+/// use azure_core::{http::RequestContent, Bytes};
 /// # use azure_core::Result;
-/// # async fn example(blob_client: BlockBlobClient) -> Result<()> {
+/// # async fn example(blob_client: BlobClient) -> Result<()> {
 /// 
-/// let content = RequestContent::from("Hello, world!");
-/// let response = blob_client.upload(content, None).await?;
+/// let data: Bytes = "Hello, world!".into();
+/// let content = RequestContent::from(data.to_vec());
+/// let response = blob_client.upload(content, true, data.len() as u64, None).await?;
 /// 
 /// // Access upload result properties
 /// let etag = response.etag()?;
@@ -794,7 +797,7 @@ pub struct BlockBlobClientStageBlockResult;
 /// - Server properties: `is_server_encrypted()`, `encryption_key_sha256()`
 /// - Request tracking: `request_id()`, `version()`
 ///
-/// [`BlockBlobClientUploadResultHeaders`]: crate::generated::models::BlockBlobClientUploadResultHeaders
+/// [`BlockBlobClientUploadResultHeaders`]: crate::models::BlockBlobClientUploadResultHeaders
 #[derive(SafeDebug)]
 pub struct BlockBlobClientUploadResult;
 
