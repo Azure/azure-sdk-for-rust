@@ -104,6 +104,38 @@ pub struct ArrowField {
 pub struct BlobClientAbortCopyFromUrlResult;
 
 /// Contains results for `BlobClient::acquire_lease()`
+///
+/// This struct represents the result of acquiring a lease on a blob. While this struct itself is empty,
+/// the returned `Response<BlobClientAcquireLeaseResult, NoFormat>` implements the
+/// [`BlobClientAcquireLeaseResultHeaders`] trait, which provides access to lease information.
+///
+/// # Usage
+///
+/// ```no_run
+/// use azure_storage_blob::{BlobClient, BlobClientAcquireLeaseResultHeaders};
+/// # use azure_core::Result;
+/// # async fn example(blob_client: BlobClient) -> Result<()> {
+/// 
+/// let response = blob_client.acquire_lease(None).await?;
+/// 
+/// // Access lease information
+/// let lease_id = response.lease_id()?;
+/// let etag = response.etag()?;
+/// let last_modified = response.last_modified()?;
+/// 
+/// println!("Lease acquired! ID: {:?}", lease_id);
+/// 
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Available Properties
+///
+/// The [`BlobClientAcquireLeaseResultHeaders`] trait provides access to:
+/// - Lease information: `lease_id()` - The unique lease identifier
+/// - Blob state: `etag()`, `last_modified()` - Current blob state after lease acquisition
+///
+/// [`BlobClientAcquireLeaseResultHeaders`]: crate::generated::models::BlobClientAcquireLeaseResultHeaders
 #[derive(SafeDebug)]
 pub struct BlobClientAcquireLeaseResult;
 
@@ -128,6 +160,39 @@ pub struct BlobClientCreateSnapshotResult;
 pub struct BlobClientDeleteImmutabilityPolicyResult;
 
 /// Contains results for `BlobClient::download()`
+///
+/// This struct represents the result of downloading blob content. While this struct itself is empty,
+/// the returned `Response<BlobClientDownloadResult, NoFormat>` implements the
+/// [`BlobClientDownloadResultHeaders`] trait and contains the blob content in its body.
+///
+/// # Usage
+///
+/// ```no_run
+/// use azure_storage_blob::{BlobClient, BlobClientDownloadResultHeaders};
+/// # use azure_core::Result;
+/// # async fn example(blob_client: BlobClient) -> Result<()> {
+/// 
+/// let response = blob_client.download(None).await?;
+/// 
+/// // Access downloaded content
+/// let body = response.into_body();
+/// // Convert body to bytes, string, or stream as needed
+/// 
+/// // Or access metadata about the downloaded blob
+/// // (Note: you'd need to access headers before consuming the body)
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Available Properties
+///
+/// The [`BlobClientDownloadResultHeaders`] trait provides access to:
+/// - Content properties: `content_length()`, `content_type()`, `content_range()`
+/// - Blob metadata: `last_modified()`, `etag()`, `metadata()`
+/// - Download-specific properties: `accept_ranges()`, `content_md5()`
+/// - And all the same properties available from `get_properties()`
+///
+/// [`BlobClientDownloadResultHeaders`]: crate::generated::models::BlobClientDownloadResultHeaders
 #[derive(SafeDebug)]
 pub struct BlobClientDownloadResult;
 
@@ -136,6 +201,46 @@ pub struct BlobClientDownloadResult;
 pub struct BlobClientGetAccountInfoResult;
 
 /// Contains results for `BlobClient::get_properties()`
+///
+/// This struct represents the result of getting blob properties. While this struct itself is empty,
+/// the returned `Response<BlobClientGetPropertiesResult, NoFormat>` implements the
+/// [`BlobClientGetPropertiesResultHeaders`] trait, which provides access to all blob properties
+/// from the response headers.
+///
+/// # Usage
+///
+/// ```no_run
+/// use azure_storage_blob::{BlobClient, BlobClientGetPropertiesResultHeaders};
+/// # use azure_core::Result;
+/// # async fn example(blob_client: BlobClient) -> Result<()> {
+/// 
+/// let response = blob_client.get_properties(None).await?;
+/// 
+/// // Access blob properties using the trait methods
+/// let content_length = response.content_length()?;
+/// let last_modified = response.last_modified()?;
+/// let etag = response.etag()?;
+/// let blob_type = response.blob_type()?;
+/// let metadata = response.metadata()?;
+/// 
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Available Properties
+///
+/// The [`BlobClientGetPropertiesResultHeaders`] trait provides access to:
+/// - Content properties: `content_length()`, `content_type()`, `content_encoding()`, etc.
+/// - Blob metadata: `metadata()`, `last_modified()`, `etag()`
+/// - Access tier information: `access_tier()`, `access_tier_change_time()`
+/// - Lease properties: `lease_state()`, `lease_status()`, `duration()`
+/// - Copy information: `copy_status()`, `copy_source()`, `copy_progress()`
+/// - And many more...
+///
+/// See the [`BlobClientGetPropertiesResultHeaders`] trait documentation for the complete list
+/// of available properties and their descriptions.
+///
+/// [`BlobClientGetPropertiesResultHeaders`]: crate::generated::models::BlobClientGetPropertiesResultHeaders
 #[derive(SafeDebug)]
 pub struct BlobClientGetPropertiesResult;
 
@@ -188,6 +293,42 @@ pub struct BlobContainerClientChangeLeaseResult;
 pub struct BlobContainerClientGetAccountInfoResult;
 
 /// Contains results for `BlobContainerClient::get_properties()`
+///
+/// This struct represents the result of getting blob container properties. While this struct itself is empty,
+/// the returned `Response<BlobContainerClientGetPropertiesResult, NoFormat>` implements the
+/// [`BlobContainerClientGetPropertiesResultHeaders`] trait, which provides access to container properties.
+///
+/// # Usage
+///
+/// ```no_run
+/// use azure_storage_blob::{BlobContainerClient, BlobContainerClientGetPropertiesResultHeaders};
+/// # use azure_core::Result;
+/// # async fn example(container_client: BlobContainerClient) -> Result<()> {
+/// 
+/// let response = container_client.get_properties(None).await?;
+/// 
+/// // Access container properties
+/// let last_modified = response.last_modified()?;
+/// let etag = response.etag()?;
+/// let lease_state = response.lease_state()?;
+/// let lease_status = response.lease_status()?;
+/// let metadata = response.metadata()?;
+/// 
+/// println!("Container last modified: {:?}", last_modified);
+/// 
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Available Properties
+///
+/// The [`BlobContainerClientGetPropertiesResultHeaders`] trait provides access to:
+/// - Container metadata: `last_modified()`, `etag()`, `metadata()`
+/// - Lease properties: `lease_state()`, `lease_status()`, `duration()`
+/// - Access control: `public_access()` - Public access level for the container
+/// - And other container-specific properties
+///
+/// [`BlobContainerClientGetPropertiesResultHeaders`]: crate::generated::models::BlobContainerClientGetPropertiesResultHeaders
 #[derive(SafeDebug)]
 pub struct BlobContainerClientGetPropertiesResult;
 
@@ -618,6 +759,42 @@ pub struct BlockBlobClientStageBlockFromUrlResult;
 pub struct BlockBlobClientStageBlockResult;
 
 /// Contains results for `BlockBlobClient::upload()`
+///
+/// This struct represents the result of uploading content to a block blob. While this struct itself is empty,
+/// the returned `Response<BlockBlobClientUploadResult, NoFormat>` implements the
+/// [`BlockBlobClientUploadResultHeaders`] trait, which provides access to properties of the uploaded blob.
+///
+/// # Usage
+///
+/// ```no_run
+/// use azure_storage_blob::{BlockBlobClient, BlockBlobClientUploadResultHeaders};
+/// use azure_core::RequestContent;
+/// # use azure_core::Result;
+/// # async fn example(blob_client: BlockBlobClient) -> Result<()> {
+/// 
+/// let content = RequestContent::from("Hello, world!");
+/// let response = blob_client.upload(content, None).await?;
+/// 
+/// // Access upload result properties
+/// let etag = response.etag()?;
+/// let last_modified = response.last_modified()?;
+/// let content_md5 = response.content_md5()?;
+/// let is_server_encrypted = response.is_server_encrypted()?;
+/// 
+/// println!("Upload successful! ETag: {:?}", etag);
+/// 
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Available Properties
+///
+/// The [`BlockBlobClientUploadResultHeaders`] trait provides access to:
+/// - Upload verification: `etag()`, `last_modified()`, `content_md5()`
+/// - Server properties: `is_server_encrypted()`, `encryption_key_sha256()`
+/// - Request tracking: `request_id()`, `version()`
+///
+/// [`BlockBlobClientUploadResultHeaders`]: crate::generated::models::BlockBlobClientUploadResultHeaders
 #[derive(SafeDebug)]
 pub struct BlockBlobClientUploadResult;
 

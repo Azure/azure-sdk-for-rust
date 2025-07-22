@@ -137,6 +137,38 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
+    ///
+    /// # Returns
+    ///
+    /// A `Response<BlobClientGetPropertiesResult, NoFormat>` that implements
+    /// [`BlobClientGetPropertiesResultHeaders`] trait. Use the trait methods to access blob properties.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_storage_blob::{BlobClient, BlobClientGetPropertiesResultHeaders};
+    /// # use azure_core::Result;
+    /// # async fn example(blob_client: BlobClient) -> Result<()> {
+    /// 
+    /// let response = blob_client.get_properties(None).await?;
+    /// 
+    /// // Access blob properties from the response
+    /// println!("Content Length: {:?}", response.content_length()?);
+    /// println!("Last Modified: {:?}", response.last_modified()?);
+    /// println!("ETag: {:?}", response.etag()?);
+    /// println!("Blob Type: {:?}", response.blob_type()?);
+    /// 
+    /// // Access metadata
+    /// let metadata = response.metadata()?;
+    /// for (key, value) in metadata {
+    ///     println!("Metadata {}: {}", key, value);
+    /// }
+    /// 
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// [`BlobClientGetPropertiesResultHeaders`]: crate::generated::models::BlobClientGetPropertiesResultHeaders
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,

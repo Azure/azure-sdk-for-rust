@@ -864,6 +864,79 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
 }
 
 /// Provides access to typed response headers for `BlobClient::get_properties()`
+///
+/// This trait is implemented on `Response<BlobClientGetPropertiesResult, NoFormat>` and provides
+/// convenient access to all blob properties returned in the response headers.
+///
+/// # Usage
+///
+/// ```no_run
+/// use azure_storage_blob::{BlobClient, BlobClientGetPropertiesResultHeaders};
+/// # use azure_core::Result;
+/// # async fn example(blob_client: BlobClient) -> Result<()> {
+/// 
+/// let response = blob_client.get_properties(None).await?;
+/// 
+/// // Access blob content properties
+/// let content_length = response.content_length()?;
+/// let content_type = response.content_type()?;  // Available via content headers
+/// let last_modified = response.last_modified()?;
+/// let etag = response.etag()?;
+/// 
+/// // Access blob-specific properties
+/// let blob_type = response.blob_type()?;
+/// let access_tier = response.access_tier()?;
+/// let lease_state = response.lease_state()?;
+/// 
+/// // Access custom metadata
+/// let metadata = response.metadata()?;
+/// 
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Property Categories
+///
+/// This trait provides access to several categories of blob properties:
+///
+/// ## Content Properties
+/// - `content_length()` - Size of the blob in bytes
+/// - `content_disposition()`, `content_encoding()`, `content_language()` - Content headers
+/// - `content_md5()` - MD5 hash of the blob content
+/// - `cache_control()` - Cache control header
+///
+/// ## Blob Metadata
+/// - `last_modified()` - When the blob was last modified
+/// - `etag()` - Entity tag for optimistic concurrency
+/// - `creation_time()` - When the blob was created
+/// - `metadata()` - Custom user-defined metadata key-value pairs
+///
+/// ## Blob Type and Storage
+/// - `blob_type()` - Type of blob (Block, Page, or Append)
+/// - `access_tier()` - Storage access tier (Hot, Cool, Archive)
+/// - `access_tier_change_time()` - When the tier was last changed
+/// - `access_tier_inferred()` - Whether the tier was inferred
+/// - `archive_status()` - Rehydration status for archived blobs
+///
+/// ## Lease Properties
+/// - `lease_state()` - Current lease state
+/// - `lease_status()` - Lease status
+/// - `duration()` - Lease duration
+///
+/// ## Copy Properties
+/// - `copy_status()` - Status of any copy operation
+/// - `copy_source()` - Source of the copy operation
+/// - `copy_progress()` - Progress of ongoing copy
+/// - `copy_completion_time()` - When copy completed
+///
+/// ## Security and Compliance
+/// - `is_server_encrypted()` - Whether the blob is encrypted at rest
+/// - `encryption_key_sha256()` - Customer-provided encryption key hash
+/// - `encryption_scope()` - Encryption scope name
+/// - `legal_hold()` - Legal hold status
+/// - `immutability_policy_expires_on()` - Immutability policy expiration
+///
+/// See individual method documentation for detailed descriptions of each property.
 pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn cache_control(&self) -> Result<Option<String>>;
     fn content_disposition(&self) -> Result<Option<String>>;
