@@ -83,7 +83,7 @@ impl Policy for AuthorizationPolicy {
         let auth = generate_authorization(
             &self.credential,
             request.url(),
-            SignatureTarget::new(*request.method(), resource_link, &date_string),
+            SignatureTarget::new(request.method(), resource_link, &date_string),
         )
         .await?;
 

@@ -1,0 +1,48 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+mod extensions;
+
+pub use crate::generated::models::{
+    AccessTier, AppendBlobClientAppendBlockFromUrlOptions,
+    AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockFromUrlResultHeaders,
+    AppendBlobClientAppendBlockOptions, AppendBlobClientAppendBlockResult,
+    AppendBlobClientAppendBlockResultHeaders, AppendBlobClientCreateOptions,
+    AppendBlobClientCreateResult, AppendBlobClientCreateResultHeaders, AppendBlobClientSealOptions,
+    AppendBlobClientSealResult, AppendBlobClientSealResultHeaders, ArchiveStatus,
+    BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResult,
+    BlobClientAcquireLeaseResultHeaders, BlobClientBreakLeaseOptions, BlobClientBreakLeaseResult,
+    BlobClientBreakLeaseResultHeaders, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
+    BlobClientChangeLeaseResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
+    BlobClientDownloadResult, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
+    BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
+    BlobClientReleaseLeaseOptions, BlobClientReleaseLeaseResult,
+    BlobClientReleaseLeaseResultHeaders, BlobClientRenewLeaseOptions, BlobClientRenewLeaseResult,
+    BlobClientRenewLeaseResultHeaders, BlobClientSetMetadataOptions,
+    BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+    BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
+    BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientBreakLeaseOptions,
+    BlobContainerClientBreakLeaseResult, BlobContainerClientBreakLeaseResultHeaders,
+    BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
+    BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientCreateOptions,
+    BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
+    BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders,
+    BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+    BlobContainerClientReleaseLeaseResult, BlobContainerClientReleaseLeaseResultHeaders,
+    BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
+    BlobContainerClientSetMetadataOptions, BlobImmutabilityPolicyMode,
+    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions, BlobType,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
+    BlockBlobClientCommitBlockListResultHeaders, BlockBlobClientGetBlockListOptions,
+    BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResult,
+    BlockBlobClientStageBlockResultHeaders, BlockBlobClientUploadOptions,
+    BlockBlobClientUploadResult, BlockBlobClientUploadResultHeaders, BlockList, BlockListType,
+    BlockLookupList, CopyStatus, LeaseState, LeaseStatus, ListBlobsFlatSegmentResponse,
+    ListContainersSegmentResponse, PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
+    PageBlobClientClearPagesResultHeaders, PageBlobClientCreateOptions, PageBlobClientCreateResult,
+    PageBlobClientCreateResultHeaders, PageBlobClientResizeOptions, PageBlobClientResizeResult,
+    PageBlobClientResizeResultHeaders, PageBlobClientUploadPagesOptions,
+    PageBlobClientUploadPagesResult, PageBlobClientUploadPagesResultHeaders, PublicAccessType,
+    RehydratePriority, StorageServiceProperties,
+};
+pub use extensions::*;

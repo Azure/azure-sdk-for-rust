@@ -6,6 +6,7 @@ members = [
   "sdk/typespec/typespec_macros",
   "sdk/core/azure_core",
   "sdk/core/azure_core_amqp",
+  "sdk/core/azure_core_macros",
   "sdk/core/azure_core_test",
   "sdk/core/azure_core_test_macros",
   "sdk/core/azure_core_opentelemetry",
@@ -34,23 +35,28 @@ rust-version = "1.85"
 [workspace.dependencies.typespec]
 default-features = false
 path = "sdk/typespec"
-version = "0.6.0"
+version = "0.7.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/typespec/typespec_client_core"
-version = "0.5.0"
+version = "0.6.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.5.0"
+version = "0.6.0"
 path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]
-version = "0.26.0"
+version = "0.27.0"
 path = "sdk/core/azure_core"
 
+[workspace.dependencies.azure_core_macros]
+version = "0.1.0"
+path = "sdk/core/azure_core_macros"
+
+
 [workspace.dependencies.azure_core_amqp]
-version = "0.5.0"
+version = "0.6.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_core_test]

@@ -1,6 +1,6 @@
 # Release History
 
-## 0.3.0 (Unreleased)
+## 0.4.0 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,14 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.3.0 (2025-07-15)
+
+### Features Added
+
+* Added lease support (`acquire_lease`, `break_lease`, `change_lease`, `release_lease`, and `renew_lease`) to `BlobContainerClient` and `BlobClient`.
+* Added two new blob client types, `AppendBlobClient` and `PageBlobClient`.
+* Added support for `list_containers` to `BlobServiceClient`.
 
 ## 0.2.0 (2025-06-10)
 
@@ -20,7 +28,7 @@
   * `BlobContainerClient::blob_client()`
   * `BlobClient::block_blob_client()`
 
-* Added support for `list_blobs`, `set_metadata` to `ContainerClient`.
+* Added support for `list_blobs`, `set_metadata` to `BlobContainerClient`.
 * Added support for `set_metadata`, `set_properties`, and `set_tier` to `BlobClient`.
 
 ### Breaking Changes

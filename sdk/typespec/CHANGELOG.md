@@ -1,16 +1,20 @@
 # Release History
 
-## 0.6.0 (Unreleased)
+## 0.7.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
-- Minimum supported Rust version (MSRV) is now 1.85.
-
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.6.0 (2025-07-10)
+
+### Breaking Changes
+
+- Minimum supported Rust version (MSRV) is now 1.85.
 
 ## 0.5.0 (2025-06-06)
 

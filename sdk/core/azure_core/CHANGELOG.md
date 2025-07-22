@@ -1,24 +1,40 @@
 # Release History
 
-## 0.26.0 (Unreleased)
+## 0.27.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.26.0 (2025-07-10)
 
 ### Features Added
 
 - Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace the asynchronous runtime used by the Azure SDK.
 - Added `PageIterator::continuation_token()` and `PageIterator::with_continuation_token()` to support reconstructing a `PageIterator` in another process or on another machine to continue paging.
+- Added `Poller<T>` for long-running operations (LROs).
+- Added `Request::set_method()` to allow changing the HTTP method of a request.
+- Added `StatusMonitor` for long-running operations.
 
 ### Breaking Changes
 
+- Added `http::PollerOptions` parameter to `http::poller::get_retry_after`.
+- Implemented `FromStr` where `FromStr::Err = Infallible` for `PollerStatus` instead of `From<&str>`.
 - Minimum supported Rust version (MSRV) is now 1.85.
 - `azure_core::http::Pipeline::new` now takes an `azure_core::http::ClientOptions` which is defined in `azure_core`, but convertible to `typespec_client_core::http::ClientOptions`.
 - Moved `process::Executor` to `azure_identity`.
 - Removed `Pipeline::replace_policy`.
+- Removed unused `location` and `body` modules from `http::poller`.
 - Renamed `azure_core::date` to `azure_core::time` and added `azure_core::time::Duration` as the standard "duration" type for the SDK.
+- Renamed `http::poller::body_content` to `http::poller::body`.
 - Renamed `PagerResult::More { next }` to `continuation`.
+- Renamed `PollerStatus::Other` to `PollerStatus::UnknownValue` following [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html#rust-enum-extensible).
 - Renamed `TelemetryOptions` to `UserAgentOptions`.
 - Renamed `TelemetryPolicy` to `UserAgentPolicy`.
-
-### Bugs Fixed
 
 ### Other Changes
 

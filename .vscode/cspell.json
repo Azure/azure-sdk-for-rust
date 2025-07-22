@@ -5,6 +5,7 @@
   "ignorePaths": [
     "**/test-resources.bicep",
     "**/test-resources.json",
+    "**/test-resources-post.ps1",
     "**/assets.json",
     ".config",
     ".devcontainer/devcontainer.json",
@@ -72,6 +73,7 @@
     "seekable",
     "servicebus",
     "stylesheet",
+    "subclient",
     "telemetered",
     "typespec",
     "undelete",

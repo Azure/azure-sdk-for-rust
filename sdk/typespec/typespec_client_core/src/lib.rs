@@ -18,6 +18,7 @@ pub mod json;
 pub mod sleep;
 pub mod stream;
 pub mod time;
+#[cfg(feature = "http")]
 pub mod tracing;
 #[cfg(feature = "xml")]
 pub mod xml;

@@ -9,27 +9,8 @@
 
 pub mod clients;
 mod generated;
+mod parsers;
 mod pipeline;
-
 pub use clients::*;
-
-pub mod models {
-    pub use crate::generated::models::{
-        AccessTierOptional, ArchiveStatus, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientDownloadResult, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
-        BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-        BlobContainerClientGetPropertiesResultHeaders,
-        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientSetMetadataOptions,
-        BlobImmutabilityPolicyMode, BlobServiceClientGetPropertiesOptions,
-        BlobServiceClientListContainersSegmentOptions, BlobType,
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadOptions, BlockBlobClientUploadResult,
-        BlockList, BlockListType, BlockLookupList, CopyStatus, LeaseState, LeaseStatus,
-        ListBlobsFlatSegmentResponse, ListContainersSegmentResponse, PublicAccessType,
-        RehydratePriority, StorageServiceProperties,
-    };
-}
+pub use parsers::*;
+pub mod models;

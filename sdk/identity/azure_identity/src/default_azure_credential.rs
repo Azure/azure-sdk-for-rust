@@ -187,8 +187,8 @@ impl TokenCredential for DefaultAzureCredentialKind {
 ///
 /// The following credential types if enabled will be tried, in order:
 ///
-/// * `ManagedIdentityCredential`
 /// * `AzureCliCredential`
+/// * `AzureDeveloperCliCredential`
 ///
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
 #[derive(Debug)]
