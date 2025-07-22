@@ -21,7 +21,7 @@ edition.workspace = true
 async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", version = "0.26.0", default-features = false }
+azure_core = { path = "../../core/azure_core", version = "0.27.0", default-features = false }
 azure_core_amqp.workspace = true
 futures.workspace = true
 rand.workspace = true

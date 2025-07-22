@@ -46,11 +46,11 @@ version = "0.6.0"
 path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]
-version = "0.26.0"
+version = "0.27.0"
 path = "sdk/core/azure_core"
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.5.0"
+version = "0.6.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_core_test]
