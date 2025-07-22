@@ -7,7 +7,7 @@ use azure_core::{
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AccessTierOptional, BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
+    AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
     BlobClientDownloadOptions, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
     BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
     BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
@@ -266,15 +266,15 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let original_response = blob_client.get_properties(None).await?;
     let og_access_tier = original_response.access_tier()?;
-    assert_eq!(AccessTierOptional::Hot.to_string(), og_access_tier.unwrap());
+    assert_eq!(AccessTier::Hot.to_string(), og_access_tier.unwrap());
 
     // Set Standard Blob Tier (Cold)
-    blob_client.set_tier(AccessTierOptional::Cold, None).await?;
+    blob_client.set_tier(AccessTier::Cold, None).await?;
     let response = blob_client.get_properties(None).await?;
 
     // Assert
     let access_tier = response.access_tier()?;
-    assert_eq!(AccessTierOptional::Cold.to_string(), access_tier.unwrap());
+    assert_eq!(AccessTier::Cold.to_string(), access_tier.unwrap());
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -371,7 +371,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         ..Default::default()
     };
     blob_client
-        .set_tier(AccessTierOptional::Cold, Some(set_tier_options))
+        .set_tier(AccessTier::Cold, Some(set_tier_options))
         .await?;
 
     // Assert
@@ -390,7 +390,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
     assert_eq!("spanish".to_string(), content_language.unwrap());
     assert_eq!("inline".to_string(), content_disposition.unwrap());
     assert_eq!(update_metadata, response_metadata);
-    assert_eq!(AccessTierOptional::Cold.to_string(), access_tier.unwrap());
+    assert_eq!(AccessTier::Cold.to_string(), access_tier.unwrap());
 
     // Overwrite Upload
     let data = b"overruled!";
