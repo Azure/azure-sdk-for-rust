@@ -1,7 +1,7 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell: ignore azuresdkforcpp invalidtopleveldomain
+// cspell: ignore azuresdkforcpp invalidtopleveldomain azurewebsites
 //! This file contains an Azure SDK for Rust fake service client API.
 //!
 use azure_core::{
