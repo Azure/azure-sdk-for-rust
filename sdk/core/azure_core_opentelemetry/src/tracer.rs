@@ -80,7 +80,10 @@ impl Tracer for OpenTelemetryTracer {
         let context = parent
             .as_any()
             .downcast_ref::<OpenTelemetrySpan>()
-            .expect("Could not downcast parent span to OpenTelemetrySpan")
+            .expect(&format!(
+                "Could not downcast parent span to OpenTelemetrySpan. Actual type: {}",
+                std::any::type_name::<dyn azure_core::tracing::Span>()
+            ))
             .context()
             .clone();
         let span = self.inner.build_with_context(span_builder, &context);
