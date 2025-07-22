@@ -102,8 +102,8 @@ impl Span for OpenTelemetrySpan {
                     HeaderValue::from(value.to_str().unwrap().to_owned()),
                 );
             } else {
-                // If the key is invalid, we skip it
-                tracing::warn!("Encountered an invalid header key (key is None). Skipping this header.");
+                // If the key is a duplicate of the previous header, we ignore it
+                tracing::warn!("Duplicate header key detected. Skipping this header.");
             }
         }
     }
