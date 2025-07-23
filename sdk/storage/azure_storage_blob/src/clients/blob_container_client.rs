@@ -68,12 +68,8 @@ impl BlobContainerClient {
             .per_try_policies
             .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
-        let client = GeneratedBlobContainerClient::new(
-            endpoint,
-            credential.clone(),
-            container_name.clone(),
-            Some(options),
-        )?;
+        let client =
+            GeneratedBlobContainerClient::new(endpoint, credential, container_name, Some(options))?;
 
         Ok(Self {
             endpoint: endpoint.parse()?,

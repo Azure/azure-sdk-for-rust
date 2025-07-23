@@ -76,9 +76,9 @@ impl BlobClient {
 
         let client = GeneratedBlobClient::new(
             endpoint,
-            credential.clone(),
-            container_name.clone(),
-            blob_name.clone(),
+            credential,
+            container_name,
+            blob_name,
             Some(options),
         )?;
         Ok(Self {

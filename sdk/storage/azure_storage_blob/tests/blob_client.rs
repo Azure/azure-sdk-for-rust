@@ -442,7 +442,6 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_body().await?;
-    println!("response:{:?}", response_tags.clone());
     assert_eq!(blob_tags, response_tags);
 
     // Set Tags with No Tags (Clear Tags)
