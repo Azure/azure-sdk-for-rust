@@ -5,14 +5,18 @@ use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
-        BlobClientRenewLeaseResult, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult,
+        BlobClientDeleteImmutabilityPolicyResult, BlobClientDownloadResult,
+        BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
+        BlobClientSetImmutabilityPolicyResult, BlobClientSetLegalHoldResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
-        BlobClientChangeLeaseOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetPropertiesOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
+        BlobClientChangeLeaseOptions, BlobClientDeleteImmutabilityPolicyOptions,
+        BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
+        BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
+        BlobClientSetImmutabilityPolicyOptions, BlobClientSetLegalHoldOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList,
@@ -312,5 +316,43 @@ impl BlobClient {
         options: Option<BlobClientRenewLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>> {
         self.client.renew_lease(lease_id, options).await
+    }
+
+    /// Sets a legal hold on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `legal_hold` - Specifies the legal hold status to set on the blob.
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_legal_hold(
+        &self,
+        legal_hold: bool,
+        options: Option<BlobClientSetLegalHoldOptions<'_>>,
+    ) -> Result<Response<BlobClientSetLegalHoldResult, NoFormat>> {
+        self.client.set_legal_hold(legal_hold, options).await
+    }
+
+    /// Sets the immutability policy on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_immutability_policy(
+        &self,
+        options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
+    ) -> Result<Response<BlobClientSetImmutabilityPolicyResult, NoFormat>> {
+        self.client.set_immutability_policy(options).await
+    }
+
+    /// Deletes the immutability policy on the blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn delete_immutability_policy(
+        &self,
+        options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
+    ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>> {
+        self.client.delete_immutability_policy(options).await
     }
 }

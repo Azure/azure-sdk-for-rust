@@ -1,18 +1,22 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::StatusCode;
+use azure_core::{
+    http::{RequestContent, StatusCode},
+    time::{Duration, OffsetDateTime},
+};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientChangeLeaseResultHeaders,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
-    BlobContainerClientSetMetadataOptions, BlobType, LeaseState,
+    AccessPolicy, BlobContainerClientAcquireLeaseResultHeaders,
+    BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
+    BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientSetMetadataOptions, BlobType,
+    LeaseState, SignedIdentifier,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_service_client, get_container_client, get_container_name,
 };
 use futures::{StreamExt, TryStreamExt};
-use std::{collections::HashMap, error::Error, time::Duration};
+use std::{collections::HashMap, error::Error};
 use tokio::time;
 
 #[recorded::test]
@@ -244,7 +248,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     assert_eq!(proposed_lease_id.clone().to_string(), lease_id);
 
     // Sleep until lease expires
-    time::sleep(Duration::from_secs(15)).await;
+    time::sleep(std::time::Duration::from_secs(15)).await;
 
     // Renew Lease
     container_client
@@ -272,6 +276,30 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
         .release_lease(lease_id.unwrap(), None)
         .await?;
 
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    container_client.create_container(None).await?;
+
+    // Set Access Policy w/ Policy Defined
+    let access_policy = AccessPolicy {
+        expiry: Some(OffsetDateTime::now_utc() + Duration::minutes(5)),
+        permission: Some("rw".to_string()),
+        start: Some(OffsetDateTime::now_utc()),
+    };
+    let signed_identifier = SignedIdentifier {
+        access_policy: Some(access_policy),
+        id: None,
+    };
+
+    //TODO: Need gen code support- how to provide the SignedIdentifier in proper format
+    // let request_content = RequestContent::try_from(vec![signed_identifier])?;
     container_client.delete_container(None).await?;
     Ok(())
 }

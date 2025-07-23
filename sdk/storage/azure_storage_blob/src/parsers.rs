@@ -3,6 +3,8 @@
 
 use std::io::{Error, ErrorKind};
 
+use azure_core::time::{to_rfc3339, OffsetDateTime};
+
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
 ///  returns the HTTP range in String format.
 ///
@@ -34,4 +36,17 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     let end_range = offset + length - 1;
     let content_range = format!("bytes={}-{}", offset, end_range);
     Ok(content_range)
+}
+
+// Truncates the milliseconds out
+pub fn format_time_string(time: &OffsetDateTime) -> String {
+    let time_string = to_rfc3339(time);
+
+    match time_string.find('.') {
+        Some(dot_index) => {
+            let base = &time_string[..dot_index];
+            format!("{}Z", base)
+        }
+        None => time_string.to_string(),
+    }
 }

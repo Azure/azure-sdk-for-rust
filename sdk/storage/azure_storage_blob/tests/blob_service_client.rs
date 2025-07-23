@@ -1,9 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::http::RequestContent;
+use azure_core::time::{Duration, OffsetDateTime};
 use azure_core_test::{recorded, TestContext};
+use azure_storage_blob::format_time_string;
 use azure_storage_blob::models::{
-    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
+    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions, KeyInfo,
 };
 use azure_storage_blob_test::{get_blob_service_client, get_container_name};
 use futures::StreamExt;
@@ -119,6 +122,49 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     for container_client in container_clients {
         container_client.delete_container(None).await?;
     }
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    //TODO: Need playback only, need secondary-enabled GRS account to record against
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+
+    let response = service_client.get_service_stats(None).await?;
+
+    // Assert
+    let storage_service_stats = response.into_body().await?;
+    assert!(storage_service_stats.geo_replication.is_some());
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_user_delegation_key(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+
+    let start = Some(format_time_string(&OffsetDateTime::now_utc()));
+    let expiry = Some(format_time_string(
+        &(OffsetDateTime::now_utc() + Duration::minutes(5)),
+    ));
+    // Act
+    let key_info = KeyInfo {
+        start: start.clone(),
+        expiry: expiry.clone(),
+    };
+
+    let response = service_client
+        .get_user_delegation_key(RequestContent::try_from(key_info)?, None)
+        .await?;
+
+    // Assert
+    let user_delegation_key = response.into_body().await?;
+    assert_eq!(start, user_delegation_key.signed_start);
+    assert_eq!(expiry, user_delegation_key.signed_expiry);
 
     Ok(())
 }

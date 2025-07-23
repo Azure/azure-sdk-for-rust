@@ -7,14 +7,16 @@ use crate::{
         BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
         BlobContainerClientChangeLeaseResult, BlobContainerClientGetPropertiesResult,
         BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
+        BlobContainerClientSetAccessPolicyResult,
     },
     models::{
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
-        BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
-        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
-        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetMetadataOptions,
-        ListBlobsFlatSegmentResponse,
+        BlobContainerClientDeleteOptions, BlobContainerClientGetAccessPolicyOptions,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
+        BlobContainerClientReleaseLeaseOptions, BlobContainerClientRenewLeaseOptions,
+        BlobContainerClientSetAccessPolicyOptions, BlobContainerClientSetMetadataOptions,
+        ListBlobsFlatSegmentResponse, SignedIdentifier,
     },
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -23,7 +25,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, PageIterator, Pager, Response, Url, XmlFormat,
+        NoFormat, PageIterator, Pager, RequestContent, Response, Url, XmlFormat,
     },
     Result,
 };
@@ -241,5 +243,33 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientRenewLeaseOptions<'_>>,
     ) -> Result<Response<BlobContainerClientRenewLeaseResult, NoFormat>> {
         self.client.renew_lease(lease_id, options).await
+    }
+
+    /// Sets the permissions for the specified container. The permissions indicate whether blobs in a
+    /// container may be accessed publicly.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_acl` - The access control list for the container.
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_access_policy(
+        &self,
+        container_acl: RequestContent<Vec<SignedIdentifier>>,
+        options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>> {
+        self.client.set_access_policy(container_acl, options).await
+    }
+
+    /// Gets the permissions for the specified container. The permissions indicate whether container data
+    /// may be accessed publicly.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_access_policy(
+        &self,
+        options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<Vec<SignedIdentifier>, XmlFormat>> {
+        self.client.get_access_policy(options).await
     }
 }
