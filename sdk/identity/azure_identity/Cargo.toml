@@ -41,6 +41,7 @@ default = ["reqwest"]
 reqwest = ["azure_core/reqwest"]
 reqwest_rustls_ = ["reqwest_rustls_native_roots"]
 reqwest_rustls_native_roots = ["azure_core/reqwest_rustls_native_roots"]
+reqwest_rustls_webpki_roots = ["azure_core/reqwest_rustls_webpki_roots"]
 tokio = ["dep:tokio", "azure_core/tokio", "tokio/process"]
 client_certificate = ["openssl"]
 
