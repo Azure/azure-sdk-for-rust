@@ -41,7 +41,7 @@ mod standard_runtime;
 #[cfg(feature = "tokio")]
 mod tokio_runtime;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(feature = "wasm-bindgen")]
 mod web_runtime;
 
 #[cfg(test)]
