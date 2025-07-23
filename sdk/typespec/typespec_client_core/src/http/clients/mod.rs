@@ -3,14 +3,30 @@
 
 //! Built-in HTTP clients.
 
-#[cfg(not(any(feature = "reqwest", feature = "reqwest_rustls")))]
+#[cfg(not(any(
+    feature = "reqwest",
+    feature = "reqwest_rustls_native_roots",
+    feature = "reqwest_rustls_webpki_roots"
+)))]
 mod noop;
-#[cfg(any(feature = "reqwest", feature = "reqwest_rustls"))]
+#[cfg(any(
+    feature = "reqwest",
+    feature = "reqwest_rustls_native_roots",
+    feature = "reqwest_rustls_webpki_roots"
+))]
 mod reqwest;
 
-#[cfg(not(any(feature = "reqwest", feature = "reqwest_rustls")))]
+#[cfg(not(any(
+    feature = "reqwest",
+    feature = "reqwest_rustls_native_roots",
+    feature = "reqwest_rustls_webpki_roots"
+)))]
 use self::noop::new_noop_client;
-#[cfg(any(feature = "reqwest", feature = "reqwest_rustls"))]
+#[cfg(any(
+    feature = "reqwest",
+    feature = "reqwest_rustls_native_roots",
+    feature = "reqwest_rustls_webpki_roots"
+))]
 use self::reqwest::new_reqwest_client;
 
 use crate::http::{RawResponse, Request};
@@ -20,11 +36,19 @@ use typespec::error::Result;
 
 /// Create a new [`HttpClient`].
 pub fn new_http_client() -> Arc<dyn HttpClient> {
-    #[cfg(any(feature = "reqwest", feature = "reqwest_rustls"))]
+    #[cfg(any(
+        feature = "reqwest",
+        feature = "reqwest_rustls_native_roots",
+        feature = "reqwest_rustls_webpki_roots"
+    ))]
     {
         new_reqwest_client()
     }
-    #[cfg(not(any(feature = "reqwest", feature = "reqwest_rustls")))]
+    #[cfg(not(any(
+        feature = "reqwest",
+        feature = "reqwest_rustls_native_roots",
+        feature = "reqwest_rustls_webpki_roots"
+    )))]
     {
         new_noop_client()
     }

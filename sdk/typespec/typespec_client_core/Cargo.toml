@@ -53,9 +53,11 @@ json = ["typespec/json"]
 reqwest = ["reqwest/native-tls"]
 reqwest_deflate = ["reqwest/deflate"]
 reqwest_gzip = ["reqwest/gzip"]
-reqwest_rustls = [
+reqwest_rustls = ["reqwest_rustls_native_roots"]
+reqwest_rustls_native_roots = [
   "reqwest/rustls-tls-native-roots-no-provider",
 ] # Remove dependency on banned `ring` crate; requires manually configuring crypto provider.
+reqwest_rustls_webpki_roots = ["reqwest/rustls-tls-webpki-roots-no-provider"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/fs", "tokio/sync", "tokio/time", "tokio/io-util"]
 xml = ["dep:quick-xml"]

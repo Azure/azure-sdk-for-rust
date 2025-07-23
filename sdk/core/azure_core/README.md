@@ -50,7 +50,8 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
-- `reqwest_rustls`: enables `reqwest`'s `rustls-tls-native-roots-no-provider` feature,
+- `reqwest_rustls_native_roots`: enables `reqwest`'s `rustls-tls-native-roots-no-provider` feature,
+- `reqwest_rustls_webpki_roots`: enables `reqwest`'s `rustls-tls-webpki-roots-no-provider` feature,
 - `tokio`: enables and sets `tokio` as the default async runtime.
 - `xml`: enables XML support.
 
