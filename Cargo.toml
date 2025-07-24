@@ -49,6 +49,7 @@ path = "sdk/typespec/typespec_macros"
 [workspace.dependencies.azure_core]
 version = "0.27.0"
 path = "sdk/core/azure_core"
+default-features = false
 
 [workspace.dependencies.azure_core_macros]
 version = "0.1.0"

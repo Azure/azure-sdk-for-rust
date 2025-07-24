@@ -23,7 +23,9 @@ serde.workspace = true
 time.workspace = true
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
+typespec_client_core = { workspace = true, default-features = false, features = [
+  "derive",
+] }
 url.workspace = true
 
 [dev-dependencies]
@@ -39,7 +41,7 @@ tracing-subscriber.workspace = true
 [features]
 default = ["reqwest"]
 reqwest = ["azure_core/reqwest"]
-reqwest_rustls_ = ["reqwest_rustls_native_roots"]
+reqwest_rustls = ["reqwest_rustls_native_roots"]
 reqwest_rustls_native_roots = ["azure_core/reqwest_rustls_native_roots"]
 reqwest_rustls_webpki_roots = ["azure_core/reqwest_rustls_webpki_roots"]
 tokio = ["dep:tokio", "azure_core/tokio", "tokio/process"]

@@ -28,7 +28,7 @@ sha2 = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
 typespec = { workspace = true, features = ["http", "json"] }
-typespec_client_core = { workspace = true, features = [
+typespec_client_core = { workspace = true, default-features = false, features = [
   "derive",
   "http",
   "json",
@@ -58,12 +58,16 @@ azurite_workaround = []
 debug = ["typespec_client_core/debug"]
 hmac_openssl = ["dep:openssl"]
 hmac_rust = ["dep:sha2", "dep:hmac"]
-reqwest = ["typespec_client_core/reqwest"]
+reqwest = ["typespec_client_core/reqwest_native_tls"]
 reqwest_deflate = ["typespec_client_core/reqwest_deflate"]
 reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 reqwest_rustls = ["reqwest_rustls_native_roots"]
-reqwest_rustls_native_roots = ["typespec_client_core/reqwest_rustls_native_roots"]
-reqwest_rustls_webpki_roots = ["typespec_client_core/reqwest_rustls_webpki_roots"]
+reqwest_rustls_native_roots = [
+  "typespec_client_core/reqwest_rustls_native_roots",
+]
+reqwest_rustls_webpki_roots = [
+  "typespec_client_core/reqwest_rustls_webpki_roots",
+]
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
 xml = ["typespec_client_core/xml"]

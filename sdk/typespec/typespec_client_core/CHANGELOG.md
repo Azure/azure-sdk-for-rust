@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Renamed the `reqwest` feature into `reqwest_native_tls` so that cargo would not auto-enable `reqwest/native-tls` for other TLS provider  (like e.g. `reqwest_rustls`).
+
 ### Bugs Fixed
 
 ### Other Changes
