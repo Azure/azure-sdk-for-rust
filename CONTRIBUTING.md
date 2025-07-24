@@ -47,7 +47,7 @@ Once changes are merged,
 
 ### Updating the generator
 
-If your modification involves consuming a new version of the [typespec-rust generator](https://github.com/Azure/typespec-rust), update the `eng\emitter-package.json` file to reference the updated version of the generator.
+If your modification involves consuming a new version of the [typespec-rust generator](https://github.com/Azure/typespec-rust), update the `eng/emitter-package.json` file to reference the updated version of the generator.
 
 After that, run:
 
