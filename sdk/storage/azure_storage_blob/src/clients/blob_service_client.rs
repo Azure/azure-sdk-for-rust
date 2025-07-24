@@ -4,8 +4,10 @@
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
     models::{
-        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-        ListContainersSegmentResponse, StorageServiceProperties,
+        BlobServiceClientGetPropertiesOptions, BlobServiceClientGetStatisticsOptions,
+        BlobServiceClientGetUserDelegationKeyOptions,
+        BlobServiceClientListContainersSegmentOptions, KeyInfo, ListContainersSegmentResponse,
+        StorageServiceProperties, StorageServiceStats, UserDelegationKey,
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,
@@ -14,7 +16,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        PageIterator, Response, Url, XmlFormat,
+        PageIterator, RequestContent, Response, Url, XmlFormat,
     },
     Result,
 };
@@ -103,5 +105,33 @@ impl BlobServiceClient {
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
         self.client.list_containers_segment(options)
+    }
+
+    /// Retrieves statistics related to replication for the Blob service. It is only available on the secondary location endpoint
+    /// when read-access geo-redundant replication is enabled for the Storage account.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_service_stats(
+        &self,
+        options: Option<BlobServiceClientGetStatisticsOptions<'_>>,
+    ) -> Result<Response<StorageServiceStats, XmlFormat>> {
+        // TODO: Propagate rename to .tsp
+        self.client.get_statistics(options).await
+    }
+
+    /// Retrieves a user delegation key for the Blob service. This is only a valid operation when using bearer token authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_info` - Key information such as when the key becomes valid and expires.
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_user_delegation_key(
+        &self,
+        key_info: RequestContent<KeyInfo>,
+        options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
+    ) -> Result<Response<UserDelegationKey, XmlFormat>> {
+        self.client.get_user_delegation_key(key_info, options).await
     }
 }

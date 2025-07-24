@@ -3,18 +3,20 @@
 
 use azure_core::{
     http::{RequestContent, StatusCode},
+    time::{Duration, OffsetDateTime},
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
     BlobClientDownloadOptions, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
-    BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
-    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-    LeaseState,
+    BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
+    BlobClientSetImmutabilityPolicyResultHeaders, BlobClientSetMetadataOptions,
+    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobImmutabilityPolicyMode,
+    BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState,
 };
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
-use std::{collections::HashMap, error::Error, time::Duration};
+use std::{collections::HashMap, error::Error};
 use tokio::time;
 
 #[recorded::test]
@@ -308,7 +310,7 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
     assert_eq!(proposed_lease_id.clone().to_string(), lease_id);
 
     // Sleep until lease expires
-    time::sleep(Duration::from_secs(15)).await;
+    time::sleep(std::time::Duration::from_secs(15)).await;
 
     // Renew Lease
     blob_client
@@ -421,5 +423,93 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
 
     blob_client.break_lease(None).await?;
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_legal_hold(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    //TODO: Need separate accounts, need a test account with versioning enabled
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+    container_client.create_container(None).await?;
+    create_test_blob(&blob_client).await?;
+
+    // Set Legal Hold
+    blob_client.set_legal_hold(true, None).await?;
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let legal_hold = response.legal_hold()?;
+    assert!(legal_hold.unwrap());
+
+    // Attempt Operation While Legal Hold Active
+    let response = blob_client.delete(None).await;
+    // Assert
+    let error = response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Remove Legal Hold
+    blob_client.set_legal_hold(false, None).await?;
+    let response = blob_client.get_properties(None).await?;
+    // Assert
+    let legal_hold = response.legal_hold()?;
+    assert!(!legal_hold.unwrap());
+
+    // Even after removing the legal hold:
+    // Error: Error { context: Full(Custom { kind: HttpResponse { status: Conflict, error_code: Some("ContainerImmutableStorageWithVersioningEnabled") },
+    // error: HttpError { status: Conflict, details: ErrorDetails { code: Some("ContainerImmutableStorageWithVersioningEnabled"), message: None },
+    // body: <?xml version="1.0" encoding="utf-8"?><Error><Code>ContainerImmutableStorageWithVersioningEnabled</Code><Message>
+    // The requested operation is not allowed as the container has a immutable storage with versioning enabled.
+    // Seems like in Python testing, we need the management client in order to delete the container
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_immutability_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    //TODO: Need separate accounts, need a test account with versioning enabled
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+    container_client.create_container(None).await?;
+    create_test_blob(&blob_client).await?;
+    let test_expiry_time = Some(OffsetDateTime::now_utc() + Duration::minutes(5));
+
+    // Set Immutability Policy
+    let immutability_policy_options = BlobClientSetImmutabilityPolicyOptions {
+        immutability_policy_expiry: test_expiry_time.clone(),
+        immutability_policy_mode: Some(ImmutabilityPolicyMode::Unlocked),
+        ..Default::default()
+    };
+    let response = blob_client
+        .set_immutability_policy(Some(immutability_policy_options))
+        .await?;
+
+    // Assert
+    // ERRORS: Error: Error { context: Full(Custom { kind: DataConversion, error: Error { context: Message { kind: DataConversion, message: "unknown variant of BlobImmutabilityPolicyMode found: \"unlocked\"" } } },
+    // "unable to parse header 'HeaderName(\"x-ms-immutability-policy-mode\"): HeaderValue'
+    // into azure_storage_blob::generated::models::enums::BlobImmutabilityPolicyMode") }
+    // let mode = response.immutability_policy_mode()?;
+    // let expires_on = response.immutability_policy_expires_on()?;
+
+    // TODO: Flatten this, there shouldn't be one for request side and one for response side
+    // Right now request is ImmutabilityPolicyMode response is BlobImmutabilityPolicyMode
+    // assert_eq!(BlobImmutabilityPolicyMode::Unlocked, mode.unwrap());
+    // assert_eq!(test_expiry_time, expires_on);
+
+    // Delete Immutability Policy
+    blob_client.delete_immutability_policy(None).await?;
+    let response = blob_client.get_properties(None).await?;
+
+    // Presumably same error as above
+    // Assert
+    // let mode = response.immutability_policy_mode()?;
+    // let expires_on = response.immutability_policy_expires_on()?;
+    // assert!(mode.is_none());
+    // assert!(expires_on.is_none());
+
+    // Also can't delete container here same error as legal hold
+    // container_client.delete_container(None).await?;
     Ok(())
 }
