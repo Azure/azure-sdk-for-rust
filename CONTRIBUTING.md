@@ -45,6 +45,20 @@ Once changes are merged,
 2. Update `tsp-location.yml` with the commit in the `Azure/azure-sdk-for-rust` repository.
 3. Run `tsp-client update`.
 
+### Updating the generator
+
+If your modification involves consuming a new version of the [typespec-rust generator](https://github.com/Azure/typespec-rust), update the `eng\emitter-package.json` file to reference the updated version of the generator.
+
+After that, run:
+
+```sh
+tsp-client generate-lock-file
+```
+
+to update the lock file to reflect the new version.
+
+Once the lock file has been regenerated, run the `tsp-client update` tool as normal.
+
 ## Coding
 
 We welcome contributions! But before you start coding, please read our [Rust Guidelines] including [implementation details](https://azure.github.io/azure-sdk/rust_implementation.html) for contributors.
