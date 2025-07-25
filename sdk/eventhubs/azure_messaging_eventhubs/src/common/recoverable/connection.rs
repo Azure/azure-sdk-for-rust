@@ -8,13 +8,14 @@ use super::{
 use crate::{
     common::{
         authorizer::Authorizer,
+        retry::ErrorRecoveryAction,
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
     },
     models::AmqpValue,
     producer::DEFAULT_EVENTHUBS_APPLICATION,
     ErrorKind, EventHubsError, RetryOptions,
 };
-use async_lock::{Mutex as AsyncMutex, OnceCell};
+use async_lock::Mutex as AsyncMutex;
 use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Result, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
@@ -22,7 +23,10 @@ use azure_core_amqp::{
     AmqpManagement, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSender,
     AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource, AmqpSymbol,
 };
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Weak},
+};
 use tracing::{debug, span, trace, warn};
 
 /// The recoverable connection is responsible for managing the connection to the Event Hubs service.
@@ -59,8 +63,8 @@ pub(crate) struct RecoverableConnection {
     pub(super) url: Url,
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
-    connections: OnceCell<Arc<AmqpConnection>>,
-    mgmt_client: OnceCell<Arc<AmqpManagement>>,
+    connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
+    mgmt_client: AsyncMutex<Option<Arc<AmqpManagement>>>,
     session_instances: AsyncMutex<HashMap<Url, Arc<AmqpSession>>>,
     receiver_instances: AsyncMutex<HashMap<Url, Arc<AmqpReceiver>>>,
     sender_instances: AsyncMutex<HashMap<Url, Arc<AmqpSender>>>,
@@ -93,21 +97,21 @@ impl RecoverableConnection {
                 connection_name,
                 custom_endpoint,
                 retry_options,
-                connections: OnceCell::new(),
+                connections: AsyncMutex::new(None),
                 session_instances: AsyncMutex::new(HashMap::new()),
                 sender_instances: AsyncMutex::new(HashMap::new()),
                 receiver_instances: AsyncMutex::new(HashMap::new()),
-                mgmt_client: OnceCell::new(),
+                mgmt_client: AsyncMutex::new(None),
                 authorizer,
             }
         })
     }
 
+    /// Create a connection that is unconnected
     #[cfg(test)]
     pub(crate) async fn disable_connection(&self) -> Result<()> {
-        self.connections
-            .get_or_init(|| async { Arc::new(AmqpConnection::new()) })
-            .await;
+        let mut connection = self.connections.lock().await;
+        *connection = Some(Arc::new(AmqpConnection::new()));
         Ok(())
     }
 
@@ -141,11 +145,14 @@ impl RecoverableConnection {
     /// first operation is performed.
     ///
     pub(crate) async fn ensure_connection(&self) -> Result<Arc<AmqpConnection>> {
-        let connection = self
-            .connections
-            .get_or_try_init(|| self.create_connection())
-            .await?;
-        Ok(connection.clone())
+        let mut connection = self.connections.lock().await;
+        if connection.is_none() {
+            *connection = Some(self.create_connection().await?);
+        }
+        if let Some(connection) = connection.as_ref() {
+            return Ok(connection.clone());
+        }
+        Err(EventHubsError::from(ErrorKind::MissingConnection).into())
     }
 
     /// Creates a new management client for the Event Hubs service.
@@ -154,7 +161,7 @@ impl RecoverableConnection {
     pub(crate) async fn get_management_client(
         self: &Arc<Self>,
     ) -> Result<RecoverableManagementClient> {
-        Ok(RecoverableManagementClient::new(self.clone()))
+        Ok(RecoverableManagementClient::new(Arc::downgrade(self)))
     }
 
     /// Creates a new Claims-Based Security (CBS) client for the Event Hubs service.
@@ -163,7 +170,7 @@ impl RecoverableConnection {
     ///
     /// Note: The Cbs client returned integrates retry operations into the authorization call.
     pub(crate) async fn get_cbs_client(self: &Arc<Self>) -> Result<RecoverableClaimsBasedSecurity> {
-        Ok(RecoverableClaimsBasedSecurity::new(self.clone()))
+        Ok(RecoverableClaimsBasedSecurity::new(Arc::downgrade(self)))
     }
 
     /// Creates a new sender for the Event Hubs service.
@@ -175,7 +182,7 @@ impl RecoverableConnection {
         // Ensure we can create a sender for the Event Hub path.
         self.ensure_sender(&path).await?;
 
-        Ok(RecoverableSender::new(self.clone(), path))
+        Ok(RecoverableSender::new(Arc::downgrade(self), path))
     }
 
     pub(crate) async fn get_receiver(
@@ -189,7 +196,7 @@ impl RecoverableConnection {
             .await?;
 
         Ok(RecoverableReceiver::new(
-            self.clone(),
+            Arc::downgrade(self),
             receiver_options,
             message_source,
             source_url.clone(),
@@ -267,17 +274,22 @@ impl RecoverableConnection {
     }
 
     pub(super) async fn ensure_amqp_management(self: &Arc<Self>) -> Result<Arc<AmqpManagement>> {
-        let management_client = self
-            .mgmt_client
-            .get_or_try_init(|| {
+        let mut management_client = self.mgmt_client.lock().await;
+        if management_client.is_none() {
+            *management_client = Some(
                 RecoverableManagementClient::create_management_client(
                     self.clone(),
                     &self.retry_options,
                 )
-            })
-            .await?;
+                .await?,
+            );
+        }
+        if let Some(management_client) = management_client.as_ref() {
+            return Ok(management_client.clone());
+        }
 
-        Ok(management_client.clone())
+        warn!("Management client is None, cannot ensure management client.");
+        Err(EventHubsError::from(ErrorKind::MissingConnection).into())
     }
 
     /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
@@ -361,11 +373,69 @@ impl RecoverableConnection {
             .clone())
     }
 
-    pub(super) fn should_retry_amqp_error(amqp_error: &AmqpError) -> bool {
+    pub(super) fn recover_from_error(
+        connection: Option<&Weak<RecoverableConnection>>,
+        reason: ErrorRecoveryAction,
+    ) -> Result<()> {
+        let Some(connection) = connection else {
+            warn!(
+                "Connection is None, cannot recover from error: {:?}",
+                reason
+            );
+            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
+        };
+
+        // If the connection is None, we cannot recover.
+        let Some(connection) = connection.upgrade() else {
+            warn!(
+                "Connection is None, cannot recover from error: {:?}",
+                reason
+            );
+            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
+        };
+
+        // Log the error and attempt to recover.
+        warn!(err=?reason, "Recovering from error: {:?}", reason);
+        // Upgrade the weak reference to a strong reference.
+        match reason {
+            ErrorRecoveryAction::ReconnectConnection => {
+                debug!("Recovering from connection error: {:?}", reason);
+                connection.connections.lock_blocking().take();
+                connection.session_instances.lock_blocking().clear();
+                connection.sender_instances.lock_blocking().clear();
+                connection.receiver_instances.lock_blocking().clear();
+            }
+            ErrorRecoveryAction::ReconnectSession => {
+                debug!("Recovering from session error: {:?}", reason);
+                // Recreate the session and sender/receiver as needed.
+                connection.session_instances.lock_blocking().clear();
+                connection.sender_instances.lock_blocking().clear();
+                connection.receiver_instances.lock_blocking().clear();
+            }
+            ErrorRecoveryAction::ReconnectLink => {
+                debug!("Recovering from link error: {:?}", reason);
+                // Recreate the session and sender/receiver as needed.
+                connection.session_instances.lock_blocking().clear();
+                connection.sender_instances.lock_blocking().clear();
+                connection.receiver_instances.lock_blocking().clear();
+            }
+            _ => {
+                warn!("Recover action {reason:?} should already have been handled.");
+                return Err(azure_core::Error::message(
+                    azure_core::error::ErrorKind::Other,
+                    "Unknown error recovery action",
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    pub(super) fn should_retry_amqp_error(amqp_error: &AmqpError) -> ErrorRecoveryAction {
         match amqp_error.kind() {
             AmqpErrorKind::ManagementStatusCode(code, _) => {
                 debug!("Management operation error: {}", code);
-                matches!(
+                if matches!(
                     code,
                     azure_core::http::StatusCode::RequestTimeout
                         | azure_core::http::StatusCode::TooManyRequests
@@ -373,21 +443,44 @@ impl RecoverableConnection {
                         | azure_core::http::StatusCode::BadGateway
                         | azure_core::http::StatusCode::ServiceUnavailable
                         | azure_core::http::StatusCode::GatewayTimeout
-                )
+                ) {
+                    debug!("Management operation error can be retried : {}", code);
+                    ErrorRecoveryAction::RetryAction
+                } else {
+                    debug!("Management operation error cannot be retried: {}", code);
+                    ErrorRecoveryAction::ReturnError
+                }
+            }
+            AmqpErrorKind::ConnectionDropped(_) => {
+                debug!("Connection dropped error: {}", amqp_error);
+                ErrorRecoveryAction::ReconnectConnection
+            }
+            AmqpErrorKind::LinkStateError(_) => {
+                debug!("Link state error: {}", amqp_error);
+                ErrorRecoveryAction::ReconnectLink
             }
             AmqpErrorKind::AmqpDescribedError(described_error) => {
                 debug!("AMQP described error: {:?}", described_error);
-                matches!(
+                if matches!(
                     described_error.condition(),
                     AmqpErrorCondition::ResourceLimitExceeded
                         | AmqpErrorCondition::ConnectionFramingError
                         | AmqpErrorCondition::LinkStolen
                         | AmqpErrorCondition::ServerBusyError
-                )
+                ) {
+                    debug!("AMQP described error can be retried: {:?}", described_error);
+                    ErrorRecoveryAction::RetryAction
+                } else {
+                    debug!(
+                        "AMQP described error cannot be retried: {:?}",
+                        described_error
+                    );
+                    ErrorRecoveryAction::ReturnError
+                }
             }
             _ => {
                 debug!(err=?amqp_error, "Other AMQP error: {amqp_error}");
-                false
+                ErrorRecoveryAction::ReturnError
             }
         }
     }
@@ -413,7 +506,7 @@ mod tests {
             Arc::new(MockCredential),
             Default::default(),
         );
-        assert!(!connection_manager.connections.is_initialized());
+        assert!(!connection_manager.connections.lock_blocking().is_some());
         assert_eq!(connection_manager.get_connection_id().len(), 36); // UUID v4 string length
 
         // verify that the connection_id can be parsed as a UUID.
@@ -435,7 +528,7 @@ mod tests {
             Arc::new(MockCredential),
             Default::default(),
         );
-        assert!(!connection_manager.connections.is_initialized());
+        assert!(!connection_manager.connections.lock_blocking().is_some());
         assert_eq!(connection_manager.get_connection_id(), app_id);
     }
 
@@ -455,7 +548,7 @@ mod tests {
             Default::default(),
         ));
 
-        assert!(!connection_manager.connections.is_initialized());
+        assert!(!connection_manager.connections.lock_blocking().is_some());
     }
 
     // The RecoverableConnection supports using a custom endpoint for connecting to Event Hubs proxies.

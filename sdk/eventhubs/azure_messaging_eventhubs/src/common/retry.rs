@@ -8,6 +8,25 @@ use rand::{rng, Rng};
 use std::fmt::Debug;
 use tracing::{info, warn};
 
+/// Type alias for recovery operation function to reduce complexity
+pub(crate) type RecoveryOperation<C, E> =
+    fn(Option<&C>, ErrorRecoveryAction) -> std::result::Result<(), E>;
+
+/// Action to be taken for Eventhubs Errors
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub(crate) enum ErrorRecoveryAction {
+    /// Error is retryable, Retry the operation.
+    RetryAction,
+    /// Error requires reconnecting the Connection, Session and Link.
+    ReconnectConnection,
+    /// Error requires reconnecting the Session and Link
+    ReconnectSession,
+    /// Error requires reconnecting the Link
+    ReconnectLink,
+    /// Error is not retryable, return the error.
+    ReturnError,
+}
+
 /// Options for configuring exponential backoff retry behavior.
 #[derive(Debug, Clone)]
 pub struct RetryOptions {
@@ -46,18 +65,20 @@ impl Default for RetryOptions {
 /// * `operation` - The operation to retry. This should be a function or closure that returns
 ///   a `Result` type.
 /// * `options` - Configuration options for the retry policy.
-/// * `is_retryable` - Optional function that determines if an error should be retried.
-///   If not provided, all errors will be retried.
+/// * `categorize_error` - Function that determines the category of the error which has occurred.
+/// * `recover_operation` - Function that handles the error recovery action based on the error category.
 ///
 /// # Returns
 ///
 /// * `Result<T, E>` - The result of the operation if it succeeds, or the last error if all
 ///   retries are exhausted.
 ///
-pub(crate) async fn retry_with_backoff<F, Fut, T, E>(
+pub(crate) async fn recover_with_backoff<F, Fut, T, E, C>(
     operation: F,
     options: &RetryOptions,
-    is_retryable: Option<fn(&E) -> bool>,
+    categorize_error: fn(&E) -> ErrorRecoveryAction,
+    recover_operation: Option<RecoveryOperation<C, E>>,
+    context: Option<C>,
 ) -> std::result::Result<T, E>
 where
     F: Fn() -> Fut,
@@ -77,14 +98,6 @@ where
             }
             Err(err) => {
                 info!("Operation failed with error: {}, checking for retry.", err);
-                // Check if we should retry this error
-                if let Some(checker) = is_retryable {
-                    if !checker(&err) {
-                        warn!("Error is not retryable, returning: {:?}", err);
-                        return Err(err);
-                    }
-                }
-
                 // Check if we've exhausted our retries
                 if current_retry >= options.max_retries {
                     warn!(
@@ -93,34 +106,53 @@ where
                     );
                     return Err(err);
                 }
+                // Check if we should retry this error
+                let error_category = categorize_error(&err);
+                match error_category {
+                    ErrorRecoveryAction::RetryAction => {
+                        // Apply jitter to the delay
+                        let jittered_delay = if options.jitter > 0.0 {
+                            let jitter_range = options.jitter * current_delay.as_seconds_f64();
+                            let jitter_amount = rng().random_range(-jitter_range..jitter_range);
+                            let jittered_secs = current_delay.as_seconds_f64() + jitter_amount;
+                            Duration::seconds_f64(jittered_secs.max(0.001)) // Ensure we don't go negative
+                        } else {
+                            current_delay
+                        };
 
-                // Apply jitter to the delay
-                let jittered_delay = if options.jitter > 0.0 {
-                    let jitter_range = options.jitter * current_delay.as_seconds_f64();
-                    let jitter_amount = rng().random_range(-jitter_range..jitter_range);
-                    let jittered_secs = current_delay.as_seconds_f64() + jitter_amount;
-                    Duration::seconds_f64(jittered_secs.max(0.001)) // Ensure we don't go negative
-                } else {
-                    current_delay
-                };
+                        info!(
+                            "Operation failed with error: {:?}. Retrying after {:?} (retry {}/{})",
+                            err,
+                            jittered_delay,
+                            current_retry + 1,
+                            options.max_retries
+                        );
 
-                info!(
-                    "Operation failed with error: {:?}. Retrying after {:?} (retry {}/{})",
-                    err,
-                    jittered_delay,
-                    current_retry + 1,
-                    options.max_retries
-                );
+                        // Wait for the backoff duration
+                        azure_core::sleep::sleep(jittered_delay).await;
 
-                // Wait for the backoff duration
-                azure_core::sleep::sleep(jittered_delay).await;
-
+                        // Calculate the next delay with exponential backoff
+                        let next_delay = current_delay.saturating_mul(2);
+                        current_delay = std::cmp::min(next_delay, options.max_delay);
+                        // Continue to retry
+                    }
+                    ErrorRecoveryAction::ReturnError => {
+                        warn!("Error is not retryable, returning: {:?}", err);
+                        return Err(err);
+                    }
+                    _ => {
+                        warn!("Error requires special handling: {:?}", err);
+                        // Handle special error cases (e.g., reconnecting). If no recovery action is provided,
+                        // return the error.
+                        if let Some(recover_operation) = recover_operation {
+                            recover_operation(context.as_ref(), error_category)?;
+                        } else {
+                            return Err(err);
+                        }
+                    }
+                }
                 // Increase retry count
                 current_retry += 1;
-
-                // Calculate the next delay with exponential backoff
-                let next_delay = current_delay.saturating_mul(2);
-                current_delay = std::cmp::min(next_delay, options.max_delay);
             }
         }
     }
@@ -140,23 +172,30 @@ where
 ///
 /// * `Result<T>` - The result of the operation if it succeeds, or the last error if all
 ///   retries are exhausted.
-pub(crate) async fn retry_azure_operation<F, Fut, T>(
+pub(crate) async fn recover_azure_operation<F, Fut, T, C>(
     operation: F,
     options: &RetryOptions,
-    is_retryable: Option<fn(&azure_core::Error) -> bool>,
+    categorize_error: fn(&azure_core::Error) -> ErrorRecoveryAction,
+    recover_operation: Option<RecoveryOperation<C, azure_core::Error>>,
+    context: Option<C>,
 ) -> Result<T>
 where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = Result<T>>,
 {
-    retry_with_backoff(operation, options, is_retryable).await
+    recover_with_backoff(
+        operation,
+        options,
+        categorize_error,
+        recover_operation,
+        context,
+    )
+    .await
 }
 
 #[cfg(test)]
 mod tests {
     use tracing::info;
-
-    use crate::consumer;
 
     use super::*;
     use std::{
@@ -164,12 +203,19 @@ mod tests {
         sync::atomic::{AtomicUsize, Ordering},
     };
 
+    pub fn test_setup() {
+        crate::consumer::tests::setup();
+    }
+
     #[tokio::test]
     async fn test_retry_success_on_first_attempt() {
-        let result = retry_with_backoff(
+        test_setup();
+        let result = recover_with_backoff(
             || async { Ok::<_, String>("success") },
             &RetryOptions::default(),
+            |_| ErrorRecoveryAction::RetryAction,
             None,
+            None::<()>,
         )
         .await;
 
@@ -178,9 +224,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_retry_success_after_retries() {
+        test_setup();
         let attempts = AtomicUsize::new(0);
 
-        let result = retry_with_backoff(
+        let result = recover_with_backoff(
             || async {
                 let attempt = attempts.fetch_add(1, Ordering::SeqCst);
                 if attempt < 2 {
@@ -190,7 +237,9 @@ mod tests {
                 }
             },
             &RetryOptions::default(),
+            |_| ErrorRecoveryAction::RetryAction,
             None,
+            None::<()>,
         )
         .await;
 
@@ -200,6 +249,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_retry_exhausted() {
+        test_setup();
         let attempts = AtomicUsize::new(0);
         let options = RetryOptions {
             initial_delay: Duration::milliseconds(10),
@@ -208,13 +258,15 @@ mod tests {
             jitter: 0.0,
         };
 
-        let result: result::Result<&str, String> = retry_with_backoff(
+        let result: result::Result<&str, String> = recover_with_backoff(
             || async {
                 let attempt = attempts.fetch_add(1, Ordering::SeqCst);
                 Err(format!("Failed attempt {}", attempt))
             },
             &options,
+            |_| ErrorRecoveryAction::RetryAction,
             None,
+            None::<()>,
         )
         .await;
 
@@ -224,13 +276,19 @@ mod tests {
 
     #[tokio::test]
     async fn test_retry_with_is_retryable() {
-        consumer::tests::setup();
+        test_setup();
         let attempts = AtomicUsize::new(0);
 
         // Only retry if the error message contains "retry"
-        let is_retryable = |err: &String| err.contains("retry");
+        let is_retryable = |err: &String| {
+            if err.contains("retry") {
+                ErrorRecoveryAction::RetryAction
+            } else {
+                ErrorRecoveryAction::ReturnError
+            }
+        };
 
-        let result = retry_with_backoff(
+        let result = recover_with_backoff(
             || async {
                 info!("Attempting operation. {}", attempts.load(Ordering::SeqCst));
                 let attempt = attempts.fetch_add(1, Ordering::SeqCst);
@@ -247,7 +305,9 @@ mod tests {
                 max_retries: 2,
                 jitter: 0.0,
             },
-            Some(is_retryable),
+            is_retryable,
+            None,
+            None::<()>,
         )
         .await;
 

@@ -2,7 +2,10 @@
 // Licensed under the MIT license.
 
 use super::RecoverableConnection;
-use crate::{common::retry_azure_operation, RetryOptions};
+use crate::{
+    common::{recover_azure_operation, retry::ErrorRecoveryAction},
+    ErrorKind, EventHubsError, RetryOptions,
+};
 use azure_core::{
     error::{ErrorKind as AzureErrorKind, Result},
     http::Url,
@@ -12,11 +15,11 @@ use azure_core_amqp::{
     AmqpSimpleValue, AmqpValue,
 };
 use std::error::Error;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use tracing::{debug, trace, warn};
 
 pub(crate) struct RecoverableManagementClient {
-    recoverable_connection: Arc<RecoverableConnection>,
+    recoverable_connection: Weak<RecoverableConnection>,
 }
 
 impl RecoverableManagementClient {
@@ -25,12 +28,12 @@ impl RecoverableManagementClient {
     /// # Arguments
     ///
     /// * `recoverable_connection` - The recoverable connection to use for management operations.
-    pub(super) fn new(recoverable_connection: Arc<RecoverableConnection>) -> Self {
+    pub(super) fn new(recoverable_connection: Weak<RecoverableConnection>) -> Self {
         Self {
             recoverable_connection,
         }
     }
-    fn should_retry_management_response(e: &azure_core::Error) -> bool {
+    fn should_retry_management_response(e: &azure_core::Error) -> ErrorRecoveryAction {
         match e.kind() {
             AzureErrorKind::Amqp => {
                 warn!("Amqp operation failed: {:?}", e.source());
@@ -43,16 +46,16 @@ impl RecoverableManagementClient {
                         RecoverableConnection::should_retry_amqp_error(amqp_error)
                     } else {
                         debug!(err=?e, "Non AMQP error: {e}");
-                        false
+                        ErrorRecoveryAction::ReturnError
                     }
                 } else {
                     debug!("No source error found");
-                    false
+                    ErrorRecoveryAction::ReturnError
                 }
             }
             _ => {
                 debug!(err=?e, "Non AMQP error: {e}");
-                false
+                ErrorRecoveryAction::ReturnError
             }
         }
     }
@@ -64,7 +67,7 @@ impl RecoverableManagementClient {
         // Clients must call ensure_connection before calling ensure_management_client.
 
         trace!("Create management session.");
-        retry_azure_operation(
+        recover_azure_operation(
             || async {
                 let amqp_connection = connection.ensure_connection().await?;
 
@@ -90,7 +93,9 @@ impl RecoverableManagementClient {
                 Ok(management)
             },
             retry_options,
-            Some(Self::should_retry_management_response),
+            Self::should_retry_management_response,
+            None,
+            None::<()>,
         )
         .await
     }
@@ -104,7 +109,7 @@ impl AmqpManagementApis for RecoverableManagementClient {
         operation_type: String,
         application_properties: AmqpOrderedMap<String, AmqpSimpleValue>,
     ) -> azure_core::Result<AmqpOrderedMap<String, AmqpValue>> {
-        let result = retry_azure_operation(
+        let result = recover_azure_operation(
             || {
                 let operation_type = operation_type.clone();
                 let application_properties = application_properties.clone();
@@ -112,6 +117,8 @@ impl AmqpManagementApis for RecoverableManagementClient {
                 async move {
                     let result = self
                         .recoverable_connection
+                        .upgrade()
+                        .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
                         .ensure_amqp_management()
                         .await?
                         .call(operation_type, application_properties)
@@ -119,8 +126,18 @@ impl AmqpManagementApis for RecoverableManagementClient {
                     Ok(result)
                 }
             },
-            &self.recoverable_connection.retry_options,
-            Some(Self::should_retry_management_response),
+            &self
+                .recoverable_connection
+                .upgrade()
+                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
+                .retry_options,
+            Self::should_retry_management_response,
+            // None,
+            // None::<()>,
+            Some(|connection, reason| {
+                RecoverableConnection::recover_from_error(connection, reason)
+            }),
+            Some(self.recoverable_connection.clone()),
         )
         .await?;
         Ok(result)
@@ -152,7 +169,10 @@ mod tests {
             )
             .into();
 
-            assert!(RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::RetryAction
+            );
         }
         {
             let error: azure_core::Error = AmqpError::new_management_error(
@@ -160,7 +180,10 @@ mod tests {
                 Some("Switcheroo".into()),
             )
             .into();
-            assert!(!RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::ReturnError
+            );
         }
         // Verify that an explicitly boxed error is handled correctly
         {
@@ -171,7 +194,10 @@ mod tests {
                     Some("Too many requests!".into()),
                 )),
             );
-            assert!(RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::RetryAction
+            );
         }
 
         {
@@ -180,7 +206,10 @@ mod tests {
                 Some("Bad Gateway".into()),
             )
             .into();
-            assert!(RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::RetryAction
+            );
         }
         {
             let error: azure_core::Error = AmqpError::new_management_error(
@@ -188,7 +217,10 @@ mod tests {
                 Some("Request Timeout".into()),
             )
             .into();
-            assert!(RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::RetryAction
+            );
         }
         {
             let error: azure_core::Error = AmqpError::new_management_error(
@@ -196,7 +228,10 @@ mod tests {
                 Some("Request Timeout".into()),
             )
             .into();
-            assert!(RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::RetryAction
+            );
         }
         {
             let error: azure_core::Error = AmqpError::new_management_error(
@@ -204,12 +239,18 @@ mod tests {
                 Some("Internal Server Error".into()),
             )
             .into();
-            assert!(RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::RetryAction
+            );
         }
         {
             let error: azure_core::Error =
                 EventHubsError::from(ErrorKind::InvalidManagementResponse).into();
-            assert!(!RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::ReturnError
+            );
         }
 
         {
@@ -220,7 +261,10 @@ mod tests {
             )
             .into();
 
-            assert!(RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::RetryAction
+            );
         }
         {
             let error: azure_core::Error = AmqpError::new_described_error(
@@ -230,7 +274,10 @@ mod tests {
             )
             .into();
 
-            assert!(!RecoverableManagementClient::should_retry_management_response(&error));
+            assert_eq!(
+                RecoverableManagementClient::should_retry_management_response(&error),
+                ErrorRecoveryAction::ReturnError
+            );
         }
     }
 }

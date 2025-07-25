@@ -2,16 +2,18 @@
 // Licensed under the MIT license.
 
 use super::RecoverableConnection;
-use crate::common::retry_azure_operation;
+use crate::common::recover_azure_operation;
+use crate::common::retry::ErrorRecoveryAction;
+use crate::{ErrorKind, EventHubsError};
 use azure_core::{error::ErrorKind as AzureErrorKind, error::Result, http::Url, time::Duration};
 use azure_core_amqp::{AmqpError, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSource};
 use futures::{select, FutureExt};
 use std::error::Error;
-use std::sync::Arc;
+use std::sync::Weak;
 use tracing::{debug, warn};
 
 pub(crate) struct RecoverableReceiver {
-    recoverable_connection: Arc<RecoverableConnection>,
+    recoverable_connection: Weak<RecoverableConnection>,
     source_url: Url,
     message_source: AmqpSource,
     receiver_options: AmqpReceiverOptions,
@@ -20,7 +22,7 @@ pub(crate) struct RecoverableReceiver {
 
 impl RecoverableReceiver {
     pub(super) fn new(
-        recoverable_connection: Arc<RecoverableConnection>,
+        recoverable_connection: Weak<RecoverableConnection>,
         receiver_options: AmqpReceiverOptions,
         message_source: AmqpSource,
         source_url: Url,
@@ -35,7 +37,7 @@ impl RecoverableReceiver {
         }
     }
 
-    fn should_retry_receive_operation(e: &azure_core::Error) -> bool {
+    fn should_retry_receive_operation(e: &azure_core::Error) -> ErrorRecoveryAction {
         match e.kind() {
             AzureErrorKind::Amqp => {
                 warn!(err=?e, "Amqp operation failed: {e}");
@@ -48,16 +50,16 @@ impl RecoverableReceiver {
                         RecoverableConnection::should_retry_amqp_error(amqp_error)
                     } else {
                         debug!(err=?e, "Non AMQP error: {e}");
-                        false
+                        ErrorRecoveryAction::ReturnError
                     }
                 } else {
                     debug!("No source error found");
-                    false
+                    ErrorRecoveryAction::ReturnError
                 }
             }
             _ => {
                 debug!(err=?e, "Non AMQP error: {e}");
-                false
+                ErrorRecoveryAction::ReturnError
             }
         }
     }
@@ -91,10 +93,12 @@ impl AmqpReceiverApis for RecoverableReceiver {
     }
 
     async fn receive_delivery(&self) -> azure_core::Result<azure_core_amqp::AmqpDelivery> {
-        let delivery = retry_azure_operation(
+        let delivery = recover_azure_operation(
             || async move {
                 let receiver = self
                     .recoverable_connection
+                    .upgrade()
+                    .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
                     .ensure_receiver(
                         &self.source_url,
                         &self.message_source,
@@ -114,8 +118,16 @@ impl AmqpReceiverApis for RecoverableReceiver {
                     receiver.receive_delivery().await
                 }
             },
-            &self.recoverable_connection.retry_options,
-            Some(Self::should_retry_receive_operation),
+            &self
+                .recoverable_connection
+                .upgrade()
+                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
+                .retry_options,
+            Self::should_retry_receive_operation,
+            Some(|connection, reason| {
+                RecoverableConnection::recover_from_error(connection, reason)
+            }),
+            Some(self.recoverable_connection.clone()),
         )
         .await?;
         Ok(delivery)

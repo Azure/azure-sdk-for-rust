@@ -9,4 +9,4 @@ pub(crate) mod user_agent;
 
 // Public API
 pub(crate) use management::ManagementInstance;
-pub(crate) use retry::retry_azure_operation;
+pub(crate) use retry::recover_azure_operation;
