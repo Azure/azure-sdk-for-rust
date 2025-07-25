@@ -32,6 +32,7 @@ fe2o3-amqp-types
 flate2
 futures
 getrandom
+gloo
 hmac
 litemap
 log
