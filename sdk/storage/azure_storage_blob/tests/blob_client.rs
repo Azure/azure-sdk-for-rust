@@ -428,9 +428,9 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
 }
 
 #[recorded::test]
-async fn test_sassy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // SAS
-    let blob_url = "<full_blob_url>";
+    let blob_url = "<BLOB_SAS_URL>";
 
     let sas_blob_client = BlobClient::from_blob_url(blob_url, None)?;
 

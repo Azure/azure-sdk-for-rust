@@ -102,7 +102,7 @@ impl BlobClient {
         })
     }
 
-    pub fn new_no_credential(
+    pub fn with_no_credential(
         endpoint: &str,
         container_name: String,
         blob_name: String,
