@@ -83,6 +83,44 @@ impl BlobClient {
         })
     }
 
+    pub fn from_blob_url(blob_url: &str, options: Option<BlobClientOptions>) -> Result<Self> {
+        let mut options = options.unwrap_or_default();
+
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+
+        // Input URL: https://vincenttranstock.blob.core.windows.net/acontainer108f32e8/goodbye.txt?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig
+        let mut url = Url::parse(blob_url)?;
+
+        let mut segments = url.path_segments().expect("Failed to get path segments");
+        let container_name = segments
+            .next()
+            .expect("Failed to parse container_name")
+            .to_string();
+        let blob_name = segments.collect::<Vec<_>>().join("/");
+
+        url.set_path("");
+        // After parsing & clear path: https://vincenttranstock.blob.core.windows.net/?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig
+
+        // Therefore, given the current design, the endpoint passed to the generated client will have query parameters (i.e. SAS info) on it.
+        let client = GeneratedBlobClient::with_no_credential(
+            url.as_str(),
+            container_name,
+            blob_name,
+            Some(options),
+        )?;
+
+        // Consequently that means currently endpoint() will have all the query parameters (i.e. SAS info) in it.
+        // We could strip it out here before saving on this client, but that would mean a mismatch of endpoint values between our client and generated.
+        Ok(Self {
+            endpoint: url,
+            client,
+        })
+    }
+
     /// Returns a new instance of AppendBlobClient.
     ///
     /// # Arguments

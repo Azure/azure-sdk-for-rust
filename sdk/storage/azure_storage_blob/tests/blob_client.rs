@@ -6,12 +6,15 @@ use azure_core::{
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::models::{
-    AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
-    BlobClientDownloadOptions, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
-    BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
-    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-    LeaseState,
+use azure_storage_blob::{
+    models::{
+        AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
+        BlobClientDownloadOptions, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
+        BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
+        LeaseState,
+    },
+    BlobClient,
 };
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -421,5 +424,19 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
 
     blob_client.break_lease(None).await?;
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // SAS
+    let blob_url = "<BLOB_SAS_URL>";
+
+    let sas_blob_client = BlobClient::from_blob_url(blob_url, None)?;
+
+    let blob_properties = sas_blob_client.get_properties(None).await?;
+    let content_length = blob_properties.content_length()?;
+    assert_eq!(11, content_length.unwrap());
+
     Ok(())
 }
