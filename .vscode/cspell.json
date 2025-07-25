@@ -21,7 +21,8 @@
     "deny.toml",
     "eng/",
     "**/.dict.txt",
-    "rust-toolchain.toml"
+    "rust-toolchain.toml",
+    "Cargo.lock"
   ],
   "words": [
     "aarch",
