@@ -289,7 +289,7 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
 
     // Set Access Policy w/ Policy Defined
     let access_policy = AccessPolicy {
-        expiry: Some(OffsetDateTime::now_utc() + Duration::minutes(5)),
+        expiry: Some(OffsetDateTime::now_utc() + Duration::seconds(10)),
         permission: Some("rw".to_string()),
         start: Some(OffsetDateTime::now_utc()),
     };
@@ -298,8 +298,21 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         id: None,
     };
 
-    //TODO: Need gen code support- how to provide the SignedIdentifier in proper format
-    // let request_content = RequestContent::try_from(vec![signed_identifier])?;
+    let request_content = RequestContent::try_from(signed_identifier)?;
+    container_client
+        .set_access_policy(request_content, None)
+        .await?;
+
+    // Assert
+    let access_policy_response = container_client.get_access_policy(None).await?;
+    let signed_identifier = access_policy_response.into_body().await?;
+    let access_policy = signed_identifier.access_policy.unwrap();
+
+    assert!(signed_identifier.id.is_some());
+    assert!(access_policy.start.is_some());
+    assert!(access_policy.expiry.is_some());
+    assert_eq!("rw", access_policy.permission.unwrap());
+
     container_client.delete_container(None).await?;
     Ok(())
 }

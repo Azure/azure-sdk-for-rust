@@ -376,7 +376,7 @@ impl BlobContainerClient {
     pub async fn get_access_policy(
         &self,
         options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
-    ) -> Result<Response<Vec<SignedIdentifier>, XmlFormat>> {
+    ) -> Result<Response<SignedIdentifier, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -824,7 +824,7 @@ impl BlobContainerClient {
     /// * `options` - Optional parameters for the request.
     pub async fn set_access_policy(
         &self,
-        container_acl: RequestContent<Vec<SignedIdentifier>>,
+        container_acl: RequestContent<SignedIdentifier>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>> {
         let options = options.unwrap_or_default();
