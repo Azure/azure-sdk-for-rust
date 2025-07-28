@@ -115,10 +115,15 @@ impl AmqpManagementApis for RecoverableManagementClient {
                 let application_properties = application_properties.clone();
 
                 async move {
-                    let result = self
+                    let connection = self
                         .recoverable_connection
                         .upgrade()
-                        .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
+                        .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+
+                    #[cfg(feature = "test")]
+                    connection.get_forced_error()?;
+
+                    let result = connection
                         .ensure_amqp_management()
                         .await?
                         .call(operation_type, application_properties)

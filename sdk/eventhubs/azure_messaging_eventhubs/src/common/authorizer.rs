@@ -60,7 +60,7 @@ unsafe impl Send for Authorizer {}
 unsafe impl Sync for Authorizer {}
 
 impl Authorizer {
-    pub fn new(
+    pub(crate) fn new(
         recoverable_connection: Weak<RecoverableConnection>,
         credential: Arc<dyn TokenCredential>,
     ) -> Self {
@@ -73,6 +73,12 @@ impl Authorizer {
             #[cfg(test)]
             disable_authorization: SyncMutex::new(false),
         }
+    }
+
+    pub(crate) fn clear(&self) {
+        debug!("Clearing authorization scopes.");
+        let mut scopes = self.authorization_scopes.lock_blocking();
+        scopes.clear();
     }
 
     #[cfg(test)]

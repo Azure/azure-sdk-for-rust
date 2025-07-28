@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+// cspell: ignore Cloneable
 use super::{
     claims_based_security::RecoverableClaimsBasedSecurity, management::RecoverableManagementClient,
     receiver::RecoverableReceiver, sender::RecoverableSender,
@@ -23,6 +24,8 @@ use azure_core_amqp::{
     AmqpManagement, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSender,
     AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource, AmqpSymbol,
 };
+#[cfg(feature = "test")]
+use std::sync::Mutex;
 use std::{
     collections::HashMap,
     sync::{Arc, Weak},
@@ -71,6 +74,9 @@ pub(crate) struct RecoverableConnection {
     pub(super) authorizer: Arc<Authorizer>,
     connection_name: String,
     pub(super) retry_options: RetryOptions,
+
+    #[cfg(feature = "test")]
+    forced_error: Mutex<Option<azure_core::Error>>,
 }
 
 unsafe impl Send for RecoverableConnection {}
@@ -103,16 +109,34 @@ impl RecoverableConnection {
                 receiver_instances: AsyncMutex::new(HashMap::new()),
                 mgmt_client: AsyncMutex::new(None),
                 authorizer,
+                #[cfg(feature = "test")]
+                forced_error: Mutex::new(None),
             }
         })
     }
 
     /// Create a connection that is unconnected
-    #[cfg(test)]
+    #[cfg(feature = "test")]
+    #[allow(dead_code)]
     pub(crate) async fn disable_connection(&self) -> Result<()> {
         let mut connection = self.connections.lock().await;
         *connection = Some(Arc::new(AmqpConnection::new()));
         Ok(())
+    }
+
+    #[cfg(feature = "test")]
+    pub(crate) fn force_error(&self, error: azure_core::Error) -> Result<()> {
+        let mut err = self.forced_error.lock().map_err(|e| {
+            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+        })?;
+        *err = Some(error);
+        Ok(())
+    }
+
+    #[cfg(feature = "test")]
+    pub(crate) fn get_forced_error(&self) -> azure_core::Result<()> {
+        let v = self.forced_error.lock().unwrap().take();
+        v.map_or(Ok(()), Err)
     }
 
     /// Returns the name of the connection as specified by the client.
@@ -401,6 +425,7 @@ impl RecoverableConnection {
             ErrorRecoveryAction::ReconnectConnection => {
                 debug!("Recovering from connection error: {:?}", reason);
                 connection.connections.lock_blocking().take();
+                connection.authorizer.clear();
                 connection.session_instances.lock_blocking().clear();
                 connection.sender_instances.lock_blocking().clear();
                 connection.receiver_instances.lock_blocking().clear();
@@ -418,6 +443,7 @@ impl RecoverableConnection {
                 connection.session_instances.lock_blocking().clear();
                 connection.sender_instances.lock_blocking().clear();
                 connection.receiver_instances.lock_blocking().clear();
+                connection.mgmt_client.lock_blocking().take();
             }
             _ => {
                 warn!("Recover action {reason:?} should already have been handled.");
@@ -476,6 +502,7 @@ impl RecoverableConnection {
                         | AmqpErrorCondition::LinkStolen
                         | AmqpErrorCondition::ServerBusyError
                         | AmqpErrorCondition::EntityUpdated
+                        | AmqpErrorCondition::EntityDisabledError
                 ) {
                     debug!("AMQP described error can be retried: {:?}", described_error);
                     ErrorRecoveryAction::RetryAction

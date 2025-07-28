@@ -84,12 +84,16 @@ impl AmqpSenderApis for RecoverableSender {
                 let path = self.path.clone();
                 let message_clone = message_arc.clone();
                 async move {
-                    let sender = self
+                    let connection = self
                         .recoverable_connection
                         .upgrade()
-                        .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
-                        .ensure_sender(&path)
-                        .await?;
+                        .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+
+                    // Check for forced error.
+                    #[cfg(feature = "test")]
+                    connection.get_forced_error()?;
+
+                    let sender = connection.ensure_sender(&path).await?;
                     let outcome = sender.send_ref(message_clone.as_ref(), options).await?;
                     // We treat all outcomes other than "rejected" as successful.
                     match outcome {

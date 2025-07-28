@@ -95,10 +95,16 @@ impl AmqpReceiverApis for RecoverableReceiver {
     async fn receive_delivery(&self) -> azure_core::Result<azure_core_amqp::AmqpDelivery> {
         let delivery = recover_azure_operation(
             || async move {
-                let receiver = self
+                let connection = self
                     .recoverable_connection
                     .upgrade()
-                    .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
+                    .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+
+                // Check for forced error.
+                #[cfg(feature = "test")]
+                connection.get_forced_error()?;
+
+                let receiver = connection
                     .ensure_receiver(
                         &self.source_url,
                         &self.message_source,

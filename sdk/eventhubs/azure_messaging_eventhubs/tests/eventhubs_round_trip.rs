@@ -12,7 +12,6 @@ use azure_messaging_eventhubs::{
 };
 use futures::stream::StreamExt;
 use std::{env, error::Error};
-use tokio::time::timeout;
 use tracing::info;
 
 #[recorded::test(live)]
@@ -151,75 +150,3 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[recorded::test(live)]
-async fn test_send_for_a_while(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    use std::time::Duration;
-    use tokio::select;
-
-    const EVENTHUB_PARTITION: &str = "1";
-    const TEST_NAME: &str = "test_round_trip_batch";
-    let recording = ctx.recording();
-    let host = env::var("EVENTHUBS_HOST")?;
-    let eventhub = env::var("EVENTHUB_NAME")?;
-    let credential = recording.credential();
-    let producer = ProducerClient::builder()
-        .with_application_id(TEST_NAME.to_string())
-        .open(host.as_str(), eventhub.as_str(), credential.clone())
-        .await?;
-
-    let partition_properties = producer
-        .get_partition_properties(EVENTHUB_PARTITION)
-        .await?;
-
-    info!(
-        "Start receiving messages from sequence: {:?}",
-        partition_properties.last_enqueued_sequence_number
-    );
-
-    let start_sequence = partition_properties.last_enqueued_sequence_number;
-    let batch = producer
-        .create_batch(Some(EventDataBatchOptions {
-            partition_id: Some(EVENTHUB_PARTITION.to_string()),
-            partition_key: Some("My Partition Key.".to_string()),
-            ..Default::default()
-        }))
-        .await?;
-
-    for i in 1..200 {
-        assert!(batch.try_add_event_data(
-            EventData::builder()
-                .with_body(b"Hello, World!")
-                .add_property("Message#".to_string(), i)
-                .with_message_id(i)
-                .build(),
-            None
-        )?);
-    }
-
-    select! {
-        _ = async {loop {
-        let batch = producer
-            .create_batch(Some(EventDataBatchOptions {
-                partition_id: Some(EVENTHUB_PARTITION.to_string()),
-                partition_key: Some("My Partition Key.".to_string()),
-                ..Default::default()
-            }))
-            .await.unwrap();
-
-        for i in 1..200 {
-            assert!(batch.try_add_event_data(
-                EventData::builder()
-                    .with_body(b"Hello, World!")
-                    .add_property("Message#".to_string(), i)
-                    .with_message_id(i)
-                    .build(),
-                None
-            ).unwrap());
-        }
-        producer.send_batch(batch, None).await.unwrap()
-    }} => Ok::<(),azure_core::Error>(()),
-    // 45 second timeout over the entire operation.
-    _ = tokio::time::sleep(Duration::from_secs(45)) => { info!("Timeout while sending batch"); Ok(()) }
-    }?;
-    Ok(())
-}

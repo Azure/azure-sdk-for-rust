@@ -151,6 +151,12 @@ impl ConsumerClient {
         self.recoverable_connection.close_connection().await
     }
 
+    /// Forces an error on the connection.
+    #[cfg(feature = "test")]
+    pub fn force_error(&self, error: azure_core::Error) -> Result<()> {
+        self.recoverable_connection.force_error(error)
+    }
+
     /// Retrieves the details of the consumer client.
     ///
     /// This function retrieves the details of the consumer client associated with the [`ConsumerClient`].

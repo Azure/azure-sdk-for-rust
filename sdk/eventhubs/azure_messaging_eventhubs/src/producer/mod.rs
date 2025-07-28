@@ -410,6 +410,12 @@ impl ProducerClient {
             .await
     }
 
+    /// Forces an error on the connection.
+    #[cfg(feature = "test")]
+    pub fn force_error(&self, error: azure_core::Error) -> Result<()> {
+        self.connection.force_error(error)
+    }
+
     pub(crate) fn base_url(&self) -> &Url {
         &self.endpoint
     }
