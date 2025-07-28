@@ -3,8 +3,7 @@
 
 // cspell: ignore retryable backoff
 
-use azure_core::{error::Result, time::Duration};
-use rand::{rng, Rng};
+use azure_core::{error::Result, sleep, time::Duration};
 use std::fmt::Debug;
 use tracing::{info, warn};
 
@@ -36,21 +35,20 @@ pub struct RetryOptions {
     /// The maximum backoff delay (Default is 30s).
     pub max_delay: Duration,
 
-    /// The maximum number of retries (Default is 5).
-    pub max_retries: usize,
+    /// The maximum total elapsed time for retries (Default is 60s).
+    pub max_total_elapsed: Duration,
 
-    /// The jitter factor to apply to backoff timing (0.0 to 1.0) (Default is 0.2).
-    /// A jitter factor of 0.2 means the delay will be randomly adjusted by up to ±20%.
-    pub jitter: f64,
+    /// The maximum number of retries (Default is 5).
+    pub max_retries: u32,
 }
 
 impl Default for RetryOptions {
     fn default() -> Self {
         Self {
-            initial_delay: Duration::milliseconds(100),
+            initial_delay: Duration::milliseconds(200),
             max_delay: Duration::seconds(30),
-            max_retries: 5,
-            jitter: 0.2,
+            max_retries: 8,
+            max_total_elapsed: Duration::seconds(60),
         }
     }
 }
@@ -85,8 +83,10 @@ where
     Fut: std::future::Future<Output = std::result::Result<T, E>>,
     E: Debug + std::fmt::Display,
 {
-    let mut current_retry = 0;
+    let mut current_retry = 0u32;
     let mut current_delay = options.initial_delay;
+
+    let start_time = std::time::Instant::now();
 
     loop {
         match operation().await {
@@ -97,12 +97,15 @@ where
                 return Ok(result);
             }
             Err(err) => {
+                let time_since_start = start_time.elapsed();
                 info!("Operation failed with error: {}, checking for retry.", err);
                 // Check if we've exhausted our retries
-                if current_retry >= options.max_retries {
+                if current_retry >= options.max_retries
+                    || time_since_start >= options.max_total_elapsed
+                {
                     warn!(
-                        "Maximum retries ({}) reached, returning error: {:?}",
-                        options.max_retries, err
+                        "Maximum retries ({}) reached or time elapsed ({:?}), returning error: {:?}",
+                        options.max_retries, time_since_start, err
                     );
                     return Err(err);
                 }
@@ -110,26 +113,28 @@ where
                 let error_category = categorize_error(&err);
                 match error_category {
                     ErrorRecoveryAction::RetryAction => {
-                        // Apply jitter to the delay
-                        let jittered_delay = if options.jitter > 0.0 {
-                            let jitter_range = options.jitter * current_delay.as_seconds_f64();
-                            let jitter_amount = rng().random_range(-jitter_range..jitter_range);
-                            let jittered_secs = current_delay.as_seconds_f64() + jitter_amount;
-                            Duration::seconds_f64(jittered_secs.max(0.001)) // Ensure we don't go negative
-                        } else {
-                            current_delay
-                        };
+                        let sleep_ms = options.initial_delay.whole_milliseconds() as u64
+                            * 2u64.pow(current_retry)
+                            + u64::from(rand::random::<u8>());
+                        let sleep_ms = sleep_ms.min(
+                            options
+                                .max_delay
+                                .whole_milliseconds()
+                                .try_into()
+                                .unwrap_or(u64::MAX),
+                        );
+                        let sleep_duration = Duration::milliseconds(sleep_ms as i64);
 
                         info!(
                             "Operation failed with error: {:?}. Retrying after {:?} (retry {}/{})",
                             err,
-                            jittered_delay,
+                            sleep_duration,
                             current_retry + 1,
                             options.max_retries
                         );
 
                         // Wait for the backoff duration
-                        azure_core::sleep::sleep(jittered_delay).await;
+                        sleep(sleep_duration).await;
 
                         // Calculate the next delay with exponential backoff
                         let next_delay = current_delay.saturating_mul(2);
@@ -255,7 +260,7 @@ mod tests {
             initial_delay: Duration::milliseconds(10),
             max_delay: Duration::milliseconds(50),
             max_retries: 2,
-            jitter: 0.0,
+            max_total_elapsed: Duration::seconds(10),
         };
 
         let result: result::Result<&str, String> = recover_with_backoff(
@@ -303,7 +308,7 @@ mod tests {
                 initial_delay: Duration::milliseconds(10),
                 max_delay: Duration::milliseconds(50),
                 max_retries: 2,
-                jitter: 0.0,
+                max_total_elapsed: Duration::seconds(1),
             },
             is_retryable,
             None,

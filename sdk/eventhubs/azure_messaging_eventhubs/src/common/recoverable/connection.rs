@@ -451,11 +451,19 @@ impl RecoverableConnection {
                     ErrorRecoveryAction::ReturnError
                 }
             }
-            AmqpErrorKind::ConnectionDropped(_) => {
+            AmqpErrorKind::ConnectionClosedByRemote(_)
+            | AmqpErrorKind::ConnectionDetachedByRemote(_)
+            | AmqpErrorKind::ConnectionDropped(_) => {
                 debug!("Connection dropped error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectConnection
             }
-            AmqpErrorKind::LinkStateError(_) => {
+            AmqpErrorKind::SessionClosedByRemote(_) | AmqpErrorKind::SessionDetachedByRemote(_) => {
+                debug!("Session dropped error: {}", amqp_error);
+                ErrorRecoveryAction::ReconnectSession
+            }
+            AmqpErrorKind::LinkClosedByRemote(_)
+            | AmqpErrorKind::LinkDetachedByRemote(_)
+            | AmqpErrorKind::LinkStateError(_) => {
                 debug!("Link state error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectLink
             }
@@ -467,8 +475,18 @@ impl RecoverableConnection {
                         | AmqpErrorCondition::ConnectionFramingError
                         | AmqpErrorCondition::LinkStolen
                         | AmqpErrorCondition::ServerBusyError
+                        | AmqpErrorCondition::EntityUpdated
                 ) {
                     debug!("AMQP described error can be retried: {:?}", described_error);
+                    ErrorRecoveryAction::RetryAction
+                } else if matches!(
+                    described_error.condition(),
+                    AmqpErrorCondition::EntityDisabledError
+                ) {
+                    debug!(
+                        "AMQP described error triggers a disconnect: {:?}",
+                        described_error
+                    );
                     ErrorRecoveryAction::RetryAction
                 } else {
                     debug!(

@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("EventData message sent to partition: {}", partition_id);
         }
 
-        client.send_batch(&batch, None).await?;
+        client.send_batch(batch, None).await?;
     }
 
     Ok(())

@@ -294,14 +294,14 @@ impl ProducerClient {
     ///
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
-    ///   producer.send_batch(&batch, None).await?;
+    ///   producer.send_batch(batch, None).await?;
     ///   Ok(())
     /// }
     /// ```
     ///
     pub async fn send_batch(
         &self,
-        batch: &EventDataBatch<'_>,
+        batch: EventDataBatch<'_>,
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
         let sender = self.connection.get_sender(batch.get_batch_path()?).await?;
