@@ -149,4 +149,3 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
