@@ -4,7 +4,7 @@
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
     models::{
-        BlobServiceClientGetPropertiesOptions, BlobServiceClientGetStatisticsOptions,
+        BlobServiceClientGetPropertiesOptions, BlobServiceClientGetServiceStatsOptions,
         BlobServiceClientGetUserDelegationKeyOptions,
         BlobServiceClientListContainersSegmentOptions, KeyInfo, ListContainersSegmentResponse,
         StorageServiceProperties, StorageServiceStats, UserDelegationKey,
@@ -115,23 +115,8 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_service_stats(
         &self,
-        options: Option<BlobServiceClientGetStatisticsOptions<'_>>,
+        options: Option<BlobServiceClientGetServiceStatsOptions<'_>>,
     ) -> Result<Response<StorageServiceStats, XmlFormat>> {
-        // TODO: Propagate rename to .tsp
-        self.client.get_statistics(options).await
-    }
-
-    /// Retrieves a user delegation key for the Blob service. This is only a valid operation when using bearer token authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `key_info` - Key information such as when the key becomes valid and expires.
-    /// * `options` - Optional configuration for the request.
-    pub async fn get_user_delegation_key(
-        &self,
-        key_info: RequestContent<KeyInfo>,
-        options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
-    ) -> Result<Response<UserDelegationKey, XmlFormat>> {
-        self.client.get_user_delegation_key(key_info, options).await
+        self.client.get_service_stats(options).await
     }
 }

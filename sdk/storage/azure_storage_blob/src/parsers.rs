@@ -37,16 +37,3 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     let content_range = format!("bytes={}-{}", offset, end_range);
     Ok(content_range)
 }
-
-// Truncates the milliseconds out
-pub fn format_time_string(time: &OffsetDateTime) -> String {
-    let time_string = to_rfc3339(time);
-
-    match time_string.find('.') {
-        Some(dot_index) => {
-            let base = &time_string[..dot_index];
-            format!("{}Z", base)
-        }
-        None => time_string.to_string(),
-    }
-}

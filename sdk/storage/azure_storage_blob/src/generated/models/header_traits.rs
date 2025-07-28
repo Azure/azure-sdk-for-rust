@@ -2650,7 +2650,7 @@ impl PageListHeaders for Response<PageList, XmlFormat> {
     }
 }
 
-/// Provides access to typed response headers for `BlobServiceClient::get_statistics()`
+/// Provides access to typed response headers for `BlobServiceClient::get_service_stats()`
 pub trait StorageServiceStatsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
