@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::RequestContent;
-use azure_core::time::{Duration, OffsetDateTime};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions, KeyInfo,
+    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
 };
 use azure_storage_blob_test::{get_blob_service_client, get_container_name};
 use futures::StreamExt;
