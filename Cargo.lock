@@ -438,6 +438,7 @@ dependencies = [
  "azure_storage_blob_test",
  "futures",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "typespec_client_core",

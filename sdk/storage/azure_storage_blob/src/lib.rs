@@ -14,3 +14,45 @@ mod pipeline;
 pub use clients::*;
 pub use parsers::*;
 pub mod models;
+
+#[cfg(test)]
+mod tests {
+    use crate::generated::models::BlobPropertiesInternal;
+    use serde_json;
+
+    #[test]
+    fn test_etag_deserialization_with_lowercase_etag() {
+        // Test JSON with "Etag" field (correct according to REST API docs)
+        let json_with_etag = r#"{"Etag": "\"0x8CB171113DEADBEEF\""}"#;
+        
+        let result = serde_json::from_str::<BlobPropertiesInternal>(json_with_etag);
+        match result {
+            Ok(props) => {
+                println!("Successfully deserialized with 'Etag' field. ETag value: {:?}", props.etag);
+                assert!(props.etag.is_some(), "ETag should not be None when 'Etag' field is present");
+            },
+            Err(e) => {
+                println!("Failed to deserialize with 'Etag' field: {}", e);
+                panic!("Should have successfully deserialized with 'Etag' field");
+            }
+        }
+    }
+
+    #[test]
+    fn test_etag_deserialization_with_capital_etag() {
+        // Test JSON with "ETag" field (current serde rename)
+        let json_with_capital_etag = r#"{"ETag": "\"0x8CB171113DEADBEEF\""}"#;
+        
+        let result = serde_json::from_str::<BlobPropertiesInternal>(json_with_capital_etag);
+        match result {
+            Ok(props) => {
+                println!("Successfully deserialized with 'ETag' field. ETag value: {:?}", props.etag);
+                assert!(props.etag.is_some(), "ETag should not be None when 'ETag' field is present");
+            },
+            Err(e) => {
+                println!("Failed to deserialize with 'ETag' field: {}", e);
+                panic!("Should have successfully deserialized with 'ETag' field");
+            }
+        }
+    }
+}
