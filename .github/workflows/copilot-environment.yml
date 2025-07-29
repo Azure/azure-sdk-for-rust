@@ -1,15 +1,19 @@
 name: Copilot Environment Setup
 
 # This workflow sets up the development environment for GitHub Copilot coding agent
-# It ensures all necessary tools and dependencies are available for automated coding tasks
+# It leverages the existing devcontainer configuration to ensure consistency
+# with the development environment and avoid duplication of tooling setup
 #
 # The workflow:
-# - Sets up Rust toolchain as specified in rust-toolchain.toml
-# - Installs and caches Cargo dependencies
-# - Installs additional development tools (cargo-audit, cargo-outdated)
-# - Verifies Azure SDK specific system dependencies (OpenSSL, build tools)
+# - Uses the same base container image as the devcontainer (mcr.microsoft.com/devcontainers/rust)
+# - Runs the devcontainer post-create script for environment setup
+# - Installs the same development tools specified in the devcontainer
+# - Caches Cargo dependencies for improved performance
 # - Runs comprehensive workspace verification (check, clippy, fmt)
 # - Tests basic functionality to ensure the environment is ready
+#
+# This approach maintains consistency with the existing devcontainer setup
+# and avoids maintaining duplicate tool installation logic
 #
 # Triggers:
 # - Manual execution via workflow_dispatch 
@@ -26,29 +30,35 @@ on:
     paths:
       - 'rust-toolchain.toml'
       - 'Cargo.toml'
+      - '.devcontainer/**'
       - '.github/workflows/copilot-environment.yml'
 
 jobs:
   setup-environment:
     name: Setup Copilot Coding Agent Environment
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/devcontainers/rust:1-1-bullseye
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Setup Rust toolchain from rust-toolchain.toml
-        uses: dtolnay/rust-toolchain@stable
-        # This action automatically reads rust-toolchain.toml and installs the specified components
-      
-      - name: Verify Rust installation
+      - name: Setup development environment using devcontainer configuration
         run: |
-          # Verify installations
-          rustc --version
-          cargo --version
-          rustfmt --version
-          cargo clippy --version
-          rust-analyzer --version || echo "rust-analyzer available through rustup"
+          # Run the devcontainer post-create script to set up the environment
+          # This uses the same setup as the existing devcontainer
+          chmod +x .devcontainer/oncreate
+          ./.devcontainer/oncreate
+      
+      - name: Install additional tools from devcontainer
+        run: |
+          # Install the same tools as specified in the devcontainer Dockerfile
+          cargo install cargo-watch http-server
+          
+          # Install tools commonly needed for Rust development and Azure SDK
+          cargo install cargo-audit || echo "cargo-audit already installed or failed to install"
+          cargo install cargo-outdated || echo "cargo-outdated already installed or failed to install"
       
       - name: Cache Cargo dependencies
         uses: actions/cache@v4
@@ -62,29 +72,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      
-      - name: Install additional development tools
-        run: |
-          # Install tools commonly needed for Rust development and Azure SDK
-          cargo install cargo-audit || echo "cargo-audit already installed or failed to install"
-          cargo install cargo-outdated || echo "cargo-outdated already installed or failed to install"
-          
-          # Install system dependencies that might be needed for Azure SDK
-          sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config libssl-dev
-      
-      - name: Azure SDK specific setup
-        run: |
-          # Check that we can work with Azure SDK specific dependencies
-          echo "Checking OpenSSL version for Azure connections:"
-          openssl version
-          
-          # Verify important system libraries are available
-          pkg-config --exists openssl || echo "OpenSSL pkg-config not found"
-          
-          # Check that we have necessary build tools
-          which make
-          which gcc || which clang
       
       - name: Verify workspace setup
         run: |
@@ -119,6 +106,14 @@ jobs:
           cargo --version
           echo "=== Installed Components ==="
           rustup component list --installed
+          echo "=== Available Tools ==="
+          which cargo-audit && cargo-audit --version || echo "cargo-audit not available"
+          which cargo-outdated && cargo-outdated --version || echo "cargo-outdated not available"
+          which cargo-watch && cargo-watch --version || echo "cargo-watch not available"
+          which http-server && http-server --version || echo "http-server not available"
+          echo "=== System Dependencies ==="
+          openssl version
+          pkg-config --exists openssl && echo "OpenSSL pkg-config: OK" || echo "OpenSSL pkg-config: NOT FOUND"
           echo "=== Workspace Structure ==="
           find . -name "Cargo.toml" | head -10
           echo "=== Environment Ready for Copilot Coding Agent ==="
