@@ -241,8 +241,7 @@ mod test {
     #[async_trait]
     impl Policy for StatusResponder {
         async fn send(&self, _: &Context, _: &mut Request, _: &[Arc<dyn Policy>]) -> PolicyResult {
-            let count = self.request_count.clone();
-            let mut count = count.lock().unwrap();
+            let mut count = self.request_count.lock().unwrap();
             *count += 1;
             Ok(RawResponse::from_bytes(self.status, Headers::new(), ""))
         }
