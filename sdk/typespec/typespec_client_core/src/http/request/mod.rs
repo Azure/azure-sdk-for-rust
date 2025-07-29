@@ -333,9 +333,10 @@ impl<T> TryFrom<Option<Decimal>> for RequestContent<T> {
     }
 }
 
-#[cfg(feature = "json")]
 /// JSON-specific conversions for `RequestContent<T>`.
+///
 /// These conversions allow for easy serialization of common types into the request body.
+#[cfg(feature = "json")]
 pub mod json {
     use super::*;
 
@@ -533,10 +534,6 @@ pub mod json {
         }
     }
 }
-
-#[allow(unused_imports)]
-#[cfg(feature = "json")]
-pub use json::*;
 
 impl<T> FromStr for RequestContent<T> {
     type Err = crate::Error;
