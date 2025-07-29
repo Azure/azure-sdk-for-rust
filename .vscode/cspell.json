@@ -49,6 +49,7 @@
     "dotenv",
     "downcasted",
     "downcasting",
+    "dtolnay",
     "entra",
     "etag",
     "eventhub",
@@ -167,6 +168,12 @@
       "filename": "**/*.rs",
       "dictionaries": [
         "crates",
+        "rust-custom"
+      ]
+    },
+    {
+      "filename": ".github/workflows/*.yml",
+      "dictionaries": [
         "rust-custom"
       ]
     },
