@@ -433,7 +433,7 @@ fn create_poller_stream<
     #[cfg(not(target_arch = "wasm32"))] F: Fn(PollerState<N>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N>>> + Send + 'static,
     #[cfg(target_arch = "wasm32")] N: 'static,
-    #[cfg(target_arch = "wasm32")] F: Fn(PollerState) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] F: Fn(PollerState<N>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N>>> + 'static,
 >(
     make_request: F,
