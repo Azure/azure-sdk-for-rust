@@ -27,6 +27,7 @@ use crate::generated::{
 use azure_core::{
     base64::encode,
     credentials::TokenCredential,
+    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
@@ -34,10 +35,11 @@ use azure_core::{
         XmlFormat,
     },
     time::to_rfc7231,
-    Result,
+    tracing, Error, Result,
 };
 use std::sync::Arc;
 
+#[tracing::client]
 pub struct BlobClient {
     pub(crate) blob_name: String,
     pub(crate) container_name: String,
@@ -66,6 +68,7 @@ impl BlobClient {
     /// * `container_name` - The name of the container.
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
+    #[tracing::new("azure_storage_blob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -113,6 +116,7 @@ impl BlobClient {
     ///
     /// * `copy_id` - The copy identifier provided in the x-ms-copy-id header of the original Copy Blob operation.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.abortCopyFromUrl")]
     pub async fn abort_copy_from_url(
         &self,
         copy_id: &str,
@@ -144,7 +148,17 @@ impl BlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Acquire Lease operation requests a new lease on a blob. The lease lock duration can be 15 to 60 seconds, or can be
@@ -155,6 +169,7 @@ impl BlobClient {
     /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
     ///   non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.acquireLease")]
     pub async fn acquire_lease(
         &self,
         duration: i32,
@@ -200,7 +215,17 @@ impl BlobClient {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Break Lease operation ends a lease and ensures that another client can't acquire a new lease until the current lease
@@ -209,6 +234,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.breakLease")]
     pub async fn break_lease(
         &self,
         options: Option<BlobClientBreakLeaseOptions<'_>>,
@@ -253,7 +279,17 @@ impl BlobClient {
             request.insert_header("x-ms-lease-break-period", break_period.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Change Lease operation is used to change the ID of an existing lease.
@@ -264,6 +300,7 @@ impl BlobClient {
     ///   lease ID must match.
     /// * `proposed_lease_id` - Required. The proposed lease ID for the container.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.changeLease")]
     pub async fn change_lease(
         &self,
         lease_id: String,
@@ -309,7 +346,17 @@ impl BlobClient {
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Copy From URL operation copies a blob or an internet resource to a new blob. It will not return a response until the
@@ -321,6 +368,7 @@ impl BlobClient {
     ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
     ///   either be public or must be authenticated via a shared access signature.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.copyFromUrl")]
     pub async fn copy_from_url(
         &self,
         copy_source: String,
@@ -426,7 +474,17 @@ impl BlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Create Snapshot operation creates a read-only snapshot of a blob
@@ -434,6 +492,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.createSnapshot")]
     pub async fn create_snapshot(
         &self,
         options: Option<BlobClientCreateSnapshotOptions<'_>>,
@@ -495,7 +554,17 @@ impl BlobClient {
             }
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// If the storage account's soft delete feature is disabled then, when a blob is deleted, it is permanently removed from
@@ -511,6 +580,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.delete")]
     pub async fn delete(
         &self,
         options: Option<BlobClientDeleteOptions<'_>>,
@@ -564,7 +634,17 @@ impl BlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Delete Immutability Policy operation deletes the immutability policy on the blob.
@@ -572,6 +652,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.deleteImmutabilityPolicy")]
     pub async fn delete_immutability_policy(
         &self,
         options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
@@ -602,7 +683,17 @@ impl BlobClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Download operation reads or downloads a blob from the system, including its metadata and properties. You can also
@@ -611,6 +702,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.download")]
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
@@ -686,7 +778,17 @@ impl BlobClient {
             request.insert_header("x-ms-structured-body", structured_body_type);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Returns the sku name and account kind
@@ -694,6 +796,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.getAccountInfo")]
     pub async fn get_account_info(
         &self,
         options: Option<BlobClientGetAccountInfoOptions<'_>>,
@@ -720,10 +823,21 @@ impl BlobClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Returns a new instance of AppendBlobClient.
+    #[tracing::subclient]
     pub fn get_append_blob_client(&self) -> AppendBlobClient {
         AppendBlobClient {
             blob_name: self.blob_name.clone(),
@@ -735,6 +849,7 @@ impl BlobClient {
     }
 
     /// Returns a new instance of BlockBlobClient.
+    #[tracing::subclient]
     pub fn get_block_blob_client(&self) -> BlockBlobClient {
         BlockBlobClient {
             blob_name: self.blob_name.clone(),
@@ -746,6 +861,7 @@ impl BlobClient {
     }
 
     /// Returns a new instance of PageBlobClient.
+    #[tracing::subclient]
     pub fn get_page_blob_client(&self) -> PageBlobClient {
         PageBlobClient {
             blob_name: self.blob_name.clone(),
@@ -762,6 +878,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.getProperties")]
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
@@ -819,7 +936,17 @@ impl BlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Get Blob Tags operation enables users to get tags on a blob.
@@ -827,6 +954,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.getTags")]
     pub async fn get_tags(
         &self,
         options: Option<BlobClientGetTagsOptions<'_>>,
@@ -862,7 +990,17 @@ impl BlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Release Lease operation frees the lease if it's no longer needed, so that another client can immediately acquire a
@@ -873,6 +1011,7 @@ impl BlobClient {
     /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
     ///   lease ID must match.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.releaseLease")]
     pub async fn release_lease(
         &self,
         lease_id: String,
@@ -916,7 +1055,17 @@ impl BlobClient {
         request.insert_header("x-ms-lease-action", "release");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Renew Lease operation renews an existing lease.
@@ -926,6 +1075,7 @@ impl BlobClient {
     /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
     ///   lease ID must match.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.renewLease")]
     pub async fn renew_lease(
         &self,
         lease_id: String,
@@ -969,7 +1119,17 @@ impl BlobClient {
         request.insert_header("x-ms-lease-action", "renew");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Set the expiration time of a blob
@@ -978,6 +1138,7 @@ impl BlobClient {
     ///
     /// * `expiry_options` - Required. Indicates mode of the expiry time
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.setExpiry")]
     pub async fn set_expiry(
         &self,
         expiry_options: BlobExpiryOptions,
@@ -1006,7 +1167,17 @@ impl BlobClient {
             request.insert_header("x-ms-expiry-time", to_rfc7231(&expires_on));
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Set the immutability policy of a blob
@@ -1014,6 +1185,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.setImmutabilityPolicy")]
     pub async fn set_immutability_policy(
         &self,
         options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
@@ -1059,7 +1231,17 @@ impl BlobClient {
             );
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Set Legal Hold operation sets a legal hold on the blob.
@@ -1068,6 +1250,7 @@ impl BlobClient {
     ///
     /// * `legal_hold` - Required. Specifies the legal hold status to set on the blob.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.setLegalHold")]
     pub async fn set_legal_hold(
         &self,
         legal_hold: bool,
@@ -1099,7 +1282,17 @@ impl BlobClient {
         }
         request.insert_header("x-ms-legal-hold", legal_hold.to_string());
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Set Metadata operation sets user-defined metadata for the specified blob as one or more name-value pairs.
@@ -1107,6 +1300,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.setMetadata")]
     pub async fn set_metadata(
         &self,
         options: Option<BlobClientSetMetadataOptions<'_>>,
@@ -1168,7 +1362,17 @@ impl BlobClient {
             }
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Set HTTP Headers operation sets system properties on the blob.
@@ -1176,6 +1380,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.setProperties")]
     pub async fn set_properties(
         &self,
         options: Option<BlobClientSetPropertiesOptions<'_>>,
@@ -1237,7 +1442,17 @@ impl BlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Set Tags operation enables users to set tags on a blob.
@@ -1246,6 +1461,7 @@ impl BlobClient {
     ///
     /// * `tags` - The blob tags.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.setTags")]
     pub async fn set_tags(
         &self,
         tags: RequestContent<BlobTags>,
@@ -1286,7 +1502,17 @@ impl BlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(tags);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Set Tier operation sets the tier on a block blob. The operation is allowed on a page blob or block blob, but not on
@@ -1297,6 +1523,7 @@ impl BlobClient {
     ///
     /// * `tier` - Indicates the tier to be set on the blob.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.setTier")]
     pub async fn set_tier(
         &self,
         tier: AccessTier,
@@ -1337,7 +1564,17 @@ impl BlobClient {
             request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Start Copy From URL operation copies a blob or an internet resource to a new blob.
@@ -1348,6 +1585,7 @@ impl BlobClient {
     ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
     ///   either be public or must be authenticated via a shared access signature.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.startCopyFromUrl")]
     pub async fn start_copy_from_url(
         &self,
         copy_source: String,
@@ -1444,7 +1682,17 @@ impl BlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Undelete a blob that was previously soft deleted
@@ -1452,6 +1700,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.undelete")]
     pub async fn undelete(
         &self,
         options: Option<BlobClientUndeleteOptions<'_>>,
@@ -1475,7 +1724,17 @@ impl BlobClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 }
 

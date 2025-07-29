@@ -88,7 +88,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
     let client = MockHttpClient::new(|request| {
         async move {
             assert!(request.url().path().starts_with("/secrets/my-secret"));
-            assert_eq!(*request.method(), Method::Get);
+            assert_eq!(request.method(), Method::Get);
             assert!(
                 !request
                     .headers()
