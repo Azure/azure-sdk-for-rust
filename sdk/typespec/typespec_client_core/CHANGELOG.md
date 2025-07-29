@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `TryFrom<>` for `RequestContent<T>` imlementations for a wider variety of types.
+
 ### Breaking Changes
 
 ### Bugs Fixed
