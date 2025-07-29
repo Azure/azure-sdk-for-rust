@@ -397,18 +397,10 @@ impl RecoverableConnection {
             .clone())
     }
 
-    pub(super) fn recover_from_error(
-        connection: Option<&Weak<RecoverableConnection>>,
+    pub(super) async fn recover_from_error(
+        connection: Weak<RecoverableConnection>,
         reason: ErrorRecoveryAction,
     ) -> Result<()> {
-        let Some(connection) = connection else {
-            warn!(
-                "Connection is None, cannot recover from error: {:?}",
-                reason
-            );
-            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
-        };
-
         // If the connection is None, we cannot recover.
         let Some(connection) = connection.upgrade() else {
             warn!(
@@ -424,26 +416,26 @@ impl RecoverableConnection {
         match reason {
             ErrorRecoveryAction::ReconnectConnection => {
                 debug!("Recovering from connection error: {:?}", reason);
-                connection.connections.lock_blocking().take();
-                connection.authorizer.clear();
-                connection.session_instances.lock_blocking().clear();
-                connection.sender_instances.lock_blocking().clear();
-                connection.receiver_instances.lock_blocking().clear();
+                connection.connections.lock().await.take();
+                connection.authorizer.clear().await;
+                connection.session_instances.lock().await.clear();
+                connection.sender_instances.lock().await.clear();
+                connection.receiver_instances.lock().await.clear();
             }
             ErrorRecoveryAction::ReconnectSession => {
                 debug!("Recovering from session error: {:?}", reason);
                 // Recreate the session and sender/receiver as needed.
-                connection.session_instances.lock_blocking().clear();
-                connection.sender_instances.lock_blocking().clear();
-                connection.receiver_instances.lock_blocking().clear();
+                connection.session_instances.lock().await.clear();
+                connection.sender_instances.lock().await.clear();
+                connection.receiver_instances.lock().await.clear();
             }
             ErrorRecoveryAction::ReconnectLink => {
                 debug!("Recovering from link error: {:?}", reason);
                 // Recreate the session and sender/receiver as needed.
-                connection.session_instances.lock_blocking().clear();
-                connection.sender_instances.lock_blocking().clear();
-                connection.receiver_instances.lock_blocking().clear();
-                connection.mgmt_client.lock_blocking().take();
+                connection.session_instances.lock().await.clear();
+                connection.sender_instances.lock().await.clear();
+                connection.receiver_instances.lock().await.clear();
+                connection.mgmt_client.lock().await.take();
             }
             _ => {
                 warn!("Recover action {reason:?} should already have been handled.");

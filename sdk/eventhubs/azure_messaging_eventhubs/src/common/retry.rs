@@ -4,12 +4,16 @@
 // cspell: ignore retryable backoff
 
 use azure_core::{error::Result, sleep, time::Duration};
-use std::fmt::Debug;
+use std::{fmt::Debug, pin::Pin};
 use tracing::{info, warn};
 
 /// Type alias for recovery operation function to reduce complexity
-pub(crate) type RecoveryOperation<C, E> =
-    fn(Option<&C>, ErrorRecoveryAction) -> std::result::Result<(), E>;
+pub(crate) type RecoveryOperation<C, E> = fn(
+    C,
+    ErrorRecoveryAction,
+) -> Pin<
+    Box<dyn std::future::Future<Output = std::result::Result<(), E>> + Send + 'static>,
+>;
 
 /// Action to be taken for Eventhubs Errors
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -82,6 +86,7 @@ where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = std::result::Result<T, E>>,
     E: Debug + std::fmt::Display,
+    C: Clone,
 {
     let mut current_retry = 0u32;
     let mut current_delay = options.initial_delay;
@@ -149,8 +154,10 @@ where
                         warn!("Error requires special handling: {:?}", err);
                         // Handle special error cases (e.g., reconnecting). If no recovery action is provided,
                         // return the error.
-                        if let Some(recover_operation) = recover_operation {
-                            recover_operation(context.as_ref(), error_category)?;
+                        if let (Some(recover_operation), Some(context)) =
+                            (recover_operation, context.clone())
+                        {
+                            recover_operation(context, error_category).await?;
                         } else {
                             return Err(err);
                         }
@@ -187,6 +194,7 @@ pub(crate) async fn recover_azure_operation<F, Fut, T, C>(
 where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = Result<T>>,
+    C: Clone,
 {
     recover_with_backoff(
         operation,

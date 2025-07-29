@@ -130,8 +130,12 @@ impl AmqpReceiverApis for RecoverableReceiver {
                 .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
                 .retry_options,
             Self::should_retry_receive_operation,
-            Some(|connection, reason| {
-                RecoverableConnection::recover_from_error(connection, reason)
+            Some(move |connection: Weak<RecoverableConnection>, reason| {
+                let connection = connection.clone();
+                Box::pin(async move {
+                    // Use the static method from RecoverableConnection to recover from the error.
+                    RecoverableConnection::recover_from_error(connection, reason).await
+                })
             }),
             Some(self.recoverable_connection.clone()),
         )

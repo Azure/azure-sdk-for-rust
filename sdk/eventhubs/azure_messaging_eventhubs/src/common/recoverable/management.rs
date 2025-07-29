@@ -137,10 +137,10 @@ impl AmqpManagementApis for RecoverableManagementClient {
                 .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
                 .retry_options,
             Self::should_retry_management_response,
-            // None,
-            // None::<()>,
             Some(|connection, reason| {
-                RecoverableConnection::recover_from_error(connection, reason)
+                Box::pin(RecoverableConnection::recover_from_error(
+                    connection, reason,
+                ))
             }),
             Some(self.recoverable_connection.clone()),
         )

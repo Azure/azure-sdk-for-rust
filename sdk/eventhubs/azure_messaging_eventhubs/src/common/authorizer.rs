@@ -75,9 +75,9 @@ impl Authorizer {
         }
     }
 
-    pub(crate) fn clear(&self) {
+    pub(crate) async fn clear(&self) {
         debug!("Clearing authorization scopes.");
-        let mut scopes = self.authorization_scopes.lock_blocking();
+        let mut scopes = self.authorization_scopes.lock().await;
         scopes.clear();
     }
 
