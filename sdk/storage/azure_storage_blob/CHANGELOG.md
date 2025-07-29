@@ -8,8 +8,6 @@
 
 ### Bugs Fixed
 
-* Fixed incorrect serde rename for etag field in BlobPropertiesInternal struct from "ETag" to "Etag" to match Azure Blob Storage REST API response format.
-
 ### Other Changes
 
 ## 0.3.0 (2025-07-15)

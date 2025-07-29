@@ -456,14 +456,7 @@ pub struct BlobPropertiesInternal {
     pub encryption_scope: Option<String>,
 
     /// The blog ETag.
-    /// 
-    /// MANUAL FIX: Changed from "ETag" to "Etag" to match the actual Azure Blob Storage 
-    /// REST API response format as documented at:
-    /// https://learn.microsoft.com/en-us/rest/api/storageservices/list-blobs
-    /// 
-    /// This is a temporary fix until the upstream TypeSpec/API specification is corrected.
-    /// See issue: https://github.com/Azure/azure-sdk-for-rust/issues/2830
-    #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ETag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 
     /// The expire time of the blob.
