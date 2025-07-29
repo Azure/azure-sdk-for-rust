@@ -2,6 +2,19 @@ name: Copilot Environment Setup
 
 # This workflow sets up the development environment for GitHub Copilot coding agent
 # It ensures all necessary tools and dependencies are available for automated coding tasks
+#
+# The workflow:
+# - Sets up Rust toolchain as specified in rust-toolchain.toml
+# - Installs and caches Cargo dependencies
+# - Installs additional development tools (cargo-audit, cargo-outdated)
+# - Verifies Azure SDK specific system dependencies (OpenSSL, build tools)
+# - Runs comprehensive workspace verification (check, clippy, fmt)
+# - Tests basic functionality to ensure the environment is ready
+#
+# Triggers:
+# - Manual execution via workflow_dispatch 
+# - Weekly scheduled runs to keep environment fresh
+# - Automatic runs when key configuration files change
 
 on:
   workflow_dispatch: # Allow manual triggering
