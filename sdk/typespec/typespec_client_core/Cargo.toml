@@ -19,7 +19,7 @@ futures.workspace = true
 pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
 rand.workspace = true
-reqwest = { workspace = true, optional = true }
+reqwest = { workspace = true, default-features = false, optional = true }
 rust_decimal = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
@@ -45,17 +45,25 @@ tracing-subscriber.workspace = true
 typespec_macros.path = "../typespec_macros"
 
 [features]
-default = ["http", "json", "reqwest", "reqwest_deflate", "reqwest_gzip"]
+default = [
+  "http",
+  "json",
+  "reqwest_native_tls",
+  "reqwest_deflate",
+  "reqwest_gzip",
+]
 debug = ["typespec_macros?/debug"]
 derive = ["dep:typespec_macros"]
 http = ["typespec/http"]
 json = ["typespec/json"]
-reqwest = ["reqwest/native-tls"]
+reqwest_native_tls = ["reqwest/native-tls"]
 reqwest_deflate = ["reqwest/deflate"]
 reqwest_gzip = ["reqwest/gzip"]
-reqwest_rustls = [
+reqwest_rustls = ["reqwest_rustls_native_roots"]
+reqwest_rustls_native_roots = [
   "reqwest/rustls-tls-native-roots-no-provider",
 ] # Remove dependency on banned `ring` crate; requires manually configuring crypto provider.
+reqwest_rustls_webpki_roots = ["reqwest/rustls-tls-webpki-roots-no-provider"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/fs", "tokio/sync", "tokio/time", "tokio/io-util"]
 xml = ["dep:quick-xml"]
