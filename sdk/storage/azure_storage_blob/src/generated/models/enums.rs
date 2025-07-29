@@ -42,41 +42,6 @@ create_extensible_enum!(
     (Premium, "Premium")
 );
 
-create_extensible_enum!(
-    #[doc = r#"/// The access tiers."#]
-    AccessTierOptional,
-    #[doc = r#"/// The archive access tier."#]
-    (Archive, "Archive"),
-    #[doc = r#"/// The Cold access tier."#]
-    (Cold, "Cold"),
-    #[doc = r#"/// The cool access tier."#]
-    (Cool, "Cool"),
-    #[doc = r#"/// The hot access tier."#]
-    (Hot, "Hot"),
-    #[doc = r#"/// The hot P10 tier."#]
-    (P10, "P10"),
-    #[doc = r#"/// The hot P15 tier."#]
-    (P15, "P15"),
-    #[doc = r#"/// The hot P20 tier."#]
-    (P20, "P20"),
-    #[doc = r#"/// The hot P30 tier."#]
-    (P30, "P30"),
-    #[doc = r#"/// The hot P4 tier."#]
-    (P4, "P4"),
-    #[doc = r#"/// The hot P40 tier."#]
-    (P40, "P40"),
-    #[doc = r#"/// The hot P50 tier."#]
-    (P50, "P50"),
-    #[doc = r#"/// The hot P6 tier."#]
-    (P6, "P6"),
-    #[doc = r#"/// The hot P60 tier."#]
-    (P60, "P60"),
-    #[doc = r#"/// The hot P70 tier."#]
-    (P70, "P70"),
-    #[doc = r#"/// The hot P80 tier."#]
-    (P80, "P80")
-);
-
 create_enum!(
     #[doc = r#"/// The account kind."#]
     AccountKind,

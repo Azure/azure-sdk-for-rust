@@ -9,7 +9,7 @@ use crate::{
         BlockBlobClientUploadResult,
     },
     models::{
-        AccessTierOptional, BlobClientDeleteOptions, BlobClientDownloadOptions,
+        AccessTier, BlobClientDeleteOptions, BlobClientDownloadOptions,
         BlobClientGetPropertiesOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
@@ -228,7 +228,7 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn set_tier(
         &self,
-        tier: AccessTierOptional,
+        tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.set_tier(tier, options).await

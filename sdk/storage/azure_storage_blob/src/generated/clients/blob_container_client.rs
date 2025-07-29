@@ -135,9 +135,6 @@ impl BlobContainerClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-lease-action", "acquire");
-        if let Some(duration) = options.duration {
-            request.insert_header("x-ms-lease-duration", duration.to_string());
-        }
         if let Some(proposed_lease_id) = options.proposed_lease_id {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }

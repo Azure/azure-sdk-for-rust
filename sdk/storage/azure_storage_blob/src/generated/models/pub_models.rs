@@ -6,9 +6,8 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange, Committed_blocksBlock,
-        Container_itemsContainer, CorsCorsRule, Page_rangePageRange, SchemaField,
-        Uncommitted_blocksBlock,
+        Blob_tag_setTag, BlobsBlob, Committed_blocksBlock, Container_itemsContainer, CorsCorsRule,
+        SchemaField, Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobImmutabilityPolicyMode, BlobType, CopyStatus,
     GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
@@ -1132,13 +1131,7 @@ pub struct PageBlobClientUploadPagesResult;
 #[non_exhaustive]
 pub struct PageList {
     /// The clear ranges.
-    #[serde(
-        default,
-        deserialize_with = "Clear_rangeClearRange::unwrap",
-        rename = "ClearRange",
-        serialize_with = "Clear_rangeClearRange::wrap",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "ClearRange", skip_serializing_if = "Option::is_none")]
     pub clear_range: Option<Vec<ClearRange>>,
 
     /// The next marker.
@@ -1146,13 +1139,7 @@ pub struct PageList {
     pub next_marker: Option<String>,
 
     /// The page ranges.
-    #[serde(
-        default,
-        deserialize_with = "Page_rangePageRange::unwrap",
-        rename = "PageRange",
-        serialize_with = "Page_rangePageRange::wrap",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "PageRange", skip_serializing_if = "Option::is_none")]
     pub page_range: Option<Vec<PageRange>>,
 }
 

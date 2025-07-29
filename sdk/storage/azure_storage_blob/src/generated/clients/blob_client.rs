@@ -6,7 +6,7 @@
 use crate::generated::{
     clients::{AppendBlobClient, BlockBlobClient, PageBlobClient},
     models::{
-        AccessTierOptional, BlobClientAbortCopyFromUrlOptions, BlobClientAbortCopyFromUrlResult,
+        AccessTier, BlobClientAbortCopyFromUrlOptions, BlobClientAbortCopyFromUrlResult,
         BlobClientAcquireLeaseOptions, BlobClientAcquireLeaseResult, BlobClientBreakLeaseOptions,
         BlobClientBreakLeaseResult, BlobClientChangeLeaseOptions, BlobClientChangeLeaseResult,
         BlobClientCopyFromUrlOptions, BlobClientCopyFromUrlResult, BlobClientCreateSnapshotOptions,
@@ -153,9 +153,12 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
+    /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
+    ///   non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
     /// * `options` - Optional parameters for the request.
     pub async fn acquire_lease(
         &self,
+        duration: i32,
         options: Option<BlobClientAcquireLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -193,9 +196,7 @@ impl BlobClient {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-lease-action", "acquire");
-        if let Some(duration) = options.duration {
-            request.insert_header("x-ms-lease-duration", duration.to_string());
-        }
+        request.insert_header("x-ms-lease-duration", duration.to_string());
         if let Some(proposed_lease_id) = options.proposed_lease_id {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }
@@ -1299,7 +1300,7 @@ impl BlobClient {
     /// * `options` - Optional parameters for the request.
     pub async fn set_tier(
         &self,
-        tier: AccessTierOptional,
+        tier: AccessTier,
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
