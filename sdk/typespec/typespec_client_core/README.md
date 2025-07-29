@@ -6,7 +6,7 @@ This is the runtime for [TypeSpec](https://typespec.io)-generated clients.
 
 * `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
 * `decimal`: enables support for `rust_decimal::Decimal` type.
-* `derive`: enable derive macros e.g., `Model` and `SafeDebug`.
+* `derive`: enable derive macros e.g., `SafeDebug`.
 * `http` (default): enables HTTP support.
 * `json` (default): enables JSON support.
 * `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
