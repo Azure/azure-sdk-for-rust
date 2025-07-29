@@ -20,8 +20,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, Pipeline, RawResponse,
-        Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, PagerState, Pipeline,
+        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
     },
     tracing, xml, Error, Result,
 };
@@ -369,9 +369,9 @@ impl BlobServiceClient {
         }
         let version = self.version.clone();
         Ok(PageIterator::from_callback(
-            move |marker: Option<String>| {
+            move |marker: PagerState<String>| {
                 let mut url = first_url.clone();
-                if let Some(marker) = marker {
+                if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
                         let mut new_url = url.clone();
                         new_url

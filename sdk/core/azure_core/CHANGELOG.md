@@ -6,6 +6,9 @@
 
 ### Breaking Changes
 
+- `Pager::from_callback` and `PageIterator::from_callback` define a parameter of type `PagerState<C>` instead of `Option<C>`, where `None` => `Initial` and `Some(C)` => `More(C)`.
+- `Poller::from_callback` defines a parameter of type `PollerState<N>` instead of `Option<N>`, where `None` => `Initial` and `Some(N)` => `More(N)`.
+
 ### Bugs Fixed
 
 ### Other Changes

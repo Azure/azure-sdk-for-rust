@@ -27,6 +27,40 @@ use std::{
 const DEFAULT_RETRY_TIME: Duration = Duration::seconds(30);
 const MIN_RETRY_TIME: Duration = Duration::seconds(1);
 
+/// Represents the state of a [`Poller`].
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum PollerState<N> {
+    /// The poller should fetch the initial status.
+    #[default]
+    Initial,
+    /// The poller should fetch subsequent status.
+    More(N),
+}
+
+impl<N> PollerState<N> {
+    /// Maps a [`PollerState<N>`] to a [`PollerState<U>`] by applying a function to a next link `N` (if `PollerState::More`) or returns `PollerState::Initial` (if `PollerState::Initial`).
+    #[inline]
+    pub fn map<U, F>(self, f: F) -> PollerState<U>
+    where
+        F: FnOnce(N) -> U,
+    {
+        match self {
+            PollerState::Initial => PollerState::Initial,
+            PollerState::More(c) => PollerState::More(f(c)),
+        }
+    }
+}
+
+impl<N: Clone> Clone for PollerState<N> {
+    #[inline]
+    fn clone(&self) -> Self {
+        match self {
+            PollerState::Initial => PollerState::Initial,
+            PollerState::More(c) => PollerState::More(c.clone()),
+        }
+    }
+}
+
 /// Long-running operation (LRO) status.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub enum PollerStatus {
@@ -193,7 +227,7 @@ where
 {
     /// Creates a [`Poller<M>`] from a callback that will be called repeatedly to monitor a long-running operation (LRO).
     ///
-    /// This method expects a callback that accepts a single `Option<N>` parameter, and returns a [`PollerResult<M, N>`] value asynchronously.
+    /// This method expects a callback that accepts a single [`PollerState<N>`] parameter, and returns a [`PollerResult<M, N>`] value asynchronously.
     /// The `N` type parameter is the type of the next link/continuation token. It may be any [`Send`]able type.
     /// The `M` type parameter must implement [`StatusMonitor`].
     ///
@@ -210,7 +244,7 @@ where
     /// To poll a long-running operation:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, Pipeline, RawResponse, Request, Response, Method, Url, poller::{Poller, PollerResult, PollerStatus, StatusMonitor}}, json};
+    /// # use azure_core::{Result, http::{Context, Pipeline, RawResponse, Request, Response, Method, Url, poller::{Poller, PollerResult, PollerState, PollerStatus, StatusMonitor}}, json};
     /// # use serde::Deserialize;
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
@@ -232,13 +266,13 @@ where
     /// let url = "https://example.com/my_operation".parse().unwrap();
     /// let mut req = Request::new(url, Method::Post);
     ///
-    /// let poller = Poller::from_callback(move |operation_url: Option<Url>| {
+    /// let poller = Poller::from_callback(move |operation_url: PollerState<Url>| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
     ///     let mut req = req.clone();
     ///     async move {
-    ///         if let Some(operation_url) = operation_url {
+    ///         if let PollerState::More(operation_url) = operation_url {
     ///             // Use the operation URL for polling
     ///             *req.url_mut() = operation_url;
     ///             req.set_method(Method::Get);
@@ -275,10 +309,10 @@ where
     /// ```
     pub fn from_callback<
         #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<N>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PollerState<N>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] N: 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(Option<N>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PollerState<N>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N>>> + 'static,
     >(
         make_request: F,
@@ -396,10 +430,10 @@ enum State<N> {
 fn create_poller_stream<
     M,
     #[cfg(not(target_arch = "wasm32"))] N: Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<N>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] F: Fn(PollerState<N>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PollerResult<M, N>>> + Send + 'static,
     #[cfg(target_arch = "wasm32")] N: 'static,
-    #[cfg(target_arch = "wasm32")] F: Fn(Option<N>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] F: Fn(PollerState) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PollerResult<M, N>>> + 'static,
 >(
     make_request: F,
@@ -412,8 +446,8 @@ where
         (State::Init, make_request),
         |(state, make_request)| async move {
             let result = match state {
-                State::Init => make_request(None).await,
-                State::InProgress(n) => make_request(Some(n)).await,
+                State::Init => make_request(PollerState::Initial).await,
+                State::InProgress(n) => make_request(PollerState::More(n)).await,
                 State::Done => return None,
             };
             let (item, next_state) = match result {
