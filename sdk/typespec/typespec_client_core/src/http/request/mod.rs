@@ -534,6 +534,7 @@ pub mod json {
     }
 }
 
+#[allow(unused_imports)]
 #[cfg(feature = "json")]
 pub use json::*;
 
