@@ -1,0 +1,111 @@
+name: Copilot Environment Setup
+
+# This workflow sets up the development environment for GitHub Copilot coding agent
+# It ensures all necessary tools and dependencies are available for automated coding tasks
+
+on:
+  workflow_dispatch: # Allow manual triggering
+  schedule:
+    # Run weekly to keep the environment fresh
+    - cron: '0 2 * * 1' # Monday at 2 AM UTC
+  push:
+    branches: [main]
+    paths:
+      - 'rust-toolchain.toml'
+      - 'Cargo.toml'
+      - '.github/workflows/copilot-environment.yml'
+
+jobs:
+  setup-environment:
+    name: Setup Copilot Coding Agent Environment
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain from rust-toolchain.toml
+        uses: dtolnay/rust-toolchain@stable
+        # This action automatically reads rust-toolchain.toml and installs the specified components
+      
+      - name: Verify Rust installation
+        run: |
+          # Verify installations
+          rustc --version
+          cargo --version
+          rustfmt --version
+          cargo clippy --version
+          rust-analyzer --version || echo "rust-analyzer available through rustup"
+      
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      
+      - name: Install additional development tools
+        run: |
+          # Install tools commonly needed for Rust development and Azure SDK
+          cargo install cargo-audit || echo "cargo-audit already installed or failed to install"
+          cargo install cargo-outdated || echo "cargo-outdated already installed or failed to install"
+          
+          # Install system dependencies that might be needed for Azure SDK
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev
+      
+      - name: Azure SDK specific setup
+        run: |
+          # Check that we can work with Azure SDK specific dependencies
+          echo "Checking OpenSSL version for Azure connections:"
+          openssl version
+          
+          # Verify important system libraries are available
+          pkg-config --exists openssl || echo "OpenSSL pkg-config not found"
+          
+          # Check that we have necessary build tools
+          which make
+          which gcc || which clang
+      
+      - name: Verify workspace setup
+        run: |
+          # Verify the workspace can be built
+          cargo check --workspace --all-targets
+          
+          # Run basic linting
+          cargo clippy --workspace --all-targets -- -D warnings
+          
+          # Check formatting
+          cargo fmt --all -- --check
+      
+      - name: Setup environment variables
+        run: |
+          echo "RUST_BACKTRACE=1" >> $GITHUB_ENV
+          echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
+          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
+      
+      - name: Test basic functionality
+        run: |
+          # Test that we can run basic cargo commands
+          cargo --version
+          cargo tree --workspace | head -20
+          
+          # Verify that tests can be discovered
+          cargo test --workspace --no-run
+      
+      - name: Environment summary
+        run: |
+          echo "=== Rust Environment Summary ==="
+          rustc --version
+          cargo --version
+          echo "=== Installed Components ==="
+          rustup component list --installed
+          echo "=== Workspace Structure ==="
+          find . -name "Cargo.toml" | head -10
+          echo "=== Environment Ready for Copilot Coding Agent ==="
