@@ -4,6 +4,7 @@
 // cspell: ignore retryable backoff
 
 use azure_core::{error::Result, sleep, time::Duration};
+use rand::random;
 use std::{fmt::Debug, pin::Pin};
 use tracing::{info, warn};
 
@@ -120,7 +121,7 @@ where
                     ErrorRecoveryAction::RetryAction => {
                         let sleep_ms = options.initial_delay.whole_milliseconds() as u64
                             * 2u64.pow(current_retry)
-                            + u64::from(rand::random::<u8>());
+                            + u64::from(random::<u8>());
                         let sleep_ms = sleep_ms.min(
                             options
                                 .max_delay

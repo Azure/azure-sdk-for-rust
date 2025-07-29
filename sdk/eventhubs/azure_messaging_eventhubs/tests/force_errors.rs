@@ -8,7 +8,7 @@ use azure_messaging_eventhubs::{
     models::EventData,
     {EventDataBatchOptions, ProducerClient},
 };
-use std::{env, sync::Arc};
+use std::sync::Arc;
 use tokio::select;
 use tracing::info;
 

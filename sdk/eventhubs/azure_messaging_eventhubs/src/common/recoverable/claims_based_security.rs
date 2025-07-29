@@ -116,7 +116,11 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
                         .await
                 }
             },
-            &self.recoverable_connection.upgrade().unwrap().retry_options,
+            &self
+                .recoverable_connection
+                .upgrade()
+                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
+                .retry_options,
             Self::should_retry_claims_based_security_response,
             Some(move |connection: Weak<RecoverableConnection>, reason| {
                 let connection = connection.clone();

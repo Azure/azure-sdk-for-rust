@@ -135,7 +135,11 @@ impl RecoverableConnection {
 
     #[cfg(feature = "test")]
     pub(crate) fn get_forced_error(&self) -> azure_core::Result<()> {
-        let v = self.forced_error.lock().unwrap().take();
+        let v = self
+            .forced_error
+            .lock()
+            .expect("Forced error lock is poisoned")
+            .take();
         v.map_or(Ok(()), Err)
     }
 
