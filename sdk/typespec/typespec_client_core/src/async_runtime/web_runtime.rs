@@ -29,7 +29,6 @@ impl AsyncRuntime for WasmBindgenRuntime {
                 gloo_timers::future::sleep(d).await;
             } else {
                 // This means the duration is negative, don't sleep at all.
-                return;
             }
         })
     }
