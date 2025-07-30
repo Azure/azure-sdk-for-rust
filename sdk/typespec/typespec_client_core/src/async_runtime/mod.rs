@@ -193,7 +193,7 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
 }
 
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
-    #[cfg(all(feature = "wasm-bindgen", target_arch = "wasm32"))]
+    #[cfg(all(target_arch = "wasm32", feature = "wasm-bindgen"))]
     {
         Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>
     }
