@@ -65,11 +65,10 @@
 # PRLabel: %Cosmos
 /sdk/cosmos/             @analogrelay @Pilchie @kirankumarkolli @tvaron3 @FabianMeiswinkel @kundadebdatta @nehrao1 @kushagraThapar
 
-# ServiceLabel: %KeyVault
 # ServiceOwner: @Azure/azure-sdk-write-keyvault
-
+# ServiceLabel: %KeyVault
 # PRLabel: %KeyVault
-/sdk/keyvault/           @Azure/azure-sdk-write-keyvault
+/sdk/keyvault/           @Azure/azure-sdk-write-keyvault @heaths
 
 ###########
 # Eng Sys
