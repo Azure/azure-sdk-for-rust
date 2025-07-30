@@ -4,7 +4,7 @@
 use crate::generated::models::{BlobTag, BlobTags};
 use azure_core::http::{RawResponse, RequestContent, Response, XmlFormat};
 use azure_core::xml;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::{Error, ErrorKind};
 
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
@@ -46,15 +46,14 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
 ///
 /// * `tags` - A hash map containing the name-value pairs associated with the blob as tags.
 pub(crate) fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
-    let mut blob_tags = vec![];
-
-    for (k, v) in tags.into_iter() {
-        let blob_tag = BlobTag {
+    let sorted_tags: BTreeMap<_, _> = tags.into_iter().collect();
+    let blob_tags = sorted_tags
+        .into_iter()
+        .map(|(k, v)| BlobTag {
             key: Some(k),
             value: Some(v),
-        };
-        blob_tags.push(blob_tag);
-    }
+        })
+        .collect();
     BlobTags {
         blob_tag_set: Some(blob_tags),
     }
