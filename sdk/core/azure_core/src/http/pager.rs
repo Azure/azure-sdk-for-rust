@@ -59,16 +59,6 @@ impl<C: AsRef<str>> PagerState<C> {
     {
         self.as_ref().map(|t| t.deref())
     }
-
-    fn to_opt(&self) -> Option<C>
-    where
-        C: Clone,
-    {
-        match self {
-            PagerState::Initial => None,
-            PagerState::More(c) => Some(c.clone()),
-        }
-    }
 }
 
 impl<C: Clone + AsRef<str>> Clone for PagerState<C> {
@@ -287,11 +277,7 @@ impl<P: Page> ItemIterator<P> {
     >(
         make_request: F,
     ) -> Self {
-        Self::from_stream(iter_from_callback(
-            make_request,
-            || PagerState::Initial,
-            |_| {},
-        ))
+        Self::from_stream(iter_from_callback(make_request, || None, |_| {}))
     }
 
     /// Creates a [`ItemIterator<P>`] from a raw stream of [`Result<P>`](crate::Result<P>) values.
@@ -370,7 +356,7 @@ impl<P: Page> fmt::Debug for ItemIterator<P> {
 pub struct PageIterator<P> {
     #[pin]
     stream: Pin<BoxedStream<P>>,
-    continuation_token: Arc<Mutex<PagerState<String>>>,
+    continuation_token: Arc<Mutex<Option<String>>>,
 }
 
 impl<P> PageIterator<P> {
@@ -478,7 +464,7 @@ impl<P> PageIterator<P> {
     where
         <C as FromStr>::Err: fmt::Debug,
     {
-        let continuation_token = Arc::new(Mutex::new(PagerState::Initial::<String>));
+        let continuation_token = Arc::new(Mutex::new(None::<String>));
 
         let get_clone = continuation_token.clone();
         let set_clone = continuation_token.clone();
@@ -491,7 +477,7 @@ impl<P> PageIterator<P> {
                         .map(|n| n.parse().expect("valid continuation_token"));
                 }
 
-                PagerState::Initial
+                None
             },
             move |next_token| {
                 if let Ok(mut token_guard) = set_clone.lock() {
@@ -559,7 +545,7 @@ impl<P> PageIterator<P> {
     /// ```
     pub fn with_continuation_token(self, continuation_token: String) -> Self {
         if let Ok(mut token_guard) = self.continuation_token.lock() {
-            *token_guard = PagerState::More(continuation_token);
+            *token_guard = Some(continuation_token);
         }
 
         self
@@ -571,7 +557,7 @@ impl<P> PageIterator<P> {
     /// will return the next page. You can use this to page results across separate processes.
     pub fn continuation_token(&self) -> Option<String> {
         if let Ok(token) = self.continuation_token.lock() {
-            return token.to_opt();
+            return token.clone();
         }
 
         None
@@ -608,13 +594,13 @@ fn iter_from_callback<
     #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] G: Fn() -> PagerState<C> + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] S: Fn(PagerState<&str>) + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] G: Fn() -> Option<C> + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] S: Fn(Option<&str>) + Send + 'static,
     #[cfg(target_arch = "wasm32")] C: AsRef<str> + 'static,
     #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
-    #[cfg(target_arch = "wasm32")] G: Fn() -> PagerState<C> + 'static,
-    #[cfg(target_arch = "wasm32")] S: Fn(PagerState<&str>) + 'static,
+    #[cfg(target_arch = "wasm32")] G: Fn() -> Option<C> + 'static,
+    #[cfg(target_arch = "wasm32")] S: Fn(Option<&str>) + 'static,
 >(
     make_request: F,
     get_next: G,
@@ -624,14 +610,14 @@ fn iter_from_callback<
         // We flow the `make_request` callback, 'get_next', and `set_next` through the state value so that we can avoid cloning.
         (State::Init, make_request, get_next, set_next),
         |(mut state, make_request, get_next, set_next)| async move {
-            if let PagerState::More(next_token) = get_next() {
+            if let Some(next_token) = get_next() {
                 state = State::More(next_token);
             }
             let result = match state {
                 State::Init => make_request(PagerState::Initial).await,
                 State::More(n) => make_request(PagerState::More(n)).await,
                 State::Done => {
-                    set_next(PagerState::Initial);
+                    set_next(None);
                     return None;
                 }
             };
@@ -641,11 +627,11 @@ fn iter_from_callback<
                     response,
                     continuation: next_token,
                 }) => {
-                    set_next(PagerState::More(next_token.as_ref()));
+                    set_next(Some(next_token.as_ref()));
                     (Ok(response), State::More(next_token))
                 }
                 Ok(PagerResult::Done { response }) => {
-                    set_next(PagerState::Initial);
+                    set_next(None);
                     (Ok(response), State::Done)
                 }
             };
