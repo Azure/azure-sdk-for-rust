@@ -5,7 +5,7 @@ use super::{AsyncRuntime, SpawnedTask, TaskFuture};
 use crate::time::Duration;
 use futures::channel::oneshot;
 
-/// An [`AsyncRuntime`] using `tokio` based APIs.
+/// An [`AsyncRuntime`] using `wasm-bindgen-futures` for task spawning and `gloo-timers` for sleep functionality.
 pub(crate) struct WasmBindgenRuntime;
 
 impl AsyncRuntime for WasmBindgenRuntime {
