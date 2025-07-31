@@ -5,16 +5,17 @@ use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::{
         BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
-        BlobContainerClientChangeLeaseResult, BlobContainerClientGetPropertiesResult,
-        BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
+        BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
+        BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
+        BlobContainerClientRenewLeaseResult,
     },
     models::{
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
-        BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
-        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
-        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetMetadataOptions,
-        ListBlobsFlatSegmentResponse,
+        BlobContainerClientDeleteOptions, BlobContainerClientGetAccountInfoOptions,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
+        BlobContainerClientReleaseLeaseOptions, BlobContainerClientRenewLeaseOptions,
+        BlobContainerClientSetMetadataOptions, ListBlobsFlatSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -232,5 +233,18 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientRenewLeaseOptions<'_>>,
     ) -> Result<Response<BlobContainerClientRenewLeaseResult, NoFormat>> {
         self.client.renew_lease(lease_id, options).await
+    }
+
+    /// Gets information related to the Storage account in which the container resides.
+    /// This includes the `sku_name` and `account_kind`.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_account_info(
+        &self,
+        options: Option<BlobContainerClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientGetAccountInfoResult, NoFormat>> {
+        self.client.get_account_info(options).await
     }
 }
