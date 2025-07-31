@@ -50,11 +50,11 @@ impl Checkpoint {
         check_non_empty_parameter!(fully_qualified_namespace);
         check_non_empty_parameter!(event_hub_name);
         check_non_empty_parameter!(consumer_group);
-        Ok(fully_qualified_namespace.to_ascii_lowercase()
+        Ok(fully_qualified_namespace.to_string()
             + "/"
-            + event_hub_name.to_ascii_lowercase().as_str()
+            + event_hub_name
             + "/"
-            + consumer_group.to_ascii_lowercase().as_str()
+            + consumer_group
             + "/checkpoint/")
     }
 
@@ -113,11 +113,11 @@ impl Ownership {
         check_non_empty_parameter!(fully_qualified_namespace);
         check_non_empty_parameter!(event_hub_name);
         check_non_empty_parameter!(consumer_group);
-        Ok(fully_qualified_namespace.to_ascii_lowercase()
+        Ok(fully_qualified_namespace.to_string()
             + "/"
-            + event_hub_name.to_ascii_lowercase().as_str()
+            + event_hub_name
             + "/"
-            + consumer_group.to_ascii_lowercase().as_str()
+            + consumer_group
             + "/ownership/")
     }
 
