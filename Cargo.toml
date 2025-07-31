@@ -54,6 +54,9 @@ path = "sdk/core/azure_core"
 version = "0.1.0"
 path = "sdk/core/azure_core_macros"
 
+[workspace.dependencies.azure_core_opentelemetry]
+version = "0.1.0"
+path = "sdk/core/azure_core_opentelemetry"
 
 [workspace.dependencies.azure_core_amqp]
 version = "0.6.0"

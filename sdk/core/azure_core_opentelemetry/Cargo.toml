@@ -10,7 +10,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_core_tracing_opentelemetry"
 keywords = ["sdk", "azure", "tracing", "opentelemetry", "observability"]
 categories = ["api-bindings", "development-tools::debugging"]
-publish = false
+publish = true
 
 edition.workspace = true
 
