@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `TryFrom<>` for `RequestContent<T>` implementations for a wider variety of types.
+
 ### Breaking Changes
 
 - When a retry policy receives a response whose status code indicates the policy shouldn't retry the request, it now returns that response instead of an error
