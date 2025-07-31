@@ -3,3 +3,4 @@ consts
 eventdata
 mgmt
 rustc
+checkpointstore

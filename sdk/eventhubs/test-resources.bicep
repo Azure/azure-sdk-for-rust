@@ -218,3 +218,4 @@ output AZURE_STORAGE_ACCOUNT_NAME string = storageAccount.name
 output STORAGE_ENDPOINT_SUFFIX string = storageEndpointSuffix
 output AZURE_STORAGE_BLOB_ENDPOINT string = storageAccount.properties.primaryEndpoints.blob
 output RESOURCE_GROUP string = resourceGroup().name
+output AZURE_STORAGE_BLOB_CONTAINER string = storageAccount::storageAccount_default::storageAccount_blobContainer.name

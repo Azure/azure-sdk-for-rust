@@ -44,7 +44,6 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
 test = []
-blob_checkpoint_store = []
 
 [[bench]]
 name = "benchmarks"
