@@ -9,7 +9,7 @@ use crate::models::{
 };
 use azure_core::{
     http::{
-        poller::{get_retry_after, PollerResult, StatusMonitor as _},
+        poller::{get_retry_after, PollerResult, PollerState, StatusMonitor as _},
         Body, Method, Poller, PollerStatus, RawResponse, Request, RequestContent, Url,
     },
     json, Result,
@@ -177,9 +177,9 @@ impl CertificateClientExt for CertificateClient {
         let parameters: Body = parameters.into();
 
         Ok(Poller::from_callback(
-            move |next_link: Option<Url>| {
+            move |next_link: PollerState<Url>| {
                 let (mut request, next_link) = match next_link {
-                    Some(next_link) => {
+                    PollerState::More(next_link) => {
                         // Make sure the `api-version` is set appropriately.
                         let qp = next_link
                             .query_pairs()
@@ -196,7 +196,7 @@ impl CertificateClientExt for CertificateClient {
 
                         (request, next_link)
                     }
-                    None => {
+                    PollerState::Initial => {
                         let mut request = Request::new(url.clone(), Method::Post);
                         request.insert_header("accept", "application/json");
                         request.insert_header("content-type", "application/json");
