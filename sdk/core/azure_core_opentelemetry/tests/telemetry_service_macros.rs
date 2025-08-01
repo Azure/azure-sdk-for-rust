@@ -193,7 +193,7 @@ mod tests {
     }
 
     fn create_service_client(
-        ctx: TestContext,
+        ctx: &TestContext,
         azure_provider: Arc<dyn TracerProvider>,
     ) -> TestServiceClientWithMacros {
         let recording = ctx.recording();
@@ -282,11 +282,11 @@ mod tests {
     }
 
     #[recorded::test()]
-    async fn test_macro_service_client_get(ctx: TestContext) -> Result<()> {
+    async fn test_macro_service_client_get_simple(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let client = create_service_client(ctx, azure_provider.clone());
+        let client = create_service_client(&ctx, azure_provider.clone());
 
         let response = client.get("get", None).await;
         info!("Response: {:?}", response);
@@ -329,7 +329,7 @@ mod tests {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let client = create_service_client(ctx, azure_provider.clone());
+        let client = create_service_client(&ctx, azure_provider.clone());
 
         let response = client.get("failing_url", None).await;
         info!("Response: {:?}", response);
@@ -377,7 +377,7 @@ mod tests {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let client = create_service_client(ctx, azure_provider.clone());
+        let client = create_service_client(&ctx, azure_provider.clone());
 
         let response = client.get_with_function_tracing("get", None).await;
         info!("Response: {:?}", response);
