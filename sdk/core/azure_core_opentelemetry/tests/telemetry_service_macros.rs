@@ -432,20 +432,8 @@ mod tests {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let recording = ctx.recording();
-        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientWithMacrosOptions {
-            client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracer_provider: Some(azure_provider),
-                }),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
+        let client = create_service_client(&ctx, azure_provider.clone());
 
-        let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
         let response = client.get_with_function_tracing("failing_url", None).await;
         info!("Response: {:?}", response);
 

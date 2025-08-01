@@ -1,6 +1,6 @@
 {
   "AssetsRepo": "Azure/azure-sdk-assets",
   "AssetsRepoPrefixPath": "rust",
-  "Tag": "rust/azure_core_opentelemetry_186f0324e6",
+  "Tag": "rust/azure_core_opentelemetry_2bc5efc404",
   "TagPrefix": "rust/azure_core_opentelemetry"
 }
