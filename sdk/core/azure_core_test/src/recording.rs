@@ -333,9 +333,10 @@ impl Recording {
             return value;
         }
 
+        let value = value?;
         let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
-        variables.insert(key.into(), Value::from(value.as_ref(), options));
-        value
+        variables.insert(key.into(), Value::from(Some(&value), options));
+        Some(value)
     }
 }
 
