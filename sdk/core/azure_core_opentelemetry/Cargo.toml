@@ -10,9 +10,8 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_core_tracing_opentelemetry"
 keywords = ["sdk", "azure", "tracing", "opentelemetry", "observability"]
 categories = ["api-bindings", "development-tools::debugging"]
-publish = true
-
 edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 azure_core.workspace = true
@@ -22,7 +21,6 @@ opentelemetry_sdk.workspace = true
 reqwest.workspace = true
 tracing.workspace = true
 typespec_client_core.workspace = true
-
 
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
