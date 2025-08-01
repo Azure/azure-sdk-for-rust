@@ -199,7 +199,7 @@ mod tests {
         let recording = ctx.recording();
         let endpoint = "https://azuresdkforcpp.azurewebsites.net";
         let credential = recording.credential().clone();
-        let options = TestServiceClientWithMacrosOptions {
+        let mut options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
                 request_instrumentation: Some(RequestInstrumentationOptions {
                     tracer_provider: Some(azure_provider),
@@ -208,6 +208,7 @@ mod tests {
             },
             ..Default::default()
         };
+        recording.instrument(&mut options.client_options);
 
         TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap()
     }
@@ -268,9 +269,10 @@ mod tests {
         let recording = ctx.recording();
         let endpoint = "https://microsoft.com";
         let credential = recording.credential().clone();
-        let options = TestServiceClientWithMacrosOptions {
+        let mut options = TestServiceClientWithMacrosOptions {
             ..Default::default()
         };
+        recording.instrument(&mut options.client_options);
 
         let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
         assert_eq!(client.endpoint().as_str(), "https://microsoft.com/");
