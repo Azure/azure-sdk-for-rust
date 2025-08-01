@@ -19,7 +19,7 @@ impl StatusMonitor for CertificateOperation {
     }
 }
 
-/// Options to be passed to [`CertificateClientExt::begin_create_certificate()`](crate::clients::CertificateClientExt::begin_create_certificate())
+/// Options to be passed to [`CertificateClient::begin_create_certificate()`](crate::clients::CertificateClient::begin_create_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientBeginCreateCertificateOptions<'a> {
     /// Allows customization of the method call.
@@ -40,7 +40,7 @@ impl CertificateClientBeginCreateCertificateOptions<'_> {
     }
 }
 
-/// Options to be passed to [`CertificateClientExt::resume_certificate_operation()`](crate::clients::CertificateClientExt::resume_certificate_operation())
+/// Options to be passed to [`CertificateClient::resume_certificate_operation()`](crate::clients::CertificateClient::resume_certificate_operation())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientResumeCertificateOperationOptions<'a> {
     /// Allows customization of the method call.

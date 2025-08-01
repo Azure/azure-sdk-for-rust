@@ -15,7 +15,7 @@ use azure_core::{
     json, Result,
 };
 
-pub trait CertificateClientExt: private::Sealed {
+impl CertificateClient {
     /// Creates a new certificate and returns a [`Poller<CertificateOperation>`] to monitor the status.
     ///
     /// If this is the first version, the certificate resource is created. This operation requires the certificates/create permission.
@@ -32,7 +32,7 @@ pub trait CertificateClientExt: private::Sealed {
     /// ```no_run
     /// use azure_identity::DefaultAzureCredential;
     /// use azure_security_keyvault_certificates::{
-    ///     CertificateClient, CertificateClientExt,
+    ///     CertificateClient,
     ///     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
     /// };
     ///
@@ -77,86 +77,7 @@ pub trait CertificateClientExt: private::Sealed {
     ///
     /// # Ok(()) }
     /// ```
-    fn begin_create_certificate(
-        &self,
-        certificate_name: &str,
-        parameters: RequestContent<CreateCertificateParameters>,
-        options: Option<CertificateClientBeginCreateCertificateOptions<'_>>,
-    ) -> Result<Poller<CertificateOperation>>;
-
-    /// Resumes the [`CertificateClientExt::begin_create_certificate`] operation by returning a [`Poller<CertificateOperation>`] already in progress or completed.
-    ///
-    /// Gets the creation operation associated with a specified certificate. This operation requires the certificates/get permission.
-    ///
-    /// # Arguments
-    ///
-    /// * `certificate_name` - The name of the certificate.
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use azure_identity::DefaultAzureCredential;
-    /// use azure_security_keyvault_certificates::{
-    ///     CertificateClient, CertificateClientExt,
-    ///     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
-    /// };
-    ///
-    /// # #[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let credential = DefaultAzureCredential::new()?;
-    /// let client = CertificateClient::new(
-    ///     "https://your-key-vault-name.vault.azure.net/",
-    ///     credential.clone(),
-    ///     None,
-    /// )?;
-    ///
-    /// // Create a self-signed certificate.
-    /// let policy = CertificatePolicy {
-    ///     x509_certificate_properties: Some(X509CertificateProperties {
-    ///         subject: Some("CN=DefaultPolicy".into()),
-    ///         ..Default::default()
-    ///     }),
-    ///     issuer_parameters: Some(IssuerParameters {
-    ///         name: Some("Self".into()),
-    ///         ..Default::default()
-    ///     }),
-    ///     ..Default::default()
-    /// };
-    /// let body = CreateCertificateParameters {
-    ///     certificate_policy: Some(policy),
-    ///     ..Default::default()
-    /// };
-    ///
-    /// // Wait for the certificate operation to complete and get the last status monitor.
-    /// let operation = client
-    ///     .resume_certificate_operation("certificate-name",  None)?
-    ///     .wait()
-    ///     .await?
-    ///     // Deserialize the CertificateOperation:
-    ///     .into_body()
-    ///     .await?;
-    ///
-    /// if matches!(operation.status, Some(status) if status == "completed") {
-    ///     let target = operation.target.ok_or("expected target")?;
-    ///     println!("Created certificate {}", target);
-    /// }
-    ///
-    /// # Ok(()) }
-    /// ```
-    fn resume_certificate_operation(
-        &self,
-        certificate_name: &str,
-        options: Option<CertificateClientResumeCertificateOperationOptions<'_>>,
-    ) -> Result<Poller<CertificateOperation>>;
-}
-
-mod private {
-    pub trait Sealed {}
-    impl Sealed for super::CertificateClient {}
-}
-
-impl CertificateClientExt for CertificateClient {
-    fn begin_create_certificate(
+    pub fn begin_create_certificate(
         &self,
         certificate_name: &str,
         parameters: RequestContent<CreateCertificateParameters>,
@@ -235,7 +156,66 @@ impl CertificateClientExt for CertificateClient {
         ))
     }
 
-    fn resume_certificate_operation(
+    /// Resumes the [`CertificateClient::begin_create_certificate`] operation by returning a [`Poller<CertificateOperation>`] already in progress or completed.
+    ///
+    /// Gets the creation operation associated with a specified certificate. This operation requires the certificates/get permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `certificate_name` - The name of the certificate.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use azure_identity::DefaultAzureCredential;
+    /// use azure_security_keyvault_certificates::{
+    ///     CertificateClient,
+    ///     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
+    /// };
+    ///
+    /// # #[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let credential = DefaultAzureCredential::new()?;
+    /// let client = CertificateClient::new(
+    ///     "https://your-key-vault-name.vault.azure.net/",
+    ///     credential.clone(),
+    ///     None,
+    /// )?;
+    ///
+    /// // Create a self-signed certificate.
+    /// let policy = CertificatePolicy {
+    ///     x509_certificate_properties: Some(X509CertificateProperties {
+    ///         subject: Some("CN=DefaultPolicy".into()),
+    ///         ..Default::default()
+    ///     }),
+    ///     issuer_parameters: Some(IssuerParameters {
+    ///         name: Some("Self".into()),
+    ///         ..Default::default()
+    ///     }),
+    ///     ..Default::default()
+    /// };
+    /// let body = CreateCertificateParameters {
+    ///     certificate_policy: Some(policy),
+    ///     ..Default::default()
+    /// };
+    ///
+    /// // Wait for the certificate operation to complete and get the last status monitor.
+    /// let operation = client
+    ///     .resume_certificate_operation("certificate-name",  None)?
+    ///     .wait()
+    ///     .await?
+    ///     // Deserialize the CertificateOperation:
+    ///     .into_body()
+    ///     .await?;
+    ///
+    /// if matches!(operation.status, Some(status) if status == "completed") {
+    ///     let target = operation.target.ok_or("expected target")?;
+    ///     println!("Created certificate {}", target);
+    /// }
+    ///
+    /// # Ok(()) }
+    /// ```
+    pub fn resume_certificate_operation(
         &self,
         certificate_name: &str,
         options: Option<CertificateClientResumeCertificateOperationOptions<'_>>,
