@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- `http::Request::method()` returns a copy of the underlying `Method` rather than a reference to the underlying `Method`.
+
 ### Bugs Fixed
 
 ### Other Changes
