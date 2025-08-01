@@ -103,7 +103,7 @@ reqwest = { version = "0.12.22", features = [
   "json",
   "stream",
 ], default-features = false }
-rust_decimal = "1.37.2"
+rust_decimal.version = "1.37.2"
 rustc_version = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_amqp = { version = "0.14", features = ["uuid"] }

@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+* Changed `RequestContent<T>` models in client methods to `RequestContent<T, XmlFormat>` to provide parity with `Response<T, XmlFormat>`.
+
 ### Bugs Fixed
 
 ### Other Changes

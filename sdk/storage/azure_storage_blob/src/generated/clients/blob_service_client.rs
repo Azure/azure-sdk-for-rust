@@ -293,7 +293,7 @@ impl BlobServiceClient {
     #[tracing::function("Storage.Blob.getUserDelegationKey")]
     pub async fn get_user_delegation_key(
         &self,
-        key_info: RequestContent<KeyInfo>,
+        key_info: RequestContent<KeyInfo, XmlFormat>,
         options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
     ) -> Result<Response<UserDelegationKey, XmlFormat>> {
         let options = options.unwrap_or_default();
@@ -428,7 +428,7 @@ impl BlobServiceClient {
     #[tracing::function("Storage.Blob.setProperties")]
     pub async fn set_properties(
         &self,
-        storage_service_properties: RequestContent<StorageServiceProperties>,
+        storage_service_properties: RequestContent<StorageServiceProperties, XmlFormat>,
         options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();

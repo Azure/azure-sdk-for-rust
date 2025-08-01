@@ -8,6 +8,8 @@
 
 ### Breaking Changes
 
+- Added `Format` to `RequestContent<T>` making it `RequestContent<T, F>`. This provides parity with `Response<T, F>` added in version 0.4.0.
+
 - When a retry policy receives a response whose status code indicates the policy shouldn't retry the request, it now returns that response instead of an error
 
 ### Bugs Fixed
