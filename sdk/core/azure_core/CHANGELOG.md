@@ -1,6 +1,6 @@
 # Release History
 
-## 0.27.0 (Unreleased)
+## 0.27.0 (2025-08-01)
 
 ### Features Added
 
@@ -10,10 +10,6 @@
 
 - `Pager::from_callback` and `PageIterator::from_callback` define a parameter of type `PagerState<C>` instead of `Option<C>`, where `None` => `Initial` and `Some(C)` => `More(C)`.
 - `Poller::from_callback` defines a parameter of type `PollerState<N>` instead of `Option<N>`, where `None` => `Initial` and `Some(N)` => `More(N)`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.26.0 (2025-07-10)
 

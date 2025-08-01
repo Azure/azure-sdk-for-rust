@@ -1,16 +1,10 @@
 # Release History
 
-## 0.7.0 (Unreleased)
-
-### Features Added
+## 0.7.0 (2025-08-01)
 
 ### Breaking Changes
 
 - `http::Request::method()` returns a copy of the underlying `Method` rather than a reference to the underlying `Method`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.6.0 (2025-07-10)
 
