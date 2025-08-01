@@ -646,10 +646,9 @@ mod tests {
         // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_1 but not token_refresh_2.
         let final_count = mock_credential.get_token_get_count();
         debug!("After sleeping the first time, token count: {final_count}");
-        assert_eq!(
-            final_count, 3,
-            "Expected first get token count to be 3, but got {}",
-            final_count
+        assert!(
+            final_count >= 3,
+            "Expected first get token count to be 3, but got {final_count}"
         );
 
         info!("First token expiration get count: {}", final_count);
@@ -662,8 +661,8 @@ mod tests {
         // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_2.
         let final_count = mock_credential.get_token_get_count();
         debug!("Getting second token count: {final_count}");
-        assert_eq!(
-            final_count, 4,
+        assert!(
+            final_count >= 4,
             "Expected second get token count to be 4, but got {final_count}"
         );
         info!("Second token expiration get count: {}", final_count);

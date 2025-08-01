@@ -1,0 +1,44 @@
+[package]
+name = "azure_messaging_eventhubs_checkpointstore_blob"
+version = "0.1.0"
+description = "Azure Event Hubs checkpoint store implementation using Azure Blob Storage"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/Azure/azure-sdk-for-rust"
+homepage = "https://github.com/Azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_messaging_eventhubs_checkpointstore_blob"
+keywords = ["sdk", "azure", "eventhubs", "checkpoints", "blob"]
+categories = ["api-bindings"]
+authors = ["Microsoft"]
+edition = "2021"
+rust-version = "1.75.0"
+
+[dependencies]
+async-trait.workspace = true
+azure_core.workspace = true
+azure_messaging_eventhubs.workspace = true
+azure_storage_blob.workspace = true
+futures.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+time = { workspace = true, features = ["serde"] }
+tracing = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+[dev-dependencies]
+azure_core_test = { workspace = true, features = ["tracing"] }
+azure_identity.workspace = true
+tokio.workspace = true
+tracing-subscriber.workspace = true
+
+[features]
+default = []
+test = ["azure_messaging_eventhubs/test"]
+
+[[example]]
+name = "checkpoint_store_basic"
+path = "examples/checkpoint_store_basic.rs"
+
+[[example]]
+name = "processor_with_blob_checkpoints"
+path = "examples/processor_with_blob_checkpoints.rs"

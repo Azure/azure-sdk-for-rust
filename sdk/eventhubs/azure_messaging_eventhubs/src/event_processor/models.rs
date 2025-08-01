@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use std::{collections::HashMap, time::SystemTime};
-
-use azure_core::{error::ErrorKind as AzureErrorKind, http::Etag, Error, Result};
-
 use crate::StartPosition;
+use azure_core::{
+    error::ErrorKind as AzureErrorKind, http::Etag, time::OffsetDateTime, Error, Result,
+};
+use std::collections::HashMap;
 
 /// Represents a checkpoint in an Event Hub.
 ///
@@ -50,11 +50,11 @@ impl Checkpoint {
         check_non_empty_parameter!(fully_qualified_namespace);
         check_non_empty_parameter!(event_hub_name);
         check_non_empty_parameter!(consumer_group);
-        Ok(fully_qualified_namespace.to_ascii_lowercase()
+        Ok(fully_qualified_namespace.to_string()
             + "/"
-            + event_hub_name.to_ascii_lowercase().as_str()
+            + event_hub_name
             + "/"
-            + consumer_group.to_ascii_lowercase().as_str()
+            + consumer_group
             + "/checkpoint/")
     }
 
@@ -100,7 +100,7 @@ pub struct Ownership {
     /// The ETag associated with the ownership.
     pub etag: Option<Etag>,
     /// The last modified time of the ownership.
-    pub last_modified_time: Option<SystemTime>,
+    pub last_modified_time: Option<OffsetDateTime>,
 }
 
 impl Ownership {
@@ -113,11 +113,11 @@ impl Ownership {
         check_non_empty_parameter!(fully_qualified_namespace);
         check_non_empty_parameter!(event_hub_name);
         check_non_empty_parameter!(consumer_group);
-        Ok(fully_qualified_namespace.to_ascii_lowercase()
+        Ok(fully_qualified_namespace.to_string()
             + "/"
-            + event_hub_name.to_ascii_lowercase().as_str()
+            + event_hub_name
             + "/"
-            + consumer_group.to_ascii_lowercase().as_str()
+            + consumer_group
             + "/ownership/")
     }
 
