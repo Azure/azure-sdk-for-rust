@@ -35,7 +35,7 @@ rust-version = "1.85"
 [workspace.dependencies.typespec]
 default-features = false
 path = "sdk/typespec"
-version = "0.7.0"
+version = "0.8.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
