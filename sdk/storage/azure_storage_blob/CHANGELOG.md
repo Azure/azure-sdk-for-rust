@@ -2,7 +2,10 @@
 
 ## 0.4.0 (Unreleased)
 
-### Features Added
+### Bugs Fixed
+
+* Fixed an issue where the `Etag` field in `BlobPropertiesInternal` was not deserialized properly.
+* Re-exported previously inaccessible models referenced in options bags and response models for currently implemented features.
 
 ### Breaking Changes
 
