@@ -10,19 +10,13 @@ use crate::stream::SeekableStream;
 use crate::{
     http::{
         headers::{AsHeaders, Header, HeaderName, HeaderValue, Headers},
-        Method, Url,
+        Format, JsonFormat, Method, SerializeWith, Url,
     },
     json::to_json,
-    time::OffsetDateTime,
 };
 use bytes::Bytes;
 use serde::Serialize;
-use serde_json::Value;
 use std::{collections::HashMap, convert::Infallible, fmt, marker::PhantomData, str::FromStr};
-use time::format_description::well_known::Rfc3339;
-
-#[cfg(feature = "decimal")]
-use rust_decimal::Decimal;
 
 /// An HTTP Body.
 #[derive(Clone)]
@@ -59,11 +53,23 @@ impl Body {
             Body::SeekableStream(stream) => stream.reset().await,
         }
     }
+
+    #[cfg(test)]
+    fn from_static(value: &'static [u8]) -> Self {
+        Self::Bytes(Bytes::from_static(value))
+    }
 }
 
 impl fmt::Debug for Body {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            #[cfg(test)]
+            Self::Bytes(v) if !v.is_empty() => f
+                .debug_struct("Bytes")
+                .field("len", &v.len())
+                .field("data", &v)
+                .finish_non_exhaustive(),
+            #[cfg(not(test))]
             Self::Bytes(v) if !v.is_empty() => f.write_str("Bytes { .. }"),
             Self::Bytes(_) => f.write_str("Bytes {}"),
             #[cfg(not(target_arch = "wasm32"))]
@@ -240,12 +246,12 @@ impl fmt::Debug for Request {
 /// The body content of a service client request.
 /// This allows callers to pass a model to serialize or raw content to client methods.
 #[derive(Clone, Debug)]
-pub struct RequestContent<T> {
+pub struct RequestContent<T, F = JsonFormat> {
     body: Body,
-    phantom: PhantomData<T>,
+    phantom: PhantomData<(T, F)>,
 }
 
-impl<T> RequestContent<T> {
+impl<T, F> RequestContent<T, F> {
     /// Gets the body of the request.
     pub fn body(&self) -> &Body {
         &self.body
@@ -261,19 +267,19 @@ impl<T> RequestContent<T> {
 }
 
 #[cfg(test)]
-impl<T> PartialEq for RequestContent<T> {
+impl<T, F> PartialEq for RequestContent<T, F> {
     fn eq(&self, other: &Self) -> bool {
         self.body.eq(&other.body)
     }
 }
 
-impl<T> From<RequestContent<T>> for Body {
-    fn from(content: RequestContent<T>) -> Self {
+impl<T, F> From<RequestContent<T, F>> for Body {
+    fn from(content: RequestContent<T, F>) -> Self {
         content.body
     }
 }
 
-impl<T> From<Body> for RequestContent<T> {
+impl<T, F> From<Body> for RequestContent<T, F> {
     fn from(body: Body) -> Self {
         Self {
             body,
@@ -282,7 +288,7 @@ impl<T> From<Body> for RequestContent<T> {
     }
 }
 
-impl<T> TryFrom<Bytes> for RequestContent<T> {
+impl<T, F> TryFrom<Bytes> for RequestContent<T, F> {
     type Error = crate::Error;
     fn try_from(body: Bytes) -> Result<Self, Self::Error> {
         Ok(Self {
@@ -292,17 +298,17 @@ impl<T> TryFrom<Bytes> for RequestContent<T> {
     }
 }
 
-impl<T> TryFrom<Vec<u8>> for RequestContent<T> {
+impl<'a, T, F> TryFrom<&'a [u8]> for RequestContent<T, F> {
     type Error = crate::Error;
-    fn try_from(body: Vec<u8>) -> Result<Self, Self::Error> {
+    fn try_from(body: &'a [u8]) -> Result<Self, Self::Error> {
         Ok(Self {
-            body: Bytes::from(body).into(),
+            body: Bytes::copy_from_slice(body).into(),
             phantom: PhantomData,
         })
     }
 }
 
-impl<T> TryFrom<&'static str> for RequestContent<T> {
+impl<T, F> TryFrom<&'static str> for RequestContent<T, F> {
     type Error = crate::Error;
     fn try_from(body: &'static str) -> Result<Self, Self::Error> {
         Ok(Self {
@@ -312,7 +318,7 @@ impl<T> TryFrom<&'static str> for RequestContent<T> {
     }
 }
 
-impl<T> TryFrom<bool> for RequestContent<T> {
+impl<T, F> TryFrom<bool> for RequestContent<T, F> {
     type Error = Infallible;
     fn try_from(body: bool) -> Result<Self, Infallible> {
         Ok(Self {
@@ -322,212 +328,34 @@ impl<T> TryFrom<bool> for RequestContent<T> {
     }
 }
 
-#[cfg(feature = "decimal")]
-impl<T> TryFrom<Option<Decimal>> for RequestContent<T> {
-    type Error = Infallible;
-    fn try_from(body: Option<Decimal>) -> Result<Self, Infallible> {
-        Ok(Self {
-            body: Bytes::from(body.map(|d| d.to_string()).unwrap_or_default()).into(),
-            phantom: PhantomData,
-        })
+impl<T: SerializeWith<F>, F: Format> TryFrom<Option<T>> for RequestContent<Option<T>, F>
+where
+    Option<T>: SerializeWith<F>,
+{
+    type Error = crate::Error;
+    fn try_from(value: Option<T>) -> Result<Self, Self::Error> {
+        Ok(<Option<T> as SerializeWith<F>>::serialize_with(value)?.into())
     }
 }
 
-pub mod json {
-    use super::*;
-
-    impl<T> TryFrom<Value> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Value) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
+impl<T: SerializeWith<F>, F: Format> TryFrom<Vec<T>> for RequestContent<Vec<T>, F>
+where
+    Vec<T>: SerializeWith<F>,
+{
+    type Error = crate::Error;
+    fn try_from(value: Vec<T>) -> Result<Self, Self::Error> {
+        Ok(<Vec<T> as SerializeWith<F>>::serialize_with(value)?.into())
     }
+}
 
-    impl<T> TryFrom<Vec<bool>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Vec<bool>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<Vec<OffsetDateTime>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Vec<OffsetDateTime>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(
-                    &body
-                        .iter()
-                        .map(|v| v.format(&Rfc3339).unwrap_or_else(|_| v.to_string()))
-                        .collect::<Vec<_>>(),
-                )?)
-                .into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<Vec<String>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Vec<String>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<Vec<&str>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Vec<&str>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<Vec<f32>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Vec<f32>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<Vec<f64>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Vec<f64>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<Vec<i32>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Vec<i32>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<Vec<i64>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Vec<i64>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<Vec<Value>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: Vec<Value>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<HashMap<String, bool>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: HashMap<String, bool>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<HashMap<String, OffsetDateTime>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: HashMap<String, OffsetDateTime>) -> Result<Self, Self::Error> {
-            let body_rfc3339: HashMap<String, String> = body
-                .into_iter()
-                .map(|(k, v)| {
-                    let formatted = v.format(&Rfc3339).unwrap_or_else(|_| v.to_string());
-                    (k, formatted)
-                })
-                .collect();
-
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body_rfc3339)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<HashMap<String, String>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: HashMap<String, String>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<HashMap<String, f32>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: HashMap<String, f32>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<HashMap<String, f64>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: HashMap<String, f64>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<HashMap<String, i32>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: HashMap<String, i32>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<HashMap<String, i64>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: HashMap<String, i64>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
-    }
-
-    impl<T> TryFrom<HashMap<String, Value>> for RequestContent<T> {
-        type Error = crate::Error;
-        fn try_from(body: HashMap<String, Value>) -> Result<Self, Self::Error> {
-            Ok(Self {
-                body: Bytes::from(serde_json::to_string(&body)?).into(),
-                phantom: PhantomData,
-            })
-        }
+impl<T: SerializeWith<F>, F: Format> TryFrom<HashMap<String, T>>
+    for RequestContent<HashMap<String, T>, F>
+where
+    HashMap<String, T>: SerializeWith<F>,
+{
+    type Error = crate::Error;
+    fn try_from(value: HashMap<String, T>) -> Result<Self, Self::Error> {
+        Ok(<HashMap<String, T> as SerializeWith<F>>::serialize_with(value)?.into())
     }
 }
 
@@ -546,7 +374,15 @@ impl<T> FromStr for RequestContent<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::LazyLock;
+    use crate::{
+        error::{Error, ErrorKind, ResultExt as _},
+        time::OffsetDateTime,
+    };
+    use bytes::BufMut as _;
+    use serde::Serializer;
+    use serde_json::{value::RawValue, Value};
+    use std::{collections::BTreeMap, sync::LazyLock};
+    use time::macros::datetime;
 
     #[derive(Debug, Serialize)]
     struct Expected {
@@ -567,6 +403,49 @@ mod tests {
         phantom: PhantomData,
     });
 
+    // Serialization support for an ordered HashMap i.e, BTreeMap.
+    impl<T: SerializeWith<JsonFormat>> SerializeWith<JsonFormat> for BTreeMap<String, T> {
+        fn serialize_with(value: Self) -> typespec::Result<Body> {
+            use serde::ser::SerializeMap;
+
+            let mut buf = vec![].writer();
+            let mut ser = serde_json::Serializer::new(&mut buf);
+            let mut seq = ser
+                .serialize_map(Some(value.len()))
+                .with_context(ErrorKind::Io, || "failed map start")?;
+            for (key, elem) in value {
+                let Body::Bytes(raw) = T::serialize_with(elem)? else {
+                    return Err(Error::new(
+                        ErrorKind::DataConversion,
+                        "failed json serialization",
+                    ));
+                };
+                let raw = RawValue::from_string(String::from_utf8(raw.to_vec())?)?;
+                seq.serialize_entry(&key, &raw)
+                    .with_context(ErrorKind::Io, || "failed map entry")?;
+            }
+            seq.end().with_context(ErrorKind::Io, || "failed map end")?;
+
+            let buf = buf.into_inner();
+            Ok(buf.into())
+        }
+    }
+
+    // Serialization support for an ordered HashMap i.e, BTreeMap.
+    impl<T: SerializeWith<F>, F: Format> TryFrom<std::collections::BTreeMap<String, T>>
+        for RequestContent<std::collections::BTreeMap<String, T>, F>
+    where
+        std::collections::BTreeMap<String, T>: SerializeWith<F>,
+    {
+        type Error = crate::Error;
+        fn try_from(value: std::collections::BTreeMap<String, T>) -> Result<Self, Self::Error> {
+            Ok(
+                <std::collections::BTreeMap<String, T> as SerializeWith<F>>::serialize_with(value)?
+                    .into(),
+            )
+        }
+    }
+
     #[test]
     fn tryfrom_t() {
         let actual = Expected {
@@ -585,7 +464,7 @@ mod tests {
 
     #[test]
     fn tryfrom_vec() {
-        let actual: Vec<u8> = r#"{"str":"test","num":1,"b":true}"#.bytes().collect();
+        let actual = br#"{"str":"test","num":1,"b":true}"#.as_ref();
         assert_eq!(*EXPECTED, actual.try_into().unwrap());
     }
 
@@ -600,5 +479,155 @@ mod tests {
         let actual: RequestContent<Expected> =
             r#"{"str":"test","num":1,"b":true}"#.parse().unwrap();
         assert_eq!(*EXPECTED, actual);
+    }
+
+    #[test]
+    fn spector_vec_bool() {
+        let actual: RequestContent<Vec<bool>> = vec![true, false].try_into().unwrap();
+        assert_eq!(actual.body(), &Body::from_static(br#"[true,false]"#));
+    }
+
+    #[test]
+    fn spector_vec_offset_date_time() {
+        let actual: RequestContent<Vec<OffsetDateTime>> =
+            vec![datetime!(2022-08-26 18:38:00 UTC)].try_into().unwrap();
+        assert_eq!(
+            actual.body(),
+            &Body::from_static(br#"["2022-08-26T18:38:00Z"]"#)
+        );
+    }
+
+    #[test]
+    fn spector_vec_duration() {
+        let actual: RequestContent<Vec<String>> =
+            vec!["P123DT22H14M12.011S".into()].try_into().unwrap();
+        assert_eq!(
+            actual.body(),
+            &Body::from_static(br#"["P123DT22H14M12.011S"]"#)
+        );
+    }
+
+    #[test]
+    fn spector_vec_f32() {
+        let actual: RequestContent<Vec<f32>> = vec![43.125f32].try_into().unwrap();
+        assert_eq!(actual.body(), &Body::from_static(br#"[43.125]"#));
+    }
+
+    #[test]
+    fn spector_vec_i64() {
+        let actual: RequestContent<Vec<i64>> = vec![9007199254740991i64, -9007199254740991i64]
+            .try_into()
+            .unwrap();
+        assert_eq!(
+            actual.body(),
+            &Body::from_static(br#"[9007199254740991,-9007199254740991]"#)
+        );
+    }
+
+    #[test]
+    fn spector_vec_string() {
+        let actual: RequestContent<Vec<String>> =
+            vec!["hello".into(), "".into()].try_into().unwrap();
+        assert_eq!(actual.body(), &Body::from_static(br#"["hello",""]"#));
+    }
+
+    #[test]
+    fn spector_vec_value() {
+        let actual: RequestContent<Vec<Value>> = vec![
+            Value::Number(1.into()),
+            Value::String("hello".into()),
+            Value::Null,
+        ]
+        .try_into()
+        .unwrap();
+        assert_eq!(actual.body(), &Body::from_static(br#"[1,"hello",null]"#));
+    }
+
+    #[test]
+    fn spector_dictionary_bool() {
+        let actual: RequestContent<BTreeMap<String, bool>> =
+            BTreeMap::from_iter(vec![("k1".into(), true), ("k2".into(), false)])
+                .try_into()
+                .unwrap();
+        assert_eq!(
+            actual.body(),
+            &Body::from_static(br#"{"k1":true,"k2":false}"#)
+        );
+    }
+
+    #[test]
+    fn spector_dictionary_offset_date_time() {
+        let actual: RequestContent<BTreeMap<String, OffsetDateTime>> =
+            BTreeMap::from_iter(vec![("k1".into(), datetime!(2022-08-26 18:38:00 UTC))])
+                .try_into()
+                .unwrap();
+        assert_eq!(
+            actual.body(),
+            &Body::from_static(br#"{"k1":"2022-08-26T18:38:00Z"}"#)
+        );
+    }
+
+    #[test]
+    fn spector_dictionary_duration() {
+        let actual: RequestContent<BTreeMap<String, String>> =
+            BTreeMap::from_iter(vec![("k1".into(), "P123DT22H14M12.011S".into())])
+                .try_into()
+                .unwrap();
+        assert_eq!(
+            actual.body(),
+            &Body::from_static(br#"{"k1":"P123DT22H14M12.011S"}"#)
+        );
+    }
+
+    #[test]
+    fn spector_dictionary_f32() {
+        let actual: RequestContent<BTreeMap<String, f32>> =
+            BTreeMap::from_iter(vec![("k1".into(), 43.125f32)])
+                .try_into()
+                .unwrap();
+        assert_eq!(actual.body(), &Body::from_static(br#"{"k1":43.125}"#));
+    }
+
+    #[test]
+    fn spector_dictionary_i64() {
+        let actual: RequestContent<BTreeMap<String, i64>> = BTreeMap::from_iter(vec![
+            ("k1".into(), 9007199254740991i64),
+            ("k2".into(), -9007199254740991i64),
+        ])
+        .try_into()
+        .unwrap();
+        assert_eq!(
+            actual.body(),
+            &Body::from_static(br#"{"k1":9007199254740991,"k2":-9007199254740991}"#)
+        );
+    }
+
+    #[test]
+    fn spector_dictionary_string() {
+        let actual: RequestContent<BTreeMap<String, String>> = BTreeMap::from_iter(vec![
+            ("k1".into(), "hello".into()),
+            ("k2".into(), "".into()),
+        ])
+        .try_into()
+        .unwrap();
+        assert_eq!(
+            actual.body(),
+            &Body::from_static(br#"{"k1":"hello","k2":""}"#)
+        );
+    }
+
+    #[test]
+    fn spector_dictionary_value() {
+        let actual: RequestContent<BTreeMap<String, Value>> = BTreeMap::from_iter(vec![
+            ("k1".into(), Value::Number(1.into())),
+            ("k2".into(), Value::String("hello".into())),
+            ("k3".into(), Value::Null),
+        ])
+        .try_into()
+        .unwrap();
+        assert_eq!(
+            actual.body(),
+            &Body::from_static(br#"{"k1":1,"k2":"hello","k3":null}"#)
+        );
     }
 }

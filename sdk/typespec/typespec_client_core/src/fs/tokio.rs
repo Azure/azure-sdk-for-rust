@@ -172,14 +172,14 @@ impl From<FileStream> for Body {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl<T> From<&FileStream> for RequestContent<T> {
+impl<T, F> From<&FileStream> for RequestContent<T, F> {
     fn from(stream: &FileStream) -> Self {
         Body::from(stream).into()
     }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl<T> From<FileStream> for RequestContent<T> {
+impl<T, F> From<FileStream> for RequestContent<T, F> {
     fn from(stream: FileStream) -> Self {
         Body::from(stream).into()
     }

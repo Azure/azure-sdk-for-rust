@@ -992,7 +992,7 @@ impl BlobContainerClient {
     #[tracing::function("Storage.Blob.Container.setAccessPolicy")]
     pub async fn set_access_policy(
         &self,
-        container_acl: RequestContent<Vec<SignedIdentifier>>,
+        container_acl: RequestContent<Vec<SignedIdentifier>, XmlFormat>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>> {
         let options = options.unwrap_or_default();

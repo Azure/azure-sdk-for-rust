@@ -22,7 +22,7 @@ rand.workspace = true
 reqwest = { workspace = true, optional = true }
 rust_decimal = { workspace = true, optional = true }
 serde.workspace = true
-serde_json.workspace = true
+serde_json = { workspace = true, features = ["raw_value"] }
 time.workspace = true
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
