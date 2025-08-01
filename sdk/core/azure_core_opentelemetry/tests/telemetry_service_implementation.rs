@@ -5,16 +5,16 @@
 
 //! This file contains an Azure SDK for Rust fake service client API.
 //!
+#[cfg(not(target_os = "macos"))]
+use azure_core::http::RequestInstrumentationOptions;
 use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
-    http::{
-        ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request,
-        RequestInstrumentationOptions, Url,
-    },
+    http::{ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request, Url},
     tracing::{PublicApiInstrumentationInformation, Tracer},
     Result,
 };
+#[cfg(not(target_os = "macos"))]
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::{InMemorySpanExporter, SdkTracerProvider};
 use std::sync::Arc;
@@ -175,8 +175,10 @@ impl TestServiceClient {
 use azure_core_test::{recorded, TestContext};
 use opentelemetry::trace::{SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus};
 use opentelemetry::Value as OpenTelemetryAttributeValue;
+#[cfg(not(target_os = "macos"))]
 use tracing::{info, trace};
 
+#[cfg(not(target_os = "macos"))]
 fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
     let otel_exporter = InMemorySpanExporter::default();
     let otel_tracer_provider = SdkTracerProvider::builder()
@@ -188,6 +190,7 @@ fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanE
 
 // Span verification utility functions.
 
+#[cfg(not(target_os = "macos"))]
 struct ExpectedSpan {
     name: &'static str,
     kind: OpenTelemetrySpanKind,
@@ -196,6 +199,7 @@ struct ExpectedSpan {
     attributes: Vec<(&'static str, OpenTelemetryAttributeValue)>,
 }
 
+#[cfg(not(target_os = "macos"))]
 fn verify_span(span: &opentelemetry_sdk::trace::SpanData, expected: ExpectedSpan) -> Result<()> {
     assert_eq!(span.name, expected.name);
     assert_eq!(span.span_kind, expected.kind);
