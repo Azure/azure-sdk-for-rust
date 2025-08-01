@@ -33,9 +33,5 @@
 //! # }
 //! ```
 
-#![deny(missing_docs)]
-#![deny(missing_debug_implementations)]
-
 pub mod checkpoint_store;
-
 pub use checkpoint_store::BlobCheckpointStore;
