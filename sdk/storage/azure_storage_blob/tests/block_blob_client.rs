@@ -74,10 +74,8 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         uncommitted: Some(Vec::new()),
     };
 
-    let request_content = RequestContent::try_from(block_lookup_list)?;
-
     block_blob_client
-        .commit_block_list(request_content, None)
+        .commit_block_list(block_lookup_list.try_into()?, None)
         .await?;
 
     // Three Committed Blocks Scenario

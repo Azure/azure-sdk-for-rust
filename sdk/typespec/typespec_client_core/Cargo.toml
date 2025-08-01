@@ -47,6 +47,7 @@ typespec_macros.path = "../typespec_macros"
 [features]
 default = ["http", "json", "reqwest", "reqwest_deflate", "reqwest_gzip"]
 debug = ["typespec_macros?/debug"]
+decimal = ["dep:rust_decimal"]
 derive = ["dep:typespec_macros"]
 http = ["typespec/http"]
 json = ["typespec/json"]
@@ -59,7 +60,6 @@ reqwest_rustls = [
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/fs", "tokio/sync", "tokio/time", "tokio/io-util"]
 xml = ["dep:quick-xml"]
-decimal = ["dep:rust_decimal"]
 
 [[example]]
 name = "core_binary_data_request"
@@ -72,6 +72,7 @@ required-features = ["derive"]
 [package.metadata.docs.rs]
 features = [
   "derive",
+  "decimal",
   "http",
   "json",
   "reqwest",
