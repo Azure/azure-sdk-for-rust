@@ -111,7 +111,7 @@ impl BlockBlobClient {
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.commitBlockList")]
     pub async fn commit_block_list(
         &self,
-        blocks: RequestContent<BlockLookupList>,
+        blocks: RequestContent<BlockLookupList, XmlFormat>,
         options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
     ) -> Result<Response<BlockBlobClientCommitBlockListResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -454,7 +454,7 @@ impl BlockBlobClient {
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.query")]
     pub async fn query(
         &self,
-        query_request: RequestContent<QueryRequest>,
+        query_request: RequestContent<QueryRequest, XmlFormat>,
         options: Option<BlockBlobClientQueryOptions<'_>>,
     ) -> Result<Response<BlockBlobClientQueryResult, NoFormat>> {
         let options = options.unwrap_or_default();

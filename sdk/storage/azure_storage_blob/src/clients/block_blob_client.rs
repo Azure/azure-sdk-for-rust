@@ -95,7 +95,7 @@ impl BlockBlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn commit_block_list(
         &self,
-        blocks: RequestContent<BlockLookupList>,
+        blocks: RequestContent<BlockLookupList, XmlFormat>,
         options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
     ) -> Result<Response<BlockBlobClientCommitBlockListResult, NoFormat>> {
         self.client.commit_block_list(blocks, options).await
