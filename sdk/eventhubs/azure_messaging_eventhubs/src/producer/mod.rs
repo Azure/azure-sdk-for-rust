@@ -294,14 +294,14 @@ impl ProducerClient {
     ///
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
-    ///   producer.send_batch(&batch, None).await?;
+    ///   producer.send_batch(batch, None).await?;
     ///   Ok(())
     /// }
     /// ```
     ///
     pub async fn send_batch(
         &self,
-        batch: &EventDataBatch<'_>,
+        batch: EventDataBatch<'_>,
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
         let sender = self.connection.get_sender(batch.get_batch_path()?).await?;
@@ -408,6 +408,12 @@ impl ProducerClient {
             .await?
             .get_eventhub_partition_properties(&self.eventhub, partition_id)
             .await
+    }
+
+    /// Forces an error on the connection.
+    #[cfg(feature = "test")]
+    pub fn force_error(&self, error: azure_core::Error) -> Result<()> {
+        self.connection.force_error(error)
     }
 
     pub(crate) fn base_url(&self) -> &Url {

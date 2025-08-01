@@ -93,7 +93,7 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         None
     )?);
 
-    assert!(producer.send_batch(&batch, None).await.is_ok());
+    assert!(producer.send_batch(batch, None).await.is_ok());
 
     let credential = recording.credential();
     let consumer = ConsumerClient::builder()

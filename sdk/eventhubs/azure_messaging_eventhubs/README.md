@@ -87,7 +87,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-# Key concepts
+## Key concepts
 
 An Event Hub [**namespace**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#namespace) can have multiple Event Hub instances.
 Each Event Hub instance, in turn, contains [**partitions**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#partitions) which store events.
@@ -107,7 +107,7 @@ Consuming events is done using an `EventReceiver`, which can be opened from the 
 
 More information about Event Hubs features and terminology can be found here: [link](https://learn.microsoft.com/azure/event-hubs/event-hubs-features)
 
-# Examples
+## Examples
 
 Additional examples for various scenarios can be found on in the examples directory in our GitHub repo for
 [Event Hubs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/examples).
@@ -121,7 +121,7 @@ Additional examples for various scenarios can be found on in the examples direct
 * [Open an Event Hubs message consumer on an Event Hubs instance](#open-an-event-hubs-message-consumer-on-an-event-hub-instance)
 * [Receive events](#receive-events)
 
-## Open an Event Hubs message producer on an Event Hub instance
+### Open an Event Hubs message producer on an Event Hub instance
 
 ```rust no_run
 use azure_core::Error;
@@ -142,13 +142,13 @@ async fn open_producer_client() -> Result<ProducerClient, Error> {
 }
 ```
 
-## Send events
+### Send events
 
 There are two mechanisms used to send events to an Event Hub instance. The first directly
 sends individual messages to the Event Hub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
-### Send events directly to the Event Hub
+#### Send events directly to the Event Hub
 
 ```rust no_run
 use azure_core::Error;
@@ -161,7 +161,7 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
 }
 ```
 
-### Send events using a batch operation
+#### Send events using a batch operation
 
 ```rust no_run
 use azure_core::Error;
@@ -172,14 +172,14 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
     assert_eq!(batch.len(), 0);
     assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
 
-    let res = producer.send_batch(&batch, None).await;
+    let res = producer.send_batch(batch, None).await;
     assert!(res.is_ok());
 
     Ok(())
 }
 ```
 
-## Open an Event Hubs message consumer on an Event Hub instance
+### Open an Event Hubs message consumer on an Event Hub instance
 
 ```rust no_run
 use azure_core::Error;
@@ -200,7 +200,7 @@ async fn open_consumer_client() -> Result<ConsumerClient, Error> {
 }
 ```
 
-## Receive events
+### Receive events
 
 The following example shows how to receive events from partition 0 on an Event Hubs instance.
 
@@ -252,18 +252,18 @@ async fn receive_events(client: &ConsumerClient) -> Result<(), Error> {
 }
 ```
 
-# Troubleshooting
+## Troubleshooting
 
-## General
+### General
 
 When you interact with the Azure Event Hubs client library using the Rust SDK, errors returned by the service are returned as `azure_core::Error` values using `ErrorKind::Other` which are `azure_messaging_eventhubs::Error` values.
 
-## Logging
+### Logging
 
 The Event Hubs SDK client uses the [tracing](https://docs.rs/tracing/latest/tracing/) package to
 enable diagnostics.
 
-# Contributing
+## Contributing
 
 See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
 
@@ -273,11 +273,11 @@ When you submit a pull request, a CLA-bot will automatically determine whether y
 
 This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
 
-## Reporting security issues and security bugs
+### Reporting security issues and security bugs
 
 Security issues and bugs should be reported privately, via email, to the Microsoft Security Response Center (MSRC) <secure@microsoft.com>. You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we received your original message. Further information, including the MSRC PGP key, can be found in the [Security TechCenter](https://www.microsoft.com/msrc/faqs-report-an-issue).
 
-## License
+### License
 
 Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sdk-for-cpp/blob/main/LICENSE.txt) license.
 

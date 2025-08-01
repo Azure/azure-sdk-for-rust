@@ -68,7 +68,7 @@ fn send_batch_benchmark(c: &mut Criterion) {
                         .try_add_event_data(EventData::from(payload.as_ref()), None)
                         .unwrap();
                 }
-                let _ = client.send_batch(&batch, None).await;
+                let _ = client.send_batch(batch, None).await;
             }
         });
     });

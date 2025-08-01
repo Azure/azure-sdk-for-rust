@@ -4,7 +4,11 @@
 
 ### Features Added
 
+- Reconnect support for EventHubs operations.
+
 ### Breaking Changes
+
+- `ProducerClient::submit_batch` now consumes its `batch` argument.
 
 ### Bugs Fixed
 
