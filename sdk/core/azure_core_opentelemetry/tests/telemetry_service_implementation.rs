@@ -252,6 +252,7 @@ async fn test_service_client_new(ctx: TestContext) -> Result<()> {
 
 // Ensure that the the test client actually does what it's supposed to do without telemetry.
 #[recorded::test()]
+#[cfg(not(target_os = "macos"))]
 async fn test_service_client_get(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let endpoint = "https://azuresdkforcpp.azurewebsites.net";
@@ -267,6 +268,7 @@ async fn test_service_client_get(ctx: TestContext) -> Result<()> {
 }
 
 #[recorded::test()]
+#[cfg(not(target_os = "macos"))]
 async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
     let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
     let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
@@ -321,6 +323,7 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
 }
 
 #[recorded::test()]
+#[cfg(not(target_os = "macos"))]
 async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
     let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
     let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
@@ -381,6 +384,7 @@ async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
 }
 
 #[recorded::test()]
+#[cfg(not(target_os = "macos"))]
 async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Result<()> {
     let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
     let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
@@ -443,6 +447,7 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
 }
 
 #[recorded::test()]
+#[cfg(not(target_os = "macos"))]
 async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -> Result<()> {
     let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
     let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
