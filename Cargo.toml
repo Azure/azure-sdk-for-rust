@@ -43,7 +43,7 @@ path = "sdk/typespec/typespec_client_core"
 version = "0.6.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.6.0"
+version = "0.7.0"
 path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]

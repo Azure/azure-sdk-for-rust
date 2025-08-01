@@ -3165,7 +3165,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",
