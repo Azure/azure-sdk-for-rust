@@ -19,7 +19,7 @@ edition.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { path = "../azure_core", version = "0.27.0", default-features = false }
+azure_core = { path = "../azure_core", version = "0.28.0", default-features = false }
 fe2o3-amqp = { workspace = true, optional = true }
 fe2o3-amqp-cbs = { workspace = true, optional = true }
 fe2o3-amqp-ext = { workspace = true, optional = true }
