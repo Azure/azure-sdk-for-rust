@@ -59,7 +59,7 @@ version = "0.1.0"
 path = "sdk/core/azure_core_opentelemetry"
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.6.0"
+version = "0.7.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_core_test]
