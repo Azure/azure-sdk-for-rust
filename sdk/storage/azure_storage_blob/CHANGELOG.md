@@ -6,7 +6,8 @@
 
 ### Breaking Changes
 
-* Changed `RequestContent<T>` models in client methods to `RequestContent<T, XmlFormat>` to provide parity with `Response<T, XmlFormat>`.
+* Changed `RequestContent<Bytes>` request methods to `RequestContent<T, NoFormat>` to provide parity with `Response<T, NoFormat>`.
+* Changed `RequestContent<T>` XML models in client methods to `RequestContent<T, XmlFormat>` to provide parity with `Response<T, XmlFormat>`.
 
 ### Bugs Fixed
 

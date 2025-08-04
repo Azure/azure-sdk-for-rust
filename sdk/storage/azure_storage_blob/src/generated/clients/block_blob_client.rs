@@ -538,7 +538,7 @@ impl BlockBlobClient {
         &self,
         block_id: &[u8],
         content_length: u64,
-        body: RequestContent<Bytes>,
+        body: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
     ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -731,7 +731,7 @@ impl BlockBlobClient {
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.upload")]
     pub async fn upload(
         &self,
-        body: RequestContent<Bytes>,
+        body: RequestContent<Bytes, NoFormat>,
         content_length: u64,
         options: Option<BlockBlobClientUploadOptions<'_>>,
     ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
