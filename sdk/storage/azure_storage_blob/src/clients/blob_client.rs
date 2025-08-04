@@ -168,7 +168,7 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn upload(
         &self,
-        data: RequestContent<Bytes>,
+        data: RequestContent<Bytes, NoFormat>,
         overwrite: bool,
         content_length: u64,
         options: Option<BlockBlobClientUploadOptions<'_>>,

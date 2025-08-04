@@ -114,7 +114,7 @@ impl BlockBlobClient {
         &self,
         block_id: &[u8],
         content_length: u64,
-        body: RequestContent<Bytes>,
+        body: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
     ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
         self.client
