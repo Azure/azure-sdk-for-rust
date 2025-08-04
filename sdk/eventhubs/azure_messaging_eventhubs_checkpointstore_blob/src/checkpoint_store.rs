@@ -6,7 +6,7 @@
 use azure_core::{
     http::{
         headers::{ETAG, LAST_MODIFIED},
-        Etag, RequestContent, StatusCode,
+        Etag, NoFormat, RequestContent, StatusCode,
     },
     time::parse_rfc7231,
     Bytes, Result,
@@ -98,7 +98,7 @@ impl BlobCheckpointStore {
                     }
                     Some(StatusCode::NotFound) => {
                         warn!("Blob {blob_name} not found, creating.");
-                        let blob_content = RequestContent::<Bytes>::from(Vec::new());
+                        let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
                         let mut options = BlockBlobClientUploadOptions::default();
                         if let Some(metadata) = metadata {
                             options.metadata = Some(metadata);
