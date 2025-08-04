@@ -2,7 +2,7 @@
 
 ## 0.6.0 (2025-08-05)
 
-## Other Changes
+### Other Changes
 
 - Updated dependencies.
 
