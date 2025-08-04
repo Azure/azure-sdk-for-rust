@@ -35,7 +35,7 @@ azure_core_amqp = { workspace = true, features = ["test"] }
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
 azure_messaging_eventhubs = { path = ".", features = [
-  #  "test",
+  "test",
 ] }
 criterion.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
