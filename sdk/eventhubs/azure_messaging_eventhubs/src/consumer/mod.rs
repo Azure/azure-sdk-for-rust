@@ -66,9 +66,9 @@ impl ConsumerClient {
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
-    ///     let my_credential = DefaultAzureCredential::new()?;
+    ///     let my_credential = DeveloperToolsCredential::new(None)?;
     /// let consumer = ConsumerClient::builder()
     ///    .open("my_namespace", "my_eventhub".to_string(), my_credential.clone()).await?;
     /// # Ok(())}
@@ -124,11 +124,11 @@ impl ConsumerClient {
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::new().unwrap();
+    ///     let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///     let consumer = ConsumerClient::builder()
     ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await.unwrap();
     ///
@@ -199,12 +199,12 @@ impl ConsumerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use futures::stream::StreamExt;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let my_credential = DefaultAzureCredential::new()?;
+    ///     let my_credential = DeveloperToolsCredential::new(None)?;
     ///     let consumer = ConsumerClient::builder()
     ///        .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
     ///     let partition_id = "0".to_string();
@@ -301,11 +301,11 @@ impl ConsumerClient {
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main(){
-    ///     let my_credential = DefaultAzureCredential::new().unwrap();
+    ///     let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///     let consumer = ConsumerClient::builder()
     ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await.unwrap();
     ///
@@ -347,11 +347,11 @@ impl ConsumerClient {
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::new().unwrap();
+    ///     let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///     let consumer = ConsumerClient::builder()
     ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await.unwrap();
     ///     let partition_id = "0";
@@ -548,11 +548,11 @@ pub mod builders {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///    let my_credential = DefaultAzureCredential::new().unwrap();
+    ///    let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///   let consumer = ConsumerClient::builder()
     ///      .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
     ///   Ok(())
@@ -591,11 +591,11 @@ pub mod builders {
         ///
         /// ```no_run
         /// use azure_messaging_eventhubs::ConsumerClient;
-        /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+        /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
         ///
         /// #[tokio::main]
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-        ///    let my_credential = DefaultAzureCredential::new()?;
+        ///    let my_credential = DeveloperToolsCredential::new(None)?;
         ///    let consumer = ConsumerClient::builder()
         ///      .with_consumer_group("my_consumer_group".to_string())
         ///      .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
@@ -651,11 +651,11 @@ pub mod builders {
         ///
         /// ```
         /// use azure_messaging_eventhubs::ConsumerClient;
-        /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+        /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
         ///
         /// #[tokio::main]
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-        ///     let my_credential = DefaultAzureCredential::new().unwrap();
+        ///     let my_credential = DeveloperToolsCredential::new(None).unwrap();
         ///     let result = ConsumerClient::builder()
         ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await;
         ///

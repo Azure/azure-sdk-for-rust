@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Replaced `DefaultAzureCredential` with `DeveloperToolsCredential`
+
 ### Bugs Fixed
 
 ### Other Changes

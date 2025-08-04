@@ -3,7 +3,7 @@
 
 //! Basic example showing how to create and use a blob checkpoint store.
 
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::{
     models::{Checkpoint, Ownership},
     CheckpointStore,
@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Creating blob checkpoint store...");
 
     // Create Azure credential and blob service client
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     let blob_container_client =
         BlobContainerClient::new(&storage_account_url, container, credential, None)?;

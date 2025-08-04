@@ -19,7 +19,7 @@ use std::fmt;
 ///     Bytes,
 /// };
 /// use azure_core_test::http::MockHttpClient;
-/// use azure_identity::DefaultAzureCredential;
+/// use azure_identity::DeveloperToolsCredential;
 /// use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 /// use futures::FutureExt as _;
 /// use std::sync::Arc;
@@ -34,7 +34,7 @@ use std::fmt;
 ///         Bytes::from_static(br#"{"value":"secret"}"#),
 ///     ))
 /// }.boxed()));
-/// let credential = DefaultAzureCredential::new()?;
+/// let credential = DeveloperToolsCredential::new(None)?;
 /// let options = SecretClientOptions {
 ///     client_options: ClientOptions {
 ///         transport: Some(TransportOptions::new(mock_client.clone())),

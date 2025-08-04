@@ -101,7 +101,7 @@ pub struct AzureCliCredentialOptions {
     pub executor: Option<Arc<dyn Executor>>,
 
     #[cfg(test)]
-    env: Option<Env>,
+    pub(crate) env: Option<Env>,
 }
 
 impl AzureCliCredential {

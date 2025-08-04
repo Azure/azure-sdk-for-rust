@@ -80,7 +80,7 @@ pub struct AzureDeveloperCliCredentialOptions {
     pub tenant_id: Option<String>,
 
     #[cfg(test)]
-    env: Option<Env>,
+    pub(crate) env: Option<Env>,
 }
 
 impl AzureDeveloperCliCredential {
