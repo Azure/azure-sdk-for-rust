@@ -367,8 +367,8 @@ impl Authorizer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::credentials::TokenRequestOptions;
-    use azure_core::{http::Url, time::OffsetDateTime, Result};
+    use azure_core::{credentials::TokenRequestOptions, http::Url, time::OffsetDateTime, Result};
+    use azure_core_test::{recorded, TestContext};
     use std::sync::Arc;
     use tracing::info;
 
@@ -440,10 +440,8 @@ mod tests {
     //
     // In production, incorrect token expiration could lead to authentication failures
     // or excessive token refresh operations, so this verification is critical.
-    #[tokio::test]
-    async fn token_credential_expiration() {
-        crate::consumer::tests::setup();
-
+    #[recorded::test]
+    async fn token_credential_expiration(_ctx: TestContext) -> Result<()> {
         let url = Url::parse("amqps://example.com").unwrap();
         let path = Url::parse("amqps://example.com/test_token_credential_expiration").unwrap();
 
@@ -491,6 +489,7 @@ mod tests {
         let now = OffsetDateTime::now_utc();
         assert!(stored_token.expires_on > now);
         assert!(stored_token.expires_on < now + Duration::seconds(15)); // Should be less than now + 15 seconds
+        Ok(())
     }
 
     // The RecoverableConnection automatically refreshes tokens before they expire.
@@ -505,10 +504,8 @@ mod tests {
     //
     // If this feature fails in production, clients would disconnect when their tokens expire,
     // which could lead to data loss, application failures, or service degradation.
-    #[tokio::test]
-    async fn token_refresh() {
-        crate::consumer::tests::setup();
-
+    #[recorded::test]
+    async fn token_refresh(_ctx: TestContext) -> Result<()> {
         let url = Url::parse("amqps://example.com").unwrap();
         let path = Url::parse("amqps://example.com/test_token_refresh").unwrap();
 
@@ -574,12 +571,11 @@ mod tests {
             "Expected token get count to be 2, but got {final_count}"
         );
         info!("Final token get count: {final_count}");
+        Ok(())
     }
 
-    #[tokio::test]
-    async fn multiple_token_refresh() -> Result<()> {
-        crate::consumer::tests::setup();
-
+    #[recorded::test]
+    async fn multiple_token_refresh(_ctx: TestContext) -> Result<()> {
         let host = Url::parse("amqps://example.com").unwrap();
         // Create a mock token credential with a very short expiration (20 seconds) - we choose 20 seconds because we configure the token refresh bias (the time before expiration we will attempt a refresh to 5 seconds and there's a +- 5 second
         let mock_credential = MockTokenCredential::new(20);

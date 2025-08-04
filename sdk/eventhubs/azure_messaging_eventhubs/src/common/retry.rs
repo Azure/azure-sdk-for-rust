@@ -209,21 +209,16 @@ where
 
 #[cfg(test)]
 mod tests {
-    use tracing::info;
-
     use super::*;
+    use azure_core_test::{recorded, TestContext};
     use std::{
         result,
         sync::atomic::{AtomicUsize, Ordering},
     };
+    use tracing::info;
 
-    pub fn test_setup() {
-        crate::consumer::tests::setup();
-    }
-
-    #[tokio::test]
-    async fn test_retry_success_on_first_attempt() {
-        test_setup();
+    #[recorded::test]
+    async fn test_retry_success_on_first_attempt(_ctx: TestContext) -> Result<()> {
         let result = recover_with_backoff(
             || async { Ok::<_, String>("success") },
             &RetryOptions::default(),
@@ -234,11 +229,11 @@ mod tests {
         .await;
 
         assert_eq!(result.unwrap(), "success");
+        Ok(())
     }
 
-    #[tokio::test]
-    async fn test_retry_success_after_retries() {
-        test_setup();
+    #[recorded::test]
+    async fn test_retry_success_after_retries(_ctx: TestContext) -> Result<()> {
         let attempts = AtomicUsize::new(0);
 
         let result = recover_with_backoff(
@@ -259,11 +254,11 @@ mod tests {
 
         assert_eq!(result.unwrap(), "Success on attempt 2");
         assert_eq!(attempts.load(Ordering::SeqCst), 3);
+        Ok(())
     }
 
-    #[tokio::test]
-    async fn test_retry_exhausted() {
-        test_setup();
+    #[recorded::test]
+    async fn test_retry_exhausted(_ctx: TestContext) -> Result<()> {
         let attempts = AtomicUsize::new(0);
         let options = RetryOptions {
             initial_delay: Duration::milliseconds(10),
@@ -286,11 +281,11 @@ mod tests {
 
         assert!(result.is_err());
         assert_eq!(attempts.load(Ordering::SeqCst), 3); // Initial + 2 retries
+        Ok(())
     }
 
-    #[tokio::test]
-    async fn test_retry_with_is_retryable() {
-        test_setup();
+    #[recorded::test]
+    async fn test_retry_with_is_retryable(_ctx: TestContext) -> Result<()> {
         let attempts = AtomicUsize::new(0);
 
         // Only retry if the error message contains "retry"
@@ -327,5 +322,6 @@ mod tests {
 
         assert_eq!(result.unwrap_err(), "I told you not to retry");
         assert_eq!(attempts.load(Ordering::SeqCst), 3);
+        Ok(())
     }
 }

@@ -90,7 +90,7 @@ impl AmqpSenderApis for RecoverableSender {
                         .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
 
                     // Check for forced error.
-                    #[cfg(feature = "test")]
+                    #[cfg(test)]
                     connection.get_forced_error()?;
 
                     let sender = connection.ensure_sender(&path).await?;

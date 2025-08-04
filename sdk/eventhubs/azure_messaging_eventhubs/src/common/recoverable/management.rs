@@ -120,7 +120,7 @@ impl AmqpManagementApis for RecoverableManagementClient {
                         .upgrade()
                         .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
 
-                    #[cfg(feature = "test")]
+                    #[cfg(test)]
                     connection.get_forced_error()?;
 
                     let result = connection
@@ -162,11 +162,10 @@ mod tests {
     use super::*;
     use crate::error::{ErrorKind, EventHubsError};
     use azure_core_amqp::error::AmqpErrorCondition;
+    use azure_core_test::{recorded, TestContext};
 
-    #[test]
-    fn should_retry_management_response() {
-        crate::consumer::tests::setup();
-
+    #[recorded::test]
+    async fn should_retry_management_response(_ctx: TestContext) -> Result<()> {
         {
             let error: azure_core::Error = AmqpError::new_management_error(
                 azure_core::http::StatusCode::TooManyRequests,
@@ -284,5 +283,6 @@ mod tests {
                 ErrorRecoveryAction::ReturnError
             );
         }
+        Ok(())
     }
 }

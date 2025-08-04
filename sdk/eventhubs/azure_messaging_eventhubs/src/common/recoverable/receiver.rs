@@ -101,7 +101,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
                     .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
 
                 // Check for forced error.
-                #[cfg(feature = "test")]
+                #[cfg(test)]
                 connection.get_forced_error()?;
 
                 let receiver = connection

@@ -23,7 +23,7 @@ use azure_core_amqp::{
     AmqpManagement, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSender,
     AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource, AmqpSymbol,
 };
-#[cfg(feature = "test")]
+#[cfg(test)]
 use std::sync::Mutex;
 use std::{
     collections::HashMap,
@@ -74,7 +74,7 @@ pub(crate) struct RecoverableConnection {
     connection_name: String,
     pub(super) retry_options: RetryOptions,
 
-    #[cfg(feature = "test")]
+    #[cfg(test)]
     forced_error: Mutex<Option<azure_core::Error>>,
 }
 
@@ -108,14 +108,14 @@ impl RecoverableConnection {
                 receiver_instances: AsyncMutex::new(HashMap::new()),
                 mgmt_client: AsyncMutex::new(None),
                 authorizer,
-                #[cfg(feature = "test")]
+                #[cfg(test)]
                 forced_error: Mutex::new(None),
             }
         })
     }
 
     /// Create a connection that is unconnected
-    #[cfg(feature = "test")]
+    #[cfg(test)]
     #[allow(dead_code)]
     pub(crate) async fn disable_connection(&self) -> Result<()> {
         let mut connection = self.connections.lock().await;
@@ -123,7 +123,7 @@ impl RecoverableConnection {
         Ok(())
     }
 
-    #[cfg(feature = "test")]
+    #[cfg(test)]
     pub(crate) fn force_error(&self, error: azure_core::Error) -> Result<()> {
         let mut err = self.forced_error.lock().map_err(|e| {
             azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
@@ -132,7 +132,7 @@ impl RecoverableConnection {
         Ok(())
     }
 
-    #[cfg(feature = "test")]
+    #[cfg(test)]
     pub(crate) fn get_forced_error(&self) -> azure_core::Result<()> {
         let v = self
             .forced_error
