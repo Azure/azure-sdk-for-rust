@@ -159,6 +159,7 @@ impl CheckpointStore for BlobCheckpointStore {
             }
         }
 
+        debug!("Returning {} ownerships", new_ownerships.len());
         Ok(new_ownerships)
     }
 

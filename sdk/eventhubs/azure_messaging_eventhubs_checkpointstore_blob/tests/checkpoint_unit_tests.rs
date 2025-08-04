@@ -36,10 +36,23 @@ async fn list_checkpoints(ctx: TestContext) -> Result<()> {
         .unwrap_or("$Default".to_string());
     let eventhub_name = recording.var("EVENTHUB_NAME", None);
 
+    // Create a checkpoint with both offset and sequence number
+    let checkpoint = Checkpoint {
+        fully_qualified_namespace: namespace.clone(),
+        event_hub_name: eventhub_name.clone(),
+        consumer_group: consumer_group.clone(),
+        partition_id: "0".to_string(),
+        offset: Some("12345".to_string()),
+        sequence_number: Some(100),
+    };
+
+    // Add a checkpoint to the checkpoint store so we have at least one entry.
+    checkpoint_store.update_checkpoint(checkpoint).await?;
+
     let checkpoints = checkpoint_store
         .list_checkpoints(&namespace, &eventhub_name, &consumer_group)
         .await?;
-    assert_eq!(checkpoints.len(), 10);
+    assert!(!checkpoints.is_empty());
     for (i, checkpoint) in checkpoints.iter().enumerate() {
         trace!("Checkpoint {i}: {checkpoint:?}");
         assert!(

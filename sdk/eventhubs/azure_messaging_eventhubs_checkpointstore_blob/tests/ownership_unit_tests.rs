@@ -13,6 +13,7 @@ use tracing::trace;
 #[recorded::test]
 async fn list_ownerships(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    const TEST_PARTITION_ID: &str = "list_ownerships";
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
     let namespace = recording.var("EVENTHUBS_HOST", None);
@@ -21,20 +22,39 @@ async fn list_ownerships(ctx: TestContext) -> Result<()> {
         .unwrap_or("$Default".to_string());
     let eventhub_name = recording.var("EVENTHUB_NAME", None);
 
+    let ownership = Ownership {
+        fully_qualified_namespace: namespace.clone(),
+        event_hub_name: eventhub_name.clone(),
+        consumer_group: consumer_group.clone(),
+        partition_id: TEST_PARTITION_ID.to_string(),
+        owner_id: Some("test-owner-1".to_string()),
+        etag: None, // No etag for new ownership
+        last_modified_time: None,
+    };
+    checkpoint_store.claim_ownership(&[ownership]).await?;
+
     let ownerships = checkpoint_store
         .list_ownerships(&namespace, &eventhub_name, &consumer_group)
         .await?;
     assert!(!ownerships.is_empty());
+    let mut found_ownership = false;
     for (i, ownership) in ownerships.iter().enumerate() {
         trace!("Ownership: {ownership:?}");
         assert!(
             !ownership.partition_id.is_empty(),
             "Ownership {i} has an empty partition_id",
         );
-        assert_eq!(ownership.partition_id, i.to_string());
         assert_eq!(ownership.fully_qualified_namespace, namespace);
         assert_eq!(ownership.consumer_group, consumer_group);
+        if ownership.partition_id == TEST_PARTITION_ID {
+            assert!(
+                !found_ownership,
+                "There should only be one ownership with the test partition ID"
+            );
+            found_ownership = true;
+        }
     }
+    assert!(found_ownership, "Expected ownership not found.");
 
     Ok(())
 }
@@ -59,6 +79,8 @@ async fn claim_ownership_single_partition(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
+    const TEST_PARTITION_ID: &str = "claim_ownership_single_partition";
+
     let namespace = recording.var("EVENTHUBS_HOST", None);
     let consumer_group = recording
         .var_opt("EVENTHUBS_CONSUMER_GROUP", None)
@@ -70,7 +92,7 @@ async fn claim_ownership_single_partition(ctx: TestContext) -> Result<()> {
         fully_qualified_namespace: namespace.clone(),
         event_hub_name: eventhub_name.clone(),
         consumer_group: consumer_group.clone(),
-        partition_id: "0".to_string(),
+        partition_id: TEST_PARTITION_ID.to_string(),
         owner_id: Some("test-owner-1".to_string()),
         etag: None, // No etag for new ownership
         last_modified_time: None,
@@ -88,7 +110,7 @@ async fn claim_ownership_single_partition(ctx: TestContext) -> Result<()> {
     assert_eq!(claimed.fully_qualified_namespace, namespace);
     assert_eq!(claimed.event_hub_name, eventhub_name);
     assert_eq!(claimed.consumer_group, consumer_group);
-    assert_eq!(claimed.partition_id, "0");
+    assert_eq!(claimed.partition_id, TEST_PARTITION_ID);
     assert_eq!(claimed.owner_id, Some("test-owner-1".to_string()));
     assert!(
         claimed.etag.is_some(),
@@ -188,6 +210,7 @@ async fn claim_ownership_multiple_partitions(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn claim_ownership_update_existing(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    const TEST_PARTITION_ID: &str = "ownership_update_existing";
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
     let namespace = recording.var("EVENTHUBS_HOST", None);
@@ -201,14 +224,14 @@ async fn claim_ownership_update_existing(ctx: TestContext) -> Result<()> {
         fully_qualified_namespace: namespace.clone(),
         event_hub_name: eventhub_name.clone(),
         consumer_group: consumer_group.clone(),
-        partition_id: "0".to_string(),
+        partition_id: TEST_PARTITION_ID.to_string(),
         owner_id: Some("initial-owner".to_string()),
         etag: None,
         last_modified_time: None,
     };
 
     let initial_claimed = checkpoint_store
-        .claim_ownership(&[initial_ownership])
+        .claim_ownership(&[initial_ownership.clone()])
         .await?;
     assert_eq!(initial_claimed.len(), 1);
     let initial_etag = initial_claimed[0].etag.clone();
@@ -216,13 +239,8 @@ async fn claim_ownership_update_existing(ctx: TestContext) -> Result<()> {
 
     // Now try to update the ownership with the correct etag
     let updated_ownership = Ownership {
-        fully_qualified_namespace: namespace.clone(),
-        event_hub_name: eventhub_name.clone(),
-        consumer_group: consumer_group.clone(),
-        partition_id: "0".to_string(),
         owner_id: Some("updated-owner".to_string()),
-        etag: initial_etag.clone(),
-        last_modified_time: initial_claimed[0].last_modified_time,
+        ..initial_claimed[0].clone()
     };
 
     let updated_claimed = checkpoint_store
