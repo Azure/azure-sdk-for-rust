@@ -323,9 +323,4 @@ impl CheckpointStore for BlobCheckpointStore {
             .await?;
         Ok(())
     }
-
-    #[cfg(feature = "test")]
-    async fn update_ownership(&self, _ownership: Ownership) -> Result<()> {
-        unimplemented!("update_ownership is a test hook and is not implemented.");
-    }
 }

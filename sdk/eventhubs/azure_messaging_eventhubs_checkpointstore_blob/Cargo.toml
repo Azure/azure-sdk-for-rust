@@ -11,7 +11,7 @@ keywords = ["sdk", "azure", "messaging", "cloud", "eventhubs"]
 categories = ["api-bindings"]
 documentation = "https://docs.rs/azure_messaging_eventhubs_checkpointstore_blob"
 edition.workspace = true
-rust-version = "1.75.0"
+rust-version.workspace = true
 
 [dependencies]
 async-trait.workspace = true
@@ -33,7 +33,6 @@ tracing-subscriber.workspace = true
 
 [features]
 default = []
-test = ["azure_messaging_eventhubs/test"]
 
 [[example]]
 name = "checkpoint_store_basic"

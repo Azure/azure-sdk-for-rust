@@ -18,9 +18,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Configuration - replace with your actual values
     let storage_account_url = env::var("AZURE_STORAGE_ACCOUNT_URL")
         .expect("AZURE_STORAGE_ACCOUNT_URL environment variable must be set");
-    let container_name =
-        env::var("BLOB_CONTAINER_NAME").unwrap_or_else(|_| "eventhubs-checkpoints".to_string());
-    let consumer_group = env::var("CONSUMER_GROUP").unwrap_or_else(|_| "$Default".to_string());
+    let container_name = env::var("AZURE_STORAGE_BLOB_CONTAINER")
+        .unwrap_or_else(|_| "eventhubs-checkpoints".to_string());
+    let consumer_group =
+        env::var("EVENTHUBS_CONSUMER_GROUP").unwrap_or_else(|_| "$Default".to_string());
 
     let eventhub_namespace =
         env::var("EVENTHUBS_NAMESPACE").expect("EVENTHUBS_NAMESPACE must be set");

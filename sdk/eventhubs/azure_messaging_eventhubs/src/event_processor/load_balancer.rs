@@ -672,7 +672,7 @@ pub(crate) mod tests {
         let mut ownership = ownership.clone();
         ownership.last_modified_time = Some(OffsetDateTime::now_utc() - Duration::seconds(3600));
         ownership.etag = etag;
-        checkpoint_store.update_ownership(ownership).await?;
+        checkpoint_store.claim_ownership(&[ownership]).await?;
         Ok(())
     }
 
@@ -700,7 +700,7 @@ pub(crate) mod tests {
         let mut ownership = ownership.clone();
         ownership.owner_id = None;
         ownership.etag = etag;
-        checkpoint_store.update_ownership(ownership).await?;
+        checkpoint_store.claim_ownership(&[ownership]).await?;
         Ok(())
     }
 
