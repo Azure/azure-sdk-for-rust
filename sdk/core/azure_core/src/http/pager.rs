@@ -7,11 +7,69 @@ use futures::{stream::unfold, FutureExt, Stream};
 use std::{
     fmt,
     future::Future,
+    ops::Deref,
     pin::Pin,
     str::FromStr,
     sync::{Arc, Mutex},
     task,
 };
+
+/// Represents the state of a [`Pager`] or [`PageIterator`].
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum PagerState<C: AsRef<str>> {
+    /// The pager should fetch the initial page.
+    #[default]
+    Initial,
+    /// The pager should fetch a subsequent page using the next link/continuation token `C`.
+    More(C),
+}
+
+impl<C: AsRef<str>> PagerState<C> {
+    /// Maps a `PagerState<C>` to a `PagerState<U>` by applying a function to a next link/continuation token `C` (if `PagerState::More`) or returns `PagerState::Initial` (if `PagerState::Initial`).
+    #[inline]
+    pub fn map<U, F>(self, f: F) -> PagerState<U>
+    where
+        U: AsRef<str>,
+        F: FnOnce(C) -> U,
+    {
+        match self {
+            PagerState::Initial => PagerState::Initial,
+            PagerState::More(c) => PagerState::More(f(c)),
+        }
+    }
+
+    /// Converts from `&PagerState<C>` to `PagerState<&C>`.
+    #[inline]
+    pub const fn as_ref(&self) -> PagerState<&C> {
+        match *self {
+            PagerState::Initial => PagerState::Initial,
+            PagerState::More(ref x) => PagerState::More(x),
+        }
+    }
+
+    /// Converts from `PagerState<C>` (or `&PagerState<C>`) to `PagerState<&C::Target>`.
+    ///
+    /// Leaves the original `PagerState` in-place, creating a new one with a reference
+    /// to the original one, additionally coercing the contents via [`Deref`].
+    #[inline]
+    pub fn as_deref(&self) -> PagerState<&C::Target>
+    where
+        C: Deref,
+        C::Target: AsRef<str>,
+    {
+        self.as_ref().map(|t| t.deref())
+    }
+}
+
+impl<C: Clone + AsRef<str>> Clone for PagerState<C> {
+    #[inline]
+    fn clone(&self) -> Self {
+        match self {
+            PagerState::Initial => PagerState::Initial,
+            PagerState::More(c) => PagerState::More(c.clone()),
+        }
+    }
+}
 
 /// The result of fetching a single page from a [`Pager`], whether there are more pages or paging is done.
 pub enum PagerResult<P, C: AsRef<str>> {
@@ -102,7 +160,7 @@ pub struct ItemIterator<P: Page> {
 impl<P: Page> ItemIterator<P> {
     /// Creates a [`ItemIterator<P>`] from a callback that will be called repeatedly to request each page.
     ///
-    /// This method expect a callback that accepts a single `Option<C>` parameter, and returns a [`PagerResult<T, C>`] value asynchronously.
+    /// This method expect a callback that accepts a single [`PagerState<C>`] parameter, and returns a [`PagerResult<T, C>`] value asynchronously.
     /// The `C` type parameter is the type of the next link/continuation token. It may be any [`Send`]able type.
     /// The result will be an asynchronous stream of [`Result<T>`](typespec::Result<T>) values.
     ///
@@ -117,7 +175,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, ItemIterator, Page, PagerResult, Pipeline, RawResponse, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{Context, ItemIterator, Page, PagerResult, PagerState, Pipeline, RawResponse, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -136,13 +194,13 @@ impl<P: Page> ItemIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = ItemIterator::from_callback(move |next_link: Option<Url>| {
+    /// let pager = ItemIterator::from_callback(move |next_link: PagerState<Url>| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
     ///     let mut req = base_req.clone();
     ///     async move {
-    ///         if let Some(next_link) = next_link {
+    ///         if let PagerState::More(next_link) = next_link {
     ///             // Ensure the api-version from the client is appended.
     ///             let qp = next_link
     ///                 .query_pairs()
@@ -175,7 +233,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using headers:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, ItemIterator, Page, PagerResult, Pipeline, Request, Response, Method, headers::HeaderName}};
+    /// # use azure_core::{Result, http::{Context, ItemIterator, Page, PagerResult, PagerState, Pipeline, Request, Response, Method, headers::HeaderName}};
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
     /// struct ListItemsResult {
@@ -197,7 +255,7 @@ impl<P: Page> ItemIterator<P> {
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
     ///     async move {
-    ///         if let Some(continuation) = continuation {
+    ///         if let PagerState::More(continuation) = continuation {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
@@ -211,10 +269,10 @@ impl<P: Page> ItemIterator<P> {
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
@@ -304,11 +362,11 @@ pub struct PageIterator<P> {
 impl<P> PageIterator<P> {
     /// Creates a [`PageIterator<P>`] from a callback that will be called repeatedly to request each page.
     ///
-    /// This method expect a callback that accepts a single `Option<C>` parameter, and returns a [`PagerResult<T, C>`] value asynchronously.
+    /// This method expect a callback that accepts a single [`PagerState<C>`] parameter, and returns a [`PagerResult<T, C>`] value asynchronously.
     /// The `C` type parameter is the type of the next link/continuation token. It may be any [`Send`]able type.
     /// The result will be an asynchronous stream of [`Result<T>`](typespec::Result<T>) values.
     ///
-    /// The first time your callback is called, it will be called with [`Option::None`], indicating no next link/continuation token is present.
+    /// The first time your callback is called, it will be called with [`PagerState::Initial`], indicating no next link/continuation token is present.
     ///
     /// Your callback must return one of:
     /// * `Ok(result)` - The request succeeded, and the provided [`PagerResult`] indicates the value to return and if there are more pages.
@@ -319,7 +377,7 @@ impl<P> PageIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, PageIterator, PagerResult, Pipeline, RawResponse, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{Context, PageIterator, PagerResult, PagerState, Pipeline, RawResponse, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -329,13 +387,13 @@ impl<P> PageIterator<P> {
     /// }
     /// let url = "https://example.com/my_paginated_api".parse().unwrap();
     /// let mut base_req = Request::new(url, Method::Get);
-    /// let pager = PageIterator::from_callback(move |next_link: Option<Url>| {
+    /// let pager = PageIterator::from_callback(move |next_link: PagerState<Url>| {
     ///     // The callback must be 'static, so you have to clone and move any values you want to use.
     ///     let pipeline = pipeline.clone();
     ///     let api_version = api_version.clone();
     ///     let mut req = base_req.clone();
     ///     async move {
-    ///         if let Some(next_link) = next_link {
+    ///         if let PagerState::More(next_link) = next_link {
     ///             // Ensure the api-version from the client is appended.
     ///             let qp = next_link
     ///                 .query_pairs()
@@ -368,7 +426,7 @@ impl<P> PageIterator<P> {
     /// To page results using headers:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, PageIterator, PagerResult, Pipeline, Request, Response, Method, headers::HeaderName}};
+    /// # use azure_core::{Result, http::{Context, PageIterator, PagerResult, PagerState, Pipeline, Request, Response, Method, headers::HeaderName}};
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
     /// struct ListItemsResult {
@@ -381,7 +439,7 @@ impl<P> PageIterator<P> {
     ///     let pipeline = pipeline.clone();
     ///     let mut req = base_req.clone();
     ///     async move {
-    ///         if let Some(continuation) = continuation {
+    ///         if let PagerState::More(continuation) = continuation {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
@@ -395,10 +453,10 @@ impl<P> PageIterator<P> {
     pub fn from_callback<
         // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
         #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + FromStr + Send + 'static,
-        #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
+        #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>) -> Fut + Send + 'static,
         #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
         #[cfg(target_arch = "wasm32")] C: AsRef<str> + FromStr + 'static,
-        #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
+        #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>) -> Fut + 'static,
         #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     >(
         make_request: F,
@@ -534,12 +592,12 @@ fn iter_from_callback<
     P,
     // This is a bit gnarly, but the only thing that differs between the WASM/non-WASM configs is the presence of Send bounds.
     #[cfg(not(target_arch = "wasm32"))] C: AsRef<str> + Send + 'static,
-    #[cfg(not(target_arch = "wasm32"))] F: Fn(Option<C>) -> Fut + Send + 'static,
+    #[cfg(not(target_arch = "wasm32"))] F: Fn(PagerState<C>) -> Fut + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] G: Fn() -> Option<C> + Send + 'static,
     #[cfg(not(target_arch = "wasm32"))] S: Fn(Option<&str>) + Send + 'static,
     #[cfg(target_arch = "wasm32")] C: AsRef<str> + 'static,
-    #[cfg(target_arch = "wasm32")] F: Fn(Option<C>) -> Fut + 'static,
+    #[cfg(target_arch = "wasm32")] F: Fn(PagerState<C>) -> Fut + 'static,
     #[cfg(target_arch = "wasm32")] Fut: Future<Output = crate::Result<PagerResult<P, C>>> + 'static,
     #[cfg(target_arch = "wasm32")] G: Fn() -> Option<C> + 'static,
     #[cfg(target_arch = "wasm32")] S: Fn(Option<&str>) + 'static,
@@ -556,8 +614,8 @@ fn iter_from_callback<
                 state = State::More(next_token);
             }
             let result = match state {
-                State::Init => make_request(None).await,
-                State::More(n) => make_request(Some(n)).await,
+                State::Init => make_request(PagerState::Initial).await,
+                State::More(n) => make_request(PagerState::More(n)).await,
                 State::Done => {
                     set_next(None);
                     return None;
@@ -588,7 +646,7 @@ fn iter_from_callback<
 mod tests {
     use crate::http::{
         headers::{HeaderName, HeaderValue},
-        PageIterator, Pager, PagerResult, RawResponse, Response, StatusCode,
+        PageIterator, Pager, PagerResult, PagerState, RawResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
     use futures::{StreamExt as _, TryStreamExt as _};
@@ -616,7 +674,7 @@ mod tests {
     async fn callback_item_pagination() {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
-                None => Ok(PagerResult::More {
+                PagerState::Initial => Ok(PagerResult::More {
                     response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
@@ -629,7 +687,7 @@ mod tests {
                     .into(),
                     continuation: "1",
                 }),
-                Some("1") => Ok(PagerResult::More {
+                PagerState::More("1") => Ok(PagerResult::More {
                     response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
@@ -642,7 +700,7 @@ mod tests {
                     .into(),
                     continuation: "2",
                 }),
-                Some("2") => Ok(PagerResult::Done {
+                PagerState::More("2") => Ok(PagerResult::Done {
                     response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
@@ -667,7 +725,7 @@ mod tests {
     async fn callback_item_pagination_error() {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
-                None => Ok(PagerResult::More {
+                PagerState::Initial => Ok(PagerResult::More {
                     response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
@@ -680,7 +738,7 @@ mod tests {
                     .into(),
                     continuation: "1",
                 }),
-                Some("1") => Err(typespec::Error::message(
+                PagerState::More("1") => Err(typespec::Error::message(
                     typespec::error::ErrorKind::Other,
                     "yon request didst fail",
                 )),
@@ -722,9 +780,9 @@ mod tests {
     #[tokio::test]
     async fn page_iterator_with_continuation_token() {
         let make_callback = || {
-            |continuation: Option<String>| async move {
+            |continuation: PagerState<String>| async move {
                 match continuation.as_deref() {
-                    None => Ok(PagerResult::More {
+                    PagerState::Initial => Ok(PagerResult::More {
                         response: RawResponse::from_bytes(
                             StatusCode::Ok,
                             Default::default(),
@@ -733,7 +791,7 @@ mod tests {
                         .into(),
                         continuation: "next-token-1".to_string(),
                     }),
-                    Some("next-token-1") => Ok(PagerResult::More {
+                    PagerState::More("next-token-1") => Ok(PagerResult::More {
                         response: RawResponse::from_bytes(
                             StatusCode::Ok,
                             HashMap::from([(
@@ -746,7 +804,7 @@ mod tests {
                         .into(),
                         continuation: "next-token-2".to_string(),
                     }),
-                    Some("next-token-2") => Ok(PagerResult::Done {
+                    PagerState::More("next-token-2") => Ok(PagerResult::Done {
                         response: RawResponse::from_bytes(
                             StatusCode::Ok,
                             HashMap::from([(

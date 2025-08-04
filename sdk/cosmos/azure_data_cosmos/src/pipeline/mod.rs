@@ -10,7 +10,7 @@ pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
     request::{options::ContentType, Request},
     response::Response,
-    ClientOptions, Context, Method, RawResponse,
+    ClientOptions, Context, Method, PagerState, RawResponse,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
@@ -101,7 +101,7 @@ impl CosmosPipeline {
             let mut req = base_request.clone();
             let ctx = ctx.clone();
             async move {
-                if let Some(continuation) = continuation {
+                if let PagerState::More(continuation) = continuation {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 

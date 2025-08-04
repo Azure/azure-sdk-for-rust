@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Removed the `CertificateClientExt` trait for `CertificateClient`. The `begin_create_certificate` and `resume_certificate_operation` methods are implemented for `CertificateClient` with the same method signatures.
+
 ### Bugs Fixed
 
 ### Other Changes

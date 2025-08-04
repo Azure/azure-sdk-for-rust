@@ -29,17 +29,19 @@ use crate::generated::models::{
 };
 use azure_core::{
     credentials::TokenCredential,
+    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, Pager, PagerResult, Pipeline, RawResponse,
-        Request, RequestContent, Response, Url,
+        ClientOptions, Context, Method, NoFormat, Pager, PagerResult, PagerState, Pipeline,
+        RawResponse, Request, RequestContent, Response, Url,
     },
-    json, Result,
+    json, tracing, Error, Result,
 };
 use std::sync::Arc;
 
 /// The key vault client performs cryptographic key operations and vault operations against the Key Vault service.
+#[tracing::client]
 pub struct CertificateClient {
     pub(crate) api_version: String,
     pub(crate) endpoint: Url,
@@ -64,6 +66,7 @@ impl CertificateClient {
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
+    #[tracing::new("azure_security_keyvault_certificates")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -109,6 +112,7 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.backupCertificate")]
     pub async fn backup_certificate(
         &self,
         certificate_name: &str,
@@ -124,7 +128,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Creates a new certificate.
@@ -137,6 +151,7 @@ impl CertificateClient {
     ///   the service. The value provided should not include personally identifiable or sensitive information.
     /// * `parameters` - The parameters to create a certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.createCertificate")]
     pub async fn create_certificate(
         &self,
         certificate_name: &str,
@@ -155,7 +170,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Deletes a certificate from a specified key vault.
@@ -167,6 +192,7 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.deleteCertificate")]
     pub async fn delete_certificate(
         &self,
         certificate_name: &str,
@@ -182,7 +208,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Deletes the creation operation for a specific certificate.
@@ -194,6 +230,7 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.deleteCertificateOperation")]
     pub async fn delete_certificate_operation(
         &self,
         certificate_name: &str,
@@ -209,7 +246,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Deletes the certificate contacts for a specified key vault.
@@ -220,6 +267,7 @@ impl CertificateClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.deleteCertificateContacts")]
     pub async fn delete_contacts(
         &self,
         options: Option<CertificateClientDeleteContactsOptions<'_>>,
@@ -232,7 +280,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Deletes the specified certificate issuer.
@@ -244,6 +302,7 @@ impl CertificateClient {
     ///
     /// * `issuer_name` - The name of the issuer.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.deleteCertificateIssuer")]
     pub async fn delete_issuer(
         &self,
         issuer_name: &str,
@@ -259,7 +318,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Gets information about a certificate.
@@ -272,6 +341,7 @@ impl CertificateClient {
     /// * `certificate_version` - The version of the certificate. This URI fragment is optional. If not specified, the latest
     ///   version of the certificate is returned.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getCertificate")]
     pub async fn get_certificate(
         &self,
         certificate_name: &str,
@@ -289,7 +359,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Gets the creation operation of a certificate.
@@ -300,6 +380,7 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getCertificateOperation")]
     pub async fn get_certificate_operation(
         &self,
         certificate_name: &str,
@@ -315,7 +396,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Lists the policy for a certificate.
@@ -327,6 +418,7 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the certificate in a given key vault.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getCertificatePolicy")]
     pub async fn get_certificate_policy(
         &self,
         certificate_name: &str,
@@ -342,7 +434,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Lists the certificate contacts for a specified key vault.
@@ -353,6 +455,7 @@ impl CertificateClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getCertificateContacts")]
     pub async fn get_contacts(
         &self,
         options: Option<CertificateClientGetContactsOptions<'_>>,
@@ -365,7 +468,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Retrieves information about the specified deleted certificate.
@@ -378,6 +491,7 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the certificate
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getDeletedCertificate")]
     pub async fn get_deleted_certificate(
         &self,
         certificate_name: &str,
@@ -393,7 +507,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Lists the specified certificate issuer.
@@ -405,6 +529,7 @@ impl CertificateClient {
     ///
     /// * `issuer_name` - The name of the issuer.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getCertificateIssuer")]
     pub async fn get_issuer(
         &self,
         issuer_name: &str,
@@ -420,7 +545,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Imports a certificate into a specified key vault.
@@ -435,6 +570,7 @@ impl CertificateClient {
     ///   the service. The value provided should not include personally identifiable or sensitive information.
     /// * `parameters` - The parameters to import the certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.importCertificate")]
     pub async fn import_certificate(
         &self,
         certificate_name: &str,
@@ -453,7 +589,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// List certificates in a specified key vault
@@ -464,6 +610,7 @@ impl CertificateClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getCertificates")]
     pub fn list_certificate_properties(
         &self,
         options: Option<CertificateClientListCertificatePropertiesOptions<'_>>,
@@ -486,9 +633,9 @@ impl CertificateClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -500,7 +647,7 @@ impl CertificateClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -508,6 +655,15 @@ impl CertificateClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                if !rsp.status().is_success() {
+                    let status = rsp.status();
+                    let http_error = HttpError::new(rsp).await;
+                    let error_kind = ErrorKind::http_response(
+                        status,
+                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                    );
+                    return Err(Error::new(error_kind, http_error));
+                }
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
@@ -532,6 +688,7 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getCertificateVersions")]
     pub fn list_certificate_properties_versions(
         &self,
         certificate_name: &str,
@@ -552,9 +709,9 @@ impl CertificateClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -566,7 +723,7 @@ impl CertificateClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -574,6 +731,15 @@ impl CertificateClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                if !rsp.status().is_success() {
+                    let status = rsp.status();
+                    let http_error = HttpError::new(rsp).await;
+                    let error_kind = ErrorKind::http_response(
+                        status,
+                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                    );
+                    return Err(Error::new(error_kind, http_error));
+                }
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
@@ -598,6 +764,7 @@ impl CertificateClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getDeletedCertificates")]
     pub fn list_deleted_certificate_properties(
         &self,
         options: Option<CertificateClientListDeletedCertificatePropertiesOptions<'_>>,
@@ -620,9 +787,9 @@ impl CertificateClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -634,7 +801,7 @@ impl CertificateClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -642,6 +809,15 @@ impl CertificateClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                if !rsp.status().is_success() {
+                    let status = rsp.status();
+                    let http_error = HttpError::new(rsp).await;
+                    let error_kind = ErrorKind::http_response(
+                        status,
+                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                    );
+                    return Err(Error::new(error_kind, http_error));
+                }
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListDeletedCertificatePropertiesResult = json::from_json(&bytes)?;
@@ -665,6 +841,7 @@ impl CertificateClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getCertificateIssuers")]
     pub fn list_issuer_properties(
         &self,
         options: Option<CertificateClientListIssuerPropertiesOptions<'_>>,
@@ -682,9 +859,9 @@ impl CertificateClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -696,7 +873,7 @@ impl CertificateClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -704,6 +881,15 @@ impl CertificateClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                if !rsp.status().is_success() {
+                    let status = rsp.status();
+                    let http_error = HttpError::new(rsp).await;
+                    let error_kind = ErrorKind::http_response(
+                        status,
+                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                    );
+                    return Err(Error::new(error_kind, http_error));
+                }
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListIssuerPropertiesResult = json::from_json(&bytes)?;
@@ -729,6 +915,7 @@ impl CertificateClient {
     /// * `certificate_name` - The name of the certificate.
     /// * `parameters` - The parameters to merge certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.mergeCertificate")]
     pub async fn merge_certificate(
         &self,
         certificate_name: &str,
@@ -747,7 +934,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Permanently deletes the specified deleted certificate.
@@ -760,6 +957,7 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the certificate
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.purgeDeletedCertificate")]
     pub async fn purge_deleted_certificate(
         &self,
         certificate_name: &str,
@@ -775,7 +973,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Recovers the deleted certificate back to its current version under /certificates.
@@ -788,6 +996,7 @@ impl CertificateClient {
     ///
     /// * `certificate_name` - The name of the deleted certificate
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.recoverDeletedCertificate")]
     pub async fn recover_deleted_certificate(
         &self,
         certificate_name: &str,
@@ -803,7 +1012,17 @@ impl CertificateClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Restores a backed up certificate to a vault.
@@ -814,6 +1033,7 @@ impl CertificateClient {
     ///
     /// * `parameters` - The parameters to restore the certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.restoreCertificate")]
     pub async fn restore_certificate(
         &self,
         parameters: RequestContent<RestoreCertificateParameters>,
@@ -829,7 +1049,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Sets the certificate contacts for the specified key vault.
@@ -840,6 +1070,7 @@ impl CertificateClient {
     ///
     /// * `contacts` - The contacts for the key vault certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.setCertificateContacts")]
     pub async fn set_contacts(
         &self,
         contacts: RequestContent<Contacts>,
@@ -855,7 +1086,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(contacts);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Sets the specified certificate issuer.
@@ -869,6 +1110,7 @@ impl CertificateClient {
     ///   service. The value provided should not include personally identifiable or sensitive information.
     /// * `parameter` - Certificate issuer set parameter.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.setCertificateIssuer")]
     pub async fn set_issuer(
         &self,
         issuer_name: &str,
@@ -887,7 +1129,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameter);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Updates a certificate operation.
@@ -900,6 +1152,7 @@ impl CertificateClient {
     /// * `certificate_name` - The name of the certificate.
     /// * `certificate_operation` - The certificate operation response.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.updateCertificateOperation")]
     pub async fn update_certificate_operation(
         &self,
         certificate_name: &str,
@@ -918,7 +1171,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(certificate_operation);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Updates the policy for a certificate.
@@ -931,6 +1194,7 @@ impl CertificateClient {
     /// * `certificate_name` - The name of the certificate in the given vault.
     /// * `certificate_policy` - The policy for the certificate.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.updateCertificatePolicy")]
     pub async fn update_certificate_policy(
         &self,
         certificate_name: &str,
@@ -949,7 +1213,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(certificate_policy);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Updates the specified attributes associated with the given certificate.
@@ -963,6 +1237,7 @@ impl CertificateClient {
     /// * `certificate_version` - The version of the certificate.
     /// * `parameters` - The parameters for certificate update.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.updateCertificate")]
     pub async fn update_certificate_properties(
         &self,
         certificate_name: &str,
@@ -983,7 +1258,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Updates the specified certificate issuer.
@@ -996,6 +1281,7 @@ impl CertificateClient {
     /// * `issuer_name` - The name of the issuer.
     /// * `parameter` - Certificate issuer update parameter.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.updateCertificateIssuer")]
     pub async fn update_issuer(
         &self,
         issuer_name: &str,
@@ -1014,7 +1300,17 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameter);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 }
 
