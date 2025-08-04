@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All Rights reserved
+// Copyright (c) Microsoft Corporation. All rights reserved
 // Licensed under the MIT license.
 
 use azure_core::{sleep::sleep, time::Duration, Result};
