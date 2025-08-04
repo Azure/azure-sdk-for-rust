@@ -1,16 +1,16 @@
 # Release History
 
-## 0.6.0 (Unreleased)
+## 0.6.0 (2025-08-01)
 
 ### Features Added
 
+- Added `TryFrom<>` for `RequestContent<T>` implementations for a wider variety of types.
+
 ### Breaking Changes
 
+- Added `Format` to `RequestContent<T>` making it `RequestContent<T, F>`. This provides parity with `Response<T, F>` added in version 0.4.0.
+
 - When a retry policy receives a response whose status code indicates the policy shouldn't retry the request, it now returns that response instead of an error
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.5.0 (2025-07-10)
 

@@ -83,7 +83,7 @@ Before we can create a new certificate, though, we need to define a certificate 
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
-    CertificateClient, CertificateClientExt,
+    CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
 use futures::stream::TryStreamExt as _;
@@ -139,7 +139,7 @@ If you just want to wait until the `Poller<CertificateOperation>` is complete an
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
-    CertificateClient, CertificateClientExt,
+    CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
 
@@ -333,7 +333,7 @@ use azure_security_keyvault_certificates::{
         CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
         KeyType, KeyUsageType, X509CertificateProperties,
     },
-    CertificateClient, CertificateClientExt, ResourceExt, ResourceId,
+    CertificateClient, ResourceExt, ResourceId,
 };
 use azure_security_keyvault_keys::{
     models::{SignParameters, SignatureAlgorithm},

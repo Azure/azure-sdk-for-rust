@@ -1464,7 +1464,7 @@ impl BlobClient {
     #[tracing::function("Storage.Blob.Container.Blob.setTags")]
     pub async fn set_tags(
         &self,
-        tags: RequestContent<BlobTags>,
+        tags: RequestContent<BlobTags, XmlFormat>,
         options: Option<BlobClientSetTagsOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
