@@ -186,9 +186,6 @@ impl CheckpointStore for BlobCheckpointStore {
                 ..Default::default()
             },
         ))?;
-        // For now, return an empty vector since the blob storage API is complex
-        // and we need to understand the exact response structure.
-        // This provides a working foundation that can be enhanced later.
         let mut checkpoints = Vec::new();
 
         let checkpoint = Checkpoint {
