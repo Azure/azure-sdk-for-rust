@@ -149,18 +149,24 @@ where
             // only start keeping track of time after the first request is made
             let start = start.get_or_insert_with(OffsetDateTime::now_utc);
             let (last_error, retry_after) = match result {
-                Ok(response) if response.status().is_success() => {
-                    trace!(
-                        ?request,
-                        ?response,
-                        "server returned success status {}",
-                        response.status(),
-                    );
-                    return Ok(response);
-                }
                 Ok(response) => {
-                    // Error status code
                     let status = response.status();
+                    if !RETRY_STATUSES.contains(&status) {
+                        if status.is_success() {
+                            trace!(
+                                ?request,
+                                ?response,
+                                "server returned success status {}",
+                                status,
+                            );
+                        } else {
+                            debug!(
+                                "server returned status which will not be retried: {}",
+                                status
+                            );
+                        }
+                        return Ok(response);
+                    }
 
                     // For a 429 response (TooManyRequests) or 503 (ServiceUnavailable),
                     // use any "retry-after" headers returned by the server to determine how long to wait before retrying.
@@ -179,21 +185,6 @@ where
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
                     );
 
-                    if !RETRY_STATUSES.contains(&status) {
-                        debug!(
-                            "server returned error status which will not be retried: {}",
-                            status
-                        );
-                        // Server didn't return a status we retry on so return early
-                        let error = Error::full(
-                            error_kind,
-                            http_error,
-                            format!(
-                                "server returned error status which will not be retried: {status}"
-                            ),
-                        );
-                        return Err(error);
-                    }
                     debug!(
                         "server returned error status which requires retry: {}",
                         status
@@ -233,7 +224,28 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::http::{
+        headers::Headers, Context, FixedRetryOptions, Method, RawResponse, Request, RetryOptions,
+        Url,
+    };
     use ::time::macros::datetime;
+    use std::sync::{Arc, Mutex};
+
+    // Policy that counts the requests it receives and returns responses having a given status code
+    #[derive(Debug)]
+    struct StatusResponder {
+        request_count: Arc<Mutex<u32>>,
+        status: StatusCode,
+    }
+
+    #[async_trait]
+    impl Policy for StatusResponder {
+        async fn send(&self, _: &Context, _: &mut Request, _: &[Arc<dyn Policy>]) -> PolicyResult {
+            let mut count = self.request_count.lock().unwrap();
+            *count += 1;
+            Ok(RawResponse::from_bytes(self.status, Headers::new(), ""))
+        }
+    }
 
     // A function that returns a fixed "now" value for testing.
     fn datetime_now() -> OffsetDateTime {
@@ -289,5 +301,58 @@ mod test {
         headers.insert(RETRY_AFTER, "123");
         let retry_after = get_retry_after(&headers, datetime_now);
         assert_eq!(retry_after, Some(Duration::seconds(123)));
+    }
+
+    #[tokio::test]
+    async fn test_retry_statuses() {
+        let retries = 2u32;
+        let retry_policy = RetryOptions::fixed(
+            FixedRetryOptions::default()
+                .delay(Duration::nanoseconds(1))
+                .max_retries(retries),
+        )
+        .to_policy();
+        let ctx = Context::new();
+        let url = Url::parse("http://localhost").unwrap();
+
+        for &status in RETRY_STATUSES {
+            let mut request = Request::new(url.clone(), Method::Get);
+            let count = Arc::new(Mutex::new(0));
+            let mock = StatusResponder {
+                request_count: count.clone(),
+                status,
+            };
+            let next = vec![Arc::new(mock) as Arc<dyn Policy>];
+
+            retry_policy
+                .send(&ctx, &mut request, &next)
+                .await
+                .expect_err("Policy should return an error after exhausting retries");
+
+            assert_eq!(
+                retries + 1,
+                *count.lock().unwrap(),
+                "Policy should retry {status}"
+            );
+        }
+
+        let mut request = Request::new(url.clone(), Method::Get);
+        let count = Arc::new(Mutex::new(0));
+        let next = vec![Arc::new(StatusResponder {
+            request_count: count.clone(),
+            status: StatusCode::Unauthorized,
+        }) as Arc<dyn Policy>];
+
+        let response = retry_policy
+            .send(&ctx, &mut request, &next)
+            .await
+            .expect("Policy should return a response whose status isn't in RETRY_STATUSES");
+
+        assert_eq!(response.status(), StatusCode::Unauthorized);
+        assert_eq!(
+            1,
+            *count.lock().unwrap(),
+            "Policy shouldn't retry after receiving a response whose status isn't in RETRY_STATUSES"
+        );
     }
 }

@@ -65,15 +65,6 @@ impl BlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let oauth_token_policy = BearerTokenCredentialPolicy::new(
-            credential.clone(),
-            ["https://storage.azure.com/.default"],
-        );
-        options
-            .client_options
-            .per_try_policies
-            .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
-
         let client = GeneratedBlobClient::new(
             endpoint,
             credential.clone(),

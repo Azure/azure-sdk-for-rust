@@ -193,13 +193,13 @@ mod tests {
     }
 
     fn create_service_client(
-        ctx: TestContext,
+        ctx: &TestContext,
         azure_provider: Arc<dyn TracerProvider>,
     ) -> TestServiceClientWithMacros {
         let recording = ctx.recording();
         let endpoint = "https://azuresdkforcpp.azurewebsites.net";
         let credential = recording.credential().clone();
-        let options = TestServiceClientWithMacrosOptions {
+        let mut options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
                 request_instrumentation: Some(RequestInstrumentationOptions {
                     tracer_provider: Some(azure_provider),
@@ -208,6 +208,7 @@ mod tests {
             },
             ..Default::default()
         };
+        recording.instrument(&mut options.client_options);
 
         TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap()
     }
@@ -268,9 +269,10 @@ mod tests {
         let recording = ctx.recording();
         let endpoint = "https://microsoft.com";
         let credential = recording.credential().clone();
-        let options = TestServiceClientWithMacrosOptions {
+        let mut options = TestServiceClientWithMacrosOptions {
             ..Default::default()
         };
+        recording.instrument(&mut options.client_options);
 
         let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
         assert_eq!(client.endpoint().as_str(), "https://microsoft.com/");
@@ -280,11 +282,11 @@ mod tests {
     }
 
     #[recorded::test()]
-    async fn test_macro_service_client_get(ctx: TestContext) -> Result<()> {
+    async fn test_macro_service_client_get_simple(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let client = create_service_client(ctx, azure_provider.clone());
+        let client = create_service_client(&ctx, azure_provider.clone());
 
         let response = client.get("get", None).await;
         info!("Response: {:?}", response);
@@ -327,7 +329,7 @@ mod tests {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let client = create_service_client(ctx, azure_provider.clone());
+        let client = create_service_client(&ctx, azure_provider.clone());
 
         let response = client.get("failing_url", None).await;
         info!("Response: {:?}", response);
@@ -375,7 +377,7 @@ mod tests {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let client = create_service_client(ctx, azure_provider.clone());
+        let client = create_service_client(&ctx, azure_provider.clone());
 
         let response = client.get_with_function_tracing("get", None).await;
         info!("Response: {:?}", response);
@@ -430,20 +432,8 @@ mod tests {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
-        let recording = ctx.recording();
-        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
-        let credential = recording.credential().clone();
-        let options = TestServiceClientWithMacrosOptions {
-            client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
-                    tracer_provider: Some(azure_provider),
-                }),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
+        let client = create_service_client(&ctx, azure_provider.clone());
 
-        let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
         let response = client.get_with_function_tracing("failing_url", None).await;
         info!("Response: {:?}", response);
 

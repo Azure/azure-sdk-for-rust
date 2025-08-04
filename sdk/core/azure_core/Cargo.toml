@@ -56,6 +56,7 @@ default = [
 ]
 azurite_workaround = []
 debug = ["typespec_client_core/debug"]
+decimal = ["typespec_client_core/decimal"]
 hmac_openssl = ["dep:openssl"]
 hmac_rust = ["dep:sha2", "dep:hmac"]
 reqwest = ["typespec_client_core/reqwest"]
@@ -72,6 +73,7 @@ workspace = true
 [package.metadata.docs.rs]
 features = [
   "debug",
+  "decimal",
   "hmac_openssl",
   "hmac_rust",
   "reqwest",
