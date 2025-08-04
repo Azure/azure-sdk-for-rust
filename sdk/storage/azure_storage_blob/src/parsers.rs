@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::generated::models::{BlobTag, BlobTags};
+use azure_core::http::response::ResponseBody;
 use azure_core::http::{RawResponse, RequestContent, Response, XmlFormat};
 use azure_core::xml;
 use std::collections::{BTreeMap, HashMap};
@@ -69,18 +70,21 @@ pub(crate) async fn deserialize_blob_tags(
 ) -> azure_core::Result<Response<HashMap<String, String>, XmlFormat>>
 where
 {
-    let mut blob_tags_map = HashMap::new();
+    let mut blob_tags_map: HashMap<String, String> = HashMap::new();
     let status = response.status();
     let headers = response.headers().clone();
     let blob_tags = response.into_body().await?;
 
     if let Some(blob_tag_set) = blob_tags.blob_tag_set {
-        for blob_tag in blob_tag_set {
-            blob_tags_map.insert(blob_tag.key, blob_tag.value);
+        for tag in blob_tag_set {
+            if let (Some(k), Some(v)) = (tag.key, tag.value) {
+                blob_tags_map.insert(k, v);
+            }
         }
     }
 
-    let xml_body = xml::to_xml_with_root("HashMap", &blob_tags_map)?;
-    let raw_response = RawResponse::from_bytes(status, headers, xml_body);
+    let request_content: RequestContent<HashMap<String, String>> =
+        RequestContent::try_from(blob_tags_map)?;
+    let raw_response = RawResponse::from_bytes(status, headers, request_content.body());
     Ok(raw_response.into())
 }

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::RequestContent;
+use azure_core::http::{RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
@@ -137,7 +137,7 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
         default_service_version: Some("2022-11-02".to_string()),
         ..Default::default()
     };
-    let request_content: RequestContent<StorageServiceProperties> =
+    let request_content: RequestContent<StorageServiceProperties, XmlFormat> =
         storage_service_properties.try_into()?;
 
     service_client.set_properties(request_content, None).await?;

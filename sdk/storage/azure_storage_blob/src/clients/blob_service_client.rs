@@ -106,7 +106,7 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub async fn set_properties(
         &self,
-        storage_service_properties: RequestContent<StorageServiceProperties>,
+        storage_service_properties: RequestContent<StorageServiceProperties, XmlFormat>,
         options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
