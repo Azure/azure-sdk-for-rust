@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Distinguish remote disconnect and remote closed errors by origin
+
 ### Bugs Fixed
 
 ### Other Changes
