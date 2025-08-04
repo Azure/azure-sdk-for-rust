@@ -245,7 +245,7 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub async fn set_access_policy(
         &self,
-        container_acl: RequestContent<Vec<SignedIdentifier>>,
+        container_acl: RequestContent<Vec<SignedIdentifier>, XmlFormat>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>> {
         self.client.set_access_policy(container_acl, options).await

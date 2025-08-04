@@ -250,7 +250,7 @@ impl BlobServiceClient {
     ///
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.getStatistics")]
-    pub async fn get_statistics(
+    pub async fn get_service_stats(
         &self,
         options: Option<BlobServiceClientGetServiceStatsOptions<'_>>,
     ) -> Result<Response<StorageServiceStats, XmlFormat>> {

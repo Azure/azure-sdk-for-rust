@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    http::{RequestContent, StatusCode},
+    http::{RequestContent, StatusCode, XmlFormat},
     time::{Duration, OffsetDateTime},
 };
 use azure_core_test::{recorded, TestContext};
@@ -301,10 +301,8 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         id: None,
     };
 
-    let request_content_1 = RequestContent::try_from(signed_identifier);
-    let request_content_2 = RequestContent::try_from(vec![signed_identifier]);
     container_client
-        .set_access_policy(request_content, None)
+        .set_access_policy(signed_identifier.try_into()?, None)
         .await?;
 
     // Assert
