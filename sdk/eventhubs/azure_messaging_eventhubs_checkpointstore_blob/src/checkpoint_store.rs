@@ -226,14 +226,6 @@ impl CheckpointStore for BlobCheckpointStore {
                     }
                 }
 
-                // // Parse the blob body to extract checkpoint information
-                // if let Some(offset) = blob.metadata.get(OFFSET) {
-                //     checkpoint.offset = offset.parse().unwrap_or_default();
-                // }
-                // if let Some(sequence_number) = blob.metadata.get(SEQUENCE_NUMBER) {
-                //     checkpoint.sequence_number = sequence_number.parse().unwrap_or_default();
-                // }
-
                 checkpoints.push(checkpoint);
             }
         }
@@ -303,11 +295,6 @@ impl CheckpointStore for BlobCheckpointStore {
                     ownership.etag = properties.etag.as_ref().map(|s| Etag::from(s.clone()));
                     ownership.last_modified_time = properties.last_modified;
                 }
-
-                // // Parse the blob body to extract ownership information
-                // if let Some(owner_id) = blob.metadata.get(OWNER_ID) {
-                //     ownership.owner_id = owner_id.clone();
-                // }
 
                 ownerships.push(ownership);
             }
