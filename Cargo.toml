@@ -83,7 +83,7 @@ criterion = { version = "0.5", features = ["async_tokio"] }
 dyn-clone = "1.0"
 fe2o3-amqp = { version = "0.14", features = ["native-tls", "uuid"] }
 fe2o3-amqp-ext = { version = "0.14" }
-fe2o3-amqp-management = { version = "0.14", features = [] }
+fe2o3-amqp-management = { version = "0.14" }
 fe2o3-amqp-cbs = { version = "0.14" }
 fe2o3-amqp-types = { version = "0.14" }
 flate2 = "1.1.0"
