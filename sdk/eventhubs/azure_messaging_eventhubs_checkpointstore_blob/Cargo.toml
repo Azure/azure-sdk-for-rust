@@ -3,14 +3,14 @@ name = "azure_messaging_eventhubs_checkpointstore_blob"
 version = "0.1.0"
 description = "Azure Event Hubs checkpoint store implementation using Azure Blob Storage"
 readme = "README.md"
-license = "MIT"
-repository = "https://github.com/Azure/azure-sdk-for-rust"
-homepage = "https://github.com/Azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_messaging_eventhubs_checkpointstore_blob"
-keywords = ["sdk", "azure", "eventhubs", "checkpoints", "blob"]
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+authors.workspace = true
+keywords = ["sdk", "azure", "messaging", "cloud", "eventhubs"]
 categories = ["api-bindings"]
-authors = ["Microsoft"]
-edition = "2021"
+documentation = "https://docs.rs/azure_messaging_eventhubs_checkpointstore_blob"
+edition.workspace = true
 rust-version = "1.75.0"
 
 [dependencies]

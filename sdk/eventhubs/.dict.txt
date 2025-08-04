@@ -3,4 +3,5 @@ consts
 eventdata
 mgmt
 rustc
-checkpointstore
+myapp
+yourcontainername

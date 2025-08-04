@@ -67,10 +67,6 @@ path = "sdk/core/azure_core_amqp"
 version = "0.6.0"
 path = "sdk/eventhubs/azure_messaging_eventhubs"
 
-[workspace.dependencies.azure_messaging_eventhubs_checkpointstore_blob]
-version = "0.1.0"
-path = "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob"
-
 [workspace.dependencies.azure_core_test]
 # azure_core_test is not published and only ever a dev-dependency
 path = "sdk/core/azure_core_test"

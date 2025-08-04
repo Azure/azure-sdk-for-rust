@@ -1,7 +1,5 @@
 # Azure Event Hubs Checkpoint Store for Blob Storage
 
-<!-- cspell: ignore myapp -->
-
 This crate provides a checkpoint store implementation for Azure Event Hubs using Azure Blob Storage as the backend. It implements the `CheckpointStore` trait from the `azure_messaging_eventhubs` crate, allowing you to persist checkpoints (event positions) to Azure Blob Storage.
 
 ## Features
@@ -25,43 +23,46 @@ azure_identity = "0.20.0"
 
 ### Basic Example
 
-```rust
+```rust no_run
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
-use azure_messaging_eventhubs::processor::EventProcessorBuilder;
-use azure_storage_blobs::BlobServiceClient;
+use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, ProcessorStrategy};
+use azure_storage_blob::BlobContainerClient;
 use azure_identity::DefaultAzureCredential;
 use std::sync::Arc;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create blob service client
-    let credential = Arc::new(DefaultAzureCredential::default());
-    let blob_client = BlobServiceClient::new(
+    let credential = DefaultAzureCredential::new()?;
+    let blob_client = BlobContainerClient::new(
         "https://yourstorageaccount.blob.core.windows.net",
-        credential.clone()
-    );
+        "yourcontainername".to_string(),
+        credential.clone(),
+        None,
+    )?;
 
     // Create checkpoint store
-    let checkpoint_store = BlobCheckpointStore::new(
-        blob_client,
-        "checkpoints".to_string(), // container name
-        Some("myapp".to_string())   // optional prefix
-    );
+    let checkpoint_store = BlobCheckpointStore::new(blob_client);
 
-    // Create event processor with blob checkpoint store
-    let processor = EventProcessorBuilder::new()
-        .with_connection_string("your_eventhubs_connection_string")
-        .with_consumer_group("$Default")
-        .with_checkpoint_store(Arc::new(checkpoint_store))
-        .with_event_handler(|event| async move {
-            println!("Received event: {:?}", event);
-            Ok(())
-        })
-        .build()
+    let consumer_client = ConsumerClient::builder()
+        .open(
+            "my-eventhubs-host-name",
+            "my-eventhub-name".to_string(),
+            credential.clone(),
+        )
+        .await?;
+
+    let event_processor = EventProcessor::builder()
+        .with_load_balancing_strategy(ProcessorStrategy::Greedy)
+        .build(
+            Arc::new(consumer_client),
+            checkpoint_store,
+        )
         .await?;
 
     // Start processing
-    processor.start().await?;
+    tokio::spawn(async move { event_processor.run().await });
 
     Ok(())
 }
