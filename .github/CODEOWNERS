@@ -19,10 +19,10 @@
 
 # Catch all for loose files in the root, which are mostly global configuration and
 # should not be changed without team discussion.
-/*                       @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/*                       @Azure/azure-sdk-rust-dev
 
 # Catch all for non-code project files and unowned files | folders
-/**                      @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/**                      @Azure/azure-sdk-rust-dev
 
 # Allow service owners to approve crate version updates, which impact Cargo.lock
 /Cargo.lock
@@ -32,23 +32,23 @@
 ##################
 
 # GitHub integration and bot rules
-/.github/                @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/.github/                @Azure/azure-sdk-rust-dev
 
 ###########
 # SDK
 ###########
 # Catch all
-/sdk/                    @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/sdk/                    @Azure/azure-sdk-rust-dev
 
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Core
 # PRLabel: %Azure.Core
-/sdk/core/               @heaths @RickWinter @LarryOsterman
+/sdk/core/               @heaths @Azure/azure-sdk-rust-dev
 
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Identity
 # PRLabel: %Azure.Identity
-/sdk/identity/           @heaths @RickWinter @LarryOsterman @chlowell
+/sdk/identity/           @chlowell @Azure/azure-sdk-rust-dev
 
 ###########
 # Client SDKs
@@ -57,7 +57,7 @@
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Storage
 # PRLabel: %Storage
-/sdk/storage/           @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
+/sdk/storage/           @Azure/azure-sdk-rust-dev @vincenttran-msft @jalauzon-msft
 
 # AzureSDKOwners: @heaths
 # ServiceOwner: @Pilchie
@@ -68,12 +68,12 @@
 # ServiceOwner: @Azure/azure-sdk-write-keyvault
 # ServiceLabel: %KeyVault
 # PRLabel: %KeyVault
-/sdk/keyvault/           @Azure/azure-sdk-write-keyvault @heaths
+/sdk/keyvault/           @Azure/azure-sdk-write-keyvault @Azure/azure-sdk-rust-dev
 
 ###########
 # Eng Sys
 ###########
-/eng/                    @hallipr @weshaggard @heaths @RickWinter
+/eng/                    @hallipr @weshaggard @Azure/azure-sdk-rust-dev
 /eng/common/             @Azure/azure-sdk-eng
 /.github/workflows/      @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @RickWinter @ronniegeraghty @Azure/azure-sdk-eng
