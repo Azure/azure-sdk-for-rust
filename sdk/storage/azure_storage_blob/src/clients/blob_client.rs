@@ -27,7 +27,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url, XmlFormat,
+        JsonFormat, NoFormat, RequestContent, Response, Url, XmlFormat,
     },
     Bytes, Result,
 };
@@ -339,7 +339,7 @@ impl BlobClient {
     pub async fn get_tags(
         &self,
         options: Option<BlobClientGetTagsOptions<'_>>,
-    ) -> Result<Response<HashMap<String, String>, XmlFormat>> {
+    ) -> Result<Response<HashMap<String, String>, JsonFormat>> {
         let response = self.client.get_tags(options).await?;
         deserialize_blob_tags(response).await
     }

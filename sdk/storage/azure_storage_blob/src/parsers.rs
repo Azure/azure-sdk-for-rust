@@ -3,7 +3,7 @@
 
 use crate::generated::models::{BlobTag, BlobTags};
 use azure_core::http::response::ResponseBody;
-use azure_core::http::{RawResponse, RequestContent, Response, XmlFormat};
+use azure_core::http::{JsonFormat, RawResponse, RequestContent, Response, XmlFormat};
 use azure_core::xml;
 use std::collections::{BTreeMap, HashMap};
 use std::io::{Error, ErrorKind};
@@ -67,7 +67,7 @@ pub(crate) fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
 /// * `response` - The `get_tags()` response to be deserialized.
 pub(crate) async fn deserialize_blob_tags(
     response: Response<BlobTags, XmlFormat>,
-) -> azure_core::Result<Response<HashMap<String, String>, XmlFormat>>
+) -> azure_core::Result<Response<HashMap<String, String>, JsonFormat>>
 where
 {
     let mut blob_tags_map: HashMap<String, String> = HashMap::new();
