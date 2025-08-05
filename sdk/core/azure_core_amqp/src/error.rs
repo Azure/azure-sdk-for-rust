@@ -10,11 +10,21 @@ use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 /// Type of AMQP error.
 pub enum AmqpErrorKind {
     AmqpDescribedError(AmqpDescribedError),
-    /// Remote peer closed the link
-    ClosedByRemote(Box<dyn std::error::Error + Send + Sync>),
 
-    /// Remote peer detached
-    DetachedByRemote(Box<dyn std::error::Error + Send + Sync>),
+    /// Remote peer closed the link
+    LinkClosedByRemote(Box<dyn std::error::Error + Send + Sync>),
+    /// Remote peer closed the session
+    SessionClosedByRemote(Box<dyn std::error::Error + Send + Sync>),
+    /// Remote peer closed the connection
+    ConnectionClosedByRemote(Box<dyn std::error::Error + Send + Sync>),
+
+    /// Remote peer detached the link
+    LinkDetachedByRemote(Box<dyn std::error::Error + Send + Sync>),
+    /// Remote peer detached the session
+    SessionDetachedByRemote(Box<dyn std::error::Error + Send + Sync>),
+
+    /// Remote peer detached the connection
+    ConnectionDetachedByRemote(Box<dyn std::error::Error + Send + Sync>),
 
     /// The send request was rejected by the remote peer.
     NonTerminalDeliveryState,
@@ -83,6 +93,7 @@ create_extensible_enum!(
         SessionCannotBeLocked,
         "com.microsoft:session-cannot-be-locked"
     ),
+    (EntityUpdated, "com.microsoft:entity-updated"),
     (MessageNotFound, "com.microsoft:message-not-found"),
     (SessionNotFound, "com.microsoft:session-not-found"),
     (EntityAlreadyExists, "com.microsoft:entity-already-exists"),
@@ -182,8 +193,12 @@ impl std::error::Error for AmqpError {
         match &self.kind {
             AmqpErrorKind::TransportImplementationError(s)
             | AmqpErrorKind::DetachError(s)
-            | AmqpErrorKind::ClosedByRemote(s)
-            | AmqpErrorKind::DetachedByRemote(s)
+            | AmqpErrorKind::LinkClosedByRemote(s)
+            | AmqpErrorKind::LinkDetachedByRemote(s)
+            | AmqpErrorKind::SessionClosedByRemote(s)
+            | AmqpErrorKind::SessionDetachedByRemote(s)
+            | AmqpErrorKind::ConnectionClosedByRemote(s)
+            | AmqpErrorKind::ConnectionDetachedByRemote(s)
             | AmqpErrorKind::LinkStateError(s)
             | AmqpErrorKind::ConnectionDropped(s) => Some(s.as_ref()),
             AmqpErrorKind::ManagementStatusCode(_, _) => None,
@@ -211,11 +226,23 @@ impl std::fmt::Display for AmqpError {
                     write!(f, "Management API returned status code: {}", status_code,)
                 }
             }
-            AmqpErrorKind::DetachedByRemote(err) => {
-                write!(f, "Remote detached with error: {}", err)
+            AmqpErrorKind::ConnectionDetachedByRemote(err) => {
+                write!(f, "Remote connection detached with error: {}", err)
             }
-            AmqpErrorKind::ClosedByRemote(err) => {
-                write!(f, "Remote closed with error: {}", err)
+            AmqpErrorKind::LinkDetachedByRemote(err) => {
+                write!(f, "Remote link detached with error: {}", err)
+            }
+            AmqpErrorKind::SessionDetachedByRemote(err) => {
+                write!(f, "Remote session detached with error: {}", err)
+            }
+            AmqpErrorKind::LinkClosedByRemote(err) => {
+                write!(f, "Remote link closed with error: {}", err)
+            }
+            AmqpErrorKind::SessionClosedByRemote(err) => {
+                write!(f, "Remote session closed with error: {}", err)
+            }
+            AmqpErrorKind::ConnectionClosedByRemote(err) => {
+                write!(f, "Remote connection closed with error: {}", err)
             }
             AmqpErrorKind::DetachError(err) => {
                 write!(f, "AMQP Detach Error: {} ", err)
