@@ -3,7 +3,7 @@
 
 [package]
 name = "azure_messaging_eventhubs"
-version = "0.6.0"
+version = "0.7.0"
 description = "Rust client for Azure Eventhubs Service"
 readme = "README.md"
 authors.workspace = true
@@ -35,14 +35,14 @@ azure_core_amqp = { workspace = true, features = ["test"] }
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
 azure_messaging_eventhubs = { path = ".", features = [
-  "test",
+  "in_memory_checkpoint_store",
 ] }
 criterion.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
-test = []
+in_memory_checkpoint_store = []
 
 [[bench]]
 name = "benchmarks"

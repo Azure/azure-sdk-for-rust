@@ -1,5 +1,20 @@
 # Release History
 
+## 0.7.0 (Unreleased)
+
+### Features Added
+
+- Reconnect support for EventHubs operations.
+
+### Breaking Changes
+
+- `ProducerClient::send_batch` now consumes its `batch` argument.
+- `RetryOptions::max_retries` is a `u32` not a `usize`.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.6.0 (2025-08-05)
 
 ### Other Changes
