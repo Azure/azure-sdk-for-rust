@@ -1013,7 +1013,6 @@ dependencies = [
  "tokio-native-tls",
  "tokio-stream",
  "tokio-util",
- "tracing",
  "url",
  "uuid",
  "wasmtimer",
@@ -1050,7 +1049,6 @@ dependencies = [
  "fe2o3-amqp-types",
  "serde",
  "thiserror 2.0.12",
- "tracing",
 ]
 
 [[package]]
