@@ -23,6 +23,10 @@ azure_identity = "0.20.0"
 
 ### Basic Example
 
+This example creates a blob container client on the storage account which will hold the blob checkpoint store, and configures a blob checkpoint store to use that storage client.
+
+It then creates an EventHubs processor client using the blob checkpoint store and starts the processor.
+
 ```rust no_run
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
 use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, ProcessorStrategy};

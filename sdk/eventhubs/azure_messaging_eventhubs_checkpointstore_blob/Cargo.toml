@@ -33,11 +33,3 @@ tracing-subscriber.workspace = true
 
 [features]
 default = []
-
-[[example]]
-name = "checkpoint_store_basic"
-path = "examples/checkpoint_store_basic.rs"
-
-[[example]]
-name = "processor_with_blob_checkpoints"
-path = "examples/processor_with_blob_checkpoints.rs"

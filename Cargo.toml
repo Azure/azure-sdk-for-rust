@@ -76,7 +76,6 @@ path = "sdk/core/azure_core_test_macros"
 path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_blob]
-# azure_storage_blob should only ever be in dev-dependencies herein
 path = "sdk/storage/azure_storage_blob"
 version = "0.4.0"
 

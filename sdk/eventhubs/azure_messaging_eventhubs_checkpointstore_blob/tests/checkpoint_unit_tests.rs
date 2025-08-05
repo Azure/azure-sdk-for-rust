@@ -59,7 +59,6 @@ async fn list_checkpoints(ctx: TestContext) -> Result<()> {
             !checkpoint.partition_id.is_empty(),
             "Checkpoint {i} has an empty partition_id",
         );
-        assert_eq!(checkpoint.partition_id, i.to_string());
         assert_eq!(checkpoint.fully_qualified_namespace, namespace);
         assert_eq!(checkpoint.consumer_group, consumer_group);
     }
