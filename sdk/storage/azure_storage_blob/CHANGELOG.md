@@ -1,5 +1,15 @@
 # Release History
 
+## 0.5.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.4.0 (2025-08-05)
 
 ### Bugs Fixed
@@ -11,10 +21,6 @@
 
 * Changed `RequestContent<Bytes>` request methods to `RequestContent<T, NoFormat>` to provide parity with `Response<T, NoFormat>`.
 * Changed `RequestContent<T>` XML models in client methods to `RequestContent<T, XmlFormat>` to provide parity with `Response<T, XmlFormat>`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.3.0 (2025-07-15)
 
