@@ -58,7 +58,7 @@ reqwest_rustls = [
   "reqwest/rustls-tls-native-roots-no-provider",
 ] # Remove dependency on banned `ring` crate; requires manually configuring crypto provider.
 test = [] # Enables extra tracing including error bodies that may contain PII.
-tokio = ["tokio/sync", "tokio/time", "tokio/io-util"]
+tokio = ["tokio/sync", "tokio/time"]
 xml = ["dep:quick-xml"]
 
 [[example]]
