@@ -19,7 +19,7 @@ This crate provides a checkpoint store implementation for Azure Event Hubs using
 Install the Azure Event Hubs client library for Rust with [Cargo]:
 
 ```sh
-cargo add azure_messaging_eventhubs
+cargo add azure_messaging_eventhubs_checkpointstore_blob
 ```
 
 ### Prerequisites
