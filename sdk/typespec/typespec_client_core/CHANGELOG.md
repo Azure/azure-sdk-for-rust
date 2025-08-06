@@ -1,5 +1,11 @@
 # Release History
 
+## 0.7.0 (Unreleased)
+
+### Breaking Changes
+
+- Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` to copy if needed.
+
 ## 0.6.0 (2025-08-01)
 
 ### Features Added
