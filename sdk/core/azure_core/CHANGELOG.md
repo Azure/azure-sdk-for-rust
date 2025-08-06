@@ -1,5 +1,17 @@
 # Release History
 
+## 0.28.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` for `typespec_client_core` to copy if needed.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.27.0 (2025-08-01)
 
 ### Features Added

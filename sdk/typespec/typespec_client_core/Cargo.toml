@@ -1,6 +1,6 @@
 [package]
 name = "typespec_client_core"
-version = "0.6.0"
+version = "0.7.0"
 authors.workspace = true
 edition.workspace = true
 description = "Client runtime for TypeSpec-generated libraries."
@@ -39,7 +39,7 @@ getrandom.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
 
 [dev-dependencies]
-tokio.workspace = true
+tokio = { workspace = true, features = ["fs"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 typespec_macros.path = "../typespec_macros"
@@ -58,12 +58,8 @@ reqwest_rustls = [
   "reqwest/rustls-tls-native-roots-no-provider",
 ] # Remove dependency on banned `ring` crate; requires manually configuring crypto provider.
 test = [] # Enables extra tracing including error bodies that may contain PII.
-tokio = ["tokio/fs", "tokio/sync", "tokio/time", "tokio/io-util"]
+tokio = ["tokio/sync", "tokio/time"]
 xml = ["dep:quick-xml"]
-
-[[example]]
-name = "core_binary_data_request"
-required-features = ["tokio"]
 
 [[example]]
 name = "core_stream_response"
