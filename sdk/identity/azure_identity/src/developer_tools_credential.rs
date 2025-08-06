@@ -9,9 +9,12 @@ use azure_core::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
 };
-use std::sync::{
-    atomic::{AtomicUsize, Ordering},
-    Arc,
+use std::{
+    fmt,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
 };
 
 /// Options for constructing a new [`DeveloperToolsCredential`]
@@ -29,7 +32,6 @@ pub struct DeveloperToolsCredentialOptions {
 /// * [`AzureDeveloperCliCredential`]
 ///
 /// `DeveloperToolsCredential` uses the first credential that provides a token for all subsequent token requests. It never tries the others again.
-#[derive(Debug)]
 pub struct DeveloperToolsCredential {
     sources: Vec<Arc<dyn TokenCredential>>,
     // index of the source that first provided a token. usize::MAX indicates no source has provided a token.
@@ -65,6 +67,12 @@ impl DeveloperToolsCredential {
             sources,
             cached_source_index: AtomicUsize::new(usize::MAX),
         }))
+    }
+}
+
+impl fmt::Debug for DeveloperToolsCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("DeveloperToolsCredential")
     }
 }
 
