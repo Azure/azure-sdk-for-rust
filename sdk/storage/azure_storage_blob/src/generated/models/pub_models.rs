@@ -1114,9 +1114,9 @@ pub struct PageBlobClientCreateResult;
 #[derive(SafeDebug)]
 pub struct PageBlobClientResizeResult;
 
-/// Contains results for `PageBlobClient::update_sequence_number()`
+/// Contains results for `PageBlobClient::set_sequence_number()`
 #[derive(SafeDebug)]
-pub struct PageBlobClientUpdateSequenceNumberResult;
+pub struct PageBlobClientSetSequenceNumberResult;
 
 /// Contains results for `PageBlobClient::upload_pages_from_url()`
 #[derive(SafeDebug)]

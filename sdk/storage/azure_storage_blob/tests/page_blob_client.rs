@@ -8,11 +8,8 @@ use azure_storage_blob::{
     models::{
         BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
         PageBlobClientCreateOptions, PageBlobClientCreateOptionsExt,
-<<<<<<< HEAD
-        PageBlobClientUpdateSequenceNumberOptions, PageBlobClientUpdateSequenceNumberResultHeaders,
+        PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResultHeaders,
         SequenceNumberActionType,
-=======
->>>>>>> main
     },
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client};
@@ -169,7 +166,6 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// TODO: MAKE THE SEQUENCE NUMBER A PARAM
 #[recorded::test]
 async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
@@ -179,9 +175,9 @@ async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>
     let blob_client = container_client.blob_client(get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
 
-    // Act
+    // Update Action
     page_blob_client.create(1024, None).await?;
-    let sequence_number_options = PageBlobClientUpdateSequenceNumberOptions {
+    let sequence_number_options = PageBlobClientSetSequenceNumberOptions {
         blob_sequence_number: Some(7),
         ..Default::default()
     };
@@ -191,10 +187,26 @@ async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>
             Some(sequence_number_options),
         )
         .await?;
-
-    // Assert
     let blob_sequence_number = response.blob_sequence_number()?;
     assert_eq!(7, blob_sequence_number.unwrap());
+
+    // Increment Action
+    let response = page_blob_client
+        .set_sequence_number(SequenceNumberActionType::Increment, None)
+        .await?;
+    let blob_sequence_number = response.blob_sequence_number()?;
+    assert_eq!(8, blob_sequence_number.unwrap());
+
+    // Set Max Action
+    let sequence_number_options = PageBlobClientSetSequenceNumberOptions {
+        blob_sequence_number: Some(5),
+        ..Default::default()
+    };
+    page_blob_client
+        .set_sequence_number(SequenceNumberActionType::Max, Some(sequence_number_options))
+        .await?;
+    let blob_sequence_number = response.blob_sequence_number()?;
+    assert_eq!(8, blob_sequence_number.unwrap());
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -290,8 +302,6 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let get_page_ranges_response = page_blob_client.get_page_ranges(None).await?;
     // Assert
     let page_ranges = get_page_ranges_response.into_body().await?;
-    // called `Option::unwrap()` on a `None` value
-    // println!("{:?}", page_ranges.page_range);
     let page_range = page_ranges.page_range.unwrap();
     for range in page_range {
         assert_eq!(0, range.start.unwrap());

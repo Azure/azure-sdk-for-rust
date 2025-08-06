@@ -7,8 +7,8 @@ use crate::{
         PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
         PageBlobClientCreateOptions, PageBlobClientCreateResult,
         PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
-        PageBlobClientResizeResult, PageBlobClientUpdateSequenceNumberOptions,
-        PageBlobClientUpdateSequenceNumberResult, PageBlobClientUploadPagesFromUrlOptions,
+        PageBlobClientResizeResult, PageBlobClientSetSequenceNumberOptions,
+        PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlOptions,
         PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesOptions,
         PageBlobClientUploadPagesResult, PageList, SequenceNumberActionType,
     },
@@ -161,10 +161,10 @@ impl PageBlobClient {
     pub async fn set_sequence_number(
         &self,
         sequence_number_action: SequenceNumberActionType,
-        options: Option<PageBlobClientUpdateSequenceNumberOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult, NoFormat>> {
+        options: Option<PageBlobClientSetSequenceNumberOptions<'_>>,
+    ) -> Result<Response<PageBlobClientSetSequenceNumberResult, NoFormat>> {
         self.client
-            .update_sequence_number(sequence_number_action, options)
+            .set_sequence_number(sequence_number_action, options)
             .await
     }
 
