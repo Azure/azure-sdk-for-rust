@@ -116,7 +116,7 @@ impl RetryOptions {
 /// # use typespec_client_core::http::{ExponentialRetryOptions, RetryOptions};
 /// RetryOptions::exponential(
 ///     ExponentialRetryOptions {
-///         max_retries: 10u3,
+///         max_retries: 10u32,
 ///         initial_delay: Duration::seconds(1),
 ///         ..Default::default()
 ///     }
@@ -164,7 +164,7 @@ impl Default for ExponentialRetryOptions {
 /// ```
 /// # use typespec_client_core::http::{FixedRetryOptions, RetryOptions};
 /// RetryOptions::fixed(
-///     FixedRetryOptions::default()
+///     FixedRetryOptions {
 ///         max_retries: 10u32,
 ///         ..Default::default()
 ///     }
