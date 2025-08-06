@@ -55,10 +55,6 @@ path = "sdk/core/azure_core"
 version = "0.2.0"
 path = "sdk/core/azure_core_macros"
 
-[workspace.dependencies.azure_core_opentelemetry]
-version = "0.2.0"
-path = "sdk/core/azure_core_opentelemetry"
-
 [workspace.dependencies.azure_core_amqp]
 version = "0.7.0"
 path = "sdk/core/azure_core_amqp"
@@ -66,6 +62,10 @@ path = "sdk/core/azure_core_amqp"
 [workspace.dependencies.azure_messaging_eventhubs]
 version = "0.7.0"
 path = "sdk/eventhubs/azure_messaging_eventhubs"
+
+[workspace.dependencies.azure_core_opentelemetry]
+# azure_core_opentelemetry should only ever be in dev-dependencies herein
+path = "sdk/core/azure_core_opentelemetry"
 
 [workspace.dependencies.azure_core_test]
 # azure_core_test is not published and only ever a dev-dependency
