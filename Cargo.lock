@@ -316,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "0.27.0"
+version = "0.28.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -341,7 +341,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "async-lock",
  "async-stream",
@@ -363,7 +363,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -383,7 +383,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -403,7 +403,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -429,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -1013,7 +1013,6 @@ dependencies = [
  "tokio-native-tls",
  "tokio-stream",
  "tokio-util",
- "tracing",
  "url",
  "uuid",
  "wasmtimer",
@@ -1050,7 +1049,6 @@ dependencies = [
  "fe2o3-amqp-types",
  "serde",
  "thiserror 2.0.12",
- "tracing",
 ]
 
 [[package]]

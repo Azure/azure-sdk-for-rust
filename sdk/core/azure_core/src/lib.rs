@@ -11,7 +11,6 @@ mod macros;
 
 mod constants;
 pub mod credentials;
-pub mod fs;
 pub mod hmac;
 pub mod http;
 

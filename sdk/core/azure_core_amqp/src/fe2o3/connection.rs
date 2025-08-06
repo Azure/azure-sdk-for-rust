@@ -187,7 +187,7 @@ impl From<Fe2o3ConnectionOpenError> for azure_core::Error {
                 azure_core::Error::from(parse_error)
             }
             fe2o3_amqp::connection::OpenError::RemoteClosed => {
-                AmqpErrorKind::ClosedByRemote(Box::new(e.0)).into()
+                AmqpErrorKind::ConnectionClosedByRemote(Box::new(e.0)).into()
             }
             fe2o3_amqp::connection::OpenError::RemoteClosedWithError(error) => {
                 AmqpErrorKind::AmqpDescribedError(error.into()).into()
@@ -207,7 +207,7 @@ impl From<Fe2o3ConnectionError> for azure_core::Error {
                 azure_core::Error::from(Fe2o3TransportError(error))
             }
             fe2o3_amqp::connection::Error::RemoteClosed => {
-                AmqpErrorKind::ClosedByRemote(Box::new(e.0)).into()
+                AmqpErrorKind::ConnectionClosedByRemote(Box::new(e.0)).into()
             }
             fe2o3_amqp::connection::Error::RemoteClosedWithError(error) => {
                 AmqpErrorKind::AmqpDescribedError(error.into()).into()

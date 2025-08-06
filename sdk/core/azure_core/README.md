@@ -254,7 +254,7 @@ The `Poller<T>` implements `futures::Stream` so you can asynchronously iterate o
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
-    CertificateClient, CertificateClientExt,
+    CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
 use futures::stream::TryStreamExt as _;
@@ -310,7 +310,7 @@ If you just want to wait until the `Poller<T>` is complete and get the last stat
 ```rust no_run
 use azure_identity::DefaultAzureCredential;
 use azure_security_keyvault_certificates::{
-    CertificateClient, CertificateClientExt,
+    CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
 

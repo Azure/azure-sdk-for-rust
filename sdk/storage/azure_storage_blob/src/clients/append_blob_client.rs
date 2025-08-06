@@ -103,7 +103,7 @@ impl AppendBlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn append_block(
         &self,
-        data: RequestContent<Bytes>,
+        data: RequestContent<Bytes, NoFormat>,
         content_length: u64,
         options: Option<AppendBlobClientAppendBlockOptions<'_>>,
     ) -> Result<Response<AppendBlobClientAppendBlockResult, NoFormat>> {

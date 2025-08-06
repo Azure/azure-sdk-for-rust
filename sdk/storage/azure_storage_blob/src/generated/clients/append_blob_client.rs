@@ -103,7 +103,7 @@ impl AppendBlobClient {
     #[tracing::function("Storage.Blob.Container.Blob.AppendBlob.appendBlock")]
     pub async fn append_block(
         &self,
-        body: RequestContent<Bytes>,
+        body: RequestContent<Bytes, NoFormat>,
         content_length: u64,
         options: Option<AppendBlobClientAppendBlockOptions<'_>>,
     ) -> Result<Response<AppendBlobClientAppendBlockResult, NoFormat>> {
