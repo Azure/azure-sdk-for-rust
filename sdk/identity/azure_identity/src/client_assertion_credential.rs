@@ -185,7 +185,7 @@ pub(crate) mod tests {
             FAKE_TENANT_ID
         );
         move |req: &Request| {
-            assert_eq!(&Method::Post, req.method());
+            assert_eq!(Method::Post, req.method());
             assert_eq!(expected_url, req.url().to_string());
             assert_eq!(
                 content_type::APPLICATION_X_WWW_FORM_URLENCODED.as_str(),

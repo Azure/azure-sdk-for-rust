@@ -6,353 +6,353 @@
 use azure_core::{create_enum, create_extensible_enum};
 
 create_extensible_enum!(
-    #[doc = r#"/// The access tiers."#]
+    #[doc = r#"The access tiers."#]
     AccessTier,
-    #[doc = r#"/// The archive access tier."#]
+    #[doc = r#"The archive access tier."#]
     (Archive, "Archive"),
-    #[doc = r#"/// The Cold access tier."#]
+    #[doc = r#"The Cold access tier."#]
     (Cold, "Cold"),
-    #[doc = r#"/// The cool access tier."#]
+    #[doc = r#"The cool access tier."#]
     (Cool, "Cool"),
-    #[doc = r#"/// The hot access tier."#]
+    #[doc = r#"The hot access tier."#]
     (Hot, "Hot"),
-    #[doc = r#"/// The hot P10 tier."#]
+    #[doc = r#"The hot P10 tier."#]
     (P10, "P10"),
-    #[doc = r#"/// The hot P15 tier."#]
+    #[doc = r#"The hot P15 tier."#]
     (P15, "P15"),
-    #[doc = r#"/// The hot P20 tier."#]
+    #[doc = r#"The hot P20 tier."#]
     (P20, "P20"),
-    #[doc = r#"/// The hot P30 tier."#]
+    #[doc = r#"The hot P30 tier."#]
     (P30, "P30"),
-    #[doc = r#"/// The hot P4 tier."#]
+    #[doc = r#"The hot P4 tier."#]
     (P4, "P4"),
-    #[doc = r#"/// The hot P40 tier."#]
+    #[doc = r#"The hot P40 tier."#]
     (P40, "P40"),
-    #[doc = r#"/// The hot P50 tier."#]
+    #[doc = r#"The hot P50 tier."#]
     (P50, "P50"),
-    #[doc = r#"/// The hot P6 tier."#]
+    #[doc = r#"The hot P6 tier."#]
     (P6, "P6"),
-    #[doc = r#"/// The hot P60 tier."#]
+    #[doc = r#"The hot P60 tier."#]
     (P60, "P60"),
-    #[doc = r#"/// The hot P70 tier."#]
+    #[doc = r#"The hot P70 tier."#]
     (P70, "P70"),
-    #[doc = r#"/// The hot P80 tier."#]
+    #[doc = r#"The hot P80 tier."#]
     (P80, "P80"),
-    #[doc = r#"/// The Premium access tier."#]
+    #[doc = r#"The Premium access tier."#]
     (Premium, "Premium")
 );
 
 create_enum!(
-    #[doc = r#"/// The account kind."#]
+    #[doc = r#"The account kind."#]
     AccountKind,
-    #[doc = r#"/// The storage account is a blob storage account."#]
+    #[doc = r#"The storage account is a blob storage account."#]
     (BlobStorage, "BlobStorage"),
-    #[doc = r#"/// The storage account is a block blob storage account."#]
+    #[doc = r#"The storage account is a block blob storage account."#]
     (BlockBlobStorage, "BlockBlobStorage"),
-    #[doc = r#"/// The storage account is a file storage account."#]
+    #[doc = r#"The storage account is a file storage account."#]
     (FileStorage, "FileStorage"),
-    #[doc = r#"/// The storage account is a general-purpose account."#]
+    #[doc = r#"The storage account is a general-purpose account."#]
     (Storage, "Storage"),
-    #[doc = r#"/// The storage account is a storage V2 account."#]
+    #[doc = r#"The storage account is a storage V2 account."#]
     (StorageV2, "StorageV2")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// The archive status."#]
+    #[doc = r#"The archive status."#]
     ArchiveStatus,
-    #[doc = r#"/// The archive status is rehydrating pending to archive."#]
+    #[doc = r#"The archive status is rehydrating pending to archive."#]
     (RehydratePendingToCold, "rehydrate-pending-to-cold"),
-    #[doc = r#"/// The archive status is rehydrating pending to cool."#]
+    #[doc = r#"The archive status is rehydrating pending to cool."#]
     (RehydratePendingToCool, "rehydrate-pending-to-cool"),
-    #[doc = r#"/// The archive status is rehydrating pending to hot."#]
+    #[doc = r#"The archive status is rehydrating pending to hot."#]
     (RehydratePendingToHot, "rehydrate-pending-to-hot")
 );
 
 create_enum!(
-    #[doc = r#"/// The blob copy source tags types."#]
+    #[doc = r#"The blob copy source tags types."#]
     BlobCopySourceTags,
-    #[doc = r#"/// The copy blob source tags option."#]
+    #[doc = r#"The copy blob source tags option."#]
     (Copy, "COPY"),
-    #[doc = r#"/// The replace blob source tags option."#]
+    #[doc = r#"The replace blob source tags option."#]
     (Replace, "REPLACE")
 );
 
 create_enum!(
-    #[doc = r#"/// The type of blob deletions."#]
+    #[doc = r#"The type of blob deletions."#]
     BlobDeleteType,
-    #[doc = r#"/// Permanently delete the blob."#]
+    #[doc = r#"Permanently delete the blob."#]
     (Permanent, "Permanent")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// The blob expiration options."#]
+    #[doc = r#"The blob expiration options."#]
     BlobExpiryOptions,
-    #[doc = r#"/// Absolute time."#]
+    #[doc = r#"Absolute time."#]
     (Absolute, "Absolute"),
-    #[doc = r#"/// Never expire."#]
+    #[doc = r#"Never expire."#]
     (NeverExpire, "NeverExpire"),
-    #[doc = r#"/// Relative to creation time."#]
+    #[doc = r#"Relative to creation time."#]
     (RelativeToCreation, "RelativeToCreation"),
-    #[doc = r#"/// Relative to now."#]
+    #[doc = r#"Relative to now."#]
     (RelativeToNow, "RelativeToNow")
 );
 
 create_enum!(
-    #[doc = r#"/// The immutability policy mode."#]
+    #[doc = r#"The immutability policy mode."#]
     BlobImmutabilityPolicyMode,
-    #[doc = r#"/// The immutability policy is locked."#]
+    #[doc = r#"The immutability policy is locked."#]
     (Locked, "Locked"),
-    #[doc = r#"/// The immutability policy is mutable."#]
+    #[doc = r#"The immutability policy is mutable."#]
     (Mutable, "Mutable"),
-    #[doc = r#"/// The immutability policy is unlocked."#]
+    #[doc = r#"The immutability policy is unlocked."#]
     (Unlocked, "Unlocked")
 );
 
 create_enum!(
-    #[doc = r#"/// The blob type."#]
+    #[doc = r#"The blob type."#]
     BlobType,
-    #[doc = r#"/// The blob is an append blob."#]
+    #[doc = r#"The blob is an append blob."#]
     (AppendBlob, "AppendBlob"),
-    #[doc = r#"/// The blob is a block blob."#]
+    #[doc = r#"The blob is a block blob."#]
     (BlockBlob, "BlockBlob"),
-    #[doc = r#"/// The blob is a page blob."#]
+    #[doc = r#"The blob is a page blob."#]
     (PageBlob, "PageBlob")
 );
 
 create_enum!(
-    #[doc = r#"/// The block list types."#]
+    #[doc = r#"The block list types."#]
     BlockListType,
-    #[doc = r#"/// Both lists together."#]
+    #[doc = r#"Both lists together."#]
     (All, "all"),
-    #[doc = r#"/// The list of committed blocks."#]
+    #[doc = r#"The list of committed blocks."#]
     (Committed, "committed"),
-    #[doc = r#"/// The list of uncommitted blocks."#]
+    #[doc = r#"The list of uncommitted blocks."#]
     (Uncommitted, "uncommitted")
 );
 
 create_enum!(
-    #[doc = r#"/// The copy status."#]
+    #[doc = r#"The copy status."#]
     CopyStatus,
-    #[doc = r#"/// The copy operation is aborted."#]
+    #[doc = r#"The copy operation is aborted."#]
     (Aborted, "aborted"),
-    #[doc = r#"/// The copy operation failed."#]
+    #[doc = r#"The copy operation failed."#]
     (Failed, "failed"),
-    #[doc = r#"/// The copy operation is pending."#]
+    #[doc = r#"The copy operation is pending."#]
     (Pending, "pending"),
-    #[doc = r#"/// The copy operation succeeded."#]
+    #[doc = r#"The copy operation succeeded."#]
     (Success, "success")
 );
 
 create_enum!(
-    #[doc = r#"/// The delete snapshots option type."#]
+    #[doc = r#"The delete snapshots option type."#]
     DeleteSnapshotsOptionType,
-    #[doc = r#"/// The delete snapshots include option is include."#]
+    #[doc = r#"The delete snapshots include option is include."#]
     (Include, "include"),
-    #[doc = r#"/// The delete snapshots include option is only."#]
+    #[doc = r#"The delete snapshots include option is only."#]
     (Only, "only")
 );
 
 create_enum!(
-    #[doc = r#"/// The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided
-/// if the x-ms-encryption-key header is provided."#]
+    #[doc = r#"The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided
+if the x-ms-encryption-key header is provided."#]
     EncryptionAlgorithmType,
-    #[doc = r#"/// The AES256 encryption algorithm."#]
+    #[doc = r#"The AES256 encryption algorithm."#]
     (AES256, "AES256")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// The file share token intent types."#]
+    #[doc = r#"The file share token intent types."#]
     FileShareTokenIntent,
-    #[doc = r#"/// The file share token intent is backup."#]
+    #[doc = r#"The file share token intent is backup."#]
     (Backup, "backup")
 );
 
 create_enum!(
-    #[doc = r#"/// The filter blobs includes."#]
+    #[doc = r#"The filter blobs includes."#]
     FilterBlobsIncludeItem,
-    #[doc = r#"/// The filter includes no versions."#]
+    #[doc = r#"The filter includes no versions."#]
     (None, "none"),
-    #[doc = r#"/// The filter includes n versions."#]
+    #[doc = r#"The filter includes n versions."#]
     (Versions, "versions")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// The geo replication status."#]
+    #[doc = r#"The geo replication status."#]
     GeoReplicationStatusType,
-    #[doc = r#"/// The geo replication is bootstrap."#]
+    #[doc = r#"The geo replication is bootstrap."#]
     (Bootstrap, "bootstrap"),
-    #[doc = r#"/// The geo replication is live."#]
+    #[doc = r#"The geo replication is live."#]
     (Live, "live"),
-    #[doc = r#"/// The geo replication is unavailable."#]
+    #[doc = r#"The geo replication is unavailable."#]
     (Unavailable, "unavailable")
 );
 
 create_enum!(
-    #[doc = r#"/// The immutability policy mode used in requests."#]
+    #[doc = r#"The immutability policy mode used in requests."#]
     ImmutabilityPolicyMode,
-    #[doc = r#"/// The immutability policy is locked."#]
+    #[doc = r#"The immutability policy is locked."#]
     (Locked, "Locked"),
-    #[doc = r#"/// The immutability policy is unlocked."#]
+    #[doc = r#"The immutability policy is unlocked."#]
     (Unlocked, "Unlocked")
 );
 
 create_enum!(
-    #[doc = r#"/// The lease duration."#]
+    #[doc = r#"The lease duration."#]
     LeaseDuration,
-    #[doc = r#"/// The lease is of fixed duration."#]
+    #[doc = r#"The lease is of fixed duration."#]
     (Fixed, "fixed"),
-    #[doc = r#"/// The lease is of infinite duration."#]
+    #[doc = r#"The lease is of infinite duration."#]
     (Infinite, "infinite")
 );
 
 create_enum!(
-    #[doc = r#"/// The lease state."#]
+    #[doc = r#"The lease state."#]
     LeaseState,
-    #[doc = r#"/// The lease is available."#]
+    #[doc = r#"The lease is available."#]
     (Available, "available"),
-    #[doc = r#"/// The lease is breaking."#]
+    #[doc = r#"The lease is breaking."#]
     (Breaking, "breaking"),
-    #[doc = r#"/// The lease is broken."#]
+    #[doc = r#"The lease is broken."#]
     (Broken, "broken"),
-    #[doc = r#"/// The lease is expired."#]
+    #[doc = r#"The lease is expired."#]
     (Expired, "expired"),
-    #[doc = r#"/// The lease is currently leased."#]
+    #[doc = r#"The lease is currently leased."#]
     (Leased, "leased")
 );
 
 create_enum!(
-    #[doc = r#"/// The lease status."#]
+    #[doc = r#"The lease status."#]
     LeaseStatus,
-    #[doc = r#"/// The lease is locked."#]
+    #[doc = r#"The lease is locked."#]
     (Locked, "locked"),
-    #[doc = r#"/// The lease is unlocked."#]
+    #[doc = r#"The lease is unlocked."#]
     (Unlocked, "unlocked")
 );
 
 create_enum!(
-    #[doc = r#"/// The list blob includes parameter values."#]
+    #[doc = r#"The list blob includes parameter values."#]
     ListBlobsIncludeItem,
-    #[doc = r#"/// The include copies."#]
+    #[doc = r#"The include copies."#]
     (Copy, "copy"),
-    #[doc = r#"/// The include deleted blobs."#]
+    #[doc = r#"The include deleted blobs."#]
     (Deleted, "deleted"),
-    #[doc = r#"/// The include deleted with versions."#]
+    #[doc = r#"The include deleted with versions."#]
     (DeletedWithVersions, "deletedwithversions"),
-    #[doc = r#"/// The include immutable policy."#]
+    #[doc = r#"The include immutable policy."#]
     (ImmutabilityPolicy, "immutabilitypolicy"),
-    #[doc = r#"/// The include legal hold."#]
+    #[doc = r#"The include legal hold."#]
     (LegalHold, "legalhold"),
-    #[doc = r#"/// The include metadata."#]
+    #[doc = r#"The include metadata."#]
     (Metadata, "metadata"),
-    #[doc = r#"/// The include snapshots."#]
+    #[doc = r#"The include snapshots."#]
     (Snapshots, "snapshots"),
-    #[doc = r#"/// The include tags."#]
+    #[doc = r#"The include tags."#]
     (Tags, "tags"),
-    #[doc = r#"/// The include uncommitted blobs."#]
+    #[doc = r#"The include uncommitted blobs."#]
     (UncommittedBlobs, "uncommittedblobs"),
-    #[doc = r#"/// The include versions."#]
+    #[doc = r#"The include versions."#]
     (Versions, "versions")
 );
 
 create_enum!(
-    #[doc = r#"/// Include this parameter to specify that the container's metadata be returned as part of the response body."#]
+    #[doc = r#"Include this parameter to specify that the container's metadata be returned as part of the response body."#]
     ListContainersIncludeType,
-    #[doc = r#"/// Include deleted"#]
+    #[doc = r#"Include deleted"#]
     (Deleted, "deleted"),
-    #[doc = r#"/// Include metadata"#]
+    #[doc = r#"Include metadata"#]
     (Metadata, "metadata"),
-    #[doc = r#"/// Include system"#]
+    #[doc = r#"Include system"#]
     (System, "system")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// The premium page blob access tier types."#]
+    #[doc = r#"The premium page blob access tier types."#]
     PremiumPageBlobAccessTier,
-    #[doc = r#"/// The premium page blob access tier is P10."#]
+    #[doc = r#"The premium page blob access tier is P10."#]
     (P10, "P10"),
-    #[doc = r#"/// The premium page blob access tier is P15."#]
+    #[doc = r#"The premium page blob access tier is P15."#]
     (P15, "P15"),
-    #[doc = r#"/// The premium page blob access tier is P20."#]
+    #[doc = r#"The premium page blob access tier is P20."#]
     (P20, "P20"),
-    #[doc = r#"/// The premium page blob access tier is P30."#]
+    #[doc = r#"The premium page blob access tier is P30."#]
     (P30, "P30"),
-    #[doc = r#"/// The premium page blob access tier is P4."#]
+    #[doc = r#"The premium page blob access tier is P4."#]
     (P4, "P4"),
-    #[doc = r#"/// The premium page blob access tier is P40."#]
+    #[doc = r#"The premium page blob access tier is P40."#]
     (P40, "P40"),
-    #[doc = r#"/// The premium page blob access tier is P50."#]
+    #[doc = r#"The premium page blob access tier is P50."#]
     (P50, "P50"),
-    #[doc = r#"/// The premium page blob access tier is P6."#]
+    #[doc = r#"The premium page blob access tier is P6."#]
     (P6, "P6"),
-    #[doc = r#"/// The premium page blob access tier is P60."#]
+    #[doc = r#"The premium page blob access tier is P60."#]
     (P60, "P60"),
-    #[doc = r#"/// The premium page blob access tier is P70."#]
+    #[doc = r#"The premium page blob access tier is P70."#]
     (P70, "P70"),
-    #[doc = r#"/// The premium page blob access tier is P80."#]
+    #[doc = r#"The premium page blob access tier is P80."#]
     (P80, "P80")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// The public access types."#]
+    #[doc = r#"The public access types."#]
     PublicAccessType,
-    #[doc = r#"/// Blob access."#]
+    #[doc = r#"Blob access."#]
     (Blob, "blob"),
-    #[doc = r#"/// Container access."#]
+    #[doc = r#"Container access."#]
     (Container, "container")
 );
 
 create_enum!(
-    #[doc = r#"/// The query request, note only SQL supported"#]
+    #[doc = r#"The query request, note only SQL supported"#]
     QueryRequestType,
-    #[doc = r#"/// The SQL request query type."#]
+    #[doc = r#"The SQL request query type."#]
     (SQL, "SQL")
 );
 
 create_enum!(
-    #[doc = r#"/// The query format type."#]
+    #[doc = r#"The query format type."#]
     QueryType,
-    #[doc = r#"/// The query format type is Apache Arrow."#]
+    #[doc = r#"The query format type is Apache Arrow."#]
     (Arrow, "arrow"),
-    #[doc = r#"/// The query format type is delimited."#]
+    #[doc = r#"The query format type is delimited."#]
     (Delimited, "delimited"),
-    #[doc = r#"/// The query format type is JSON."#]
+    #[doc = r#"The query format type is JSON."#]
     (JSON, "json"),
-    #[doc = r#"/// The query format type is Parquet."#]
+    #[doc = r#"The query format type is Parquet."#]
     (Parquet, "parquet")
 );
 
 create_extensible_enum!(
-    #[doc = r#"/// If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High
-/// and Standard."#]
+    #[doc = r#"If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High
+and Standard."#]
     RehydratePriority,
-    #[doc = r#"/// The rehydrate priority is high."#]
+    #[doc = r#"The rehydrate priority is high."#]
     (High, "High"),
-    #[doc = r#"/// The rehydrate priority is standard."#]
+    #[doc = r#"The rehydrate priority is standard."#]
     (Standard, "Standard")
 );
 
 create_enum!(
-    #[doc = r#"/// The sequence number actions."#]
+    #[doc = r#"The sequence number actions."#]
     SequenceNumberActionType,
-    #[doc = r#"/// Increment the sequence number."#]
+    #[doc = r#"Increment the sequence number."#]
     (Increment, "increment"),
-    #[doc = r#"/// Set the maximum for the sequence number."#]
+    #[doc = r#"Set the maximum for the sequence number."#]
     (Max, "max"),
-    #[doc = r#"/// Update the sequence number."#]
+    #[doc = r#"Update the sequence number."#]
     (Update, "update")
 );
 
 create_enum!(
-    #[doc = r#"/// The SKU types"#]
+    #[doc = r#"The SKU types"#]
     SkuName,
-    #[doc = r#"/// The premium LRS SKU."#]
+    #[doc = r#"The premium LRS SKU."#]
     (PremiumLRS, "Premium_LRS"),
-    #[doc = r#"/// The standard GRS SKU."#]
+    #[doc = r#"The standard GRS SKU."#]
     (StandardGRS, "Standard_GRS"),
-    #[doc = r#"/// The standard LRS SKU."#]
+    #[doc = r#"The standard LRS SKU."#]
     (StandardLRS, "Standard_LRS"),
-    #[doc = r#"/// The standard RAGRS SKU."#]
+    #[doc = r#"The standard RAGRS SKU."#]
     (StandardRAGRS, "Standard_RAGRS"),
-    #[doc = r#"/// The standard ZRS SKU."#]
+    #[doc = r#"The standard ZRS SKU."#]
     (StandardZRS, "Standard_ZRS")
 );

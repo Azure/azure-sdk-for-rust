@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.26.0"
+version = "0.27.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors.workspace = true
@@ -16,6 +16,7 @@ rust-version.workspace = true
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
+azure_core_macros.workspace = true
 bytes.workspace = true
 futures.workspace = true
 hmac = { workspace = true, optional = true }
@@ -37,8 +38,10 @@ typespec_client_core = { workspace = true, features = [
 rustc_version.workspace = true
 
 [dev-dependencies]
+azure_core_macros.path = "../azure_core_macros"
 azure_core_test.workspace = true
 azure_identity.workspace = true
+azure_security_keyvault_certificates.path = "../../keyvault/azure_security_keyvault_certificates"
 azure_security_keyvault_secrets.path = "../../keyvault/azure_security_keyvault_secrets"
 criterion.workspace = true
 thiserror.workspace = true
@@ -53,6 +56,7 @@ default = [
 ]
 azurite_workaround = []
 debug = ["typespec_client_core/debug"]
+decimal = ["typespec_client_core/decimal"]
 hmac_openssl = ["dep:openssl"]
 hmac_rust = ["dep:sha2", "dep:hmac"]
 reqwest = ["typespec_client_core/reqwest"]
@@ -69,6 +73,7 @@ workspace = true
 [package.metadata.docs.rs]
 features = [
   "debug",
+  "decimal",
   "hmac_openssl",
   "hmac_rust",
   "reqwest",

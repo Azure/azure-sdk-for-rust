@@ -1,16 +1,35 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.6.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
-- Minimum supported Rust version (MSRV) is now 1.85.
-
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.5.0 (2025-08-05)
+
+### Breaking Changes
+
+- Removed the `CertificateClientExt` trait for `CertificateClient`. The `begin_create_certificate` and `resume_certificate_operation` methods are implemented for `CertificateClient` with the same method signatures.
+
+### Other Changes
+
+- Updated dependencies.
+
+## 0.4.0 (2025-07-10)
+
+### Features Added
+
+- Added the `CertificateClientExt` trait for `CertificateClient` with `begin_create_certificate` and `resume_certificate_operation` methods that return the new `Poller<CertificateOperation>`.
+  These extension methods are likely temporary until `Poller` support is added to the TypeSpec emitter and we update `CertificateClient::create_certificate` and `get_certificate_operation` to return a `Poller<CertificateOperation>`.
+
+### Breaking Changes
+
+- Minimum supported Rust version (MSRV) is now 1.85.
 
 ## 0.3.0 (2025-06-10)
 

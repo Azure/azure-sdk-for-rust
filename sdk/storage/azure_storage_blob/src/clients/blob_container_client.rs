@@ -3,11 +3,18 @@
 
 use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
-    generated::models::BlobContainerClientGetPropertiesResult,
+    generated::models::{
+        BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
+        BlobContainerClientChangeLeaseResult, BlobContainerClientGetPropertiesResult,
+        BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
+    },
     models::{
-        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
-        BlobContainerClientSetMetadataOptions, ListBlobsFlatSegmentResponse,
+        BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
+        BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
+        BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
+        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetMetadataOptions,
+        ListBlobsFlatSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -50,15 +57,6 @@ impl BlobContainerClient {
             .client_options
             .per_call_policies
             .push(storage_headers_policy);
-
-        let oauth_token_policy = BearerTokenCredentialPolicy::new(
-            credential.clone(),
-            ["https://storage.azure.com/.default"],
-        );
-        options
-            .client_options
-            .per_try_policies
-            .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
 
         let client = GeneratedBlobContainerClient::new(
             endpoint,
@@ -156,5 +154,83 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListBlobsFlatSegmentResponse, XmlFormat>>> {
         self.client.list_blob_flat_segment(options)
+    }
+
+    /// Requests a new lease on a container. The lease lock duration can be 15 to 60 seconds, or can be infinite.
+    ///
+    /// # Arguments
+    ///
+    /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
+    ///   non-infinite lease can be between 15 and 60 seconds.
+    /// * `options` - Optional configuration for the request.
+    pub async fn acquire_lease(
+        &self,
+        duration: i32,
+        options: Option<BlobContainerClientAcquireLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientAcquireLeaseResult, NoFormat>> {
+        self.client.acquire_lease(duration, options).await
+    }
+
+    /// Ends a lease and ensures that another client can't acquire a new lease until the current lease
+    /// period has expired.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn break_lease(
+        &self,
+        options: Option<BlobContainerClientBreakLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientBreakLeaseResult, NoFormat>> {
+        self.client.break_lease(options).await
+    }
+
+    /// Changes the ID of an existing lease to the proposed lease ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `lease_id` - A lease ID for the source path. The source path must have an active lease and the
+    ///   lease ID must match.
+    /// * `proposed_lease_id` - The proposed lease ID for the container.
+    /// * `options` - Optional configuration for the request.
+    pub async fn change_lease(
+        &self,
+        lease_id: String,
+        proposed_lease_id: String,
+        options: Option<BlobContainerClientChangeLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientChangeLeaseResult, NoFormat>> {
+        self.client
+            .change_lease(lease_id, proposed_lease_id, options)
+            .await
+    }
+
+    /// Frees the lease so that another client can immediately acquire a lease
+    /// against the container as soon as the release is complete.
+    ///
+    /// # Arguments
+    ///
+    /// * `lease_id` - A lease ID for the source path. The source path must have an active lease and the
+    ///   lease ID must match.
+    /// * `options` - Optional configuration for the request.
+    pub async fn release_lease(
+        &self,
+        lease_id: String,
+        options: Option<BlobContainerClientReleaseLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientReleaseLeaseResult, NoFormat>> {
+        self.client.release_lease(lease_id, options).await
+    }
+
+    /// Renews the lease on a container.
+    ///
+    /// # Arguments
+    ///
+    /// * `lease_id` - A lease ID for the source path. The source path must have an active lease and the
+    ///   lease ID must match.
+    /// * `options` - Optional configuration for the request.
+    pub async fn renew_lease(
+        &self,
+        lease_id: String,
+        options: Option<BlobContainerClientRenewLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientRenewLeaseResult, NoFormat>> {
+        self.client.renew_lease(lease_id, options).await
     }
 }

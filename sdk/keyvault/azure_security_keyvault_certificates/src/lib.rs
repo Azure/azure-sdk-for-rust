@@ -3,8 +3,11 @@
 
 #![doc = include_str!("../README.md")]
 
+pub mod clients;
+#[allow(unused_imports)]
 mod generated;
+pub mod models;
 mod resource;
 
-pub use generated::*;
+pub use clients::{CertificateClient, CertificateClientOptions};
 pub use resource::*;

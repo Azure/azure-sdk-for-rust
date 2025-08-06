@@ -147,7 +147,7 @@ mod tests {
     fn is_valid_request(authority_host: &str, tenant_id: &str) -> impl Fn(&Request) -> Result<()> {
         let expected_url = format!("{}{}/oauth2/v2.0/token", authority_host, tenant_id);
         move |req: &Request| {
-            assert_eq!(&Method::Post, req.method());
+            assert_eq!(Method::Post, req.method());
             assert_eq!(expected_url, req.url().to_string());
             assert_eq!(
                 req.headers().get_str(&headers::CONTENT_TYPE).unwrap(),

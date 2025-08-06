@@ -1,17 +1,16 @@
 # Release History
 
-## 0.25.0 (Unreleased)
+## 0.26.0 (2025-08-06)
+
+## 0.25.0 (2025-08-05)
 
 ### Features Added
 * Added `if_match_etag` to `ItemOptions` ([#2705](https://github.com/Azure/azure-sdk-for-rust/pull/2705))
+* Added several more options to `ItemOptions`: `pre_triggers`, `post_triggers`, `session_token`, `consistency_level`, and `indexing_directive` ([#2744](https://github.com/Azure/azure-sdk-for-rust/pull/2744))
 
 ### Breaking Changes
 
 - Minimum supported Rust version (MSRV) is now 1.85.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.24.0 (2025-06-10)
 

@@ -6,6 +6,7 @@ members = [
   "sdk/typespec/typespec_macros",
   "sdk/core/azure_core",
   "sdk/core/azure_core_amqp",
+  "sdk/core/azure_core_macros",
   "sdk/core/azure_core_test",
   "sdk/core/azure_core_test_macros",
   "sdk/core/azure_core_opentelemetry",
@@ -34,23 +35,31 @@ rust-version = "1.85"
 [workspace.dependencies.typespec]
 default-features = false
 path = "sdk/typespec"
-version = "0.6.0"
+version = "0.7.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/typespec/typespec_client_core"
-version = "0.5.0"
+version = "0.6.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.5.0"
+version = "0.6.0"
 path = "sdk/typespec/typespec_macros"
 
 [workspace.dependencies.azure_core]
-version = "0.26.0"
+version = "0.27.0"
 path = "sdk/core/azure_core"
 
+[workspace.dependencies.azure_core_macros]
+version = "0.1.0"
+path = "sdk/core/azure_core_macros"
+
+[workspace.dependencies.azure_core_opentelemetry]
+version = "0.1.0"
+path = "sdk/core/azure_core_opentelemetry"
+
 [workspace.dependencies.azure_core_amqp]
-version = "0.5.0"
+version = "0.6.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_core_test]
@@ -75,9 +84,9 @@ cargo_metadata = "0.18.1"
 clap = { version = "4.4.16", features = ["derive"] }
 criterion = { version = "0.5", features = ["async_tokio"] }
 dyn-clone = "1.0"
-fe2o3-amqp = { version = "0.14", features = ["native-tls", "tracing", "uuid"] }
+fe2o3-amqp = { version = "0.14", features = ["native-tls", "uuid"] }
 fe2o3-amqp-ext = { version = "0.14" }
-fe2o3-amqp-management = { version = "0.14", features = ["tracing"] }
+fe2o3-amqp-management = { version = "0.14" }
 fe2o3-amqp-cbs = { version = "0.14" }
 fe2o3-amqp-types = { version = "0.14" }
 flate2 = "1.1.0"
@@ -87,6 +96,9 @@ hmac = { version = "0.12" }
 litemap = "0.7.4"
 log = "0.4"
 openssl = { version = "0.10.72" }
+opentelemetry = { version = "0.30", features = ["trace"] }
+opentelemetry_sdk = "0.30"
+opentelemetry-http = "0.30"
 pin-project = "1.0"
 proc-macro2 = "1.0.86"
 quick-xml = { version = "0.31", features = ["serialize", "serde-types"] }
@@ -97,6 +109,7 @@ reqwest = { version = "0.12.22", features = [
   "json",
   "stream",
 ], default-features = false }
+rust_decimal.version = "1.37.2"
 rustc_version = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_amqp = { version = "0.14", features = ["uuid"] }

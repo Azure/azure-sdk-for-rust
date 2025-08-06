@@ -1,19 +1,30 @@
 # Release History
 
-## 0.5.0 (Unreleased)
+## 0.6.0 (2025-08-01)
+
+### Features Added
+
+- Added `TryFrom<>` for `RequestContent<T>` implementations for a wider variety of types.
+
+### Breaking Changes
+
+- Added `Format` to `RequestContent<T>` making it `RequestContent<T, F>`. This provides parity with `Response<T, F>` added in version 0.4.0.
+
+- When a retry policy receives a response whose status code indicates the policy shouldn't retry the request, it now returns that response instead of an error
+
+## 0.5.0 (2025-07-10)
 
 ### Features Added
 
 - Added `get_async_runtime()` and `set_async_runtime()` to allow customers to replace
 the default asynchronous runtime with another.
+- Added `Request::set_method()` to allow changing the HTTP method of a request.
 
 ### Breaking Changes
 
 - Minimum supported Rust version (MSRV) is now 1.85.
 - Removed `Pipeline::replace_policy`.
 - Renamed `typespec_client_core::date` to `typespec_client_core::time` and added `typespec_client_core::time::Duration`
-
-### Bugs Fixed
 
 ### Other Changes
 

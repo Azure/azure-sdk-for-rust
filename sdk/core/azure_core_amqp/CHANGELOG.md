@@ -1,17 +1,27 @@
 # Release History
 
-## 0.5.0 (Unreleased)
+## 0.7.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
-- Minimum supported Rust version (MSRV) is now 1.85.
-- Converted all `time::Duration` references to be `azure_core::time::Duration`.
+- Distinguish remote disconnect and remote closed errors by origin
 
 ### Bugs Fixed
 
+## 0.6.0 (2025-08-01)
+
 ### Other Changes
+
+- Updated dependencies.
+
+## 0.5.0 (2025-07-10)
+
+### Breaking Changes
+
+- Minimum supported Rust version (MSRV) is now 1.85.
+- Converted all `time::Duration` references to be `azure_core::time::Duration`.
 
 ## 0.4.0 (2025-06-06)
 

@@ -455,7 +455,7 @@ pub struct BlobPropertiesInternal {
     pub encryption_scope: Option<String>,
 
     /// The blog ETag.
-    #[serde(rename = "ETag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 
     /// The expire time of the blob.

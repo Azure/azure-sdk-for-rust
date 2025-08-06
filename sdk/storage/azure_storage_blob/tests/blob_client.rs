@@ -7,12 +7,15 @@ use azure_core::{
 };
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AccessTier, BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders,
-    BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlockBlobClientUploadOptions,
+    AccessTier, BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
+    BlobClientDownloadOptions, BlobClientDownloadResultHeaders, BlobClientGetPropertiesOptions,
+    BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
+    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
     LeaseState,
 };
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, time::Duration};
+use tokio::time;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -273,6 +276,150 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let access_tier = response.access_tier()?;
     assert_eq!(AccessTier::Cold.to_string(), access_tier.unwrap());
 
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(blob_name.clone());
+    let other_blob_client = container_client.blob_client(blob_name);
+    create_test_blob(&blob_client).await?;
+
+    // Acquire Lease
+    let acquire_response = blob_client.acquire_lease(15, None).await?;
+    let lease_id = acquire_response.lease_id()?.unwrap();
+    let other_acquire_response = other_blob_client.acquire_lease(15, None).await;
+    // Assert
+    let error = other_acquire_response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Change Lease
+    let proposed_lease_id = "00000000-1111-2222-3333-444444444444".to_string();
+    let change_lease_response = blob_client
+        .change_lease(lease_id, proposed_lease_id.clone(), None)
+        .await?;
+    // Assert
+    let lease_id = change_lease_response.lease_id()?.unwrap();
+    assert_eq!(proposed_lease_id.clone().to_string(), lease_id);
+
+    // Sleep until lease expires
+    time::sleep(Duration::from_secs(15)).await;
+
+    // Renew Lease
+    blob_client
+        .renew_lease(proposed_lease_id.clone(), None)
+        .await?;
+    let other_acquire_response = other_blob_client.acquire_lease(15, None).await;
+    // Assert
+    let error = other_acquire_response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Break Lease
+    blob_client.break_lease(None).await?;
+    let other_acquire_response = other_blob_client.acquire_lease(15, None).await;
+    // Assert
+    let error = other_acquire_response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Release Lease
+    blob_client
+        .release_lease(proposed_lease_id.clone(), None)
+        .await?;
+    other_blob_client.acquire_lease(15, None).await?;
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(blob_name.clone());
+    create_test_blob(&blob_client).await?;
+    let acquire_response = blob_client.acquire_lease(-1, None).await?;
+    let lease_id = acquire_response.lease_id()?.unwrap();
+
+    // Set Properties, Set Metadata, Set Access Tier
+    let set_properties_options = BlobClientSetPropertiesOptions {
+        blob_content_language: Some("spanish".to_string()),
+        blob_content_disposition: Some("inline".to_string()),
+        lease_id: Some(lease_id.clone()),
+        ..Default::default()
+    };
+    blob_client
+        .set_properties(Some(set_properties_options))
+        .await?;
+
+    let update_metadata = HashMap::from([("updated".to_string(), "values".to_string())]);
+    let set_metadata_options = BlobClientSetMetadataOptions {
+        metadata: Some(update_metadata.clone()),
+        lease_id: Some(lease_id.clone()),
+        ..Default::default()
+    };
+    blob_client.set_metadata(Some(set_metadata_options)).await?;
+
+    let set_tier_options = BlobClientSetTierOptions {
+        lease_id: Some(lease_id.clone()),
+        ..Default::default()
+    };
+    blob_client
+        .set_tier(AccessTier::Cold, Some(set_tier_options))
+        .await?;
+
+    // Assert
+    let get_properties_options = BlobClientGetPropertiesOptions {
+        lease_id: Some(lease_id.clone()),
+        ..Default::default()
+    };
+    let response = blob_client
+        .get_properties(Some(get_properties_options))
+        .await?;
+    let content_language = response.content_language()?;
+    let content_disposition = response.content_disposition()?;
+    let response_metadata = response.metadata()?;
+    let access_tier = response.access_tier()?;
+
+    assert_eq!("spanish".to_string(), content_language.unwrap());
+    assert_eq!("inline".to_string(), content_disposition.unwrap());
+    assert_eq!(update_metadata, response_metadata);
+    assert_eq!(AccessTier::Cold.to_string(), access_tier.unwrap());
+
+    // Overwrite Upload
+    let data = b"overruled!";
+    let upload_options = BlockBlobClientUploadOptions {
+        lease_id: Some(lease_id.clone()),
+        ..Default::default()
+    };
+    blob_client
+        .upload(
+            RequestContent::from(data.to_vec()),
+            true,
+            u64::try_from(data.len())?,
+            Some(upload_options),
+        )
+        .await?;
+
+    // Assert
+    let download_options = BlobClientDownloadOptions {
+        lease_id: Some(lease_id.clone()),
+        ..Default::default()
+    };
+    let response = blob_client.download(Some(download_options)).await?;
+    let content_length = response.content_length()?;
+    let (status_code, _, response_body) = response.deconstruct();
+    assert!(status_code.is_success());
+    assert_eq!(10, content_length.unwrap());
+    assert_eq!(data.to_vec(), response_body.collect().await?);
+
+    blob_client.break_lease(None).await?;
     container_client.delete_container(None).await?;
     Ok(())
 }

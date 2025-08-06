@@ -3,7 +3,7 @@
 
 use crate::http::{
     policies::{CustomHeadersPolicy, Policy, TransportPolicy},
-    ClientOptions, Context, RawResponse, Request, RetryOptions,
+    ClientOptions, Context, RawResponse, Request,
 };
 use std::sync::Arc;
 
@@ -49,8 +49,7 @@ impl Pipeline {
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.extend_from_slice(&options.per_call_policies);
 
-        // TODO: Consider whether this should be initially customizable as we onboard more services.
-        let retry_policy = RetryOptions::default().to_policy();
+        let retry_policy = options.retry.unwrap_or_default().to_policy();
         pipeline.push(retry_policy);
 
         pipeline.push(Arc::new(CustomHeadersPolicy::default()));

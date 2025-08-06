@@ -149,7 +149,7 @@ impl From<fe2o3_amqp::session::BeginError> for AmqpError {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
             fe2o3_amqp::session::BeginError::RemoteEnded => {
-                AmqpErrorKind::ClosedByRemote(Box::new(e)).into()
+                AmqpErrorKind::SessionClosedByRemote(Box::new(e)).into()
             }
             fe2o3_amqp::session::BeginError::RemoteEndedWithError(error) => {
                 AmqpErrorKind::AmqpDescribedError(error.into()).into()
@@ -173,7 +173,7 @@ impl From<fe2o3_amqp::session::Error> for AmqpError {
                 AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }
             fe2o3_amqp::session::Error::RemoteEnded => {
-                AmqpErrorKind::ClosedByRemote(Box::new(e)).into()
+                AmqpErrorKind::SessionClosedByRemote(Box::new(e)).into()
             }
             fe2o3_amqp::session::Error::RemoteEndedWithError(error) => {
                 AmqpErrorKind::AmqpDescribedError(error.into()).into()

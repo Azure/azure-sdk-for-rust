@@ -1,5 +1,7 @@
 # Azure SDK for Rust
 
+[![Take Our Design Discussion Survey](https://img.shields.io/badge/Take%20Our%20Design%20Discussion%20Survey-008000?style=flat&link=https://www.surveymonkey.com/r/repo-badge)](https://www.surveymonkey.com/r/repo-badge)
+
 This repository is for the active development of the Azure SDK for Rust. For consumers of the SDK, we recommend visiting [Docs.rs](https://docs.rs/) and looking up the docs for any of libraries in the SDK.
 
 ## Crates 📦

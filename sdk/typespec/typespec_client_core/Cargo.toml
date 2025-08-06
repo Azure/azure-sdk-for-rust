@@ -1,6 +1,6 @@
 [package]
 name = "typespec_client_core"
-version = "0.5.0"
+version = "0.6.0"
 authors.workspace = true
 edition.workspace = true
 description = "Client runtime for TypeSpec-generated libraries."
@@ -20,6 +20,7 @@ pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
 rand.workspace = true
 reqwest = { workspace = true, optional = true }
+rust_decimal = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
@@ -46,6 +47,7 @@ typespec_macros.path = "../typespec_macros"
 [features]
 default = ["http", "json", "reqwest", "reqwest_deflate", "reqwest_gzip"]
 debug = ["typespec_macros?/debug"]
+decimal = ["dep:rust_decimal"]
 derive = ["dep:typespec_macros"]
 http = ["typespec/http"]
 json = ["typespec/json"]
@@ -70,6 +72,7 @@ required-features = ["derive"]
 [package.metadata.docs.rs]
 features = [
   "derive",
+  "decimal",
   "http",
   "json",
   "reqwest",

@@ -8,8 +8,11 @@ use azure_storage_blob::{
     models::{
         BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
         PageBlobClientCreateOptions, PageBlobClientCreateOptionsExt,
+<<<<<<< HEAD
         PageBlobClientUpdateSequenceNumberOptions, PageBlobClientUpdateSequenceNumberResultHeaders,
         SequenceNumberActionType,
+=======
+>>>>>>> main
     },
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client};
