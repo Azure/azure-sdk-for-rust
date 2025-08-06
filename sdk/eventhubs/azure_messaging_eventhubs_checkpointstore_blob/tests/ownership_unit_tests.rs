@@ -298,11 +298,8 @@ async fn claim_ownership_concurrent_update_should_fail(ctx: TestContext) -> Resu
     };
 
     // This should fail due to etag mismatch
-    let result = checkpoint_store.claim_ownership(&[stale_ownership]).await;
-    assert!(
-        result.is_err(),
-        "Claiming ownership with stale etag should fail"
-    );
+    let ownerships = checkpoint_store.claim_ownership(&[stale_ownership]).await?;
+    assert!(ownerships.is_empty());
 
     Ok(())
 }

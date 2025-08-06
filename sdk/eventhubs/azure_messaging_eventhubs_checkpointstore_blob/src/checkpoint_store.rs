@@ -24,9 +24,9 @@ use azure_storage_blob::{
     BlobContainerClient,
 };
 use futures::TryStreamExt;
-use std::{collections::HashMap, fmt::Debug, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use time::OffsetDateTime;
-use tracing::{debug, warn};
+use tracing::{debug, info, warn};
 
 /// Azure Blob Storage implementation of the [`CheckpointStore`] trait.
 ///
@@ -35,12 +35,6 @@ use tracing::{debug, warn};
 #[derive(Clone)]
 pub struct BlobCheckpointStore {
     blob_container_client: Arc<BlobContainerClient>,
-}
-
-impl Debug for BlobCheckpointStore {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("BlobCheckpointStore").finish()
-    }
 }
 
 const OWNER_ID: &str = "ownerid";
@@ -70,7 +64,49 @@ impl BlobCheckpointStore {
         Ok((lm, etag.map(Etag::from)))
     }
 
-    async fn set_metadata_on_blob(
+    async fn set_checkpoint_metadata_on_blob(
+        &self,
+        blob_name: &str,
+        metadata: HashMap<String, String>,
+    ) -> Result<(Option<OffsetDateTime>, Option<Etag>)> {
+        let blob_client = self
+            .blob_container_client
+            .blob_client(blob_name.to_string());
+
+        let options = BlobClientSetMetadataOptions {
+            metadata: Some(metadata.clone()),
+            ..Default::default()
+        };
+
+        let result = blob_client.set_metadata(Some(options)).await;
+        match result {
+            Ok(r) => Ok(Self::process_storage_response_metadata(
+                r.headers().get_optional_string(&LAST_MODIFIED),
+                r.headers().get_optional_string(&ETAG),
+            )?),
+            Err(e) => match e.http_status() {
+                Some(StatusCode::NotFound) => {
+                    info!("Blob {blob_name} not found, creating.");
+                    let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
+                    let options = BlockBlobClientUploadOptions {
+                        metadata: Some(metadata),
+                        ..Default::default()
+                    };
+
+                    let upload_result = blob_client
+                        .upload(blob_content, true, 0, Some(options))
+                        .await;
+                    match upload_result {
+                        Ok(r) => Ok((r.last_modified()?, r.etag()?.map(Etag::from))),
+                        Err(e) => Err(e),
+                    }
+                }
+                _ => Err(e),
+            },
+        }
+    }
+
+    async fn set_ownership_metadata_on_blob(
         &self,
         blob_name: &str,
         metadata: Option<HashMap<String, String>>,
@@ -79,43 +115,38 @@ impl BlobCheckpointStore {
         let blob_client = self
             .blob_container_client
             .blob_client(blob_name.to_string());
-        let mut options = BlobClientSetMetadataOptions::default();
-        if let Some(metadata) = &metadata {
-            options.metadata = Some(metadata.clone());
-        }
-        options.if_match = etag.clone().map(|e| e.to_string());
-        let result = blob_client.set_metadata(Some(options)).await;
-        match result {
-            Ok(r) => Ok(Self::process_storage_response_metadata(
-                r.headers().get_optional_string(&LAST_MODIFIED),
-                r.headers().get_optional_string(&ETAG),
-            )?),
-            Err(e) => {
-                match e.http_status() {
-                    Some(StatusCode::PreconditionFailed) => {
-                        // If the blob has been modified since we last read it, return a NotFound error
-                        Err(e)
-                    }
-                    Some(StatusCode::NotFound) => {
-                        warn!("Blob {blob_name} not found, creating.");
-                        let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
-                        let mut options = BlockBlobClientUploadOptions::default();
-                        if let Some(metadata) = metadata {
-                            options.metadata = Some(metadata);
-                        }
-                        options.if_match = etag.map(|e| e.to_string());
 
-                        let upload_result = blob_client
-                            .upload(blob_content, true, 0, Some(options))
-                            .await;
-                        match upload_result {
-                            Ok(r) => Ok((r.last_modified()?, r.etag()?.map(Etag::from))),
-                            Err(e) => Err(e),
-                        }
-                    }
-                    _ => Err(e),
-                }
+        if etag.is_some() {
+            debug!(
+                "{:?} claiming ownership for {} with etag {:?}",
+                metadata, blob_name, etag
+            );
+            let mut options = BlobClientSetMetadataOptions::default();
+            if let Some(metadata) = &metadata {
+                options.metadata = Some(metadata.clone());
             }
+            options.if_match = etag.map(|ref e| e.to_string());
+            let result = blob_client.set_metadata(Some(options)).await?;
+            return Self::process_storage_response_metadata(
+                result.headers().get_optional_string(&LAST_MODIFIED),
+                result.headers().get_optional_string(&ETAG),
+            );
+        }
+        debug!("Claiming ownership for {} without etag", blob_name);
+
+        let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
+        let options = BlockBlobClientUploadOptions {
+            metadata: metadata.clone(),
+            if_match: Some("*".to_string()), // Upload without an etag, creating a new blob
+            ..Default::default()
+        };
+
+        let upload_result = blob_client
+            .upload(blob_content, true, 0, Some(options))
+            .await;
+        match upload_result {
+            Ok(r) => Ok((r.last_modified()?, r.etag()?.map(Etag::from))),
+            Err(e) => Err(e),
         }
     }
 }
@@ -136,8 +167,8 @@ impl CheckpointStore for BlobCheckpointStore {
                 &ownership.partition_id,
             )?;
 
-            let (last_modified_time, etag) = self
-                .set_metadata_on_blob(
+            let set_metadata_result = self
+                .set_ownership_metadata_on_blob(
                     &blob_name,
                     ownership
                         .owner_id
@@ -145,7 +176,22 @@ impl CheckpointStore for BlobCheckpointStore {
                         .map(|id| HashMap::<String, String>::from([(OWNER_ID.to_string(), id)])),
                     ownership.etag.clone(),
                 )
-                .await?;
+                .await;
+            let (last_modified_time, etag) = match set_metadata_result {
+                Ok((last_modified_time, etag)) => (last_modified_time, etag),
+                Err(e) if e.http_status() == Some(StatusCode::PreconditionFailed) => {
+                    debug!("PreconditionFailed error for blob {}", blob_name);
+                    (None, None)
+                }
+                Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+                    debug!("Blob already exists, skipping");
+                    (None, None)
+                }
+                Err(e) => {
+                    warn!("Error claiming ownership for blob {}: {}", blob_name, e);
+                    return Err(e);
+                }
+            };
 
             if let Some(etag) = etag {
                 if !etag.as_ref().is_empty() {
@@ -317,7 +363,7 @@ impl CheckpointStore for BlobCheckpointStore {
         if let Some(offset) = checkpoint.offset {
             metadata.insert(OFFSET.to_string(), offset);
         }
-        self.set_metadata_on_blob(&blob_name, Some(metadata), None)
+        self.set_checkpoint_metadata_on_blob(&blob_name, metadata)
             .await?;
         Ok(())
     }

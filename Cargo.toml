@@ -77,7 +77,7 @@ path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_blob]
 path = "sdk/storage/azure_storage_blob"
-version = "0.4.0"
+version = "0.5.0"
 
 [workspace.dependencies]
 async-lock = "3.0"
