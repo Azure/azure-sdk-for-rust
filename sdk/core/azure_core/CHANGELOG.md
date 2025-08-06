@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` for `typespec_client_core` to copy if needed.
+- Removed the `setters` macro.
 
 ### Bugs Fixed
 
