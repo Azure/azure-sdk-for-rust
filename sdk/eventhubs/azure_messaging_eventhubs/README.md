@@ -2,7 +2,7 @@
 
 # Azure Event Hubs client library for Rust
 
-[Azure Event Hubs](https://azure.microsoft.com/services/event-hubs/) is a big data streaming platform and event ingestion service from Microsoft. For more information about Event Hubs see: [this link](https://learn.microsoft.com/azure/event-hubs/event-hubs-about).
+[Azure Event Hubs](https://azure.microsoft.com/services/event-hubs/) is a big data streaming platform and event ingestion service from Microsoft. For more information about Event Hubs see [this link](https://learn.microsoft.com/azure/event-hubs/event-hubs-about).
 
 The Azure Event Hubs client library allows you to send single events or batches of events to an event hub and consume events from an event hub.
 
