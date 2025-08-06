@@ -362,6 +362,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_messaging_eventhubs_checkpointstore_blob"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core",
+ "azure_core_test",
+ "azure_identity",
+ "azure_messaging_eventhubs",
+ "azure_storage_blob",
+ "futures",
+ "serde",
+ "serde_json",
+ "time",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "azure_security_keyvault_certificates"
 version = "0.6.0"
 dependencies = [
@@ -3225,6 +3245,7 @@ checksum = "3cf4199d1e5d15ddd86a694e4d0dffa9c323ce759fea589f00fef9d81cc1931d"
 dependencies = [
  "getrandom 0.3.3",
  "js-sys",
+ "serde",
  "uuid-rng-internal",
  "wasm-bindgen",
 ]

@@ -333,9 +333,16 @@ impl Recording {
             return value;
         }
 
-        let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
-        variables.insert(key.into(), Value::from(value.as_ref(), options));
-        value
+        match value {
+            None => None,
+            Some(v) if v.is_empty() => None,
+            Some(v) => {
+                let v = Some(v);
+                let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
+                variables.insert(key.into(), Value::from(v.as_ref(), options));
+                v
+            }
+        }
     }
 }
 

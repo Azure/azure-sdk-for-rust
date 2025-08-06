@@ -13,6 +13,7 @@ members = [
   "sdk/cosmos/azure_data_cosmos",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
+  "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
   "sdk/keyvault/azure_security_keyvault_certificates",
   "sdk/keyvault/azure_security_keyvault_keys",
   "sdk/keyvault/azure_security_keyvault_secrets",
@@ -54,13 +55,17 @@ path = "sdk/core/azure_core"
 version = "0.2.0"
 path = "sdk/core/azure_core_macros"
 
-[workspace.dependencies.azure_core_opentelemetry]
-version = "0.2.0"
-path = "sdk/core/azure_core_opentelemetry"
-
 [workspace.dependencies.azure_core_amqp]
 version = "0.7.0"
 path = "sdk/core/azure_core_amqp"
+
+[workspace.dependencies.azure_messaging_eventhubs]
+version = "0.7.0"
+path = "sdk/eventhubs/azure_messaging_eventhubs"
+
+[workspace.dependencies.azure_core_opentelemetry]
+# azure_core_opentelemetry should only ever be in dev-dependencies herein
+path = "sdk/core/azure_core_opentelemetry"
 
 [workspace.dependencies.azure_core_test]
 # azure_core_test is not published and only ever a dev-dependency
@@ -73,6 +78,10 @@ path = "sdk/core/azure_core_test_macros"
 [workspace.dependencies.azure_identity]
 # azure_identity should only ever be in dev-dependencies herein
 path = "sdk/identity/azure_identity"
+
+[workspace.dependencies.azure_storage_blob]
+path = "sdk/storage/azure_storage_blob"
+version = "0.5.0"
 
 [workspace.dependencies]
 async-lock = "3.0"

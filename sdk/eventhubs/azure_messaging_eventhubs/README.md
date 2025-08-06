@@ -2,7 +2,7 @@
 
 # Azure Event Hubs client library for Rust
 
-[Azure Event Hubs](https://azure.microsoft.com/services/event-hubs/) is a big data streaming platform and event ingestion service from Microsoft. For more information about Event Hubs see: [link](https://learn.microsoft.com/azure/event-hubs/event-hubs-about).
+[Azure Event Hubs](https://azure.microsoft.com/services/event-hubs/) is a big data streaming platform and event ingestion service from Microsoft. For more information about Event Hubs see [this link](https://learn.microsoft.com/azure/event-hubs/event-hubs-about).
 
 The Azure Event Hubs client library allows you to send single events or batches of events to an event hub and consume events from an event hub.
 
@@ -20,7 +20,7 @@ cargo add azure_messaging_eventhubs
 
 ### Prerequisites
 
-* A Rust Compiler. See [here](https://www.rust-lang.org/tools/install) for installation instructions.
+* A Rust Compiler. See [the rust compiler installation instructions](https://www.rust-lang.org/tools/install).
 * An [Azure subscription]
 * The [Azure CLI]
 * An [Event Hub namespace](https://learn.microsoft.com/azure/event-hubs/).
@@ -105,7 +105,7 @@ Consuming events is done using an `EventReceiver`, which can be opened from the 
     The Processor is useful when you want to have the partition assignment be dynamically chosen, and balanced with other Processor instances.
     -->
 
-More information about Event Hubs features and terminology can be found here: [link](https://learn.microsoft.com/azure/event-hubs/event-hubs-features)
+More information about Event Hubs features and terminology can be found at the [Event Hubs features documentation]](<https://learn.microsoft.com/azure/event-hubs/event-hubs-features>)
 
 ## Examples
 

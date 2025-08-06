@@ -531,10 +531,12 @@ pub mod builders {
     /// such as load balancing strategy, update interval, start positions, and more.
     /// It provides a fluent interface for setting these options and building the event processor.
     /// # Examples
-    /// ```
-    /// async fn create_processor() -> Result<(), Box<dyn std::error::Error>> {
-    /// use azure_messaging_eventhubs::{EventProcessor,CheckpointStore ,ConsumerClient, InMemoryCheckpointStore};
+    /// ``` no_run
+    /// use azure_messaging_eventhubs::{EventProcessor,CheckpointStore ,ConsumerClient};
     /// use std::sync::Arc;
+    ///
+    /// async fn create_processor(checkpoint_store: Arc<dyn CheckpointStore>) -> Result<(), Box<dyn std::error::Error>> {
+    /// use azure_core::Result;
     /// use azure_identity::DefaultAzureCredential;
     ///
     /// let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
@@ -549,9 +551,8 @@ pub mod builders {
     ///         .await?,
     /// );
     /// println!("Opened consumer client");
-    /// let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
     /// let processor = EventProcessor::builder()
-    ///     .build(consumer.clone(), checkpoint_store)
+    ///     .build(consumer.clone(), checkpoint_store.clone())
     ///     .await?;
     /// Ok(())
     /// }

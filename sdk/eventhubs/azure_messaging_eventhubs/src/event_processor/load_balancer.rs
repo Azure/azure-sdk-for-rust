@@ -378,7 +378,7 @@ pub(crate) mod tests {
         event_processor::Ownership, in_memory_checkpoint_store::InMemoryCheckpointStore,
         models::ConsumerClientDetails, CheckpointStore,
     };
-    use azure_core::Result;
+    use azure_core::{time::OffsetDateTime, Result};
     use azure_core_test::{recorded, TestContext};
     use tracing::info;
 
@@ -665,7 +665,7 @@ pub(crate) mod tests {
             .etag
             .clone();
         let mut ownership = ownership.clone();
-        ownership.last_modified_time = Some(SystemTime::now() - Duration::seconds(3600));
+        ownership.last_modified_time = Some(OffsetDateTime::now_utc() - Duration::seconds(3600));
         ownership.etag = etag;
         checkpoint_store.claim_ownership(&[ownership]).await?;
         Ok(())
