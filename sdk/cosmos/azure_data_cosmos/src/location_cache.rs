@@ -12,13 +12,9 @@ pub struct AccountRegion {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountProperties {
-    #[serde(rename = "databaseAccountEndpoint")]
     pub database_account_endpoint: String,
-    #[serde(rename = "readableLocations")]
     pub read_regions: Vec<AccountRegion>,
-    #[serde(rename = "writableLocations")]
     pub write_regions: Vec<AccountRegion>,
-    #[serde(rename = "multiRegionWrites")]
     pub enable_multiple_write_locations: bool,
 }
 
@@ -69,7 +65,7 @@ impl LocationCache {
         write_locations: HashMap<String, String>,
         read_locations: HashMap<String, String>,
     ) -> Result<(), &'static str> {
-        // separate write locations into appropriate hashmap and list
+        // Separate write locations into appropriate hashmap and list
         if !write_locations.is_empty() {
             let (available_write_endpoints_by_location, available_write_locations) =
                 self.get_endpoints_by_location(write_locations);
@@ -78,7 +74,7 @@ impl LocationCache {
             self.locations_info.available_write_locations = available_write_locations;
         }
 
-        // separate read locations into appropriate hashmap and list
+        // Separate read locations into appropriate hashmap and list
         if !read_locations.is_empty() {
             let (available_read_endpoints_by_location, available_read_locations) =
                 self.get_endpoints_by_location(read_locations);
@@ -92,80 +88,7 @@ impl LocationCache {
         Ok(())
     }
 
-    pub fn refresh_endpoints(&mut self) {
-        // get preferred available endpoints for write and read operations
-        self.locations_info.write_endpoints = self.get_preferred_available_endpoints(
-            &self.locations_info.available_write_endpoints_by_location,
-            RequestOperation::Write,
-            &self.default_endpoint,
-        );
-
-        self.locations_info.read_endpoints = self.get_preferred_available_endpoints(
-            &self.locations_info.available_read_endpoints_by_location,
-            RequestOperation::Read,
-            &self.default_endpoint,
-        );
-
-        self.refresh_stale_endpoints();
-    }
-
-    pub fn get_endpoints_by_location(
-        &mut self,
-        locations: HashMap<String, String>,
-    ) -> (HashMap<String, String>, Vec<String>) {
-        let mut endpoints_by_location: HashMap<String, String> = HashMap::new();
-        let mut parsed_locations: Vec<String> = Vec::new();
-
-        for (location, endpoint) in locations {
-            if !location.is_empty() {
-                endpoints_by_location.insert(location.clone(), endpoint.clone());
-                parsed_locations.push(location);
-            }
-        }
-
-        (endpoints_by_location, parsed_locations)
-    }
-
-    pub fn get_preferred_available_endpoints(
-        &self,
-        endpoints_by_location: &HashMap<String, String>,
-        request: RequestOperation,
-        default_endpoint: &str,
-    ) -> Vec<String> {
-        let mut endpoints: Vec<String> = Vec::new();
-        let mut unavailable_endpoints: Vec<String> = Vec::new();
-
-        // don't need to check if empty
-        if !self.locations_info.preferred_locations.is_empty() {
-            for location in &self.locations_info.preferred_locations {
-                //checks if preferred location exists in endpoints_by_location
-                if let Some(endpoint) = endpoints_by_location.get(location) {
-                    //check if endpoint is available, if not add to unavailable_endpoints
-                    //if it is then add to endpoints
-                    if !self.is_endpoint_unavailable(endpoint, request) {
-                        endpoints.push(endpoint.clone());
-                    } else {
-                        unavailable_endpoints.push(endpoint.clone());
-                    }
-                }
-            }
-        }
-
-        // Add unavailable endpoints
-        for endpoint in unavailable_endpoints {
-            endpoints.push(endpoint);
-        }
-
-        // If no preferred locations were found, use the default endpoint
-        if endpoints.is_empty() {
-            endpoints.push(default_endpoint.to_string());
-        }
-
-        endpoints
-    }
-
-    // endpoint should be reference here
-    fn mark_endpoint_unavailable(&mut self, endpoint: &str, operation: RequestOperation) {
+    pub fn mark_endpoint_unavailable(&mut self, endpoint: &str, operation: RequestOperation) {
         let now = std::time::SystemTime::now();
 
         {
@@ -179,6 +102,7 @@ impl LocationCache {
                     // If the endpoint is already marked as unavailable, update last_check_time
                     info.last_check_time = now;
                 } else {
+                    // If endpoint marked unavailable but with a different operation, update operation type to All
                     info.last_check_time = now;
                     info.unavailable_operation = RequestOperation::All;
                 }
@@ -197,10 +121,11 @@ impl LocationCache {
         self.refresh_endpoints();
     }
 
-    fn is_endpoint_unavailable(&self, endpoint: &str, operation: RequestOperation) -> bool {
+    pub fn is_endpoint_unavailable(&self, endpoint: &str, operation: RequestOperation) -> bool {
         let location_unavailability_info_map =
             self.location_unavailability_info_map.lock().unwrap();
         if let Some(info) = location_unavailability_info_map.get(endpoint) {
+            // Checks if endpoint is unavailable for the given operation
             let operation_type = info.unavailable_operation == operation;
             let elapsed = info.last_check_time.elapsed().unwrap_or_default()
                 < std::time::Duration::from_secs(300);
@@ -211,21 +136,12 @@ impl LocationCache {
         }
     }
 
-    fn refresh_stale_endpoints(&mut self) {
-        let mut location_unavailability_info_map =
-            self.location_unavailability_info_map.lock().unwrap();
-
-        location_unavailability_info_map.retain(|_, info| {
-            info.last_check_time.elapsed().unwrap_or_default()
-                <= std::time::Duration::from_secs(300)
-        });
-    }
-
-    fn resolve_service_endpoint(
+    pub fn resolve_service_endpoint(
         &self,
         location_index: usize,
         operation: RequestOperation,
     ) -> String {
+        // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
         if operation == RequestOperation::Write && !self.locations_info.write_endpoints.is_empty() {
             self.locations_info.write_endpoints[location_index].clone()
         } else if operation == RequestOperation::Read
@@ -236,18 +152,95 @@ impl LocationCache {
             self.default_endpoint.clone()
         }
     }
+
+    fn refresh_endpoints(&mut self) {
+        // Get preferred available endpoints for write and read operations
+        self.locations_info.write_endpoints = self.get_preferred_available_endpoints(
+            &self.locations_info.available_write_endpoints_by_location,
+            RequestOperation::Write,
+            &self.default_endpoint,
+        );
+
+        self.locations_info.read_endpoints = self.get_preferred_available_endpoints(
+            &self.locations_info.available_read_endpoints_by_location,
+            RequestOperation::Read,
+            &self.default_endpoint,
+        );
+
+        self.refresh_stale_endpoints();
+    }
+
+    fn get_endpoints_by_location(
+        &mut self,
+        locations: HashMap<String, String>,
+    ) -> (HashMap<String, String>, Vec<String>) {
+        // Separates locations into a hashmap and list
+        let mut endpoints_by_location: HashMap<String, String> = HashMap::new();
+        let mut parsed_locations: Vec<String> = Vec::new();
+
+        for (location, endpoint) in locations {
+            if !location.is_empty() {
+                endpoints_by_location.insert(location.clone(), endpoint.clone());
+                parsed_locations.push(location);
+            }
+        }
+
+        (endpoints_by_location, parsed_locations)
+    }
+
+    fn get_preferred_available_endpoints(
+        &self,
+        endpoints_by_location: &HashMap<String, String>,
+        request: RequestOperation,
+        default_endpoint: &str,
+    ) -> Vec<String> {
+        let mut endpoints: Vec<String> = Vec::new();
+        let mut unavailable_endpoints: Vec<String> = Vec::new();
+
+        for location in &self.locations_info.preferred_locations {
+            // Checks if preferred location exists in endpoints_by_location
+            if let Some(endpoint) = endpoints_by_location.get(location) {
+                // Check if endpoint is available, if not add to unavailable_endpoints
+                // If it is then add to endpoints
+                if !self.is_endpoint_unavailable(endpoint, request) {
+                    endpoints.push(endpoint.clone());
+                } else {
+                    unavailable_endpoints.push(endpoint.clone());
+                }
+            }
+        }
+
+        // Add unavailable endpoints to end of endpoints lists
+        for endpoint in unavailable_endpoints {
+            endpoints.push(endpoint);
+        }
+
+        // If no preferred locations were found, use the default endpoint
+        if endpoints.is_empty() {
+            endpoints.push(default_endpoint.to_string());
+        }
+
+        endpoints
+    }
+
+    fn refresh_stale_endpoints(&mut self) {
+        let mut location_unavailability_info_map =
+            self.location_unavailability_info_map.lock().unwrap();
+
+        // Removes endpoints that have not been checked in the last 5 minutes
+        location_unavailability_info_map.retain(|_, info| {
+            info.last_check_time.elapsed().unwrap_or_default()
+                <= std::time::Duration::from_secs(300)
+        });
+    }
 }
 
-//tests for location cache
-
+// Tests for location cache
 #[cfg(test)]
 
 mod tests {
-    use std::{collections::HashSet, default, hash::Hash, vec};
-
-    use azure_core::http::Request;
-
     use super::*;
+    use std::{collections::HashSet, vec};
 
     fn create_test_data() -> (
         String,
