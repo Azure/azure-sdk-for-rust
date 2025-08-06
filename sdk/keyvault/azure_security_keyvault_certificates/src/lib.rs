@@ -9,5 +9,5 @@ mod generated;
 pub mod models;
 mod resource;
 
-pub use clients::{CertificateClient, CertificateClientExt, CertificateClientOptions};
+pub use clients::{CertificateClient, CertificateClientOptions};
 pub use resource::*;

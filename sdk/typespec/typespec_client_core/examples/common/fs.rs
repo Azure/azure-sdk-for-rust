@@ -1,11 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    http::{Body, RequestContent},
-    setters,
-    stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
-};
 use futures::{task::Poll, Future};
 use std::{cmp::min, io::SeekFrom, pin::Pin, sync::Arc, task::Context};
 use tokio::{
@@ -14,6 +9,12 @@ use tokio::{
     sync::Mutex,
 };
 use tracing::debug;
+use typespec_client_core::{
+    error::Result,
+    http::{Body, RequestContent},
+    setters,
+    stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
+};
 
 #[derive(Debug)]
 pub struct FileStreamBuilder {
@@ -45,7 +46,7 @@ impl FileStreamBuilder {
         buffer_size: usize => Some(buffer_size),
     }
 
-    pub async fn build(mut self) -> crate::Result<FileStream> {
+    pub async fn build(mut self) -> Result<FileStream> {
         let stream_size = self.handle.metadata().await?.len();
 
         let buffer_size = self.buffer_size.unwrap_or(DEFAULT_BUFFER_SIZE);
@@ -102,7 +103,7 @@ impl FileStream {
     /// `stream_size`
     ///
     /// This is useful if you want to read the stream in multiple blocks
-    pub async fn next_block(&mut self) -> crate::Result<()> {
+    pub async fn next_block(&mut self) -> Result<()> {
         debug!("setting limit to {}", self.block_size);
         let mut handle = self.handle.clone().lock_owned().await;
         {
@@ -120,7 +121,7 @@ impl SeekableStream for FileStream {
     /// Seek to the specified offset into the file and reset the number of bytes to read
     ///
     /// This is useful upon encountering an error to reset the stream to the last
-    async fn reset(&mut self) -> crate::Result<()> {
+    async fn reset(&mut self) -> Result<()> {
         debug!(
             "resetting stream to offset {} and limit to {}",
             self.offset, self.block_size

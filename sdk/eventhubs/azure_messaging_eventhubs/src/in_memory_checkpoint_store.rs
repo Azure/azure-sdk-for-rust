@@ -98,21 +98,6 @@ impl CheckpointStore for InMemoryCheckpointStore {
         Ok(claimed_ownerships)
     }
 
-    #[cfg(feature = "test")]
-    async fn update_ownership(&self, ownership: Ownership) -> Result<()> {
-        trace!(
-            "update_ownership: update ownership for partition {}",
-            ownership.partition_id
-        );
-        let ownership = self.update_ownership(&ownership)?;
-        trace!(
-            "update_ownership: updated ownership for partition {}",
-            ownership.partition_id
-        );
-        trace!("Update ownership for partition {}", ownership.partition_id);
-        Ok(())
-    }
-
     async fn list_checkpoints(
         &self,
         namespace: &str,
