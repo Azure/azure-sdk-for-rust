@@ -6,7 +6,7 @@
 use super::{ListQueuesIncludeType, QueueMessage};
 use azure_core::{
     fmt::SafeDebug,
-    http::{ClientMethodOptions, RequestContent},
+    http::{ClientMethodOptions, RequestContent, XmlFormat},
 };
 use std::collections::HashMap;
 
@@ -191,7 +191,7 @@ pub struct QueueClientUpdateOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 
     /// A Message object which can be stored in a Queue
-    pub queue_message: Option<RequestContent<QueueMessage>>,
+    pub queue_message: Option<RequestContent<QueueMessage, XmlFormat>>,
 }
 
 /// Options to be passed to `QueueServiceClient::get_properties()`

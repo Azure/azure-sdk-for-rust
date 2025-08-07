@@ -6,19 +6,19 @@
 use azure_core::{create_enum, create_extensible_enum};
 
 create_extensible_enum!(
-    #[doc = r#"/// The geo replication status."#]
+    #[doc = r#"The geo replication status."#]
     GeoReplicationStatusType,
-    #[doc = r#"/// The geo replication is bootstrap."#]
+    #[doc = r#"The geo replication is bootstrap."#]
     (Bootstrap, "bootstrap"),
-    #[doc = r#"/// The geo replication is live."#]
+    #[doc = r#"The geo replication is live."#]
     (Live, "live"),
-    #[doc = r#"/// The geo replication is unavailable."#]
+    #[doc = r#"The geo replication is unavailable."#]
     (Unavailable, "unavailable")
 );
 
 create_enum!(
-    #[doc = r#"/// Include this parameter to specify that the queue's metadata be returned as part of the response body."#]
+    #[doc = r#"Include this parameter to specify that the queue's metadata be returned as part of the response body."#]
     ListQueuesIncludeType,
-    #[doc = r#"/// Include metadata"#]
+    #[doc = r#"Include metadata"#]
     (Metadata, "metadata")
 );

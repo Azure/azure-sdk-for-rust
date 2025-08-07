@@ -11,12 +11,12 @@ use azure_core::{
 };
 use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::{
-    clients::QueueClient,
     models::{
         QueueClientGetMetadataResultHeaders, QueueClientPeekMessagesOptions,
         QueueClientReceiveMessagesOptions, QueueClientSetMetadataOptions, QueueClientUpdateOptions,
         QueueMessage, SentMessage,
     },
+    QueueClient,
 };
 
 async fn send_message(
@@ -169,56 +169,6 @@ async fn peek_and_receive_messages(
     Ok(())
 }
 
-async fn peek_and_receive_message(
-    queue_client: &QueueClient,
-) -> Result<(), Box<dyn std::error::Error>> {
-    _ = send_message(queue_client, "Message 1 from Rust Queue SDK").await;
-    _ = send_message(queue_client, "Message 2 from Rust Queue SDK").await;
-
-    let options = QueueClientPeekMessagesOptions {
-        number_of_messages: Some(5),
-        ..Default::default()
-    };
-
-    let result = queue_client.peek_message(Some(options)).await;
-    log_operation_result(&result, "peek_message");
-
-    if let Ok(response) = result {
-        let message = response.into_body().await?;
-        if let Some(message) = message {
-            println!(
-                "Successfully peeked message ({}): {}",
-                message.message_id.unwrap(),
-                message.message_text.unwrap_or_default()
-            );
-        }
-    }
-
-    loop {
-        let result = queue_client.receive_message(None).await;
-        log_operation_result(&result, "receive_message");
-
-        if let Ok(response) = result {
-            let message = response.into_body().await?;
-            if let Some(msg) = message {
-                println!(
-                    "Successfully received message ({}): {}",
-                    msg.message_id.unwrap(),
-                    msg.message_text.unwrap_or_default()
-                );
-            } else {
-                // No more messages available
-                break;
-            }
-        } else {
-            // Error occurred, break the loop
-            break;
-        }
-    }
-
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DefaultAzureCredential::new()?;
@@ -235,9 +185,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let result = queue_client.exists().await;
     log_operation_result(&result, "check_exists");
-
-    let result = queue_client.create_if_not_exists(None).await;
-    log_operation_result(&result, "create_if_not_exists");
 
     // Set and get queue metadata
     set_and_get_metadata(&queue_client).await?;
@@ -265,9 +212,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Peek and Receive messages
     peek_and_receive_messages(&queue_client).await?;
 
-    // Peek and Receive message
-    peek_and_receive_message(&queue_client).await?;
-
     // Cleanup
     let result = queue_client.delete(None).await;
     log_operation_result(&result, "delete");
@@ -276,9 +220,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         QueueClient::new(&endpoint, "non-existent-queue", credential.clone(), None)?;
     let result = non_existing_queue_client.exists().await;
     log_operation_result(&result, "check_non_existent");
-
-    let result = non_existing_queue_client.delete_if_exists(None).await;
-    log_operation_result(&result, "delete_if_exists");
 
     Ok(())
 }
