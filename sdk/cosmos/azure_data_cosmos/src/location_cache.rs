@@ -25,6 +25,18 @@ pub enum RequestOperation {
     All,
 }
 
+impl RequestOperation {
+    pub fn includes(self, other: RequestOperation) -> bool {
+        matches!(
+            (self, other),
+            (RequestOperation::All, _)
+                | (_, RequestOperation::All)
+                | (RequestOperation::Read, RequestOperation::Read)
+                | (RequestOperation::Write, RequestOperation::Write)
+        )
+    }
+}
+
 #[derive(Clone, Default)]
 pub struct DatabaseAccountLocationsInfo {
     pub preferred_locations: Vec<String>,
@@ -96,9 +108,7 @@ impl LocationCache {
                 self.location_unavailability_info_map.lock().unwrap();
 
             if let Some(info) = location_unavailability_info_map.get_mut(endpoint) {
-                if info.unavailable_operation == operation
-                    || info.unavailable_operation == RequestOperation::All
-                {
+                if info.unavailable_operation.includes(operation) {
                     // If the endpoint is already marked as unavailable, update last_check_time
                     info.last_check_time = now;
                 } else {
@@ -126,11 +136,10 @@ impl LocationCache {
             self.location_unavailability_info_map.lock().unwrap();
         if let Some(info) = location_unavailability_info_map.get(endpoint) {
             // Checks if endpoint is unavailable for the given operation
-            let operation_type = info.unavailable_operation == operation;
             let elapsed = info.last_check_time.elapsed().unwrap_or_default()
                 < std::time::Duration::from_secs(300);
 
-            operation_type && elapsed
+            info.unavailable_operation.includes(operation) && elapsed
         } else {
             false
         }
