@@ -56,7 +56,7 @@ cargo add azure_identity tokio azure_messaging_eventhubs azure_storage_blob
 
 ### Authenticate the client
 
-In order to interact with the Azure Event Hubs service and blob storage service, you'll need to create an instance of the `ProducerClient` or the `ConsumerClient`. You need an **event hub namespace host URL** (which you may see as `serviceBusEndpoint` in the Azure CLI response when creating the Even Hubs Namespace), an **Event Hub name** (which you may see as `name` in the Azure CLI response when creating the Event Hub instance), and credentials to instantiate a client object.
+In order to interact with the Azure Event Hubs service and blob storage service, you'll need to create an instance of the `ProducerClient` or the `ConsumerClient`. You need an **event hub namespace host URL** (which you may see as `serviceBusEndpoint` in the Azure CLI response when creating the Event Hubs Namespace), an **Event Hub name** (which you may see as `name` in the Azure CLI response when creating the Event Hub instance), and credentials to instantiate a client object.
 
 The example shown below uses a [`DefaultAzureCredential`][default_cred_ref], which is appropriate for most local development environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
 
