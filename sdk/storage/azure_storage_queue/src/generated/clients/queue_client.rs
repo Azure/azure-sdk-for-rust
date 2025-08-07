@@ -23,7 +23,7 @@ use azure_core::{
     },
     tracing, Error, Result,
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[tracing::client]
 pub struct QueueClient {
@@ -524,10 +524,12 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
+    /// * `metadata` - The metadata headers.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Queues.Queue.setMetadata")]
     pub async fn set_metadata(
         &self,
+        metadata: HashMap<String, String>,
         options: Option<QueueClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
@@ -546,10 +548,8 @@ impl QueueClient {
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
+        for (k, v) in &metadata {
+            request.insert_header(format!("x-ms-meta-{k}"), v);
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;

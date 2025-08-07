@@ -13,8 +13,7 @@ use azure_identity::DefaultAzureCredential;
 use azure_storage_queue::{
     models::{
         QueueClientGetMetadataResultHeaders, QueueClientPeekMessagesOptions,
-        QueueClientReceiveMessagesOptions, QueueClientSetMetadataOptions, QueueClientUpdateOptions,
-        QueueMessage, SentMessage,
+        QueueClientReceiveMessagesOptions, QueueClientUpdateOptions, QueueMessage, SentMessage,
     },
     QueueClient,
 };
@@ -97,18 +96,30 @@ async fn send_and_update_message(
 async fn set_and_get_metadata(
     queue_client: &QueueClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let metadata_options = Some(QueueClientSetMetadataOptions {
-        metadata: Some(HashMap::from([
-            ("key1".to_string(), "value1".to_string()),
-            ("key2".to_string(), "value2".to_string()),
-        ])),
-        ..Default::default()
-    });
-    let result = queue_client.set_metadata(metadata_options).await;
+    let result = queue_client
+        .set_metadata(
+            HashMap::from([
+                ("key1".to_string(), "value1".to_string()),
+                ("key2".to_string(), "value2".to_string()),
+            ]),
+            None,
+        )
+        .await;
     log_operation_result(&result, "set_metadata");
 
     let result = queue_client.get_metadata(None).await;
     log_operation_result(&result, "get_metadata");
+
+    let metadata = result.unwrap().metadata().unwrap_or_default();
+    for (key, value) in metadata {
+        println!("Metadata - {}: {}", key, value);
+    }
+
+    let result = queue_client.set_metadata(HashMap::new(), None).await;
+    log_operation_result(&result, "set_metadata_empty");
+
+    let result = queue_client.get_metadata(None).await;
+    log_operation_result(&result, "get_metadata_empty");
 
     let metadata = result.unwrap().metadata().unwrap_or_default();
     for (key, value) in metadata {

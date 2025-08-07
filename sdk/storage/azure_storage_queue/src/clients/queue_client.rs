@@ -10,7 +10,7 @@ use azure_core::{
     http::{NoFormat, RawResponse, RequestContent, Response, StatusCode, Url, XmlFormat},
     xml, Bytes, Result,
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 /// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
 pub struct QueueClient {
@@ -158,7 +158,10 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request, including the metadata to set for the queue
+    /// * `metadata` - A HashMap containing the metadata key-value pairs to set for the queue.
+    ///   This will replace all existing metadata on the queue. If an empty HashMap is provided, all
+    ///   existing metadata will be deleted from the queue.
+    /// * `options` - Optional parameters for the request
     ///
     /// # Returns
     ///
@@ -169,9 +172,10 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn set_metadata(
         &self,
+        metadata: HashMap<String, String>,
         options: Option<QueueClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client.set_metadata(options).await
+        self.client.set_metadata(metadata, options).await
     }
 
     /// Retrieves the metadata of the specified queue.

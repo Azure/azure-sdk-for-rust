@@ -6,7 +6,7 @@ use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
     models::{
         QueueClientPeekMessagesOptions, QueueClientReceiveMessagesOptions,
-        QueueClientSetMetadataOptions, QueueClientUpdateOptions, QueueMessage,
+        QueueClientUpdateOptions, QueueMessage,
     },
     QueueClient, QueueClientOptions,
 };
@@ -122,15 +122,15 @@ async fn test_set_metadata(ctx: TestContext) -> Result<()> {
     let test_result = async {
         // Set metadata for the queue
 
-        let metadata_options = Some(QueueClientSetMetadataOptions {
-            metadata: Some(HashMap::from([
-                ("key1".to_string(), "value1".to_string()),
-                ("key2".to_string(), "value2".to_string()),
-            ])),
-            ..Default::default()
-        });
-
-        let response = queue_client.set_metadata(metadata_options).await?;
+        let response = queue_client
+            .set_metadata(
+                HashMap::from([
+                    ("key1".to_string(), "value1".to_string()),
+                    ("key2".to_string(), "value2".to_string()),
+                ]),
+                None,
+            )
+            .await?;
 
         assert_successful_response(&response);
 
