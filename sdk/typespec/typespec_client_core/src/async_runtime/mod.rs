@@ -36,7 +36,7 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-#[cfg_attr(feature = "tokio", allow(dead_code))]
+#[cfg(not(feature = "tokio"))]
 mod standard_runtime;
 
 #[cfg(feature = "tokio")]
