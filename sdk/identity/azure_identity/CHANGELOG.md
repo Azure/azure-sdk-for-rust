@@ -6,7 +6,7 @@
 
 ### Breaking Changes
 
-- Replaced `DefaultAzureCredential` with `DeveloperToolsCredential`
+- Replaced `DefaultAzureCredential` with `DeveloperToolsCredential`. This new type is excluded from wasm32 builds because it can't authenticate in a WASM runtime environment (neither could `DefaultAzureCredential`).
 
 ### Bugs Fixed
 
