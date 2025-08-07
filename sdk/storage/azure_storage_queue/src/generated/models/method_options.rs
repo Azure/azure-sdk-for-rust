@@ -171,9 +171,6 @@ pub struct QueueClientSetMetadataOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
-    /// The metadata headers.
-    pub metadata: Option<HashMap<String, String>>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
