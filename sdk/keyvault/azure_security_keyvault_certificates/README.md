@@ -40,15 +40,15 @@ cargo add azure_identity tokio
 
 In order to interact with the Azure Key Vault service, you'll need to create an instance of the `CertificateClient`. You need a **vault url**, which you may see as "DNS Name" in the portal, and credentials to instantiate a client object.
 
-The example shown below uses a `DefaultAzureCredential`, which is appropriate for local development environments. We recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
+The example shown below uses a `DeveloperToolsCredential`, which is appropriate for local development environments. We recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
 
-The `DefaultAzureCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
+The `DeveloperToolsCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
 
 ```azurecli
 az login
 ```
 
-Instantiate a `DefaultAzureCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
+Instantiate a `DeveloperToolsCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
 
 ## Key concepts
 
@@ -81,7 +81,7 @@ The following section provides several code snippets using the `CertificateClien
 Before we can create a new certificate, though, we need to define a certificate policy. This is used for the first certificate version and all subsequent versions of that certificate until changed.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::{
     CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
@@ -90,7 +90,7 @@ use futures::stream::TryStreamExt as _;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -137,7 +137,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 If you just want to wait until the `Poller<CertificateOperation>` is complete and get the last status monitor, you can await `wait()`:
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::{
     CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
@@ -145,7 +145,7 @@ use azure_security_keyvault_certificates::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -196,12 +196,12 @@ Setting the `certificate-version` to an empty string will return the latest vers
 
 ```rust no_run
 use azure_core::base64;
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::CertificateClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
@@ -229,7 +229,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 Only the attributes of the certificate are updated. To regenerate the certificate, call `CertificateClient::create_certificate` on a certificate with the same name.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::{
     models::UpdateCertificatePropertiesParameters, CertificateClient,
 };
@@ -237,7 +237,7 @@ use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
@@ -271,12 +271,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_certificate` on the returned `DeletedCertificate.id`.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::CertificateClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
@@ -295,14 +295,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 This example lists all the certificates in the specified Azure Key Vault.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::{CertificateClient, ResourceExt};
 use futures::TryStreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a new certificate client
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
@@ -327,7 +327,7 @@ The following example shows how to sign data using an EC certificate key.
 
 ```rust no_run
 use azure_core::base64;
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::{
     models::{
         CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
@@ -350,7 +350,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let certificate_client = CertificateClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
-        DefaultAzureCredential::new()?,
+        DeveloperToolsCredential::new(None)?,
         None,
     )?;
 
@@ -391,7 +391,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a KeyClient using the certificate to sign the digest.
     let key_client = KeyClient::new(
         certificate_client.endpoint().as_str(),
-        DefaultAzureCredential::new()?,
+        DeveloperToolsCredential::new(None)?,
         None,
     )?;
     let body = SignParameters {
@@ -422,12 +422,12 @@ When you interact with the Azure Key Vault certificates client library using the
 For example, if you try to retrieve a key that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::CertificateClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
         "https://<my-vault>.vault.azure.net/",
         credential.clone(),

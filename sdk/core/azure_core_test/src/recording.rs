@@ -88,7 +88,7 @@ impl Recording {
         match self.test_mode {
             TestMode::Playback => Arc::new(MockCredential) as Arc<dyn TokenCredential>,
             _ => credentials::from_env(None).map_or_else(
-                |err| panic!("failed to create DefaultAzureCredential: {err}"),
+                |err| panic!("failed to create DeveloperToolsCredential: {err}"),
                 |cred| cred as Arc<dyn TokenCredential>,
             ),
         }

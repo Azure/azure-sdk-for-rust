@@ -6,7 +6,7 @@
 //! using a custom `Layer`. It demonstrates how to create a custom layer that formats log messages
 //! and sends them to Event Hubs asynchronously.
 
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::SendEventOptions;
 use azure_messaging_eventhubs::{models::EventData, ProducerClient};
 use std::error::Error;
@@ -40,7 +40,7 @@ impl EventHubsLayer {
             .open(
                 fully_qualified_namespace,
                 eventhub_name,
-                DefaultAzureCredential::new()?,
+                DeveloperToolsCredential::new(None)?,
             )
             .await?;
 

@@ -7,7 +7,7 @@
 //! events from an Event Hub partition and checkpointing the events that have been
 //! processed.
 
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, InMemoryCheckpointStore};
 use futures::StreamExt;
 use std::sync::Arc;
@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .open(
                 eventhub_namespace.as_str(),
                 eventhub_name,
-                DefaultAzureCredential::new()?.clone(),
+                DeveloperToolsCredential::new(None)?.clone(),
             )
             .await?,
     );

@@ -537,7 +537,7 @@ pub mod builders {
     ///
     /// async fn create_processor(checkpoint_store: Arc<dyn CheckpointStore>) -> Result<(), Box<dyn std::error::Error>> {
     /// use azure_core::Result;
-    /// use azure_identity::DefaultAzureCredential;
+    /// use azure_identity::DeveloperToolsCredential;
     ///
     /// let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
     /// let eventhub_name = std::env::var("EVENTHUB_NAME")?;
@@ -546,7 +546,7 @@ pub mod builders {
     ///         .open(
     ///             &eventhub_namespace,
     ///             eventhub_name,
-    ///             DefaultAzureCredential::new()?.clone(),
+    ///             DeveloperToolsCredential::new(None)?.clone(),
     ///         )
     ///         .await?,
     /// );

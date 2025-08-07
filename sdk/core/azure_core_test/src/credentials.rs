@@ -6,7 +6,11 @@ use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     time::{Duration, OffsetDateTime},
 };
-use azure_identity::{AzurePipelinesCredential, DefaultAzureCredential, TokenCredentialOptions};
+#[cfg(target_arch = "wasm32")]
+use azure_core::{error::ErrorKind, Error};
+#[cfg(not(target_arch = "wasm32"))]
+use azure_identity::DeveloperToolsCredential;
+use azure_identity::{AzurePipelinesCredential, TokenCredentialOptions};
 use std::{env, sync::Arc};
 
 /// A mock [`TokenCredential`] useful for testing.
@@ -38,7 +42,7 @@ impl TokenCredential for MockCredential {
 /// Gets a `TokenCredential` appropriate for the current environment.
 ///
 /// When running in Azure Pipelines, this will return an [`AzurePipelinesCredential`];
-/// otherwise, it will return a [`DefaultAzureCredential`].
+/// otherwise, it will return a [`DeveloperToolsCredential`].
 pub fn from_env(
     options: Option<TokenCredentialOptions>,
 ) -> azure_core::Result<Arc<dyn TokenCredential>> {
@@ -65,9 +69,13 @@ pub fn from_env(
             )? as Arc<dyn TokenCredential>);
         }
     }
-
-    Ok(
-        DefaultAzureCredential::with_options(options.unwrap_or_default())?
-            as Arc<dyn TokenCredential>,
-    )
+    #[cfg(target_arch = "wasm32")]
+    {
+        Err(Error::message(
+            ErrorKind::Other,
+            "No local development credential for WASM.",
+        ))
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    Ok(DeveloperToolsCredential::new(None)? as Arc<dyn TokenCredential>)
 }

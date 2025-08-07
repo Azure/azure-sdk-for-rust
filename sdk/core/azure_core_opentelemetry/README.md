@@ -11,7 +11,7 @@ It allows Rust applications which use the [OpenTelemetry](https://opentelemetry.
 To integrate the OpenTelemetry APIs with the Azure SDK for Rust, you create a `OpenTelemetryTracerProvider` and pass it into your SDK ClientOptions.
 
 ```rust no_run
-# use azure_identity::DefaultAzureCredential;
+# use azure_identity::DeveloperToolsCredential;
 # use azure_core::{http::{ClientOptions, RequestInstrumentationOptions}};
 # #[derive(Default)]
 # struct ServiceClientOptions {
@@ -44,7 +44,7 @@ let options = ServiceClientOptions {
 If it is more convenient to use the global OpenTelemetry provider, then the `OpenTelemetryTracerProvider::new_from_global_provider` method will configure the OpenTelemetry support to use the global provider instead of a custom configured provider.
 
 ```rust no_run
-# use azure_identity::DefaultAzureCredential;
+# use azure_identity::DeveloperToolsCredential;
 # use azure_core::{http::{ClientOptions, RequestInstrumentationOptions}};
 
 # #[derive(Default)]
