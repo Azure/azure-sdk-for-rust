@@ -321,6 +321,10 @@ impl<T, F> TryFrom<&'static str> for RequestContent<T, F> {
     }
 }
 
+#[allow(
+    clippy::infallible_try_from,
+    reason = "maintain a consistent pattern of `try_into()`"
+)]
 impl<F> TryFrom<bool> for RequestContent<bool, F> {
     type Error = Infallible;
     fn try_from(body: bool) -> Result<Self, Infallible> {
@@ -349,6 +353,10 @@ mod decimal {
     use super::*;
     use rust_decimal::Decimal;
 
+    #[allow(
+        clippy::infallible_try_from,
+        reason = "maintain a consistent pattern of `try_into()`"
+    )]
     impl<T, F> TryFrom<Decimal> for RequestContent<T, F> {
         type Error = Infallible;
         fn try_from(value: Decimal) -> Result<Self, Infallible> {
@@ -359,6 +367,10 @@ mod decimal {
         }
     }
 
+    #[allow(
+        clippy::infallible_try_from,
+        reason = "maintain a consistent pattern of `try_into()`"
+    )]
     impl<T, F> TryFrom<Option<Decimal>> for RequestContent<T, F> {
         type Error = Infallible;
         fn try_from(value: Option<Decimal>) -> Result<Self, Infallible> {

@@ -314,6 +314,7 @@ impl FromStr for RecordingId {
     }
 }
 
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 #[derive(Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 struct Version {
     major: i32,
