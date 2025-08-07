@@ -88,10 +88,8 @@ impl TokenCredential for DeveloperToolsCredential {
             if let Some(source) = self.sources.get(cached_index) {
                 return source.get_token(scopes, options).await;
             }
-            // should never happen
-            return Err(Error::with_message(ErrorKind::Credential, || {
-                format!("Source index {cached_index} is out of bounds")
-            }));
+            // impossible because the vector's size never changes
+            panic!("DeveloperToolsCredential source index {cached_index} is out of bounds")
         }
 
         let mut errors = Vec::new();
