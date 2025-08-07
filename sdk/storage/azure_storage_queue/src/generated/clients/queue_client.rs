@@ -14,16 +14,18 @@ use crate::generated::models::{
 };
 use azure_core::{
     credentials::TokenCredential,
+    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Context, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
         XmlFormat,
     },
-    Result,
+    tracing, Error, Result,
 };
 use std::sync::Arc;
 
+#[tracing::client]
 pub struct QueueClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
@@ -50,6 +52,7 @@ impl QueueClient {
     ///   Entra ID token to use when authenticating.
     /// * `queue_name` - The name of the queue.
     /// * `options` - Optional configuration for the client.
+    #[tracing::new("azure_storage_queue")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -93,6 +96,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.clear")]
     pub async fn clear(
         &self,
         options: Option<QueueClientClearOptions<'_>>,
@@ -109,7 +113,17 @@ impl QueueClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Creates a new queue under the specified account. If the queue with the same name already exists, the operation fails.
@@ -117,6 +131,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.create")]
     pub async fn create(
         &self,
         options: Option<QueueClientCreateOptions<'_>>,
@@ -136,11 +151,21 @@ impl QueueClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// operation permanently deletes the specified queue
@@ -148,6 +173,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.delete")]
     pub async fn delete(
         &self,
         options: Option<QueueClientDeleteOptions<'_>>,
@@ -167,11 +193,21 @@ impl QueueClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Delete operation deletes the specified message.
@@ -182,6 +218,7 @@ impl QueueClient {
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or
     ///   Update Message operation.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.deleteMessage")]
     pub async fn delete_message(
         &self,
         message_id: &str,
@@ -202,7 +239,17 @@ impl QueueClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// gets the permissions for the specified queue. The permissions indicate whether queue data may be accessed publicly.
@@ -210,6 +257,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.getAccessPolicy")]
     pub async fn get_access_policy(
         &self,
         options: Option<QueueClientGetAccessPolicyOptions<'_>>,
@@ -232,7 +280,17 @@ impl QueueClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// returns all user-defined metadata and system properties for the specified queue.
@@ -240,6 +298,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.getMetadata")]
     pub async fn get_metadata(
         &self,
         options: Option<QueueClientGetMetadataOptions<'_>>,
@@ -261,7 +320,17 @@ impl QueueClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Peek operation retrieves one or more messages from the front of the queue,
@@ -270,6 +339,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.peekMessages")]
     pub async fn peek_messages(
         &self,
         options: Option<QueueClientPeekMessagesOptions<'_>>,
@@ -292,7 +362,17 @@ impl QueueClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Dequeue operation retrieves one or more messages from the front of the
@@ -301,6 +381,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.receiveMessages")]
     pub async fn receive_messages(
         &self,
         options: Option<QueueClientReceiveMessagesOptions<'_>>,
@@ -330,7 +411,17 @@ impl QueueClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Enqueue operation adds a new message to the back of the message queue. A
@@ -344,9 +435,10 @@ impl QueueClient {
     ///
     /// * `queue_message` - A Message object which can be stored in a Queue
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.sendMessage")]
     pub async fn send_message(
         &self,
-        queue_message: RequestContent<QueueMessage>,
+        queue_message: RequestContent<QueueMessage, XmlFormat>,
         options: Option<QueueClientSendMessageOptions<'_>>,
     ) -> Result<Response<ListOfSentMessage, XmlFormat>> {
         let options = options.unwrap_or_default();
@@ -371,7 +463,17 @@ impl QueueClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(queue_message);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// sets the permissions for the specified queue.
@@ -380,9 +482,10 @@ impl QueueClient {
     ///
     /// * `queue_acl` - The access control list for the queue.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.setAccessPolicy")]
     pub async fn set_access_policy(
         &self,
-        queue_acl: RequestContent<ListOfSignedIdentifier>,
+        queue_acl: RequestContent<ListOfSignedIdentifier, XmlFormat>,
         options: Option<QueueClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<QueueClientSetAccessPolicyResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -404,7 +507,17 @@ impl QueueClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(queue_acl);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// operation sets one or more user-defined name-value pairs for the specified queue.
@@ -412,6 +525,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.setMetadata")]
     pub async fn set_metadata(
         &self,
         options: Option<QueueClientSetMetadataOptions<'_>>,
@@ -434,11 +548,21 @@ impl QueueClient {
         }
         if let Some(metadata) = options.metadata {
             for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{}", k), v);
+                request.insert_header(format!("x-ms-meta-{k}"), v);
             }
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Update operation was introduced with version 2011-08-18 of the Queue
@@ -457,6 +581,7 @@ impl QueueClient {
     ///   larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be
     ///   set to a value later than the expiry time.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.Queue.update")]
     pub async fn update(
         &self,
         message_id: &str,
@@ -484,7 +609,17 @@ impl QueueClient {
         if let Some(queue_message) = options.queue_message {
             request.set_body(queue_message);
         }
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 }
 

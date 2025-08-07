@@ -142,7 +142,7 @@ impl QueueServiceClient {
     pub async fn get_properties(
         &self,
         options: Option<QueueServiceClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
+    ) -> Result<Response<QueueServiceProperties, XmlFormat>> {
         self.client.get_properties(options).await
     }
 
@@ -159,11 +159,11 @@ impl QueueServiceClient {
     /// Returns a `Result` containing the response if successful.
     pub async fn set_properties(
         &self,
-        storage_service_properties: RequestContent<StorageServiceProperties>,
+        queue_service_properties: RequestContent<QueueServiceProperties, XmlFormat>,
         options: Option<QueueServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
-            .set_properties(storage_service_properties, options)
+            .set_properties(queue_service_properties, options)
             .await
     }
 

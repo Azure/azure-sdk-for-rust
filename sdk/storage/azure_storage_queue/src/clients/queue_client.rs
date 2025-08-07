@@ -89,35 +89,6 @@ impl QueueClient {
         self.client.create(options).await
     }
 
-    /// Creates a new queue under the given account if it doesn't already exist.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the response. If the queue already exists,
-    /// returns a success response with no content (204 No Content)
-    pub async fn create_if_not_exists(
-        &self,
-        options: Option<QueueClientCreateOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        // Attempt to create the queue, if it already exists, this will return an error.
-        match self.create(options).await {
-            Ok(response) => Ok(response),
-            Err(e) if e.http_status().unwrap() == StatusCode::Conflict => {
-                // If the error is a conflict (queue already exists), we return Ok with no content.
-                use azure_core::http::{headers::Headers, RawResponse};
-                Ok(
-                    RawResponse::from_bytes(StatusCode::NoContent, Headers::new(), Bytes::new())
-                        .into(),
-                )
-            }
-            Err(e) => Err(e), // Propagate other errors.
-        }
-    }
-
     /// Permanently deletes the specified queue.
     ///
     /// # Arguments
@@ -138,35 +109,6 @@ impl QueueClient {
         self.client.delete(options).await
     }
 
-    /// Deletes the specified queue if it exists.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the response. If the queue doesn't exist,
-    /// returns a success response with no content (204 No Content)
-    pub async fn delete_if_exists(
-        &self,
-        options: Option<QueueClientDeleteOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        // Attempt to delete the queue, if it does not exist, this will return an error.
-        match self.delete(options).await {
-            Ok(response) => Ok(response),
-            Err(e) if e.http_status().unwrap() == StatusCode::NotFound => {
-                // If the error is a not found (queue does not exist), we return Ok with no content.
-                use azure_core::http::{headers::Headers, RawResponse};
-                Ok(
-                    RawResponse::from_bytes(StatusCode::NoContent, Headers::new(), Bytes::new())
-                        .into(),
-                )
-            }
-            Err(e) => Err(e), // Propagate other errors.
-        }
-    }
-
     /// Checks if the queue exists.
     ///
     /// # Returns
@@ -181,7 +123,7 @@ impl QueueClient {
     pub async fn exists(&self) -> Result<bool> {
         match self.get_metadata(None).await {
             Ok(_) => Ok(true),
-            Err(e) if e.http_status().unwrap() == StatusCode::NotFound => {
+            Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
                 // If the queue does not exist, we return false.
                 Ok(false)
             }
@@ -209,8 +151,7 @@ impl QueueClient {
         &self,
         options: Option<QueueClientClearOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        let result = self.client.clear(options).await?;
-        Ok(result)
+        self.client.clear(options).await
     }
 
     /// Sets the metadata for the specified queue.
@@ -269,7 +210,7 @@ impl QueueClient {
     /// Returns an error if the queue doesn't exist or if the request fails
     pub async fn send_message(
         &self,
-        queue_message: RequestContent<QueueMessage>,
+        queue_message: RequestContent<QueueMessage, XmlFormat>,
         options: Option<QueueClientSendMessageOptions<'_>>,
     ) -> Result<Response<Option<SentMessage>, XmlFormat>> {
         let response = self.client.send_message(queue_message, options).await?;
@@ -333,35 +274,6 @@ impl QueueClient {
             .await
     }
 
-    /// The Dequeue operation retrieves a single message from the front of the queue.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the dequeue operation. If `number_of_messages` is specified in the options,
-    ///   it will be overridden to 1. Use this to set the visibility timeout for the message
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the dequeued message if successful. The message will be invisible
-    /// to other consumers for the duration specified in the visibility timeout
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn receive_message(
-        &self,
-        options: Option<QueueClientReceiveMessagesOptions<'_>>,
-    ) -> Result<Response<Option<ReceivedMessage>, XmlFormat>> {
-        let options = Some(QueueClientReceiveMessagesOptions {
-            number_of_messages: Some(1),
-            ..options.unwrap_or_default()
-        });
-
-        let response = self.receive_messages(options).await?;
-        Self::extract_first_message(response, |list: &ListOfReceivedMessage| list.items.clone())
-            .await
-    }
-
     /// The Dequeue operation retrieves one or more messages from the front of the queue.
     ///
     /// # Arguments
@@ -382,34 +294,6 @@ impl QueueClient {
         options: Option<QueueClientReceiveMessagesOptions<'_>>,
     ) -> Result<Response<ListOfReceivedMessage, XmlFormat>> {
         self.client.receive_messages(options).await
-    }
-
-    /// Peeks a single message from the front of the queue without removing it.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the peek operation. If `number_of_messages` is specified,
-    ///   it will be overridden to 1
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the message at the front of the queue if successful.
-    /// The message remains visible to other consumers
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
-    pub async fn peek_message(
-        &self,
-        options: Option<QueueClientPeekMessagesOptions<'_>>,
-    ) -> Result<Response<Option<PeekedMessage>, XmlFormat>> {
-        let options = Some(QueueClientPeekMessagesOptions {
-            number_of_messages: Some(1),
-            ..options.unwrap_or_default()
-        });
-
-        let response = self.peek_messages(options).await?;
-        Self::extract_first_message(response, |list: &ListOfPeekedMessage| list.items.clone()).await
     }
 
     /// Peeks multiple messages from the front of the queue without removing them.

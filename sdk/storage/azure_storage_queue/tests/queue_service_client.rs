@@ -4,8 +4,8 @@ use azure_core::http::{
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
-    clients::{QueueServiceClient, QueueServiceClientOptions},
     models::{GeoReplicationStatusType, QueueServiceClientListQueuesOptions},
+    QueueServiceClient, QueueServiceClientOptions,
 };
 use futures::StreamExt;
 
