@@ -41,7 +41,7 @@ let options = ServiceClientOptions {
 # }
 ```
 
-If it is more convenient to use the global OpenTelemetry provider, then the `OpenTelemetryTracerProvider::new_from_global_provider` method will configure the OpenTelemetry support to use the global provider instead of a custom configured provider.
+If it is more convenient to use the global OpenTelemetry provider, then the `OpenTelemetryTracerProvider::from_global_provider` method will configure the OpenTelemetry support to use the global provider instead of a custom configured provider.
 
 ```rust no_run
 # use azure_identity::DeveloperToolsCredential;
@@ -57,7 +57,7 @@ use std::sync::Arc;
 
 # fn test_fn() -> azure_core::Result<()> {
 
-let azure_provider = OpenTelemetryTracerProvider::new_from_global_provider();
+let azure_provider = OpenTelemetryTracerProvider::from_global_provider();
 
 let options = ServiceClientOptions {
     client_options: ClientOptions {

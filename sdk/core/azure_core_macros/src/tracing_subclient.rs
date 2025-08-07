@@ -4,7 +4,7 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{spanned::Spanned, ExprStruct, ItemFn, Result};
-use tracing::error;
+use tracing::warn;
 
 const INVALID_SUBCLIENT_MESSAGE: &str =
     "subclient attribute must be applied to a public function which returns a client type";
@@ -15,8 +15,11 @@ const INVALID_SUBCLIENT_MESSAGE: &str =
 ///
 ///
 pub fn parse_subclient(_attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
-    if !is_subclient_declaration(&item) {
-        return Err(syn::Error::new(item.span(), INVALID_SUBCLIENT_MESSAGE));
+    if let Err(e) = is_subclient_declaration(&item) {
+        return Err(syn::Error::new(
+            item.span(),
+            format!("{} {}", INVALID_SUBCLIENT_MESSAGE, e),
+        ));
     }
 
     let ItemFn {
@@ -43,40 +46,42 @@ pub fn parse_subclient(_attr: TokenStream, item: TokenStream) -> Result<TokenStr
     })
 }
 
-fn is_subclient_declaration(item: &TokenStream) -> bool {
+fn is_subclient_declaration(item: &TokenStream) -> Result<(), String> {
     let ItemFn {
         vis, block, sig, ..
     } = match syn::parse2(item.clone()) {
         Ok(fn_item) => fn_item,
         Err(e) => {
-            error!("Failed to parse function: {}", e);
-            return false;
+            warn!("Failed to parse function: {}", e);
+            return Err(format!("failed to parse function: {e}"));
         }
     };
 
     // Subclient constructors must be public functions.
     if !matches!(vis, syn::Visibility::Public(_)) {
-        error!("Subclient constructors must be public functions");
-        return false;
+        warn!("Subclient constructors must be public functions");
+        return Err("subclient constructors must be public functions".to_string());
     }
 
     // Subclient constructors must have a body with a single statement.
     if block.stmts.len() != 1 {
-        error!("Subclient constructors must have a single statement in their body");
-        return false;
+        warn!("Subclient constructors must have a single statement in their body");
+        return Err(
+            "subclient constructors must have a single statement in their body".to_string(),
+        );
     }
 
     // Subclient constructors must have a return type that is a client type.
     if let syn::ReturnType::Type(_, ty) = &sig.output {
         if !matches!(ty.as_ref(), syn::Type::Path(p) if p.path.segments.last().unwrap().ident.to_string().ends_with("Client"))
         {
-            return false;
+            return Err("subclient constructors must return a client type".to_string());
         }
     } else {
-        return false;
+        return Err("subclient constructors must return a client type".to_string());
     }
 
-    true
+    Ok(())
 }
 
 #[cfg(test)]
@@ -99,11 +104,13 @@ mod tests {
                     subscription_id: self.subscription_id.clone(),
                 }
             }
-        }),);
+        })
+        .is_ok(),);
 
-        assert!(!is_subclient_declaration(&quote! {
+        assert!(is_subclient_declaration(&quote! {
             pub fn not_a_subclient() {}
-        }));
+        })
+        .is_err());
 
         assert!(is_subclient_declaration(&quote! {
             pub fn operation_templates_lro_client() -> OperationTemplatesLroClient {
@@ -114,7 +121,8 @@ mod tests {
                     subscription_id: "subscription_id".to_string(),
                 }
             }
-        }));
+        })
+        .is_ok());
     }
 
     #[test]
