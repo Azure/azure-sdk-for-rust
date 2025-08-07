@@ -21,6 +21,7 @@ mod env;
 mod imds_managed_identity_credential;
 mod managed_identity_credential;
 mod options;
+#[cfg(not(target_arch = "wasm32"))]
 mod process;
 mod virtual_machine_managed_identity_credential;
 mod workload_identity_credential;
@@ -38,6 +39,7 @@ pub use client_secret_credential::*;
 pub use developer_tools_credential::*;
 pub use managed_identity_credential::*;
 pub use options::TokenCredentialOptions;
+#[cfg(not(target_arch = "wasm32"))]
 pub use process::{new_executor, Executor};
 pub use workload_identity_credential::*;
 

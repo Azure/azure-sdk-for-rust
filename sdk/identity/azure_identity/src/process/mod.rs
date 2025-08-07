@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![cfg_attr(target_arch = "wasm32", allow(unused))]
-
 // cspell:ignore workdir
 
 use crate::env::Env;
-use async_trait::async_trait;
 use azure_core::{
     credentials::AccessToken,
     error::{Error, ErrorKind, Result},
@@ -43,8 +40,7 @@ pub fn new_executor() -> Arc<dyn Executor> {
 }
 
 /// An async command runner.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait::async_trait]
 pub trait Executor: Send + Sync + fmt::Debug {
     /// Run a program with the given arguments until it terminates, returning the output.
     async fn run(&self, program: &OsStr, args: &[&OsStr]) -> io::Result<Output>;
