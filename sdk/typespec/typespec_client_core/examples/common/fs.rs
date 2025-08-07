@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#![allow(dead_code)]
+
 use futures::{task::Poll, Future};
 use std::{cmp::min, io::SeekFrom, pin::Pin, sync::Arc, task::Context};
 use tokio::{
@@ -11,11 +13,10 @@ use tokio::{
 use tracing::debug;
 use typespec_client_core::{
     error::Result,
-    http::{Body, RequestContent},
-    setters,
     stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
 };
 
+/// Builds a [`FileStream`].
 #[derive(Debug)]
 pub struct FileStreamBuilder {
     handle: File,
@@ -37,15 +38,31 @@ impl FileStreamBuilder {
         }
     }
 
-    setters! {
-        // #[doc = "Offset into the file to start reading from"]
-        offset: u64 => Some(offset),
-        // #[doc = "Amount of data to read from the file"]
-        block_size: u64 => Some(block_size),
-        // #[doc = "Amount of data to buffer in memory during streaming reads"]
-        buffer_size: usize => Some(buffer_size),
+    /// Offset into the file to start reading from
+    pub fn offset(self, offset: u64) -> Self {
+        Self {
+            offset: Some(offset),
+            ..self
+        }
     }
 
+    /// Amount of data to read from the file
+    pub fn block_size(self, block_size: u64) -> Self {
+        Self {
+            block_size: Some(block_size),
+            ..self
+        }
+    }
+
+    /// Amount of data to buffer in memory during streaming reads
+    pub fn buffer_size(self, buffer_size: usize) -> Self {
+        Self {
+            buffer_size: Some(buffer_size),
+            ..self
+        }
+    }
+
+    /// Build a [`FileStream`] from this `FileStreamBuilder`.
     pub async fn build(mut self) -> Result<FileStream> {
         let stream_size = self.handle.metadata().await?.len();
 
@@ -159,29 +176,31 @@ impl futures::io::AsyncRead for FileStream {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-impl From<&FileStream> for Body {
-    fn from(stream: &FileStream) -> Self {
-        Body::SeekableStream(Box::new(stream.clone()))
-    }
-}
+mod convert {
+    use super::FileStream;
+    use typespec_client_core::http::{Body, RequestContent};
 
-#[cfg(not(target_arch = "wasm32"))]
-impl From<FileStream> for Body {
-    fn from(stream: FileStream) -> Self {
-        Body::SeekableStream(Box::new(stream))
+    impl From<&FileStream> for Body {
+        fn from(stream: &FileStream) -> Self {
+            Body::SeekableStream(Box::new(stream.clone()))
+        }
     }
-}
 
-#[cfg(not(target_arch = "wasm32"))]
-impl<T, F> From<&FileStream> for RequestContent<T, F> {
-    fn from(stream: &FileStream) -> Self {
-        Body::from(stream).into()
+    impl From<FileStream> for Body {
+        fn from(stream: FileStream) -> Self {
+            Body::SeekableStream(Box::new(stream))
+        }
     }
-}
 
-#[cfg(not(target_arch = "wasm32"))]
-impl<T, F> From<FileStream> for RequestContent<T, F> {
-    fn from(stream: FileStream) -> Self {
-        Body::from(stream).into()
+    impl<T, F> From<&FileStream> for RequestContent<T, F> {
+        fn from(stream: &FileStream) -> Self {
+            Body::from(stream).into()
+        }
+    }
+
+    impl<T, F> From<FileStream> for RequestContent<T, F> {
+        fn from(stream: FileStream) -> Self {
+            Body::from(stream).into()
+        }
     }
 }

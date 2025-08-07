@@ -306,11 +306,11 @@ mod test {
     #[tokio::test]
     async fn test_retry_statuses() {
         let retries = 2u32;
-        let retry_policy = RetryOptions::fixed(
-            FixedRetryOptions::default()
-                .delay(Duration::nanoseconds(1))
-                .max_retries(retries),
-        )
+        let retry_policy = RetryOptions::fixed(FixedRetryOptions {
+            delay: Duration::nanoseconds(1),
+            max_retries: retries,
+            ..Default::default()
+        })
         .to_policy();
         let ctx = Context::new();
         let url = Url::parse("http://localhost").unwrap();

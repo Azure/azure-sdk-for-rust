@@ -115,9 +115,11 @@ impl RetryOptions {
 /// # use typespec_client_core::time::Duration;
 /// # use typespec_client_core::http::{ExponentialRetryOptions, RetryOptions};
 /// RetryOptions::exponential(
-///    ExponentialRetryOptions::default()
-///        .max_retries(10u32)
-///        .initial_delay(Duration::seconds(1)),
+///     ExponentialRetryOptions {
+///         max_retries: 10u32,
+///         initial_delay: Duration::seconds(1),
+///         ..Default::default()
+///     }
 /// );
 /// ```
 #[derive(Clone, Debug)]
@@ -143,15 +145,6 @@ pub struct ExponentialRetryOptions {
     pub max_delay: Duration,
 }
 
-impl ExponentialRetryOptions {
-    setters! {
-        initial_delay: Duration => initial_delay,
-        max_retries: u32 => max_retries,
-        max_total_elapsed: Duration => max_total_elapsed,
-        max_delay: Duration => max_delay,
-    }
-}
-
 impl Default for ExponentialRetryOptions {
     fn default() -> Self {
         Self {
@@ -171,8 +164,10 @@ impl Default for ExponentialRetryOptions {
 /// ```
 /// # use typespec_client_core::http::{FixedRetryOptions, RetryOptions};
 /// RetryOptions::fixed(
-///    FixedRetryOptions::default()
-///        .max_retries(10u32)
+///     FixedRetryOptions {
+///         max_retries: 10u32,
+///         ..Default::default()
+///     }
 /// );
 /// ```
 #[derive(Clone, Debug)]
@@ -191,17 +186,6 @@ pub struct FixedRetryOptions {
     ///
     /// The default is 1 minute.
     pub max_total_elapsed: Duration,
-}
-
-impl FixedRetryOptions {
-    setters! {
-        #[doc = "Set the delay between retry attempts."]
-        delay: Duration => delay,
-        #[doc = "Set the maximum number of retry attempts before giving up."]
-        max_retries: u32 => max_retries,
-        #[doc = "Set the maximum permissible elapsed time since starting to retry."]
-        max_total_elapsed: Duration => max_total_elapsed,
-    }
 }
 
 impl Default for FixedRetryOptions {

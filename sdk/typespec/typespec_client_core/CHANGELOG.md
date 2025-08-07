@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` to copy if needed.
+- Removed the `setters` macro.
 
 ### Bugs Fixed
 
