@@ -231,7 +231,7 @@ async fn claim_ownership_update_existing(ctx: TestContext) -> Result<()> {
     };
 
     let initial_claimed = checkpoint_store
-        .claim_ownership(&[initial_ownership.clone()])
+        .claim_ownership(std::slice::from_ref(&initial_ownership))
         .await?;
     assert_eq!(initial_claimed.len(), 1);
     let initial_etag = initial_claimed[0].etag.clone();

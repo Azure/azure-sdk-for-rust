@@ -273,9 +273,9 @@ mod tests {
             }
         }
 
-        if api_information.is_some() {
+        if let Some(api_information) = api_information {
             // If we have public API information, add it to the context.
-            ctx = ctx.with_value(api_information.unwrap());
+            ctx = ctx.with_value(api_information);
         }
         let _result = public_api_policy.send(&ctx, request, &next).await;
 

@@ -147,6 +147,7 @@ zerofrom = "0.1.5"
 zip = { version = "4.0.0", default-features = false, features = ["deflate"] }
 
 [workspace.lints.clippy]
+infallible_try_from = "allow"
 large_futures = "deny"
 uninlined_format_args = "allow"
 
