@@ -8,21 +8,23 @@ use crate::generated::{
     models::{
         ListQueuesResponse, QueueServiceClientGetPropertiesOptions,
         QueueServiceClientGetStatisticsOptions, QueueServiceClientListQueuesOptions,
-        QueueServiceClientSetPropertiesOptions, StorageServiceProperties, StorageServiceStats,
+        QueueServiceClientSetPropertiesOptions, QueueServiceProperties, StorageServiceStats,
     },
 };
 use azure_core::{
     credentials::TokenCredential,
+    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, Pipeline, RawResponse,
-        Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, PagerState, Pipeline,
+        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
     },
-    xml, Result,
+    tracing, xml, Error, Result,
 };
 use std::sync::Arc;
 
+#[tracing::client]
 pub struct QueueServiceClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
@@ -47,6 +49,7 @@ impl QueueServiceClient {
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
+    #[tracing::new("azure_storage_queue")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -89,10 +92,11 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.getProperties")]
     pub async fn get_properties(
         &self,
         options: Option<QueueServiceClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
+    ) -> Result<Response<QueueServiceProperties, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -110,7 +114,17 @@ impl QueueServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Returns a new instance of QueueClient.
@@ -118,6 +132,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `queue_name` - The name of the queue.
+    #[tracing::subclient]
     pub fn get_queue_client(&self, queue_name: String) -> QueueClient {
         QueueClient {
             endpoint: self.endpoint.clone(),
@@ -133,6 +148,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.getStatistics")]
     pub async fn get_statistics(
         &self,
         options: Option<QueueServiceClientGetStatisticsOptions<'_>>,
@@ -154,7 +170,17 @@ impl QueueServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// returns a list of the queues under the specified account
@@ -162,6 +188,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.getQueues")]
     pub fn list_queues(
         &self,
         options: Option<QueueServiceClientListQueuesOptions<'_>>,
@@ -198,9 +225,9 @@ impl QueueServiceClient {
         }
         let version = self.version.clone();
         Ok(PageIterator::from_callback(
-            move |marker: Option<String>| {
+            move |marker: PagerState<String>| {
                 let mut url = first_url.clone();
-                if let Some(marker) = marker {
+                if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
                         let mut new_url = url.clone();
                         new_url
@@ -222,6 +249,15 @@ impl QueueServiceClient {
                 let pipeline = pipeline.clone();
                 async move {
                     let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                    if !rsp.status().is_success() {
+                        let status = rsp.status();
+                        let http_error = HttpError::new(rsp).await;
+                        let error_kind = ErrorKind::http_response(
+                            status,
+                            http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                        );
+                        return Err(Error::new(error_kind, http_error));
+                    }
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListQueuesResponse = xml::read_xml(&bytes)?;
@@ -229,7 +265,7 @@ impl QueueServiceClient {
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
-                            next: next_marker,
+                            continuation: next_marker,
                         },
                         _ => PagerResult::Done { response: rsp },
                     })
@@ -243,11 +279,12 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `storage_service_properties` - The storage service properties to set.
+    /// * `queue_service_properties` - The storage service properties to set.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Queues.setProperties")]
     pub async fn set_properties(
         &self,
-        storage_service_properties: RequestContent<StorageServiceProperties>,
+        queue_service_properties: RequestContent<QueueServiceProperties, XmlFormat>,
         options: Option<QueueServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
@@ -267,8 +304,18 @@ impl QueueServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        request.set_body(storage_service_properties);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        request.set_body(queue_service_properties);
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 }
 

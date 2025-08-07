@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use azure_storage_queue::models::{
     CorsRule, ListQueuesIncludeType, ListQueuesResponse, QueueServiceClientListQueuesOptions,
-    StorageServiceProperties,
+    QueueServiceProperties,
 };
 
 mod helpers;
@@ -11,7 +11,7 @@ use helpers::logs::log_operation_result;
 use helpers::random_queue_name::get_random_queue_name;
 
 use azure_identity::DefaultAzureCredential;
-use azure_storage_queue::clients::QueueServiceClient;
+use azure_storage_queue::QueueServiceClient;
 
 use futures::StreamExt;
 
@@ -19,7 +19,7 @@ async fn set_and_get_properties(
     queue_client: &QueueServiceClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Set queue service properties
-    let properties = StorageServiceProperties {
+    let properties = QueueServiceProperties {
         cors: Some(vec![CorsRule {
             allowed_origins: Some("https://example.com".to_string()),
             allowed_methods: Some("GET,POST".to_string()),
@@ -39,7 +39,7 @@ async fn set_and_get_properties(
     log_operation_result(&result, "get_properties");
 
     if let Ok(response) = result {
-        let properties: StorageServiceProperties = response.into_body().await?;
+        let properties = response.into_body().await?;
         println!("Queue Service Properties:");
         println!("Logging: {:#?}", properties.logging);
         println!("Hour Metrics: {:#?}", properties.hour_metrics);
