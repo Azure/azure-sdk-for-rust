@@ -31,14 +31,14 @@ It then creates an EventHubs processor client using the blob checkpoint store an
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
 use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, ProcessorStrategy};
 use azure_storage_blob::BlobContainerClient;
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use std::sync::Arc;
 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create blob service client
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobContainerClient::new(
         "https://yourstorageaccount.blob.core.windows.net",
         "yourcontainername".to_string(),
