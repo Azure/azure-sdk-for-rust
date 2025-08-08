@@ -12,6 +12,13 @@ use azure_core::http::{
     request::{options::ContentType, Request},
     response::Response,
     BufResponse, ClientOptions, Context, Method,
+use azure_core::{
+    error::HttpError,
+    http::{
+        request::{options::ContentType, Request},
+        response::Response,
+        ClientOptions, Context, Method, PagerState, RawResponse,
+    },
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
@@ -66,7 +73,7 @@ impl CosmosPipeline {
         resource_link: ResourceLink,
     ) -> azure_core::Result<BufResponse> {
         let ctx = ctx.with_value(resource_link);
-        self.pipeline.send(&ctx, request).await
+        self.pipeline.send(&ctx, request).await?.success().await
     }
 
     pub async fn send<T>(
@@ -77,7 +84,7 @@ impl CosmosPipeline {
     ) -> azure_core::Result<Response<T>> {
         self.send_raw(ctx, request, resource_link)
             .await
-            .map(|r| r.into())
+            .map(Into::into)
     }
 
     pub fn send_query_request<T: DeserializeOwned + Send>(
@@ -107,7 +114,7 @@ impl CosmosPipeline {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 
-                let resp = pipeline.send(&ctx, &mut req).await?;
+                let resp = pipeline.send(&ctx, &mut req).await?.success().await?;
                 let page = FeedPage::<T>::from_response(resp).await?;
 
                 Ok(page.into())
@@ -192,4 +199,40 @@ pub(crate) fn create_base_query_request(url: Url, query: &Query) -> azure_core::
     request.add_mandatory_header(&constants::QUERY_CONTENT_TYPE);
     request.set_json(query)?;
     Ok(request)
+}
+
+trait ResponseExt {
+    async fn success(self) -> azure_core::Result<Self>
+    where
+        Self: Sized;
+}
+
+impl<T, F> ResponseExt for Response<T, F> {
+    async fn success(self) -> azure_core::Result<Self> {
+        if self.status().is_success() {
+            Ok(self)
+        } else {
+            RawResponse::from(self).success().await.map(Into::into)
+        }
+    }
+}
+
+impl ResponseExt for RawResponse {
+    async fn success(self) -> azure_core::Result<Self> {
+        if self.status().is_success() {
+            Ok(self)
+        } else {
+            let http_error = HttpError::new(self).await;
+            let status = http_error.status();
+            let error_kind = azure_core::error::ErrorKind::http_response(
+                status,
+                http_error.error_code().map(ToOwned::to_owned),
+            );
+            Err(azure_core::Error::full(
+                error_kind,
+                http_error,
+                format!("Request failed with status code: {}", status),
+            ))
+        }
+    }
 }

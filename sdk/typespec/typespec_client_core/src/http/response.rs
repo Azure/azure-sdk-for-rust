@@ -7,10 +7,17 @@ use crate::{
     http::{headers::Headers, DeserializeWith, Format, JsonFormat, RawResponse, StatusCode},
     Bytes,
 };
+    error::HttpError,
+    http::{headers::Headers, DeserializeWith, Format, JsonFormat, StatusCode},
+};
+use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
 use std::{fmt, marker::PhantomData, pin::Pin};
-use typespec::error::{ErrorKind, ResultExt};
+use typespec::{
+    error::{ErrorKind, ResultExt},
+    Error,
+};
 
 /// A pinned stream of bytes that can be sent as a response body.
 #[cfg(not(target_arch = "wasm32"))]
@@ -87,6 +94,24 @@ pub struct Response<T, F = JsonFormat> {
 }
 
 impl<T, F> Response<T, F> {
+    pub async fn success(self) -> crate::Result<Self> {
+        let status = self.status();
+        if status.is_success() {
+            Ok(self)
+        } else {
+            let http_error = HttpError::new(self.raw).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            Err(Error::full(
+                error_kind,
+                http_error,
+                format!("server returned an error response: {status}"),
+            ))
+        }
+    }
+
     /// Get the status code from the response.
     pub fn status(&self) -> StatusCode {
         self.raw.status()
