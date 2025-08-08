@@ -173,9 +173,9 @@ impl PageBlobClient {
     /// # Arguments
     ///
     /// * `source_url` - The URL of the copy source.
-    /// * `source_range` - Range of bytes from the source to be uploaded.
+    /// * `source_range` - Range of bytes from the source to be uploaded. See [`format_page_range()`](crate::format_page_range) for help with the expected String format.
     /// * `content_length` - Total length of the blob data to be uploaded.
-    /// * `range` - Range of bytes where the source data should be written on the destination Page blob.
+    /// * `range` - Range of bytes where the source data should be written on the destination Page blob. See [`format_page_range()`](crate::format_page_range) for help with the expected String format.
     /// * `options` - Optional parameters for the request.
     pub async fn upload_pages_from_url(
         &self,

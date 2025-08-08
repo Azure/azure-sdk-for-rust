@@ -224,10 +224,10 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
     // Act
     page_blob_client_1.create(512, None).await?;
-    let data_1 = vec![b'B'; 512];
+    let data_b = vec![b'B'; 512];
     page_blob_client_1
         .upload_page(
-            RequestContent::from(data_1.clone()),
+            RequestContent::from(data_b.clone()),
             512,
             format_page_range(0, 512)?,
             None,
@@ -241,10 +241,10 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     );
 
     page_blob_client_2.create(1024, None).await?;
-    let mut data_2 = vec![b'A'; 512];
+    let mut data_a = vec![b'A'; 512];
     page_blob_client_2
         .upload_page(
-            RequestContent::from(data_2.clone()),
+            RequestContent::from(data_a.clone()),
             512,
             format_page_range(0, 512)?,
             None,
@@ -253,9 +253,9 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     page_blob_client_2
         .upload_pages_from_url(
             source_url,
-            format_page_range(0, data_1.len() as u64)?,
-            data_1.len() as u64,
-            format_page_range(512, data_1.len() as u64)?,
+            format_page_range(0, data_b.len() as u64)?,
+            data_b.len() as u64,
+            format_page_range(512, data_b.len() as u64)?,
             None,
         )
         .await?;
@@ -266,8 +266,8 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(1024, content_length.unwrap());
-    data_2.extend(&data_1);
-    assert_eq!(data_2, response_body.collect().await?);
+    data_a.extend(&data_b);
+    assert_eq!(data_a, response_body.collect().await?);
 
     container_client.delete_container(None).await?;
     Ok(())
