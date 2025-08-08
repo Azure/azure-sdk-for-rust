@@ -46,7 +46,7 @@ pub fn parse_subclient(_attr: TokenStream, item: TokenStream) -> Result<TokenStr
     })
 }
 
-fn is_subclient_declaration(item: &TokenStream) -> Result<(), String> {
+fn is_subclient_declaration(item: &TokenStream) -> std::result::Result<(), String> {
     let ItemFn {
         vis, block, sig, ..
     } = match syn::parse2(item.clone()) {
