@@ -40,12 +40,12 @@ In order to interact with the Azure Queue service, you'll need to create an inst
 
 ```rust no_run
 use azure_storage_queue::{QueueClient, QueueClientOptions};
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a QueueClient that will authenticate through Microsoft Entra ID
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let queue_client = QueueClient::new(
         "https://<storage_account_name>.blob.core.windows.net/", // endpoint
         "queue-name",                                            // queue name

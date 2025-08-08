@@ -9,7 +9,7 @@ use azure_core::{
     http::{Response, XmlFormat},
     Error,
 };
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_storage_queue::{
     models::{
         QueueClientGetMetadataResultHeaders, QueueClientPeekMessagesOptions,
@@ -182,7 +182,7 @@ async fn peek_and_receive_messages(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     // Retrieve the storage account endpoint from environment variable.
     let endpoint = get_endpoint();

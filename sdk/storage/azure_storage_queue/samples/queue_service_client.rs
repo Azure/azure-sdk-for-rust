@@ -10,7 +10,7 @@ use helpers::endpoint::{get_endpoint, get_secondary_endpoint};
 use helpers::logs::log_operation_result;
 use helpers::random_queue_name::get_random_queue_name;
 
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_storage_queue::QueueServiceClient;
 
 use futures::StreamExt;
@@ -98,7 +98,7 @@ async fn list_queues(queue_client: &QueueServiceClient) -> Result<(), Box<dyn st
 }
 
 async fn get_statistics(
-    credential: Arc<DefaultAzureCredential>,
+    credential: Arc<DeveloperToolsCredential>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let secondary_endpoint = get_secondary_endpoint();
     let secondary_queue_client =
@@ -123,7 +123,7 @@ async fn get_statistics(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     // Retrieve the storage account endpoint from environment variable.
     let endpoint = get_endpoint();
