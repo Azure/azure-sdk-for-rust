@@ -2,7 +2,10 @@
 // Licensed under the MIT License.
 
 // cspell: ignore traceparent
-use std::sync::{Arc, Mutex};
+use std::{
+    pin::Pin,
+    sync::{Arc, Mutex},
+};
 use tracing::trace;
 use typespec_client_core::{
     http::{headers::HeaderName, Context, Request},
@@ -174,20 +177,20 @@ impl AsAny for MockSpan {
     }
 }
 
+/// Expected information about a tracer.
 #[derive(Debug)]
 pub struct ExpectedTracerInformation<'a> {
+    /// Expected name for the tracer.
     pub name: &'a str,
-    pub version: Option<&'a str>,
-    pub namespace: Option<&'a str>,
-    pub spans: Vec<ExpectedSpanInformation<'a>>,
-}
 
-#[derive(Debug)]
-pub struct ExpectedSpanInformation<'a> {
-    pub span_name: &'a str,
-    pub status: SpanStatus,
-    pub kind: SpanKind,
-    pub attributes: Vec<(&'a str, AttributeValue)>,
+    /// Expected version for the tracer.
+    pub version: Option<&'a str>,
+
+    /// Expected namespace for the tracer.
+    pub namespace: Option<&'a str>,
+
+    /// A set of spans which should have been generated.
+    pub spans: Vec<ExpectedSpanInformation<'a>>,
 }
 
 pub fn check_instrumentation_result(
@@ -225,6 +228,14 @@ pub fn check_instrumentation_result(
     }
 }
 
+#[derive(Debug)]
+pub struct ExpectedSpanInformation<'a> {
+    pub span_name: &'a str,
+    pub status: SpanStatus,
+    pub kind: SpanKind,
+    pub attributes: Vec<(&'a str, AttributeValue)>,
+}
+
 fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformation<'_>) {
     assert_eq!(span.name, expected.span_name);
     assert_eq!(span.kind, expected.kind);
@@ -252,4 +263,58 @@ fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformati
             panic!("Expected attribute not found: {} = {:?}", key, value);
         }
     }
+}
+
+pub async fn test_instrumentation_for_api<C, FnInit, FnTest, T>(
+    create_client: FnInit,
+    test_api: FnTest,
+) -> azure_core::Result<()>
+where
+    FnInit: FnOnce(Arc<dyn TracerProvider>) -> C,
+    FnTest: FnOnce(C) -> Pin<Box<dyn futures::Future<Output = azure_core::Result<T>>>>,
+{
+    // Initialize the mock tracer provider
+    let mock_tracer = Arc::new(MockTracingProvider::new());
+
+    // Create a client with the mock tracer
+    let client = create_client(mock_tracer.clone());
+
+    let result = test_api(client).await;
+
+    match result {
+        Ok(_) => {
+            // If the test passes, we can check the instrumentation
+            check_instrumentation_result(
+                mock_tracer,
+                vec![ExpectedTracerInformation {
+                    name: "azure_sdk_for_rust",
+                    version: Some(env!("CARGO_PKG_VERSION")),
+                    namespace: Some("azure"),
+                    spans: vec![ExpectedSpanInformation {
+                        span_name: "test_api_span",
+                        status: SpanStatus::Unset,
+                        kind: SpanKind::Internal,
+                        attributes: vec![("key1", AttributeValue::String("value1".to_string()))],
+                    }],
+                }],
+            );
+        }
+        Err(_) => {
+            check_instrumentation_result(
+                mock_tracer,
+                vec![ExpectedTracerInformation {
+                    name: "azure_sdk_for_rust",
+                    version: Some(env!("CARGO_PKG_VERSION")),
+                    namespace: Some("azure"),
+                    spans: vec![ExpectedSpanInformation {
+                        span_name: "test_api_span",
+                        status: SpanStatus::Unset,
+                        kind: SpanKind::Client,
+                        attributes: vec![("key1", AttributeValue::String("value1".to_string()))],
+                    }],
+                }],
+            );
+        }
+    }
+    Ok(())
 }

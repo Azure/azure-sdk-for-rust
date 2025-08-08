@@ -665,4 +665,34 @@ mod tests {
 
         Ok(())
     }
+
+    #[recorded::test()]
+    async fn test_function_tracing_tests(ctx: TestContext) -> Result<()> {
+        let credential = ctx.recording().credential().clone();
+        azure_core_test::tracing::test_instrumentation_for_api(
+            |tracer_provider| {
+                TestServiceClientWithMacros::new(
+                    "https://azuresdkforcpp.azurewebsites.net",
+                    credential,
+                    Some(TestServiceClientWithMacrosOptions {
+                        client_options: ClientOptions {
+                            request_instrumentation: Some(RequestInstrumentationOptions {
+                                tracer_provider: Some(tracer_provider.clone()),
+                            }),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    }),
+                )
+                .unwrap()
+            },
+            |client| {
+                let client = client;
+                Box::pin(async move { client.get_with_function_tracing("index.htm", None).await })
+            },
+        )
+        .await?;
+
+        Ok(())
+    }
 }
