@@ -125,6 +125,11 @@
       "noSuggest": true
     },
     {
+      "name": "servicebus",
+      "path": "../sdk/servicebus/.dict.txt",
+      "noSuggest": true
+    },
+    {
       "name": "storage",
       "path": "../sdk/storage/.dict.txt",
       "noSuggest": true
@@ -200,6 +205,14 @@
         "crates",
         "rust-custom",
         "cosmos"
+      ]
+    },
+    {
+      "filename": "sdk/servicebus/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "servicebus"
       ]
     },
     {
