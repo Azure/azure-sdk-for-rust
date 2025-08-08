@@ -23,6 +23,9 @@ pub(crate) mod utils;
 
 pub mod models;
 
+mod global_endpoint_manager;
+mod location_cache;
+
 #[doc(inline)]
 pub use clients::CosmosClient;
 
