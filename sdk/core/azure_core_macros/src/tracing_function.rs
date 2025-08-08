@@ -22,11 +22,11 @@ const INVALID_PUBLIC_FUNCTION_MESSAGE: &str =
 /// 1) `Result<Arc<Self>, E>`
 ///
 pub fn parse_function(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
-    if !is_function_declaration(&item) {
+    if let Err(e) = is_function_declaration(&item) {
         println!("Not a function declaration: {item}");
         return Err(syn::Error::new(
             item.span(),
-            INVALID_PUBLIC_FUNCTION_MESSAGE,
+            format!("{INVALID_PUBLIC_FUNCTION_MESSAGE}: {e}"),
         ));
     }
 
@@ -133,32 +133,58 @@ impl Parse for FunctionNameAndAttributes {
         // If the next character is a comma, we expect a list of attributes.
         if input.peek(Token!(,)) {
             input.parse::<Token![,]>()?;
-            if input.peek(syn::token::Paren) {
-                let content;
-                let _ = syn::parenthesized!(content in input);
-                let mut arguments: syn::punctuated::Punctuated<syn::ExprAssign, syn::token::Comma> =
-                    syn::punctuated::Punctuated::new();
-                if !content.is_empty() {
-                    arguments = content.parse_terminated(syn::ExprAssign::parse, syn::Token![,])?;
-                }
-                let arguments_result = arguments
-                    .into_iter()
-                    .map(|arg| {
-                        let syn::ExprAssign { left, right, .. } = arg;
-                        let (left, right) = (left, right);
-                        let name = name_from_expr(left.as_ref())?;
-                        Ok((name, *right))
-                    })
-                    .collect::<Result<Vec<_>>>()?;
+            if input.peek(syn::Ident) {
+                let ident = input.parse::<syn::Ident>()?;
+                if ident == "attributes" {
+                    if input.peek(Token![=]) {
+                        input.parse::<Token![=]>()?;
+                    } else {
+                        return Err(syn::Error::new(
+                            ident.span(),
+                            "Expected '=' after 'attributes'",
+                        ));
+                    }
+                    if input.peek(syn::token::Paren) {
+                        let content;
+                        let _ = syn::parenthesized!(content in input);
+                        let mut arguments: syn::punctuated::Punctuated<
+                            syn::ExprAssign,
+                            syn::token::Comma,
+                        > = syn::punctuated::Punctuated::new();
+                        if !content.is_empty() {
+                            arguments =
+                                content.parse_terminated(syn::ExprAssign::parse, syn::Token![,])?;
+                        }
+                        let arguments_result = arguments
+                            .into_iter()
+                            .map(|arg| {
+                                let syn::ExprAssign { left, right, .. } = arg;
+                                let (left, right) = (left, right);
+                                let name = name_from_expr(left.as_ref())?;
+                                Ok((name, *right))
+                            })
+                            .collect::<Result<Vec<_>>>()?;
 
-                Ok(FunctionNameAndAttributes {
-                    function_name,
-                    arguments: arguments_result,
-                })
+                        Ok(FunctionNameAndAttributes {
+                            function_name,
+                            arguments: arguments_result,
+                        })
+                    } else {
+                        Err(syn::Error::new(
+                            input.span(),
+                            "Expected parentheses after function name.",
+                        ))
+                    }
+                } else {
+                    Err(syn::Error::new(
+                        ident.span(),
+                        "Expected 'attributes' identifier",
+                    ))
+                }
             } else {
                 Err(syn::Error::new(
                     input.span(),
-                    "Expected parentheses after function name.",
+                    "Expected identifier after comma",
                 ))
             }
         } else {
@@ -170,29 +196,29 @@ impl Parse for FunctionNameAndAttributes {
     }
 }
 
-fn is_function_declaration(item: &TokenStream) -> bool {
+fn is_function_declaration(item: &TokenStream) -> std::result::Result<(), String> {
     let item_fn: ItemFn = match syn::parse2(item.clone()) {
         Ok(fn_item) => fn_item,
-        Err(_) => {
-            return false;
+        Err(e) => {
+            return Err(format!("Failed to parse function declaration: {e}"));
         }
     };
 
     // Function must be public.
     if !matches!(item_fn.vis, syn::Visibility::Public(_)) {
-        return false;
+        return Err("Function must be public".into());
     }
 
     // Function must return a Result type.
     if let syn::ReturnType::Type(_, ty) = &item_fn.sig.output {
         if !matches!(ty.as_ref(), syn::Type::Path(_)) {
-            return false;
+            return Err("Function must return a Result type".into());
         }
     } else {
-        return false;
+        return Err("Function must return a Result type".into());
     }
 
-    true
+    Ok(())
 }
 
 #[cfg(test)]
@@ -206,7 +232,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes() {
         {
-            let test_stream = quote! { "Test Function", (arg1 = 42, arg2 = "value") };
+            let test_stream = quote! { "Test Function", attributes=(arg1 = 42, arg2 = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
@@ -219,10 +245,27 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn parse_function_without_attributes() {
+        {
+            let test_stream = quote! { "Test Function", () };
+            syn::parse2::<FunctionNameAndAttributes>(test_stream).expect_err("Failed to parse");
+        }
+    }
+
+    #[test]
+    fn parse_function_without_equals() {
+        {
+            let test_stream = quote! { "Test Function", attributes() };
+            syn::parse2::<FunctionNameAndAttributes>(test_stream).expect_err("Failed to parse");
+        }
+    }
+
     #[test]
     fn test_parse_function_name_and_attributes_with_string_name() {
         {
-            let test_stream = quote! { "Test Function", ("az.namespace" = "my namespace", az.test_value = "value") };
+            let test_stream = quote! { "Test Function", attributes=(az.namespace = "my namespace", az.test_value = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
@@ -238,7 +281,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_with_dotted_name() {
         {
-            let test_stream = quote! { "Test Function", (az.namespace = "my namespace", az.test_value = "value") };
+            let test_stream = quote! { "Test Function", attributes= (az.namespace = "my namespace", az.test_value = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
@@ -254,7 +297,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_with_identifier_argument() {
         {
-            let test_stream = quote! {"macros_get_with_tracing", (az.path = path, az.info = "Test", az.number = 42)};
+            let test_stream = quote! {"macros_get_with_tracing", attributes= (az.path = path, az.info = "Test", az.number = 42)};
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "macros_get_with_tracing");
@@ -271,7 +314,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_with_identifier_name() {
         {
-            let test_stream = quote! { "Test Function", (az.foo.bar.namespace = "my namespace", az.test_value = "value") };
+            let test_stream = quote! { "Test Function", attributes= (az.foo.bar.namespace = "my namespace", az.test_value = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
@@ -296,10 +339,11 @@ mod tests {
                 .expect_err("Should fail to parse.");
         }
     }
+
     #[test]
     fn test_parse_function_name_and_attributes_invalid_attribute_name() {
         {
-            let test_stream = quote! { "Test Function",(23.5= "value") };
+            let test_stream = quote! { "Test Function",attributes=(23.5= "value") };
 
             syn::parse2::<FunctionNameAndAttributes>(test_stream)
                 .expect_err("Should fail to parse.");
@@ -308,7 +352,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_empty_attributes() {
         {
-            let test_stream = quote! { "Test Function", ()};
+            let test_stream = quote! { "Test Function", attributes=()};
 
             syn::parse2::<FunctionNameAndAttributes>(test_stream).expect("No attributes are ok.");
         }
@@ -325,8 +369,8 @@ mod tests {
             }
         };
 
-        assert!(is_function_declaration(&valid_fn));
-        assert!(!is_function_declaration(&invalid_fn));
+        assert!(is_function_declaration(&valid_fn).is_ok());
+        assert!(is_function_declaration(&invalid_fn).is_err());
     }
 
     #[test]

@@ -138,7 +138,7 @@ impl TestServiceClientWithMacros {
     /// This applies to most HTTP client operations, but not all. CosmosDB has its own set of conventions as listed
     /// [here](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/cosmosdb.md)
     ///
-    #[tracing::function("macros_get_with_tracing",(a.b=1,az.telemetry="Abc","string attribute"=path))]
+    #[tracing::function("macros_get_with_tracing",attributes=(a.b=1,az.telemetry="Abc","string attribute"=path))]
     pub async fn get_with_function_tracing(
         &self,
         path: &str,
