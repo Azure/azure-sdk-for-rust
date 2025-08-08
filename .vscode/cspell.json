@@ -40,6 +40,7 @@
     "cppvsdbg",
     "datalake",
     "datetime",
+    "devcontainers",
     "devicecode",
     "docsrs",
     "doctest",
@@ -60,6 +61,7 @@
     "msrv",
     "newtonsoft",
     "oidc",
+    "oncreate",
     "otel",
     "opentelemetry",
     "pageable",
@@ -152,6 +154,12 @@
       "filename": "**/*.rs",
       "dictionaries": [
         "crates",
+        "rust-custom"
+      ]
+    },
+    {
+      "filename": ".github/workflows/*.yml",
+      "dictionaries": [
         "rust-custom"
       ]
     },
