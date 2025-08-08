@@ -5,6 +5,7 @@
 ### Features Added
 
 - Reconnect support for EventHubs operations.
+- Enable GeoDr support in EventHubs client.
 
 ### Breaking Changes
 
