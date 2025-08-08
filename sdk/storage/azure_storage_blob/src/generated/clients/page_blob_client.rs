@@ -9,7 +9,7 @@ use crate::generated::models::{
     PageBlobClientCreateOptions, PageBlobClientCreateResult,
     PageBlobClientGetPageRangesDiffOptions, PageBlobClientGetPageRangesOptions,
     PageBlobClientResizeOptions, PageBlobClientResizeResult,
-    PageBlobClientUpdateSequenceNumberOptions, PageBlobClientUpdateSequenceNumberResult,
+    PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResult,
     PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesFromUrlResult,
     PageBlobClientUploadPagesOptions, PageBlobClientUploadPagesResult, PageList,
     SequenceNumberActionType,
@@ -638,12 +638,12 @@ impl PageBlobClient {
     /// * `sequence_number_action` - Required if the x-ms-blob-sequence-number header is set for the request. This property applies
     ///   to page blobs only. This property indicates how the service should modify the blob's sequence number
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.updateSequenceNumber")]
-    pub async fn update_sequence_number(
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.setSequenceNumber")]
+    pub async fn set_sequence_number(
         &self,
         sequence_number_action: SequenceNumberActionType,
-        options: Option<PageBlobClientUpdateSequenceNumberOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult, NoFormat>> {
+        options: Option<PageBlobClientSetSequenceNumberOptions<'_>>,
+    ) -> Result<Response<PageBlobClientSetSequenceNumberResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
