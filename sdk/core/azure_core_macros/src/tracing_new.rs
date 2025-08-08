@@ -6,7 +6,7 @@ use quote::{quote, ToTokens};
 use syn::{
     parse::Parse, spanned::Spanned, AngleBracketedGenericArguments, ExprStruct, ItemFn, Result,
 };
-use tracing::{trace, warn};
+use tracing::trace;
 
 const INVALID_SERVICE_CLIENT_NEW_MESSAGE: &str =
     "new attribute must be applied to a public function which returns Self, a Result and/or Arc containing Self";
@@ -219,35 +219,27 @@ pub fn parse_new(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
 fn is_arc_of_self(path: &syn::Path) -> std::result::Result<(), String> {
     let segment = path.segments.last().unwrap();
     if segment.ident != "Arc" {
-        warn!("Arc must be the first segment, found {:?}", segment.ident);
         return Err("Arc must be the first segment".to_string());
     }
     if segment.arguments.is_empty() {
-        warn!("Arc must have arguments, found {:?}", segment.arguments);
         return Err("Arc must have arguments".to_string());
     }
     match &segment.arguments {
         syn::PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) => {
             if args.len() != 1 {
-                warn!("Arc must have one argument, found {args:?}");
                 return Err("Arc must have one argument".to_string());
             }
             if let syn::GenericArgument::Type(syn::Type::Path(path)) = &args[0] {
                 if path.path.is_ident("Self") {
                     Ok(())
                 } else {
-                    warn!("Arc argument must be Self, found {:?}", path.path);
                     Err("Arc argument must be Self".to_string())
                 }
             } else {
-                warn!("Arc argument must be Self, found {:?}", args[0]);
                 Err("Arc argument must be Self".to_string())
             }
         }
-        _ => {
-            warn!("Arc arguments must be angle bracketed");
-            Err("Arc arguments must be angle bracketed".to_string())
-        }
+        _ => Err("Arc arguments must be angle bracketed".to_string()),
     }
 }
 
@@ -256,14 +248,9 @@ fn is_valid_arc_of_self_call(expr: &syn::Expr) -> std::result::Result<(), String
         if struct_body.path.is_ident("Self") {
             Ok(())
         } else {
-            warn!(
-                "Expected struct initialization with Self, found {:?}",
-                struct_body.path
-            );
             Err("expected struct initialization with Self".to_string())
         }
     } else {
-        warn!("Expected call to `Arc`, found {:?}", expr);
         Err("expected last parameter to Arc to be Self".to_string())
     }
 }
@@ -271,7 +258,6 @@ fn is_valid_ok_call(
     args: &syn::punctuated::Punctuated<syn::Expr, syn::token::Comma>,
 ) -> std::result::Result<(), String> {
     if args.len() != 1 {
-        warn!("Expected call to `Ok` with one argument, found {args:?}");
         return Err("Expected call to `Ok` with one argument".to_string());
     }
     match &args[0] {
@@ -279,10 +265,6 @@ fn is_valid_ok_call(
             if struct_body.path.is_ident("Self") {
                 Ok(())
             } else {
-                warn!(
-                    "Expected struct initialization with Self, found {:?}",
-                    struct_body.path
-                );
                 Err("expected struct initialization with Self".to_string())
             }
         }
@@ -291,27 +273,13 @@ fn is_valid_ok_call(
                 if is_arc_new_call(call.func.as_ref()) {
                     is_valid_arc_of_self_call(call.args.last().unwrap())
                 } else {
-                    warn!(
-                        "Expected function named Arc, found {:?}",
-                        call.func.as_ref()
-                    );
                     Err("expected Arc path".to_string())
                 }
             } else {
-                warn!(
-                    "Expected call to function with one argument, found {:?}",
-                    args[0]
-                );
                 Err("expected call to Arc with one argument".to_string())
             }
         }
-        _ => {
-            warn!(
-                "Expected a structure or call to function, found {:?}",
-                args[0]
-            );
-            Err("expected a structure or call to function".to_string())
-        }
+        _ => Err("expected a structure or call to function".to_string()),
     }
 }
 
@@ -326,10 +294,6 @@ fn is_valid_new_body(stmts: &[syn::Stmt]) -> std::result::Result<(), String> {
                 if struct_body.path.is_ident("Self") {
                     Ok(())
                 } else {
-                    warn!(
-                        "Expected struct initialization with Self, found {:?}",
-                        struct_body.path
-                    );
                     Err("expected struct initialization with Self".to_string())
                 }
             }
@@ -340,21 +304,15 @@ fn is_valid_new_body(stmts: &[syn::Stmt]) -> std::result::Result<(), String> {
                     } else if is_arc_new_call(call.func.as_ref()) {
                         is_valid_arc_of_self_call(call.args.last().unwrap())
                     } else {
-                        warn!("Expected call to `Ok` or `Arc`, found {:?}", path);
                         Err("expected call to `Ok` or `Arc`".to_string())
                     }
                 } else {
-                    warn!("expected Path, got {:?}", call.func);
                     Err("expected Path".to_string())
                 }
             }
-            _ => {
-                warn!("Expected call or struct statement, found {:?}", last_stmt);
-                Err("expected call or struct statement".to_string())
-            }
+            _ => Err("expected call or struct statement".to_string()),
         }
     } else {
-        warn!("Expected expression statement, found {:?}", last_stmt);
         Err("expected final statement to be an expression".to_string())
     }
 }
@@ -364,11 +322,9 @@ fn is_valid_new_return(return_type: &syn::ReturnType) -> std::result::Result<(),
         syn::ReturnType::Default => Err("Default return type is not allowed".to_string()),
         syn::ReturnType::Type(_, ty) => {
             let syn::Type::Path(p) = ty.as_ref() else {
-                warn!("Invalid return type for new function, expected path: {ty:?}");
                 return Err("expected path".to_string());
             };
             if p.path.segments.is_empty() {
-                warn!("Invalid return type for new function: Path is empty");
                 return Err("expected non-empty path".to_string());
             }
             if p.path.is_ident("Self") {
@@ -384,7 +340,6 @@ fn is_valid_new_return(return_type: &syn::ReturnType) -> std::result::Result<(),
                             ..
                         }) => {
                             if args.len() != 1 && args.len() != 2 {
-                                warn!("Invalid return type for new function: Result must have one or two arguments");
                                 return Err("result must have one or two arguments".to_string());
                             }
                             if let syn::GenericArgument::Type(syn::Type::Path(path)) = &args[0] {
@@ -394,14 +349,10 @@ fn is_valid_new_return(return_type: &syn::ReturnType) -> std::result::Result<(),
                                     is_arc_of_self(&path.path)
                                 }
                             } else {
-                                warn!("Invalid return type for new function: Result first argument must be Self, found {:?}", args[0]);
                                 Err("expected Self".to_string())
                             }
                         }
-                        _ => {
-                            warn!("Invalid return type for new function: Result arguments must be angle bracketed");
-                            Err("expected angle bracketed arguments".to_string())
-                        }
+                        _ => Err("expected angle bracketed arguments".to_string()),
                     }
                 } else if segment.ident == "Arc" {
                     is_arc_of_self(&p.path)
@@ -425,7 +376,6 @@ fn is_new_declaration(item: &TokenStream) -> std::result::Result<(), String> {
 
     // Service clients new functions must be public.
     if !matches!(item_fn.vis, syn::Visibility::Public(_)) {
-        warn!("Service client new function must be public");
         Err("`tracing::new` function must be public".to_string())
     } else {
         // Verify that this function returns a type that is either Self, Result<Self, E>, Arc<Self>, or Result<Arc<Self>, E>.

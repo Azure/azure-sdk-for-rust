@@ -232,7 +232,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes() {
         {
-            let test_stream = quote! { "Test Function", attributes=(arg1 = 42, arg2 = "value") };
+            let test_stream = quote! { "Test Function", attributes = (arg1 = 42, arg2 = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
@@ -265,7 +265,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_with_string_name() {
         {
-            let test_stream = quote! { "Test Function", attributes=(az.namespace = "my namespace", az.test_value = "value") };
+            let test_stream = quote! { "Test Function", attributes = (az.namespace = "my namespace", az.test_value = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
@@ -281,7 +281,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_with_dotted_name() {
         {
-            let test_stream = quote! { "Test Function", attributes=(az.namespace = "my namespace", az.test_value = "value") };
+            let test_stream = quote! { "Test Function", attributes = (az.namespace = "my namespace", az.test_value = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
@@ -297,7 +297,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_with_identifier_argument() {
         {
-            let test_stream = quote! {"macros_get_with_tracing", attributes=(az.path = path, az.info = "Test", az.number = 42)};
+            let test_stream = quote! {"macros_get_with_tracing", attributes = (az.path = path, az.info = "Test", az.number = 42)};
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "macros_get_with_tracing");
@@ -314,7 +314,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_with_identifier_name() {
         {
-            let test_stream = quote! { "Test Function", attributes=(az.foo.bar.namespace = "my namespace", az.test_value = "value") };
+            let test_stream = quote! { "Test Function", attributes = (az.foo.bar.namespace = "my namespace", az.test_value = "value") };
             let parsed: FunctionNameAndAttributes =
                 syn::parse2(test_stream).expect("Failed to parse");
             assert_eq!(parsed.function_name, "Test Function");
@@ -343,7 +343,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_invalid_attribute_name() {
         {
-            let test_stream = quote! { "Test Function",attributes=(23.5= "value") };
+            let test_stream = quote! { "Test Function", attributes = (23.5= "value") };
 
             syn::parse2::<FunctionNameAndAttributes>(test_stream)
                 .expect_err("Should fail to parse.");
@@ -352,7 +352,7 @@ mod tests {
     #[test]
     fn test_parse_function_name_and_attributes_empty_attributes() {
         {
-            let test_stream = quote! { "Test Function", attributes=()};
+            let test_stream = quote! { "Test Function", attributes  = ()};
 
             syn::parse2::<FunctionNameAndAttributes>(test_stream).expect("No attributes are ok.");
         }

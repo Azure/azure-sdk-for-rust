@@ -4,7 +4,6 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{spanned::Spanned, ExprStruct, ItemFn, Result};
-use tracing::warn;
 
 const INVALID_SUBCLIENT_MESSAGE: &str =
     "subclient attribute must be applied to a public function which returns a client type";
@@ -52,20 +51,17 @@ fn is_subclient_declaration(item: &TokenStream) -> std::result::Result<(), Strin
     } = match syn::parse2(item.clone()) {
         Ok(fn_item) => fn_item,
         Err(e) => {
-            warn!("Failed to parse function: {}", e);
             return Err(format!("failed to parse function: {e}"));
         }
     };
 
     // Subclient constructors must be public functions.
     if !matches!(vis, syn::Visibility::Public(_)) {
-        warn!("Subclient constructors must be public functions");
         return Err("subclient constructors must be public functions".to_string());
     }
 
     // Subclient constructors must have a body with a single statement.
     if block.stmts.len() != 1 {
-        warn!("Subclient constructors must have a single statement in their body");
         return Err(
             "subclient constructors must have a single statement in their body".to_string(),
         );
