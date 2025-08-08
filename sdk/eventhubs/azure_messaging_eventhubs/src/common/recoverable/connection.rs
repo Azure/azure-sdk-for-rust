@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+// cspell:ignore geodr georeplication
+
 use super::{
     claims_based_security::RecoverableClaimsBasedSecurity, management::RecoverableManagementClient,
     receiver::RecoverableReceiver, sender::RecoverableSender,
@@ -30,6 +32,8 @@ use std::{
     sync::{Arc, Weak},
 };
 use tracing::{debug, span, trace, warn};
+
+const GEODR_REPLICATION_CAPABILITY: &str = "com.microsoft.georeplication";
 
 /// The recoverable connection is responsible for managing the connection to the Event Hubs service.
 /// It also handles authorization and connection recovery.
@@ -292,6 +296,7 @@ impl RecoverableConnection {
                         .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
                         .collect(),
                     ),
+                    desired_capabilities: Some(vec![GEODR_REPLICATION_CAPABILITY.into()]),
                     custom_endpoint: self.custom_endpoint.clone(),
                     ..Default::default()
                 }),
