@@ -33,6 +33,10 @@ use std::{
 };
 use tracing::{debug, span, trace, warn};
 
+/// The AMQP capability string used to negotiate geo-disaster recovery (GeoDR) replication features
+/// between client and server. This capability is advertised during AMQP connection setup to indicate
+/// support for geo-replication, allowing clients and Event Hubs to coordinate failover and replication
+/// scenarios for high availability.
 const GEODR_REPLICATION_CAPABILITY: &str = "com.microsoft.georeplication";
 
 /// The recoverable connection is responsible for managing the connection to the Event Hubs service.
