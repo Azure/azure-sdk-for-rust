@@ -8,7 +8,7 @@ use crate::generated::{
     models::{
         BlobServiceClientFilterBlobsOptions, BlobServiceClientGetAccountInfoOptions,
         BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
-        BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
+        BlobServiceClientGetServiceStatsOptions, BlobServiceClientGetUserDelegationKeyOptions,
         BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
         FilterBlobSegment, KeyInfo, ListContainersSegmentResponse, StorageServiceProperties,
         StorageServiceStats, UserDelegationKey,
@@ -250,9 +250,9 @@ impl BlobServiceClient {
     ///
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.getStatistics")]
-    pub async fn get_statistics(
+    pub async fn get_service_stats(
         &self,
-        options: Option<BlobServiceClientGetStatisticsOptions<'_>>,
+        options: Option<BlobServiceClientGetServiceStatsOptions<'_>>,
     ) -> Result<Response<StorageServiceStats, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);

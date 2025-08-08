@@ -122,3 +122,19 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
 
     Ok(())
 }
+
+#[recorded::test]
+async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    //TODO: Need playback only, need secondary-enabled GRS account to record against
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+
+    let response = service_client.get_service_stats(None).await?;
+
+    // Assert
+    let storage_service_stats = response.into_body().await?;
+    assert!(storage_service_stats.geo_replication.is_some());
+
+    Ok(())
+}

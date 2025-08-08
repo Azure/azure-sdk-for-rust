@@ -3,6 +3,8 @@
 
 use std::io::{Error, ErrorKind};
 
+use azure_core::time::{to_rfc3339, OffsetDateTime};
+
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
 ///  returns the HTTP range in String format.
 ///

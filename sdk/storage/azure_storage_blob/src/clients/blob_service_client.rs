@@ -4,8 +4,10 @@
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
     models::{
-        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-        ListContainersSegmentResponse, StorageServiceProperties,
+        BlobServiceClientGetPropertiesOptions, BlobServiceClientGetServiceStatsOptions,
+        BlobServiceClientGetUserDelegationKeyOptions,
+        BlobServiceClientListContainersSegmentOptions, KeyInfo, ListContainersSegmentResponse,
+        StorageServiceProperties, StorageServiceStats, UserDelegationKey,
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,
@@ -14,7 +16,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        PageIterator, Response, Url, XmlFormat,
+        PageIterator, RequestContent, Response, Url, XmlFormat,
     },
     Result,
 };
@@ -94,5 +96,18 @@ impl BlobServiceClient {
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
         self.client.list_containers_segment(options)
+    }
+
+    /// Retrieves statistics related to replication for the Blob service. It is only available on the secondary location endpoint
+    /// when read-access geo-redundant replication is enabled for the Storage account.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_service_stats(
+        &self,
+        options: Option<BlobServiceClientGetServiceStatsOptions<'_>>,
+    ) -> Result<Response<StorageServiceStats, XmlFormat>> {
+        self.client.get_service_stats(options).await
     }
 }

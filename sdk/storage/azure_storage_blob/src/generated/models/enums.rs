@@ -188,15 +188,6 @@ create_extensible_enum!(
 );
 
 create_enum!(
-    #[doc = r#"The immutability policy mode used in requests."#]
-    ImmutabilityPolicyMode,
-    #[doc = r#"The immutability policy is locked."#]
-    (Locked, "Locked"),
-    #[doc = r#"The immutability policy is unlocked."#]
-    (Unlocked, "Unlocked")
-);
-
-create_enum!(
     #[doc = r#"The lease duration."#]
     LeaseDuration,
     #[doc = r#"The lease is of fixed duration."#]
