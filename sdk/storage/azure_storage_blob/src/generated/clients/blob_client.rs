@@ -105,6 +105,35 @@ impl BlobClient {
         })
     }
 
+    pub fn with_no_credential(
+        endpoint: &str,
+        container_name: String,
+        blob_name: String,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let options = options.unwrap_or_default();
+        let endpoint = Url::parse(endpoint)?;
+        if !endpoint.scheme().starts_with("http") {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                format!("{endpoint} must use http(s)"),
+            ));
+        }
+        Ok(Self {
+            blob_name,
+            container_name,
+            endpoint,
+            version: options.version,
+            pipeline: Pipeline::new(
+                option_env!("CARGO_PKG_NAME"),
+                option_env!("CARGO_PKG_VERSION"),
+                options.client_options,
+                Vec::default(),
+                Vec::default(),
+            ),
+        })
+    }
+
     /// Returns the Url associated with this client.
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
@@ -887,10 +916,20 @@ impl BlobClient {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
+        // let mut path = String::from("{containerName}/{blobName}");
+        // path = path.replace("{blobName}", &self.blob_name);
+        // path = path.replace("{containerName}", &self.container_name);
+        // url = url.join(&path)?;
+
+        // request uri before: https://vincenttranstock.blob.core.windows.net/?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig=
+        // println!("request uri before: {}", url);
+        {
+            url.path_segments_mut()
+                .expect("Cannot be base")
+                .extend([&self.container_name, &self.blob_name]);
+        }
+        // request uri after: https://vincenttranstock.blob.core.windows.net/acontainer108f32e8/goodbye.txt?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig=
+        // println!("request uri after: {}", url);
         if let Some(snapshot) = options.snapshot {
             url.query_pairs_mut().append_pair("snapshot", &snapshot);
         }
