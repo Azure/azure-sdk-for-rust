@@ -12,6 +12,7 @@ use azure_core::http::{
     request::{options::ContentType, Request},
     response::Response,
     BufResponse, ClientOptions, Context, Method,
+};
 use azure_core::{
     error::HttpError,
     http::{
