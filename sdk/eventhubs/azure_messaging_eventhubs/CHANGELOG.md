@@ -5,6 +5,7 @@
 ### Features Added
 
 - Reconnect support for EventHubs operations.
+- Enable [Geo Replication](https://learn.microsoft.com/azure/event-hubs/geo-replication) support in Event Hubs consumers and producers.
 
 ### Breaking Changes
 
