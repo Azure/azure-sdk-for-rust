@@ -5,11 +5,13 @@
 
 //! This file contains an Azure SDK for Rust fake service client API.
 //!
-use azure_core::http::RequestInstrumentationOptions;
 use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
-    http::{ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request, Url},
+    http::{
+        ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, RawResponse, Request,
+        Url,
+    },
     tracing::{PublicApiInstrumentationInformation, Tracer},
     Result,
 };
@@ -60,21 +62,20 @@ impl TestServiceClient {
         }
         endpoint.set_query(None);
 
-        let tracer =
-            if let Some(tracer_options) = &options.azure_client_options.request_instrumentation {
-                tracer_options
-                    .tracer_provider
-                    .as_ref()
-                    .map(|tracer_provider| {
-                        tracer_provider.get_tracer(
-                            Some("Az.TestServiceClient"),
-                            option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                            option_env!("CARGO_PKG_VERSION"),
-                        )
-                    })
-            } else {
-                None
-            };
+        let tracer = if let Some(tracer_options) = &options.azure_client_options.instrumentation {
+            tracer_options
+                .tracer_provider
+                .as_ref()
+                .map(|tracer_provider| {
+                    tracer_provider.get_tracer(
+                        Some("Az.TestServiceClient"),
+                        option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
+                        option_env!("CARGO_PKG_VERSION"),
+                    )
+                })
+        } else {
+            None
+        };
 
         Ok(Self {
             endpoint,
@@ -98,7 +99,7 @@ impl TestServiceClient {
     /// Returns the result of a Get verb against the configured endpoint with the specified path.
     ///
     /// This method demonstrates a service client which does not have per-method spans but which will create
-    /// HTTP client spans if the `RequestInstrumentationOptions` are configured in the client options.
+    /// HTTP client spans if the `InstrumentationOptions` are configured in the client options.
     ///
     pub async fn get(
         &self,
@@ -277,7 +278,7 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         azure_client_options: ClientOptions {
-            request_instrumentation: Some(RequestInstrumentationOptions {
+            instrumentation: Some(InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
             }),
             ..Default::default()
@@ -332,7 +333,7 @@ async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         azure_client_options: ClientOptions {
-            request_instrumentation: Some(RequestInstrumentationOptions {
+            instrumentation: Some(InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
             }),
             ..Default::default()
@@ -393,7 +394,7 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         azure_client_options: ClientOptions {
-            request_instrumentation: Some(RequestInstrumentationOptions {
+            instrumentation: Some(InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
             }),
             ..Default::default()
@@ -456,7 +457,7 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         azure_client_options: ClientOptions {
-            request_instrumentation: Some(RequestInstrumentationOptions {
+            instrumentation: Some(InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
             }),
             ..Default::default()

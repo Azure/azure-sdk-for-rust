@@ -8,8 +8,8 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request,
-        RequestInstrumentationOptions, Url,
+        ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, RawResponse, Request,
+        Url,
     },
     tracing, Result,
 };
@@ -201,7 +201,7 @@ mod tests {
         let credential = recording.credential().clone();
         let mut options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
+                instrumentation: Some(InstrumentationOptions {
                     tracer_provider: Some(azure_provider),
                 }),
                 ..Default::default()
@@ -503,7 +503,7 @@ mod tests {
         let credential = recording.credential().clone();
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
+                instrumentation: Some(InstrumentationOptions {
                     tracer_provider: Some(azure_provider),
                 }),
                 retry: Some(RetryOptions::exponential(ExponentialRetryOptions {

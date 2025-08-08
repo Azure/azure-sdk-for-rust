@@ -86,9 +86,9 @@ For the Rust implementation, if a tracer provider is configured, ALL http operat
 
 ## Implementation details
 
-To provide for requirement #1, if a customer provides a value for the `azure_core::ClientOptions::request_instrumentation` structure, the Azure Core HTTP pipeline will add a `PublicApiInstrumentationPolicy` to the pipeline which is responsible for creating the public API outer span.
+To provide for requirement #1, if a customer provides a value for the `azure_core::ClientOptions::instrumentation` structure, the Azure Core HTTP pipeline will add a `PublicApiInstrumentationPolicy` to the pipeline which is responsible for creating the public API outer span.
 
-To provide for requirement #2, if a customer provides a `azure_core::ClientOptions::request_instrumentation` the `azure_core` HTTP pipeline will add a `RequestInstrumentationPolicy` to the pipeline which is responsible for creating the required HTTP request span to the pipeline.
+To provide for requirement #2, if a customer provides a `azure_core::ClientOptions::instrumentation` the `azure_core` HTTP pipeline will add a `RequestInstrumentationPolicy` to the pipeline which is responsible for creating the required HTTP request span to the pipeline.
 
 This implementation means that operations like Long Running Operations (Pollers) and Pageable Operations (Pagers) will all have a Public API span created by the `PublicApiInstrumentationPolicy` and a HTTP Request span created by the `RequestInstrumentationPolicy`.
 
@@ -218,7 +218,7 @@ pub fn new(
         vec!["https://vault.azure.net/.default"],
     ));
 +    let tracer =
-+    if let Some(tracer_options) = &options.client_options.request_instrumentation {
++    if let Some(tracer_options) = &options.client_options.instrumentation {
 +        tracer_options
 +            .tracer_provider
 +            .as_ref()

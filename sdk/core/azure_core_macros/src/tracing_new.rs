@@ -31,7 +31,7 @@ fn parse_struct_expr(
     if struct_body.path.is_ident("Self") {
         let fields = struct_body.fields.iter();
         let tracer_init = quote! {
-            if let Some(tracer_options) = &options.client_options.request_instrumentation {
+            if let Some(tracer_options) = &options.client_options.instrumentation {
                 tracer_options
                     .tracer_provider
                     .as_ref()
@@ -553,7 +553,7 @@ mod tests {
 
                 Self {
                     tracer: if let Some(tracer_options) =
-                        &options.client_options.request_instrumentation
+                        &options.client_options.instrumentation
                     {
                         tracer_options
                             .tracer_provider
@@ -643,7 +643,7 @@ mod tests {
                 ));
                 Ok(Self {
                     tracer: if let Some(tracer_options) =
-                        &options.client_options.request_instrumentation
+                        &options.client_options.instrumentation
                     {
                         tracer_options
                             .tracer_provider
@@ -740,7 +740,7 @@ mod tests {
                 ));
                 Ok(Arc::new(Self {
                     tracer: if let Some(tracer_options) =
-                        &options.client_options.request_instrumentation
+                        &options.client_options.instrumentation
                     {
                         tracer_options
                             .tracer_provider
