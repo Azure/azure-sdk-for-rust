@@ -39,7 +39,7 @@ pub(crate) mod tests {
                 literal.to_string() == expected_literal.to_string()
             }
             _ => {
-                error!("Unexpected token: {expected_token:?}");
+                error!("Unexpected token: {expected_token:?}, found {token:?}");
                 false
             }
         }

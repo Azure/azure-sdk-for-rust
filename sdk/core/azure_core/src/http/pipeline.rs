@@ -52,29 +52,20 @@ impl Pipeline {
     ) -> Self {
         let (core_client_options, options) = options.deconstruct();
 
-        let install_instrumentation_policies = core_client_options
-            .request_instrumentation
-            .tracer_provider
-            .is_some();
-
         // Create a fallback tracer if no tracer provider is set.
         // This is useful for service clients that have not yet been instrumented.
-        let tracer = if install_instrumentation_policies {
-            core_client_options
-                .request_instrumentation
-                .tracer_provider
-                .as_ref()
-                .map(|tracer_provider| {
-                    tracer_provider.get_tracer(None, crate_name.unwrap_or("Unknown"), crate_version)
-                })
-        } else {
-            None
-        };
+        let tracer = core_client_options
+            .instrumentation
+            .tracer_provider
+            .as_ref()
+            .map(|provider| {
+                provider.get_tracer(None, crate_name.unwrap_or("Unknown"), crate_version)
+            });
 
         let mut per_call_policies = per_call_policies.clone();
         push_unique(&mut per_call_policies, ClientRequestIdPolicy::default());
-        if install_instrumentation_policies {
-            let public_api_policy = PublicApiInstrumentationPolicy::new(tracer.clone());
+        if let Some(ref tracer) = tracer {
+            let public_api_policy = PublicApiInstrumentationPolicy::new(Some(tracer.clone()));
             push_unique(&mut per_call_policies, public_api_policy);
         }
 
@@ -83,7 +74,7 @@ impl Pipeline {
         push_unique(&mut per_call_policies, user_agent_policy);
 
         let mut per_try_policies = per_try_policies.clone();
-        if install_instrumentation_policies {
+        if let Some(ref tracer) = tracer {
             // Note that the choice to use "None" as the namespace here
             // is intentional.
             // The `azure_namespace` parameter is used to populate the `az.namespace`
@@ -96,7 +87,8 @@ impl Pipeline {
             // This information can only come from the package owner. It doesn't make sense
             // to burden all users of the azure_core pipeline with determining this
             // information, so we use `None` here.
-            let request_instrumentation_policy = RequestInstrumentationPolicy::new(tracer);
+            let request_instrumentation_policy =
+                RequestInstrumentationPolicy::new(Some(tracer.clone()));
             push_unique(&mut per_try_policies, request_instrumentation_policy);
         }
 

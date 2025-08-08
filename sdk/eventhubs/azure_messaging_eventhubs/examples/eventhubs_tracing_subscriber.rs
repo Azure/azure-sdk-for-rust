@@ -245,13 +245,6 @@ async fn enable_eventhubs_logging() -> Result<(), Box<dyn Error>> {
 async fn main() -> Result<(), Box<dyn Error>> {
     enable_eventhubs_logging().await?;
 
-    // Application code
-    tracing::info!("Application started");
-    // ... your application code here ...
-    tracing::info!("Processing some data");
-    tracing::warn!("This is a warning message");
-    tracing::error!("This is an error message");
-
     let mut data = StructuredData {
         body: "This is a structured log message".to_string(),
         properties: std::collections::HashMap::new(),
