@@ -1,6 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::generated::models::{BlobTag, BlobTags};
+use azure_core::http::response::ResponseBody;
+use azure_core::http::{JsonFormat, RawResponse, RequestContent, Response, XmlFormat};
+use azure_core::xml;
+use std::collections::{BTreeMap, HashMap};
 use std::io::{Error, ErrorKind};
 
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
@@ -34,4 +39,52 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     let end_range = offset + length - 1;
     let content_range = format!("bytes={}-{}", offset, end_range);
     Ok(content_range)
+}
+
+/// Takes in a HashMap of blob tags and serializes them into the `BlobTags` model.
+///
+/// # Arguments
+///
+/// * `tags` - A hash map containing the name-value pairs associated with the blob as tags.
+pub(crate) fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
+    let sorted_tags: BTreeMap<_, _> = tags.into_iter().collect();
+    let blob_tags = sorted_tags
+        .into_iter()
+        .map(|(k, v)| BlobTag {
+            key: Some(k),
+            value: Some(v),
+        })
+        .collect();
+    BlobTags {
+        blob_tag_set: Some(blob_tags),
+    }
+}
+
+/// Takes in a `get_tags()` response and deserializes the `BlobTags` model into a HashMap of blob tags.
+///
+/// # Arguments
+///
+/// * `response` - The `get_tags()` response to be deserialized.
+pub(crate) async fn deserialize_blob_tags(
+    response: Response<BlobTags, XmlFormat>,
+) -> azure_core::Result<Response<HashMap<String, String>, JsonFormat>>
+where
+{
+    let mut blob_tags_map: HashMap<String, String> = HashMap::new();
+    let status = response.status();
+    let headers = response.headers().clone();
+    let blob_tags = response.into_body().await?;
+
+    if let Some(blob_tag_set) = blob_tags.blob_tag_set {
+        for tag in blob_tag_set {
+            if let (Some(k), Some(v)) = (tag.key, tag.value) {
+                blob_tags_map.insert(k, v);
+            }
+        }
+    }
+
+    let request_content: RequestContent<HashMap<String, String>> =
+        RequestContent::try_from(blob_tags_map)?;
+    let raw_response = RawResponse::from_bytes(status, headers, request_content.body());
+    Ok(raw_response.into())
 }
