@@ -359,6 +359,33 @@ Samples may take the following categories of dependencies:
 
 In general, we prefer taking dependencies on licensed components in the order of the listed categories. In cases where the category may not be well known, we'll document the category so that readers understand the choice that they're making by using that dependency.
 
+## Troubleshooting
+
+### Proc-macro map is missing error entry
+
+If Visual Studio Code with the rust-analyzer extension active is showing an error for all code in the editor with an error similar to:
+
+> tracing::function: internal error: proc-macro map is missing error entry for crate Crate(Id(6560))
+
+This could be a discrepancy between your active Rust toolchain and the internal `rust-analyzer` the rust-analyzer extension distributes and uses by default.
+Because we do not currently mandate a specific version of the Rust toolchain in our `rust-toolchain.toml` (as long as it supports the MSRV in `Cargo.toml`),
+the version of `rust-analyzer` you have installed should match the active toolchain.
+
+In your Visual Studio Code settings, add:
+
+```json
+{
+    "rust-analyzer.server.path": "${userHome}/.cargo/bin/rust-analyzer"
+}
+```
+
+Set this to an appropriate path for local development. If you're running Visual Studio Code with a remote session e.g., WSL or SSH,
+you'll need to [open remote settings](https://code.visualstudio.com/docs/remote/troubleshooting#_local-absolute-path-settings-fail-when-applied-remotely) and add the configuration above.
+
+1. Press `F1`.
+2. Type "open remote settings (json)" and press `Enter`.
+3. Add the above setting to your remote settings. If you use multiple remote sessions you'll need to do this for each one.
+
 [C/C++]: https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools
 [CodeLLDB]: https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb
 [Rust Guidelines]: https://azure.github.io/azure-sdk/rust_introduction.html
