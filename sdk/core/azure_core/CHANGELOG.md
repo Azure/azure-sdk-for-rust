@@ -1,5 +1,29 @@
 # Release History
 
+## 0.28.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` for `typespec_client_core` to copy if needed.
+- Removed the `setters` macro.
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.27.0 (2025-08-01)
+
+### Features Added
+
+- Added support for distributed tracing macros in Azure service clients, including convenience macros `#[tracing::new]`, `#[tracing::client]` and `#[tracing::function]` to reduce implementation details. See [distributed tracing in rust](https://github.com/Azure/azure-sdk-for-rust/blob/main/doc/distributed-tracing-for-rust-service-clients.md) for more information on distributed tracing.
+
+### Breaking Changes
+
+- `Pager::from_callback` and `PageIterator::from_callback` define a parameter of type `PagerState<C>` instead of `Option<C>`, where `None` => `Initial` and `Some(C)` => `More(C)`.
+- `Poller::from_callback` defines a parameter of type `PollerState<N>` instead of `Option<N>`, where `None` => `Initial` and `Some(N)` => `More(N)`.
+
 ## 0.26.0 (2025-07-10)
 
 ### Features Added

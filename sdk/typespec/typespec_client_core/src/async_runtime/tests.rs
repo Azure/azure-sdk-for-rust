@@ -6,7 +6,6 @@ use crate::time::Duration;
 use futures::FutureExt;
 use std::sync::{Arc, Mutex};
 
-#[cfg(not(feature = "tokio"))]
 #[test]
 fn test_task_spawner_execution() {
     let runtime = get_async_runtime();
@@ -172,7 +171,6 @@ fn std_multiple_tasks() {
 
 // When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
 // When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
-#[cfg(not(feature = "tokio"))]
 #[test]
 fn std_task_execution() {
     let runtime = Arc::new(standard_runtime::StdRuntime);
@@ -199,7 +197,6 @@ fn std_task_execution() {
 // Basic test that launches 10k futures and waits for them to complete:
 // it has a high chance of failing if there is a race condition in the sleep method;
 // otherwise, it runs quickly.
-#[cfg(not(feature = "tokio"))]
 #[tokio::test]
 async fn test_timeout() {
     use super::*;

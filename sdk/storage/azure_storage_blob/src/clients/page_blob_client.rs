@@ -53,15 +53,6 @@ impl PageBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let oauth_token_policy = BearerTokenCredentialPolicy::new(
-            credential.clone(),
-            ["https://storage.azure.com/.default"],
-        );
-        options
-            .client_options
-            .per_try_policies
-            .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
-
         let client = GeneratedPageBlobClient::new(
             endpoint,
             credential.clone(),
@@ -96,7 +87,7 @@ impl PageBlobClient {
     ///
     /// * `content_length` - The maximum size for the Page blob, up to 1TB. The page blob size must
     ///   be aligned to a 512-byte boundary.
-    /// * `options` - Optional parameters for the request. See [`PageBlobClientCreateOptionsExt`](crate::models::PageBlobClientCreateOptionsExt) for additional usage helpers.
+    /// * `options` - Optional configuration for the request. See [`PageBlobClientCreateOptionsExt`](crate::models::PageBlobClientCreateOptionsExt) for additional usage helpers.
     pub async fn create(
         &self,
         content_length: u64,
@@ -110,7 +101,7 @@ impl PageBlobClient {
     /// # Arguments
     ///
     /// * `range` - The range of bytes to clear. See [`format_page_range()`](crate::format_page_range) for help with the expected String format.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     pub async fn clear_page(
         &self,
         range: String,
@@ -126,7 +117,7 @@ impl PageBlobClient {
     ///
     /// * `size` - Size used to resize the blob. Maximum size for a page Blob is up to 1TB. The
     ///   Page blob size must be aligned to a 512-byte boundary.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     pub async fn resize(
         &self,
         size: u64,
@@ -143,10 +134,10 @@ impl PageBlobClient {
     /// * `content_length` - Number of bytes to use for writing to a section of the blob. The
     ///   content_length specified must be a modulus of 512.
     /// * `range` - The range of the bytes to write. See [`format_page_range()`](crate::format_page_range) for help with the expected String format.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     pub async fn upload_page(
         &self,
-        data: RequestContent<Bytes>,
+        data: RequestContent<Bytes, NoFormat>,
         content_length: u64,
         range: String,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,

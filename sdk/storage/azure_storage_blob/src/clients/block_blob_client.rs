@@ -59,15 +59,6 @@ impl BlockBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let oauth_token_policy = BearerTokenCredentialPolicy::new(
-            credential.clone(),
-            ["https://storage.azure.com/.default"],
-        );
-        options
-            .client_options
-            .per_try_policies
-            .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
-
         let client = GeneratedBlockBlobClient::new(
             endpoint,
             credential.clone(),
@@ -104,7 +95,7 @@ impl BlockBlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn commit_block_list(
         &self,
-        blocks: RequestContent<BlockLookupList>,
+        blocks: RequestContent<BlockLookupList, XmlFormat>,
         options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
     ) -> Result<Response<BlockBlobClientCommitBlockListResult, NoFormat>> {
         self.client.commit_block_list(blocks, options).await
@@ -123,7 +114,7 @@ impl BlockBlobClient {
         &self,
         block_id: &[u8],
         content_length: u64,
-        body: RequestContent<Bytes>,
+        body: RequestContent<Bytes, NoFormat>,
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
     ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
         self.client

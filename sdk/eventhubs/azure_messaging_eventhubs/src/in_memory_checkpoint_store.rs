@@ -2,9 +2,11 @@ use crate::{
     models::{Checkpoint, Ownership},
     CheckpointStore,
 };
-use azure_core::{error::ErrorKind as AzureErrorKind, http::Etag, Error, Result, Uuid};
+use azure_core::{
+    error::ErrorKind as AzureErrorKind, http::Etag, time::OffsetDateTime, Error, Result, Uuid,
+};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::{collections::HashMap, time::SystemTime};
 use tracing::{trace, warn};
 
 /// An in-memory checkpoint store for Event Hubs.
@@ -75,7 +77,7 @@ impl InMemoryCheckpointStore {
             trace!("Insert new ownership for key {}", key);
             let mut new_ownership = ownership.clone();
             new_ownership.etag = Some(Etag::from(Uuid::new_v4().to_string()));
-            new_ownership.last_modified_time = Some(SystemTime::now());
+            new_ownership.last_modified_time = Some(OffsetDateTime::now_utc());
             store.insert(key.clone(), new_ownership.clone());
             trace!("Inserted new ownership for key {}", key);
             Ok(new_ownership.clone())
@@ -96,21 +98,6 @@ impl CheckpointStore for InMemoryCheckpointStore {
             }
         }
         Ok(claimed_ownerships)
-    }
-
-    #[cfg(feature = "test")]
-    async fn update_ownership(&self, ownership: Ownership) -> Result<()> {
-        trace!(
-            "update_ownership: update ownership for partition {}",
-            ownership.partition_id
-        );
-        let ownership = self.update_ownership(&ownership)?;
-        trace!(
-            "update_ownership: updated ownership for partition {}",
-            ownership.partition_id
-        );
-        trace!("Update ownership for partition {}", ownership.partition_id);
-        Ok(())
     }
 
     async fn list_checkpoints(

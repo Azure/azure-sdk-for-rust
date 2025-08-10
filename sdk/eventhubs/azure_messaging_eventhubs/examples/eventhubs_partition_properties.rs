@@ -4,7 +4,7 @@
 //! Example of using the Event Hubs SDK to get partition properties.
 
 use azure_core::error::Result;
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ProducerClient;
 use std::env;
 
@@ -16,7 +16,7 @@ async fn main() -> Result<()> {
     let host = env::var("EVENTHUBS_HOST").unwrap();
     let eventhub = env::var("EVENTHUB_NAME").unwrap();
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     let result = ProducerClient::builder()
         .with_application_id("test_get_properties".to_string())

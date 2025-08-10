@@ -19,12 +19,12 @@ use tracing::trace;
 ///
 /// ```no_run
 /// use azure_messaging_eventhubs::ConsumerClient;
-/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+/// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
 /// use futures::stream::StreamExt;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-///     let my_credential = DefaultAzureCredential::new()?;
+///     let my_credential = DeveloperToolsCredential::new(None)?;
 ///     let consumer = ConsumerClient::builder()
 ///        .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
 ///     let partition_id = "0".to_string();

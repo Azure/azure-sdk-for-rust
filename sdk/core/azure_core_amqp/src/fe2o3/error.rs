@@ -115,13 +115,13 @@ impl From<fe2o3_amqp::link::DetachError> for AmqpError {
     fn from(e: fe2o3_amqp::link::DetachError) -> Self {
         match e {
             fe2o3_amqp::link::DetachError::DetachedByRemote => {
-                Self::from(AmqpErrorKind::DetachedByRemote(Box::new(e)))
+                Self::from(AmqpErrorKind::LinkDetachedByRemote(Box::new(e)))
             }
             fe2o3_amqp::link::DetachError::RemoteDetachedWithError(error) => {
                 Self::from(AmqpErrorKind::AmqpDescribedError(error.into()))
             }
             fe2o3_amqp::link::DetachError::ClosedByRemote => {
-                Self::from(AmqpErrorKind::ClosedByRemote(Box::new(e)))
+                Self::from(AmqpErrorKind::LinkClosedByRemote(Box::new(e)))
             }
             fe2o3_amqp::link::DetachError::RemoteClosedWithError(error) => {
                 Self::from(AmqpErrorKind::AmqpDescribedError(error.into()))
@@ -141,10 +141,10 @@ impl From<fe2o3_amqp::link::LinkStateError> for AmqpError {
                 AmqpErrorKind::AmqpDescribedError(e.into()).into()
             }
             fe2o3_amqp::link::LinkStateError::RemoteClosed => {
-                AmqpErrorKind::ClosedByRemote(Box::new(e)).into()
+                AmqpErrorKind::LinkClosedByRemote(Box::new(e)).into()
             }
             fe2o3_amqp::link::LinkStateError::RemoteDetached => {
-                AmqpErrorKind::DetachedByRemote(Box::new(e)).into()
+                AmqpErrorKind::LinkDetachedByRemote(Box::new(e)).into()
             }
             _ => AmqpErrorKind::LinkStateError(e.into()).into(),
         }

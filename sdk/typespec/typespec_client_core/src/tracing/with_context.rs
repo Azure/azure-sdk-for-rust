@@ -1,8 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell: ignore cloneable
-
 use super::Span;
 use crate::http::Context;
 use pin_project::pin_project;
@@ -20,8 +18,8 @@ impl<T: std::future::Future> std::future::Future for WithContext<'_, T> {
 
     fn poll(self: Pin<&mut Self>, task_cx: &mut TaskContext<'_>) -> Poll<Self::Output> {
         let this = self.project();
-        if let Some(span) = this.context.value::<Arc<dyn Span + Send + Sync>>() {
-            let _guard = span.set_current(this.context).unwrap();
+        if let Some(span) = this.context.value::<Arc<dyn Span>>() {
+            let _guard = span.set_current(this.context);
 
             this.inner.poll(task_cx)
         } else {

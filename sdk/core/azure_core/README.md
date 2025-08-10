@@ -72,12 +72,12 @@ available directly on `ClientOptions`.
 
 ```rust no_run
 use azure_core::http::ClientOptions;
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     let options = SecretClientOptions {
         api_version: "7.5".to_string(),
@@ -102,13 +102,13 @@ This type provides access to both the deserialized result of the service call, a
 
 ```rust no_run
 use azure_core::http::Response;
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{models::Secret, SecretClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // create a client
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = SecretClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
@@ -146,13 +146,13 @@ When a service call fails, the returned `Result` will contain an `Error`. The `E
 
 ```rust no_run
 use azure_core::{error::{ErrorKind, HttpError}, http::{Response, StatusCode}};
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::SecretClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // create a client
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = SecretClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
@@ -183,14 +183,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 If a service call returns multiple values in pages, it should return `Result<Pager<T>>` as a result. You can iterate all items from all pages.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
 use futures::TryStreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // create a client
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = SecretClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
@@ -214,14 +214,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 To instead iterate over all pages, call `into_pages()` on the returned `Pager`.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
 use futures::TryStreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // create a client
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = SecretClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),
@@ -252,16 +252,16 @@ If a service call may take a while to process, it should return `Result<Poller<T
 The `Poller<T>` implements `futures::Stream` so you can asynchronously iterate over each status monitor update:
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::{
-    CertificateClient, CertificateClientExt,
+    CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
 use futures::stream::TryStreamExt as _;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -308,15 +308,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 If you just want to wait until the `Poller<T>` is complete and get the last status monitor, you can await `wait()`:
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_certificates::{
-    CertificateClient, CertificateClientExt,
+    CertificateClient,
     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = CertificateClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -398,13 +398,13 @@ There can only be one async runtime set in a given process, so attempts to set t
 To help protected end users from accidental Personally-Identifiable Information (PII) from leaking into logs or traces, models' default implementation of `core::fmt::Debug` formats as non-exhaustive structure tuple e.g.,
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{ResourceExt, SecretClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // create a client
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = SecretClient::new(
         "https://<your-key-vault-name>.vault.azure.net/",
         credential.clone(),

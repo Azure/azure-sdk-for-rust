@@ -11,7 +11,6 @@ mod macros;
 
 mod constants;
 pub mod credentials;
-pub mod fs;
 pub mod hmac;
 pub mod http;
 
@@ -27,8 +26,14 @@ pub use typespec_client_core::{
     fmt, json, sleep, stream, time, Bytes, Uuid,
 };
 
+/// Abstractions for distributed tracing and telemetry.
 pub mod tracing {
-    pub use typespec_client_core::tracing::*;
+    pub use crate::http::policies::PublicApiInstrumentationInformation;
+    pub use azure_core_macros::{client, function, new, subclient};
+    pub use typespec_client_core::tracing::{
+        AsAny, Attribute, AttributeArray, AttributeValue, Span, SpanGuard, SpanKind, SpanStatus,
+        Tracer, TracerProvider,
+    };
 }
 
 #[cfg(feature = "xml")]

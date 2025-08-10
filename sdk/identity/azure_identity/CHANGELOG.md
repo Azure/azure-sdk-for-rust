@@ -1,8 +1,24 @@
 # Release History
 
-## 0.26.0 (Unreleased)
+## 0.28.0 (Unreleased)
 
 ### Features Added
+
+### Breaking Changes
+
+- Replaced `DefaultAzureCredential` with `DeveloperToolsCredential`. This new type is excluded from WASM32 builds because it can't authenticate in a WASM runtime environment; however, neither could `DefaultAzureCredential`, which wasn't properly excluded.
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.27.0 (2025-08-05)
+
+### Other Changes
+
+- Updated dependencies.
+
+## 0.26.0 (2025-07-15)
 
 ### Breaking Changes
 
@@ -10,10 +26,6 @@
 - Converted all `time::Duration` types to `azure_core::time::Duration`
 - Replaced `azure_core::process::Executor` with `azure_identity::process::Executor`.
 - Renamed `azure_core::date` module to `azure_core::time`
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.25.0 (2025-06-10)
 

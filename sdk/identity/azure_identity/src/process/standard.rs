@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 use super::Executor;
-use async_trait::async_trait;
 use futures::channel::oneshot;
 use std::{ffi::OsStr, io, process::Output, thread};
 
@@ -10,8 +9,7 @@ use std::{ffi::OsStr, io, process::Output, thread};
 #[derive(Debug)]
 pub struct StdExecutor;
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait::async_trait]
 impl Executor for StdExecutor {
     async fn run(&self, program: &OsStr, args: &[&OsStr]) -> io::Result<Output> {
         let (tx, rx) = oneshot::channel();

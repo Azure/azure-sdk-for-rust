@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod instrumentation;
 mod user_agent;
 
+pub use instrumentation::*;
 use std::sync::Arc;
 use typespec_client_core::http::policies::Policy;
 pub use typespec_client_core::http::{
@@ -27,6 +29,17 @@ pub struct ClientOptions {
 
     /// User-Agent telemetry options.
     pub user_agent: Option<UserAgentOptions>,
+
+    /// Options for request instrumentation, such as distributed tracing.
+    ///
+    /// If not specified, defaults to no instrumentation.
+    ///
+    pub instrumentation: Option<InstrumentationOptions>,
+}
+
+pub(crate) struct CoreClientOptions {
+    pub(crate) user_agent: UserAgentOptions,
+    pub(crate) instrumentation: InstrumentationOptions,
 }
 
 impl ClientOptions {
@@ -35,7 +48,7 @@ impl ClientOptions {
     /// If instead we implemented [`Into`], we'd have to clone Azure-specific options instead of moving memory of [`Some`] values.
     pub(in crate::http) fn deconstruct(
         self,
-    ) -> (UserAgentOptions, typespec_client_core::http::ClientOptions) {
+    ) -> (CoreClientOptions, typespec_client_core::http::ClientOptions) {
         let options = typespec_client_core::http::ClientOptions {
             per_call_policies: self.per_call_policies,
             per_try_policies: self.per_try_policies,
@@ -43,6 +56,12 @@ impl ClientOptions {
             transport: self.transport,
         };
 
-        (self.user_agent.unwrap_or_default(), options)
+        (
+            CoreClientOptions {
+                user_agent: self.user_agent.unwrap_or_default(),
+                instrumentation: self.instrumentation.unwrap_or_default(),
+            },
+            options,
+        )
     }
 }
