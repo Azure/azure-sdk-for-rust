@@ -197,14 +197,20 @@ pub fn check_instrumentation_result(
     mock_tracer: Arc<MockTracingProvider>,
     expected_tracers: Vec<ExpectedTracerInformation<'_>>,
 ) {
-    assert_eq!(
-        mock_tracer.tracers.lock().unwrap().len(),
-        expected_tracers.len(),
-        "Unexpected number of tracers",
-    );
     let tracers = mock_tracer.tracers.lock().unwrap();
+    if tracers.len() != expected_tracers.len() {
+        println!("Expected tracers: {:?}", expected_tracers);
+        println!("Found tracers: {:?}", tracers);
+    }
+    assert_eq!(
+        tracers.len(),
+        expected_tracers.len(),
+        "Unexpected number of tracers, expected: {}, found: {}",
+        expected_tracers.len(),
+        tracers.len()
+    );
     for (index, expected) in expected_tracers.iter().enumerate() {
-        trace!("Checking tracer {}: {}", index, expected.name);
+        println!("Checking tracer {}: {}", index, expected.name);
         let tracer = &tracers[index];
         assert_eq!(tracer.package_name, expected.name);
         assert_eq!(tracer.package_version, expected.version);
@@ -241,12 +247,17 @@ fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformati
     assert_eq!(span.kind, expected.kind);
     assert_eq!(*span.state.lock().unwrap(), expected.status);
     let attributes = span.attributes.lock().unwrap();
+    println!("Expected attributes: {:?}", expected.attributes);
+    println!("Found attributes: {:?}", attributes);
     for (index, attr) in attributes.iter().enumerate() {
         println!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
         let mut found = false;
         for (key, value) in &expected.attributes {
             if attr.key == *key {
-                assert_eq!(attr.value, *value, "Attribute mismatch for key: {}", key);
+                // Skip checking the value for "<ANY>" as it is a placeholder
+                if *value != AttributeValue::String("<ANY>".into()) {
+                    assert_eq!(attr.value, *value, "Attribute mismatch for key: {}", *key);
+                }
                 found = true;
                 break;
             }
@@ -256,64 +267,152 @@ fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformati
         }
     }
     for (key, value) in expected.attributes.iter() {
-        if !attributes
-            .iter()
-            .any(|attr| attr.key == *key && attr.value == *value)
-        {
+        if !attributes.iter().any(|attr| attr.key == *key) {
             panic!("Expected attribute not found: {} = {:?}", key, value);
         }
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct InstrumentedApiInformation {
+    pub api_name: Option<&'static str>,
+    pub api_verb: azure_core::http::Method,
+    pub expected_status_code: azure_core::http::StatusCode,
+    pub additional_api_attributes: Vec<(&'static str, AttributeValue)>,
+}
+
+impl Default for InstrumentedApiInformation {
+    fn default() -> Self {
+        Self {
+            api_name: None,
+            api_verb: azure_core::http::Method::Get,
+            expected_status_code: azure_core::http::StatusCode::Ok,
+            additional_api_attributes: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct InstrumentationInformation {
+    pub package_name: String,
+    pub package_version: String,
+    pub package_namespace: Option<&'static str>,
+    pub api_calls: Vec<InstrumentedApiInformation>,
+}
+
 pub async fn test_instrumentation_for_api<C, FnInit, FnTest, T>(
     create_client: FnInit,
     test_api: FnTest,
+    api_information: InstrumentationInformation,
 ) -> azure_core::Result<()>
 where
-    FnInit: FnOnce(Arc<dyn TracerProvider>) -> C,
+    FnInit: FnOnce(Arc<dyn TracerProvider>) -> azure_core::Result<C>,
     FnTest: FnOnce(C) -> Pin<Box<dyn futures::Future<Output = azure_core::Result<T>>>>,
 {
     // Initialize the mock tracer provider
     let mock_tracer = Arc::new(MockTracingProvider::new());
 
     // Create a client with the mock tracer
-    let client = create_client(mock_tracer.clone());
+    let client = create_client(mock_tracer.clone())?;
 
     let result = test_api(client).await;
+    trace!("Generated traces: {:?}", mock_tracer);
+
+    let mut public_api_tracer = ExpectedTracerInformation {
+        name: api_information.package_name.as_str(),
+        version: Some(api_information.package_version.as_str()),
+        namespace: api_information.package_namespace,
+        spans: Vec::new(),
+    };
+
+    let mut request_activity_tracer = ExpectedTracerInformation {
+        name: api_information.package_name.as_str(),
+        version: Some(api_information.package_version.as_str()),
+        namespace: None,
+        spans: Vec::new(),
+    };
+
+    for api_call in api_information.api_calls.iter() {
+        let mut expected_spans = Vec::new();
+
+        let mut public_api_attributes = api_call.additional_api_attributes.clone();
+        // Add additional attributes as needed.
+        if let Some(namespace) = api_information.package_namespace {
+            public_api_attributes.push(("az.namespace", namespace.into()));
+        }
+        if !api_call.expected_status_code.is_success() {
+            public_api_attributes.push((
+                "error.type",
+                api_call.expected_status_code.to_string().into(),
+            ));
+        }
+
+        if let Some(api_name) = api_call.api_name {
+            expected_spans.push(ExpectedSpanInformation {
+                span_name: api_name,
+                status: if api_call.expected_status_code.is_server_error() {
+                    SpanStatus::Error {
+                        description: "".into(),
+                    }
+                } else {
+                    SpanStatus::Unset
+                },
+                kind: SpanKind::Internal,
+                attributes: public_api_attributes.clone(),
+            });
+        }
+        // Add the HTTP API span.
+        let mut expected_http_attributes = vec![
+            ("http.request.method", api_call.api_verb.as_str().into()),
+            ("url.full", "<ANY>".into()),
+            ("server.address", "<ANY>".into()),
+            ("server.port", "<ANY>".into()),
+            ("az.client_request_id", "<ANY>".into()),
+            (
+                "http.response.status_code",
+                (*api_call.expected_status_code).into(),
+            ),
+        ];
+        if !api_call.expected_status_code.is_success() {
+            expected_http_attributes.push((
+                "error.type",
+                api_call.expected_status_code.to_string().into(),
+            ));
+        }
+        // If we have no public API information, we won't have a namespace in the HTTP attributes.
+        if api_call.api_name.is_some() && api_information.package_namespace.is_some() {
+            expected_http_attributes.push((
+                "az.namespace",
+                api_information.package_namespace.unwrap().into(),
+            ));
+        }
+        expected_spans.push(ExpectedSpanInformation {
+            span_name: api_call.api_verb.as_str(),
+            status: if api_call.expected_status_code != 200 {
+                SpanStatus::Error {
+                    description: "".into(),
+                }
+            } else {
+                SpanStatus::Unset
+            },
+            kind: SpanKind::Client,
+            attributes: expected_http_attributes,
+        });
+        if api_call.api_name.is_some() {
+            public_api_tracer.spans.extend(expected_spans);
+        } else {
+            request_activity_tracer.spans.extend(expected_spans);
+        }
+    }
+    let expected_tracers = vec![public_api_tracer, request_activity_tracer];
 
     match result {
         Ok(_) => {
             // If the test passes, we can check the instrumentation
-            check_instrumentation_result(
-                mock_tracer,
-                vec![ExpectedTracerInformation {
-                    name: "azure_sdk_for_rust",
-                    version: Some(env!("CARGO_PKG_VERSION")),
-                    namespace: Some("azure"),
-                    spans: vec![ExpectedSpanInformation {
-                        span_name: "test_api_span",
-                        status: SpanStatus::Unset,
-                        kind: SpanKind::Internal,
-                        attributes: vec![("key1", AttributeValue::String("value1".to_string()))],
-                    }],
-                }],
-            );
+            check_instrumentation_result(mock_tracer, expected_tracers);
         }
         Err(_) => {
-            check_instrumentation_result(
-                mock_tracer,
-                vec![ExpectedTracerInformation {
-                    name: "azure_sdk_for_rust",
-                    version: Some(env!("CARGO_PKG_VERSION")),
-                    namespace: Some("azure"),
-                    spans: vec![ExpectedSpanInformation {
-                        span_name: "test_api_span",
-                        status: SpanStatus::Unset,
-                        kind: SpanKind::Client,
-                        attributes: vec![("key1", AttributeValue::String("value1".to_string()))],
-                    }],
-                }],
-            );
+            check_instrumentation_result(mock_tracer, expected_tracers);
         }
     }
     Ok(())

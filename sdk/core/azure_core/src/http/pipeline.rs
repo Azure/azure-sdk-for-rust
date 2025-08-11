@@ -57,8 +57,19 @@ impl Pipeline {
         let tracer = core_client_options
             .instrumentation
             .tracer_provider
-            .as_ref()
             .map(|provider| {
+                // Note that the choice to use "None" as the namespace here
+                // is intentional.
+                // The `azure_namespace` parameter is used to populate the `az.namespace`
+                // span attribute, however that information is only known by the author of the
+                // client library, not the core library.
+                // It is also *not* a constant that can be derived from the crate information -
+                // it is a value that is determined from the list of resource providers
+                // listed [here](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers).
+                //
+                // This information can only come from the package owner. It doesn't make sense
+                // to burden all users of the azure_core pipeline with determining this
+                // information, so we use `None` here.
                 provider.get_tracer(None, crate_name.unwrap_or("Unknown"), crate_version)
             });
 
@@ -75,18 +86,6 @@ impl Pipeline {
 
         let mut per_try_policies = per_try_policies.clone();
         if let Some(ref tracer) = tracer {
-            // Note that the choice to use "None" as the namespace here
-            // is intentional.
-            // The `azure_namespace` parameter is used to populate the `az.namespace`
-            // span attribute, however that information is only known by the author of the
-            // client library, not the core library.
-            // It is also *not* a constant that can be derived from the crate information -
-            // it is a value that is determined from the list of resource providers
-            // listed [here](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers).
-            //
-            // This information can only come from the package owner. It doesn't make sense
-            // to burden all users of the azure_core pipeline with determining this
-            // information, so we use `None` here.
             let request_instrumentation_policy =
                 RequestInstrumentationPolicy::new(Some(tracer.clone()));
             push_unique(&mut per_try_policies, request_instrumentation_policy);

@@ -3,8 +3,15 @@
 
 #![cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 
-use azure_core::{http::StatusCode, Result};
-use azure_core_test::{recorded, TestContext, TestMode};
+use azure_core::{
+    http::{InstrumentationOptions, StatusCode},
+    Result,
+};
+use azure_core_test::{
+    recorded,
+    tracing::{InstrumentationInformation, InstrumentedApiInformation},
+    TestContext, TestMode,
+};
 use azure_security_keyvault_secrets::{
     models::{SetSecretParameters, UpdateSecretPropertiesParameters},
     ResourceExt as _, SecretClient, SecretClientOptions,
@@ -197,6 +204,71 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
             Err(err) => return Err(err),
         }
     }
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
+    use azure_core_test::tracing::test_instrumentation_for_api;
+    let recording = ctx.recording();
+
+    test_instrumentation_for_api(
+        |tracer_provider| {
+            let mut options = SecretClientOptions::default();
+            recording.instrument(&mut options.client_options);
+            options.client_options.instrumentation = Some(InstrumentationOptions {
+                tracer_provider: Some(tracer_provider),
+            });
+            SecretClient::new(
+                recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+                recording.credential(),
+                Some(options),
+            )
+        },
+        |client: SecretClient| {
+            Box::pin(async move {
+                // Set a secret.
+                let body = SetSecretParameters {
+                    value: Some("secret-value-instrument".into()),
+                    ..Default::default()
+                };
+                let secret = client
+                    .set_secret("secret-roundtrip-instrument", body.try_into()?, None)
+                    .await?
+                    .into_body()
+                    .await?;
+                assert_eq!(secret.value, Some("secret-value-instrument".into()));
+
+                // Get a specific version of a secret.
+                let version = secret.resource_id()?.version.unwrap_or_default();
+                let secret = client
+                    .get_secret("secret-roundtrip-instrument", version.as_ref(), None)
+                    .await?
+                    .into_body()
+                    .await?;
+                assert_eq!(secret.value, Some("secret-value-instrument".into()));
+                Ok(())
+            })
+        },
+        InstrumentationInformation {
+            package_name: recording.var("CARGO_PKG_NAME", None),
+            package_version: recording.var("CARGO_PKG_VERSION", None),
+            package_namespace: Some("azure_security_keyvault_secrets"),
+            api_calls: vec![
+                InstrumentedApiInformation {
+                    api_name: Some("KeyVault.setSecret"),
+                    api_verb: azure_core::http::Method::Put,
+                    ..Default::default()
+                },
+                InstrumentedApiInformation {
+                    api_name: Some("KeyVault.getSecret"),
+                    ..Default::default()
+                },
+            ],
+        },
+    )
+    .await?;
 
     Ok(())
 }
