@@ -340,7 +340,7 @@ implement per-service-client distributed tracing attributes.
 The parameters for the `tracing::function` roughly follow the following BNF:
 
 ```bnf
-tracing_parameters = quoted_string [ ',' '( attribute_list ')']
+tracing_parameters = quoted_string [ ',' 'attributes' '=' '( attribute_list ')']
 quoted_string = `"` <characters> `"`
 attribute_list = attribute | attribute [`,`] attribute_list
 attribute = key '=' value
@@ -353,9 +353,9 @@ value = <any Rust expression>
 This means that the following are valid parameters for `tracing::function`:
 
 * `#[tracing::function("MyServiceClient.MyApi")]` - specifies a public API name.
-* `#[tracing::function("Name", (az.namespace="namespace"))]` - specifies a public API name and creates a span with an attribute named "az.namespace" and a value of "namespace".
-* `#[tracing::function("Name", (api_count=23, "my_attribute" = "Abc"))]` - specifies a public API name and creates a span with two attributes, one named  "api_count" with a value of "23" and the other with the name "my_attribute" and a value of "Abc"
-* `#[tracing::function("Name", ("API path"=path))]` - specifies a public API name and creates a span with an attribute named "API path" and the value of the parameter named "path".
+* `#[tracing::function("Name", attributes = (az.namespace="namespace"))]` - specifies a public API name and creates a span with an attribute named "az.namespace" and a value of "namespace".
+* `#[tracing::function("Name", attributes = (api_count=23, "my_attribute" = "Abc"))]` - specifies a public API name and creates a span with two attributes, one named  "api_count" with a value of "23" and the other with the name "my_attribute" and a value of "Abc"
+* `#[tracing::function("Name", attributes = ("API path"=path))]` - specifies a public API name and creates a span with an attribute named "API path" and the value of the parameter named "path".
 
 This allows a generator to pass in simple attribute annotations to the public API spans created by the pipeline.
 
@@ -412,3 +412,74 @@ pub fn get_operation_templates_lro_client(&self) -> OperationTemplatesLroClient 
 ```
 
 This adds a clone of the parent client's `tracer` to the subclient - it functions similarly to `#[tracing::new]` but for subclient instantiation.
+
+## Verifying distributed tracing support
+
+The `azure_core_test::tracing` package provides functionality to allow developers to verify that their distributed tracing functionality is generating the expected tracing information.
+
+This functionality is driven from the `azure_core_test::tracing::test_instrumentation_for_api` API.
+
+This function takes two closures and a structure which describes the expected API shape. The first closure is used to create an instance of the public API, the second actually executes the public API.
+
+As an example, here is a test for the `keyvault_secrets` package:
+
+```rust
+test_instrumentation_for_api(
+    |tracer_provider| {
+        let mut options = SecretClientOptions::default();
+        recording.instrument(&mut options.client_options);
+        options.client_options.instrumentation = Some(InstrumentationOptions {
+            tracer_provider: Some(tracer_provider),
+        });
+        SecretClient::new(
+            recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+            recording.credential(),
+            Some(options),
+        )
+    },
+    |client: SecretClient| {
+        Box::pin(async move {
+            // Set a secret.
+            let body = SetSecretParameters {
+                value: Some("secret-value-instrument".into()),
+                ..Default::default()
+            };
+            let secret = client
+                .set_secret("secret-roundtrip-instrument", body.try_into()?, None)
+                .await?
+                .into_body()
+                .await?;
+            assert_eq!(secret.value, Some("secret-value-instrument".into()));
+
+            // Get a specific version of a secret.
+            let version = secret.resource_id()?.version.unwrap_or_default();
+            let secret = client
+                .get_secret("secret-roundtrip-instrument", version.as_ref(), None)
+                .await?
+                .into_body()
+                .await?;
+            assert_eq!(secret.value, Some("secret-value-instrument".into()));
+            Ok(())
+        })
+    },
+    InstrumentationInformation {
+        package_name: recording.var("CARGO_PKG_NAME", None),
+        package_version: recording.var("CARGO_PKG_VERSION", None),
+        package_namespace: Some("azure_security_keyvault_secrets"),
+        api_calls: vec![
+            InstrumentedApiInformation {
+                api_name: Some("KeyVault.setSecret"),
+                api_verb: azure_core::http::Method::Put,
+                ..Default::default()
+            },
+            InstrumentedApiInformation {
+                api_name: Some("KeyVault.getSecret"),
+                ..Default::default()
+            },
+        ],
+    },
+)
+.await?;
+```
+
+The first closure creates an instance of a KeyVault client. The second one executes a keyvault secrets round trip test setting a secret and retrieving the secret. In this case, the instrumentation information describes the name of the package and the namespace for the service client. It says that there will be two instrumented APIs being called - the first named `KeyVault.setSecret` and the second named `KeyVault.getSecret`.

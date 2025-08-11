@@ -273,11 +273,25 @@ fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformati
     }
 }
 
+/// Information about an instrumented API call.
+///
+/// This structure is used to collect information about a specific API call that is being instrumented for tracing.
 #[derive(Debug, Clone)]
 pub struct InstrumentedApiInformation {
+    /// The name of the API being called.
+    ///
+    /// This is the name of the API as it appears in the service documentation. If `None`, it means that
+    /// public API instrumentation is not enabled for this API, and the test will only look for request
+    /// instrumentation spans.
     pub api_name: Option<&'static str>,
+
+    /// The HTTP verb used in the API request.
     pub api_verb: azure_core::http::Method,
+
+    /// Expected status code returned by the service.
     pub expected_status_code: azure_core::http::StatusCode,
+
+    /// A set of optional additional attributes attached to the public API span for service clients which require them.
     pub additional_api_attributes: Vec<(&'static str, AttributeValue)>,
 }
 
@@ -292,14 +306,40 @@ impl Default for InstrumentedApiInformation {
     }
 }
 
+/// Information about an instrumented package calling the `test_instrumentation_for_api` test.
 #[derive(Debug, Default, Clone)]
 pub struct InstrumentationInformation {
+    /// The package name for the service client.
     pub package_name: String,
+    /// The package version for the service client.
     pub package_version: String,
+    /// The namespace for the service client.
     pub package_namespace: Option<&'static str>,
+    /// Individual instrumented API calls from the test function.
     pub api_calls: Vec<InstrumentedApiInformation>,
 }
 
+/// Tests the instrumentation of a service client API call.
+///
+/// Arguments:
+/// - `create_client`: A function to create the service client.
+/// - `test_api`: A function to test the API call.
+/// - `api_information`: Information about the API call being tested.
+///
+/// This function will call the `create_client` function to create a new instance of the service client. It is the responsibility of the `create_client` callback to
+/// add the provided distributed tracing `TracerProvider` to the newly created service client.
+///
+/// Once the client has been created, it will call the `test_api` function to test the API call(s).
+///
+/// After the APIs have been tested, this function will verify that the expected tracing spans were created.
+///
+/// To do that, it uses the `InstrumentationInformation` structure to collect and compare the actual spans generated during the test.
+///
+/// The code does not verify the actual client URLs or server ports, it only verifies that the relevant attributes are created.
+///
+/// The `test_api` call may issue multiple service client calls, if it does, this function will verify that all expected spans were created. The caller of the `test_instrumentation_for_api` call
+/// should make sure to include all expected APIs in the call.
+///
 pub async fn test_instrumentation_for_api<C, FnInit, FnTest, T>(
     create_client: FnInit,
     test_api: FnTest,
