@@ -1,12 +1,16 @@
-use std::{collections::HashMap, sync::Mutex, time::SystemTime};
-
+#![allow(dead_code)]
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    sync::RwLock,
+    time::{Duration, SystemTime},
+};
+
+const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(300); // 5 minutes
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountRegion {
-    #[serde(rename = "databaseAccountEndpoint")]
     pub endpoint: String,
-    #[serde(rename = "name")]
     pub region: String,
 }
 
@@ -40,10 +44,10 @@ impl RequestOperation {
 #[derive(Clone, Default)]
 pub struct DatabaseAccountLocationsInfo {
     pub preferred_locations: Vec<String>,
-    available_write_locations: Vec<String>,
-    available_read_locations: Vec<String>,
-    available_write_endpoints_by_location: HashMap<String, String>,
-    available_read_endpoints_by_location: HashMap<String, String>,
+    account_write_locations: Vec<String>,
+    account_read_locations: Vec<String>,
+    account_write_endpoints_by_location: HashMap<String, String>,
+    account_read_endpoints_by_location: HashMap<String, String>,
     write_endpoints: Vec<String>,
     read_endpoints: Vec<String>,
 }
@@ -57,7 +61,7 @@ pub struct LocationUnavailabilityInfo {
 pub struct LocationCache {
     pub default_endpoint: String,
     pub locations_info: DatabaseAccountLocationsInfo,
-    pub location_unavailability_info_map: Mutex<HashMap<String, LocationUnavailabilityInfo>>,
+    pub location_unavailability_info_map: RwLock<HashMap<String, LocationUnavailabilityInfo>>,
 }
 
 impl LocationCache {
@@ -65,10 +69,10 @@ impl LocationCache {
         Self {
             default_endpoint,
             locations_info: DatabaseAccountLocationsInfo {
-                preferred_locations: preferred_locations,
+                preferred_locations,
                 ..Default::default()
             },
-            location_unavailability_info_map: Mutex::new(HashMap::new()),
+            location_unavailability_info_map: RwLock::new(HashMap::new()),
         }
     }
 
@@ -79,20 +83,20 @@ impl LocationCache {
     ) -> Result<(), &'static str> {
         // Separate write locations into appropriate hashmap and list
         if !write_locations.is_empty() {
-            let (available_write_endpoints_by_location, available_write_locations) =
+            let (account_write_endpoints_by_location, account_write_locations) =
                 self.get_endpoints_by_location(write_locations);
-            self.locations_info.available_write_endpoints_by_location =
-                available_write_endpoints_by_location;
-            self.locations_info.available_write_locations = available_write_locations;
+            self.locations_info.account_write_endpoints_by_location =
+                account_write_endpoints_by_location;
+            self.locations_info.account_write_locations = account_write_locations;
         }
 
         // Separate read locations into appropriate hashmap and list
         if !read_locations.is_empty() {
-            let (available_read_endpoints_by_location, available_read_locations) =
+            let (account_read_endpoints_by_location, account_read_locations) =
                 self.get_endpoints_by_location(read_locations);
-            self.locations_info.available_read_endpoints_by_location =
-                available_read_endpoints_by_location;
-            self.locations_info.available_read_locations = available_read_locations;
+            self.locations_info.account_read_endpoints_by_location =
+                account_read_endpoints_by_location;
+            self.locations_info.account_read_locations = account_read_locations;
         }
 
         self.refresh_endpoints();
@@ -105,15 +109,12 @@ impl LocationCache {
 
         {
             let mut location_unavailability_info_map =
-                self.location_unavailability_info_map.lock().unwrap();
+                self.location_unavailability_info_map.write().unwrap();
 
             if let Some(info) = location_unavailability_info_map.get_mut(endpoint) {
-                if info.unavailable_operation.includes(operation) {
-                    // If the endpoint is already marked as unavailable, update last_check_time
-                    info.last_check_time = now;
-                } else {
-                    // If endpoint marked unavailable but with a different operation, update operation type to All
-                    info.last_check_time = now;
+                // update last check time and operation in unavailability_info_map
+                info.last_check_time = now;
+                if !info.unavailable_operation.includes(operation) {
                     info.unavailable_operation = RequestOperation::All;
                 }
             } else {
@@ -133,12 +134,11 @@ impl LocationCache {
 
     pub fn is_endpoint_unavailable(&self, endpoint: &str, operation: RequestOperation) -> bool {
         let location_unavailability_info_map =
-            self.location_unavailability_info_map.lock().unwrap();
+            self.location_unavailability_info_map.read().unwrap();
         if let Some(info) = location_unavailability_info_map.get(endpoint) {
             // Checks if endpoint is unavailable for the given operation
-            let elapsed = info.last_check_time.elapsed().unwrap_or_default()
-                < std::time::Duration::from_secs(300);
-
+            let elapsed =
+                info.last_check_time.elapsed().unwrap_or_default() < DEFAULT_EXPIRATION_TIME;
             info.unavailable_operation.includes(operation) && elapsed
         } else {
             false
@@ -152,11 +152,19 @@ impl LocationCache {
     ) -> String {
         // Returns service endpoint based on index, if index out of bounds or operation not supported, returns default endpoint
         if operation == RequestOperation::Write && !self.locations_info.write_endpoints.is_empty() {
-            self.locations_info.write_endpoints[location_index].clone()
+            self.locations_info
+                .write_endpoints
+                .get(location_index)
+                .cloned()
+                .unwrap_or_else(|| self.default_endpoint.clone())
         } else if operation == RequestOperation::Read
             && !self.locations_info.read_endpoints.is_empty()
         {
-            self.locations_info.read_endpoints[location_index].clone()
+            self.locations_info
+                .read_endpoints
+                .get(location_index)
+                .cloned()
+                .unwrap_or_else(|| self.default_endpoint.clone())
         } else {
             self.default_endpoint.clone()
         }
@@ -165,13 +173,13 @@ impl LocationCache {
     fn refresh_endpoints(&mut self) {
         // Get preferred available endpoints for write and read operations
         self.locations_info.write_endpoints = self.get_preferred_available_endpoints(
-            &self.locations_info.available_write_endpoints_by_location,
+            &self.locations_info.account_write_endpoints_by_location,
             RequestOperation::Write,
             &self.default_endpoint,
         );
 
         self.locations_info.read_endpoints = self.get_preferred_available_endpoints(
-            &self.locations_info.available_read_endpoints_by_location,
+            &self.locations_info.account_read_endpoints_by_location,
             RequestOperation::Read,
             &self.default_endpoint,
         );
@@ -234,19 +242,17 @@ impl LocationCache {
 
     fn refresh_stale_endpoints(&mut self) {
         let mut location_unavailability_info_map =
-            self.location_unavailability_info_map.lock().unwrap();
+            self.location_unavailability_info_map.write().unwrap();
 
         // Removes endpoints that have not been checked in the last 5 minutes
         location_unavailability_info_map.retain(|_, info| {
-            info.last_check_time.elapsed().unwrap_or_default()
-                <= std::time::Duration::from_secs(300)
+            info.last_check_time.elapsed().unwrap_or_default() <= DEFAULT_EXPIRATION_TIME
         });
     }
 }
 
 // Tests for location cache
 #[cfg(test)]
-
 mod tests {
     use super::*;
     use std::{collections::HashSet, vec};
@@ -258,22 +264,22 @@ mod tests {
         Vec<String>,
     ) {
         // Setting up test database account data
-        let default_endpoint = "https://default.documents.azure.com".to_string();
+        let default_endpoint = "https://default.documents.example.com".to_string();
 
         let location_1 = AccountRegion {
-            endpoint: "https://location1.documents.azure.com".to_string(),
+            endpoint: "https://location1.documents.example.com".to_string(),
             region: "Location 1".to_string(),
         };
         let location_2 = AccountRegion {
-            endpoint: "https://location2.documents.azure.com".to_string(),
+            endpoint: "https://location2.documents.example.com".to_string(),
             region: "Location 2".to_string(),
         };
         let location_3 = AccountRegion {
-            endpoint: "https://location3.documents.azure.com".to_string(),
+            endpoint: "https://location3.documents.example.com".to_string(),
             region: "Location 3".to_string(),
         };
         let location_4 = AccountRegion {
-            endpoint: "https://location4.documents.azure.com".to_string(),
+            endpoint: "https://location4.documents.example.com".to_string(),
             region: "Location 4".to_string(),
         };
         let write_locations = HashMap::from([
@@ -298,20 +304,24 @@ mod tests {
         )
     }
 
-    #[test]
-    fn location_cache_update_test() {
-        // this test also checks refresh_endpoints, get_endpoints_by_location, and get_preferred_available_endpoints methods
-        // set up test data
+    fn create_test_location_cache() -> LocationCache {
         let (default_endpoint, write_locations, read_locations, preferred_locations) =
             create_test_data();
 
-        let mut cache = LocationCache::new(default_endpoint.to_string(), preferred_locations);
+        let mut cache = LocationCache::new(default_endpoint, preferred_locations);
+        cache.update(write_locations, read_locations).unwrap();
+        cache
+    }
 
-        cache.update(write_locations, read_locations);
+    #[test]
+    fn location_cache_update() {
+        // this test also checks refresh_endpoints, get_endpoints_by_location, and get_preferred_available_endpoints methods
+        // set up test data
+        let cache = create_test_location_cache();
 
         assert_eq!(
             cache.default_endpoint,
-            "https://default.documents.azure.com"
+            "https://default.documents.example.com"
         );
 
         assert_eq!(
@@ -320,71 +330,71 @@ mod tests {
         );
 
         // check available write locations
-        let actual_available_write_locations: HashSet<_> = cache
+        let actual_account_write_locations: HashSet<_> = cache
             .locations_info
-            .available_write_locations
+            .account_write_locations
             .iter()
             .cloned()
             .collect();
-        let expected_available_write_locations: HashSet<String> = ["Location 1", "Location 2"]
+        let expected_account_write_locations: HashSet<String> = ["Location 1", "Location 2"]
             .iter()
             .map(|s| s.to_string())
             .collect();
         assert_eq!(
-            actual_available_write_locations,
-            expected_available_write_locations
+            actual_account_write_locations,
+            expected_account_write_locations
         );
 
         // check available read locations
-        let actual_available_read_locations: HashSet<_> = cache
+        let actual_account_read_locations: HashSet<_> = cache
             .locations_info
-            .available_read_locations
+            .account_read_locations
             .iter()
             .cloned()
             .collect();
-        let expected_available_read_locations: HashSet<String> =
+        let expected_account_read_locations: HashSet<String> =
             ["Location 1", "Location 2", "Location 3", "Location 4"]
                 .iter()
                 .map(|s| s.to_string())
                 .collect();
 
         assert_eq!(
-            actual_available_read_locations,
-            expected_available_read_locations
+            actual_account_read_locations,
+            expected_account_read_locations
         );
 
         assert_eq!(
-            cache.locations_info.available_write_endpoints_by_location,
+            cache.locations_info.account_write_endpoints_by_location,
             HashMap::from([
                 (
                     "Location 1".to_string(),
-                    "https://location1.documents.azure.com".to_string()
+                    "https://location1.documents.example.com".to_string()
                 ),
                 (
                     "Location 2".to_string(),
-                    "https://location2.documents.azure.com".to_string()
+                    "https://location2.documents.example.com".to_string()
                 )
             ])
         );
 
         assert_eq!(
-            cache.locations_info.available_read_endpoints_by_location,
+            cache.locations_info.account_read_endpoints_by_location,
             HashMap::from([
                 (
                     "Location 1".to_string(),
-                    "https://location1.documents.azure.com".to_string()
+                    "https://location1.documents.example.com".to_string()
                 ),
                 (
                     "Location 2".to_string(),
-                    "https://location2.documents.azure.com".to_string()
+                    "https://location2.documents.example.com".to_string()
                 ),
                 (
                     "Location 3".to_string(),
-                    "https://location3.documents.azure.com".to_string()
+                    "https://location3.documents.example.com".to_string()
                 ),
                 (
                     "Location 4".to_string(),
-                    "https://location4.documents.azure.com".to_string()
+                    "https://location4.documents.example.com".to_string()
                 )
             ])
         );
@@ -392,16 +402,16 @@ mod tests {
         assert_eq!(
             cache.locations_info.write_endpoints,
             vec![
-                "https://location1.documents.azure.com".to_string(),
-                "https://location2.documents.azure.com".to_string()
+                "https://location1.documents.example.com".to_string(),
+                "https://location2.documents.example.com".to_string()
             ]
         );
 
         assert_eq!(
             cache.locations_info.read_endpoints,
             vec![
-                "https://location1.documents.azure.com".to_string(),
-                "https://location2.documents.azure.com".to_string(),
+                "https://location1.documents.example.com".to_string(),
+                "https://location2.documents.example.com".to_string(),
             ]
         );
     }
@@ -416,11 +426,11 @@ mod tests {
             vec![preferred_locations[0].clone()],
         );
 
-        cache.update(write_locations, read_locations);
+        let _ = cache.update(write_locations, read_locations);
 
         assert_eq!(
             cache.default_endpoint,
-            "https://default.documents.azure.com"
+            "https://default.documents.example.com"
         );
 
         assert_eq!(
@@ -430,49 +440,49 @@ mod tests {
 
         assert_eq!(
             cache.locations_info.write_endpoints,
-            vec!["https://location1.documents.azure.com".to_string()]
+            vec!["https://location1.documents.example.com".to_string()]
         );
 
         assert_eq!(
             cache.locations_info.read_endpoints,
-            vec!["https://location1.documents.azure.com".to_string()]
+            vec!["https://location1.documents.example.com".to_string()]
         );
     }
 
     #[test]
-    fn mark_read_endpoint_unavailable_test() {
-        // set up test data
-        let (default_endpoint, write_locations, read_locations, preferred_locations) =
-            create_test_data();
-
-        let mut cache = LocationCache::new(default_endpoint, preferred_locations);
-        cache.update(write_locations, read_locations);
+    fn mark_read_endpoint_unavailable() {
+        // set up test cache
+        let mut cache = create_test_location_cache();
 
         // mark location 1 as unavailable endpoint for read operation
-        let unavailable_endpoint = "https://location1.documents.azure.com";
+        let unavailable_endpoint = "https://location1.documents.example.com";
         let operation = RequestOperation::Read;
         cache.mark_endpoint_unavailable(unavailable_endpoint, operation);
 
         // check that endpoint is last option in read endpoints and it is in the location unavailability info map
         assert_eq!(
-            cache.locations_info.read_endpoints.last(),
-            Some(&unavailable_endpoint.to_string())
+            cache.locations_info.read_endpoints,
+            vec![
+                "https://location2.documents.example.com".to_string(),
+                unavailable_endpoint.to_string()
+            ]
         );
 
         assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
+
+        assert_eq!(
+            cache.resolve_service_endpoint(0, RequestOperation::Read),
+            "https://location2.documents.example.com".to_string()
+        );
     }
 
     #[test]
-    fn mark_write_endpoint_unavailable_test() {
-        // set up test data
-        let (default_endpoint, write_locations, read_locations, preferred_locations) =
-            create_test_data();
-
-        let mut cache = LocationCache::new(default_endpoint, preferred_locations);
-        cache.update(write_locations, read_locations);
+    fn mark_write_endpoint_unavailable() {
+        // set up test cache
+        let mut cache = create_test_location_cache();
 
         // mark location 1 as unavailable endpoint for write operation
-        let unavailable_endpoint = "https://location1.documents.azure.com";
+        let unavailable_endpoint = "https://location1.documents.example.com";
         let operation = RequestOperation::Write;
         cache.mark_endpoint_unavailable(unavailable_endpoint, operation);
 
@@ -483,26 +493,38 @@ mod tests {
         );
 
         assert!(cache.is_endpoint_unavailable(unavailable_endpoint, operation));
+
+        assert_eq!(
+            cache.resolve_service_endpoint(0, RequestOperation::Write),
+            "https://location2.documents.example.com".to_string()
+        );
     }
 
     #[test]
-    fn mark_same_endpoint_unavailable_test() {
-        let (default_endpoint, write_locations, read_locations, preferred_locations) =
-            create_test_data();
+    fn mark_same_endpoint_unavailable() {
+        // set up test cache
+        let mut cache = create_test_location_cache();
 
-        let mut cache = LocationCache::new(default_endpoint, preferred_locations);
+        let endpoint1 = "https://location1.documents.example.com";
 
-        cache.update(write_locations, read_locations);
-
-        let endpoint1 = "https://location1.documents.azure.com";
-
+        let before_marked_unavailable_time = SystemTime::now();
         cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
         cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Write);
+
+        assert!(
+            cache
+                .location_unavailability_info_map
+                .read()
+                .unwrap()
+                .get(endpoint1)
+                .map(|info| info.last_check_time)
+                > Some(before_marked_unavailable_time)
+        );
 
         assert_eq!(
             cache
                 .location_unavailability_info_map
-                .lock()
+                .read()
                 .unwrap()
                 .get(endpoint1)
                 .map(|info| info.unavailable_operation),
@@ -511,24 +533,19 @@ mod tests {
     }
 
     #[test]
-    fn refresh_stale_endpoints_test() {
-        // create test data
-        let (default_endpoint, write_locations, read_locations, preferred_locations) =
-            create_test_data();
-
-        let mut cache = LocationCache::new(default_endpoint, preferred_locations);
-
-        cache.update(write_locations, read_locations);
+    fn refresh_stale_endpoints() {
+        // create test cache
+        let mut cache = create_test_location_cache();
 
         // mark endpoint 1 and endpoint 2 as unavailable
-        let endpoint1 = "https://location1.documents.azure.com";
-        let endpoint2 = "https://location2.documents.azure.com";
+        let endpoint1 = "https://location1.documents.example.com";
+        let endpoint2 = "https://location2.documents.example.com";
         cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
         cache.mark_endpoint_unavailable(endpoint2, RequestOperation::Read);
 
         // simulate stale entry
         {
-            let mut unavailability_map = cache.location_unavailability_info_map.lock().unwrap();
+            let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
             if let Some(info) = unavailability_map.get_mut(endpoint1) {
                 info.last_check_time = SystemTime::now() - std::time::Duration::from_secs(500);
             }
@@ -542,38 +559,39 @@ mod tests {
     }
 
     #[test]
-    fn resolve_service_endpoint_test() {
-        // create test data
-        let (default_endpoint, write_locations, read_locations, preferred_locations) =
-            create_test_data();
-
-        let mut cache = LocationCache::new(default_endpoint, preferred_locations);
-
-        cache.update(write_locations, read_locations);
+    fn resolve_service_endpoint() {
+        // create test cache
+        let cache = create_test_location_cache();
 
         // resolve service endpoint
         let endpoint = cache.resolve_service_endpoint(0, RequestOperation::Read);
         assert_eq!(
             endpoint,
-            "https://location1.documents.azure.com".to_string()
+            "https://location1.documents.example.com".to_string()
         );
     }
 
     #[test]
-    fn resolve_service_endpoint_second_location_test() {
-        // create test data
-        let (default_endpoint, write_locations, read_locations, preferred_locations) =
-            create_test_data();
-
-        let mut cache = LocationCache::new(default_endpoint, preferred_locations);
-
-        cache.update(write_locations, read_locations);
+    fn resolve_service_endpoint_second_location() {
+        // create test cache
+        let cache = create_test_location_cache();
 
         // resolve service endpoint for second location
         let endpoint = cache.resolve_service_endpoint(1, RequestOperation::Read);
         assert_eq!(
             endpoint,
-            "https://location2.documents.azure.com".to_string()
+            "https://location2.documents.example.com".to_string()
+        );
+    }
+
+    #[test]
+    fn resolve_service_endpoint_default() {
+        let cache = create_test_location_cache();
+
+        let endpoint = cache.resolve_service_endpoint(5, RequestOperation::Read);
+        assert_eq!(
+            endpoint,
+            "https://default.documents.example.com".to_string()
         );
     }
 }
