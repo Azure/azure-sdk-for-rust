@@ -521,6 +521,7 @@ mod tests {
             },
             ..Default::default()
         };
+        //        recording.instrument(&mut options.client_options);
 
         let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
         let response = client.get_with_function_tracing("failing_url", None).await;
@@ -676,25 +677,10 @@ mod tests {
     #[recorded::test()]
     async fn test_http_tracing_tests(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
-        let credential = recording.credential().clone();
         let package_name = recording.var("CARGO_PKG_NAME", None);
         let package_version = recording.var("CARGO_PKG_VERSION", None);
         azure_core_test::tracing::test_instrumentation_for_api(
-            |tracer_provider| {
-                TestServiceClientWithMacros::new(
-                    "https://azuresdkforcpp.azurewebsites.net",
-                    credential,
-                    Some(TestServiceClientWithMacrosOptions {
-                        client_options: ClientOptions {
-                            instrumentation: Some(InstrumentationOptions {
-                                tracer_provider: Some(tracer_provider.clone()),
-                            }),
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    }),
-                )
-            },
+            |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
                 let client = client;
                 Box::pin(async move { client.get("get", None).await })
@@ -717,25 +703,10 @@ mod tests {
     #[recorded::test()]
     async fn test_function_tracing_tests(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
-        let credential = recording.credential().clone();
         let package_name = recording.var("CARGO_PKG_NAME", None);
         let package_version = recording.var("CARGO_PKG_VERSION", None);
         azure_core_test::tracing::test_instrumentation_for_api(
-            |tracer_provider| {
-                TestServiceClientWithMacros::new(
-                    "https://azuresdkforcpp.azurewebsites.net",
-                    credential,
-                    Some(TestServiceClientWithMacrosOptions {
-                        client_options: ClientOptions {
-                            instrumentation: Some(InstrumentationOptions {
-                                tracer_provider: Some(tracer_provider.clone()),
-                            }),
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    }),
-                )
-            },
+            |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
                 let client = client;
                 Box::pin(async move { client.get_with_function_tracing("get", None).await })
@@ -762,25 +733,10 @@ mod tests {
     #[recorded::test()]
     async fn test_function_tracing_tests_error(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
-        let credential = recording.credential().clone();
         let package_name = recording.var("CARGO_PKG_NAME", None);
         let package_version = recording.var("CARGO_PKG_VERSION", None);
         azure_core_test::tracing::test_instrumentation_for_api(
-            |tracer_provider| {
-                TestServiceClientWithMacros::new(
-                    "https://azuresdkforcpp.azurewebsites.net",
-                    credential,
-                    Some(TestServiceClientWithMacrosOptions {
-                        client_options: ClientOptions {
-                            instrumentation: Some(InstrumentationOptions {
-                                tracer_provider: Some(tracer_provider.clone()),
-                            }),
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    }),
-                )
-            },
+            |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
                 let client = client;
                 Box::pin(async move { client.get_with_function_tracing("index.htm", None).await })
