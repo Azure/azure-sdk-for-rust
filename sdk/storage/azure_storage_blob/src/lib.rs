@@ -8,6 +8,7 @@
 #![allow(unused_imports)]
 
 pub mod clients;
+#[expect(deprecated, reason = "requires emitter update")]
 mod generated;
 mod parsers;
 mod pipeline;
