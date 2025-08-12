@@ -2,6 +2,12 @@
 // Licensed under the MIT License.
 
 /// Endpoints for Azure Resource Manager in different Azure clouds
+///
+/// # Deprecated
+/// These constants are deprecated. Use [`crate::cloud::configurations`] instead
+/// for a more comprehensive cloud configuration system that includes authority hosts,
+/// resource manager endpoints, and service audiences.
+#[deprecated(since = "0.29.0", note = "Use `azure_core::cloud::configurations` instead")]
 pub mod resource_manager_endpoint {
     static_url!(
         /// Azure Resource Manager China cloud endpoint
@@ -29,6 +35,12 @@ pub mod resource_manager_endpoint {
 }
 
 /// A list of known Azure authority hosts
+///
+/// # Deprecated
+/// These constants are deprecated. Use [`crate::cloud::configurations`] instead
+/// for a more comprehensive cloud configuration system that includes authority hosts,
+/// resource manager endpoints, and service audiences.
+#[deprecated(since = "0.29.0", note = "Use `azure_core::cloud::configurations` instead")]
 pub mod authority_hosts {
     static_url!(
         /// China-based Azure Authority Host

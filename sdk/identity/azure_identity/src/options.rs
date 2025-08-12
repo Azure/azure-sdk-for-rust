@@ -5,6 +5,7 @@ use crate::env::Env;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::process::{new_executor, Executor};
 use azure_core::{
+    cloud::CloudConfiguration,
     error::{ErrorKind, Result, ResultExt},
     http::{new_http_client, HttpClient, Url},
 };
@@ -20,6 +21,7 @@ pub struct TokenCredentialOptions {
     pub(crate) env: Env,
     pub(crate) http_client: Arc<dyn HttpClient>,
     pub(crate) authority_host: String,
+    pub(crate) cloud_config: Option<&'static CloudConfiguration>,
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) executor: Arc<dyn Executor>,
 }
@@ -28,6 +30,7 @@ pub struct TokenCredentialOptions {
 ///
 /// The authority host is taken from the `AZURE_AUTHORITY_HOST` environment variable if set and a valid URL.
 /// If not, the default authority host is `https://login.microsoftonline.com` for the Azure public cloud.
+/// The cloud configuration can be set explicitly using `set_cloud_config()` for non-public clouds.
 impl Default for TokenCredentialOptions {
     fn default() -> Self {
         let env = Env::default();
@@ -38,6 +41,7 @@ impl Default for TokenCredentialOptions {
             env: Env::default(),
             http_client: new_http_client(),
             authority_host,
+            cloud_config: None,
             #[cfg(not(target_arch = "wasm32"))]
             executor: new_executor(),
         }
@@ -45,6 +49,16 @@ impl Default for TokenCredentialOptions {
 }
 
 impl TokenCredentialOptions {
+    /// Set the cloud configuration for authentication requests.
+    ///
+    /// This allows credentials to work with different Azure clouds
+    /// (Public, China, Germany, US Government) by setting the appropriate
+    /// authority host and other cloud-specific settings.
+    pub fn set_cloud_config(&mut self, cloud_config: &'static CloudConfiguration) {
+        self.cloud_config = Some(cloud_config);
+        self.authority_host = cloud_config.authority_host.to_string();
+    }
+
     /// Set the authority host for authentication requests.
     pub fn set_authority_host(&mut self, authority_host: String) {
         self.authority_host = authority_host;
@@ -54,9 +68,20 @@ impl TokenCredentialOptions {
     ///
     /// The default is `https://login.microsoftonline.com`.
     pub fn authority_host(&self) -> Result<Url> {
-        Url::parse(&self.authority_host).with_context(ErrorKind::DataConversion, || {
-            format!("invalid authority host URL {}", &self.authority_host)
-        })
+        // If cloud config is set, use it; otherwise use the explicit authority_host
+        let host = if let Some(config) = self.cloud_config {
+            config.authority_host.clone()
+        } else {
+            Url::parse(&self.authority_host).with_context(ErrorKind::DataConversion, || {
+                format!("invalid authority host URL {}", &self.authority_host)
+            })?
+        };
+        Ok(host)
+    }
+
+    /// Gets the cloud configuration if set.
+    pub fn cloud_config(&self) -> Option<&'static CloudConfiguration> {
+        self.cloud_config
     }
 
     /// The [`HttpClient`] to make requests.
@@ -81,5 +106,46 @@ impl From<Arc<dyn HttpClient>> for TokenCredentialOptions {
             http_client,
             ..Default::default()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::cloud::configurations;
+
+    #[test]
+    fn test_default_options() {
+        let options = TokenCredentialOptions::default();
+        assert_eq!(options.authority_host, AZURE_PUBLIC_CLOUD);
+        assert!(options.cloud_config.is_none());
+    }
+
+    #[test]
+    fn test_set_cloud_config() {
+        let mut options = TokenCredentialOptions::default();
+        options.set_cloud_config(configurations::azure_china_cloud());
+
+        assert_eq!(
+            options.cloud_config.unwrap().authority_host.as_str(),
+            "https://login.chinacloudapi.cn/"
+        );
+        assert_eq!(options.authority_host, "https://login.chinacloudapi.cn/");
+    }
+
+    #[test]
+    fn test_authority_host_with_cloud_config() {
+        let mut options = TokenCredentialOptions::default();
+        options.set_cloud_config(configurations::azure_us_government_cloud());
+
+        let authority_host = options.authority_host().unwrap();
+        assert_eq!(authority_host.as_str(), "https://login.microsoftonline.us/");
+    }
+
+    #[test]
+    fn test_authority_host_without_cloud_config() {
+        let options = TokenCredentialOptions::default();
+        let authority_host = options.authority_host().unwrap();
+        assert_eq!(authority_host.as_str(), "https://login.microsoftonline.com/");
     }
 }

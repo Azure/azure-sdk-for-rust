@@ -5,6 +5,7 @@ mod instrumentation;
 mod user_agent;
 
 pub use instrumentation::*;
+use crate::cloud::CloudConfiguration;
 use std::sync::Arc;
 use typespec_client_core::http::policies::Policy;
 pub use typespec_client_core::http::{
@@ -35,14 +36,46 @@ pub struct ClientOptions {
     /// If not specified, defaults to no instrumentation.
     ///
     pub instrumentation: Option<InstrumentationOptions>,
+
+    /// Cloud configuration for determining endpoints and audiences.
+    ///
+    /// If not specified, defaults to Azure Public Cloud.
+    pub cloud_config: Option<&'static CloudConfiguration>,
+
+    /// Service audience for token requests.
+    ///
+    /// This is typically the base URI of the service being accessed.
+    /// If not specified, the audience will be derived from the cloud configuration
+    /// for known services, or default to the resource manager audience.
+    pub audience: Option<String>,
 }
 
 pub(crate) struct CoreClientOptions {
     pub(crate) user_agent: UserAgentOptions,
     pub(crate) instrumentation: InstrumentationOptions,
+    pub(crate) cloud_config: &'static CloudConfiguration,
+    pub(crate) audience: Option<String>,
 }
 
 impl ClientOptions {
+    /// Set the cloud configuration.
+    ///
+    /// This determines the endpoints and audiences used for authentication
+    /// and service requests.
+    pub fn with_cloud_config(mut self, cloud_config: &'static CloudConfiguration) -> Self {
+        self.cloud_config = Some(cloud_config);
+        self
+    }
+
+    /// Set the service audience for token requests.
+    ///
+    /// The audience should be the base URI of the service being accessed.
+    /// For example, for Azure Storage, use "https://storage.azure.com".
+    pub fn with_audience(mut self, audience: impl Into<String>) -> Self {
+        self.audience = Some(audience.into());
+        self
+    }
+
     /// Efficiently deconstructs into owned [`typespec_client_core::http::ClientOptions`] as well as unwrapped or default Azure-specific options.
     ///
     /// If instead we implemented [`Into`], we'd have to clone Azure-specific options instead of moving memory of [`Some`] values.
@@ -60,6 +93,8 @@ impl ClientOptions {
             CoreClientOptions {
                 user_agent: self.user_agent.unwrap_or_default(),
                 instrumentation: self.instrumentation.unwrap_or_default(),
+                cloud_config: self.cloud_config.unwrap_or_else(|| crate::cloud::configurations::azure_public_cloud()),
+                audience: self.audience,
             },
             options,
         )
