@@ -11,9 +11,9 @@ use crate::{
     models::{
         BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions, BlockList, BlockListType,
-        BlockLookupList, StorageServiceProperties,
+        BlobServiceProperties, BlockBlobClientCommitBlockListOptions,
+        BlockBlobClientGetBlockListOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions, BlockBlobClientOptions,

@@ -21,8 +21,8 @@ async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
         .await?;
 
     // Assert
-    let storage_service_properties = response.into_body().await?;
-    let hour_metrics = storage_service_properties.hour_metrics;
+    let blob_service_properties = response.into_body().await?;
+    let hour_metrics = blob_service_properties.hour_metrics;
     assert!(hour_metrics.is_some());
     Ok(())
 }

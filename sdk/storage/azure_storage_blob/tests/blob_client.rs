@@ -18,6 +18,27 @@ use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
 #[recorded::test]
+async fn test_blob_exists(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+    container_client.create_container(None).await?;
+
+    // Blob Does Not Exists Scenario
+    let response = blob_client.exists().await?;
+    assert!(!response);
+
+    // Blob Exists Scenario
+    create_test_blob(&blob_client).await?;
+    let response = blob_client.exists().await?;
+    assert!(response);
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();

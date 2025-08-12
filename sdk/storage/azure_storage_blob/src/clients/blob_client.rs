@@ -24,7 +24,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url, XmlFormat,
+        NoFormat, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
     Bytes, Result,
 };
@@ -120,6 +120,32 @@ impl BlobClient {
     /// Gets the blob name of the Storage account this client is connected to.
     pub fn blob_name(&self) -> &str {
         &self.client.blob_name
+    }
+
+    /// Checks if the blob exists. Returns `Ok(true)` if the blob exists, `Ok(false)` if the blob does not exists, and
+    /// propagates any other errors.
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result` containing:
+    /// - `Ok(true)` if the blob exists
+    /// - `Ok(false)` if the blob does not exist
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the request fails for any reason other than a non-existent blob.
+    pub async fn exists(&self) -> Result<bool> {
+        match self.get_properties(None).await {
+            Ok(_) => Ok(true),
+            Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                // If the blob does not exist, we return false.
+                Ok(false)
+            }
+            Err(e) => {
+                // Propagate other errors.
+                Err(e)
+            }
+        }
     }
 
     /// Returns all user-defined metadata, standard HTTP properties, and system properties for the blob.

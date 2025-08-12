@@ -50,6 +50,6 @@ pub use crate::generated::models::{
     PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesOptions,
     PageBlobClientUploadPagesResult, PageBlobClientUploadPagesResultHeaders, PageList,
     PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority, RetentionPolicy,
-    SequenceNumberActionType, StaticWebsite, StorageServiceProperties,
+    SequenceNumberActionType, StaticWebsite, BlobServiceProperties,
 };
 pub use extensions::*;
