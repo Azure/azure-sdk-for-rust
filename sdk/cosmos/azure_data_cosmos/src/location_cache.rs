@@ -5,6 +5,7 @@ use std::{
     sync::RwLock,
     time::{Duration, SystemTime},
 };
+use tracing::info;
 
 const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(300); // 5 minutes
 
@@ -127,6 +128,11 @@ impl LocationCache {
                     },
                 );
             }
+
+            info!(
+                "Endpoint {} was marked as unavailable for {:?}",
+                endpoint, operation
+            );
         }
 
         self.refresh_endpoints();
