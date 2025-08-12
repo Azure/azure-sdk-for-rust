@@ -210,10 +210,10 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
 
 #[recorded::test]
 async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
-    use azure_core_test::tracing::test_instrumentation_for_api;
     let recording = ctx.recording();
 
-    test_instrumentation_for_api(
+    // Verify that the distributed tracing traces generated from the API call below match the expected traces.
+    azure_core_test::tracing::assert_instrumentation_information(
         |tracer_provider| {
             let mut options = SecretClientOptions::default();
             recording.instrument(&mut options.client_options);

@@ -2,11 +2,12 @@
 // Licensed under the MIT License.
 
 // cspell: ignore traceparent
+
+//! This module contains a set of tests to help verify correctness of the Distributed Tracing implementation, and correctness of service client implementations of Distributed Tracing.
 use std::{
     pin::Pin,
     sync::{Arc, Mutex},
 };
-use tracing::trace;
 use typespec_client_core::{
     http::{headers::HeaderName, Context, Request},
     tracing::{
@@ -14,12 +15,14 @@ use typespec_client_core::{
     },
 };
 
+/// Mock Tracing Provider - used for testing distributed tracing without involving a specific tracing implementation.
 #[derive(Debug)]
 pub struct MockTracingProvider {
     tracers: Mutex<Vec<Arc<MockTracer>>>,
 }
 
 impl MockTracingProvider {
+    /// Instantiate a new instance of a Mock Tracing Provider.
     pub fn new() -> Self {
         Self {
             tracers: Mutex::new(Vec::new()),
@@ -52,7 +55,7 @@ impl TracerProvider for MockTracingProvider {
         tracer
     }
 }
-
+/// Mock Tracer - used for testing distributed tracing without involving a specific tracing implementation.
 #[derive(Debug)]
 pub struct MockTracer {
     pub namespace: Option<&'static str>,
@@ -97,6 +100,7 @@ impl Tracer for MockTracer {
     }
 }
 
+/// Mock span for testing purposes.
 #[derive(Debug)]
 pub struct MockSpan {
     pub name: String,
@@ -107,9 +111,8 @@ pub struct MockSpan {
 }
 impl MockSpan {
     fn new(name: &str, kind: SpanKind, attributes: Vec<Attribute>) -> Self {
-        println!("Creating MockSpan: {}", name);
-        println!("Attributes: {:?}", attributes);
-        println!("Converted attributes: {:?}", attributes);
+        eprintln!("Creating MockSpan: {}", name);
+        eprintln!("Attributes: {:?}", attributes);
         Self {
             name: name.to_string(),
             kind,
@@ -122,7 +125,7 @@ impl MockSpan {
 
 impl Span for MockSpan {
     fn set_attribute(&self, key: &'static str, value: AttributeValue) {
-        println!("{}: Setting attribute {}: {:?}", self.name, key, value);
+        eprintln!("{}: Setting attribute {}: {:?}", self.name, key, value);
         let mut attributes = self.attributes.lock().unwrap();
         attributes.push(Attribute {
             key: key.into(),
@@ -131,13 +134,13 @@ impl Span for MockSpan {
     }
 
     fn set_status(&self, status: crate::tracing::SpanStatus) {
-        println!("{}: Setting span status: {:?}", self.name, status);
+        eprintln!("{}: Setting span status: {:?}", self.name, status);
         let mut state = self.state.lock().unwrap();
         *state = status;
     }
 
     fn end(&self) {
-        println!("Ending span: {}", self.name);
+        eprintln!("Ending span: {}", self.name);
         let mut is_open = self.is_open.lock().unwrap();
         *is_open = false;
     }
@@ -193,14 +196,22 @@ pub struct ExpectedTracerInformation<'a> {
     pub spans: Vec<ExpectedSpanInformation<'a>>,
 }
 
+/// Checks the instrumentation result against the expected tracers.
+///
+/// Used to verify that the mock tracer has recorded the expected spans and attributes. Primarily
+/// intended for use in unit tests of the distributed tracing functionality.
+///
+/// # Arguments
+/// - `mock_tracer`: The mock tracer instance that contains the recorded spans.
+/// - `expected_tracers`: The expected tracer information to compare against.
 pub fn check_instrumentation_result(
     mock_tracer: Arc<MockTracingProvider>,
     expected_tracers: Vec<ExpectedTracerInformation<'_>>,
 ) {
     let tracers = mock_tracer.tracers.lock().unwrap();
     if tracers.len() != expected_tracers.len() {
-        println!("Expected tracers: {:?}", expected_tracers);
-        println!("Found tracers: {:?}", tracers);
+        eprintln!("Expected tracers: {:?}", expected_tracers);
+        eprintln!("Found tracers: {:?}", tracers);
     }
     assert_eq!(
         tracers.len(),
@@ -210,7 +221,7 @@ pub fn check_instrumentation_result(
         tracers.len()
     );
     for (index, expected) in expected_tracers.iter().enumerate() {
-        println!("Checking tracer {}: {}", index, expected.name);
+        eprintln!("Checking tracer {}: {}", index, expected.name);
         let tracer = &tracers[index];
         assert_eq!(tracer.package_name, expected.name);
         assert_eq!(tracer.package_version, expected.version);
@@ -225,7 +236,7 @@ pub fn check_instrumentation_result(
         );
 
         for (span_index, span_expected) in expected.spans.iter().enumerate() {
-            println!(
+            eprintln!(
                 "Checking span {} of tracer {}: {}",
                 span_index, expected.name, span_expected.span_name
             );
@@ -234,11 +245,18 @@ pub fn check_instrumentation_result(
     }
 }
 
+/// Information about an expected span. Used to assert span properties.
 #[derive(Debug)]
 pub struct ExpectedSpanInformation<'a> {
+    /// The expected name of the span.
     pub span_name: &'a str,
+    /// The expected status of the span.
     pub status: SpanStatus,
+
+    /// The expected kind of the span.
     pub kind: SpanKind,
+
+    /// The expected attributes associated with the span.
     pub attributes: Vec<(&'a str, AttributeValue)>,
 }
 
@@ -247,10 +265,10 @@ fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformati
     assert_eq!(span.kind, expected.kind);
     assert_eq!(*span.state.lock().unwrap(), expected.status);
     let attributes = span.attributes.lock().unwrap();
-    println!("Expected attributes: {:?}", expected.attributes);
-    println!("Found attributes: {:?}", attributes);
+    eprintln!("Expected attributes: {:?}", expected.attributes);
+    eprintln!("Found attributes: {:?}", attributes);
     for (index, attr) in attributes.iter().enumerate() {
-        println!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
+        eprintln!("Attribute {}: {} = {:?}", index, attr.key, attr.value);
         let mut found = false;
         for (key, value) in &expected.attributes {
             if attr.key == *key {
@@ -276,6 +294,9 @@ fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformati
 /// Information about an instrumented API call.
 ///
 /// This structure is used to collect information about a specific API call that is being instrumented for tracing.
+///
+/// It provides hooks which can be use to verify the expected HTTP result type for the API call, and provides the ability
+/// to register any service client specific public API attributes which will be generated during the API call.
 #[derive(Debug, Clone)]
 pub struct InstrumentedApiInformation {
     /// The name of the API being called.
@@ -292,6 +313,7 @@ pub struct InstrumentedApiInformation {
     pub expected_status_code: azure_core::http::StatusCode,
 
     /// A set of optional additional attributes attached to the public API span for service clients which require them.
+    /// If the attribute value has the `<ANY>` placeholder, it means that the test should accept any value for that attribute.
     pub additional_api_attributes: Vec<(&'static str, AttributeValue)>,
 }
 
@@ -321,7 +343,9 @@ pub struct InstrumentationInformation {
 
 /// Tests the instrumentation of a service client API call.
 ///
-/// Arguments:
+/// Asserts that the generated distributed tracing information for a particular API matches the expected shape of the API.
+///
+/// # Arguments
 /// - `create_client`: A function to create the service client.
 /// - `test_api`: A function to test the API call.
 /// - `api_information`: Information about the API call being tested.
@@ -340,7 +364,7 @@ pub struct InstrumentationInformation {
 /// The `test_api` call may issue multiple service client calls, if it does, this function will verify that all expected spans were created. The caller of the `test_instrumentation_for_api` call
 /// should make sure to include all expected APIs in the call.
 ///
-pub async fn test_instrumentation_for_api<C, FnInit, FnTest, T>(
+pub async fn assert_instrumentation_information<C, FnInit, FnTest, T>(
     create_client: FnInit,
     test_api: FnTest,
     api_information: InstrumentationInformation,
@@ -355,9 +379,13 @@ where
     // Create a client with the mock tracer
     let client = create_client(mock_tracer.clone())?;
 
-    let result = test_api(client).await;
-    trace!("Generated traces: {:?}", mock_tracer);
+    // We don't actually care about the result of the API call - just that it was made.
+    let _ = test_api(client).await;
 
+    // There will be two tracers generated - one for public APIs, the second for HTTP calls.
+    //
+    // If there are public API instrumentation spans, we will see the public API and HTTP API traces on
+    // the public API tracer.
     let mut public_api_tracer = ExpectedTracerInformation {
         name: api_information.package_name.as_str(),
         version: Some(api_information.package_version.as_str()),
@@ -365,6 +393,7 @@ where
         spans: Vec::new(),
     };
 
+    // If there are no public API spans in the API call, they will appear on the Request Activity Tracer.
     let mut request_activity_tracer = ExpectedTracerInformation {
         name: api_information.package_name.as_str(),
         version: Some(api_information.package_version.as_str()),
@@ -372,6 +401,7 @@ where
         spans: Vec::new(),
     };
 
+    // Iterate over the expected API calls calculating the expected spans which will be created.
     for api_call in api_information.api_calls.iter() {
         let mut expected_spans = Vec::new();
 
@@ -388,6 +418,7 @@ where
         }
 
         if let Some(api_name) = api_call.api_name {
+            // Public API spans only enter the Error state if the status code is a server error.
             expected_spans.push(ExpectedSpanInformation {
                 span_name: api_name,
                 status: if api_call.expected_status_code.is_server_error() {
@@ -398,11 +429,12 @@ where
                     SpanStatus::Unset
                 },
                 kind: SpanKind::Internal,
-                attributes: public_api_attributes.clone(),
+                attributes: public_api_attributes,
             });
         }
-        // Add the HTTP API span.
-        let mut expected_http_attributes = vec![
+
+        // Add the HTTP API span after creating the expected set of attributes.
+        let mut http_request_attributes = vec![
             ("http.request.method", api_call.api_verb.as_str().into()),
             ("url.full", "<ANY>".into()),
             ("server.address", "<ANY>".into()),
@@ -414,21 +446,21 @@ where
             ),
         ];
         if !api_call.expected_status_code.is_success() {
-            expected_http_attributes.push((
+            http_request_attributes.push((
                 "error.type",
                 api_call.expected_status_code.to_string().into(),
             ));
         }
         // If we have no public API information, we won't have a namespace in the HTTP attributes.
         if api_call.api_name.is_some() && api_information.package_namespace.is_some() {
-            expected_http_attributes.push((
+            http_request_attributes.push((
                 "az.namespace",
                 api_information.package_namespace.unwrap().into(),
             ));
         }
         expected_spans.push(ExpectedSpanInformation {
             span_name: api_call.api_verb.as_str(),
-            status: if api_call.expected_status_code != 200 {
+            status: if !api_call.expected_status_code.is_success() {
                 SpanStatus::Error {
                     description: "".into(),
                 }
@@ -436,7 +468,7 @@ where
                 SpanStatus::Unset
             },
             kind: SpanKind::Client,
-            attributes: expected_http_attributes,
+            attributes: http_request_attributes,
         });
         if api_call.api_name.is_some() {
             public_api_tracer.spans.extend(expected_spans);
@@ -446,14 +478,7 @@ where
     }
     let expected_tracers = vec![public_api_tracer, request_activity_tracer];
 
-    match result {
-        Ok(_) => {
-            // If the test passes, we can check the instrumentation
-            check_instrumentation_result(mock_tracer, expected_tracers);
-        }
-        Err(_) => {
-            check_instrumentation_result(mock_tracer, expected_tracers);
-        }
-    }
+    check_instrumentation_result(mock_tracer, expected_tracers);
+
     Ok(())
 }

@@ -417,14 +417,15 @@ This adds a clone of the parent client's `tracer` to the subclient - it function
 
 The `azure_core_test::tracing` package provides functionality to allow developers to verify that their distributed tracing functionality is generating the expected tracing information.
 
-This functionality is driven from the `azure_core_test::tracing::test_instrumentation_for_api` API.
+This functionality is driven from the `azure_core_test::tracing::assert_instrumentation_information` API.
 
 This function takes two closures and a structure which describes the expected API shape. The first closure is used to create an instance of the public API, the second actually executes the public API.
 
 As an example, here is a test for the `keyvault_secrets` package:
 
 ```rust
-test_instrumentation_for_api(
+assert_instrumentation_information(
+    // Create an instance of a SecretClient adding the instrumentation options to ensure distributed tracing is enabled.
     |tracer_provider| {
         let mut options = SecretClientOptions::default();
         recording.instrument(&mut options.client_options);
@@ -437,6 +438,8 @@ test_instrumentation_for_api(
             Some(options),
         )
     },
+    // Perform a series of tests against the newly created SecretClient.
+    // In this case, there are two APIs called - set_secret and get_secret.
     |client: SecretClient| {
         Box::pin(async move {
             // Set a secret.
@@ -462,6 +465,12 @@ test_instrumentation_for_api(
             Ok(())
         })
     },
+    // Verify that the tests above generated appropriate distributed traces.
+    // First verify the package information and service client namespace.
+    // Next verify that two service APIs were called - one with the language
+    // independent name of "KeyVault.setSecret" (using the "PUT" HTTP verb),
+    // and the other with a language independent name of "KeyVault.getSecret"
+    // using the "get" verb.
     InstrumentationInformation {
         package_name: recording.var("CARGO_PKG_NAME", None),
         package_version: recording.var("CARGO_PKG_VERSION", None),

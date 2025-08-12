@@ -679,7 +679,7 @@ mod tests {
         let recording = ctx.recording();
         let package_name = recording.var("CARGO_PKG_NAME", None);
         let package_version = recording.var("CARGO_PKG_VERSION", None);
-        azure_core_test::tracing::test_instrumentation_for_api(
+        azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
                 let client = client;
@@ -705,7 +705,7 @@ mod tests {
         let recording = ctx.recording();
         let package_name = recording.var("CARGO_PKG_NAME", None);
         let package_version = recording.var("CARGO_PKG_VERSION", None);
-        azure_core_test::tracing::test_instrumentation_for_api(
+        azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
                 let client = client;
@@ -735,7 +735,7 @@ mod tests {
         let recording = ctx.recording();
         let package_name = recording.var("CARGO_PKG_NAME", None);
         let package_version = recording.var("CARGO_PKG_VERSION", None);
-        azure_core_test::tracing::test_instrumentation_for_api(
+        azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
                 let client = client;
