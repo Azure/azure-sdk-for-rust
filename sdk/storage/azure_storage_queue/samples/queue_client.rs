@@ -21,7 +21,7 @@ use azure_storage_queue::{
 async fn send_message(
     queue_client: &QueueClient,
     message: &str,
-) -> Result<Response<Option<SentMessage>, XmlFormat>, Error> {
+) -> Result<Response<SentMessage, XmlFormat>, Error> {
     let queue_message = QueueMessage {
         message_text: Some(message.to_owned()),
     };
@@ -40,18 +40,15 @@ async fn send_and_delete_message(
     if let Ok(response) = result {
         let message = response.into_body().await?;
 
-        if let Some(message) = message {
-            if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
-            {
-                println!(
-                    "Deleting message with ID: {} and pop receipt: {}",
-                    message_id, pop_receipt
-                );
-                let delete_result = queue_client
-                    .delete_message(&message_id, &pop_receipt, None)
-                    .await;
-                log_operation_result(&delete_result, "delete_message");
-            }
+        if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt) {
+            println!(
+                "Deleting message with ID: {} and pop receipt: {}",
+                message_id, pop_receipt
+            );
+            let delete_result = queue_client
+                .delete_message(&message_id, &pop_receipt, None)
+                .await;
+            log_operation_result(&delete_result, "delete_message");
         }
     }
 
@@ -67,26 +64,23 @@ async fn send_and_update_message(
     if let Ok(response) = result {
         let message = response.into_body().await?;
 
-        if let Some(message) = message {
-            if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt)
-            {
-                println!(
-                    "Updating message with ID: {} and pop receipt: {}",
-                    message_id, pop_receipt
-                );
-                let queue_message = QueueMessage {
-                    message_text: Some("Updated message text from Rust".to_string()),
-                };
-                let update_option = QueueClientUpdateOptions {
-                    // Serialize the message text as bytes for the update
-                    queue_message: Some(queue_message.try_into()?),
-                    ..Default::default()
-                };
-                let update_result = queue_client
-                    .update_message(&message_id.clone(), &pop_receipt, 50, Some(update_option))
-                    .await;
-                log_operation_result(&update_result, "update_message");
-            }
+        if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt) {
+            println!(
+                "Updating message with ID: {} and pop receipt: {}",
+                message_id, pop_receipt
+            );
+            let queue_message = QueueMessage {
+                message_text: Some("Updated message text from Rust".to_string()),
+            };
+            let update_option = QueueClientUpdateOptions {
+                // Serialize the message text as bytes for the update
+                queue_message: Some(queue_message.try_into()?),
+                ..Default::default()
+            };
+            let update_result = queue_client
+                .update_message(&message_id.clone(), &pop_receipt, 50, Some(update_option))
+                .await;
+            log_operation_result(&update_result, "update_message");
         }
     }
 

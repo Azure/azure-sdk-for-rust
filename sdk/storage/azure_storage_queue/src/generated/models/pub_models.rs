@@ -293,6 +293,15 @@ pub struct QueueServiceProperties {
     pub minute_metrics: Option<Metrics>,
 }
 
+/// Stats for the storage service.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+pub struct QueueServiceStats {
+    /// The geo replication stats.
+    #[serde(rename = "GeoReplication", skip_serializing_if = "Option::is_none")]
+    pub geo_replication: Option<GeoReplication>,
+}
+
 /// The object returned in the QueueMessageList array when calling Get Messages on
 /// a Queue.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -407,13 +416,4 @@ pub struct SignedIdentifier {
     /// The unique ID for the signed identifier.
     #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-}
-
-/// Stats for the storage service.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct StorageServiceStats {
-    /// The geo replication stats.
-    #[serde(rename = "GeoReplication", skip_serializing_if = "Option::is_none")]
-    pub geo_replication: Option<GeoReplication>,
 }
