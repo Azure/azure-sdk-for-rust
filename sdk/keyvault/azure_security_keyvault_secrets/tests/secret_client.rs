@@ -9,7 +9,7 @@ use azure_core::{
 };
 use azure_core_test::{
     recorded,
-    tracing::{ExpectedInstrumentation, ExpectedApiInformation},
+    tracing::{ExpectedApiInformation, ExpectedInstrumentation},
     TestContext, TestMode,
 };
 use azure_security_keyvault_secrets::{
