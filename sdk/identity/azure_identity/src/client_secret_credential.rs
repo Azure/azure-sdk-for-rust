@@ -40,6 +40,54 @@ pub struct ClientSecretCredential {
 }
 
 impl ClientSecretCredential {
+    /// Creates a new client secret credential for the Azure Public Cloud.
+    pub fn new_for_public_cloud(
+        tenant_id: &str,
+        client_id: String,
+        secret: Secret,
+    ) -> Result<Arc<Self>> {
+        let options = Some(ClientSecretCredentialOptions {
+            credential_options: TokenCredentialOptions::new_for_public_cloud(),
+        });
+        Self::new(tenant_id, client_id, secret, options)
+    }
+
+    /// Creates a new client secret credential for the Azure China Cloud.
+    pub fn new_for_china_cloud(
+        tenant_id: &str,
+        client_id: String,
+        secret: Secret,
+    ) -> Result<Arc<Self>> {
+        let options = Some(ClientSecretCredentialOptions {
+            credential_options: TokenCredentialOptions::new_for_china_cloud(),
+        });
+        Self::new(tenant_id, client_id, secret, options)
+    }
+
+    /// Creates a new client secret credential for the Azure Germany Cloud.
+    pub fn new_for_germany_cloud(
+        tenant_id: &str,
+        client_id: String,
+        secret: Secret,
+    ) -> Result<Arc<Self>> {
+        let options = Some(ClientSecretCredentialOptions {
+            credential_options: TokenCredentialOptions::new_for_germany_cloud(),
+        });
+        Self::new(tenant_id, client_id, secret, options)
+    }
+
+    /// Creates a new client secret credential for the Azure US Government Cloud.
+    pub fn new_for_us_government_cloud(
+        tenant_id: &str,
+        client_id: String,
+        secret: Secret,
+    ) -> Result<Arc<Self>> {
+        let options = Some(ClientSecretCredentialOptions {
+            credential_options: TokenCredentialOptions::new_for_us_government_cloud(),
+        });
+        Self::new(tenant_id, client_id, secret, options)
+    }
+
     pub fn new(
         tenant_id: &str,
         client_id: String,

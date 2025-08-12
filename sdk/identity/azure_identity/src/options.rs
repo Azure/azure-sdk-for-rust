@@ -49,6 +49,34 @@ impl Default for TokenCredentialOptions {
 }
 
 impl TokenCredentialOptions {
+    /// Create options for the Azure Public Cloud.
+    pub fn new_for_public_cloud() -> Self {
+        let mut options = Self::default();
+        options.set_cloud_config(azure_core::cloud::configurations::azure_public_cloud());
+        options
+    }
+
+    /// Create options for the Azure China Cloud.
+    pub fn new_for_china_cloud() -> Self {
+        let mut options = Self::default();
+        options.set_cloud_config(azure_core::cloud::configurations::azure_china_cloud());
+        options
+    }
+
+    /// Create options for the Azure Germany Cloud.
+    pub fn new_for_germany_cloud() -> Self {
+        let mut options = Self::default();
+        options.set_cloud_config(azure_core::cloud::configurations::azure_germany_cloud());
+        options
+    }
+
+    /// Create options for the Azure US Government Cloud.
+    pub fn new_for_us_government_cloud() -> Self {
+        let mut options = Self::default();
+        options.set_cloud_config(azure_core::cloud::configurations::azure_us_government_cloud());
+        options
+    }
+
     /// Set the cloud configuration for authentication requests.
     ///
     /// This allows credentials to work with different Azure clouds
@@ -147,5 +175,32 @@ mod tests {
         let options = TokenCredentialOptions::default();
         let authority_host = options.authority_host().unwrap();
         assert_eq!(authority_host.as_str(), "https://login.microsoftonline.com/");
+    }
+
+    #[test]
+    fn test_convenience_methods() {
+        let public = TokenCredentialOptions::new_for_public_cloud();
+        assert_eq!(
+            public.cloud_config.unwrap().authority_host.as_str(),
+            "https://login.microsoftonline.com/"
+        );
+
+        let china = TokenCredentialOptions::new_for_china_cloud();
+        assert_eq!(
+            china.cloud_config.unwrap().authority_host.as_str(),
+            "https://login.chinacloudapi.cn/"
+        );
+
+        let germany = TokenCredentialOptions::new_for_germany_cloud();
+        assert_eq!(
+            germany.cloud_config.unwrap().authority_host.as_str(),
+            "https://login.microsoftonline.de/"
+        );
+
+        let us_gov = TokenCredentialOptions::new_for_us_government_cloud();
+        assert_eq!(
+            us_gov.cloud_config.unwrap().authority_host.as_str(),
+            "https://login.microsoftonline.us/"
+        );
     }
 }
