@@ -192,7 +192,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        let send_message = sent_message_response.into_body().await?.unwrap();
+        let send_message = sent_message_response.into_body().await?;
 
         let delete_response = queue_client
             .delete_message(
@@ -235,7 +235,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        let sent_message = send_message_response.into_body().await?.unwrap();
+        let sent_message = send_message_response.into_body().await?;
 
         // Update the message in the queue
         let option = Some(QueueClientUpdateOptions {

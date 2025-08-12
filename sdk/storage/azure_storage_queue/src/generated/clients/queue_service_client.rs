@@ -8,7 +8,7 @@ use crate::generated::{
     models::{
         ListQueuesResponse, QueueServiceClientGetPropertiesOptions,
         QueueServiceClientGetStatisticsOptions, QueueServiceClientListQueuesOptions,
-        QueueServiceClientSetPropertiesOptions, QueueServiceProperties, StorageServiceStats,
+        QueueServiceClientSetPropertiesOptions, QueueServiceProperties, QueueServiceStats,
     },
 };
 use azure_core::{
@@ -152,7 +152,7 @@ impl QueueServiceClient {
     pub async fn get_statistics(
         &self,
         options: Option<QueueServiceClientGetStatisticsOptions<'_>>,
-    ) -> Result<Response<StorageServiceStats, XmlFormat>> {
+    ) -> Result<Response<QueueServiceStats, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();

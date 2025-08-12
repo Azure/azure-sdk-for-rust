@@ -198,7 +198,7 @@ impl QueueServiceClient {
     pub async fn get_statistics(
         &self,
         options: Option<QueueServiceClientGetStatisticsOptions<'_>>,
-    ) -> Result<Response<StorageServiceStats, XmlFormat>> {
+    ) -> Result<Response<QueueServiceStats, XmlFormat>> {
         self.client.get_statistics(options).await
     }
 }

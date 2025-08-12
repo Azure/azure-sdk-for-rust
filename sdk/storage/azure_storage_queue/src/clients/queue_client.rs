@@ -211,15 +211,18 @@ impl QueueClient {
     ///
     /// # Errors
     ///
-    /// Returns an error if the queue doesn't exist or if the request fails
+    /// Returns an error if the queue doesn't exist, if no message was sent, or if the request fails
     pub async fn send_message(
         &self,
         queue_message: RequestContent<QueueMessage, XmlFormat>,
         options: Option<QueueClientSendMessageOptions<'_>>,
-    ) -> Result<Response<Option<SentMessage>, XmlFormat>> {
+    ) -> Result<Response<SentMessage, XmlFormat>> {
         let response = self.client.send_message(queue_message, options).await?;
 
-        Self::extract_first_message(response, |list: &ListOfSentMessage| list.items.clone()).await
+        Self::extract_first_message(response, |list: &ListOfSentMessage| {
+            list.items.clone().unwrap_or_default()
+        })
+        .await
     }
 
     /// Deletes a specific message from the queue.
@@ -325,8 +328,8 @@ impl QueueClient {
     /// Helper function to extract the first message from a list response and convert it to a single message response
     async fn extract_first_message<T, U>(
         response: Response<T, XmlFormat>,
-        extract_fn: impl Fn(&T) -> Option<Vec<U>>,
-    ) -> Result<Response<Option<U>, XmlFormat>>
+        extract_fn: impl Fn(&T) -> Vec<U>,
+    ) -> Result<Response<U, XmlFormat>>
     where
         T: serde::de::DeserializeOwned,
         U: serde::Serialize + Clone,
@@ -335,19 +338,16 @@ impl QueueClient {
         let headers = response.headers().clone();
         let message_list = response.into_body().await?;
 
-        if let Some(messages) = extract_fn(&message_list) {
-            if let Some(first_message) = messages.into_iter().next() {
-                let xml_body = xml::to_xml(&first_message)?;
-                let raw_response = RawResponse::from_bytes(status, headers, xml_body);
-                Ok(raw_response.into())
-            } else {
-                let raw_response =
-                    RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
-                Ok(raw_response.into())
-            }
-        } else {
-            let raw_response = RawResponse::from_bytes(status, headers, Bytes::from_static(&[]));
-            Ok(raw_response.into())
-        }
+        let messages = extract_fn(&message_list);
+        let first_message = messages.into_iter().next().ok_or_else(|| {
+            azure_core::Error::message(
+                azure_core::error::ErrorKind::DataConversion,
+                "No messages found in the response",
+            )
+        })?;
+
+        let xml_body = xml::to_xml(&first_message)?;
+        let raw_response = RawResponse::from_bytes(status, headers, xml_body);
+        Ok(raw_response.into())
     }
 }
