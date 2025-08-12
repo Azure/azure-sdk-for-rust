@@ -90,7 +90,7 @@ async-trait = "0.1"
 base64 = "0.22"
 bytes = "1.0"
 cargo_metadata = "0.18.1"
-clap = { version = "4.4.16", features = ["derive"] }
+clap = { version = "4.5.45", features = ["derive"] }
 criterion = { version = "0.5", features = ["async_tokio"] }
 dyn-clone = "1.0"
 fe2o3-amqp = { version = "0.14", features = ["native-tls", "uuid"] }
@@ -108,13 +108,14 @@ openssl = { version = "0.10.72" }
 opentelemetry = { version = "0.30", features = ["trace"] }
 opentelemetry_sdk = "0.30"
 opentelemetry-http = "0.30"
+parking_lot = "0.12"
 pin-project = "1.0"
-proc-macro2 = "1.0.86"
+proc-macro2 = "1.0.97"
 quick-xml = { version = "0.31", features = ["serialize", "serde-types"] }
 quote = "1.0.37"
 rand = "0.9.1"
 rand_chacha = "0.9"
-reqwest = { version = "0.12.22", features = [
+reqwest = { version = "0.12.23", features = [
   "json",
   "stream",
 ], default-features = false }
@@ -142,7 +143,7 @@ tokio = { version = "1.0", default-features = false, features = [
 tracing = "0.1.40"
 tracing-subscriber = "0.3"
 url = "2.2"
-uuid = { version = "1.17", features = ["v4"] }
+uuid = { version = "1.18", features = ["v4"] }
 zerofrom = "0.1.5"
 zip = { version = "4.0.0", default-features = false, features = ["deflate"] }
 
