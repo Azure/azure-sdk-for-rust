@@ -5,7 +5,7 @@ use std::{
     sync::RwLock,
     time::{Duration, SystemTime},
 };
-use tracing::info;
+use tracing::{info, warn};
 
 const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(300); // 5 minutes
 
