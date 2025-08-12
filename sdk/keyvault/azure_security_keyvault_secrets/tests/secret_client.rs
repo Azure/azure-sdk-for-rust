@@ -9,7 +9,7 @@ use azure_core::{
 };
 use azure_core_test::{
     recorded,
-    tracing::{InstrumentationInformation, InstrumentedApiInformation},
+    tracing::{ExpectedInstrumentation, ExpectedApiInformation},
     TestContext, TestMode,
 };
 use azure_security_keyvault_secrets::{
@@ -251,17 +251,17 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
                 Ok(())
             })
         },
-        InstrumentationInformation {
+        ExpectedInstrumentation {
             package_name: recording.var("CARGO_PKG_NAME", None),
             package_version: recording.var("CARGO_PKG_VERSION", None),
             package_namespace: Some("azure_security_keyvault_secrets"),
             api_calls: vec![
-                InstrumentedApiInformation {
+                ExpectedApiInformation {
                     api_name: Some("KeyVault.setSecret"),
                     api_verb: azure_core::http::Method::Put,
                     ..Default::default()
                 },
-                InstrumentedApiInformation {
+                ExpectedApiInformation {
                     api_name: Some("KeyVault.getSecret"),
                     ..Default::default()
                 },

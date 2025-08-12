@@ -298,7 +298,7 @@ fn check_span_information(span: &Arc<MockSpan>, expected: &ExpectedSpanInformati
 /// It provides hooks which can be use to verify the expected HTTP result type for the API call, and provides the ability
 /// to register any service client specific public API attributes which will be generated during the API call.
 #[derive(Debug, Clone)]
-pub struct InstrumentedApiInformation {
+pub struct ExpectedApiInformation {
     /// The name of the API being called.
     ///
     /// This is the name of the API as it appears in the service documentation. If `None`, it means that
@@ -317,7 +317,7 @@ pub struct InstrumentedApiInformation {
     pub additional_api_attributes: Vec<(&'static str, AttributeValue)>,
 }
 
-impl Default for InstrumentedApiInformation {
+impl Default for ExpectedApiInformation {
     fn default() -> Self {
         Self {
             api_name: None,
@@ -330,7 +330,7 @@ impl Default for InstrumentedApiInformation {
 
 /// Information about an instrumented package calling the `test_instrumentation_for_api` test.
 #[derive(Debug, Default, Clone)]
-pub struct InstrumentationInformation {
+pub struct ExpectedInstrumentation {
     /// The package name for the service client.
     pub package_name: String,
     /// The package version for the service client.
@@ -338,7 +338,7 @@ pub struct InstrumentationInformation {
     /// The namespace for the service client.
     pub package_namespace: Option<&'static str>,
     /// Individual instrumented API calls from the test function.
-    pub api_calls: Vec<InstrumentedApiInformation>,
+    pub api_calls: Vec<ExpectedApiInformation>,
 }
 
 /// Tests the instrumentation of a service client API call.
@@ -357,7 +357,7 @@ pub struct InstrumentationInformation {
 ///
 /// After the APIs have been tested, this function will verify that the expected tracing spans were created.
 ///
-/// To do that, it uses the `InstrumentationInformation` structure to collect and compare the actual spans generated during the test.
+/// To do that, it uses the `[ExpectedInstrumentation]` structure to collect and compare the actual spans generated during the test.
 ///
 /// The code does not verify the actual client URLs or server ports, it only verifies that the relevant attributes are created.
 ///
@@ -367,7 +367,7 @@ pub struct InstrumentationInformation {
 pub async fn assert_instrumentation_information<C, FnInit, FnTest, T>(
     create_client: FnInit,
     test_api: FnTest,
-    api_information: InstrumentationInformation,
+    api_information: ExpectedInstrumentation,
 ) -> azure_core::Result<()>
 where
     FnInit: FnOnce(Arc<dyn TracerProvider>) -> azure_core::Result<C>,

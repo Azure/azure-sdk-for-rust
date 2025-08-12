@@ -181,7 +181,7 @@ mod tests {
     };
     use azure_core_test::{
         recorded,
-        tracing::{InstrumentationInformation, InstrumentedApiInformation},
+        tracing::{ExpectedApiInformation, ExpectedInstrumentation},
         TestContext,
     };
     use opentelemetry::trace::{
@@ -685,11 +685,11 @@ mod tests {
                 let client = client;
                 Box::pin(async move { client.get("get", None).await })
             },
-            InstrumentationInformation {
+            ExpectedInstrumentation {
                 package_name,
                 package_version,
                 package_namespace: Some("Az.TestServiceClient"),
-                api_calls: vec![InstrumentedApiInformation {
+                api_calls: vec![ExpectedApiInformation {
                     api_name: None,
                     ..Default::default()
                 }],
@@ -711,11 +711,11 @@ mod tests {
                 let client = client;
                 Box::pin(async move { client.get_with_function_tracing("get", None).await })
             },
-            InstrumentationInformation {
+            ExpectedInstrumentation {
                 package_name,
                 package_version,
                 package_namespace: Some("Az.TestServiceClient"),
-                api_calls: vec![InstrumentedApiInformation {
+                api_calls: vec![ExpectedApiInformation {
                     api_name: Some("macros_get_with_tracing"),
                     additional_api_attributes: vec![
                         ("a.b", 1.into()),
@@ -741,11 +741,11 @@ mod tests {
                 let client = client;
                 Box::pin(async move { client.get_with_function_tracing("index.htm", None).await })
             },
-            InstrumentationInformation {
+            ExpectedInstrumentation {
                 package_name,
                 package_version,
                 package_namespace: Some("Az.TestServiceClient"),
-                api_calls: vec![InstrumentedApiInformation {
+                api_calls: vec![ExpectedApiInformation {
                     api_name: Some("macros_get_with_tracing"),
                     expected_status_code: http::StatusCode::NotFound,
                     additional_api_attributes: vec![

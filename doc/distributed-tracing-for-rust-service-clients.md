@@ -471,17 +471,17 @@ assert_instrumentation_information(
     // independent name of "KeyVault.setSecret" (using the "PUT" HTTP verb),
     // and the other with a language independent name of "KeyVault.getSecret"
     // using the "get" verb.
-    InstrumentationInformation {
+    ExpectedInstrumentation {
         package_name: recording.var("CARGO_PKG_NAME", None),
         package_version: recording.var("CARGO_PKG_VERSION", None),
         package_namespace: Some("azure_security_keyvault_secrets"),
         api_calls: vec![
-            InstrumentedApiInformation {
+            ExpectedApiInformation {
                 api_name: Some("KeyVault.setSecret"),
                 api_verb: azure_core::http::Method::Put,
                 ..Default::default()
             },
-            InstrumentedApiInformation {
+            ExpectedApiInformation {
                 api_name: Some("KeyVault.getSecret"),
                 ..Default::default()
             },
