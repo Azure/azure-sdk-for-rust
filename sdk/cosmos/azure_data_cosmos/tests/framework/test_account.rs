@@ -147,12 +147,7 @@ impl TestAccount {
         // We COULD choose not to delete them and instead validate that they were deleted, but this is what I've gone with for now.
         for id in ids {
             println!("Deleting left-over database: {}", &id);
-            cosmos_client
-                .database_client(&id)
-                .delete(None)
-                .await?
-                .success()
-                .await?;
+            cosmos_client.database_client(&id).delete(None).await?;
         }
         Ok(())
     }
