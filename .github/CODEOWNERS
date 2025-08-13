@@ -59,13 +59,13 @@
 
 # ServiceLabel: %Cosmos
 # AzureSDKOwners: @heaths
-# ServiceOwner: @Pilchie
+# ServiceOwners: @Pilchie
 
 # PRLabel: %KeyVault
 /sdk/keyvault/           @Azure/azure-sdk-write-keyvault @heaths
 
 # ServiceLabel: %KeyVault
-# ServiceOwner: @Azure/azure-sdk-write-keyvault
+# ServiceOwners: @Azure/azure-sdk-write-keyvault
 
 # PRLabel: %Storage
 /sdk/storage/            @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
