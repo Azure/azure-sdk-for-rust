@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 fn main() {
     let build_id = format!(
         "$Id: {}, Version: {}, Commit: {}, Branch: {}, Build ID: {}, Build Number: {}, Timestamp: {}$",
