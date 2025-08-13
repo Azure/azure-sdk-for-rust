@@ -1,6 +1,3 @@
-<!-- Copyright(C) Microsoft Corp. All Rights Reserved. -->
-
-<!-- cspell: ignore liudmila subclients -->
 # Distributed tracing options in Rust service clients
 
 ## Distributed tracing fundamentals
@@ -149,7 +146,7 @@ to
 ```diff
 pub struct MyServiceClient {
     endpoint: Url,
-+    tracer: std::sync::Arc<dyn azure_core::tracing::Tracer>,
++   tracer: std::sync::Arc<dyn azure_core::tracing::Tracer>,
 }
 ```
 
@@ -192,7 +189,7 @@ pub fn new(
             Vec::default(),
             vec![auth_policy],
         ),
-     })
+    })
 }
 ```
 
@@ -217,33 +214,33 @@ pub fn new(
         credential,
         vec!["https://vault.azure.net/.default"],
     ));
-+    let tracer =
-+    if let Some(tracer_options) = &options.client_options.instrumentation {
-+        tracer_options
-+            .tracer_provider
-+            .as_ref()
-+            .map(|tracer_provider| {
-+                tracer_provider.get_tracer(
-+                    Some(#client_namespace),
-+                    option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-+                    option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
-+                )
-+            })
-+    } else {
-+        None
-+    };
++   let tracer =
++   if let Some(tracer_options) = &options.client_options.instrumentation {
++       tracer_options
++           .tracer_provider
++           .as_ref()
++           .map(|tracer_provider| {
++               tracer_provider.get_tracer(
++                   Some(#client_namespace),
++                   option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
++                   option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
++               )
++           })
++   } else {
++       None
++   };
     Ok(Self {
-+            tracer,
-           endpoint,
-           api_version: options.api_version,
-           pipeline: Pipeline::new(
-               option_env!("CARGO_PKG_NAME"),
-               option_env!("CARGO_PKG_VERSION"),
-               options.client_options,
-               Vec::default(),
-               vec![auth_policy],
-           ),
-       })
++       tracer,
+        endpoint,
+        api_version: options.api_version,
+        pipeline: Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options,
+            Vec::default(),
+            vec![auth_policy],
+        ),
+    })
 }
 ```
 
@@ -297,19 +294,19 @@ pub async fn get(
     path: &str,
     options: Option<TestServiceClientGetMethodOptions<'_>>,
 ) -> Result<RawResponse> {
-+    let options = {
-+        let mut options = options.unwrap_or_default();
-+        let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-+            api_name: "TestFunction",
-+            attributes: Vec::new(),
-+        };
-+        let mut ctx = options.method_options.context.with_value(public_api_info);
-+        if let Some(tracer) = &self.tracer {
-+            ctx = ctx.with_value(tracer.clone());
-+        }
-+        options.method_options.context = ctx;
-+        Some(options)
-+    };
++   let options = {
++       let mut options = options.unwrap_or_default();
++       let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
++           api_name: "TestFunction",
++           attributes: Vec::new(),
++       };
++       let mut ctx = options.method_options.context.with_value(public_api_info);
++       if let Some(tracer) = &self.tracer {
++           ctx = ctx.with_value(tracer.clone());
++       }
++       options.method_options.context = ctx;
++       Some(options)
++   };
     let mut url = self.endpoint.clone();
     url.set_path(path);
     url.query_pairs_mut()
@@ -319,8 +316,8 @@ pub async fn get(
 
     let response = self
         .pipeline
--        .send(&options.method_options.context, &mut request)
-+        .send(&ctx, &mut request)
+-       .send(&options.method_options.context, &mut request)
++       .send(&ctx, &mut request)
         .await?;
     if !response.status().is_success() {
         return Err(azure_core::Error::message(
@@ -379,6 +376,7 @@ The client can then add whatever attributes to the span it needs, and after the 
 
 Note that in this model, the client is responsible for ending the span.
 
+<!-- cspell:ignore subclients -->
 ### Service implementations with "subclients"
 
 Service clients can sometimes contain "subclients" - clients which have their own pipelines and endpoint which contain subclient specific functionality.
@@ -386,7 +384,6 @@ Service clients can sometimes contain "subclients" - clients which have their ow
 Such subclients often have an accessor function to create a new subclient instance which looks like this:
 
 ```rust
-
 pub fn get_operation_templates_lro_client(&self) -> OperationTemplatesLroClient {
     OperationTemplatesLroClient {
         api_version: self.api_version.clone(),
