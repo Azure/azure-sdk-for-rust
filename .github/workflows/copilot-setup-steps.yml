@@ -31,7 +31,7 @@ on:
       - 'rust-toolchain.toml'
       - 'Cargo.toml'
       - '.devcontainer/**'
-      - '.github/workflows/copilot-environment.yml'
+      - '.github/workflows/copilot-setup-steps.yml'
 
 jobs:
   setup-environment:
@@ -46,17 +46,14 @@ jobs:
       
       - name: Setup development environment using devcontainer configuration
         run: |
-          # Run the devcontainer post-create script to set up the environment
-          # This uses the same setup as the existing devcontainer
+          # Run the devcontainer post-create script to set up additional toolchains
           chmod +x .devcontainer/oncreate
           ./.devcontainer/oncreate
       
-      - name: Install additional tools from devcontainer
+      - name: Install additional tools for Azure SDK development
         run: |
-          # Install the same tools as specified in the devcontainer Dockerfile
-          cargo install cargo-watch http-server
-          
           # Install tools commonly needed for Rust development and Azure SDK
+          # Note: cargo-watch and http-server are already installed in the container
           cargo install cargo-audit || echo "cargo-audit already installed or failed to install"
           cargo install cargo-outdated || echo "cargo-outdated already installed or failed to install"
       
