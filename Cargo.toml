@@ -21,7 +21,7 @@ members = [
   "sdk/template/azure_template_core",
   "sdk/template/azure_template",
   "sdk/storage/azure_storage_common",
-  "sdk/storage/azure_storage_blob",
+  "sdk/storage/azure_storage_blob", "sdk/cosmos/cosmosclient",
 ]
 exclude = [
   "eng/scripts",
