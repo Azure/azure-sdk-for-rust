@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::ffi::{c_char, CStr, CString};
 
 #[no_mangle] // Necessary to prevent the compiler from stripping it when optimizing

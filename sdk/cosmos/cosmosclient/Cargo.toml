@@ -1,5 +1,6 @@
 [package]
 name = "cosmosclient"
+publish = false
 description = "C library wrapping the Azure CosmosDB SDK for Rust"
 version = "0.27.0"
 authors.workspace = true
@@ -12,7 +13,7 @@ rust-version.workspace = true
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-azure_data_cosmos = { path = "../azure_data_cosmos", features = ["_internal_c"] }
+azure_data_cosmos = { path = "../azure_data_cosmos", features = ["c"] }
 
 [build-dependencies]
 cbindgen = "0.29.0"
