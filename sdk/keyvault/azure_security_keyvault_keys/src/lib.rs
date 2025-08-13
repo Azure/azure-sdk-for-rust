@@ -3,6 +3,7 @@
 
 #![doc = include_str!("../README.md")]
 
+#[expect(deprecated, reason = "requires emitter update")]
 mod generated;
 mod resource;
 

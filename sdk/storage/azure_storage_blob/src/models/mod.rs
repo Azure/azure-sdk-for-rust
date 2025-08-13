@@ -43,10 +43,13 @@ pub use crate::generated::models::{
     ListContainersIncludeType, ListContainersSegmentResponse, Logging, Metrics,
     ObjectReplicationMetadata, PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
     PageBlobClientClearPagesResultHeaders, PageBlobClientCreateOptions, PageBlobClientCreateResult,
-    PageBlobClientCreateResultHeaders, PageBlobClientResizeOptions, PageBlobClientResizeResult,
-    PageBlobClientResizeResultHeaders, PageBlobClientUploadPagesOptions,
-    PageBlobClientUploadPagesResult, PageBlobClientUploadPagesResultHeaders,
-    PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority, RetentionPolicy, StaticWebsite,
-    StorageServiceProperties,
+    PageBlobClientCreateResultHeaders, PageBlobClientGetPageRangesOptions,
+    PageBlobClientResizeOptions, PageBlobClientResizeResult, PageBlobClientResizeResultHeaders,
+    PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResult,
+    PageBlobClientSetSequenceNumberResultHeaders, PageBlobClientUploadPagesFromUrlOptions,
+    PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesOptions,
+    PageBlobClientUploadPagesResult, PageBlobClientUploadPagesResultHeaders, PageList,
+    PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority, RetentionPolicy,
+    SequenceNumberActionType, StaticWebsite, StorageServiceProperties,
 };
 pub use extensions::*;
