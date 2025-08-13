@@ -130,7 +130,7 @@ impl LocationCache {
             }
 
             info!(
-                "Endpoint {} was marked as unavailable for {:?}",
+                "Endpoint {} marked unavailable for {:?}",
                 endpoint, operation
             );
         }
@@ -513,7 +513,18 @@ mod tests {
 
         let endpoint1 = "https://location1.documents.example.com";
 
-        let before_marked_unavailable_time = SystemTime::now();
+        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
+        cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Write);
+
+        let before_marked_unavailable_time = SystemTime::now() - Duration::from_secs(10);
+
+        {
+            let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
+            if let Some(info) = unavailability_map.get_mut(endpoint1) {
+                info.last_check_time = before_marked_unavailable_time;
+            }
+        }
+
         cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Read);
         cache.mark_endpoint_unavailable(endpoint1, RequestOperation::Write);
 
@@ -553,7 +564,7 @@ mod tests {
         {
             let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
             if let Some(info) = unavailability_map.get_mut(endpoint1) {
-                info.last_check_time = SystemTime::now() - std::time::Duration::from_secs(500);
+                info.last_check_time = SystemTime::now() - Duration::from_secs(500);
             }
         }
 
@@ -594,7 +605,10 @@ mod tests {
     fn resolve_service_endpoint_default() {
         let cache = create_test_location_cache();
 
-        let endpoint = cache.resolve_service_endpoint(5, RequestOperation::Read);
+        let endpoint = cache.resolve_service_endpoint(
+            cache.locations_info.read_endpoints.len() + 1,
+            RequestOperation::Read,
+        );
         assert_eq!(
             endpoint,
             "https://default.documents.example.com".to_string()
