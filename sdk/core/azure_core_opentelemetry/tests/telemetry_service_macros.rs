@@ -521,7 +521,6 @@ mod tests {
             },
             ..Default::default()
         };
-        //        recording.instrument(&mut options.client_options);
 
         let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
         let response = client.get_with_function_tracing("failing_url", None).await;
