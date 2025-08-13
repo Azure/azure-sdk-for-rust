@@ -1,6 +1,3 @@
-<!-- Copyright(C) Microsoft Corp. All Rights Reserved. -->
-
-<!-- cspell: ignore liudmila subclients -->
 # Distributed tracing options in Rust service clients
 
 ## Distributed tracing fundamentals
@@ -149,7 +146,7 @@ to
 ```diff
 pub struct MyServiceClient {
     endpoint: Url,
-+    tracer: std::sync::Arc<dyn azure_core::tracing::Tracer>,
++   tracer: std::sync::Arc<dyn azure_core::tracing::Tracer>,
 }
 ```
 
@@ -192,7 +189,7 @@ pub fn new(
             Vec::default(),
             vec![auth_policy],
         ),
-     })
+    })
 }
 ```
 
@@ -217,33 +214,33 @@ pub fn new(
         credential,
         vec!["https://vault.azure.net/.default"],
     ));
-+    let tracer =
-+    if let Some(tracer_options) = &options.client_options.instrumentation {
-+        tracer_options
-+            .tracer_provider
-+            .as_ref()
-+            .map(|tracer_provider| {
-+                tracer_provider.get_tracer(
-+                    Some(#client_namespace),
-+                    option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-+                    option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
-+                )
-+            })
-+    } else {
-+        None
-+    };
++   let tracer =
++   if let Some(tracer_options) = &options.client_options.instrumentation {
++       tracer_options
++           .tracer_provider
++           .as_ref()
++           .map(|tracer_provider| {
++               tracer_provider.get_tracer(
++                   Some(#client_namespace),
++                   option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
++                   option_env!("CARGO_PKG_VERSION").unwrap_or("UNKNOWN"),
++               )
++           })
++   } else {
++       None
++   };
     Ok(Self {
-+            tracer,
-           endpoint,
-           api_version: options.api_version,
-           pipeline: Pipeline::new(
-               option_env!("CARGO_PKG_NAME"),
-               option_env!("CARGO_PKG_VERSION"),
-               options.client_options,
-               Vec::default(),
-               vec![auth_policy],
-           ),
-       })
++       tracer,
+        endpoint,
+        api_version: options.api_version,
+        pipeline: Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options,
+            Vec::default(),
+            vec![auth_policy],
+        ),
+    })
 }
 ```
 
@@ -297,19 +294,19 @@ pub async fn get(
     path: &str,
     options: Option<TestServiceClientGetMethodOptions<'_>>,
 ) -> Result<RawResponse> {
-+    let options = {
-+        let mut options = options.unwrap_or_default();
-+        let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
-+            api_name: "TestFunction",
-+            attributes: Vec::new(),
-+        };
-+        let mut ctx = options.method_options.context.with_value(public_api_info);
-+        if let Some(tracer) = &self.tracer {
-+            ctx = ctx.with_value(tracer.clone());
-+        }
-+        options.method_options.context = ctx;
-+        Some(options)
-+    };
++   let options = {
++       let mut options = options.unwrap_or_default();
++       let public_api_info = azure_core::tracing::PublicApiInstrumentationInformation {
++           api_name: "TestFunction",
++           attributes: Vec::new(),
++       };
++       let mut ctx = options.method_options.context.with_value(public_api_info);
++       if let Some(tracer) = &self.tracer {
++           ctx = ctx.with_value(tracer.clone());
++       }
++       options.method_options.context = ctx;
++       Some(options)
++   };
     let mut url = self.endpoint.clone();
     url.set_path(path);
     url.query_pairs_mut()
@@ -319,8 +316,8 @@ pub async fn get(
 
     let response = self
         .pipeline
--        .send(&options.method_options.context, &mut request)
-+        .send(&ctx, &mut request)
+-       .send(&options.method_options.context, &mut request)
++       .send(&ctx, &mut request)
         .await?;
     if !response.status().is_success() {
         return Err(azure_core::Error::message(
@@ -340,7 +337,7 @@ implement per-service-client distributed tracing attributes.
 The parameters for the `tracing::function` roughly follow the following BNF:
 
 ```bnf
-tracing_parameters = quoted_string [ ',' '( attribute_list ')']
+tracing_parameters = quoted_string [ ',' 'attributes' '=' '( attribute_list ')']
 quoted_string = `"` <characters> `"`
 attribute_list = attribute | attribute [`,`] attribute_list
 attribute = key '=' value
@@ -353,9 +350,9 @@ value = <any Rust expression>
 This means that the following are valid parameters for `tracing::function`:
 
 * `#[tracing::function("MyServiceClient.MyApi")]` - specifies a public API name.
-* `#[tracing::function("Name", (az.namespace="namespace"))]` - specifies a public API name and creates a span with an attribute named "az.namespace" and a value of "namespace".
-* `#[tracing::function("Name", (api_count=23, "my_attribute" = "Abc"))]` - specifies a public API name and creates a span with two attributes, one named  "api_count" with a value of "23" and the other with the name "my_attribute" and a value of "Abc"
-* `#[tracing::function("Name", ("API path"=path))]` - specifies a public API name and creates a span with an attribute named "API path" and the value of the parameter named "path".
+* `#[tracing::function("Name", attributes = (az.namespace="namespace"))]` - specifies a public API name and creates a span with an attribute named "az.namespace" and a value of "namespace".
+* `#[tracing::function("Name", attributes = (api_count=23, "my_attribute" = "Abc"))]` - specifies a public API name and creates a span with two attributes, one named  "api_count" with a value of "23" and the other with the name "my_attribute" and a value of "Abc"
+* `#[tracing::function("Name", attributes = ("API path"=path))]` - specifies a public API name and creates a span with an attribute named "API path" and the value of the parameter named "path".
 
 This allows a generator to pass in simple attribute annotations to the public API spans created by the pipeline.
 
@@ -379,6 +376,7 @@ The client can then add whatever attributes to the span it needs, and after the 
 
 Note that in this model, the client is responsible for ending the span.
 
+<!-- cspell:ignore subclients -->
 ### Service implementations with "subclients"
 
 Service clients can sometimes contain "subclients" - clients which have their own pipelines and endpoint which contain subclient specific functionality.
@@ -386,7 +384,6 @@ Service clients can sometimes contain "subclients" - clients which have their ow
 Such subclients often have an accessor function to create a new subclient instance which looks like this:
 
 ```rust
-
 pub fn get_operation_templates_lro_client(&self) -> OperationTemplatesLroClient {
     OperationTemplatesLroClient {
         api_version: self.api_version.clone(),
@@ -412,3 +409,83 @@ pub fn get_operation_templates_lro_client(&self) -> OperationTemplatesLroClient 
 ```
 
 This adds a clone of the parent client's `tracer` to the subclient - it functions similarly to `#[tracing::new]` but for subclient instantiation.
+
+## Verifying distributed tracing support
+
+The `azure_core_test::tracing` package provides functionality to allow developers to verify that their distributed tracing functionality is generating the expected tracing information.
+
+This functionality is driven from the `azure_core_test::tracing::assert_instrumentation_information` API.
+
+This function takes two closures and a structure which describes the expected API shape. The first closure is used to create an instance of the public API, the second actually executes the public API.
+
+As an example, here is a test for the `keyvault_secrets` package:
+
+```rust
+assert_instrumentation_information(
+    // Create an instance of a SecretClient adding the instrumentation options to ensure distributed tracing is enabled.
+    |tracer_provider| {
+        let mut options = SecretClientOptions::default();
+        recording.instrument(&mut options.client_options);
+        options.client_options.instrumentation = Some(InstrumentationOptions {
+            tracer_provider: Some(tracer_provider),
+        });
+        SecretClient::new(
+            recording.var("AZURE_KEYVAULT_URL", None).as_str(),
+            recording.credential(),
+            Some(options),
+        )
+    },
+    // Perform a series of tests against the newly created SecretClient.
+    // In this case, there are two APIs called - set_secret and get_secret.
+    |client: SecretClient| {
+        Box::pin(async move {
+            // Set a secret.
+            let body = SetSecretParameters {
+                value: Some("secret-value-instrument".into()),
+                ..Default::default()
+            };
+            let secret = client
+                .set_secret("secret-roundtrip-instrument", body.try_into()?, None)
+                .await?
+                .into_body()
+                .await?;
+            assert_eq!(secret.value, Some("secret-value-instrument".into()));
+
+            // Get a specific version of a secret.
+            let version = secret.resource_id()?.version.unwrap_or_default();
+            let secret = client
+                .get_secret("secret-roundtrip-instrument", version.as_ref(), None)
+                .await?
+                .into_body()
+                .await?;
+            assert_eq!(secret.value, Some("secret-value-instrument".into()));
+            Ok(())
+        })
+    },
+    // Verify that the tests above generated appropriate distributed traces.
+    // First verify the package information and service client namespace.
+    // Next verify that two service APIs were called - one with the language
+    // independent name of "KeyVault.setSecret" (using the "PUT" HTTP verb),
+    // and the other with a language independent name of "KeyVault.getSecret"
+    // using the "get" verb.
+    ExpectedInstrumentation {
+        package_name: recording.var("CARGO_PKG_NAME", None),
+        package_version: recording.var("CARGO_PKG_VERSION", None),
+        package_namespace: Some("azure_security_keyvault_secrets"),
+        api_calls: vec![
+            ExpectedApiInformation {
+                api_name: Some("KeyVault.setSecret"),
+                api_verb: azure_core::http::Method::Put,
+                ..Default::default()
+            },
+            ExpectedApiInformation {
+                api_name: Some("KeyVault.getSecret"),
+                ..Default::default()
+            },
+        ],
+    },
+)
+.await?;
+```
+
+The first closure creates an instance of a KeyVault client. The second one executes a keyvault secrets round trip test setting a secret and retrieving the secret. In this case, the instrumentation information describes the name of the package and the namespace for the service client. It says that there will be two instrumented APIs being called - the first named `KeyVault.setSecret` and the second named `KeyVault.getSecret`.
