@@ -207,6 +207,12 @@ Similarly, if running on the command line pass `PROXY_MANUAL_START=true`.
 To log tracing information to the terminal, you can add the `RUST_LOG` environment variable as shown above using the [same format supported by `env_logger`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging).
 The targets are the crate names if you want to trace more or less for specific targets e.g., `RUST_LOG=info,azure_core=trace` to trace information messages by default but detailed traces for the `azure_core` crate.
 
+To log traces from the [Test Proxy] itself, pass `test-proxy=trace` to `RUST_LOG` e.g.,
+
+```sh
+RUST_LOG=info,azure_core=debug,test-proxy=trace cargo test -p azure_security_keyvault_secrets --test secret_client
+```
+
 #### Debugging in Windows
 
 Using the recommended [CodeLLDB] Visual Studio Code extension on Windows will stop at breakpoints but may not pretty print variables e.g.,
