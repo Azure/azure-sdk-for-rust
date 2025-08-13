@@ -10,7 +10,7 @@ use std::{
 };
 use tracing::info;
 
-const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(300); // 5 minutes
+const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(5 * 60);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountRegion {
