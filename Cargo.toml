@@ -25,6 +25,7 @@ members = [
   "sdk/storage/azure_storage_common",
   "sdk/storage/azure_storage_blob",
   "sdk/storage/azure_storage_queue",
+  "sdk/cosmos/cosmosclient",
 ]
 exclude = [
   "eng/scripts",
