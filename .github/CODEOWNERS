@@ -68,7 +68,7 @@
 # ServiceOwner: @Azure/azure-sdk-write-keyvault
 
 # PRLabel: %Storage
-/sdk/storage/           @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
+/sdk/storage/            @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
 
 # ServiceLabel: %Storage
 # AzureSDKOwners: @heaths
