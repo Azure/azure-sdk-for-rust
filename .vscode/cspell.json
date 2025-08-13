@@ -14,6 +14,7 @@
     ".devcontainer/oncreate",
     ".github/CODEOWNERS",
     ".github/dependabot.yml",
+    ".github/workflows/*.yml",
     ".vscode/cspell.json",
     ".vscode/extensions.json",
     ".vscode/settings.json",
@@ -173,12 +174,6 @@
       "filename": "**/*.rs",
       "dictionaries": [
         "crates",
-        "rust-custom"
-      ]
-    },
-    {
-      "filename": ".github/workflows/*.yml",
-      "dictionaries": [
         "rust-custom"
       ]
     },
