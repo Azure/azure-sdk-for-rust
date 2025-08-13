@@ -54,24 +54,21 @@
 # Client Libraries
 ####################
 
-# PRLabel: %Cosmos
-/sdk/cosmos/             @analogrelay @Pilchie @kirankumarkolli @tvaron3 @FabianMeiswinkel @kundadebdatta @nehrao1 @kushagraThapar
-
 # ServiceLabel: %Cosmos
 # AzureSDKOwners: @heaths
 # ServiceOwners: @Pilchie
-
-# PRLabel: %KeyVault
-/sdk/keyvault/           @Azure/azure-sdk-write-keyvault @heaths
+# PRLabel: %Cosmos
+/sdk/cosmos/             @analogrelay @Pilchie @kirankumarkolli @tvaron3 @FabianMeiswinkel @kundadebdatta @nehrao1 @kushagraThapar
 
 # ServiceLabel: %KeyVault
 # ServiceOwners: @Azure/azure-sdk-write-keyvault
-
-# PRLabel: %Storage
-/sdk/storage/            @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
+# PRLabel: %KeyVault
+/sdk/keyvault/           @Azure/azure-sdk-write-keyvault @heaths
 
 # ServiceLabel: %Storage
 # AzureSDKOwners: @heaths
+# PRLabel: %Storage
+/sdk/storage/            @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
 
 ####################
 # Management Libraries
