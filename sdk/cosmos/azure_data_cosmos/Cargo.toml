@@ -37,6 +37,7 @@ workspace = true
 
 [features]
 default = ["hmac_rust"]
+_internal_c = [] # Internal feature used to expose additional types/functions as needed to build libcosmosclient.
 key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
 preview_query_engine = ["serde_json/raw_value"] # Enables support for the PREVIEW external query engine
 hmac_rust = ["azure_core/hmac_rust"]
