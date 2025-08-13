@@ -50,25 +50,32 @@
 # PRLabel: %Azure.Identity
 /sdk/identity/           @heaths @RickWinter @LarryOsterman @chlowell
 
-###########
-# Client SDKs
-###########
+####################
+# Client Libraries
+####################
 
-# AzureSDKOwners: @heaths
-# ServiceLabel: %Storage
-# PRLabel: %Storage
-/sdk/storage/           @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
-
-# AzureSDKOwners: @heaths
-# ServiceOwner: @Pilchie
-# ServiceLabel: %Cosmos
 # PRLabel: %Cosmos
 /sdk/cosmos/             @analogrelay @Pilchie @kirankumarkolli @tvaron3 @FabianMeiswinkel @kundadebdatta @nehrao1 @kushagraThapar
 
-# ServiceOwner: @Azure/azure-sdk-write-keyvault
-# ServiceLabel: %KeyVault
+# ServiceLabel: %Cosmos
+# AzureSDKOwners: @heaths
+# ServiceOwner: @Pilchie
+
 # PRLabel: %KeyVault
 /sdk/keyvault/           @Azure/azure-sdk-write-keyvault @heaths
+
+# ServiceLabel: %KeyVault
+# ServiceOwner: @Azure/azure-sdk-write-keyvault
+
+# PRLabel: %Storage
+/sdk/storage/           @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
+
+# ServiceLabel: %Storage
+# AzureSDKOwners: @heaths
+
+####################
+# Management Libraries
+####################
 
 ###########
 # Eng Sys
