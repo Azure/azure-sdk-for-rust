@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 use crate::{
-    deserialize_blob_tags,
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
@@ -339,9 +338,8 @@ impl BlobClient {
     pub async fn get_tags(
         &self,
         options: Option<BlobClientGetTagsOptions<'_>>,
-    ) -> Result<Response<HashMap<String, String>, JsonFormat>> {
-        let response = self.client.get_tags(options).await?;
-        deserialize_blob_tags(response).await
+    ) -> Result<Response<BlobTags, XmlFormat>> {
+        self.client.get_tags(options).await
     }
 
     /// Gets information related to the Storage account in which the blob resides.

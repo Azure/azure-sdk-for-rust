@@ -59,32 +59,3 @@ pub(crate) fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
         blob_tag_set: Some(blob_tags),
     }
 }
-
-/// Takes in a `get_tags()` response and deserializes the `BlobTags` model into a HashMap of blob tags.
-///
-/// # Arguments
-///
-/// * `response` - The `get_tags()` response to be deserialized.
-pub(crate) async fn deserialize_blob_tags(
-    response: Response<BlobTags, XmlFormat>,
-) -> azure_core::Result<Response<HashMap<String, String>, JsonFormat>>
-where
-{
-    let mut blob_tags_map: HashMap<String, String> = HashMap::new();
-    let status = response.status();
-    let headers = response.headers().clone();
-    let blob_tags = response.into_body().await?;
-
-    if let Some(blob_tag_set) = blob_tags.blob_tag_set {
-        for tag in blob_tag_set {
-            if let (Some(k), Some(v)) = (tag.key, tag.value) {
-                blob_tags_map.insert(k, v);
-            }
-        }
-    }
-
-    let request_content: RequestContent<HashMap<String, String>> =
-        RequestContent::try_from(blob_tags_map)?;
-    let raw_response = RawResponse::from_bytes(status, headers, request_content.body());
-    Ok(raw_response.into())
-}

@@ -442,14 +442,16 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_body().await?;
-    assert_eq!(blob_tags, response_tags);
+    let map: HashMap<String, String> = response_tags.try_into()?;
+    assert_eq!(blob_tags, map);
 
     // Set Tags with No Tags (Clear Tags)
     blob_client.set_tags(HashMap::new(), None).await?;
 
     // Assert
     let response_tags = blob_client.get_tags(None).await?.into_body().await?;
-    assert_eq!(HashMap::new(), response_tags);
+    let map: HashMap<String, String> = response_tags.try_into()?;
+    assert_eq!(HashMap::new(), map);
 
     container_client.delete_container(None).await?;
     Ok(())

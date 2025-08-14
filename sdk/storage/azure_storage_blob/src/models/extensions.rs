@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::models::{AppendBlobClientCreateOptions, PageBlobClientCreateOptions};
+use crate::models::{
+    AppendBlobClientCreateOptions, BlobTag, BlobTags, PageBlobClientCreateOptions,
+};
+use std::collections::HashMap;
 
 /// Provides usage helpers for setting the `PageBlobClientCreateOptions` optional configurations.
 pub trait PageBlobClientCreateOptionsExt {
@@ -36,5 +39,27 @@ impl AppendBlobClientCreateOptionsExt for AppendBlobClientCreateOptions<'_> {
             if_none_match: Some("*".into()),
             ..self
         }
+    }
+}
+
+/// Converts a `BlobTags` struct into `HashMap<String, String>`.
+impl TryFrom<BlobTags> for HashMap<String, String> {
+    type Error = &'static str;
+
+    fn try_from(blob_tags: BlobTags) -> Result<Self, Self::Error> {
+        let mut map = HashMap::new();
+
+        if let Some(tags) = blob_tags.blob_tag_set {
+            for tag in tags {
+                match (tag.key, tag.value) {
+                    (Some(k), Some(v)) => {
+                        map.insert(k, v);
+                    }
+                    _ => return Err("BlobTag missing key or value"),
+                }
+            }
+        }
+
+        Ok(map)
     }
 }
