@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 macro_rules! c_str {
     ($s:expr) => { const {
         // This does a few funky things to make sure we can stay in a const context
