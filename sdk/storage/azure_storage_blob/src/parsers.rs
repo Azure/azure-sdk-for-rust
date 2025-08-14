@@ -40,22 +40,3 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     let content_range = format!("bytes={}-{}", offset, end_range);
     Ok(content_range)
 }
-
-/// Takes in a HashMap of blob tags and serializes them into the `BlobTags` model.
-///
-/// # Arguments
-///
-/// * `tags` - A hash map containing the name-value pairs associated with the blob as tags.
-pub(crate) fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
-    let sorted_tags: BTreeMap<_, _> = tags.into_iter().collect();
-    let blob_tags = sorted_tags
-        .into_iter()
-        .map(|(k, v)| BlobTag {
-            key: Some(k),
-            value: Some(v),
-        })
-        .collect();
-    BlobTags {
-        blob_tag_set: Some(blob_tags),
-    }
-}

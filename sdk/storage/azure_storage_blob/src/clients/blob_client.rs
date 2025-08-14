@@ -20,7 +20,7 @@ use crate::{
         BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
-    serialize_blob_tags, AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
+    AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -324,7 +324,7 @@ impl BlobClient {
         tags: HashMap<String, String>,
         options: Option<BlobClientSetTagsOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        let blob_tags = serialize_blob_tags(tags);
+        let blob_tags: BlobTags = tags.into();
         self.client
             .set_tags(RequestContent::try_from(blob_tags)?, options)
             .await

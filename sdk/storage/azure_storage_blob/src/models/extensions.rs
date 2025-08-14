@@ -4,7 +4,7 @@
 use crate::models::{
     AppendBlobClientCreateOptions, BlobTag, BlobTags, PageBlobClientCreateOptions,
 };
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 /// Provides usage helpers for setting the `PageBlobClientCreateOptions` optional configurations.
 pub trait PageBlobClientCreateOptionsExt {
@@ -61,5 +61,22 @@ impl TryFrom<BlobTags> for HashMap<String, String> {
         }
 
         Ok(map)
+    }
+}
+
+/// Converts a `HashMap<String, String>` into a `BlobTags` struct.
+impl From<HashMap<String, String>> for BlobTags {
+    fn from(tags: HashMap<String, String>) -> Self {
+        let sorted_tags: BTreeMap<_, _> = tags.into_iter().collect();
+        let blob_tags = sorted_tags
+            .into_iter()
+            .map(|(k, v)| BlobTag {
+                key: Some(k),
+                value: Some(v),
+            })
+            .collect();
+        BlobTags {
+            blob_tag_set: Some(blob_tags),
+        }
     }
 }
