@@ -122,7 +122,7 @@ impl<'de> Deserialize<'de> for PollerStatus {
         D: serde::Deserializer<'de>,
     {
         struct PollerStatusVisitor;
-        impl<'de> serde::de::Visitor<'de> for PollerStatusVisitor {
+        impl serde::de::Visitor<'_> for PollerStatusVisitor {
             type Value = PollerStatus;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

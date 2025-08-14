@@ -23,6 +23,8 @@ pub(crate) mod utils;
 
 pub mod models;
 
+mod location_cache;
+
 #[doc(inline)]
 pub use clients::CosmosClient;
 

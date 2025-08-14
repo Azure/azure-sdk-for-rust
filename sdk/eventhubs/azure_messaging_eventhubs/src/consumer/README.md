@@ -10,12 +10,12 @@ and manage the lifecycle of the consumer client.
 ### Creating a new [`ConsumerClient`] instance
 
 ```rust no_run
-use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::ConsumerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), azure_core::Error> {
-    let my_credential = DefaultAzureCredential::new()?;
+    let my_credential = DeveloperToolsCredential::new(None)?;
     let consumer = ConsumerClient::builder()
         .open("my_namespace", "my_eventhub".to_string(), my_credential)
         .await?;
@@ -26,12 +26,12 @@ async fn main() -> Result<(), azure_core::Error> {
 ### Opening a connection to the Event Hub
 
 ```rust no_run
-use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::ConsumerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), azure_core::Error> {
-    let my_credential = DefaultAzureCredential::new()?;
+    let my_credential = DeveloperToolsCredential::new(None)?;
     let result = ConsumerClient::builder()
         .open("my_namespace", "my_eventhub".to_string(), my_credential)
         .await;
@@ -53,12 +53,12 @@ async fn main() -> Result<(), azure_core::Error> {
 ### Closing the connection to the Event Hub
 
 ```rust no_run
-use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::ConsumerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), azure_core::Error> {
-    let my_credential = DefaultAzureCredential::new()?;
+    let my_credential = DeveloperToolsCredential::new(None)?;
     let consumer = ConsumerClient::builder()
         .open("my_namespace", "my_eventhub".to_string(), my_credential)
         .await?;
@@ -83,13 +83,13 @@ async fn main() -> Result<(), azure_core::Error> {
 
 ```rust no_run
 use futures::stream::StreamExt;
-use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
 use azure_messaging_eventhubs::ConsumerClient;
 use futures::pin_mut;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let my_credential = DefaultAzureCredential::new().unwrap();
+    let my_credential = DeveloperToolsCredential::new(None).unwrap();
     let consumer = ConsumerClient::builder()
         .open("my_namespace", "my_eventhub".to_string(), my_credential)
         .await?;

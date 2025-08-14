@@ -518,13 +518,13 @@ impl<P> PageIterator<P> {
     /// that, when first iterated, will get the next page of results.
     ///
     /// ``` no_run
-    /// use azure_identity::DefaultAzureCredential;
+    /// use azure_identity::DeveloperToolsCredential;
     /// use azure_security_keyvault_secrets::SecretClient;
     /// use futures::stream::TryStreamExt as _;
     ///
     /// # #[tokio::main]
     /// # async fn main() -> azure_core::Result<()> {
-    /// let client = SecretClient::new("https://my-vault.vault.azure.net", DefaultAzureCredential::new()?, None)?;
+    /// let client = SecretClient::new("https://my-vault.vault.azure.net", DeveloperToolsCredential::new(None)?, None)?;
     ///
     /// // Advance first pager to first page.
     /// let mut pager = client.list_secret_properties(None)?

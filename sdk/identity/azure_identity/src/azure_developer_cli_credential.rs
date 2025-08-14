@@ -80,7 +80,7 @@ pub struct AzureDeveloperCliCredentialOptions {
     pub tenant_id: Option<String>,
 
     #[cfg(test)]
-    env: Option<Env>,
+    pub(crate) env: Option<Env>,
 }
 
 impl AzureDeveloperCliCredential {
@@ -105,8 +105,7 @@ impl AzureDeveloperCliCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for AzureDeveloperCliCredential {
     async fn get_token(
         &self,

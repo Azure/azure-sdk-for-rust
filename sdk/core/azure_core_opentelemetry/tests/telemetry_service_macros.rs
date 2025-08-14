@@ -8,8 +8,8 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request,
-        RequestInstrumentationOptions, Url,
+        ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, RawResponse, Request,
+        Url,
     },
     tracing, Result,
 };
@@ -138,7 +138,7 @@ impl TestServiceClientWithMacros {
     /// This applies to most HTTP client operations, but not all. CosmosDB has its own set of conventions as listed
     /// [here](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/cosmosdb.md)
     ///
-    #[tracing::function("macros_get_with_tracing",(a.b=1,az.telemetry="Abc","string attribute"=path))]
+    #[tracing::function("macros_get_with_tracing",attributes=(a.b=1,az.telemetry="Abc","string attribute"=path))]
     pub async fn get_with_function_tracing(
         &self,
         path: &str,
@@ -174,14 +174,21 @@ impl TestServiceClientWithMacros {
 mod tests {
     use super::*;
     use ::tracing::{info, trace};
-    use azure_core::http::{ExponentialRetryOptions, RetryOptions};
-    use azure_core::tracing::TracerProvider;
-    use azure_core::Result;
-    use azure_core_test::{recorded, TestContext};
+    use azure_core::{
+        http::{ExponentialRetryOptions, RetryOptions},
+        tracing::TracerProvider,
+        Result,
+    };
+    use azure_core_test::{
+        recorded,
+        tracing::{ExpectedApiInformation, ExpectedInstrumentation},
+        TestContext,
+    };
     use opentelemetry::trace::{
         SpanKind as OpenTelemetrySpanKind, Status as OpenTelemetrySpanStatus,
     };
     use opentelemetry::Value as OpenTelemetryAttributeValue;
+    use typespec_client_core::http;
 
     fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
         let otel_exporter = InMemorySpanExporter::default();
@@ -201,7 +208,7 @@ mod tests {
         let credential = recording.credential().clone();
         let mut options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
+                instrumentation: Some(InstrumentationOptions {
                     tracer_provider: Some(azure_provider),
                 }),
                 ..Default::default()
@@ -503,7 +510,7 @@ mod tests {
         let credential = recording.credential().clone();
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
-                request_instrumentation: Some(RequestInstrumentationOptions {
+                instrumentation: Some(InstrumentationOptions {
                     tracer_provider: Some(azure_provider),
                 }),
                 retry: Some(RetryOptions::exponential(ExponentialRetryOptions {
@@ -662,6 +669,94 @@ mod tests {
                 ],
             },
         )?;
+
+        Ok(())
+    }
+
+    #[recorded::test()]
+    async fn test_http_tracing_tests(ctx: TestContext) -> Result<()> {
+        let recording = ctx.recording();
+        let package_name = recording.var("CARGO_PKG_NAME", None);
+        let package_version = recording.var("CARGO_PKG_VERSION", None);
+        azure_core_test::tracing::assert_instrumentation_information(
+            |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
+            |client| {
+                let client = client;
+                Box::pin(async move { client.get("get", None).await })
+            },
+            ExpectedInstrumentation {
+                package_name,
+                package_version,
+                package_namespace: Some("Az.TestServiceClient"),
+                api_calls: vec![ExpectedApiInformation {
+                    api_name: None,
+                    ..Default::default()
+                }],
+            },
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    #[recorded::test()]
+    async fn test_function_tracing_tests(ctx: TestContext) -> Result<()> {
+        let recording = ctx.recording();
+        let package_name = recording.var("CARGO_PKG_NAME", None);
+        let package_version = recording.var("CARGO_PKG_VERSION", None);
+        azure_core_test::tracing::assert_instrumentation_information(
+            |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
+            |client| {
+                let client = client;
+                Box::pin(async move { client.get_with_function_tracing("get", None).await })
+            },
+            ExpectedInstrumentation {
+                package_name,
+                package_version,
+                package_namespace: Some("Az.TestServiceClient"),
+                api_calls: vec![ExpectedApiInformation {
+                    api_name: Some("macros_get_with_tracing"),
+                    additional_api_attributes: vec![
+                        ("a.b", 1.into()),
+                        ("az.telemetry", "Abc".into()),
+                        ("string attribute", "get".into()),
+                    ],
+                    ..Default::default()
+                }],
+            },
+        )
+        .await?;
+
+        Ok(())
+    }
+    #[recorded::test()]
+    async fn test_function_tracing_tests_error(ctx: TestContext) -> Result<()> {
+        let recording = ctx.recording();
+        let package_name = recording.var("CARGO_PKG_NAME", None);
+        let package_version = recording.var("CARGO_PKG_VERSION", None);
+        azure_core_test::tracing::assert_instrumentation_information(
+            |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
+            |client| {
+                let client = client;
+                Box::pin(async move { client.get_with_function_tracing("index.htm", None).await })
+            },
+            ExpectedInstrumentation {
+                package_name,
+                package_version,
+                package_namespace: Some("Az.TestServiceClient"),
+                api_calls: vec![ExpectedApiInformation {
+                    api_name: Some("macros_get_with_tracing"),
+                    expected_status_code: http::StatusCode::NotFound,
+                    additional_api_attributes: vec![
+                        ("a.b", 1.into()),
+                        ("az.telemetry", "Abc".into()),
+                        ("string attribute", "index.htm".into()),
+                    ],
+                    ..Default::default()
+                }],
+            },
+        )
+        .await?;
 
         Ok(())
     }

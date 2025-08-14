@@ -38,14 +38,14 @@ pub struct SendBatchOptions {}
 ///
 /// ```no_run
 /// use azure_messaging_eventhubs::ProducerClient;
-/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+/// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
 /// use std::error::Error;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 ///    let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
 ///    let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-///    let my_credentials = DefaultAzureCredential::new()?;
+///    let my_credentials = DeveloperToolsCredential::new(None)?;
 ///   let producer = ProducerClient::builder()
 ///    .with_application_id("your_application_id".to_string())
 ///    .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
@@ -237,14 +237,14 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///   let my_credentials = DefaultAzureCredential::new()?;
+    ///   let my_credentials = DeveloperToolsCredential::new(None)?;
     ///
     ///   let producer = ProducerClient::builder()
     ///    .with_application_id("your_application_id".to_string())
@@ -279,14 +279,14 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///   let my_credentials = DefaultAzureCredential::new()?;
+    ///   let my_credentials = DeveloperToolsCredential::new(None)?;
     ///
     ///   let producer = ProducerClient::builder()
     ///    .with_application_id("your_application_id".to_string())
@@ -347,14 +347,14 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///   let my_credentials = DefaultAzureCredential::new()?;
+    ///   let my_credentials = DeveloperToolsCredential::new(None)?;
     ///   let producer = ProducerClient::builder()
     ///     .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
     ///
@@ -384,7 +384,7 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
     /// #[tokio::main]
@@ -392,7 +392,7 @@ impl ProducerClient {
     ///  let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///     let my_credentials = DefaultAzureCredential::new()?;
+    ///     let my_credentials = DeveloperToolsCredential::new(None)?;
     ///     let producer = ProducerClient::builder()
     ///        .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
     ///     let partition_properties = producer.get_partition_properties("0").await?;
@@ -444,11 +444,11 @@ pub mod builders {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///   let my_credential = DefaultAzureCredential::new().unwrap();
+    ///   let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///   let producer = ProducerClient::builder()
     ///      .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
     /// }

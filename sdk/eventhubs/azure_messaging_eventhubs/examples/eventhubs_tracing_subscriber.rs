@@ -6,7 +6,7 @@
 //! using a custom `Layer`. It demonstrates how to create a custom layer that formats log messages
 //! and sends them to Event Hubs asynchronously.
 
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::SendEventOptions;
 use azure_messaging_eventhubs::{models::EventData, ProducerClient};
 use std::error::Error;
@@ -40,7 +40,7 @@ impl EventHubsLayer {
             .open(
                 fully_qualified_namespace,
                 eventhub_name,
-                DefaultAzureCredential::new()?,
+                DeveloperToolsCredential::new(None)?,
             )
             .await?;
 
@@ -244,13 +244,6 @@ async fn enable_eventhubs_logging() -> Result<(), Box<dyn Error>> {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     enable_eventhubs_logging().await?;
-
-    // Application code
-    tracing::info!("Application started");
-    // ... your application code here ...
-    tracing::info!("Processing some data");
-    tracing::warn!("This is a warning message");
-    tracing::error!("This is an error message");
 
     let mut data = StructuredData {
         body: "This is a structured log message".to_string(),

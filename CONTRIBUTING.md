@@ -207,6 +207,12 @@ Similarly, if running on the command line pass `PROXY_MANUAL_START=true`.
 To log tracing information to the terminal, you can add the `RUST_LOG` environment variable as shown above using the [same format supported by `env_logger`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging).
 The targets are the crate names if you want to trace more or less for specific targets e.g., `RUST_LOG=info,azure_core=trace` to trace information messages by default but detailed traces for the `azure_core` crate.
 
+To log traces from the [Test Proxy] itself, pass `test-proxy=trace` to `RUST_LOG` e.g.,
+
+```sh
+RUST_LOG=info,azure_core=debug,test-proxy=trace cargo test -p azure_security_keyvault_secrets --test secret_client
+```
+
 #### Debugging in Windows
 
 Using the recommended [CodeLLDB] Visual Studio Code extension on Windows will stop at breakpoints but may not pretty print variables e.g.,
@@ -358,6 +364,33 @@ Samples may take the following categories of dependencies:
 - **Tiered licensed**: Offerings that enable readers to use the license tier that corresponds to their characteristics. For example, tiers may be available for students, hobbyists, or companies with defined revenue  thresholds. For offerings with tiered licenses, strive to limit our use in tutorials to the features available in the lowest tier. This policy enables the widest audience for the article. [Docker](https://www.docker.com/), [IdentityServer](https://duendesoftware.com/products/identityserver), [ImageSharp](https://sixlabors.com/products/imagesharp/), and [Visual Studio](https://visualstudio.com) are examples of this license type.
 
 In general, we prefer taking dependencies on licensed components in the order of the listed categories. In cases where the category may not be well known, we'll document the category so that readers understand the choice that they're making by using that dependency.
+
+## Troubleshooting
+
+### Proc-macro map is missing error entry
+
+If Visual Studio Code with the rust-analyzer extension active is showing an error for all code in the editor with an error similar to:
+
+> tracing::function: internal error: proc-macro map is missing error entry for crate Crate(Id(6560))
+
+This could be a discrepancy between your active Rust toolchain and the internal `rust-analyzer` the rust-analyzer extension distributes and uses by default.
+Because we do not currently mandate a specific version of the Rust toolchain in our `rust-toolchain.toml` (as long as it supports the MSRV in `Cargo.toml`),
+the version of `rust-analyzer` you have installed should match the active toolchain.
+
+In your Visual Studio Code settings, add:
+
+```json
+{
+    "rust-analyzer.server.path": "${userHome}/.cargo/bin/rust-analyzer"
+}
+```
+
+Set this to an appropriate path for local development. If you're running Visual Studio Code with a remote session e.g., WSL or SSH,
+you'll need to [open remote settings](https://code.visualstudio.com/docs/remote/troubleshooting#_local-absolute-path-settings-fail-when-applied-remotely) and add the configuration above.
+
+1. Press `F1`.
+2. Type "open remote settings (json)" and press `Enter`.
+3. Add the above setting to your remote settings. If you use multiple remote sessions you'll need to do this for each one.
 
 [C/C++]: https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools
 [CodeLLDB]: https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb

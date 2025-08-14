@@ -49,10 +49,10 @@ use std::time::SystemTime;
 /// Basic usage:
 ///
 /// ```no_run
-/// # use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+/// # use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// # let my_credentials = DefaultAzureCredential::new()?;
+/// # let my_credentials = DeveloperToolsCredential::new(None)?;
 /// let consumer_client = azure_messaging_eventhubs::ConsumerClient::builder()
 ///    .open("fully_qualified_domain", "eventhub_name".to_string(), my_credentials.clone()).await?;
 ///
@@ -95,10 +95,10 @@ pub struct EventHubProperties {
 /// Basic usage:
 ///
 /// ```no_run
-/// # use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+/// # use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// # let my_credentials = DefaultAzureCredential::new()?;
+/// # let my_credentials = DeveloperToolsCredential::new(None)?;
 /// let consumer_client = azure_messaging_eventhubs::ConsumerClient::builder()
 ///   .open("fully_qualified_domain", "eventhub_name".to_string(), my_credentials.clone()).await?;
 ///

@@ -30,14 +30,14 @@ impl CertificateClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_identity::DefaultAzureCredential;
+    /// use azure_identity::DeveloperToolsCredential;
     /// use azure_security_keyvault_certificates::{
     ///     CertificateClient,
     ///     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
     /// };
     ///
     /// # #[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let credential = DefaultAzureCredential::new()?;
+    /// let credential = DeveloperToolsCredential::new(None)?;
     /// let client = CertificateClient::new(
     ///     "https://your-key-vault-name.vault.azure.net/",
     ///     credential.clone(),
@@ -168,14 +168,14 @@ impl CertificateClient {
     /// # Examples
     ///
     /// ```no_run
-    /// use azure_identity::DefaultAzureCredential;
+    /// use azure_identity::DeveloperToolsCredential;
     /// use azure_security_keyvault_certificates::{
     ///     CertificateClient,
     ///     models::{CreateCertificateParameters, CertificatePolicy, X509CertificateProperties, IssuerParameters},
     /// };
     ///
     /// # #[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let credential = DefaultAzureCredential::new()?;
+    /// let credential = DeveloperToolsCredential::new(None)?;
     /// let client = CertificateClient::new(
     ///     "https://your-key-vault-name.vault.azure.net/",
     ///     credential.clone(),

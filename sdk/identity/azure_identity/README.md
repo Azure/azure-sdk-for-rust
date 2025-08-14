@@ -25,7 +25,7 @@ When debugging and executing code locally, it's typical for developers to use th
 
 #### Authenticate via the Azure CLI
 
-`DefaultAzureCredential` and `AzureCliCredential` can authenticate as the user signed in to the [Azure CLI]. To sign in to the Azure CLI, run `az login`. On a system with a default web browser, the Azure CLI launches the browser to authenticate a user.
+`DeveloperToolsCredential` and `AzureCliCredential` can authenticate as the user signed in to the [Azure CLI]. To sign in to the Azure CLI, run `az login`. On a system with a default web browser, the Azure CLI launches the browser to authenticate a user.
 
 When no default browser is available, `az login` uses the device code authentication flow. This flow can also be selected manually by running `az login --use-device-code`.
 
@@ -37,34 +37,20 @@ A credential is a struct that contains or can obtain the data needed for a servi
 
 The Azure Identity library focuses on OAuth authentication with Microsoft Entra ID. It offers various credentials capable of acquiring a Microsoft Entra access token. See the [Credential structures](#credential-structures "Credential structures") section for a list of this library's credentials.
 
-### DefaultAzureCredential
-
-`DefaultAzureCredential` simplifies authentication while developing apps that deploy to Azure by combining credentials used in Azure hosting environments with credentials used in local development.
-
-#### Continuation policy
-
-`DefaultAzureCredential` attempts to authenticate with all developer credentials until one succeeds, regardless of any errors previous developer credentials experienced. For example, a developer credential may attempt to get a token and fail, so `DefaultAzureCredential` will continue to the next credential in the flow. Deployed service credentials stop the flow with a thrown exception if they're able to attempt token retrieval, but don't receive one.
-
-This allows for trying all of the developer credentials on your machine while having predictable deployed behavior.
-
 ## Examples
 
-The following examples are provided:
-<!-- no toc -->
-* [Authenticate with DefaultAzureCredential](#authenticate-with-defaultazurecredential "Authenticate with DefaultAzureCredential")
+### Authenticate with `DeveloperToolsCredential`
 
-### Authenticate with `DefaultAzureCredential`
+`DeveloperToolsCredential` simplifies authentication while developing apps. It attempts to authenticate via developer tools such as the Azure CLI, stopping when one succeeds. After receiving a token from a particular tool, it uses that tool for all subsequent token requests. See the type's [reference documentation][devtool_cred_ref] for more details.
 
-More details on configuring your environment to use `DefaultAzureCredential` can be found in the struct's [reference documentation][default_cred_ref].
-
-This example demonstrates authenticating the `SecretClient` from the [azure_security_keyvault_secrets] crate using `DefaultAzureCredential`.
+This example demonstrates authenticating the `SecretClient` from the [azure_security_keyvault_secrets] crate using `DeveloperToolsCredential`.
 
 ```rust
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::SecretClient;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = SecretClient::new("https://your-key-vault-name.vault.azure.net/", credential.clone(), None)?;
     Ok(())
 }
@@ -128,7 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 |Credential|Usage
 |-|-
-|[`DefaultAzureCredential`][default_cred_ref]| Provides a simplified authentication experience to quickly start developing applications run in Azure.
+|[`DeveloperToolsCredential`][devtool_cred_ref]| Provides a simplified authentication experience to quickly start developing applications.
 
 ### Authenticate Azure-hosted applications
 
@@ -180,7 +166,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure subscription]: https://azure.microsoft.com/free/
 [cert_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientCertificateCredential.html
 [cli_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureCliCredential.html
-[default_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.DefaultAzureCredential.html
+[devtool_cred_ref]: https://aka.ms/azsdk/rust/identity/docs#structs
 [managed_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ManagedIdentityCredential.html
 [Microsoft Entra ID documentation]: https://learn.microsoft.com/entra/identity/
 [API reference documentation]: https://docs.rs/azure_identity/latest/azure_identity/
