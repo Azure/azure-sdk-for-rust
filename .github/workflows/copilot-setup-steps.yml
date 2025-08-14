@@ -1,4 +1,4 @@
-name: Copilot Environment Setup
+name: Copilot Setup Steps
 
 # This workflow sets up the development environment for GitHub Copilot coding agent
 # It leverages the existing devcontainer configuration to ensure consistency
@@ -27,6 +27,12 @@ on:
     - cron: '0 2 * * 1' # Monday at 2 AM UTC
   push:
     branches: [main]
+    paths:
+      - 'rust-toolchain.toml'
+      - 'Cargo.toml'
+      - '.devcontainer/**'
+      - '.github/workflows/copilot-setup-steps.yml'
+  pull_request:
     paths:
       - 'rust-toolchain.toml'
       - 'Cargo.toml'
