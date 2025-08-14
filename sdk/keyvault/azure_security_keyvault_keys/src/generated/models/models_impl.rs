@@ -11,7 +11,7 @@ use super::{
 };
 use async_trait::async_trait;
 use azure_core::{
-    http::{Page, RequestContent},
+    http::{pager::Page, RequestContent},
     json::to_json,
     Result,
 };

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Types and methods for pageable responses.
+
 use crate::http::{headers::HeaderName, response::Response, DeserializeWith, Format, JsonFormat};
 use async_trait::async_trait;
 use futures::{stream::unfold, FutureExt, Stream};
@@ -646,7 +648,8 @@ fn iter_from_callback<
 mod tests {
     use crate::http::{
         headers::{HeaderName, HeaderValue},
-        PageIterator, Pager, PagerResult, PagerState, RawResponse, Response, StatusCode,
+        pager::{PageIterator, Pager, PagerResult, PagerState},
+        RawResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
     use futures::{StreamExt as _, TryStreamExt as _};

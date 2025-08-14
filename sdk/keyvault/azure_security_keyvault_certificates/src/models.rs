@@ -5,8 +5,9 @@ pub use crate::generated::models::*;
 use azure_core::{
     fmt::SafeDebug,
     http::{
+        poller::PollerStatus,
         poller::{PollerOptions, StatusMonitor},
-        ClientMethodOptions, PollerStatus,
+        ClientMethodOptions,
     },
 };
 impl StatusMonitor for CertificateOperation {

@@ -8,9 +8,10 @@ use std::sync::Arc;
 
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
+    pager::PagerState,
     request::{options::ContentType, Request},
     response::Response,
-    ClientOptions, Context, Method, PagerState, RawResponse,
+    ClientOptions, Context, Method, RawResponse,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
