@@ -1033,6 +1033,7 @@ dependencies = [
  "tokio-native-tls",
  "tokio-stream",
  "tokio-util",
+ "tracing",
  "url",
  "uuid",
  "wasmtimer",
