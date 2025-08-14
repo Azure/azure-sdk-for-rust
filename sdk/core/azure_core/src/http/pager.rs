@@ -177,7 +177,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, ItemIterator, Page, PagerResult, PagerState, Pipeline, RawResponse, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, RawResponse, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -235,7 +235,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using headers:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, ItemIterator, Page, PagerResult, PagerState, Pipeline, Request, Response, Method, headers::HeaderName}};
+    /// # use azure_core::{Result, http::{Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, Request, Response, Method, headers::HeaderName}};
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
     /// struct ListItemsResult {
@@ -379,7 +379,7 @@ impl<P> PageIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, PageIterator, PagerResult, PagerState, Pipeline, RawResponse, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, RawResponse, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -428,7 +428,7 @@ impl<P> PageIterator<P> {
     /// To page results using headers:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, PageIterator, PagerResult, PagerState, Pipeline, Request, Response, Method, headers::HeaderName}};
+    /// # use azure_core::{Result, http::{Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, Request, Response, Method, headers::HeaderName}};
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
     /// struct ListItemsResult {
