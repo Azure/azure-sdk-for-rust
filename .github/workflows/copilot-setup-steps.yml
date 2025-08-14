@@ -39,10 +39,18 @@ on:
       - '.devcontainer/**'
       - '.github/workflows/copilot-setup-steps.yml'
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
-  setup-environment:
+  copilot-setup-steps:
     name: Setup Copilot Coding Agent Environment
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    environment: Copilot
     container:
       image: mcr.microsoft.com/devcontainers/rust:1-1-bullseye
     
