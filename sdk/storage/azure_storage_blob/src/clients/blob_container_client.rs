@@ -76,12 +76,12 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `blob_name` - The name of the blob.
-    pub fn blob_client(&self, blob_name: String) -> BlobClient {
-        BlobClient {
-            endpoint: self.client.endpoint.clone(),
-            client: self.client.get_blob_client(blob_name),
-        }
-    }
+    // pub fn blob_client(&self, blob_name: String) -> BlobClient {
+    //     BlobClient {
+    //         endpoint: self.client.endpoint.clone(),
+    //         client: self.client.get_blob_client(blob_name),
+    //     }
+    // }
 
     /// Gets the endpoint of the Storage account this client is connected to.
     pub fn endpoint(&self) -> &Url {

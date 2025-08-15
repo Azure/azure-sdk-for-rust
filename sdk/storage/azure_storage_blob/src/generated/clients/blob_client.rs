@@ -40,11 +40,10 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-#[tracing::client]
 pub struct BlobClient {
     pub(crate) blob_name: String,
     pub(crate) container_name: String,
-    pub(crate) endpoint: Url,
+    pub(crate) blob_url: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
 }
@@ -69,7 +68,6 @@ impl BlobClient {
     /// * `container_name` - The name of the container.
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("azure_storage_blob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -85,7 +83,13 @@ impl BlobClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        endpoint.set_query(None);
+
+        // In regular ctor, since struct now holds blob_url, we have to build the blob_url given endpoint + container_name + blob_name
+        endpoint
+            .path_segments_mut()
+            .expect("Cannot be base")
+            .extend([&container_name, &blob_name]);
+
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
@@ -93,7 +97,7 @@ impl BlobClient {
         Ok(Self {
             blob_name,
             container_name,
-            endpoint,
+            blob_url: endpoint,
             version: options.version,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
@@ -105,24 +109,29 @@ impl BlobClient {
         })
     }
 
-    pub fn with_no_credential(
-        endpoint: &str,
-        container_name: String,
-        blob_name: String,
-        options: Option<BlobClientOptions>,
-    ) -> Result<Self> {
+    pub fn with_no_credential(blob_url: &str, options: Option<BlobClientOptions>) -> Result<Self> {
         let options = options.unwrap_or_default();
-        let endpoint = Url::parse(endpoint)?;
-        if !endpoint.scheme().starts_with("http") {
+        let blob_url = Url::parse(blob_url)?;
+        if !blob_url.scheme().starts_with("http") {
             return Err(azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
+                format!("{blob_url} must use http(s)"),
             ));
         }
+
+        let mut segments = blob_url
+            .path_segments()
+            .expect("Failed to get path segments");
+        let container_name = segments
+            .next()
+            .expect("Failed to parse container_name")
+            .to_string();
+        let blob_name = segments.collect::<Vec<_>>().join("/");
+
         Ok(Self {
             blob_name,
             container_name,
-            endpoint,
+            blob_url,
             version: options.version,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
@@ -135,772 +144,772 @@ impl BlobClient {
     }
 
     /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
+    pub fn blob_url(&self) -> &Url {
+        &self.blob_url
     }
 
-    /// The Abort Copy From URL operation aborts a pending Copy From URL operation, and leaves a destination blob with zero length
-    /// and full metadata.
-    ///
-    /// # Arguments
-    ///
-    /// * `copy_id` - The copy identifier provided in the x-ms-copy-id header of the original Copy Blob operation.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.abortCopyFromUrl")]
-    pub async fn abort_copy_from_url(
-        &self,
-        copy_id: &str,
-        options: Option<BlobClientAbortCopyFromUrlOptions<'_>>,
-    ) -> Result<Response<BlobClientAbortCopyFromUrlResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_pair("comp", "copy")
-            .append_key_only("copyid");
-        url.query_pairs_mut().append_pair("copyid", copy_id);
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-copy-action", "abort");
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Abort Copy From URL operation aborts a pending Copy From URL operation, and leaves a destination blob with zero length
+    // /// and full metadata.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `copy_id` - The copy identifier provided in the x-ms-copy-id header of the original Copy Blob operation.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.abortCopyFromUrl")]
+    // pub async fn abort_copy_from_url(
+    //     &self,
+    //     copy_id: &str,
+    //     options: Option<BlobClientAbortCopyFromUrlOptions<'_>>,
+    // ) -> Result<Response<BlobClientAbortCopyFromUrlResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_pair("comp", "copy")
+    //         .append_key_only("copyid");
+    //     url.query_pairs_mut().append_pair("copyid", copy_id);
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     request.insert_header("x-ms-copy-action", "abort");
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Acquire Lease operation requests a new lease on a blob. The lease lock duration can be 15 to 60 seconds, or can be
-    /// infinite.
-    ///
-    /// # Arguments
-    ///
-    /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
-    ///   non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.acquireLease")]
-    pub async fn acquire_lease(
-        &self,
-        duration: i32,
-        options: Option<BlobClientAcquireLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_key_only("acquire")
-            .append_pair("comp", "lease");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        request.insert_header("x-ms-lease-action", "acquire");
-        request.insert_header("x-ms-lease-duration", duration.to_string());
-        if let Some(proposed_lease_id) = options.proposed_lease_id {
-            request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Acquire Lease operation requests a new lease on a blob. The lease lock duration can be 15 to 60 seconds, or can be
+    // /// infinite.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
+    // ///   non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.acquireLease")]
+    // pub async fn acquire_lease(
+    //     &self,
+    //     duration: i32,
+    //     options: Option<BlobClientAcquireLeaseOptions<'_>>,
+    // ) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_key_only("acquire")
+    //         .append_pair("comp", "lease");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     request.insert_header("x-ms-lease-action", "acquire");
+    //     request.insert_header("x-ms-lease-duration", duration.to_string());
+    //     if let Some(proposed_lease_id) = options.proposed_lease_id {
+    //         request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Break Lease operation ends a lease and ensures that another client can't acquire a new lease until the current lease
-    /// period has expired.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.breakLease")]
-    pub async fn break_lease(
-        &self,
-        options: Option<BlobClientBreakLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientBreakLeaseResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_key_only("break")
-            .append_pair("comp", "lease");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        request.insert_header("x-ms-lease-action", "break");
-        if let Some(break_period) = options.break_period {
-            request.insert_header("x-ms-lease-break-period", break_period.to_string());
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Break Lease operation ends a lease and ensures that another client can't acquire a new lease until the current lease
+    // /// period has expired.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.breakLease")]
+    // pub async fn break_lease(
+    //     &self,
+    //     options: Option<BlobClientBreakLeaseOptions<'_>>,
+    // ) -> Result<Response<BlobClientBreakLeaseResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_key_only("break")
+    //         .append_pair("comp", "lease");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     request.insert_header("x-ms-lease-action", "break");
+    //     if let Some(break_period) = options.break_period {
+    //         request.insert_header("x-ms-lease-break-period", break_period.to_string());
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Change Lease operation is used to change the ID of an existing lease.
-    ///
-    /// # Arguments
-    ///
-    /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
-    ///   lease ID must match.
-    /// * `proposed_lease_id` - Required. The proposed lease ID for the container.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.changeLease")]
-    pub async fn change_lease(
-        &self,
-        lease_id: String,
-        proposed_lease_id: String,
-        options: Option<BlobClientChangeLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientChangeLeaseResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_key_only("change")
-            .append_pair("comp", "lease");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        request.insert_header("x-ms-lease-action", "change");
-        request.insert_header("x-ms-lease-id", lease_id);
-        request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Change Lease operation is used to change the ID of an existing lease.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
+    // ///   lease ID must match.
+    // /// * `proposed_lease_id` - Required. The proposed lease ID for the container.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.changeLease")]
+    // pub async fn change_lease(
+    //     &self,
+    //     lease_id: String,
+    //     proposed_lease_id: String,
+    //     options: Option<BlobClientChangeLeaseOptions<'_>>,
+    // ) -> Result<Response<BlobClientChangeLeaseResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_key_only("change")
+    //         .append_pair("comp", "lease");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     request.insert_header("x-ms-lease-action", "change");
+    //     request.insert_header("x-ms-lease-id", lease_id);
+    //     request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Copy From URL operation copies a blob or an internet resource to a new blob. It will not return a response until the
-    /// copy is complete.
-    ///
-    /// # Arguments
-    ///
-    /// * `copy_source` - Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that
-    ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
-    ///   either be public or must be authenticated via a shared access signature.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.copyFromUrl")]
-    pub async fn copy_from_url(
-        &self,
-        copy_source: String,
-        options: Option<BlobClientCopyFromUrlOptions<'_>>,
-    ) -> Result<Response<BlobClientCopyFromUrlResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_pair("comp", "copy")
-            .append_key_only("sync");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(tier) = options.tier {
-            request.insert_header("x-ms-access-tier", tier.to_string());
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-copy-source", copy_source);
-        if let Some(copy_source_authorization) = options.copy_source_authorization {
-            request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
-        }
-        if let Some(copy_source_tags) = options.copy_source_tags {
-            request.insert_header("x-ms-copy-source-tag-option", copy_source_tags.to_string());
-        }
-        if let Some(encryption_scope) = options.encryption_scope {
-            request.insert_header("x-ms-encryption-scope", encryption_scope);
-        }
-        if let Some(file_request_intent) = options.file_request_intent {
-            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(immutability_policy_mode) = options.immutability_policy_mode {
-            request.insert_header(
-                "x-ms-immutability-policy-mode",
-                immutability_policy_mode.to_string(),
-            );
-        }
-        if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
-            request.insert_header(
-                "x-ms-immutability-policy-until-date",
-                to_rfc7231(&immutability_policy_expiry),
-            );
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(legal_hold) = options.legal_hold {
-            request.insert_header("x-ms-legal-hold", legal_hold.to_string());
-        }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
-        }
-        request.insert_header("x-ms-requires-sync", "true");
-        if let Some(source_content_md5) = options.source_content_md5 {
-            request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
-        }
-        if let Some(source_if_match) = options.source_if_match {
-            request.insert_header("x-ms-source-if-match", source_if_match);
-        }
-        if let Some(source_if_modified_since) = options.source_if_modified_since {
-            request.insert_header(
-                "x-ms-source-if-modified-since",
-                to_rfc7231(&source_if_modified_since),
-            );
-        }
-        if let Some(source_if_none_match) = options.source_if_none_match {
-            request.insert_header("x-ms-source-if-none-match", source_if_none_match);
-        }
-        if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
-            request.insert_header(
-                "x-ms-source-if-unmodified-since",
-                to_rfc7231(&source_if_unmodified_since),
-            );
-        }
-        if let Some(blob_tags_string) = options.blob_tags_string {
-            request.insert_header("x-ms-tags", blob_tags_string);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Copy From URL operation copies a blob or an internet resource to a new blob. It will not return a response until the
+    // /// copy is complete.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `copy_source` - Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that
+    // ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
+    // ///   either be public or must be authenticated via a shared access signature.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.copyFromUrl")]
+    // pub async fn copy_from_url(
+    //     &self,
+    //     copy_source: String,
+    //     options: Option<BlobClientCopyFromUrlOptions<'_>>,
+    // ) -> Result<Response<BlobClientCopyFromUrlResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_pair("comp", "copy")
+    //         .append_key_only("sync");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(tier) = options.tier {
+    //         request.insert_header("x-ms-access-tier", tier.to_string());
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     request.insert_header("x-ms-copy-source", copy_source);
+    //     if let Some(copy_source_authorization) = options.copy_source_authorization {
+    //         request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
+    //     }
+    //     if let Some(copy_source_tags) = options.copy_source_tags {
+    //         request.insert_header("x-ms-copy-source-tag-option", copy_source_tags.to_string());
+    //     }
+    //     if let Some(encryption_scope) = options.encryption_scope {
+    //         request.insert_header("x-ms-encryption-scope", encryption_scope);
+    //     }
+    //     if let Some(file_request_intent) = options.file_request_intent {
+    //         request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(immutability_policy_mode) = options.immutability_policy_mode {
+    //         request.insert_header(
+    //             "x-ms-immutability-policy-mode",
+    //             immutability_policy_mode.to_string(),
+    //         );
+    //     }
+    //     if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
+    //         request.insert_header(
+    //             "x-ms-immutability-policy-until-date",
+    //             to_rfc7231(&immutability_policy_expiry),
+    //         );
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     if let Some(legal_hold) = options.legal_hold {
+    //         request.insert_header("x-ms-legal-hold", legal_hold.to_string());
+    //     }
+    //     if let Some(metadata) = options.metadata {
+    //         for (k, v) in &metadata {
+    //             request.insert_header(format!("x-ms-meta-{k}"), v);
+    //         }
+    //     }
+    //     request.insert_header("x-ms-requires-sync", "true");
+    //     if let Some(source_content_md5) = options.source_content_md5 {
+    //         request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
+    //     }
+    //     if let Some(source_if_match) = options.source_if_match {
+    //         request.insert_header("x-ms-source-if-match", source_if_match);
+    //     }
+    //     if let Some(source_if_modified_since) = options.source_if_modified_since {
+    //         request.insert_header(
+    //             "x-ms-source-if-modified-since",
+    //             to_rfc7231(&source_if_modified_since),
+    //         );
+    //     }
+    //     if let Some(source_if_none_match) = options.source_if_none_match {
+    //         request.insert_header("x-ms-source-if-none-match", source_if_none_match);
+    //     }
+    //     if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
+    //         request.insert_header(
+    //             "x-ms-source-if-unmodified-since",
+    //             to_rfc7231(&source_if_unmodified_since),
+    //         );
+    //     }
+    //     if let Some(blob_tags_string) = options.blob_tags_string {
+    //         request.insert_header("x-ms-tags", blob_tags_string);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Create Snapshot operation creates a read-only snapshot of a blob
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.createSnapshot")]
-    pub async fn create_snapshot(
-        &self,
-        options: Option<BlobClientCreateSnapshotOptions<'_>>,
-    ) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "snapshot");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
-            request.insert_header(
-                "x-ms-encryption-algorithm",
-                encryption_algorithm.to_string(),
-            );
-        }
-        if let Some(encryption_key) = options.encryption_key {
-            request.insert_header("x-ms-encryption-key", encryption_key);
-        }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
-            request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
-        }
-        if let Some(encryption_scope) = options.encryption_scope {
-            request.insert_header("x-ms-encryption-scope", encryption_scope);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Create Snapshot operation creates a read-only snapshot of a blob
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.createSnapshot")]
+    // pub async fn create_snapshot(
+    //     &self,
+    //     options: Option<BlobClientCreateSnapshotOptions<'_>>,
+    // ) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut().append_pair("comp", "snapshot");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(encryption_algorithm) = options.encryption_algorithm {
+    //         request.insert_header(
+    //             "x-ms-encryption-algorithm",
+    //             encryption_algorithm.to_string(),
+    //         );
+    //     }
+    //     if let Some(encryption_key) = options.encryption_key {
+    //         request.insert_header("x-ms-encryption-key", encryption_key);
+    //     }
+    //     if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+    //         request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
+    //     }
+    //     if let Some(encryption_scope) = options.encryption_scope {
+    //         request.insert_header("x-ms-encryption-scope", encryption_scope);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     if let Some(metadata) = options.metadata {
+    //         for (k, v) in &metadata {
+    //             request.insert_header(format!("x-ms-meta-{k}"), v);
+    //         }
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// If the storage account's soft delete feature is disabled then, when a blob is deleted, it is permanently removed from
-    /// the storage account. If the storage account's soft delete feature is enabled, then, when a blob is deleted, it is marked
-    /// for deletion and becomes inaccessible immediately. However, the blob service retains the blob or snapshot for the number
-    /// of days specified by the DeleteRetentionPolicy section of [Storage service properties] (Set-Blob-Service-Properties.md).
-    /// After the specified number of days has passed, the blob's data is permanently removed from the storage account. Note that
-    /// you continue to be charged for the soft-deleted blob's storage until it is permanently removed. Use the List Blobs API
-    /// and specify the \"include=deleted\" query parameter to discover which blobs and snapshots have been soft deleted. You
-    /// can then use the Undelete Blob API to restore a soft-deleted blob. All other operations on a soft-deleted blob or snapshot
-    /// causes the service to return an HTTP status code of 404 (ResourceNotFound).
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.delete")]
-    pub async fn delete(
-        &self,
-        options: Option<BlobClientDeleteOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        if let Some(blob_delete_type) = options.blob_delete_type {
-            url.query_pairs_mut()
-                .append_pair("deletetype", blob_delete_type.as_ref());
-        }
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
-        }
-        let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(delete_snapshots) = options.delete_snapshots {
-            request.insert_header("x-ms-delete-snapshots", delete_snapshots.to_string());
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// If the storage account's soft delete feature is disabled then, when a blob is deleted, it is permanently removed from
+    // /// the storage account. If the storage account's soft delete feature is enabled, then, when a blob is deleted, it is marked
+    // /// for deletion and becomes inaccessible immediately. However, the blob service retains the blob or snapshot for the number
+    // /// of days specified by the DeleteRetentionPolicy section of [Storage service properties] (Set-Blob-Service-Properties.md).
+    // /// After the specified number of days has passed, the blob's data is permanently removed from the storage account. Note that
+    // /// you continue to be charged for the soft-deleted blob's storage until it is permanently removed. Use the List Blobs API
+    // /// and specify the \"include=deleted\" query parameter to discover which blobs and snapshots have been soft deleted. You
+    // /// can then use the Undelete Blob API to restore a soft-deleted blob. All other operations on a soft-deleted blob or snapshot
+    // /// causes the service to return an HTTP status code of 404 (ResourceNotFound).
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.delete")]
+    // pub async fn delete(
+    //     &self,
+    //     options: Option<BlobClientDeleteOptions<'_>>,
+    // ) -> Result<Response<(), NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     if let Some(blob_delete_type) = options.blob_delete_type {
+    //         url.query_pairs_mut()
+    //             .append_pair("deletetype", blob_delete_type.as_ref());
+    //     }
+    //     if let Some(snapshot) = options.snapshot {
+    //         url.query_pairs_mut().append_pair("snapshot", &snapshot);
+    //     }
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     if let Some(version_id) = options.version_id {
+    //         url.query_pairs_mut().append_pair("versionid", &version_id);
+    //     }
+    //     let mut request = Request::new(url, Method::Delete);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(delete_snapshots) = options.delete_snapshots {
+    //         request.insert_header("x-ms-delete-snapshots", delete_snapshots.to_string());
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Delete Immutability Policy operation deletes the immutability policy on the blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.deleteImmutabilityPolicy")]
-    pub async fn delete_immutability_policy(
-        &self,
-        options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_pair("comp", "immutabilityPolicies");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
-        }
-        let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Delete Immutability Policy operation deletes the immutability policy on the blob.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.deleteImmutabilityPolicy")]
+    // pub async fn delete_immutability_policy(
+    //     &self,
+    //     options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
+    // ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_pair("comp", "immutabilityPolicies");
+    //     if let Some(snapshot) = options.snapshot {
+    //         url.query_pairs_mut().append_pair("snapshot", &snapshot);
+    //     }
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     if let Some(version_id) = options.version_id {
+    //         url.query_pairs_mut().append_pair("versionid", &version_id);
+    //     }
+    //     let mut request = Request::new(url, Method::Delete);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Download operation reads or downloads a blob from the system, including its metadata and properties. You can also
-    /// call Download to read a snapshot.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.download")]
-    pub async fn download(
-        &self,
-        options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<Response<BlobClientDownloadResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
-        }
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/octet-stream");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(range) = options.range {
-            request.insert_header("range", range);
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
-            request.insert_header(
-                "x-ms-encryption-algorithm",
-                encryption_algorithm.to_string(),
-            );
-        }
-        if let Some(encryption_key) = options.encryption_key {
-            request.insert_header("x-ms-encryption-key", encryption_key);
-        }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
-            request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(range_get_content_crc64) = options.range_get_content_crc64 {
-            request.insert_header(
-                "x-ms-range-get-content-crc64",
-                range_get_content_crc64.to_string(),
-            );
-        }
-        if let Some(range_get_content_md5) = options.range_get_content_md5 {
-            request.insert_header(
-                "x-ms-range-get-content-md5",
-                range_get_content_md5.to_string(),
-            );
-        }
-        if let Some(structured_body_type) = options.structured_body_type {
-            request.insert_header("x-ms-structured-body", structured_body_type);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Download operation reads or downloads a blob from the system, including its metadata and properties. You can also
+    // /// call Download to read a snapshot.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.download")]
+    // pub async fn download(
+    //     &self,
+    //     options: Option<BlobClientDownloadOptions<'_>>,
+    // ) -> Result<Response<BlobClientDownloadResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     if let Some(snapshot) = options.snapshot {
+    //         url.query_pairs_mut().append_pair("snapshot", &snapshot);
+    //     }
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     if let Some(version_id) = options.version_id {
+    //         url.query_pairs_mut().append_pair("versionid", &version_id);
+    //     }
+    //     let mut request = Request::new(url, Method::Get);
+    //     request.insert_header("accept", "application/octet-stream");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(range) = options.range {
+    //         request.insert_header("range", range);
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(encryption_algorithm) = options.encryption_algorithm {
+    //         request.insert_header(
+    //             "x-ms-encryption-algorithm",
+    //             encryption_algorithm.to_string(),
+    //         );
+    //     }
+    //     if let Some(encryption_key) = options.encryption_key {
+    //         request.insert_header("x-ms-encryption-key", encryption_key);
+    //     }
+    //     if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+    //         request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     if let Some(range_get_content_crc64) = options.range_get_content_crc64 {
+    //         request.insert_header(
+    //             "x-ms-range-get-content-crc64",
+    //             range_get_content_crc64.to_string(),
+    //         );
+    //     }
+    //     if let Some(range_get_content_md5) = options.range_get_content_md5 {
+    //         request.insert_header(
+    //             "x-ms-range-get-content-md5",
+    //             range_get_content_md5.to_string(),
+    //         );
+    //     }
+    //     if let Some(structured_body_type) = options.structured_body_type {
+    //         request.insert_header("x-ms-structured-body", structured_body_type);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// Returns the sku name and account kind
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.getAccountInfo")]
-    pub async fn get_account_info(
-        &self,
-        options: Option<BlobClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_key_only("blob")
-            .append_pair("comp", "properties")
-            .append_pair("restype", "account");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// Returns the sku name and account kind
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.getAccountInfo")]
+    // pub async fn get_account_info(
+    //     &self,
+    //     options: Option<BlobClientGetAccountInfoOptions<'_>>,
+    // ) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_key_only("blob")
+    //         .append_pair("comp", "properties")
+    //         .append_pair("restype", "account");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Get);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
     /// Returns a new instance of AppendBlobClient.
-    #[tracing::subclient]
-    pub fn get_append_blob_client(&self) -> AppendBlobClient {
-        AppendBlobClient {
-            blob_name: self.blob_name.clone(),
-            container_name: self.container_name.clone(),
-            endpoint: self.endpoint.clone(),
-            pipeline: self.pipeline.clone(),
-            version: self.version.clone(),
-        }
-    }
+    // #[tracing::subclient]
+    // pub fn get_append_blob_client(&self) -> AppendBlobClient {
+    //     AppendBlobClient {
+    //         blob_name: self.blob_name.clone(),
+    //         container_name: self.container_name.clone(),
+    //         endpoint: self.endpoint.clone(),
+    //         pipeline: self.pipeline.clone(),
+    //         version: self.version.clone(),
+    //     }
+    // }
 
-    /// Returns a new instance of BlockBlobClient.
-    #[tracing::subclient]
-    pub fn get_block_blob_client(&self) -> BlockBlobClient {
-        BlockBlobClient {
-            blob_name: self.blob_name.clone(),
-            container_name: self.container_name.clone(),
-            endpoint: self.endpoint.clone(),
-            pipeline: self.pipeline.clone(),
-            version: self.version.clone(),
-        }
-    }
+    // /// Returns a new instance of BlockBlobClient.
+    // #[tracing::subclient]
+    // pub fn get_block_blob_client(&self) -> BlockBlobClient {
+    //     BlockBlobClient {
+    //         blob_name: self.blob_name.clone(),
+    //         container_name: self.container_name.clone(),
+    //         endpoint: self.endpoint.clone(),
+    //         pipeline: self.pipeline.clone(),
+    //         version: self.version.clone(),
+    //     }
+    // }
 
-    /// Returns a new instance of PageBlobClient.
-    #[tracing::subclient]
-    pub fn get_page_blob_client(&self) -> PageBlobClient {
-        PageBlobClient {
-            blob_name: self.blob_name.clone(),
-            container_name: self.container_name.clone(),
-            endpoint: self.endpoint.clone(),
-            pipeline: self.pipeline.clone(),
-            version: self.version.clone(),
-        }
-    }
+    // /// Returns a new instance of PageBlobClient.
+    // #[tracing::subclient]
+    // pub fn get_page_blob_client(&self) -> PageBlobClient {
+    //     PageBlobClient {
+    //         blob_name: self.blob_name.clone(),
+    //         container_name: self.container_name.clone(),
+    //         endpoint: self.endpoint.clone(),
+    //         pipeline: self.pipeline.clone(),
+    //         version: self.version.clone(),
+    //     }
+    // }
 
     /// The Get Properties operation returns all user-defined metadata, standard HTTP properties, and system properties for the
     /// blob. It does not return the content of the blob.
@@ -908,28 +917,13 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.getProperties")]
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobClientGetPropertiesResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        // let mut path = String::from("{containerName}/{blobName}");
-        // path = path.replace("{blobName}", &self.blob_name);
-        // path = path.replace("{containerName}", &self.container_name);
-        // url = url.join(&path)?;
-
-        // request uri before: https://vincenttranstock.blob.core.windows.net/?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig=
-        // println!("request uri before: {}", url);
-        {
-            url.path_segments_mut()
-                .expect("Cannot be base")
-                .extend([&self.container_name, &self.blob_name]);
-        }
-        // request uri after: https://vincenttranstock.blob.core.windows.net/acontainer108f32e8/goodbye.txt?sp=racwd&st=2025-07-21T21:22:28Z&se=2025-07-22T05:37:28Z&spr=https&sv=2024-11-04&sr=b&sig=
-        // println!("request uri after: {}", url);
+        let mut url = self.blob_url.clone();
         if let Some(snapshot) = options.snapshot {
             url.query_pairs_mut().append_pair("snapshot", &snapshot);
         }
@@ -989,793 +983,793 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Get Blob Tags operation enables users to get tags on a blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.getTags")]
-    pub async fn get_tags(
-        &self,
-        options: Option<BlobClientGetTagsOptions<'_>>,
-    ) -> Result<Response<BlobTags, XmlFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "tags");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
-        }
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Get Blob Tags operation enables users to get tags on a blob.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.getTags")]
+    // pub async fn get_tags(
+    //     &self,
+    //     options: Option<BlobClientGetTagsOptions<'_>>,
+    // ) -> Result<Response<BlobTags, XmlFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut().append_pair("comp", "tags");
+    //     if let Some(snapshot) = options.snapshot {
+    //         url.query_pairs_mut().append_pair("snapshot", &snapshot);
+    //     }
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     if let Some(version_id) = options.version_id {
+    //         url.query_pairs_mut().append_pair("versionid", &version_id);
+    //     }
+    //     let mut request = Request::new(url, Method::Get);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Release Lease operation frees the lease if it's no longer needed, so that another client can immediately acquire a
-    /// lease against the blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
-    ///   lease ID must match.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.releaseLease")]
-    pub async fn release_lease(
-        &self,
-        lease_id: String,
-        options: Option<BlobClientReleaseLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientReleaseLeaseResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_pair("comp", "lease")
-            .append_key_only("release");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        request.insert_header("x-ms-lease-action", "release");
-        request.insert_header("x-ms-lease-id", lease_id);
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Release Lease operation frees the lease if it's no longer needed, so that another client can immediately acquire a
+    // /// lease against the blob.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
+    // ///   lease ID must match.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.releaseLease")]
+    // pub async fn release_lease(
+    //     &self,
+    //     lease_id: String,
+    //     options: Option<BlobClientReleaseLeaseOptions<'_>>,
+    // ) -> Result<Response<BlobClientReleaseLeaseResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_pair("comp", "lease")
+    //         .append_key_only("release");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     request.insert_header("x-ms-lease-action", "release");
+    //     request.insert_header("x-ms-lease-id", lease_id);
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Renew Lease operation renews an existing lease.
-    ///
-    /// # Arguments
-    ///
-    /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
-    ///   lease ID must match.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.renewLease")]
-    pub async fn renew_lease(
-        &self,
-        lease_id: String,
-        options: Option<BlobClientRenewLeaseOptions<'_>>,
-    ) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_pair("comp", "lease")
-            .append_key_only("renew");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        request.insert_header("x-ms-lease-action", "renew");
-        request.insert_header("x-ms-lease-id", lease_id);
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Renew Lease operation renews an existing lease.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
+    // ///   lease ID must match.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.renewLease")]
+    // pub async fn renew_lease(
+    //     &self,
+    //     lease_id: String,
+    //     options: Option<BlobClientRenewLeaseOptions<'_>>,
+    // ) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_pair("comp", "lease")
+    //         .append_key_only("renew");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     request.insert_header("x-ms-lease-action", "renew");
+    //     request.insert_header("x-ms-lease-id", lease_id);
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// Set the expiration time of a blob
-    ///
-    /// # Arguments
-    ///
-    /// * `expiry_options` - Required. Indicates mode of the expiry time
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.setExpiry")]
-    pub async fn set_expiry(
-        &self,
-        expiry_options: BlobExpiryOptions,
-        options: Option<BlobClientSetExpiryOptions<'_>>,
-    ) -> Result<Response<BlobClientSetExpiryResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "expiry");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-expiry-option", expiry_options.to_string());
-        if let Some(expires_on) = options.expires_on {
-            request.insert_header("x-ms-expiry-time", to_rfc7231(&expires_on));
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// Set the expiration time of a blob
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `expiry_options` - Required. Indicates mode of the expiry time
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.setExpiry")]
+    // pub async fn set_expiry(
+    //     &self,
+    //     expiry_options: BlobExpiryOptions,
+    //     options: Option<BlobClientSetExpiryOptions<'_>>,
+    // ) -> Result<Response<BlobClientSetExpiryResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut().append_pair("comp", "expiry");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     request.insert_header("x-ms-expiry-option", expiry_options.to_string());
+    //     if let Some(expires_on) = options.expires_on {
+    //         request.insert_header("x-ms-expiry-time", to_rfc7231(&expires_on));
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// Set the immutability policy of a blob
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.setImmutabilityPolicy")]
-    pub async fn set_immutability_policy(
-        &self,
-        options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
-    ) -> Result<Response<BlobClientSetImmutabilityPolicyResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_pair("comp", "immutabilityPolicies");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(immutability_policy_mode) = options.immutability_policy_mode {
-            request.insert_header(
-                "x-ms-immutability-policy-mode",
-                immutability_policy_mode.to_string(),
-            );
-        }
-        if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
-            request.insert_header(
-                "x-ms-immutability-policy-until-date",
-                to_rfc7231(&immutability_policy_expiry),
-            );
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// Set the immutability policy of a blob
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.setImmutabilityPolicy")]
+    // pub async fn set_immutability_policy(
+    //     &self,
+    //     options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
+    // ) -> Result<Response<BlobClientSetImmutabilityPolicyResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_pair("comp", "immutabilityPolicies");
+    //     if let Some(snapshot) = options.snapshot {
+    //         url.query_pairs_mut().append_pair("snapshot", &snapshot);
+    //     }
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     if let Some(version_id) = options.version_id {
+    //         url.query_pairs_mut().append_pair("versionid", &version_id);
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(immutability_policy_mode) = options.immutability_policy_mode {
+    //         request.insert_header(
+    //             "x-ms-immutability-policy-mode",
+    //             immutability_policy_mode.to_string(),
+    //         );
+    //     }
+    //     if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
+    //         request.insert_header(
+    //             "x-ms-immutability-policy-until-date",
+    //             to_rfc7231(&immutability_policy_expiry),
+    //         );
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Set Legal Hold operation sets a legal hold on the blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `legal_hold` - Required. Specifies the legal hold status to set on the blob.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.setLegalHold")]
-    pub async fn set_legal_hold(
-        &self,
-        legal_hold: bool,
-        options: Option<BlobClientSetLegalHoldOptions<'_>>,
-    ) -> Result<Response<BlobClientSetLegalHoldResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "legalhold");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-legal-hold", legal_hold.to_string());
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Set Legal Hold operation sets a legal hold on the blob.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `legal_hold` - Required. Specifies the legal hold status to set on the blob.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.setLegalHold")]
+    // pub async fn set_legal_hold(
+    //     &self,
+    //     legal_hold: bool,
+    //     options: Option<BlobClientSetLegalHoldOptions<'_>>,
+    // ) -> Result<Response<BlobClientSetLegalHoldResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut().append_pair("comp", "legalhold");
+    //     if let Some(snapshot) = options.snapshot {
+    //         url.query_pairs_mut().append_pair("snapshot", &snapshot);
+    //     }
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     if let Some(version_id) = options.version_id {
+    //         url.query_pairs_mut().append_pair("versionid", &version_id);
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     request.insert_header("x-ms-legal-hold", legal_hold.to_string());
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Set Metadata operation sets user-defined metadata for the specified blob as one or more name-value pairs.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.setMetadata")]
-    pub async fn set_metadata(
-        &self,
-        options: Option<BlobClientSetMetadataOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "metadata");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
-            request.insert_header(
-                "x-ms-encryption-algorithm",
-                encryption_algorithm.to_string(),
-            );
-        }
-        if let Some(encryption_key) = options.encryption_key {
-            request.insert_header("x-ms-encryption-key", encryption_key);
-        }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
-            request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
-        }
-        if let Some(encryption_scope) = options.encryption_scope {
-            request.insert_header("x-ms-encryption-scope", encryption_scope);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Set Metadata operation sets user-defined metadata for the specified blob as one or more name-value pairs.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.setMetadata")]
+    // pub async fn set_metadata(
+    //     &self,
+    //     options: Option<BlobClientSetMetadataOptions<'_>>,
+    // ) -> Result<Response<(), NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut().append_pair("comp", "metadata");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(encryption_algorithm) = options.encryption_algorithm {
+    //         request.insert_header(
+    //             "x-ms-encryption-algorithm",
+    //             encryption_algorithm.to_string(),
+    //         );
+    //     }
+    //     if let Some(encryption_key) = options.encryption_key {
+    //         request.insert_header("x-ms-encryption-key", encryption_key);
+    //     }
+    //     if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+    //         request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
+    //     }
+    //     if let Some(encryption_scope) = options.encryption_scope {
+    //         request.insert_header("x-ms-encryption-scope", encryption_scope);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     if let Some(metadata) = options.metadata {
+    //         for (k, v) in &metadata {
+    //             request.insert_header(format!("x-ms-meta-{k}"), v);
+    //         }
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Set HTTP Headers operation sets system properties on the blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.setProperties")]
-    pub async fn set_properties(
-        &self,
-        options: Option<BlobClientSetPropertiesOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_key_only("SetHTTPHeaders")
-            .append_pair("comp", "properties");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(blob_cache_control) = options.blob_cache_control {
-            request.insert_header("x-ms-blob-cache-control", blob_cache_control);
-        }
-        if let Some(blob_content_disposition) = options.blob_content_disposition {
-            request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
-        }
-        if let Some(blob_content_encoding) = options.blob_content_encoding {
-            request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
-        }
-        if let Some(blob_content_language) = options.blob_content_language {
-            request.insert_header("x-ms-blob-content-language", blob_content_language);
-        }
-        if let Some(blob_content_md5) = options.blob_content_md5 {
-            request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
-        }
-        if let Some(blob_content_type) = options.blob_content_type {
-            request.insert_header("x-ms-blob-content-type", blob_content_type);
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Set HTTP Headers operation sets system properties on the blob.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.setProperties")]
+    // pub async fn set_properties(
+    //     &self,
+    //     options: Option<BlobClientSetPropertiesOptions<'_>>,
+    // ) -> Result<Response<(), NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut()
+    //         .append_key_only("SetHTTPHeaders")
+    //         .append_pair("comp", "properties");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(blob_cache_control) = options.blob_cache_control {
+    //         request.insert_header("x-ms-blob-cache-control", blob_cache_control);
+    //     }
+    //     if let Some(blob_content_disposition) = options.blob_content_disposition {
+    //         request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
+    //     }
+    //     if let Some(blob_content_encoding) = options.blob_content_encoding {
+    //         request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
+    //     }
+    //     if let Some(blob_content_language) = options.blob_content_language {
+    //         request.insert_header("x-ms-blob-content-language", blob_content_language);
+    //     }
+    //     if let Some(blob_content_md5) = options.blob_content_md5 {
+    //         request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
+    //     }
+    //     if let Some(blob_content_type) = options.blob_content_type {
+    //         request.insert_header("x-ms-blob-content-type", blob_content_type);
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Set Tags operation enables users to set tags on a blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `tags` - The blob tags.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.setTags")]
-    pub async fn set_tags(
-        &self,
-        tags: RequestContent<BlobTags, XmlFormat>,
-        options: Option<BlobClientSetTagsOptions<'_>>,
-    ) -> Result<Response<BlobClientSetTagsResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "tags");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", encode(transactional_content_md5));
-        }
-        request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
-            request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        request.set_body(tags);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Set Tags operation enables users to set tags on a blob.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `tags` - The blob tags.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.setTags")]
+    // pub async fn set_tags(
+    //     &self,
+    //     tags: RequestContent<BlobTags, XmlFormat>,
+    //     options: Option<BlobClientSetTagsOptions<'_>>,
+    // ) -> Result<Response<BlobClientSetTagsResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut().append_pair("comp", "tags");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     if let Some(version_id) = options.version_id {
+    //         url.query_pairs_mut().append_pair("versionid", &version_id);
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     if let Some(transactional_content_md5) = options.transactional_content_md5 {
+    //         request.insert_header("content-md5", encode(transactional_content_md5));
+    //     }
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(transactional_content_crc64) = options.transactional_content_crc64 {
+    //         request.insert_header("x-ms-content-crc64", encode(transactional_content_crc64));
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     request.set_body(tags);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Set Tier operation sets the tier on a block blob. The operation is allowed on a page blob or block blob, but not on
-    /// an append blob. A block blob's tier determines Hot/Cool/Archive storage type. This operation does not update the blob's
-    /// ETag.
-    ///
-    /// # Arguments
-    ///
-    /// * `tier` - Indicates the tier to be set on the blob.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.setTier")]
-    pub async fn set_tier(
-        &self,
-        tier: AccessTier,
-        options: Option<BlobClientSetTierOptions<'_>>,
-    ) -> Result<Response<(), NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "tier");
-        if let Some(snapshot) = options.snapshot {
-            url.query_pairs_mut().append_pair("snapshot", &snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        if let Some(version_id) = options.version_id {
-            url.query_pairs_mut().append_pair("versionid", &version_id);
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        request.insert_header("x-ms-access-tier", tier.to_string());
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(rehydrate_priority) = options.rehydrate_priority {
-            request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Set Tier operation sets the tier on a block blob. The operation is allowed on a page blob or block blob, but not on
+    // /// an append blob. A block blob's tier determines Hot/Cool/Archive storage type. This operation does not update the blob's
+    // /// ETag.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `tier` - Indicates the tier to be set on the blob.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.setTier")]
+    // pub async fn set_tier(
+    //     &self,
+    //     tier: AccessTier,
+    //     options: Option<BlobClientSetTierOptions<'_>>,
+    // ) -> Result<Response<(), NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut().append_pair("comp", "tier");
+    //     if let Some(snapshot) = options.snapshot {
+    //         url.query_pairs_mut().append_pair("snapshot", &snapshot);
+    //     }
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     if let Some(version_id) = options.version_id {
+    //         url.query_pairs_mut().append_pair("versionid", &version_id);
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     request.insert_header("x-ms-access-tier", tier.to_string());
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     if let Some(rehydrate_priority) = options.rehydrate_priority {
+    //         request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// The Start Copy From URL operation copies a blob or an internet resource to a new blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `copy_source` - Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that
-    ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
-    ///   either be public or must be authenticated via a shared access signature.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.startCopyFromUrl")]
-    pub async fn start_copy_from_url(
-        &self,
-        copy_source: String,
-        options: Option<BlobClientStartCopyFromUrlOptions<'_>>,
-    ) -> Result<Response<BlobClientStartCopyFromUrlResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(tier) = options.tier {
-            request.insert_header("x-ms-access-tier", tier.to_string());
-        }
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-copy-source", copy_source);
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(immutability_policy_mode) = options.immutability_policy_mode {
-            request.insert_header(
-                "x-ms-immutability-policy-mode",
-                immutability_policy_mode.to_string(),
-            );
-        }
-        if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
-            request.insert_header(
-                "x-ms-immutability-policy-until-date",
-                to_rfc7231(&immutability_policy_expiry),
-            );
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(legal_hold) = options.legal_hold {
-            request.insert_header("x-ms-legal-hold", legal_hold.to_string());
-        }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
-        }
-        if let Some(rehydrate_priority) = options.rehydrate_priority {
-            request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
-        }
-        request.insert_header("x-ms-requires-sync", "true");
-        if let Some(seal_blob) = options.seal_blob {
-            request.insert_header("x-ms-seal-blob", seal_blob.to_string());
-        }
-        if let Some(source_if_match) = options.source_if_match {
-            request.insert_header("x-ms-source-if-match", source_if_match);
-        }
-        if let Some(source_if_modified_since) = options.source_if_modified_since {
-            request.insert_header(
-                "x-ms-source-if-modified-since",
-                to_rfc7231(&source_if_modified_since),
-            );
-        }
-        if let Some(source_if_none_match) = options.source_if_none_match {
-            request.insert_header("x-ms-source-if-none-match", source_if_none_match);
-        }
-        if let Some(source_if_tags) = options.source_if_tags {
-            request.insert_header("x-ms-source-if-tags", source_if_tags);
-        }
-        if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
-            request.insert_header(
-                "x-ms-source-if-unmodified-since",
-                to_rfc7231(&source_if_unmodified_since),
-            );
-        }
-        if let Some(blob_tags_string) = options.blob_tags_string {
-            request.insert_header("x-ms-tags", blob_tags_string);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// The Start Copy From URL operation copies a blob or an internet resource to a new blob.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `copy_source` - Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that
+    // ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
+    // ///   either be public or must be authenticated via a shared access signature.
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.startCopyFromUrl")]
+    // pub async fn start_copy_from_url(
+    //     &self,
+    //     copy_source: String,
+    //     options: Option<BlobClientStartCopyFromUrlOptions<'_>>,
+    // ) -> Result<Response<BlobClientStartCopyFromUrlResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(if_match) = options.if_match {
+    //         request.insert_header("if-match", if_match);
+    //     }
+    //     if let Some(if_modified_since) = options.if_modified_since {
+    //         request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+    //     }
+    //     if let Some(if_none_match) = options.if_none_match {
+    //         request.insert_header("if-none-match", if_none_match);
+    //     }
+    //     if let Some(if_unmodified_since) = options.if_unmodified_since {
+    //         request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+    //     }
+    //     if let Some(tier) = options.tier {
+    //         request.insert_header("x-ms-access-tier", tier.to_string());
+    //     }
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     request.insert_header("x-ms-copy-source", copy_source);
+    //     if let Some(if_tags) = options.if_tags {
+    //         request.insert_header("x-ms-if-tags", if_tags);
+    //     }
+    //     if let Some(immutability_policy_mode) = options.immutability_policy_mode {
+    //         request.insert_header(
+    //             "x-ms-immutability-policy-mode",
+    //             immutability_policy_mode.to_string(),
+    //         );
+    //     }
+    //     if let Some(immutability_policy_expiry) = options.immutability_policy_expiry {
+    //         request.insert_header(
+    //             "x-ms-immutability-policy-until-date",
+    //             to_rfc7231(&immutability_policy_expiry),
+    //         );
+    //     }
+    //     if let Some(lease_id) = options.lease_id {
+    //         request.insert_header("x-ms-lease-id", lease_id);
+    //     }
+    //     if let Some(legal_hold) = options.legal_hold {
+    //         request.insert_header("x-ms-legal-hold", legal_hold.to_string());
+    //     }
+    //     if let Some(metadata) = options.metadata {
+    //         for (k, v) in &metadata {
+    //             request.insert_header(format!("x-ms-meta-{k}"), v);
+    //         }
+    //     }
+    //     if let Some(rehydrate_priority) = options.rehydrate_priority {
+    //         request.insert_header("x-ms-rehydrate-priority", rehydrate_priority.to_string());
+    //     }
+    //     request.insert_header("x-ms-requires-sync", "true");
+    //     if let Some(seal_blob) = options.seal_blob {
+    //         request.insert_header("x-ms-seal-blob", seal_blob.to_string());
+    //     }
+    //     if let Some(source_if_match) = options.source_if_match {
+    //         request.insert_header("x-ms-source-if-match", source_if_match);
+    //     }
+    //     if let Some(source_if_modified_since) = options.source_if_modified_since {
+    //         request.insert_header(
+    //             "x-ms-source-if-modified-since",
+    //             to_rfc7231(&source_if_modified_since),
+    //         );
+    //     }
+    //     if let Some(source_if_none_match) = options.source_if_none_match {
+    //         request.insert_header("x-ms-source-if-none-match", source_if_none_match);
+    //     }
+    //     if let Some(source_if_tags) = options.source_if_tags {
+    //         request.insert_header("x-ms-source-if-tags", source_if_tags);
+    //     }
+    //     if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
+    //         request.insert_header(
+    //             "x-ms-source-if-unmodified-since",
+    //             to_rfc7231(&source_if_unmodified_since),
+    //         );
+    //     }
+    //     if let Some(blob_tags_string) = options.blob_tags_string {
+    //         request.insert_header("x-ms-tags", blob_tags_string);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 
-    /// Undelete a blob that was previously soft deleted
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.undelete")]
-    pub async fn undelete(
-        &self,
-        options: Option<BlobClientUndeleteOptions<'_>>,
-    ) -> Result<Response<BlobClientUndeleteResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut().append_pair("comp", "undelete");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-type", "application/xml");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
+    // /// Undelete a blob that was previously soft deleted
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `options` - Optional parameters for the request.
+    // #[tracing::function("Storage.Blob.Container.Blob.undelete")]
+    // pub async fn undelete(
+    //     &self,
+    //     options: Option<BlobClientUndeleteOptions<'_>>,
+    // ) -> Result<Response<BlobClientUndeleteResult, NoFormat>> {
+    //     let options = options.unwrap_or_default();
+    //     let ctx = Context::with_context(&options.method_options.context);
+    //     let mut url = self.endpoint.clone();
+    //     let mut path = String::from("{containerName}/{blobName}");
+    //     path = path.replace("{blobName}", &self.blob_name);
+    //     path = path.replace("{containerName}", &self.container_name);
+    //     url = url.join(&path)?;
+    //     url.query_pairs_mut().append_pair("comp", "undelete");
+    //     if let Some(timeout) = options.timeout {
+    //         url.query_pairs_mut()
+    //             .append_pair("timeout", &timeout.to_string());
+    //     }
+    //     let mut request = Request::new(url, Method::Put);
+    //     request.insert_header("accept", "application/xml");
+    //     request.insert_header("content-type", "application/xml");
+    //     if let Some(client_request_id) = options.client_request_id {
+    //         request.insert_header("x-ms-client-request-id", client_request_id);
+    //     }
+    //     request.insert_header("x-ms-version", &self.version);
+    //     let rsp = self.pipeline.send(&ctx, &mut request).await?;
+    //     if !rsp.status().is_success() {
+    //         let status = rsp.status();
+    //         let http_error = HttpError::new(rsp).await;
+    //         let error_kind = ErrorKind::http_response(
+    //             status,
+    //             http_error.error_code().map(std::borrow::ToOwned::to_owned),
+    //         );
+    //         return Err(Error::new(error_kind, http_error));
+    //     }
+    //     Ok(rsp.into())
+    // }
 }
 
 impl Default for BlobClientOptions {
