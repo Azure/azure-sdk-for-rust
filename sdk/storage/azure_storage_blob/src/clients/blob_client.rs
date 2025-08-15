@@ -32,7 +32,6 @@ use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
-    pub(super) blob_url: Url,
     pub(super) client: GeneratedBlobClient,
 }
 
@@ -69,7 +68,6 @@ impl BlobClient {
             Some(options),
         )?;
         Ok(Self {
-            blob_url: client.blob_url().clone(),
             client,
         })
     }
@@ -87,7 +85,6 @@ impl BlobClient {
         let client = GeneratedBlobClient::with_no_credential(url.as_str(), Some(options))?;
 
         Ok(Self {
-            blob_url: url,
             client,
         })
     }
@@ -127,7 +124,7 @@ impl BlobClient {
 
     /// Gets the endpoint of the Storage account this client is connected to.
     pub fn blob_url(&self) -> &Url {
-        &self.blob_url
+        &self.client.blob_url
     }
 
     /// Gets the container name of the Storage account this client is connected to.
