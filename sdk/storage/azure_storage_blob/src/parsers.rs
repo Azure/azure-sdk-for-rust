@@ -1,11 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::generated::models::{BlobTag, BlobTags};
-use azure_core::http::response::ResponseBody;
-use azure_core::http::{JsonFormat, RawResponse, RequestContent, Response, XmlFormat};
-use azure_core::xml;
-use std::collections::{BTreeMap, HashMap};
 use std::io::{Error, ErrorKind};
 
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
