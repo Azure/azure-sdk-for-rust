@@ -118,7 +118,7 @@ impl TokenCredential for AzureDeveloperCliCredential {
                 "at least one scope required",
             ));
         }
-        let mut command = OsString::from("azd auth token -o json");
+        let mut command = OsString::from("azd auth token -o json --no-prompt");
         for scope in scopes {
             validate_scope(scope)?;
             command.push(" --scope ");
@@ -171,11 +171,11 @@ mod tests {
                         assert_eq!(program.to_string_lossy(), "cmd");
                         assert_eq!(args[0], "/C");
                         assert!(args[1]
-                            .starts_with(&format!("cd {system_root} && azd auth token -o json")));
+                            .starts_with(&format!("cd {system_root} && azd auth token -o json --no-prompt")));
                     } else {
                         assert_eq!(program, "/bin/sh");
                         assert_eq!(args[0], "-c");
-                        assert!(args[1].starts_with("cd /bin && azd auth token -o json"));
+                        assert!(args[1].starts_with("cd /bin && azd auth token -o json --no-prompt"));
                     }
                     for scope in LIVE_TEST_SCOPES {
                         assert!(args[1].contains(&format!(" --scope {scope}")));
