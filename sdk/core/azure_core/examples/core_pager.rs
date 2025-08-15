@@ -1,0 +1,91 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+use azure_core::{
+    credentials::TokenCredential,
+    http::{headers::Headers, HttpClient, Method, RawResponse, StatusCode, TransportOptions},
+};
+use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+use futures::{FutureExt, TryStreamExt};
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
+
+// This example demonstrates using a Pager to list secret properties from Key Vault.
+async fn test_pager() -> Result<(), Box<dyn std::error::Error>> {
+    let mut options = SecretClientOptions::default();
+
+    // Ignore: this is only set up for testing.
+    // You normally would create credentials from `azure_identity` and
+    // use the default transport in production.
+    let (credential, transport) = setup()?;
+    options.client_options.transport = Some(TransportOptions::new(transport));
+
+    let client = SecretClient::new(
+        "https://my-vault.vault.azure.net",
+        credential,
+        Some(options),
+    )?;
+
+    // List secret properties using a Pager.
+    let mut pager = client.list_secret_properties(None)?.into_stream();
+    let mut names = Vec::new();
+    while let Some(secret) = pager.try_next().await? {
+        names.push(secret.resource_id()?.name);
+    }
+    assert_eq!(names, vec!["secret-a", "secret-b", "secret-c"]);
+
+    Ok(())
+}
+
+// ----- BEGIN TEST SETUP -----
+#[tokio::test]
+async fn test_core_pager() -> Result<(), Box<dyn std::error::Error>> {
+    test_pager().await
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    test_pager().await
+}
+
+#[allow(clippy::type_complexity)]
+fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn std::error::Error>> {
+    let credential: Arc<dyn TokenCredential> = MockCredential::new()?;
+    let calls = Arc::new(AtomicUsize::new(0));
+    let transport = {
+        let calls = calls.clone();
+        MockHttpClient::new(move |request| {
+            let calls = calls.clone();
+            async move {
+                let idx = calls.fetch_add(1, Ordering::SeqCst);
+                assert_eq!(request.method(), Method::Get);
+                assert_eq!(request.url().path(), "/secrets");
+                match idx {
+                    0 => Ok(RawResponse::from_bytes(
+                        StatusCode::Ok,
+                        Headers::new(),
+                        // First page with continuation (nextLink)
+                        r#"{"value":[
+                            {"id":"https://my-vault.vault.azure.net/secrets/secret-a"},
+                            {"id":"https://my-vault.vault.azure.net/secrets/secret-b"}
+                          ],
+                          "nextLink":"https://my-vault.vault.azure.net/secrets?api-version=7.4&$skiptoken=page2"}"#,
+                    )),
+                    1 => Ok(RawResponse::from_bytes(
+                        StatusCode::Ok,
+                        Headers::new(),
+                        // Second (final) page without nextLink
+                        r#"{"value":[{"id":"https://my-vault.vault.azure.net/secrets/secret-c"}]}"#,
+                    )),
+                    _ => panic!("unexpected request count {idx}"),
+                }
+            }
+            .boxed()
+        })
+    };
+    Ok((credential, Arc::new(transport)))
+}
+// ----- END TEST SETUP -----
