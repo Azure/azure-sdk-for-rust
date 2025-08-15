@@ -95,20 +95,20 @@ pub async fn get_container_client(
     Ok(container_client)
 }
 
-/// Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17.
-///
-/// # Arguments
-///
-/// * `blob_client` - A reference to a BlobClient instance.
-pub async fn create_test_blob(
-    blob_client: &BlobClient,
-) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
-    blob_client
-        .upload(
-            RequestContent::from(b"hello rusty world".to_vec()),
-            true,
-            17,
-            None,
-        )
-        .await
-}
+// / Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17.
+// /
+// / # Arguments
+// /
+// / * `blob_client` - A reference to a BlobClient instance.
+// pub async fn create_test_blob(
+//     blob_client: &BlobClient,
+// ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
+//     blob_client
+//         .upload(
+//             RequestContent::from(b"hello rusty world".to_vec()),
+//             true,
+//             17,
+//             None,
+//         )
+//         .await
+// }
