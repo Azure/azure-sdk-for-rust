@@ -3,7 +3,9 @@
 
 use super::policies::ClientRequestIdPolicy;
 use crate::http::{
-    policies::{Policy, UserAgentPolicy},
+    policies::{
+        Policy, PublicApiInstrumentationPolicy, RequestInstrumentationPolicy, UserAgentPolicy,
+    },
     ClientOptions,
 };
 use std::{
@@ -48,12 +50,46 @@ impl Pipeline {
         per_call_policies: Vec<Arc<dyn Policy>>,
         per_try_policies: Vec<Arc<dyn Policy>>,
     ) -> Self {
+        let (core_client_options, options) = options.deconstruct();
+
+        // Create a fallback tracer if no tracer provider is set.
+        // This is useful for service clients that have not yet been instrumented.
+        let tracer = core_client_options
+            .instrumentation
+            .tracer_provider
+            .map(|provider| {
+                // Note that the choice to use "None" as the namespace here
+                // is intentional.
+                // The `azure_namespace` parameter is used to populate the `az.namespace`
+                // span attribute, however that information is only known by the author of the
+                // client library, not the core library.
+                // It is also *not* a constant that can be derived from the crate information -
+                // it is a value that is determined from the list of resource providers
+                // listed [here](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers).
+                //
+                // This information can only come from the package owner. It doesn't make sense
+                // to burden all users of the azure_core pipeline with determining this
+                // information, so we use `None` here.
+                provider.get_tracer(None, crate_name.unwrap_or("Unknown"), crate_version)
+            });
+
         let mut per_call_policies = per_call_policies.clone();
         push_unique(&mut per_call_policies, ClientRequestIdPolicy::default());
+        if let Some(ref tracer) = tracer {
+            let public_api_policy = PublicApiInstrumentationPolicy::new(Some(tracer.clone()));
+            push_unique(&mut per_call_policies, public_api_policy);
+        }
 
-        let (user_agent, options) = options.deconstruct();
-        let telemetry_policy = UserAgentPolicy::new(crate_name, crate_version, &user_agent);
-        push_unique(&mut per_call_policies, telemetry_policy);
+        let user_agent_policy =
+            UserAgentPolicy::new(crate_name, crate_version, &core_client_options.user_agent);
+        push_unique(&mut per_call_policies, user_agent_policy);
+
+        let mut per_try_policies = per_try_policies.clone();
+        if let Some(ref tracer) = tracer {
+            let request_instrumentation_policy =
+                RequestInstrumentationPolicy::new(Some(tracer.clone()));
+            push_unique(&mut per_try_policies, request_instrumentation_policy);
+        }
 
         Self(http::Pipeline::new(
             options,

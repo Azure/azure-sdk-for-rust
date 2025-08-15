@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::{models::EventData, ProducerClient, SendEventOptions};
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::{env, sync::Arc};
@@ -42,7 +42,7 @@ fn send_batch_benchmark(c: &mut Criterion) {
     let event_hub = env::var("EVENTHUB_NAME").expect("Set EVENTHUB_NAME in env");
 
     let credential =
-        DefaultAzureCredential::new().expect("Failed to create DefaultAzureCredential");
+        DeveloperToolsCredential::new(None).expect("Failed to create DeveloperToolsCredential");
 
     let client = rt.block_on(async move {
         Arc::new(
@@ -68,7 +68,7 @@ fn send_batch_benchmark(c: &mut Criterion) {
                         .try_add_event_data(EventData::from(payload.as_ref()), None)
                         .unwrap();
                 }
-                let _ = client.send_batch(&batch, None).await;
+                let _ = client.send_batch(batch, None).await;
             }
         });
     });
@@ -90,7 +90,7 @@ fn get_eventhub_properties(c: &mut Criterion) {
     let event_hub = env::var("EVENTHUB_NAME").expect("Set EVENTHUB_NAME in env");
 
     let credential =
-        DefaultAzureCredential::new().expect("Failed to create DefaultAzureCredential");
+        DeveloperToolsCredential::new(None).expect("Failed to create DeveloperToolsCredential");
 
     let client = rt.block_on(async move {
         Arc::new(
@@ -132,7 +132,7 @@ fn get_eventhub_partition_properties(c: &mut Criterion) {
     let event_hub = env::var("EVENTHUB_NAME").expect("Set EVENTHUB_NAME in env");
 
     let credential =
-        DefaultAzureCredential::new().expect("Failed to create DefaultAzureCredential");
+        DeveloperToolsCredential::new(None).expect("Failed to create DeveloperToolsCredential");
 
     let client = rt.block_on(async move {
         Arc::new(
@@ -183,7 +183,7 @@ fn send_benchmark(c: &mut Criterion) {
     let event_hub = env::var("EVENTHUB_NAME").expect("Set EVENTHUB_NAME in env");
 
     let credential =
-        DefaultAzureCredential::new().expect("Failed to create DefaultAzureCredential");
+        DeveloperToolsCredential::new(None).expect("Failed to create DeveloperToolsCredential");
 
     let client = rt.block_on(async move {
         Arc::new(

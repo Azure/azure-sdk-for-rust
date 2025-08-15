@@ -88,7 +88,7 @@ impl Recording {
         match self.test_mode {
             TestMode::Playback => Arc::new(MockCredential) as Arc<dyn TokenCredential>,
             _ => credentials::from_env(None).map_or_else(
-                |err| panic!("failed to create DefaultAzureCredential: {err}"),
+                |err| panic!("failed to create DeveloperToolsCredential: {err}"),
                 |cred| cred as Arc<dyn TokenCredential>,
             ),
         }
@@ -333,9 +333,16 @@ impl Recording {
             return value;
         }
 
-        let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
-        variables.insert(key.into(), Value::from(value.as_ref(), options));
-        value
+        match value {
+            None => None,
+            Some(v) if v.is_empty() => None,
+            Some(v) => {
+                let v = Some(v);
+                let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
+                variables.insert(key.into(), Value::from(v.as_ref(), options));
+                v
+            }
+        }
     }
 }
 

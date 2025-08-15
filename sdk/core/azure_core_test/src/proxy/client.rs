@@ -14,7 +14,7 @@ use azure_core::{
     http::{
         headers::{AsHeaders, ACCEPT, CONTENT_TYPE},
         request::{Request, RequestContent},
-        ClientMethodOptions, ClientOptions, Context, Method, Pipeline, Response, Url,
+        ClientMethodOptions, ClientOptions, Method, Pipeline, Response, Url,
     },
     Bytes, Result,
 };
@@ -56,7 +56,7 @@ impl Client {
         options: Option<ClientRecordStartOptions<'_>>,
     ) -> Result<RecordStartResult> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("/Record/Start")?;
         let mut request = Request::new(url, Method::Post);
@@ -77,7 +77,7 @@ impl Client {
         options: Option<ClientRecordStopOptions<'_>>,
     ) -> Result<()> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("/Record/Stop")?;
         let mut request = Request::new(url, Method::Post);
@@ -100,7 +100,7 @@ impl Client {
             stringify!(recording_id),
             options.recording_id.map(AsRef::as_ref),
         );
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("/Playback/Start")?;
         let mut request = Request::new(url, Method::Post);
@@ -123,7 +123,7 @@ impl Client {
         options: Option<ClientPlaybackStopOptions<'_>>,
     ) -> Result<()> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("/Playback/Stop")?;
         let mut request = Request::new(url, Method::Post);
@@ -145,7 +145,7 @@ impl Client {
             stringify!(recording_id),
             options.recording_id.map(AsRef::as_ref),
         );
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/SetMatcher")?;
         let mut request = Request::new(url, Method::Post);
@@ -174,7 +174,7 @@ impl Client {
             stringify!(recording_id),
             options.recording_id.map(AsRef::as_ref),
         );
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/AddSanitizer")?;
         let mut request = Request::new(url, Method::Post);
@@ -197,7 +197,7 @@ impl Client {
             stringify!(recording_id),
             options.recording_id.map(AsRef::as_ref),
         );
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/RemoveSanitizers")?;
         let mut request = Request::new(url, Method::Post);
@@ -220,7 +220,7 @@ impl Client {
             stringify!(recording_id),
             options.recording_id.map(AsRef::as_ref),
         );
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("/Admin/Reset")?;
         let mut request = Request::new(url, Method::Post);

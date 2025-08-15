@@ -29,7 +29,7 @@ use serde::Serializer;
 use std::process::ExitStatus;
 use std::{fmt, str::FromStr, sync::Arc};
 #[cfg(not(target_arch = "wasm32"))]
-use tokio::process::Child;
+use tokio::{io::Lines, process::Child};
 
 const ABSTRACTION_IDENTIFIER: HeaderName = HeaderName::from_static("x-abstraction-identifier");
 const RECORDING_ID: HeaderName = HeaderName::from_static("x-recording-id");
@@ -76,34 +76,24 @@ impl Proxy {
                 )
             })?;
 
-        let mut stdout = command
-            .stdout
-            .take()
-            .ok_or_else(|| azure_core::Error::message(ErrorKind::Io, "no stdout pipe"))?;
-        // Take stderr now but we won't listen until after start up, such that messages should buffer.
-        let mut stderr = command
-            .stderr
-            .take()
-            .ok_or_else(|| azure_core::Error::message(ErrorKind::Io, "no stderr pipe"))?;
+        let mut stdout = BufReader::new(
+            command
+                .stdout
+                .take()
+                .ok_or_else(|| azure_core::Error::message(ErrorKind::Io, "no stdout pipe"))?,
+        )
+        .lines();
         self.command = Some(command);
 
         // Wait until the service is listening on a port.
         self.wait_till_listening(&mut stdout).await?;
 
-        // Then spawn a thread to keep pumping messages to stdout and stderr.
+        // Then spawn a thread to keep pumping messages to stdout.
         // The pipe will be closed when the process is shut down, which will terminate the task.
         tokio::spawn(async move {
-            let mut reader = BufReader::new(&mut stdout).lines();
-            while let Some(line) = reader.next_line().await.unwrap_or(None) {
+            while let Some(line) = stdout.next_line().await.unwrap_or(None) {
                 // Trace useful lines that test-proxy writes to stdout.
                 trace_line(Level::TRACE, &line);
-            }
-        });
-        tokio::spawn(async move {
-            let mut reader = BufReader::new(&mut stderr).lines();
-            while let Some(line) = reader.next_line().await.unwrap_or(None) {
-                // Trace useful lines that test-proxy writes to stdout.
-                trace_line(Level::ERROR, &line);
             }
         });
 
@@ -153,10 +143,12 @@ impl Proxy {
         Ok(ExitStatus::default())
     }
 
-    async fn wait_till_listening(&mut self, stdout: &mut ChildStdout) -> Result<()> {
+    async fn wait_till_listening(
+        &mut self,
+        stdout: &mut Lines<BufReader<ChildStdout>>,
+    ) -> Result<()> {
         let pid = self.command.as_ref().and_then(Child::id);
-        let mut reader = BufReader::new(stdout).lines();
-        while let Some(line) = reader.next_line().await? {
+        while let Some(line) = stdout.next_line().await? {
             const RUNNING_PATTERN: &str = "Running proxy version is Azure.Sdk.Tools.TestProxy ";
             const LISTENING_PATTERN: &str = "Now listening on: ";
 
@@ -314,6 +306,7 @@ impl FromStr for RecordingId {
     }
 }
 
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 #[derive(Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 struct Version {
     major: i32,

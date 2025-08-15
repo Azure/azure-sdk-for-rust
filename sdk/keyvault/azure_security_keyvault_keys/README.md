@@ -42,15 +42,15 @@ cargo add azure_identity tokio
 
 In order to interact with the Azure Key Vault service, you'll need to create an instance of the `KeyClient`. You need a **vault url**, which you may see as "DNS Name" in the portal, and credentials to instantiate a client object.
 
-The example shown below uses a `DefaultAzureCredential`, which is appropriate for local development environments. We recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
+The example shown below uses a `DeveloperToolsCredential`, which is appropriate for local development environments. We recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
 
-The `DefaultAzureCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
+The `DeveloperToolsCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
 
 ```azurecli
 az login
 ```
 
-Instantiate a `DefaultAzureCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
+Instantiate a `DeveloperToolsCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
 
 #### Activate your Managed HSM
 
@@ -107,7 +107,7 @@ The following section provides several code snippets using the `KeyClient`, cove
 `create_key` creates a Key Vault key to be stored in the Azure Key Vault. If a key with the same name already exists, then a new version of the key is created.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_keys::{
     models::{Key, CreateKeyParameters, CurveName, KeyType},
     ResourceExt, KeyClient,
@@ -115,7 +115,7 @@ use azure_security_keyvault_keys::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = KeyClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -151,12 +151,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 `get_key` retrieves a public key (or only metadata for symmetric keys) previously stored in the Azure Key Vault. Setting the `key-version` to an empty string will return the latest version.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_keys::KeyClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = KeyClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -181,13 +181,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 `update_key_properties` updates a key previously stored in the Azure Key Vault. Only the attributes of the key are updated. To update the value, call `KeyClient::create_key` on a key with the same name.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_keys::{models::UpdateKeyPropertiesParameters, KeyClient};
 use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = KeyClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -215,12 +215,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 `delete_key` will tell Key Vault to delete a key but it is not deleted immediately. It will not be deleted until the service-configured data retention period - the default is 90 days - or until you call `purge_key` on the returned `DeletedKey.id`.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_keys::KeyClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = KeyClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -239,14 +239,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 This example lists all the keys in the specified Azure Key Vault.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_keys::{KeyClient, ResourceExt};
 use futures::TryStreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a new key client
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = KeyClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -270,7 +270,7 @@ You can create an asymmetric key in Azure Key Vault (Managed HSM also supports A
 without the private key ever leaving the HSM.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_keys::{
     models::{CreateKeyParameters, KeyOperationParameters, EncryptionAlgorithm, KeyType},
     ResourceExt, KeyClient,
@@ -279,7 +279,7 @@ use rand::random;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = KeyClient::new(
         "https://your-key-vault-name.vault.azure.net/",
         credential.clone(),
@@ -338,12 +338,12 @@ When you interact with the Azure Key Vault keys client library using the Rust SD
 For example, if you try to retrieve a key that doesn't exist in your Azure Key Vault, a `404` error is returned, indicating `Not Found`.
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_keys::KeyClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
     let client = KeyClient::new(
         "https://<my-vault>.vault.azure.net/",
         credential.clone(),

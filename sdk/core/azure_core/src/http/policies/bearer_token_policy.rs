@@ -198,7 +198,11 @@ mod tests {
         let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
 
         let err = policy
-            .send(&Context::default(), &mut req, &[transport.clone()])
+            .send(
+                &Context::default(),
+                &mut req,
+                std::slice::from_ref(&(transport.clone() as Arc<dyn Policy>)),
+            )
             .await
             .expect_err("request should fail");
 
@@ -236,7 +240,11 @@ mod tests {
                 let ctx = Context::default();
                 let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
                 policy
-                    .send(&ctx, &mut req, &[transport.clone()])
+                    .send(
+                        &ctx,
+                        &mut req,
+                        std::slice::from_ref(&(transport.clone() as Arc<dyn Policy>)),
+                    )
                     .await
                     .expect("successful request");
             });

@@ -38,14 +38,14 @@ pub struct SendBatchOptions {}
 ///
 /// ```no_run
 /// use azure_messaging_eventhubs::ProducerClient;
-/// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+/// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
 /// use std::error::Error;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 ///    let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
 ///    let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-///    let my_credentials = DefaultAzureCredential::new()?;
+///    let my_credentials = DeveloperToolsCredential::new(None)?;
 ///   let producer = ProducerClient::builder()
 ///    .with_application_id("your_application_id".to_string())
 ///    .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
@@ -237,14 +237,14 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///   let my_credentials = DefaultAzureCredential::new()?;
+    ///   let my_credentials = DeveloperToolsCredential::new(None)?;
     ///
     ///   let producer = ProducerClient::builder()
     ///    .with_application_id("your_application_id".to_string())
@@ -279,14 +279,14 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///   let my_credentials = DefaultAzureCredential::new()?;
+    ///   let my_credentials = DeveloperToolsCredential::new(None)?;
     ///
     ///   let producer = ProducerClient::builder()
     ///    .with_application_id("your_application_id".to_string())
@@ -294,14 +294,14 @@ impl ProducerClient {
     ///
     ///   let mut batch = producer.create_batch(None).await?;
     ///   batch.try_add_event_data("Hello, World!", None)?;
-    ///   producer.send_batch(&batch, None).await?;
+    ///   producer.send_batch(batch, None).await?;
     ///   Ok(())
     /// }
     /// ```
     ///
     pub async fn send_batch(
         &self,
-        batch: &EventDataBatch<'_>,
+        batch: EventDataBatch<'_>,
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
         let sender = self.connection.get_sender(batch.get_batch_path()?).await?;
@@ -347,14 +347,14 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     ///   let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///   let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///   let my_credentials = DefaultAzureCredential::new()?;
+    ///   let my_credentials = DeveloperToolsCredential::new(None)?;
     ///   let producer = ProducerClient::builder()
     ///     .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
     ///
@@ -384,7 +384,7 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use std::error::Error;
     ///
     /// #[tokio::main]
@@ -392,7 +392,7 @@ impl ProducerClient {
     ///  let fully_qualified_namespace = std::env::var("EVENT_HUB_NAMESPACE")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
     ///     let eventhub_name = std::env::var("EVENT_HUB_NAME")?;
-    ///     let my_credentials = DefaultAzureCredential::new()?;
+    ///     let my_credentials = DeveloperToolsCredential::new(None)?;
     ///     let producer = ProducerClient::builder()
     ///        .open(&fully_qualified_namespace, &eventhub_name, my_credentials.clone()).await?;
     ///     let partition_properties = producer.get_partition_properties("0").await?;
@@ -408,6 +408,12 @@ impl ProducerClient {
             .await?
             .get_eventhub_partition_properties(&self.eventhub, partition_id)
             .await
+    }
+
+    /// Forces an error on the connection.
+    #[cfg(test)]
+    pub fn force_error(&self, error: azure_core::Error) -> Result<()> {
+        self.connection.force_error(error)
     }
 
     pub(crate) fn base_url(&self) -> &Url {
@@ -438,11 +444,11 @@ pub mod builders {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///   let my_credential = DefaultAzureCredential::new().unwrap();
+    ///   let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///   let producer = ProducerClient::builder()
     ///      .open("my_namespace", "my_eventhub", my_credential).await.unwrap();
     /// }
@@ -551,5 +557,349 @@ pub mod builders {
         }
     }
 }
+
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use crate::common::tests::force_errors;
+    use crate::{models::EventData, EventDataBatchOptions, ProducerClient};
+    use azure_core::{time::Duration, Result};
+    use azure_core_amqp::error::AmqpErrorKind;
+    use azure_core_test::{recorded, TestContext};
+    use std::sync::Arc;
+
+    #[recorded::test(live)]
+    async fn force_errors_send_batch_link_error(ctx: TestContext) -> Result<()> {
+        const EVENTHUB_PARTITION: &str = "1";
+        const TEST_NAME: &str = "force_errors_send_batch_link_error";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let producer = Arc::new(
+            ProducerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub.as_str(), credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            producer.clone(),
+            |producer: Arc<ProducerClient>| {
+                let producer = producer.clone();
+                async move {
+                    loop {
+                        let batch = producer
+                            .create_batch(Some(EventDataBatchOptions {
+                                partition_id: Some(EVENTHUB_PARTITION.to_string()),
+                                partition_key: Some("My Partition Key.".to_string()),
+                                ..Default::default()
+                            }))
+                            .await
+                            .unwrap();
+
+                        for i in 1..200 {
+                            assert!(batch
+                                .try_add_event_data(
+                                    EventData::builder()
+                                        .with_body(b"Hello, World!")
+                                        .add_property("Message#".to_string(), i)
+                                        .with_message_id(i)
+                                        .build(),
+                                    None
+                                )
+                                .unwrap());
+                        }
+                        producer.send_batch(batch, None).await.unwrap()
+                    }
+                }
+            },
+            |producer| {
+                producer
+                    .force_error(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Amqp,
+                        azure_core_amqp::AmqpError::from(AmqpErrorKind::LinkClosedByRemote(
+                            Box::new(azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            )),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until stable state.
+            Duration::seconds(30), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_send_batch_session_error(ctx: TestContext) -> Result<()> {
+        const EVENTHUB_PARTITION: &str = "1";
+        const TEST_NAME: &str = "force_errors_send_batch_session_error";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let producer = Arc::new(
+            ProducerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub.as_str(), credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            producer.clone(),
+            |producer: Arc<ProducerClient>| {
+                let producer = producer.clone();
+                async move {
+                    loop {
+                        let batch = producer
+                            .create_batch(Some(EventDataBatchOptions {
+                                partition_id: Some(EVENTHUB_PARTITION.to_string()),
+                                partition_key: Some("My Partition Key.".to_string()),
+                                ..Default::default()
+                            }))
+                            .await
+                            .unwrap();
+
+                        for i in 1..200 {
+                            assert!(batch
+                                .try_add_event_data(
+                                    EventData::builder()
+                                        .with_body(b"Hello, World!")
+                                        .add_property("Message#".to_string(), i)
+                                        .with_message_id(i)
+                                        .build(),
+                                    None
+                                )
+                                .unwrap());
+                        }
+                        producer.send_batch(batch, None).await.unwrap()
+                    }
+                }
+            },
+            |producer| {
+                producer
+                    .force_error(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Amqp,
+                        azure_core_amqp::AmqpError::from(AmqpErrorKind::SessionDetachedByRemote(
+                            Box::new(azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            )),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until stable state.
+            Duration::seconds(30), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_send_batch_connection_error(ctx: TestContext) -> Result<()> {
+        const EVENTHUB_PARTITION: &str = "1";
+        const TEST_NAME: &str = "force_errors_send_batch_connection_error";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let producer = Arc::new(
+            ProducerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub.as_str(), credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            producer.clone(),
+            |producer: Arc<ProducerClient>| {
+                let producer = producer.clone();
+                async move {
+                    loop {
+                        let batch = producer
+                            .create_batch(Some(EventDataBatchOptions {
+                                partition_id: Some(EVENTHUB_PARTITION.to_string()),
+                                partition_key: Some("My Partition Key.".to_string()),
+                                ..Default::default()
+                            }))
+                            .await
+                            .unwrap();
+
+                        for i in 1..200 {
+                            assert!(batch
+                                .try_add_event_data(
+                                    EventData::builder()
+                                        .with_body(b"Hello, World!")
+                                        .add_property("Message#".to_string(), i)
+                                        .with_message_id(i)
+                                        .build(),
+                                    None
+                                )
+                                .unwrap());
+                        }
+                        producer.send_batch(batch, None).await.unwrap()
+                    }
+                }
+            },
+            |producer| {
+                producer
+                    .force_error(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Amqp,
+                        azure_core_amqp::AmqpError::from(AmqpErrorKind::ConnectionClosedByRemote(
+                            Box::new(azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            )),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until forcing the error.
+            Duration::seconds(30), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_producer_properties_connection(ctx: TestContext) -> Result<()> {
+        const TEST_NAME: &str = "force_errors_producer_properties_connection";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let producer = Arc::new(
+            ProducerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub.as_str(), credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            producer.clone(),
+            |producer: Arc<ProducerClient>| {
+                let producer = producer.clone();
+                async move {
+                    loop {
+                        producer.get_eventhub_properties().await.unwrap();
+                    }
+                }
+            },
+            |producer| {
+                producer
+                    .force_error(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Amqp,
+                        azure_core_amqp::AmqpError::from(AmqpErrorKind::ConnectionClosedByRemote(
+                            Box::new(azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            )),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until forcing the error.
+            Duration::seconds(20), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_producer_properties_session(ctx: TestContext) -> Result<()> {
+        const TEST_NAME: &str = "force_errors_producer_properties_session";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let producer = Arc::new(
+            ProducerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub.as_str(), credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            producer.clone(),
+            |producer: Arc<ProducerClient>| {
+                let producer = producer.clone();
+                async move {
+                    loop {
+                        producer.get_eventhub_properties().await.unwrap();
+                    }
+                }
+            },
+            |producer| {
+                producer
+                    .force_error(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Amqp,
+                        azure_core_amqp::AmqpError::from(AmqpErrorKind::SessionClosedByRemote(
+                            Box::new(azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            )),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until forcing the error.
+            Duration::seconds(20), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_producer_properties_link(ctx: TestContext) -> Result<()> {
+        const TEST_NAME: &str = "force_errors_producer_properties_link";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let producer = Arc::new(
+            ProducerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub.as_str(), credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            producer.clone(),
+            |producer: Arc<ProducerClient>| {
+                let producer = producer.clone();
+                async move {
+                    loop {
+                        producer.get_eventhub_properties().await.unwrap();
+                    }
+                }
+            },
+            |producer| {
+                producer
+                    .force_error(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Amqp,
+                        azure_core_amqp::AmqpError::from(AmqpErrorKind::LinkClosedByRemote(
+                            Box::new(azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            )),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until forcing the error.
+            Duration::seconds(20), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
+    }
+}

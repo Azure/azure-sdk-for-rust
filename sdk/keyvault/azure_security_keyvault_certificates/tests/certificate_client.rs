@@ -10,7 +10,7 @@ use azure_security_keyvault_certificates::{
         CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
         KeyType, UpdateCertificatePropertiesParameters, X509CertificateProperties,
     },
-    CertificateClient, CertificateClientExt as _, CertificateClientOptions, ResourceExt as _,
+    CertificateClient, CertificateClientOptions, ResourceExt as _,
 };
 use azure_security_keyvault_keys::{
     models::{SignParameters, SignatureAlgorithm},

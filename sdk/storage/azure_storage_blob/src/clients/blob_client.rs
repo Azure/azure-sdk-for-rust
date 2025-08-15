@@ -61,15 +61,6 @@ impl BlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let oauth_token_policy = BearerTokenCredentialPolicy::new(
-            credential.clone(),
-            ["https://storage.azure.com/.default"],
-        );
-        options
-            .client_options
-            .per_try_policies
-            .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
-
         let client = GeneratedBlobClient::new(
             endpoint,
             credential.clone(),
@@ -215,7 +206,7 @@ impl BlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn upload(
         &self,
-        data: RequestContent<Bytes>,
+        data: RequestContent<Bytes, NoFormat>,
         overwrite: bool,
         content_length: u64,
         options: Option<BlockBlobClientUploadOptions<'_>>,

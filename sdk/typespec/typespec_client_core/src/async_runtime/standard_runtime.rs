@@ -80,7 +80,6 @@ impl Future for ThreadJoinFuture {
 }
 
 /// An [`AsyncRuntime`] using [`std::thread::spawn`].
-#[allow(dead_code)]
 pub(crate) struct StdRuntime;
 
 impl AsyncRuntime for StdRuntime {
@@ -163,9 +162,9 @@ impl AsyncRuntime for StdRuntime {
     }
 }
 
-#[derive(Debug)]
 #[cfg(not(target_arch = "wasm32"))]
-pub struct Sleep {
+#[derive(Debug)]
+struct Sleep {
     signal: Option<Arc<AtomicBool>>,
     duration: Duration,
 }

@@ -22,17 +22,19 @@ use crate::generated::models::{
 };
 use azure_core::{
     credentials::TokenCredential,
+    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, Pager, PagerResult, Pipeline, RawResponse,
-        Request, RequestContent, Response, Url,
+        ClientOptions, Context, Method, NoFormat, Pager, PagerResult, PagerState, Pipeline,
+        RawResponse, Request, RequestContent, Response, Url,
     },
-    json, Result,
+    json, tracing, Error, Result,
 };
 use std::sync::Arc;
 
 /// The key vault client performs cryptographic key operations and vault operations against the Key Vault service.
+#[tracing::client]
 pub struct KeyClient {
     pub(crate) api_version: String,
     pub(crate) endpoint: Url,
@@ -57,6 +59,7 @@ impl KeyClient {
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
+    #[tracing::new("azure_security_keyvault_keys")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -108,6 +111,7 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.backupKey")]
     pub async fn backup_key(
         &self,
         key_name: &str,
@@ -123,7 +127,17 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Creates a new key, stores it, then returns key parameters and attributes to the client.
@@ -138,6 +152,7 @@ impl KeyClient {
     ///   or sensitive information.
     /// * `parameters` - The parameters to create a key.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.createKey")]
     pub async fn create_key(
         &self,
         key_name: &str,
@@ -156,7 +171,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Decrypts a single block of encrypted data.
@@ -175,6 +200,7 @@ impl KeyClient {
     /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the decryption operation.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.decrypt")]
     pub async fn decrypt(
         &self,
         key_name: &str,
@@ -195,7 +221,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Deletes a key of any type from storage in Azure Key Vault.
@@ -208,6 +244,7 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key to delete.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.deleteKey")]
     pub async fn delete_key(
         &self,
         key_name: &str,
@@ -223,7 +260,17 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Encrypts an arbitrary sequence of bytes using an encryption key that is stored in a key vault.
@@ -241,6 +288,7 @@ impl KeyClient {
     /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the encryption operation.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.encrypt")]
     pub async fn encrypt(
         &self,
         key_name: &str,
@@ -261,7 +309,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Gets the public part of a deleted key.
@@ -273,6 +331,7 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getDeletedKey")]
     pub async fn get_deleted_key(
         &self,
         key_name: &str,
@@ -288,7 +347,17 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Gets the public part of a stored key.
@@ -302,6 +371,7 @@ impl KeyClient {
     /// * `key_version` - Adding the version parameter retrieves a specific version of a key. This URI fragment is optional. If
     ///   not specified, the latest version of the key is returned.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getKey")]
     pub async fn get_key(
         &self,
         key_name: &str,
@@ -319,7 +389,17 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Gets the public part of a stored key along with its attestation blob.
@@ -333,6 +413,7 @@ impl KeyClient {
     /// * `key_version` - Adding the version parameter retrieves attestation blob for specific version of a key. This URI fragment
     ///   is optional. If not specified, the latest version of the key attestation blob is returned.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getKeyAttestation")]
     pub async fn get_key_attestation(
         &self,
         key_name: &str,
@@ -350,7 +431,17 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Lists the policy for a key.
@@ -362,6 +453,7 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key in a given key vault.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getKeyRotationPolicy")]
     pub async fn get_key_rotation_policy(
         &self,
         key_name: &str,
@@ -377,7 +469,17 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Get the requested number of bytes containing random values.
@@ -388,6 +490,7 @@ impl KeyClient {
     ///
     /// * `parameters` - The request object to get random bytes.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getRandomBytes")]
     pub async fn get_random_bytes(
         &self,
         parameters: RequestContent<GetRandomBytesParameters>,
@@ -403,7 +506,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Imports an externally created key, stores it, and returns key parameters and attributes to the client.
@@ -417,6 +530,7 @@ impl KeyClient {
     ///   service. The value provided should not include personally identifiable or sensitive information.
     /// * `parameters` - The parameters to import a key.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.importKey")]
     pub async fn import_key(
         &self,
         key_name: &str,
@@ -435,7 +549,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Lists the deleted keys in the specified vault.
@@ -448,6 +572,7 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getDeletedKeys")]
     pub fn list_deleted_key_properties(
         &self,
         options: Option<KeyClientListDeletedKeyPropertiesOptions<'_>>,
@@ -465,9 +590,9 @@ impl KeyClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -479,7 +604,7 @@ impl KeyClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -487,6 +612,15 @@ impl KeyClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                if !rsp.status().is_success() {
+                    let status = rsp.status();
+                    let http_error = HttpError::new(rsp).await;
+                    let error_kind = ErrorKind::http_response(
+                        status,
+                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                    );
+                    return Err(Error::new(error_kind, http_error));
+                }
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListDeletedKeyPropertiesResult = json::from_json(&bytes)?;
@@ -511,6 +645,7 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getKeys")]
     pub fn list_key_properties(
         &self,
         options: Option<KeyClientListKeyPropertiesOptions<'_>>,
@@ -528,9 +663,9 @@ impl KeyClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -542,7 +677,7 @@ impl KeyClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -550,6 +685,15 @@ impl KeyClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                if !rsp.status().is_success() {
+                    let status = rsp.status();
+                    let http_error = HttpError::new(rsp).await;
+                    let error_kind = ErrorKind::http_response(
+                        status,
+                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                    );
+                    return Err(Error::new(error_kind, http_error));
+                }
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListKeyPropertiesResult = json::from_json(&bytes)?;
@@ -573,6 +717,7 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.getKeyVersions")]
     pub fn list_key_properties_versions(
         &self,
         key_name: &str,
@@ -593,9 +738,9 @@ impl KeyClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -607,7 +752,7 @@ impl KeyClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -615,6 +760,15 @@ impl KeyClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                if !rsp.status().is_success() {
+                    let status = rsp.status();
+                    let http_error = HttpError::new(rsp).await;
+                    let error_kind = ErrorKind::http_response(
+                        status,
+                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                    );
+                    return Err(Error::new(error_kind, http_error));
+                }
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListKeyPropertiesResult = json::from_json(&bytes)?;
@@ -639,6 +793,7 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the key
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.purgeDeletedKey")]
     pub async fn purge_deleted_key(
         &self,
         key_name: &str,
@@ -654,7 +809,17 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Recovers the deleted key to its latest version.
@@ -667,6 +832,7 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of the deleted key.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.recoverDeletedKey")]
     pub async fn recover_deleted_key(
         &self,
         key_name: &str,
@@ -682,7 +848,17 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Releases a key.
@@ -696,6 +872,7 @@ impl KeyClient {
     /// * `key_version` - Adding the version parameter retrieves a specific version of a key.
     /// * `parameters` - The parameters for the key release operation.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.release")]
     pub async fn release(
         &self,
         key_name: &str,
@@ -716,7 +893,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Restores a backed up key to a vault.
@@ -734,6 +921,7 @@ impl KeyClient {
     ///
     /// * `parameters` - The parameters to restore the key.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.restoreKey")]
     pub async fn restore_key(
         &self,
         parameters: RequestContent<RestoreKeyParameters>,
@@ -749,7 +937,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Creates a new key version, stores it, then returns key parameters, attributes and policy to the client.
@@ -760,6 +958,7 @@ impl KeyClient {
     ///
     /// * `key_name` - The name of key to be rotated. The system will generate a new version in the specified key.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.rotateKey")]
     pub async fn rotate_key(
         &self,
         key_name: &str,
@@ -775,7 +974,17 @@ impl KeyClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Creates a signature from a digest using the specified key.
@@ -789,6 +998,7 @@ impl KeyClient {
     /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the signing operation.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.sign")]
     pub async fn sign(
         &self,
         key_name: &str,
@@ -809,7 +1019,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Unwraps a symmetric key using the specified key that was initially used for wrapping that key.
@@ -824,6 +1044,7 @@ impl KeyClient {
     /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the key operation.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.unwrapKey")]
     pub async fn unwrap_key(
         &self,
         key_name: &str,
@@ -844,7 +1065,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The update key operation changes specified attributes of a stored key and can be applied to any key type and key version
@@ -859,6 +1090,7 @@ impl KeyClient {
     /// * `key_version` - The version of the key to update.
     /// * `parameters` - The parameters of the key to update.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.updateKey")]
     pub async fn update_key_properties(
         &self,
         key_name: &str,
@@ -879,7 +1111,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Updates the rotation policy for a key.
@@ -891,6 +1133,7 @@ impl KeyClient {
     /// * `key_name` - The name of the key in the given vault.
     /// * `key_rotation_policy` - The policy for the key.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.updateKeyRotationPolicy")]
     pub async fn update_key_rotation_policy(
         &self,
         key_name: &str,
@@ -909,7 +1152,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(key_rotation_policy);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Verifies a signature using a specified key.
@@ -925,6 +1178,7 @@ impl KeyClient {
     /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for verify operations.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.verify")]
     pub async fn verify(
         &self,
         key_name: &str,
@@ -945,7 +1199,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// Wraps a symmetric key using a specified key.
@@ -962,6 +1226,7 @@ impl KeyClient {
     /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for wrap operation.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.wrapKey")]
     pub async fn wrap_key(
         &self,
         key_name: &str,
@@ -982,7 +1247,17 @@ impl KeyClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 }
 

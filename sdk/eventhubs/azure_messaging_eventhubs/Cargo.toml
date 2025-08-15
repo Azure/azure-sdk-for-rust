@@ -3,7 +3,7 @@
 
 [package]
 name = "azure_messaging_eventhubs"
-version = "0.5.0"
+version = "0.7.0"
 description = "Rust client for Azure Eventhubs Service"
 readme = "README.md"
 authors.workspace = true
@@ -11,7 +11,6 @@ license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_messaging_eventhubs"
-
 keywords = ["sdk", "azure", "messaging", "cloud", "eventhubs"]
 categories = ["api-bindings"]
 
@@ -21,7 +20,7 @@ edition.workspace = true
 async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", version = "0.26.0", default-features = false }
+azure_core = { path = "../../core/azure_core", version = "0.28.0", default-features = false }
 azure_core_amqp.workspace = true
 futures.workspace = true
 rand.workspace = true
@@ -36,15 +35,14 @@ azure_core_amqp = { workspace = true, features = ["test"] }
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
 azure_messaging_eventhubs = { path = ".", features = [
-  "test",
+  "in_memory_checkpoint_store",
 ] }
 criterion.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
-test = []
-blob_checkpoint_store = []
+in_memory_checkpoint_store = []
 
 [[bench]]
 name = "benchmarks"

@@ -2491,9 +2491,9 @@ pub struct PageBlobClientResizeOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `PageBlobClient::update_sequence_number()`
+/// Options to be passed to `PageBlobClient::set_sequence_number()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct PageBlobClientUpdateSequenceNumberOptions<'a> {
+pub struct PageBlobClientSetSequenceNumberOptions<'a> {
     /// Set for page blobs only. The sequence number is a user-controlled value that you can use to track requests. The value
     /// of the sequence number must be between 0 and 2^63 - 1.
     pub blob_sequence_number: Option<i64>,

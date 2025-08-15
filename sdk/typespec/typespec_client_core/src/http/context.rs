@@ -26,6 +26,7 @@ impl<'a> Context<'a> {
     /// Returns a new `Context` that borrows the type map of the given `context`.
     ///
     /// Once you [`Context::insert`] entities the type map is copied.
+    #[deprecated(since = "0.7.0", note = "use to_borrowed() instead")]
     #[must_use]
     pub fn with_context<'b>(context: &'a Context) -> Context<'b>
     where
@@ -119,6 +120,20 @@ impl<'a> Context<'a> {
         };
         Context {
             type_map: Cow::Owned(type_map),
+        }
+    }
+
+    /// Returns a new `Context` that borrows the type map of the given `context`.
+    ///
+    /// Once you [`Context::insert`] entities the type map is copied.
+    #[must_use]
+    pub fn to_borrowed<'b>(&'a self) -> Context<'b>
+    where
+        'a: 'b,
+    {
+        let type_map = self.type_map.as_ref();
+        Context {
+            type_map: Cow::Borrowed(type_map),
         }
     }
 }
@@ -223,7 +238,7 @@ mod tests {
     #[test]
     fn with_context_borrows() {
         let a = Context::new().with_value("a".to_string());
-        let mut b = Context::with_context(&a);
+        let mut b = a.to_borrowed();
 
         // TODO: Use is_owned(), is_borrowed() once stabilized.
         let a_ptr = std::ptr::addr_of!(*a.type_map);

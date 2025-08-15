@@ -3,9 +3,8 @@
 
 //! Distributed tracing trait definitions
 //!
-use crate::http::Context;
-use crate::Result;
-use std::sync::Arc;
+use crate::http::{Context, Request};
+use std::{fmt::Debug, sync::Arc};
 
 /// Overall architecture for distributed tracing in the SDK.
 ///
@@ -19,77 +18,92 @@ use std::sync::Arc;
 mod attributes;
 mod with_context;
 
-pub use attributes::{AttributeArray, AttributeValue};
+pub use attributes::{Attribute, AttributeArray, AttributeValue};
 pub use with_context::{FutureExt, WithContext};
 
 /// The TracerProvider trait is the entrypoint for distributed tracing in the SDK.
 ///
 /// It provides a method to get a tracer for a specific name and package version.
-pub trait TracerProvider {
+pub trait TracerProvider: Send + Sync + Debug {
     /// Returns a tracer for the given name.
     ///
     /// Arguments:
-    /// - `package_name`: The name of the package for which the tracer is requested.
-    /// - `package_version`: The version of the package for which the tracer is requested.
+    /// - `namespace_name`: The namespace of the package for which the tracer is requested. See
+    ///   [this page](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-services-resource-providers)
+    ///   for more information on namespace names.
+    /// - `crate_name`: The name of the crate for which the tracer is requested.
+    /// - `crate_version`: The version of the crate for which the tracer is requested.
     fn get_tracer(
         &self,
-        package_name: &'static str,
-        package_version: &'static str,
-    ) -> Box<dyn Tracer + Send + Sync>;
+        namespace_name: Option<&'static str>,
+        crate_name: &'static str,
+        crate_version: Option<&'static str>,
+    ) -> Arc<dyn Tracer>;
 }
 
-pub trait Tracer {
+pub trait Tracer: Send + Sync + Debug {
     /// Starts a new span with the given name and type.
     ///
-    /// # Arguments
-    /// - `name`: The name of the span to start.
-    /// - `kind`: The type of the span to start.
-    ///
-    /// # Returns
-    /// An `Arc<dyn Span + Send + Sync>` representing the started span.
-    ///
-    fn start_span(&self, name: &'static str, kind: SpanKind)
-        -> Result<Arc<dyn Span + Send + Sync>>;
-
-    /// Starts a new span with the given type, using the current span as the parent span.
+    ///  The newly created span will have the "current" span as a parent.
     ///
     /// # Arguments
     /// - `name`: The name of the span to start.
     /// - `kind`: The type of the span to start.
+    /// - `attributes`: A vector of attributes to associate with the span.
     ///
     /// # Returns
-    /// An `Arc<dyn Span + Send + Sync>` representing the started span.
+    /// An `Arc<dyn Span>` representing the started span.
     ///
-    fn start_span_with_current(
+    fn start_span(
         &self,
         name: &'static str,
         kind: SpanKind,
-    ) -> Result<Arc<dyn Span + Send + Sync>>;
+        attributes: Vec<Attribute>,
+    ) -> Arc<dyn Span>;
 
     /// Starts a new child with the given name, type, and parent span.
     ///
     /// # Arguments
     /// - `name`: The name of the span to start.
     /// - `kind`: The type of the span to start.
+    /// - `attributes`: A vector of attributes to associate with the span.
     /// - `parent`: The parent span to use for the new span.
     ///
     /// # Returns
-    /// An `Arc<dyn Span + Send + Sync>` representing the started span
+    /// An `Arc<dyn Span>` representing the started span
+    ///
+    /// Note: This method may panic if the parent span cannot be downcasted to the expected type.
     ///
     fn start_span_with_parent(
         &self,
         name: &'static str,
         kind: SpanKind,
-        parent: Arc<dyn Span + Send + Sync>,
-    ) -> Result<Arc<dyn Span + Send + Sync>>;
+        attributes: Vec<Attribute>,
+        parent: Arc<dyn Span>,
+    ) -> Arc<dyn Span>;
+
+    /// Returns the namespace the tracer was configured with (if any).
+    ///
+    /// # Returns
+    /// An `Option<&'static str>` representing the namespace of the tracer,
+    fn namespace(&self) -> Option<&'static str>;
 }
+
+/// The status of a span.
+///
+/// This enum represents the possible statuses of a span in distributed tracing.
+/// It can be either `Unset`, indicating that the span has not been set to any specific status,
+/// or `Error`, which contains a description of the error that occurred during the span's execution
+///
+/// Note that OpenTelemetry defines an `Ok` status but that status is reserved for application and service developers,
+/// so libraries should never set it.
+#[derive(Debug, PartialEq)]
 pub enum SpanStatus {
     Unset,
-    Ok,
     Error { description: String },
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub enum SpanKind {
     #[default]
     Internal,
@@ -101,15 +115,21 @@ pub enum SpanKind {
 
 pub trait SpanGuard {
     /// Ends the span when dropped.
-    fn end(self) -> crate::Result<()>;
+    fn end(self);
 }
 
-pub trait Span: AsAny {
+/// A trait that represents a span in distributed tracing.
+///
+/// This trait defines the methods that a span must implement to be used in distributed tracing.
+/// It includes methods for setting attributes, recording errors, and managing the span's lifecycle.
+pub trait Span: AsAny + Send + Sync {
+    fn is_recording(&self) -> bool;
+
     /// The 8 byte value which identifies the span.
     fn span_id(&self) -> [u8; 8];
 
     /// Ends the current span.
-    fn end(&self) -> crate::Result<()>;
+    fn end(&self);
 
     /// Sets the status of the current span.
     /// # Arguments
@@ -118,14 +138,15 @@ pub trait Span: AsAny {
     /// # Returns
     /// A `Result` indicating success or failure of the operation.
     ///
-    fn set_status(&self, status: SpanStatus) -> crate::Result<()>;
+    fn set_status(&self, status: SpanStatus);
 
     /// Sets an attribute on the current span.
-    fn set_attribute(
-        &self,
-        key: &'static str,
-        value: attributes::AttributeValue,
-    ) -> crate::Result<()>;
+    ///
+    /// # Arguments
+    /// - `key`: The key of the attribute to set.
+    /// - `value`: The value of the attribute to set.
+    ///
+    fn set_attribute(&self, key: &'static str, value: attributes::AttributeValue);
 
     /// Records a Rust standard error on the current span.
     ///
@@ -135,9 +156,10 @@ pub trait Span: AsAny {
     /// # Returns
     /// A `Result` indicating success or failure of the operation.
     ///
-    fn record_error(&self, error: &dyn std::error::Error) -> crate::Result<()>;
+    fn record_error(&self, error: &dyn std::error::Error);
 
     /// Temporarily sets the span as the current active span in the context.
+    ///
     /// # Arguments
     /// - `context`: The context in which to set the current span.
     ///
@@ -147,7 +169,18 @@ pub trait Span: AsAny {
     /// This method allows the span to be set as the current span in the context,
     /// enabling it to be used for tracing operations within that context.
     ///
-    fn set_current(&self, context: &Context) -> crate::Result<Box<dyn SpanGuard>>;
+    fn set_current(&self, context: &Context) -> Box<dyn SpanGuard>;
+
+    /// Adds telemetry headers to the request for distributed tracing.
+    ///
+    /// # Arguments
+    /// - `request`: A mutable reference to the request to which headers will be added.
+    ///
+    /// This method should be called before sending the request to ensure that the tracing information
+    /// is included in the request headers. It typically adds the [W3C Distributed Tracing](https://www.w3.org/TR/trace-context/)
+    /// headers to the request.
+    ///
+    fn propagate_headers(&self, request: &mut Request);
 }
 
 /// A trait that allows an object to be downcast to a reference of type `Any`.

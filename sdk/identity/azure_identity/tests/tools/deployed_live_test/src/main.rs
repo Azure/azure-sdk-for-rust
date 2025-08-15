@@ -9,7 +9,7 @@ use axum::{
     Router,
 };
 use azure_core::credentials::TokenCredential;
-use azure_identity::{ManagedIdentityCredential, ManagedIdentityCredentialOptions, UserAssignedId};
+use azure_identity::{ManagedIdentityCredential, ManagedIdentityCredentialOptions, UserAssignedId, WorkloadIdentityCredential};
 use azure_storage_blob::BlobServiceClient;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn handle_request(Query(params): Query<Params>) -> Response {
-    let credential = match params.test.as_str() {
+    let credential: Arc<dyn TokenCredential> = match params.test.as_str() {
         "managed-identity" => {
             let user_assigned_id = match (
                 params.client_id.as_ref(),
@@ -73,6 +73,18 @@ async fn handle_request(Query(params): Query<Params>) -> Response {
                     return (
                         StatusCode::INTERNAL_SERVER_ERROR,
                         format!("ManagedIdentityCredential::new returned '{e}'"),
+                    )
+                        .into_response()
+                }
+            }
+        }
+        "workload-identity" => {
+            match WorkloadIdentityCredential::new(None) {
+                Ok(cred) => cred,
+                Err(e) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("WorkloadIdentityCredential::new returned '{e}'"),
                     )
                         .into_response()
                 }

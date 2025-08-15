@@ -9,7 +9,7 @@ use crate::generated::models::{
     PageBlobClientCreateOptions, PageBlobClientCreateResult,
     PageBlobClientGetPageRangesDiffOptions, PageBlobClientGetPageRangesOptions,
     PageBlobClientResizeOptions, PageBlobClientResizeResult,
-    PageBlobClientUpdateSequenceNumberOptions, PageBlobClientUpdateSequenceNumberResult,
+    PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResult,
     PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesFromUrlResult,
     PageBlobClientUploadPagesOptions, PageBlobClientUploadPagesResult, PageList,
     SequenceNumberActionType,
@@ -17,6 +17,7 @@ use crate::generated::models::{
 use azure_core::{
     base64::encode,
     credentials::TokenCredential,
+    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
@@ -24,10 +25,11 @@ use azure_core::{
         XmlFormat,
     },
     time::to_rfc7231,
-    Bytes, Result,
+    tracing, Bytes, Error, Result,
 };
 use std::sync::Arc;
 
+#[tracing::client]
 pub struct PageBlobClient {
     pub(crate) blob_name: String,
     pub(crate) container_name: String,
@@ -56,6 +58,7 @@ impl PageBlobClient {
     /// * `container_name` - The name of the container.
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
+    #[tracing::new("azure_storage_blob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -102,6 +105,7 @@ impl PageBlobClient {
     ///
     /// * `range` - Bytes of data in the specified range.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.clearPages")]
     pub async fn clear_pages(
         &self,
         range: String,
@@ -183,7 +187,17 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-page-write", "clear");
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Copy Incremental operation copies a snapshot of the source page blob to a destination page blob. The snapshot is copied
@@ -197,6 +211,7 @@ impl PageBlobClient {
     ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
     ///   either be public or must be authenticated via a shared access signature.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.copyIncremental")]
     pub async fn copy_incremental(
         &self,
         copy_source: String,
@@ -237,7 +252,17 @@ impl PageBlobClient {
             request.insert_header("x-ms-if-tags", if_tags);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Create operation creates a new page blob.
@@ -247,6 +272,7 @@ impl PageBlobClient {
     /// * `blob_content_length` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must
     ///   be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.create")]
     pub async fn create(
         &self,
         blob_content_length: u64,
@@ -355,7 +381,17 @@ impl PageBlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Get Page Ranges operation returns the list of valid page ranges for a page blob or snapshot of a page blob.
@@ -363,6 +399,7 @@ impl PageBlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.getPageRanges")]
     pub async fn get_page_ranges(
         &self,
         options: Option<PageBlobClientGetPageRangesOptions<'_>>,
@@ -417,7 +454,17 @@ impl PageBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Get Page Ranges Diff operation returns the list of valid page ranges for a page blob or snapshot of a page blob.
@@ -425,6 +472,7 @@ impl PageBlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.getPageRangesDiff")]
     pub async fn get_page_ranges_diff(
         &self,
         options: Option<PageBlobClientGetPageRangesDiffOptions<'_>>,
@@ -488,7 +536,17 @@ impl PageBlobClient {
             request.insert_header("x-ms-previous-snapshot-url", prev_snapshot_url);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Resize operation increases the size of the page blob to the specified size.
@@ -498,6 +556,7 @@ impl PageBlobClient {
     /// * `blob_content_length` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must
     ///   be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.resize")]
     pub async fn resize(
         &self,
         blob_content_length: u64,
@@ -558,7 +617,17 @@ impl PageBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Update Sequence Number operation sets the blob's sequence number. The operation will fail if the specified sequence
@@ -569,11 +638,12 @@ impl PageBlobClient {
     /// * `sequence_number_action` - Required if the x-ms-blob-sequence-number header is set for the request. This property applies
     ///   to page blobs only. This property indicates how the service should modify the blob's sequence number
     /// * `options` - Optional parameters for the request.
-    pub async fn update_sequence_number(
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.setSequenceNumber")]
+    pub async fn set_sequence_number(
         &self,
         sequence_number_action: SequenceNumberActionType,
-        options: Option<PageBlobClientUpdateSequenceNumberOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult, NoFormat>> {
+        options: Option<PageBlobClientSetSequenceNumberOptions<'_>>,
+    ) -> Result<Response<PageBlobClientSetSequenceNumberResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -623,7 +693,17 @@ impl PageBlobClient {
             sequence_number_action.to_string(),
         );
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Upload Pages operation writes a range of pages to a page blob
@@ -634,9 +714,10 @@ impl PageBlobClient {
     /// * `content_length` - The length of the request.
     /// * `range` - Bytes of data in the specified range.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.uploadPages")]
     pub async fn upload_pages(
         &self,
-        body: RequestContent<Bytes>,
+        body: RequestContent<Bytes, NoFormat>,
         content_length: u64,
         range: String,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
@@ -734,7 +815,17 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 
     /// The Upload Pages operation writes a range of pages to a page blob where the contents are read from a URL.
@@ -748,6 +839,7 @@ impl PageBlobClient {
     /// * `range` - Bytes of source data in the specified range. The length of this range should match the ContentLength header
     ///   and x-ms-range/Range destination range header.
     /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.uploadPagesFromUrl")]
     pub async fn upload_pages_from_url(
         &self,
         source_url: String,
@@ -865,7 +957,17 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-source-range", source_range);
         request.insert_header("x-ms-version", &self.version);
-        self.pipeline.send(&ctx, &mut request).await.map(Into::into)
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
     }
 }
 

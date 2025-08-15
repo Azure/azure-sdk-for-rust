@@ -53,15 +53,6 @@ impl AppendBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let oauth_token_policy = BearerTokenCredentialPolicy::new(
-            credential.clone(),
-            ["https://storage.azure.com/.default"],
-        );
-        options
-            .client_options
-            .per_try_policies
-            .push(Arc::new(oauth_token_policy) as Arc<dyn Policy>);
-
         let client = GeneratedAppendBlobClient::new(
             endpoint,
             credential.clone(),
@@ -112,7 +103,7 @@ impl AppendBlobClient {
     /// * `options` - Optional configuration for the request.
     pub async fn append_block(
         &self,
-        data: RequestContent<Bytes>,
+        data: RequestContent<Bytes, NoFormat>,
         content_length: u64,
         options: Option<AppendBlobClientAppendBlockOptions<'_>>,
     ) -> Result<Response<AppendBlobClientAppendBlockResult, NoFormat>> {
