@@ -430,7 +430,7 @@ use tokio::time;
 #[recorded::test]
 async fn test_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // SAS
-    let blob_url = "https://ruststoragedev.blob.core.windows.net/container0vgpjc2p/blob1ear0rva?sp=r&st=2025-08-15T20:44:04Z&se=2025-08-16T04:59:04Z&spr=https&sv=2024-11-04&sr=b&sig=9gRXYd8CUZXEjzR7nnOQ%2Bf16XnLjHeb6a4dKd%2FCElwY%3D";
+    let blob_url = "<BLOB_URL>";
 
     let sas_blob_client = BlobClient::from_blob_url(blob_url, None)?;
 
