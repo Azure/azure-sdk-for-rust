@@ -58,16 +58,7 @@ pub struct BlobClientOptions {
 }
 
 impl BlobClient {
-    /// Creates a new BlobClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - Service host
-    /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
-    ///   Entra ID token to use when authenticating.
-    /// * `container_name` - The name of the container.
-    /// * `blob_name` - The name of the blob.
-    /// * `options` - Optional configuration for the client.
+    // UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -83,13 +74,7 @@ impl BlobClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-
-        // In regular ctor, since struct now holds blob_url, we have to build the blob_url given endpoint + container_name + blob_name
-        endpoint
-            .path_segments_mut()
-            .expect("Cannot be base")
-            .extend([&container_name, &blob_name]);
-
+        endpoint.set_query(None);
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
@@ -97,7 +82,7 @@ impl BlobClient {
         Ok(Self {
             blob_name,
             container_name,
-            blob_url: endpoint,
+            blob_url: endpoint, // This is straight up wrong (does not fold in blob/container to url, but need to fix compiler)
             version: options.version,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
@@ -105,40 +90,6 @@ impl BlobClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
-            ),
-        })
-    }
-
-    pub fn with_no_credential(blob_url: &str, options: Option<BlobClientOptions>) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let blob_url = Url::parse(blob_url)?;
-        if !blob_url.scheme().starts_with("http") {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                format!("{blob_url} must use http(s)"),
-            ));
-        }
-
-        let mut segments = blob_url
-            .path_segments()
-            .expect("Failed to get path segments");
-        let container_name = segments
-            .next()
-            .expect("Failed to parse container_name")
-            .to_string();
-        let blob_name = segments.collect::<Vec<_>>().join("/");
-
-        Ok(Self {
-            blob_name,
-            container_name,
-            blob_url,
-            version: options.version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                Vec::default(),
             ),
         })
     }

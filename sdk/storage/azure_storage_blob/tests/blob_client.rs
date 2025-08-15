@@ -430,11 +430,33 @@ use tokio::time;
 #[recorded::test]
 async fn test_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // SAS
-    let blob_url = "<BLOB_URL>";
+    let blob_url = "SAS URL HERE";
 
     let sas_blob_client = BlobClient::from_blob_url(blob_url, None)?;
 
     let blob_properties = sas_blob_client.get_properties(None).await?;
+    let content_length = blob_properties.content_length()?;
+    assert_eq!(17, content_length.unwrap());
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_regular(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let endpoint = "https://ruststoragedev.blob.core.windows.net/";
+    let container_name = "container0vgpjc2p";
+    let blob_name = "blob1ear0rva";
+    let credential = recording.credential();
+    let blob_client = BlobClient::new(
+        endpoint,
+        container_name.into(),
+        blob_name.into(),
+        credential,
+        None,
+    )?;
+
+    let blob_properties = blob_client.get_properties(None).await?;
     let content_length = blob_properties.content_length()?;
     assert_eq!(17, content_length.unwrap());
 

@@ -24,7 +24,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url, XmlFormat,
+        NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     Bytes, Result,
 };
@@ -33,6 +33,88 @@ use std::sync::Arc;
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
     pub(super) client: GeneratedBlobClient,
+}
+
+impl GeneratedBlobClient {
+    fn from_url_with_credential(
+        blob_url: &str,
+        credential: Arc<dyn TokenCredential>,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let options = options.unwrap_or_default();
+        let blob_url = Url::parse(blob_url)?;
+        if !blob_url.scheme().starts_with("http") {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                format!("{blob_url} must use http(s)"),
+            ));
+        }
+
+        let mut segments = blob_url
+            .path_segments()
+            .expect("Failed to get path segments");
+        let container_name = segments
+            .next()
+            .expect("Failed to parse container_name")
+            .to_string();
+        let blob_name = segments.collect::<Vec<_>>().join("/");
+
+        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+            credential,
+            vec!["https://storage.azure.com/.default"],
+        ));
+
+        Ok(Self {
+            blob_name,
+            container_name,
+            blob_url,
+            version: options.version,
+            pipeline: Pipeline::new(
+                option_env!("CARGO_PKG_NAME"),
+                option_env!("CARGO_PKG_VERSION"),
+                options.client_options,
+                Vec::default(),
+                vec![auth_policy],
+            ),
+        })
+    }
+
+    fn from_url_with_no_credential(
+        blob_url: &str,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let options = options.unwrap_or_default();
+        let blob_url = Url::parse(blob_url)?;
+        if !blob_url.scheme().starts_with("http") {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                format!("{blob_url} must use http(s)"),
+            ));
+        }
+
+        let mut segments = blob_url
+            .path_segments()
+            .expect("Failed to get path segments");
+        let container_name = segments
+            .next()
+            .expect("Failed to parse container_name")
+            .to_string();
+        let blob_name = segments.collect::<Vec<_>>().join("/");
+
+        Ok(Self {
+            blob_name,
+            container_name,
+            blob_url,
+            version: options.version,
+            pipeline: Pipeline::new(
+                option_env!("CARGO_PKG_NAME"),
+                option_env!("CARGO_PKG_VERSION"),
+                options.client_options,
+                Vec::default(),
+                Vec::default(),
+            ),
+        })
+    }
 }
 
 impl BlobClient {
@@ -60,16 +142,22 @@ impl BlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let client = GeneratedBlobClient::new(
-            endpoint,
-            credential.clone(),
-            container_name.clone(),
-            blob_name.clone(),
-            Some(options),
-        )?;
-        Ok(Self {
-            client,
-        })
+        let mut url = Url::parse(endpoint)?;
+        if !url.scheme().starts_with("http") {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                format!("{url} must use http(s)"),
+            ));
+        }
+
+        // In regular ctor, since struct now holds blob_url, we have to build the blob_url given endpoint + container_name + blob_name
+        url.path_segments_mut()
+            .expect("Cannot be base")
+            .extend([&container_name, &blob_name]);
+
+        let client =
+            GeneratedBlobClient::from_url_with_credential(url.as_str(), credential, Some(options))?;
+        Ok(Self { client })
     }
 
     pub fn from_blob_url(blob_url: &str, options: Option<BlobClientOptions>) -> Result<Self> {
@@ -82,11 +170,9 @@ impl BlobClient {
             .push(storage_headers_policy);
 
         let url = Url::parse(blob_url)?;
-        let client = GeneratedBlobClient::with_no_credential(url.as_str(), Some(options))?;
+        let client = GeneratedBlobClient::from_url_with_no_credential(url.as_str(), Some(options))?;
 
-        Ok(Self {
-            client,
-        })
+        Ok(Self { client })
     }
 
     // /// Returns a new instance of AppendBlobClient.
