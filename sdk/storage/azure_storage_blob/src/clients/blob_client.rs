@@ -24,7 +24,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url, XmlFormat,
+        NoFormat, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
     Bytes, Result,
 };

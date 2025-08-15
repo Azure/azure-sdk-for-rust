@@ -5,7 +5,7 @@ use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
     models::{
         BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-        ListContainersSegmentResponse, StorageServiceProperties,
+        BlobServiceProperties, ListContainersSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,
@@ -80,7 +80,7 @@ impl BlobServiceClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
+    ) -> Result<Response<BlobServiceProperties, XmlFormat>> {
         self.client.get_properties(options).await
     }
 

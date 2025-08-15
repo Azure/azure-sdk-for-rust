@@ -63,12 +63,8 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
 
     // Set Metadata With Values
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
-    let set_metadata_options = BlobContainerClientSetMetadataOptions {
-        metadata: Some(update_metadata.clone()),
-        ..Default::default()
-    };
     container_client
-        .set_metadata(Some(set_metadata_options))
+        .set_metadata(update_metadata.clone(), None)
         .await?;
 
     // Assert
@@ -77,7 +73,7 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     assert_eq!(update_metadata, response_metadata);
 
     // Set Metadata No Values (Clear Metadata)
-    container_client.set_metadata(None).await?;
+    container_client.set_metadata(HashMap::new(), None).await?;
 
     // Assert
     let response = container_client.get_properties(None).await?;
@@ -230,11 +226,10 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
     let set_metadata_options = BlobContainerClientSetMetadataOptions {
         lease_id: Some(lease_id.clone()),
-        metadata: Some(update_metadata.clone()),
         ..Default::default()
     };
     container_client
-        .set_metadata(Some(set_metadata_options))
+        .set_metadata(update_metadata.clone(), Some(set_metadata_options))
         .await?;
 
     // Change Lease
