@@ -53,12 +53,12 @@ impl CloudConfiguration {
     }
 
     /// Gets the audience for a specific service.
-    pub fn get_service_audience(&self, service: &str) -> Option<&str> {
+    pub fn service_audience(&self, service: &str) -> Option<&str> {
         self.service_audiences.get(service).map(|s| s.as_str())
     }
 
     /// Gets the audience for Azure Resource Manager.
-    pub fn get_resource_manager_audience(&self) -> &str {
+    pub fn resource_manager_audience(&self) -> &str {
         &self.resource_manager_audience
     }
 
@@ -90,7 +90,6 @@ pub mod configurations {
             )
             .with_service_audience("storage", "https://storage.azure.com")
             .with_service_audience("keyvault", "https://vault.azure.net")
-            .with_service_audience("tables", "https://storage.azure.com")
         })
     }
 
@@ -105,7 +104,6 @@ pub mod configurations {
             )
             .with_service_audience("storage", "https://storage.azure.com")
             .with_service_audience("keyvault", "https://vault.azure.cn")
-            .with_service_audience("tables", "https://storage.azure.com")
         })
     }
 
@@ -120,7 +118,6 @@ pub mod configurations {
             )
             .with_service_audience("storage", "https://storage.azure.com")
             .with_service_audience("keyvault", "https://vault.microsoftazure.de")
-            .with_service_audience("tables", "https://storage.azure.com")
         })
     }
 
@@ -135,7 +132,6 @@ pub mod configurations {
             )
             .with_service_audience("storage", "https://storage.azure.com")
             .with_service_audience("keyvault", "https://vault.usgovcloudapi.net")
-            .with_service_audience("tables", "https://storage.azure.com")
         })
     }
 }
@@ -165,8 +161,8 @@ mod tests {
         let public = configurations::azure_public_cloud();
         assert_eq!(public.authority_host.as_str(), "https://login.microsoftonline.com/");
         assert_eq!(public.resource_manager_endpoint.as_str(), "https://management.azure.com/");
-        assert_eq!(public.get_service_audience("storage"), Some("https://storage.azure.com"));
-        assert_eq!(public.get_service_audience("tables"), Some("https://storage.azure.com"));
+        assert_eq!(public.service_audience("storage"), Some("https://storage.azure.com"));
+        assert_eq!(public.service_audience("tables"), None);
 
         let china = configurations::azure_china_cloud();
         assert_eq!(china.authority_host.as_str(), "https://login.chinacloudapi.cn/");
@@ -189,9 +185,9 @@ mod tests {
             "https://management.azure.com".to_string(),
         );
         
-        assert_eq!(config.get_service_audience("storage"), None);
+        assert_eq!(config.service_audience("storage"), None);
         
         config = config.with_service_audience("storage", "https://storage.azure.com");
-        assert_eq!(config.get_service_audience("storage"), Some("https://storage.azure.com"));
+        assert_eq!(config.service_audience("storage"), Some("https://storage.azure.com"));
     }
 }

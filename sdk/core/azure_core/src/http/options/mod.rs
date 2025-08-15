@@ -14,6 +14,30 @@ pub use typespec_client_core::http::{
 pub use user_agent::*;
 
 /// Client options allow customization of general client policies, retry options, and more.
+///
+/// # Examples
+///
+/// ## Basic usage with default (Public Cloud) configuration:
+/// ```
+/// use azure_core::http::ClientOptions;
+/// 
+/// let options = ClientOptions::default();
+/// ```
+///
+/// ## Using a specific cloud configuration:
+/// ```
+/// use azure_core::http::ClientOptions;
+/// use azure_core::cloud::configurations;
+/// 
+/// // Configure for Azure China Cloud
+/// let options = ClientOptions::default()
+///     .with_cloud(configurations::azure_china_cloud().clone())
+///     .with_audience("https://storage.azure.com");
+///     
+/// // Get the OAuth scope for authentication
+/// let scope = options.get_auth_scope(Some("storage"));
+/// assert_eq!(scope, Some("https://storage.azure.com/.default".to_string()));
+/// ```
 #[derive(Clone, Debug, Default)]
 pub struct ClientOptions {
     /// Policies called per call.
@@ -40,7 +64,7 @@ pub struct ClientOptions {
     /// Cloud configuration for determining endpoints and audiences.
     ///
     /// If not specified, defaults to Azure Public Cloud.
-    pub cloud_config: Option<&'static CloudConfiguration>,
+    pub cloud: Option<CloudConfiguration>,
 
     /// Service audience for token requests.
     ///
@@ -53,7 +77,7 @@ pub struct ClientOptions {
 pub(crate) struct CoreClientOptions {
     pub(crate) user_agent: UserAgentOptions,
     pub(crate) instrumentation: InstrumentationOptions,
-    pub(crate) cloud_config: &'static CloudConfiguration,
+    pub(crate) cloud: Option<CloudConfiguration>,
     pub(crate) audience: Option<String>,
 }
 
@@ -62,8 +86,8 @@ impl ClientOptions {
     ///
     /// This determines the endpoints and audiences used for authentication
     /// and service requests.
-    pub fn with_cloud_config(mut self, cloud_config: &'static CloudConfiguration) -> Self {
-        self.cloud_config = Some(cloud_config);
+    pub fn with_cloud(mut self, cloud: CloudConfiguration) -> Self {
+        self.cloud = Some(cloud);
         self
     }
 
@@ -82,15 +106,15 @@ impl ClientOptions {
     /// If no audience is explicitly set, it will try to derive one from the cloud
     /// configuration for known services.
     pub fn get_auth_scope(&self, service_name: Option<&str>) -> Option<String> {
-        let cloud_config = self.cloud_config.unwrap_or_else(|| crate::cloud::configurations::azure_public_cloud());
+        let cloud = self.cloud.as_ref().unwrap_or_else(|| crate::cloud::configurations::azure_public_cloud());
         
         if let Some(audience) = &self.audience {
             Some(CloudConfiguration::audience_to_scope(audience))
         } else if let Some(service) = service_name {
-            cloud_config.get_service_audience(service)
+            cloud.service_audience(service)
                 .map(CloudConfiguration::audience_to_scope)
         } else {
-            Some(CloudConfiguration::audience_to_scope(cloud_config.get_resource_manager_audience()))
+            Some(CloudConfiguration::audience_to_scope(cloud.resource_manager_audience()))
         }
     }
 
@@ -111,7 +135,7 @@ impl ClientOptions {
             CoreClientOptions {
                 user_agent: self.user_agent.unwrap_or_default(),
                 instrumentation: self.instrumentation.unwrap_or_default(),
-                cloud_config: self.cloud_config.unwrap_or_else(|| crate::cloud::configurations::azure_public_cloud()),
+                cloud: self.cloud,
                 audience: self.audience,
             },
             options,
@@ -136,7 +160,7 @@ mod tests {
     #[test]
     fn test_get_auth_scope_with_service_name() {
         let options = ClientOptions::default()
-            .with_cloud_config(configurations::azure_public_cloud());
+            .with_cloud(configurations::azure_public_cloud().clone());
         
         let scope = options.get_auth_scope(Some("storage"));
         assert_eq!(scope, Some("https://storage.azure.com/.default".to_string()));
@@ -156,7 +180,7 @@ mod tests {
     #[test]
     fn test_get_auth_scope_china_cloud() {
         let options = ClientOptions::default()
-            .with_cloud_config(configurations::azure_china_cloud());
+            .with_cloud(configurations::azure_china_cloud().clone());
         
         let scope = options.get_auth_scope(Some("keyvault"));
         assert_eq!(scope, Some("https://vault.azure.cn/.default".to_string()));
@@ -165,7 +189,7 @@ mod tests {
     #[test]
     fn test_explicit_audience_overrides_service_name() {
         let options = ClientOptions::default()
-            .with_cloud_config(configurations::azure_public_cloud())
+            .with_cloud(configurations::azure_public_cloud().clone())
             .with_audience("https://custom.service.com");
         
         let scope = options.get_auth_scope(Some("storage"));
@@ -176,11 +200,7 @@ mod tests {
     fn test_scope_derivation_for_different_services() {
         // Test that the scope derivation works correctly for different Azure services
         let options = ClientOptions::default()
-            .with_cloud_config(configurations::azure_public_cloud());
-
-        // Test Tables service (uses storage audience)
-        let tables_scope = options.get_auth_scope(Some("tables"));
-        assert_eq!(tables_scope, Some("https://storage.azure.com/.default".to_string()));
+            .with_cloud(configurations::azure_public_cloud().clone());
 
         // Test KeyVault service
         let keyvault_scope = options.get_auth_scope(Some("keyvault"));
@@ -190,7 +210,7 @@ mod tests {
         let storage_scope = options.get_auth_scope(Some("storage"));
         assert_eq!(storage_scope, Some("https://storage.azure.com/.default".to_string()));
 
-        // Test unknown service (falls back to resource manager)
+        // Test unknown service (falls back to None for unknown services)
         let unknown_scope = options.get_auth_scope(Some("unknown"));
         assert_eq!(unknown_scope, None);
 
