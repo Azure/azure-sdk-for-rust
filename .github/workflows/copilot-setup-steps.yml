@@ -1,19 +1,17 @@
 name: Copilot Setup Steps
 
 # This workflow sets up the development environment for GitHub Copilot coding agent
-# It leverages the existing devcontainer configuration to ensure consistency
-# with the development environment and avoid duplication of tooling setup
+# It uses a pre-built container image with all the necessary tools already installed
 #
 # The workflow:
-# - Uses the same base container image as the devcontainer (mcr.microsoft.com/devcontainers/rust)
-# - Runs the devcontainer post-create script for environment setup
-# - Installs the same development tools specified in the devcontainer
+# - Uses the heaths/azure-sdk-for-rust:latest container image with all dependencies
+# - Maps the repository into the standard devcontainer workspace location
 # - Caches Cargo dependencies for improved performance
 # - Runs comprehensive workspace verification (check, clippy, fmt)
 # - Tests basic functionality to ensure the environment is ready
 #
-# This approach maintains consistency with the existing devcontainer setup
-# and avoids maintaining duplicate tool installation logic
+# This approach leverages a pre-built image that contains all the tools from
+# the devcontainer configuration, avoiding the need to install tools at runtime
 #
 # Triggers:
 # - Manual execution via workflow_dispatch 
@@ -52,24 +50,14 @@ jobs:
       contents: read
     environment: Copilot
     container:
-      image: mcr.microsoft.com/devcontainers/rust:1-1-bullseye
+      image: heaths/azure-sdk-for-rust:latest
+      volumes:
+        - ${{ github.workspace }}:/workspaces/azure-sdk-for-rust
+      options: --workdir /workspaces/azure-sdk-for-rust
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Setup development environment using devcontainer configuration
-        run: |
-          # Run the devcontainer post-create script to set up additional toolchains
-          chmod +x .devcontainer/oncreate
-          ./.devcontainer/oncreate
-      
-      - name: Install additional tools for Azure SDK development
-        run: |
-          # Install tools commonly needed for Rust development and Azure SDK
-          # Note: cargo-watch and http-server are already installed in the container
-          cargo install cargo-audit || echo "cargo-audit already installed or failed to install"
-          cargo install cargo-outdated || echo "cargo-outdated already installed or failed to install"
       
       - name: Cache Cargo dependencies
         uses: actions/cache@v4
@@ -117,8 +105,6 @@ jobs:
           echo "=== Installed Components ==="
           rustup component list --installed
           echo "=== Available Tools ==="
-          which cargo-audit && cargo-audit --version || echo "cargo-audit not available"
-          which cargo-outdated && cargo-outdated --version || echo "cargo-outdated not available"
           which cargo-watch && cargo-watch --version || echo "cargo-watch not available"
           which http-server && http-server --version || echo "http-server not available"
           echo "=== System Dependencies ==="
