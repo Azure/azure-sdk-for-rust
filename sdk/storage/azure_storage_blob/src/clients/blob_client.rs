@@ -5,16 +5,18 @@ use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
-        BlobClientDownloadResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
-        BlobClientRenewLeaseResult, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult,
+        BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
+        BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
         BlobClientChangeLeaseOptions, BlobClientDeleteOptions, BlobClientDownloadOptions,
-        BlobClientGetPropertiesOptions, BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions,
-        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
+        BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
+        BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions, BlobClientSetMetadataOptions,
+        BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+        BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
@@ -24,10 +26,11 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url, XmlFormat,
+        JsonFormat, NoFormat, RequestContent, Response, Url, XmlFormat,
     },
     Bytes, Result,
 };
+use std::collections::HashMap;
 use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
@@ -63,9 +66,9 @@ impl BlobClient {
 
         let client = GeneratedBlobClient::new(
             endpoint,
-            credential.clone(),
-            container_name.clone(),
-            blob_name.clone(),
+            credential,
+            container_name,
+            blob_name,
             Some(options),
         )?;
         Ok(Self {
@@ -303,5 +306,52 @@ impl BlobClient {
         options: Option<BlobClientRenewLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>> {
         self.client.renew_lease(lease_id, options).await
+    }
+
+    /// Sets tags on a blob. Note that each call to this operation replaces all existing tags. To remove
+    /// all tags from the blob, call this operation with no tags specified.
+    ///
+    /// # Arguments
+    ///
+    /// * `tags` - Name-value pairs associated with the blob as tag. Tags are case-sensitive.
+    ///   The tag set may contain at most 10 tags.  Tag keys must be between 1 and 128 characters,
+    ///   and tag values must be between 0 and 256 characters.
+    ///   Valid tag key and value characters include: lowercase and uppercase letters, digits (0-9),
+    ///   space (' '), plus (+), minus (-), period (.), solidus (/), colon (:), equals (=), underscore (_)
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_tags(
+        &self,
+        tags: HashMap<String, String>,
+        options: Option<BlobClientSetTagsOptions<'_>>,
+    ) -> Result<Response<(), NoFormat>> {
+        let blob_tags: BlobTags = tags.into();
+        self.client
+            .set_tags(RequestContent::try_from(blob_tags)?, options)
+            .await
+    }
+
+    /// Gets the tags on a blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_tags(
+        &self,
+        options: Option<BlobClientGetTagsOptions<'_>>,
+    ) -> Result<Response<BlobTags, XmlFormat>> {
+        self.client.get_tags(options).await
+    }
+
+    /// Gets information related to the Storage account in which the blob resides.
+    /// This includes the `sku_name` and `account_kind`.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_account_info(
+        &self,
+        options: Option<BlobClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>> {
+        self.client.get_account_info(options).await
     }
 }

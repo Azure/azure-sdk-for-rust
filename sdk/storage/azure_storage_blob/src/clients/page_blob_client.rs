@@ -58,9 +58,9 @@ impl PageBlobClient {
 
         let client = GeneratedPageBlobClient::new(
             endpoint,
-            credential.clone(),
-            container_name.clone(),
-            blob_name.clone(),
+            credential,
+            container_name,
+            blob_name,
             Some(options),
         )?;
         Ok(Self {
