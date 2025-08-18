@@ -4,6 +4,7 @@
 use crate::models::{
     AppendBlobClientCreateOptions, BlobTag, BlobTags, PageBlobClientCreateOptions,
 };
+use azure_core::error::ErrorKind;
 use std::collections::{BTreeMap, HashMap};
 
 /// Provides usage helpers for setting the `PageBlobClientCreateOptions` optional configurations.
@@ -44,9 +45,9 @@ impl AppendBlobClientCreateOptionsExt for AppendBlobClientCreateOptions<'_> {
 
 /// Converts a `BlobTags` struct into `HashMap<String, String>`.
 impl TryFrom<BlobTags> for HashMap<String, String> {
-    type Error = &'static str;
+    type Error = azure_core::Error;
 
-    fn try_from(blob_tags: BlobTags) -> Result<Self, Self::Error> {
+    fn try_from(blob_tags: BlobTags) -> Result<Self, azure_core::Error> {
         let mut map = HashMap::new();
 
         if let Some(tags) = blob_tags.blob_tag_set {
@@ -55,7 +56,12 @@ impl TryFrom<BlobTags> for HashMap<String, String> {
                     (Some(k), Some(v)) => {
                         map.insert(k, v);
                     }
-                    _ => return Err("BlobTag missing key or value"),
+                    _ => {
+                        return Err(azure_core::Error::message(
+                            azure_core::error::ErrorKind::DataConversion,
+                            "BlobTag missing key or value",
+                        ));
+                    }
                 }
             }
         }
@@ -67,8 +73,7 @@ impl TryFrom<BlobTags> for HashMap<String, String> {
 /// Converts a `HashMap<String, String>` into a `BlobTags` struct.
 impl From<HashMap<String, String>> for BlobTags {
     fn from(tags: HashMap<String, String>) -> Self {
-        let sorted_tags: BTreeMap<_, _> = tags.into_iter().collect();
-        let blob_tags = sorted_tags
+        let blob_tags = tags
             .into_iter()
             .map(|(k, v)| BlobTag {
                 key: Some(k),
