@@ -37,23 +37,3 @@ pub fn format_page_range(offset: u64, length: u64) -> Result<String, Error> {
     let content_range = format!("bytes={}-{}", offset, end_range);
     Ok(content_range)
 }
-
-/// Helper function to call the correct conversion method depending on test context.
-#[cfg(test)]
-pub(crate) fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
-    let blob_tags = tags
-        .into_iter()
-        .map(|(k, v)| BlobTag {
-            key: Some(k),
-            value: Some(v),
-        })
-        .collect();
-    BlobTags {
-        blob_tag_set: Some(blob_tags),
-    }
-}
-
-#[cfg(not(test))]
-pub(crate) fn serialize_blob_tags(tags: HashMap<String, String>) -> BlobTags {
-    tags.into()
-}
