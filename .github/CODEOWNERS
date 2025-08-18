@@ -71,7 +71,7 @@
 /sdk/storage/            @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
 
 # ServiceLabel: %Storage
-# AzureSDKOwners: @heaths
+# AzureSDKOwners: @vincenttran-msft @jalauzon-msft
 
 ####################
 # Management Libraries
