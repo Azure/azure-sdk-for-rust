@@ -170,12 +170,15 @@ mod tests {
                     if cfg!(target_os = "windows") {
                         assert_eq!(program.to_string_lossy(), "cmd");
                         assert_eq!(args[0], "/C");
-                        assert!(args[1]
-                            .starts_with(&format!("cd {system_root} && azd auth token -o json --no-prompt")));
+                        assert!(args[1].starts_with(&format!(
+                            "cd {system_root} && azd auth token -o json --no-prompt"
+                        )));
                     } else {
                         assert_eq!(program, "/bin/sh");
                         assert_eq!(args[0], "-c");
-                        assert!(args[1].starts_with("cd /bin && azd auth token -o json --no-prompt"));
+                        assert!(
+                            args[1].starts_with("cd /bin && azd auth token -o json --no-prompt")
+                        );
                     }
                     for scope in LIVE_TEST_SCOPES {
                         assert!(args[1].contains(&format!(" --scope {scope}")));
