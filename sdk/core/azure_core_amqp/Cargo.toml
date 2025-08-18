@@ -40,7 +40,6 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 default = ["fe2o3_amqp"]
 cplusplus = []
 test = []
-amqp_tracing = ["fe2o3-amqp/tracing"]
 fe2o3_amqp = [
   "dep:fe2o3-amqp",
   "fe2o3-amqp-types",
