@@ -102,7 +102,7 @@ pub mod configurations {
                 Url::parse("https://management.chinacloudapi.cn").unwrap(),
                 "https://management.chinacloudapi.cn".to_string(),
             )
-            .with_service_audience("storage", "https://storage.azure.com")
+            .with_service_audience("storage", "https://storage.core.chinacloudapi.cn")
             .with_service_audience("keyvault", "https://vault.azure.cn")
         })
     }
@@ -116,7 +116,7 @@ pub mod configurations {
                 Url::parse("https://management.microsoftazure.de").unwrap(),
                 "https://management.microsoftazure.de".to_string(),
             )
-            .with_service_audience("storage", "https://storage.azure.com")
+            .with_service_audience("storage", "https://storage.core.cloudapi.de")
             .with_service_audience("keyvault", "https://vault.microsoftazure.de")
         })
     }
@@ -130,7 +130,7 @@ pub mod configurations {
                 Url::parse("https://management.usgovcloudapi.net").unwrap(),
                 "https://management.usgovcloudapi.net".to_string(),
             )
-            .with_service_audience("storage", "https://storage.azure.com")
+            .with_service_audience("storage", "https://storage.core.usgovcloudapi.net")
             .with_service_audience("keyvault", "https://vault.usgovcloudapi.net")
         })
     }
@@ -167,14 +167,20 @@ mod tests {
         let china = configurations::azure_china_cloud();
         assert_eq!(china.authority_host.as_str(), "https://login.chinacloudapi.cn/");
         assert_eq!(china.resource_manager_endpoint.as_str(), "https://management.chinacloudapi.cn/");
+        assert_eq!(china.service_audience("storage"), Some("https://storage.core.chinacloudapi.cn"));
+        assert_eq!(china.service_audience("keyvault"), Some("https://vault.azure.cn"));
 
         let germany = configurations::azure_germany_cloud();
         assert_eq!(germany.authority_host.as_str(), "https://login.microsoftonline.de/");
         assert_eq!(germany.resource_manager_endpoint.as_str(), "https://management.microsoftazure.de/");
+        assert_eq!(germany.service_audience("storage"), Some("https://storage.core.cloudapi.de"));
+        assert_eq!(germany.service_audience("keyvault"), Some("https://vault.microsoftazure.de"));
 
         let us_gov = configurations::azure_us_government_cloud();
         assert_eq!(us_gov.authority_host.as_str(), "https://login.microsoftonline.us/");
         assert_eq!(us_gov.resource_manager_endpoint.as_str(), "https://management.usgovcloudapi.net/");
+        assert_eq!(us_gov.service_audience("storage"), Some("https://storage.core.usgovcloudapi.net"));
+        assert_eq!(us_gov.service_audience("keyvault"), Some("https://vault.usgovcloudapi.net"));
     }
 
     #[test]

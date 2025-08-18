@@ -32,11 +32,11 @@ pub use user_agent::*;
 /// // Configure for Azure China Cloud
 /// let options = ClientOptions::default()
 ///     .with_cloud(configurations::azure_china_cloud().clone())
-///     .with_audience("https://storage.azure.com");
+///     .with_audience("https://storage.core.chinacloudapi.cn");
 ///     
 /// // Get the OAuth scope for authentication
 /// let scope = options.get_auth_scope(Some("storage"));
-/// assert_eq!(scope, Some("https://storage.azure.com/.default".to_string()));
+/// assert_eq!(scope, Some("https://storage.core.chinacloudapi.cn/.default".to_string()));
 /// ```
 #[derive(Clone, Debug, Default)]
 pub struct ClientOptions {
