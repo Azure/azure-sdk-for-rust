@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `TryFrom<>` for `RequestContent<String, JsonFormat>`.
+
 ### Breaking Changes
 
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` to copy if needed.

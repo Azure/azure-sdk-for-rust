@@ -451,6 +451,16 @@ mod json {
     impl_try_from!(f32, f64);
     impl_try_from!(Value);
 
+    impl TryFrom<String> for RequestContent<String, JsonFormat> {
+        type Error = crate::Error;
+        fn try_from(body: String) -> crate::Result<Self> {
+            Ok(Self {
+                body: crate::json::to_json(&body)?.into(),
+                phantom: PhantomData,
+            })
+        }
+    }
+
     impl TryFrom<Value> for RequestContent<Value, JsonFormat> {
         type Error = crate::Error;
         fn try_from(body: Value) -> crate::Result<Self> {
@@ -493,6 +503,12 @@ mod json {
                 phantom: PhantomData,
             })
         }
+    }
+
+    #[test]
+    fn spector_string() {
+        let actual: RequestContent<String> = "testing".to_string().try_into().unwrap();
+        assert_eq!(actual.body(), &Body::from_static(br#""testing""#));
     }
 
     #[test]
