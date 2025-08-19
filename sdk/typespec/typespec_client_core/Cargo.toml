@@ -16,7 +16,6 @@ base64.workspace = true
 bytes.workspace = true
 dyn-clone.workspace = true
 futures.workspace = true
-gloo-timers = { workspace = true, optional = true }
 pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
 rand.workspace = true
@@ -38,16 +37,22 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 getrandom.workspace = true
+gloo-timers = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["fs"] }
+tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 typespec_macros.path = "../typespec_macros"
-wasm-bindgen-test = "0.3"
-getrandom = { version = "0.3" , features = ["wasm_js"]}
-uuid = { version = "1", features = ["v4", "js"] }
+
+[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
+tokio = { workspace = true, features = ["fs"] }
+
+[target.'cfg(target_family = "wasm")'.dev-dependencies]
+getrandom = { workspace = true, features = ["wasm_js"] }
+uuid = { workspace = true, features = ["v4", "js"] }
+wasm-bindgen-test.workspace = true
 
 [features]
 default = ["http", "json", "reqwest", "reqwest_deflate", "reqwest_gzip"]
@@ -64,7 +69,7 @@ reqwest_rustls = [
 ] # Remove dependency on banned `ring` crate; requires manually configuring crypto provider.
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
-wasm-bindgen = ["dep:wasm-bindgen-futures", "gloo-timers/futures"]
+wasm_bindgen = ["dep:wasm-bindgen-futures", "gloo-timers/futures"]
 xml = ["dep:quick-xml"]
 
 [[example]]
