@@ -5,7 +5,7 @@ use azure_core::{
     http::{RequestContent, StatusCode},
     Bytes,
 };
-use azure_core_test::{recorded, TestContext};
+use azure_core_test::{recorded, Matcher, TestContext};
 use azure_storage_blob::models::{
     AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
     BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
@@ -429,6 +429,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
 async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    recording.set_matcher(Matcher::BodilessMatcher).await?;
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
     create_test_blob(&blob_client).await?;

@@ -5,7 +5,7 @@ use crate::models::{
     AppendBlobClientCreateOptions, BlobTag, BlobTags, PageBlobClientCreateOptions,
 };
 use azure_core::error::ErrorKind;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 /// Provides usage helpers for setting the `PageBlobClientCreateOptions` optional configurations.
 pub trait PageBlobClientCreateOptionsExt {
