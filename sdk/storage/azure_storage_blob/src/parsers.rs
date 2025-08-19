@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::models::{BlobTag, BlobTags};
+use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
 
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and

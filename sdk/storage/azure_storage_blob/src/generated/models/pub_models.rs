@@ -158,10 +158,6 @@ pub struct BlobClientSetImmutabilityPolicyResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetLegalHoldResult;
 
-/// Contains results for `BlobClient::set_tags()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetTagsResult;
-
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
