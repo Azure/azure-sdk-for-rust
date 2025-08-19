@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added support for WASM to the `async_runtime` module.
+
 ### Breaking Changes
 
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` to copy if needed.

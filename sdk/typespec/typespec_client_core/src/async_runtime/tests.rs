@@ -3,24 +3,21 @@
 
 use super::*;
 use crate::time::Duration;
-use futures::FutureExt;
 use std::sync::{Arc, Mutex};
 
+#[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
 #[test]
 fn test_task_spawner_execution() {
     let runtime = get_async_runtime();
     let result = Arc::new(Mutex::new(false));
     let result_clone = Arc::clone(&result);
 
-    let handle = runtime.spawn(
-        async move {
-            // Simulate some work
-            crate::sleep::sleep(Duration::milliseconds(50)).await;
-            let mut value = result_clone.lock().unwrap();
-            *value = true;
-        }
-        .boxed(),
-    );
+    let handle = runtime.spawn(Box::pin(async move {
+        // Simulate some work
+        crate::sleep::sleep(Duration::milliseconds(50)).await;
+        let mut value = result_clone.lock().unwrap();
+        *value = true;
+    }));
 
     futures::executor::block_on(handle).expect("Task should complete successfully");
 
@@ -35,15 +32,12 @@ async fn tokio_task_spawner_execution() {
     let result = Arc::new(Mutex::new(false));
     let result_clone = Arc::clone(&result);
 
-    let handle = async_runtime.spawn(
-        async move {
-            // Simulate some work
-            crate::sleep::sleep(Duration::milliseconds(50)).await;
-            let mut value = result_clone.lock().unwrap();
-            *value = true;
-        }
-        .boxed(),
-    );
+    let handle = async_runtime.spawn(Box::pin(async move {
+        // Simulate some work
+        crate::sleep::sleep(Duration::milliseconds(50)).await;
+        let mut value = result_clone.lock().unwrap();
+        *value = true;
+    }));
 
     handle.await.expect("Task should complete successfully");
 
@@ -58,12 +52,9 @@ async fn test_tokio_specific_handling() {
     let task_completed = Arc::new(Mutex::new(false));
     let task_completed_clone = Arc::clone(&task_completed);
 
-    let handle = spawner.spawn(
-        async move {
-            *task_completed_clone.lock().unwrap() = true;
-        }
-        .boxed(),
-    );
+    let handle = spawner.spawn(Box::pin(async move {
+        *task_completed_clone.lock().unwrap() = true;
+    }));
 
     handle.await.expect("Task should complete successfully");
     assert!(*task_completed.lock().unwrap());
@@ -79,13 +70,10 @@ async fn tokio_multiple_tasks() {
     // Spawn multiple tasks
     for _ in 0..5 {
         let counter_clone = Arc::clone(&counter);
-        let handle = spawner.spawn(
-            async move {
-                let mut value = counter_clone.lock().unwrap();
-                *value += 1;
-            }
-            .boxed(),
-        );
+        let handle = spawner.spawn(Box::pin(async move {
+            let mut value = counter_clone.lock().unwrap();
+            *value += 1;
+        }));
         handles.push(handle);
     }
 
@@ -104,15 +92,12 @@ async fn tokio_task_execution() {
     let result = Arc::new(Mutex::new(false));
     let result_clone = Arc::clone(&result);
 
-    let handle = spawner.spawn(
-        async move {
-            // Simulate some work
-            crate::sleep::sleep(Duration::milliseconds(50)).await;
-            let mut value = result_clone.lock().unwrap();
-            *value = true;
-        }
-        .boxed(),
-    );
+    let handle = spawner.spawn(Box::pin(async move {
+        // Simulate some work
+        crate::sleep::sleep(Duration::milliseconds(50)).await;
+        let mut value = result_clone.lock().unwrap();
+        *value = true;
+    }));
 
     // Wait for task completion
     handle.await.expect("Task should complete successfully");
@@ -123,18 +108,16 @@ async fn tokio_task_execution() {
 
 // When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
 // When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
+#[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn std_specific_handling() {
     let spawner = Arc::new(standard_runtime::StdRuntime);
     let task_completed = Arc::new(Mutex::new(false));
     let task_completed_clone = Arc::clone(&task_completed);
 
-    let handle = spawner.spawn(
-        async move {
-            *task_completed_clone.lock().unwrap() = true;
-        }
-        .boxed(),
-    );
+    let handle = spawner.spawn(Box::pin(async move {
+        *task_completed_clone.lock().unwrap() = true;
+    }));
 
     // For std threads, we need to wait for the task to complete
     std::thread::sleep(Duration::milliseconds(100).try_into().unwrap());
@@ -143,6 +126,7 @@ fn std_specific_handling() {
 }
 
 #[test]
+#[cfg(not(target_arch = "wasm32"))]
 fn std_multiple_tasks() {
     let spawner = Arc::new(standard_runtime::StdRuntime);
     let counter = Arc::new(Mutex::new(0));
@@ -151,13 +135,10 @@ fn std_multiple_tasks() {
     // Spawn multiple tasks
     for _ in 0..5 {
         let counter_clone = Arc::clone(&counter);
-        let handle = spawner.spawn(
-            async move {
-                let mut value = counter_clone.lock().unwrap();
-                *value += 1;
-            }
-            .boxed(),
-        );
+        let handle = spawner.spawn(Box::pin(async move {
+            let mut value = counter_clone.lock().unwrap();
+            *value += 1;
+        }));
         handles.push(handle);
     }
 
@@ -171,21 +152,19 @@ fn std_multiple_tasks() {
 
 // When the "tokio" feature is enabled, the azure_core::sleep::sleep function uses tokio::time::sleep which requires a tokio runtime.
 // When the "tokio" feature is not enabled, it uses std::thread::sleep which does not require a tokio runtime.
+#[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
 #[test]
 fn std_task_execution() {
     let runtime = Arc::new(standard_runtime::StdRuntime);
     let result = Arc::new(Mutex::new(false));
     let result_clone = Arc::clone(&result);
 
-    let handle = runtime.spawn(
-        async move {
-            // Simulate some work
-            crate::sleep::sleep(Duration::milliseconds(500)).await;
-            let mut value = result_clone.lock().unwrap();
-            *value = true;
-        }
-        .boxed(),
-    );
+    let handle = runtime.spawn(Box::pin(async move {
+        // Simulate some work
+        crate::sleep::sleep(Duration::milliseconds(500)).await;
+        let mut value = result_clone.lock().unwrap();
+        *value = true;
+    }));
 
     // Wait for task completion
     futures::executor::block_on(handle).expect("Task should complete successfully");
@@ -197,6 +176,7 @@ fn std_task_execution() {
 // Basic test that launches 10k futures and waits for them to complete:
 // it has a high chance of failing if there is a race condition in the sleep method;
 // otherwise, it runs quickly.
+#[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
 #[tokio::test]
 async fn test_timeout() {
     use super::*;
@@ -223,6 +203,7 @@ async fn test_timeout() {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[tokio::test]
 async fn test_sleep() {
     let runtime = get_async_runtime();
@@ -230,6 +211,37 @@ async fn test_sleep() {
     runtime.sleep(Duration::milliseconds(100)).await;
     let elapsed = start.elapsed();
     assert!(elapsed >= Duration::milliseconds(100));
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
+use wasm_bindgen_test::*;
+
+#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
+#[wasm_bindgen_test]
+async fn wasm_bindgen_test_sleep() {
+    let runtime = get_async_runtime();
+    runtime.sleep(Duration::milliseconds(100)).await;
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
+#[wasm_bindgen_test]
+async fn wasm_bindgen_task_execution() {
+    let spawner = Arc::new(web_runtime::WasmBindgenRuntime);
+    let result = Arc::new(Mutex::new(false));
+    let result_clone = Arc::clone(&result);
+
+    let handle = spawner.spawn(Box::pin(async move {
+        // Simulate some work
+        crate::sleep::sleep(Duration::milliseconds(50)).await;
+        let mut value = result_clone.lock().unwrap();
+        *value = true;
+    }));
+
+    // Wait for task completion
+    handle.await.expect("Task should complete successfully");
+
+    // Verify the task executed
+    assert!(*result.lock().unwrap());
 }
 
 #[test]
@@ -245,7 +257,7 @@ impl AsyncRuntime for TestRuntime {
         unimplemented!("TestRuntime does not support spawning tasks");
     }
 
-    fn sleep(&self, _duration: Duration) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
+    fn sleep(&self, _duration: Duration) -> TaskFuture {
         unimplemented!("TestRuntime does not support sleeping");
     }
 }

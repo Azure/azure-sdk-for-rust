@@ -7,28 +7,22 @@
 //!
 //! It abstracts away the underlying implementation details, allowing for different task execution strategies based on the target architecture and features enabled.
 //!
-//!
-//! Example usage:
+//! # Examples
 //!
 //! ```
 //! use typespec_client_core::async_runtime::get_async_runtime;
-//! use futures::FutureExt;
 //!
-//! #[tokio::main]
-//! async fn main() {
-//!     let async_runtime = get_async_runtime();
-//!     let handle = async_runtime.spawn(async {
-//!         // Simulate some work
-//!         std::thread::sleep(std::time::Duration::from_secs(1));
-//!     }.boxed());
-//!
-//!     handle.await.expect("Task should complete successfully");
-//!
-//!     println!("Task completed");
-//! }
+//! # #[tokio::main]
+//! # async fn main() {
+//! let async_runtime = get_async_runtime();
+//! let handle = async_runtime.spawn(Box::pin(async {
+//!     // Simulate some work
+//!     std::thread::sleep(std::time::Duration::from_secs(1));
+//! }));
+//! handle.await.expect("Task should complete successfully");
+//! println!("Task completed");
+//! # }
 //! ```
-//!
-//!
 use crate::time::Duration;
 use std::{
     future::Future,
@@ -36,11 +30,14 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-#[cfg_attr(feature = "tokio", allow(dead_code))]
+#[cfg_attr(any(feature = "tokio", feature = "wasm_bindgen"), allow(dead_code))]
 mod standard_runtime;
 
 #[cfg(feature = "tokio")]
 mod tokio_runtime;
+
+#[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
+mod web_runtime;
 
 #[cfg(test)]
 mod tests;
@@ -80,35 +77,35 @@ pub trait AsyncRuntime: Send + Sync {
     ///   from its environment by reference, as it will be executed in a different thread or context.
     ///
     /// # Returns
+    ///
     /// A future which can be awaited to block until the task has completed.
     ///
-    /// # Example
+    /// # Examples
+    ///
     /// ```
     /// use typespec_client_core::async_runtime::get_async_runtime;
-    /// use futures::FutureExt;
     ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///   let async_runtime = get_async_runtime();
-    ///   let future = async_runtime.spawn(async {
-    ///     // Simulate some work
-    ///     std::thread::sleep(std::time::Duration::from_secs(1));
-    ///   }.boxed());
-    ///   future.await.expect("Task should complete successfully");
-    /// }
+    /// # #[tokio::main]
+    /// # async fn main() {
+    /// let async_runtime = get_async_runtime();
+    /// let handle = async_runtime.spawn(Box::pin(async {
+    ///   // Simulate some work
+    ///   std::thread::sleep(std::time::Duration::from_secs(1));
+    /// }));
+    /// handle.await.expect("Task should complete successfully");
+    /// # }
     /// ```
     ///
-    /// # Note
+    /// # Notes
     ///
     /// This trait intentionally does not use the *`async_trait`* macro because when the
     /// `async_trait` attribute is applied to a trait  implementation, the rewritten
     /// method cannot directly return a future, instead they wrap the return value
     /// in a future, and we want the `spawn` method to directly return a future
     /// that can be awaited.
-    ///
     fn spawn(&self, f: TaskFuture) -> SpawnedTask;
 
-    fn sleep(&self, duration: Duration) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
+    fn sleep(&self, duration: Duration) -> TaskFuture;
 }
 
 static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock::new();
@@ -124,22 +121,20 @@ static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock:
 /// # Returns
 ///  An instance of a [`AsyncRuntime`] which can be used to spawn background tasks or perform other asynchronous operations.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// use typespec_client_core::async_runtime::get_async_runtime;
-/// use futures::FutureExt;
 ///
-/// #[tokio::main]
-/// async fn main() {
-///   let async_runtime = get_async_runtime();
-///   let handle = async_runtime.spawn(async {
-///     // Simulate some work
-///     std::thread::sleep(std::time::Duration::from_secs(1));
-///   }.boxed());
-/// }
+/// # #[tokio::main]
+/// # async fn main() {
+/// let async_runtime = get_async_runtime();
+/// let handle = async_runtime.spawn(Box::pin(async {
+///   // Simulate some work
+///   std::thread::sleep(std::time::Duration::from_secs(1));
+/// }));
+/// # }
 /// ```
-///
 pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
     ASYNC_RUNTIME_IMPLEMENTATION
         .get_or_init(|| create_async_runtime())
@@ -155,7 +150,7 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 /// # Returns
 ///  Ok if the async runtime was set successfully, or an error if it has already been set.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// use typespec_client_core::async_runtime::{
@@ -190,12 +185,16 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
 }
 
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
-    #[cfg(not(feature = "tokio"))]
+    #[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
     {
-        Arc::new(standard_runtime::StdRuntime)
+        Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>
     }
     #[cfg(feature = "tokio")]
     {
         Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>
+    }
+    #[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+    {
+        Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
     }
 }

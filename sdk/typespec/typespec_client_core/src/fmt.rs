@@ -90,6 +90,7 @@ pub mod as_string {
     }
 }
 
+#[cfg(feature = "json")]
 #[cfg(test)]
 mod tests {
     use crate::json::{from_json, to_json};

@@ -89,7 +89,8 @@ impl Deref for RetryPolicyCount {
 ///
 /// `wait` can be implemented in more complex cases where a simple test of time
 /// is not enough.
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     /// Determine if no more retries should be performed.
     ///
@@ -238,7 +239,8 @@ mod test {
         status: StatusCode,
     }
 
-    #[async_trait]
+    #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
     impl Policy for StatusResponder {
         async fn send(&self, _: &Context, _: &mut Request, _: &[Arc<dyn Policy>]) -> PolicyResult {
             let mut count = self.request_count.lock().unwrap();
