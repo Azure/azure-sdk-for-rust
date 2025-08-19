@@ -28,11 +28,11 @@ az account set --subscription "<Your Subscription Name>"
 
 This will automatically create:
 
-- Azure Service Bus namespace with Standard tier
-- Test queue named `testqueue`
-- Test topic named `testtopic` with subscription `testsubscription`
-- RBAC permissions for TokenCredential testing
-- All required environment variables
+-   Azure Service Bus namespace with Standard tier
+-   Test queue named `testqueue`
+-   Test topic named `testtopic` with subscription `testsubscription`
+-   RBAC permissions for TokenCredential testing
+-   All required environment variables
 
 The script will output PowerShell commands to set environment variables.
 
@@ -54,7 +54,7 @@ Once the environment variables are set, run the tests:
 **All Live Tests:**
 
 ```powershell
-cd sdk\servicebus\azure_messaging_servicebus
+cd sdk/servicebus/azure_messaging_servicebus
 cargo test
 ```
 
@@ -74,33 +74,27 @@ $env:RUST_LOG = "azure_messaging_servicebus=debug,azure_core_amqp=debug"
 cargo test
 ```
 
-## Expected Test Behavior
-
-- **TokenCredential Tests**: Will skip if not properly configured (not a failure)
-- **Test Duration**: Each test typically takes 10-30 seconds due to network operations
-- **Resource Cleanup**: Tests automatically complete/delete sent messages
-
 ## Troubleshooting
 
 ### Deployment Issues
 
-- Ensure you're logged into Azure CLI: `az login`
-- Verify you have Contributor permissions on the subscription
-- Check that the resource group name doesn't already exist
-- Ensure Service Bus is available in your selected region
+-   Ensure you're logged into Azure CLI: `az login`
+-   Verify you have Contributor permissions on the subscription
+-   Check that the resource group name doesn't already exist
+-   Ensure Service Bus is available in your selected region
 
 ### Authentication Issues
 
-- For TokenCredential tests, ensure you're logged in via Azure CLI
-- RBAC permissions are automatically configured during deployment
-- Service principal credentials can be set via environment variables if needed
+-   For TokenCredential tests, ensure you're logged in via Azure CLI
+-   RBAC permissions are automatically configured during deployment
+-   Service principal credentials can be set via environment variables if needed
 
 ### Test Execution Issues
 
-- Verify all environment variables are set correctly
-- Check that Service Bus resources are in "Active" status
-- Ensure network connectivity to Azure Service Bus
-- Review test output for specific error messages
+-   Verify all environment variables are set correctly
+-   Check that Service Bus resources are in "Active" status
+-   Ensure network connectivity to Azure Service Bus
+-   Review test output for specific error messages
 
 ## Resource Cleanup
 
@@ -113,8 +107,8 @@ When you're finished testing, clean up the resources:
 
 ## Performance Notes
 
-- Live tests create real network connections
-- Messages are sent to actual Azure Service Bus queues
-- Consider using a dedicated test namespace
-- Tests include cleanup operations (complete/delete messages)
-- Some tests may have delays for timing validation
+-   Live tests create real network connections
+-   Messages are sent to actual Azure Service Bus queues
+-   Consider using a dedicated test namespace
+-   Tests include cleanup operations (complete/delete messages)
+-   Some tests may have delays for timing validation
