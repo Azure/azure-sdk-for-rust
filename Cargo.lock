@@ -188,6 +188,7 @@ dependencies = [
  "hmac",
  "openssl",
  "pin-project",
+ "reqwest",
  "rustc_version",
  "serde",
  "serde_json",

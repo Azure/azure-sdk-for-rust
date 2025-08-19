@@ -435,6 +435,40 @@ Though not recommended for production, you can enable normal `core::fmt::Debug` 
 cargo add azure_core -F debug
 ```
 
+### Specific issues
+
+#### Hang when invoking multiple HTTP operations using the default HTTP transport.
+
+Some customers have reported hangs when using the default `reqwest` based transport, the issue is tracked in [this GitHub issue](https://github.com/hyperium/hyper/issues/2312). The indicated workaround
+for the problem is to disable connection pooling in the `reqwest` transport.
+
+If you are encountering this issue, you can disable connection pooling by using the following function to construct an HTTP client which disables HTTP connection pooling:
+
+```rust
+pub fn create_reqwest_client_without_connection_pooling() -> Arc<dyn HttpClient> {
+    let client = ::reqwest::ClientBuilder::new()
+        .pool_max_idle_per_host(0)
+        .build()
+        .expect("failed to build `reqwest` client");
+
+    Arc::new(client)
+}
+```
+
+You can then set this transport in the `ClientOptions` used to configure your Azure SDK client:
+
+```rust
+let options = MyServiceClientOptions {
+    client_options: ClientOptions {
+        transport: Some(TransportOptions::new(transport)),
+        ..Default::default()
+    },
+    ..Default::default()
+};
+```
+
+Note that implementing this workaround can result in a significant (3x) performance slowdown depending on your use case.
+
 ## Contributing
 
 See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
