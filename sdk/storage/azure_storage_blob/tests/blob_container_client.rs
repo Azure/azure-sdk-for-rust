@@ -65,7 +65,7 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     // Set Metadata With Values
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
     container_client
-        .set_metadata(update_metadata.clone(), (None))
+        .set_metadata(update_metadata.clone(), None)
         .await?;
 
     // Assert
