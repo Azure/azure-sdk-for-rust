@@ -545,6 +545,50 @@ pub struct BlobPropertiesInternal {
 #[derive(SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoResult;
 
+/// The service properties.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+pub struct BlobServiceProperties {
+    /// The CORS properties.
+    #[serde(
+        default,
+        deserialize_with = "CorsCorsRule::unwrap",
+        rename = "Cors",
+        serialize_with = "CorsCorsRule::wrap",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub cors: Option<Vec<CorsRule>>,
+
+    /// The default service version.
+    #[serde(
+        rename = "DefaultServiceVersion",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub default_service_version: Option<String>,
+
+    /// The delete retention policy.
+    #[serde(
+        rename = "DeleteRetentionPolicy",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub delete_retention_policy: Option<RetentionPolicy>,
+
+    /// The hour metrics properties.
+    #[serde(rename = "HourMetrics", skip_serializing_if = "Option::is_none")]
+    pub hour_metrics: Option<Metrics>,
+
+    /// The logging properties.
+    #[serde(rename = "Logging", skip_serializing_if = "Option::is_none")]
+    pub logging: Option<Logging>,
+
+    /// The minute metrics properties.
+    #[serde(rename = "MinuteMetrics", skip_serializing_if = "Option::is_none")]
+    pub minute_metrics: Option<Metrics>,
+
+    /// The static website properties.
+    #[serde(rename = "StaticWebsite", skip_serializing_if = "Option::is_none")]
+    pub static_website: Option<StaticWebsite>,
+}
+
 /// The blob tags.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "Tag")]
@@ -1276,50 +1320,6 @@ pub struct StaticWebsite {
     /// The index document.
     #[serde(rename = "IndexDocument", skip_serializing_if = "Option::is_none")]
     pub index_document: Option<String>,
-}
-
-/// The service properties.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-pub struct StorageServiceProperties {
-    /// The CORS properties.
-    #[serde(
-        default,
-        deserialize_with = "CorsCorsRule::unwrap",
-        rename = "Cors",
-        serialize_with = "CorsCorsRule::wrap",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub cors: Option<Vec<CorsRule>>,
-
-    /// The default service version.
-    #[serde(
-        rename = "DefaultServiceVersion",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub default_service_version: Option<String>,
-
-    /// The delete retention policy.
-    #[serde(
-        rename = "DeleteRetentionPolicy",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub delete_retention_policy: Option<RetentionPolicy>,
-
-    /// The hour metrics properties.
-    #[serde(rename = "HourMetrics", skip_serializing_if = "Option::is_none")]
-    pub hour_metrics: Option<Metrics>,
-
-    /// The logging properties.
-    #[serde(rename = "Logging", skip_serializing_if = "Option::is_none")]
-    pub logging: Option<Logging>,
-
-    /// The minute metrics properties.
-    #[serde(rename = "MinuteMetrics", skip_serializing_if = "Option::is_none")]
-    pub minute_metrics: Option<Metrics>,
-
-    /// The static website properties.
-    #[serde(rename = "StaticWebsite", skip_serializing_if = "Option::is_none")]
-    pub static_website: Option<StaticWebsite>,
 }
 
 /// Stats for the storage service.

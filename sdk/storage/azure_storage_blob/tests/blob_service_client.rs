@@ -6,7 +6,7 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
     BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-    StorageServiceProperties,
+    BlobServiceProperties,
 };
 use azure_storage_blob_test::{get_blob_service_client, get_container_name};
 use futures::StreamExt;
@@ -133,19 +133,19 @@ async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
     let service_client = get_blob_service_client(recording)?;
 
     // Storage Service Properties
-    let storage_service_properties = StorageServiceProperties {
+    let blob_service_properties = BlobServiceProperties {
         default_service_version: Some("2022-11-02".to_string()),
         ..Default::default()
     };
-    let request_content: RequestContent<StorageServiceProperties, XmlFormat> =
-        storage_service_properties.try_into()?;
+    let request_content: RequestContent<BlobServiceProperties, XmlFormat> =
+        blob_service_properties.try_into()?;
 
     service_client.set_properties(request_content, None).await?;
 
     // Assert
     let response = service_client.get_properties(None).await?;
-    let storage_service_properties = response.into_body().await?;
-    let default_service_version = storage_service_properties.default_service_version;
+    let blob_service_properties = response.into_body().await?;
+    let default_service_version = blob_service_properties.default_service_version;
     assert_eq!("2022-11-02".to_string(), default_service_version.unwrap());
     Ok(())
 }

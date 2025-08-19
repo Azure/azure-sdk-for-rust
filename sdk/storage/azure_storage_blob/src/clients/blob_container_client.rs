@@ -28,6 +28,7 @@ use azure_core::{
     },
     Result,
 };
+use std::collections::HashMap;
 use std::sync::Arc;
 
 /// A client to interact with a specified Azure storage container.
@@ -112,12 +113,14 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
+    /// * `metadata` - The metadata headers.
     /// * `options` - Optional configuration for the request.
     pub async fn set_metadata(
         &self,
+        metadata: HashMap<String, String>,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client.set_metadata(options).await
+        self.client.set_metadata(metadata, options).await
     }
 
     /// Marks the specified container for deletion. The container and any blobs contained within are later deleted during garbage collection.
