@@ -195,10 +195,6 @@ fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
     }
     #[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
     {
-        Arc::new(standard_runtime::StdRuntime)
-    }
-    #[cfg(all(target_arch = "wasm32", not(feature = "wasm_bindgen")))]
-    {
-        panic!("no async runtime available")
+        Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
     }
 }
