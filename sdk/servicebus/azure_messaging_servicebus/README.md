@@ -18,16 +18,15 @@ This crate is in early development, it **SHOULD NOT** be used in production.
 
 ### Prerequisites
 
--   Rust 1.85.0 or later
--   An Azure subscription
--   A Service Bus namespace
+-   An [Azure subscription].
+-   The [Azure CLI] can also be useful for authenticating in a development environment, creating accounts, and managing account roles.
 
 ### Install dependencies
 
 Add the following crates to your project:
 
 ```sh
-cargo add azure_identity tokio
+cargo add azure_identity
 ```
 
 ### Authenticate the client
@@ -49,14 +48,12 @@ let client = ServiceBusClient::builder()
 # }
 ```
 
-The `ServiceBusClient` supports various credential types from the `azure_identity` crate:
+The `ServiceBusClient` supports all credential types from the `azure_identity` crate:
 
--   **DeveloperToolsCredential** (Recommended): Automatically tries multiple authentication methods
--   **ClientSecretCredential**: For service principals with client secrets
--   **ManagedIdentityCredential**: For Azure resources with managed identity
--   **AzureCliCredential**: For development using Azure CLI authentication
+-   **DeveloperToolsCredential** (Recommended for development): Automatically tries multiple authentication methods
+-   **ManagedIdentityCredential** (Recommended for production): For Azure resources with managed identity
 
-All credentials handle token acquisition, caching, and automatic refresh automatically.
+All credentials handle token acquisition, caching, and refresh.
 
 For a comprehensive example showing all credential types, see [token_credential_auth.rs](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/servicebus/azure_messaging_servicebus/examples/token_credential_auth.rs).
 
@@ -178,6 +175,8 @@ Security issues and bugs should be reported privately, via email, to the Microso
 
 Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sdk-for-rust/blob/main/LICENSE.txt) license.
 
+[Azure CLI]: https://learn.microsoft.com/cli/azure
+[Azure subscription]: https://azure.microsoft.com/free/
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [samples]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/servicebus/azure_messaging_servicebus/examples
 [Service Bus messaging patterns]: https://docs.microsoft.com/azure/service-bus-messaging/
