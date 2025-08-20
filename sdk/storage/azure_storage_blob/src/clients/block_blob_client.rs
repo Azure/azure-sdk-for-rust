@@ -13,7 +13,7 @@ use crate::{
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
         BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions, BlockList, BlockListType,
-        BlockLookupList, StorageServiceProperties,
+        BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions, BlockBlobClientOptions,
