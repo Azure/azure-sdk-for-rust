@@ -547,6 +547,7 @@ pub struct BlobServiceClientGetAccountInfoResult;
 
 /// The service properties.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename = "StorageServiceProperties")]
 pub struct BlobServiceProperties {
     /// The CORS properties.
     #[serde(
