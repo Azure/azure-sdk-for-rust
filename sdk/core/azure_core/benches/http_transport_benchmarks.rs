@@ -5,7 +5,6 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
         ClientMethodOptions, ClientOptions, HttpClient, Method, Pipeline, RawResponse, Request,
         TransportOptions, Url,
     },
@@ -44,7 +43,7 @@ pub struct TestServiceClientGetMethodOptions<'a> {
 impl TestServiceClient {
     pub fn new(
         endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
+        _credential: Arc<dyn TokenCredential>,
         options: Option<TestServiceClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -57,11 +56,6 @@ impl TestServiceClient {
         }
         endpoint.set_query(None);
 
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
-            credential,
-            vec!["https://vault.azure.net/.default"],
-        ));
-
         Ok(Self {
             endpoint,
             api_version: options.api_version.unwrap_or_default(),
@@ -70,7 +64,7 @@ impl TestServiceClient {
                 option_env!("CARGO_PKG_VERSION"),
                 options.client_options,
                 Vec::default(),
-                vec![auth_policy.clone()],
+                Vec::default(),
             ),
         })
     }

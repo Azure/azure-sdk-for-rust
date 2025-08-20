@@ -9,9 +9,10 @@ use azure_security_keyvault_keys::{
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use std::sync::Arc;
 
-fn key_operations_benchmark(c: &mut Criterion) {
-    const ENV_NAME: &str = "AZURE_KEYVAULT_URL";
+/// Environment variable for the Azure Key Vault URL
+const ENV_NAME: &str = "AZURE_KEYVAULT_URL";
 
+fn key_operations_benchmark(c: &mut Criterion) {
     // Check if the environment variable is set thus allowing the benchmarks to run
     if std::env::var(ENV_NAME).is_err() {
         println!("Skipping benchmarks. Set {} to run.", ENV_NAME);
@@ -82,8 +83,6 @@ fn key_operations_benchmark(c: &mut Criterion) {
 }
 
 fn key_2901_benchmark_default(c: &mut Criterion) {
-    const ENV_NAME: &str = "AZURE_KEYVAULT_URL";
-
     // Check if the environment variable is set thus allowing the benchmarks to run
     if std::env::var(ENV_NAME).is_err() {
         println!("Skipping benchmarks. Set {} to run.", ENV_NAME);
@@ -153,8 +152,6 @@ fn key_2901_benchmark_default(c: &mut Criterion) {
 }
 
 fn key_2901_benchmark_slow(c: &mut Criterion) {
-    const ENV_NAME: &str = "AZURE_KEYVAULT_URL";
-
     // Check if the environment variable is set thus allowing the benchmarks to run
     if std::env::var(ENV_NAME).is_err() {
         println!("Skipping benchmarks. Set {} to run.", ENV_NAME);
@@ -218,7 +215,7 @@ fn key_2901_benchmark_slow(c: &mut Criterion) {
 
     let dek = rand::random::<[u8; 32]>(); // Generate a random 32-byte data encryption key (DEK)
 
-    c.bench_function("key_2901_benchmark_default", |b| {
+    c.bench_function("key_2901_benchmark_slow", |b| {
         b.to_async(&rt).iter(|| async {
             let parameters = KeyOperationParameters {
                 algorithm: Some(EncryptionAlgorithm::RsaOAEP256),
