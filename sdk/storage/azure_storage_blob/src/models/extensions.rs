@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::models::{
-    AppendBlobClientCreateOptions, BlobTag, BlobTags, PageBlobClientCreateOptions,
+    AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientPutBlobFromUrlOptions,
+    PageBlobClientCreateOptions,
 };
 use azure_core::error::ErrorKind;
 use std::collections::HashMap;
@@ -35,6 +36,23 @@ pub trait AppendBlobClientCreateOptionsExt {
 }
 
 impl AppendBlobClientCreateOptionsExt for AppendBlobClientCreateOptions<'_> {
+    fn with_if_not_exists(self) -> Self {
+        Self {
+            if_none_match: Some("*".into()),
+            ..self
+        }
+    }
+}
+
+pub trait BlockBlobClientPutBlobFromUrlOptionsExt {
+    /// Augments the current options bag to only create if the Block blob does not already exist.
+    /// # Arguments
+    ///
+    /// * `self` - The options bag to be modified.
+    fn with_if_not_exists(self) -> Self;
+}
+
+impl BlockBlobClientPutBlobFromUrlOptionsExt for BlockBlobClientPutBlobFromUrlOptions<'_> {
     fn with_if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),

@@ -78,7 +78,7 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
     let blob_client_2 = container_client.blob_client(get_blob_name(recording));
-    create_test_blob(&blob_client_2).await?;
+    create_test_blob(None, &blob_client_2).await?;
     let source_url = format!(
         "{}{}/{}",
         blob_client_2.endpoint(),

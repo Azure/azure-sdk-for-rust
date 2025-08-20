@@ -93,8 +93,8 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let blob_names = ["testblob1".to_string(), "testblob2".to_string()];
 
     container_client.create_container(None).await?;
-    create_test_blob(&container_client.blob_client(blob_names[0].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[1].clone())).await?;
+    create_test_blob(None, &container_client.blob_client(blob_names[0].clone())).await?;
+    create_test_blob(None, &container_client.blob_client(blob_names[1].clone())).await?;
 
     let mut list_blobs_response = container_client.list_blobs(None)?;
 
@@ -128,10 +128,10 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     ];
 
     container_client.create_container(None).await?;
-    create_test_blob(&container_client.blob_client(blob_names[0].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[1].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[2].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[3].clone())).await?;
+    create_test_blob(None, &container_client.blob_client(blob_names[0].clone())).await?;
+    create_test_blob(None, &container_client.blob_client(blob_names[1].clone())).await?;
+    create_test_blob(None, &container_client.blob_client(blob_names[2].clone())).await?;
+    create_test_blob(None, &container_client.blob_client(blob_names[3].clone())).await?;
 
     // Continuation Token with Token Provided
     let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
