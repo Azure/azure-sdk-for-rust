@@ -63,7 +63,6 @@ hmac_rust = ["dep:sha2", "dep:hmac"]
 reqwest = ["typespec_client_core/reqwest"]
 reqwest_deflate = ["typespec_client_core/reqwest_deflate"]
 reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
-reqwest_rustls = ["typespec_client_core/reqwest_rustls"]
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
 xml = ["typespec_client_core/xml"]
@@ -80,7 +79,6 @@ features = [
   "reqwest",
   "reqwest_deflate",
   "reqwest_gzip",
-  "reqwest_rustls",
   "tokio",
   "xml",
 ]

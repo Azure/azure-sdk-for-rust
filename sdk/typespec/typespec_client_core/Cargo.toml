@@ -64,9 +64,6 @@ json = ["typespec/json"]
 reqwest = ["reqwest/native-tls"]
 reqwest_deflate = ["reqwest/deflate"]
 reqwest_gzip = ["reqwest/gzip"]
-reqwest_rustls = [
-  "reqwest/rustls-tls-native-roots-no-provider",
-] # Remove dependency on banned `ring` crate; requires manually configuring crypto provider.
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
 wasm_bindgen = ["dep:wasm-bindgen-futures", "gloo-timers/futures"]
@@ -89,7 +86,6 @@ features = [
   "reqwest",
   "reqwest_deflate",
   "reqwest_gzip",
-  "reqwest_rustls",
   "tokio",
   "wasm_bindgen",
   "xml",

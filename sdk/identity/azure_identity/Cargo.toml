@@ -39,17 +39,8 @@ tracing-subscriber.workspace = true
 [features]
 default = ["reqwest"]
 reqwest = ["azure_core/reqwest"]
-reqwest_rustls = ["azure_core/reqwest_rustls"]
 tokio = ["dep:tokio", "azure_core/tokio", "tokio/process"]
 client_certificate = ["openssl"]
 
 [lints]
 workspace = true
-
-[package.metadata.docs.rs]
-features = [
-  "client_certificate",
-  "reqwest",
-  "reqwest_rustls",
-  "tokio",
-]

@@ -117,7 +117,6 @@ quote = "1.0.37"
 rand = "0.9.1"
 rand_chacha = "0.9"
 reqwest = { version = "0.12.23", features = [
-  "json",
   "stream",
 ], default-features = false }
 rust_decimal.version = "1.37.2"
