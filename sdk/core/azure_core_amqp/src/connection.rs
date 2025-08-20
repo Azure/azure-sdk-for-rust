@@ -264,7 +264,6 @@ mod tests {
         );
     }
 
-    // On OSX, there is a periodic issue where loopback TCP connections fail.
     // On macOS, there is a periodic issue where loopback TCP connections fail.
     // Disable these tests on macOS.
     #[cfg(not(target_os = "macos"))]
