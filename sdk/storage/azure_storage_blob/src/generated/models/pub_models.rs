@@ -258,10 +258,7 @@ pub struct BlobItemInternal {
     pub name: Option<BlobName>,
 
     /// The object replication metadata of the blob.
-    #[serde(
-        rename = "ObjectReplicationMetadata",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "OrMetadata", skip_serializing_if = "Option::is_none")]
     pub object_replication_metadata: Option<ObjectReplicationMetadata>,
 
     /// The properties of the blob.
