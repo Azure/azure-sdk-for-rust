@@ -445,6 +445,8 @@ for the problem is to disable connection pooling in the `reqwest` transport.
 If you are encountering this issue, you can disable connection pooling by using the following function to construct an HTTP client which disables HTTP connection pooling:
 
 ```rust
+# use std::sync::Arc;
+# use azure_core::http::HttpClient;
 pub fn create_reqwest_client_without_connection_pooling() -> Arc<dyn HttpClient> {
     let client = ::reqwest::ClientBuilder::new()
         .pool_max_idle_per_host(0)
@@ -458,6 +460,10 @@ pub fn create_reqwest_client_without_connection_pooling() -> Arc<dyn HttpClient>
 You can then set this transport in the `ClientOptions` used to configure your Azure SDK client:
 
 ```rust
+# use std::sync::Arc;
+# use azure_core::http::{HttpClient, ClientOptions, TransportOptions};
+# #[derive(Default)]struct MyServiceClientOptions { client_options: ClientOptions};
+# let transport = Arc::new(reqwest::Client::new());
 let options = MyServiceClientOptions {
     client_options: ClientOptions {
         transport: Some(TransportOptions::new(transport)),
