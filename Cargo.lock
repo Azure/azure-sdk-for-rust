@@ -415,6 +415,7 @@ dependencies = [
  "criterion",
  "futures",
  "rand 0.9.2",
+ "reqwest",
  "rustc_version",
  "serde",
  "serde_json",
