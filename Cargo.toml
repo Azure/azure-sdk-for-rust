@@ -17,6 +17,7 @@ members = [
   "sdk/keyvault/azure_security_keyvault_certificates",
   "sdk/keyvault/azure_security_keyvault_keys",
   "sdk/keyvault/azure_security_keyvault_secrets",
+  "sdk/servicebus/azure_messaging_servicebus",
   "sdk/template/azure_template_core",
   "sdk/template/azure_template",
   "sdk/storage/azure_storage_common",
