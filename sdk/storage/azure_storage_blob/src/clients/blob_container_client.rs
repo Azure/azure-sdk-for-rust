@@ -28,8 +28,7 @@ use azure_core::{
     },
     Result,
 };
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 /// A client to interact with a specified Azure storage container.
 pub struct BlobContainerClient {
