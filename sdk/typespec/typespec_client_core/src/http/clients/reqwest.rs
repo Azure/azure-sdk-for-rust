@@ -17,13 +17,15 @@ use typespec::error::{Error, ErrorKind, Result, ResultExt};
 pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
     debug!("creating an http client using `reqwest`");
 
-    // Set `pool_max_idle_per_host` to `0` to avoid an issue in the underlying
-    // `hyper` library that causes the `reqwest` client to hang in some cases.
+    // Note that customers have reported challenges associated with enabling
+    // connection pooling in reqwest. See <https://github.com/hyperium/hyper/issues/2312>
+    // for more details.
     //
-    // See <https://github.com/hyperium/hyper/issues/2312> for more details.
+    // Due to the significant performance impact associated with disabling connection pooling,
+    // it is enabled here, but instructions on how to disable it are in the troubleshooting
+    // guide.
     #[cfg(not(target_arch = "wasm32"))]
     let client = ::reqwest::ClientBuilder::new()
-        .pool_max_idle_per_host(0)
         .build()
         .expect("failed to build `reqwest` client");
 

@@ -29,6 +29,7 @@ azure_identity.workspace = true
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 criterion.workspace = true
 rand.workspace = true
+reqwest.workspace = true
 sha2.workspace = true
 tokio.workspace = true
 
