@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-
+#[cfg_attr(target_os = "macos", allow(unused_imports))]
 use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
@@ -10,6 +10,7 @@ use azure_core::{
     },
     Result,
 };
+#[cfg_attr(target_os = "macos", allow(unused_imports))]
 use azure_identity::DeveloperToolsCredential;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::sync::Arc;
@@ -124,6 +125,7 @@ pub fn new_default_reqwest_client() -> Arc<dyn HttpClient> {
     Arc::new(client)
 }
 
+#[cfg_attr(target_os = "macos", allow(unused_variables))]
 pub fn simple_http_transport_test(c: &mut Criterion) {
     #[cfg(target_os = "macos")]
     return;
@@ -150,6 +152,7 @@ pub fn simple_http_transport_test(c: &mut Criterion) {
     }
 }
 
+#[cfg_attr(target_os = "macos", allow(unused_variables))]
 pub fn disable_pooling_http_transport_test(c: &mut Criterion) {
     #[cfg(target_os = "macos")]
     return;
@@ -183,6 +186,7 @@ pub fn disable_pooling_http_transport_test(c: &mut Criterion) {
     }
 }
 
+#[cfg_attr(target_os = "macos", allow(unused_variables))]
 pub fn baseline_http_transport_test(c: &mut Criterion) {
     #[cfg(target_os = "macos")]
     return;
