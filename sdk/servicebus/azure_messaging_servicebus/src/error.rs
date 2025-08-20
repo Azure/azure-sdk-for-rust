@@ -144,7 +144,7 @@ mod tests {
     #[test]
     fn test_servicebus_error_can_store_any_std_error() {
         // Test that we can store any std::error::Error as a source
-        let io_error = std::io::Error::new(std::io::ErrorKind::Other, "test error");
+        let io_error = std::io::Error::other("test error");
         let service_bus_error =
             ServiceBusError::with_source(ErrorKind::Unknown, "wrapper error", io_error);
 
@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn test_servicebus_error_with_chain() {
-        let inner_error = std::io::Error::new(std::io::ErrorKind::Other, "inner error");
+        let inner_error = std::io::Error::other("inner error");
         let middle_error =
             ServiceBusError::with_source(ErrorKind::Amqp, "middle error", inner_error);
         let outer_error =
