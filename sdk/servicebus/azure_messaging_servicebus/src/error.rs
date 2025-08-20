@@ -53,11 +53,11 @@ impl fmt::Display for ErrorKind {
 }
 
 /// A Service Bus specific error.
-#[derive(SafeDebug, Clone, PartialEq, Eq)]
+#[derive(SafeDebug)]
 pub struct ServiceBusError {
     kind: ErrorKind,
     message: String,
-    source: Option<Box<ServiceBusError>>,
+    source: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
 }
 
 impl ServiceBusError {
@@ -74,7 +74,7 @@ impl ServiceBusError {
     pub fn with_source(
         kind: ErrorKind,
         message: impl Into<String>,
-        source: ServiceBusError,
+        source: impl std::error::Error + Send + Sync + 'static,
     ) -> Self {
         Self {
             kind,
@@ -94,8 +94,10 @@ impl ServiceBusError {
     }
 
     /// Returns the source error, if any.
-    pub fn source(&self) -> Option<&ServiceBusError> {
-        self.source.as_deref()
+    pub fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.source
+            .as_ref()
+            .map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
     }
 }
 
@@ -107,7 +109,9 @@ impl fmt::Display for ServiceBusError {
 
 impl std::error::Error for ServiceBusError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        self.source.as_ref().map(|e| e as &dyn std::error::Error)
+        self.source
+            .as_ref()
+            .map(|e| e.as_ref() as &(dyn std::error::Error + 'static))
     }
 }
 
@@ -123,12 +127,65 @@ impl From<azure_core::error::Error> for ServiceBusError {
             _ => ErrorKind::Unknown,
         };
 
-        ServiceBusError::new(kind, error.to_string())
+        ServiceBusError::with_source(kind, error.to_string(), error)
     }
 }
 
 impl From<azure_core_amqp::AmqpError> for ServiceBusError {
     fn from(error: azure_core_amqp::AmqpError) -> Self {
-        ServiceBusError::new(ErrorKind::Amqp, error.to_string())
+        ServiceBusError::with_source(ErrorKind::Amqp, error.to_string(), error)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_servicebus_error_can_store_any_std_error() {
+        // Test that we can store any std::error::Error as a source
+        let io_error = std::io::Error::new(std::io::ErrorKind::Other, "test error");
+        let service_bus_error =
+            ServiceBusError::with_source(ErrorKind::Unknown, "wrapper error", io_error);
+
+        assert_eq!(service_bus_error.kind(), &ErrorKind::Unknown);
+        assert_eq!(service_bus_error.message(), "wrapper error");
+        assert!(service_bus_error.source().is_some());
+
+        // Verify the source can be downcast to the original error type
+        let source = service_bus_error.source().unwrap();
+        assert!(source.downcast_ref::<std::io::Error>().is_some());
+    }
+
+    #[test]
+    fn test_servicebus_error_implements_std_error() {
+        let error = ServiceBusError::new(ErrorKind::InvalidRequest, "test message");
+
+        // Should implement std::error::Error
+        let _: &dyn std::error::Error = &error;
+
+        // Should return None for source when no source is set
+        assert!(error.source().is_none());
+    }
+
+    #[test]
+    fn test_servicebus_error_with_chain() {
+        let inner_error = std::io::Error::new(std::io::ErrorKind::Other, "inner error");
+        let middle_error =
+            ServiceBusError::with_source(ErrorKind::Amqp, "middle error", inner_error);
+        let outer_error =
+            ServiceBusError::with_source(ErrorKind::Unknown, "outer error", middle_error);
+
+        // Check that we can traverse the error chain
+        assert_eq!(outer_error.kind(), &ErrorKind::Unknown);
+        assert_eq!(outer_error.message(), "outer error");
+
+        let source = outer_error.source().unwrap();
+        let middle_as_servicebus = source.downcast_ref::<ServiceBusError>().unwrap();
+        assert_eq!(middle_as_servicebus.kind(), &ErrorKind::Amqp);
+        assert_eq!(middle_as_servicebus.message(), "middle error");
+
+        let inner_source = middle_as_servicebus.source().unwrap();
+        assert!(inner_source.downcast_ref::<std::io::Error>().is_some());
     }
 }

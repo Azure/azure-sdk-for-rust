@@ -35,7 +35,7 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
     zoneRedundant: false
   }
 
-  resource rootSharedAccessKey 'AuthorizationRules@2022-10-01-preview' = {
+  resource rootSharedAccessKey 'AuthorizationRules@2024-01-01' = {
     name: 'RootManageSharedAccessKey'
     properties: {
       rights: [
@@ -46,7 +46,7 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
     }
   }
 
-  resource listenOnlyKey 'AuthorizationRules@2022-10-01-preview' = {
+  resource listenOnlyKey 'AuthorizationRules@2024-01-01' = {
     name: 'ListenOnly'
     properties: {
       rights: [
@@ -55,7 +55,7 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
     }
   }
 
-  resource sendOnlyKey 'AuthorizationRules@2022-10-01-preview' = {
+  resource sendOnlyKey 'AuthorizationRules@2024-01-01' = {
     name: 'SendOnly'
     properties: {
       rights: [
@@ -64,7 +64,7 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
     }
   }
 
-  resource queue 'queues@2022-10-01-preview' = {
+  resource queue 'queues@2024-01-01' = {
     name: queueName
     properties: {
       lockDuration: 'PT30S'
@@ -82,7 +82,7 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
     }
   }
 
-  resource topic 'topics@2022-10-01-preview' = {
+  resource topic 'topics@2024-01-01' = {
     name: topicName
     properties: {
       maxSizeInMegabytes: 1024
@@ -97,7 +97,7 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
       supportOrdering: true
     }
 
-    resource subscription 'subscriptions@2022-10-01-preview' = {
+    resource subscription 'subscriptions@2024-01-01' = {
       name: subscriptionName
       properties: {
         lockDuration: 'PT30S'
@@ -113,7 +113,7 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
     }
   }
 
-  resource networkRuleSet 'networkrulesets@2022-10-01-preview' = {
+  resource networkRuleSet 'networkrulesets@2024-01-01' = {
     name: 'default'
     properties: {
       publicNetworkAccess: 'Enabled'

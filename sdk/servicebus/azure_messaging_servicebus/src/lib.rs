@@ -7,7 +7,7 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 /// Service Bus client
-pub mod client;
+pub mod clients;
 mod error;
 mod message;
 /// Service Bus message receiving functionality and options.
@@ -22,7 +22,7 @@ pub mod models;
 /// Common types and utilities.
 mod common;
 
-pub use client::{
+pub use clients::{
     CreateReceiverOptions, CreateSenderOptions, ServiceBusClient, ServiceBusClientBuilder,
     ServiceBusClientOptions, SubQueue,
 };
