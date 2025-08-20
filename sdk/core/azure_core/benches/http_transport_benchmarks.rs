@@ -125,71 +125,89 @@ pub fn new_default_reqwest_client() -> Arc<dyn HttpClient> {
 }
 
 pub fn simple_http_transport_test(c: &mut Criterion) {
-    let rt = tokio::runtime::Runtime::new().unwrap();
+    #[cfg(target_os = "macos")]
+    return;
 
-    let endpoint = "https://azuresdkforcpp.azurewebsites.net";
-    let credential = DeveloperToolsCredential::new(None).unwrap();
-    let options = TestServiceClientOptions::default();
+    #[cfg(not(target_os = "macos"))]
+    {
+        let rt = tokio::runtime::Runtime::new().unwrap();
 
-    let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+        let credential = DeveloperToolsCredential::new(None).unwrap();
+        let options = TestServiceClientOptions::default();
 
-    // Benchmark GET and POST requests
-    c.bench_function("default_http_pipeline_test", |b| {
-        b.to_async(&rt).iter(|| async {
-            let response = client.get("get", None).await;
-            assert!(response.is_ok());
-            let response = response.unwrap();
-            assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+
+        // Benchmark GET and POST requests
+        c.bench_function("default_http_pipeline_test", |b| {
+            b.to_async(&rt).iter(|| async {
+                let response = client.get("get", None).await;
+                assert!(response.is_ok());
+                let response = response.unwrap();
+                assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+            });
         });
-    });
+    }
 }
 
 pub fn disable_pooling_http_transport_test(c: &mut Criterion) {
-    let rt = tokio::runtime::Runtime::new().unwrap();
+    #[cfg(target_os = "macos")]
+    return;
 
-    let endpoint = "https://azuresdkforcpp.azurewebsites.net";
-    let credential = DeveloperToolsCredential::new(None).unwrap();
-    let transport = new_reqwest_client_disable_connection_pool();
-    let options = TestServiceClientOptions {
-        client_options: ClientOptions {
-            transport: Some(TransportOptions::new(transport)),
+    #[cfg(not(target_os = "macos"))]
+    {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+
+        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+        let credential = DeveloperToolsCredential::new(None).unwrap();
+        let transport = new_reqwest_client_disable_connection_pool();
+        let options = TestServiceClientOptions {
+            client_options: ClientOptions {
+                transport: Some(TransportOptions::new(transport)),
+                ..Default::default()
+            },
             ..Default::default()
-        },
-        ..Default::default()
-    };
+        };
 
-    let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+        let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
 
-    // Benchmark GET and POST requests
-    c.bench_function("disable_pooling_http_pipeline_test", |b| {
-        b.to_async(&rt).iter(|| async {
-            let response = client.get("get", None).await;
-            assert!(response.is_ok());
-            let response = response.unwrap();
-            assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+        // Benchmark GET and POST requests
+        c.bench_function("disable_pooling_http_pipeline_test", |b| {
+            b.to_async(&rt).iter(|| async {
+                let response = client.get("get", None).await;
+                assert!(response.is_ok());
+                let response = response.unwrap();
+                assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+            });
         });
-    });
+    }
 }
 
 pub fn baseline_http_transport_test(c: &mut Criterion) {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+    #[cfg(target_os = "macos")]
+    return;
 
-    let http_client = new_default_reqwest_client();
+    #[cfg(not(target_os = "macos"))]
+    {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
 
-    // Benchmark GET and POST requests
-    c.bench_function("baseline_http_pipeline_test", |b| {
-        b.to_async(&rt).iter(|| async {
-            let request = Request::new(
-                Url::parse(&format!("{}/get", endpoint)).unwrap(),
-                Method::Get,
-            );
-            let response = http_client.execute_request(&request).await;
-            assert!(response.is_ok());
-            let response = response.unwrap();
-            assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+        let http_client = new_default_reqwest_client();
+
+        // Benchmark GET and POST requests
+        c.bench_function("baseline_http_pipeline_test", |b| {
+            b.to_async(&rt).iter(|| async {
+                let request = Request::new(
+                    Url::parse(&format!("{}/get", endpoint)).unwrap(),
+                    Method::Get,
+                );
+                let response = http_client.execute_request(&request).await;
+                assert!(response.is_ok());
+                let response = response.unwrap();
+                assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+            });
         });
-    });
+    }
 }
 
 // Main benchmark configuration
