@@ -196,9 +196,9 @@ impl BlobClient {
     /// * `copy_source` - A URL of up to 2 KB in length that specifies a file or blob. The value should be URL-encoded as it would appear in a request URI.
     ///   The source must either be public or must be authenticated via a shared access signature as part of the url or using the source_authorization keyword.
     ///   If the source is public, no authentication is required. Examples:
-    ///   https://myaccount.blob.core.windows.net/mycontainer/myblob
-    ///   https://myaccount.blob.core.windows.net/mycontainer/myblob?snapshot=<DateTime>
-    ///   https://otheraccount.blob.core.windows.net/mycontainer/myblob?sastoken
+    ///   `https://myaccount.blob.core.windows.net/mycontainer/myblob`
+    ///   `https://myaccount.blob.core.windows.net/mycontainer/myblob?snapshot=<DateTime>`
+    ///   `https://otheraccount.blob.core.windows.net/mycontainer/myblob?sastoken`
     /// * `options` - Optional configuration for the request. See [`BlockBlobClientPutBlobFromUrlOptionsExt`](crate::models::BlockBlobClientPutBlobFromUrlOptionsExt) for additional usage helpers.
     pub async fn put_blob_from_url(
         &self,
