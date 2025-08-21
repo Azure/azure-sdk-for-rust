@@ -15,7 +15,7 @@ edition.workspace = true
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core.workspace = true
+azure_core = { workspace = true, default-features = false }
 futures.workspace = true
 openssl = { workspace = true, optional = true }
 pin-project.workspace = true
@@ -23,7 +23,6 @@ serde.workspace = true
 time.workspace = true
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
 
 [dev-dependencies]

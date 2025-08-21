@@ -20,7 +20,11 @@ gloo-timers = { workspace = true, optional = true }
 pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
 rand.workspace = true
-reqwest = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true, features = [
+  "deflate",
+  "gzip",
+  "native-tls",
+] }
 rust_decimal = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
@@ -55,15 +59,13 @@ uuid = { workspace = true, features = ["v4", "js"] }
 wasm-bindgen-test.workspace = true
 
 [features]
-default = ["http", "json", "reqwest", "reqwest_deflate", "reqwest_gzip"]
+default = ["http", "json", "reqwest"]
 debug = ["typespec_macros?/debug"]
 decimal = ["dep:rust_decimal"]
 derive = ["dep:typespec_macros"]
 http = ["typespec/http"]
 json = ["typespec/json"]
-reqwest = ["reqwest/native-tls"]
-reqwest_deflate = ["reqwest/deflate"]
-reqwest_gzip = ["reqwest/gzip"]
+reqwest = ["dep:reqwest"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
 wasm_bindgen = ["dep:wasm-bindgen-futures", "gloo-timers/futures"]
@@ -84,8 +86,6 @@ features = [
   "http",
   "json",
   "reqwest",
-  "reqwest_deflate",
-  "reqwest_gzip",
   "tokio",
   "wasm_bindgen",
   "xml",

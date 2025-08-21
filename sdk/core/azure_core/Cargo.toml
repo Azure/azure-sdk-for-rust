@@ -28,7 +28,7 @@ sha2 = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
 typespec = { workspace = true, features = ["http", "json"] }
-typespec_client_core = { workspace = true, features = [
+typespec_client_core = { workspace = true, default-features = false, features = [
   "derive",
   "http",
   "json",
@@ -50,19 +50,13 @@ tokio.workspace = true
 tracing-subscriber.workspace = true
 
 [features]
-default = [
-  "reqwest",
-  "reqwest_deflate",
-  "reqwest_gzip",
-]
+default = ["reqwest"]
 azurite_workaround = []
 debug = ["typespec_client_core/debug"]
 decimal = ["typespec_client_core/decimal"]
 hmac_openssl = ["dep:openssl"]
 hmac_rust = ["dep:sha2", "dep:hmac"]
 reqwest = ["typespec_client_core/reqwest"]
-reqwest_deflate = ["typespec_client_core/reqwest_deflate"]
-reqwest_gzip = ["typespec_client_core/reqwest_gzip"]
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
 xml = ["typespec_client_core/xml"]
@@ -77,8 +71,6 @@ features = [
   "hmac_openssl",
   "hmac_rust",
   "reqwest",
-  "reqwest_deflate",
-  "reqwest_gzip",
   "tokio",
   "xml",
 ]
