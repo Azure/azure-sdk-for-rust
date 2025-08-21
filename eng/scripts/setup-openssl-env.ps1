@@ -15,20 +15,22 @@ Write-Host "  CMAKE_TOOLCHAIN_FILE = $env:CMAKE_TOOLCHAIN_FILE"
 
 # Check if vcpkg and OpenSSL are installed
 if (-not (Test-Path "C:\vcpkg\vcpkg.exe")) {
-    Write-Host "WARNING: vcpkg not found at C:\vcpkg\vcpkg.exe" -ForegroundColor Red
-    Write-Host "Please run the following commands to install vcpkg and OpenSSL:" -ForegroundColor Yellow
-    Write-Host "  git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg"
-    Write-Host "  C:\vcpkg\bootstrap-vcpkg.bat"
-    Write-Host "  C:\vcpkg\vcpkg.exe integrate install"
-    Write-Host "  C:\vcpkg\vcpkg.exe install openssl:x64-windows-static-md"
-} elseif (-not (Test-Path "C:\vcpkg\installed\x64-windows-static-md\lib\libssl.lib")) {
-    Write-Host "WARNING: OpenSSL not found in vcpkg installation" -ForegroundColor Red
-    Write-Host "Please run: C:\vcpkg\vcpkg.exe install openssl:x64-windows-static-md"
-} else {
-    Write-Host "✓ vcpkg and OpenSSL are properly installed" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "You can now run:" -ForegroundColor Cyan
-    Write-Host "  cargo clippy --workspace --all-features --all-targets --keep-going --no-deps"
-    Write-Host "  cargo build --workspace --all-features --all-targets"
-    Write-Host "  cargo test --workspace"
+  Write-Host "WARNING: vcpkg not found at C:\vcpkg\vcpkg.exe" -ForegroundColor Red
+  Write-Host "Please run the following commands to install vcpkg and OpenSSL:" -ForegroundColor Yellow
+  Write-Host "  git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg"
+  Write-Host "  C:\vcpkg\bootstrap-vcpkg.bat"
+  Write-Host "  C:\vcpkg\vcpkg.exe integrate install"
+  Write-Host "  C:\vcpkg\vcpkg.exe install openssl:x64-windows-static-md"
+}
+elseif (-not (Test-Path "C:\vcpkg\installed\x64-windows-static-md\lib\libssl.lib")) {
+  Write-Host "WARNING: OpenSSL not found in vcpkg installation" -ForegroundColor Red
+  Write-Host "Please run: C:\vcpkg\vcpkg.exe install openssl:x64-windows-static-md"
+}
+else {
+  Write-Host "✓ vcpkg and OpenSSL are properly installed" -ForegroundColor Green
+  Write-Host ""
+  Write-Host "You can now run:" -ForegroundColor Cyan
+  Write-Host "  cargo clippy --workspace --all-features --all-targets --keep-going --no-deps"
+  Write-Host "  cargo build --workspace --all-features --all-targets"
+  Write-Host "  cargo test --workspace"
 }

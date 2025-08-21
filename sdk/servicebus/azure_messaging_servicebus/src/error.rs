@@ -62,7 +62,7 @@ pub struct ServiceBusError {
 
 impl ServiceBusError {
     /// Creates a new Service Bus error.
-    pub fn new(kind: ErrorKind, message: impl Into<String>) -> Self {
+    pub(crate) fn new(kind: ErrorKind, message: impl Into<String>) -> Self {
         Self {
             kind,
             message: message.into(),
@@ -71,7 +71,7 @@ impl ServiceBusError {
     }
 
     /// Creates a new Service Bus error with a source error.
-    pub fn with_source(
+    pub(crate) fn with_source(
         kind: ErrorKind,
         message: impl Into<String>,
         source: impl std::error::Error + Send + Sync + 'static,
