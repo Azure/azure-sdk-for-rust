@@ -2,10 +2,12 @@
 // Licensed under the MIT License.
 
 use azure_core::{
+    credentials::TokenCredential,
     http::{RequestContent, StatusCode},
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
+use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::models::{
     BlobClientDownloadResultHeaders, BlockBlobClientUploadBlobFromUrlOptions, BlockListType,
     BlockLookupList,
@@ -115,9 +117,8 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 }
 
 #[recorded::test]
-async fn test_put_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
-
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let source_blob_client = container_client.blob_client(get_blob_name(recording));
@@ -151,7 +152,7 @@ async fn test_put_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     // Regular Scenario
     blob_client
         .block_blob_client()
-        .put_blob_from_url(12, source_url.clone(), None)
+        .upload_blob_from_url(12, source_url.clone(), None)
         .await?;
 
     let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().with_if_not_exists();
@@ -159,7 +160,7 @@ async fn test_put_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     // No Overwrite Existing Blob Scenario
     let response = blob_client
         .block_blob_client()
-        .put_blob_from_url(12, overwrite_url.clone(), Some(create_options))
+        .upload_blob_from_url(12, overwrite_url.clone(), Some(create_options))
         .await;
     // Assert
     let error = response.unwrap_err().http_status();
@@ -168,7 +169,38 @@ async fn test_put_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     // Overwrite Existing Blob Scenario
     blob_client
         .block_blob_client()
-        .put_blob_from_url(12, overwrite_url.clone(), None)
+        .upload_blob_from_url(12, overwrite_url.clone(), None)
+        .await?;
+
+    // Public Resource Scenario
+    blob_client
+        .block_blob_client()
+        .upload_blob_from_url(
+            500,
+            "https://www.gutenberg.org/cache/epub/1533/pg1533.txt".into(),
+            None,
+        )
+        .await?;
+
+    // Source Authorization Scenario
+    let credential = DeveloperToolsCredential::new(None)?;
+    let access_token = format!(
+        "Bearer {}",
+        credential
+            .get_token(&["https://storage.azure.com/.default"], None)
+            .await?
+            .token
+            .secret()
+    );
+
+    let source_auth_options = BlockBlobClientUploadBlobFromUrlOptions {
+        copy_source_authorization: Some(access_token),
+        ..Default::default()
+    };
+
+    blob_client
+        .block_blob_client()
+        .upload_blob_from_url(12, overwrite_url.clone(), Some(source_auth_options))
         .await?;
 
     Ok(())

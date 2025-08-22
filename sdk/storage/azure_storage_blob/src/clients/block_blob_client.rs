@@ -148,7 +148,7 @@ impl BlockBlobClient {
     ///   `https://myaccount.blob.core.windows.net/mycontainer/myblob?snapshot=<DateTime>`
     ///   `https://otheraccount.blob.core.windows.net/mycontainer/myblob?sastoken`
     /// * `options` - Optional configuration for the request.
-    pub async fn put_blob_from_url(
+    pub async fn upload_blob_from_url(
         &self,
         content_length: u64,
         copy_source: String,
