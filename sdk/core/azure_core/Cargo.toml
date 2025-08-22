@@ -50,16 +50,24 @@ tokio.workspace = true
 tracing-subscriber.workspace = true
 
 [features]
-default = ["reqwest_native_tls"]
+default = [
+  "reqwest",
+  "reqwest_deflate",
+  "reqwest_gzip",
+  "reqwest_native_tls",
+]
 azurite_workaround = []
 debug = ["typespec_client_core/debug"]
 decimal = ["typespec_client_core/decimal"]
 hmac_openssl = ["dep:openssl"]
 hmac_rust = ["dep:sha2", "dep:hmac"]
 reqwest = ["typespec_client_core/reqwest"]
+reqwest_deflate = ["reqwest", "typespec_client_core/reqwest_deflate"]
+reqwest_gzip = ["reqwest", "typespec_client_core/reqwest_gzip"]
 reqwest_native_tls = ["reqwest", "typespec_client_core/reqwest_native_tls"]
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
+wasm_bindgen = ["typespec_client_core/wasm_bindgen"]
 xml = ["typespec_client_core/xml"]
 
 [lints]
@@ -72,8 +80,11 @@ features = [
   "hmac_openssl",
   "hmac_rust",
   "reqwest",
+  "reqwest_deflate",
+  "reqwest_gzip",
   "reqwest_native_tls",
   "tokio",
+  "wasm_bindgen",
   "xml",
 ]
 

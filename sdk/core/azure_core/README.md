@@ -45,13 +45,16 @@ We guarantee that all client instance methods are thread-safe and independent of
 ## Features
 
 - `debug`: enables extra information for developers e.g., emitting all fields in `std::fmt::Debug` implementation.
-- `hmac_openssl`: configures HMAC using `openssl`.
-- `hmac_rust`: configures HMAC using pure Rust.
+- `decimal`: enables support for `rust_decimal::Decimal` type.
+- `derive`: enable derive macros e.g., `SafeDebug`.
+- `hmac_openssl`: enables HMAC signing using `openssl`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.
+- `hmac_rust`: enables HMAC signing using rust-native libraries `sha2` and `hmac`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.
 - `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
-- `reqwest_rustls`: enables `reqwest`'s `rustls-tls-native-roots-no-provider` feature,
+- `reqwest_native-tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
 - `tokio`: enables and sets `tokio` as the default async runtime.
+- `wasm_bindgen`: enables the async runtime for WASM.
 - `xml`: enables XML support.
 
 ## Examples
