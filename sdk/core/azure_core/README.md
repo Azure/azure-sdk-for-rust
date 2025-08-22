@@ -435,45 +435,40 @@ Though not recommended for production, you can enable normal `core::fmt::Debug` 
 cargo add azure_core -F debug
 ```
 
-### Specific issues
+### Known issues
 
-#### Hang when invoking multiple HTTP operations using the default HTTP transport.
+#### Hang when invoking multiple HTTP operations using the default HTTP transport
 
-Some customers have reported hangs when using the default `reqwest` based transport, the issue is tracked in [this GitHub issue](https://github.com/hyperium/hyper/issues/2312). The indicated workaround
-for the problem is to disable connection pooling in the `reqwest` transport.
+Some customers have reported hangs when using the default `reqwest` HTTP transport.
+The issue is tracked in [this GitHub issue](https://github.com/hyperium/hyper/issues/2312).
+The recommended workaround is to disable connection pooling in a custom `reqwest` transport.
 
-If you are encountering this issue, you can disable connection pooling by using the following function to construct an HTTP client which disables HTTP connection pooling:
+If you are encountering this issue, you can construct an `HttpClient` which disables HTTP connection pooling
+and set that as the transport in any `ClientOptions` used to configure your Azure SDK clients:
 
-```rust
-# use std::sync::Arc;
-# use azure_core::http::HttpClient;
-pub fn create_reqwest_client_without_connection_pooling() -> Arc<dyn HttpClient> {
-    let client = ::reqwest::ClientBuilder::new()
+```rust no_run
+use std::sync::Arc;
+use azure_core::http::{HttpClient, ClientOptions, TransportOptions};
+use azure_security_keyvault_secrets::SecretClientOptions;
+
+let client = Arc::new(
+    ::reqwest::ClientBuilder::new()
+        // Note that reqwest does not support `pool_max_idle_per_host` on WASM.
         .pool_max_idle_per_host(0)
         .build()
-        .expect("failed to build `reqwest` client");
+        .expect("failed to build `reqwest` client"),
+);
 
-    Arc::new(client)
-}
-```
-
-You can then set this transport in the `ClientOptions` used to configure your Azure SDK client:
-
-```rust
-# use std::sync::Arc;
-# use azure_core::http::{HttpClient, ClientOptions, TransportOptions};
-# #[derive(Default)]struct MyServiceClientOptions { client_options: ClientOptions};
-# let transport = Arc::new(reqwest::Client::new());
-let options = MyServiceClientOptions {
+let options = SecretClientOptions {
     client_options: ClientOptions {
-        transport: Some(TransportOptions::new(transport)),
+        transport: Some(TransportOptions::new(client.clone())),
         ..Default::default()
     },
     ..Default::default()
 };
 ```
 
-Note that implementing this workaround can result in a significant (3x) performance slowdown depending on your use case.
+Note that implementing this workaround can result in a significant performance slowdown depending on your scenario.
 
 ## Contributing
 
