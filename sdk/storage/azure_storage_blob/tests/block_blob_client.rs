@@ -2,12 +2,10 @@
 // Licensed under the MIT License.
 
 use azure_core::{
-    credentials::TokenCredential,
     http::{RequestContent, StatusCode},
     Bytes,
 };
 use azure_core_test::{recorded, TestContext};
-use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::models::{
     BlobClientDownloadResultHeaders, BlockBlobClientUploadBlobFromUrlOptions, BlockListType,
     BlockLookupList,
@@ -183,10 +181,10 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .await?;
 
     // Source Authorization Scenario
-    let credential = DeveloperToolsCredential::new(None)?;
     let access_token = format!(
         "Bearer {}",
-        credential
+        recording
+            .credential()
             .get_token(&["https://storage.azure.com/.default"], None)
             .await?
             .token
