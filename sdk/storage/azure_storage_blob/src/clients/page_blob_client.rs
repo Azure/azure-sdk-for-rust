@@ -90,7 +90,7 @@ impl PageBlobClient {
     ///
     /// * `content_length` - The maximum size for the Page blob, up to 1TB. The page blob size must
     ///   be aligned to a 512-byte boundary.
-    /// * `options` - Optional configuration for the request. See [`PageBlobClientCreateOptionsExt`](crate::models::PageBlobClientCreateOptionsExt) for additional usage helpers.
+    /// * `options` - Optional configuration for the request.
     pub async fn create(
         &self,
         content_length: u64,

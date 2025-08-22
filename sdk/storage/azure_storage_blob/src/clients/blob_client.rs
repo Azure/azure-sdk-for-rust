@@ -7,8 +7,8 @@ use crate::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
         BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
         BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientPutBlobFromUrlResult,
-        BlockBlobClientStageBlockResult, BlockBlobClientUploadResult,
+        BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientUploadResult,
     },
     models::{
         AccessTier, BlobClientAcquireLeaseOptions, BlobClientBreakLeaseOptions,
@@ -16,8 +16,8 @@ use crate::{
         BlobClientGetAccountInfoOptions, BlobClientGetPropertiesOptions, BlobClientGetTagsOptions,
         BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
-        BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientPutBlobFromUrlOptions,
-        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
+        BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
+        BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -185,30 +185,6 @@ impl BlobClient {
         self.client
             .get_block_blob_client()
             .upload(data, content_length, Some(options))
-            .await
-    }
-
-    /// Creates a new Block Blob where the content of the blob is read from a given URL. The default behavior is content of an existing blob is overwritten with the new blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `content_length` - The blob data to upload.
-    /// * `copy_source` - A URL of up to 2 KB in length that specifies a file or blob. The value should be URL-encoded as it would appear in a request URI.
-    ///   The source must either be public or must be authenticated via a shared access signature as part of the url or using the source_authorization keyword.
-    ///   If the source is public, no authentication is required. Examples:
-    ///   `https://myaccount.blob.core.windows.net/mycontainer/myblob`
-    ///   `https://myaccount.blob.core.windows.net/mycontainer/myblob?snapshot=<DateTime>`
-    ///   `https://otheraccount.blob.core.windows.net/mycontainer/myblob?sastoken`
-    /// * `options` - Optional configuration for the request. See [`BlockBlobClientPutBlobFromUrlOptionsExt`](crate::models::BlockBlobClientPutBlobFromUrlOptionsExt) for additional usage helpers.
-    pub async fn put_blob_from_url(
-        &self,
-        content_length: u64,
-        copy_source: String,
-        options: Option<BlockBlobClientPutBlobFromUrlOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientPutBlobFromUrlResult, NoFormat>> {
-        self.client
-            .get_block_blob_client()
-            .put_blob_from_url(content_length, copy_source, options)
             .await
     }
 

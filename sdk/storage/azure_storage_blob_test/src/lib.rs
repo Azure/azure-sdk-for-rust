@@ -95,14 +95,15 @@ pub async fn get_container_client(
     Ok(container_client)
 }
 
-/// Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17.
+/// Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17 if no data specified.
 ///
 /// # Arguments
 ///
 /// * `blob_client` - A reference to a BlobClient instance.
+/// * `data` - Blob content to be uploaded.
 pub async fn create_test_blob(
-    data: Option<RequestContent<Bytes, NoFormat>>,
     blob_client: &BlobClient,
+    data: Option<RequestContent<Bytes, NoFormat>>,
 ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
     match data {
         Some(content) => {

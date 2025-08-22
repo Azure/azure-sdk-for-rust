@@ -6,14 +6,14 @@ use crate::{
     generated::models::{
         BlobClientDownloadResult, BlobClientGetPropertiesResult,
         BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadResult,
+        BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadResult,
     },
     models::{
         BlobClientDeleteOptions, BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientCommitBlockListOptions, BlockBlobClientGetBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadOptions, BlockList, BlockListType,
-        BlockLookupList,
+        BlockBlobClientStageBlockOptions, BlockBlobClientUploadBlobFromUrlOptions,
+        BlockBlobClientUploadOptions, BlockList, BlockListType, BlockLookupList,
     },
     pipeline::StorageHeadersPolicy,
     BlobClientOptions, BlockBlobClientOptions,
@@ -134,5 +134,28 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientGetBlockListOptions<'_>>,
     ) -> Result<Response<BlockList, XmlFormat>> {
         self.client.get_block_list(list_type, options).await
+    }
+
+    /// Creates a new Block Blob where the content of the blob is read from a given URL. The default behavior is content of an existing blob is overwritten with the new blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `content_length` - The blob data to upload.
+    /// * `copy_source` - A URL of up to 2 KB in length that specifies a file or blob. The value should be URL-encoded as it would appear in a request URI.
+    ///   The source must either be public or must be authenticated via a shared access signature as part of the url or using the source_authorization keyword.
+    ///   If the source is public, no authentication is required. Examples:
+    ///   `https://myaccount.blob.core.windows.net/mycontainer/myblob`
+    ///   `https://myaccount.blob.core.windows.net/mycontainer/myblob?snapshot=<DateTime>`
+    ///   `https://otheraccount.blob.core.windows.net/mycontainer/myblob?sastoken`
+    /// * `options` - Optional configuration for the request.
+    pub async fn put_blob_from_url(
+        &self,
+        content_length: u64,
+        copy_source: String,
+        options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>> {
+        self.client
+            .upload_blob_from_url(content_length, copy_source, options)
+            .await
     }
 }

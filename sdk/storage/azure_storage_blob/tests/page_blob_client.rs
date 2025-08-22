@@ -7,9 +7,8 @@ use azure_storage_blob::{
     format_page_range,
     models::{
         BlobClientDownloadResultHeaders, BlobClientGetPropertiesResultHeaders, BlobType,
-        PageBlobClientCreateOptions, PageBlobClientCreateOptionsExt,
-        PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResultHeaders,
-        SequenceNumberActionType,
+        PageBlobClientCreateOptions, PageBlobClientSetSequenceNumberOptions,
+        PageBlobClientSetSequenceNumberResultHeaders, SequenceNumberActionType,
     },
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client};

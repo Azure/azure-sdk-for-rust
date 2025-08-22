@@ -5,10 +5,10 @@
 
 use crate::generated::models::{
     BlockBlobClientCommitBlockListOptions, BlockBlobClientCommitBlockListResult,
-    BlockBlobClientGetBlockListOptions, BlockBlobClientPutBlobFromUrlOptions,
-    BlockBlobClientPutBlobFromUrlResult, BlockBlobClientQueryOptions, BlockBlobClientQueryResult,
+    BlockBlobClientGetBlockListOptions, BlockBlobClientQueryOptions, BlockBlobClientQueryResult,
     BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockFromUrlResult,
     BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResult,
+    BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadBlobFromUrlResult,
     BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockList, BlockListType,
     BlockLookupList, QueryRequest,
 };
@@ -271,165 +271,6 @@ impl BlockBlobClient {
         }
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
-
-    /// The Put Blob from URL operation creates a new Block Blob where the contents of the blob are read from a given URL. This
-    /// API is supported beginning with the 2020-04-08 version. Partial updates are not supported with Put Blob from URL; the
-    /// content of an existing blob is overwritten with the content of the new blob. To perform partial updates to a block blob’s
-    /// contents using a source URL, use the Put Block from URL API in conjunction with Put Block List.
-    ///
-    /// # Arguments
-    ///
-    /// * `content_length` - The length of the request.
-    /// * `copy_source` - Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that
-    ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
-    ///   either be public or must be authenticated via a shared access signature.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.putBlobFromUrl")]
-    pub async fn put_blob_from_url(
-        &self,
-        content_length: u64,
-        copy_source: String,
-        options: Option<BlockBlobClientPutBlobFromUrlOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientPutBlobFromUrlResult, NoFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_key_only("BlockBlob")
-            .append_key_only("fromUrl");
-        if let Some(timeout) = options.timeout {
-            url.query_pairs_mut()
-                .append_pair("timeout", &timeout.to_string());
-        }
-        let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("content-length", content_length.to_string());
-        if let Some(transactional_content_md5) = options.transactional_content_md5 {
-            request.insert_header("content-md5", encode(transactional_content_md5));
-        }
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match);
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match);
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(tier) = options.tier {
-            request.insert_header("x-ms-access-tier", tier.to_string());
-        }
-        if let Some(blob_cache_control) = options.blob_cache_control {
-            request.insert_header("x-ms-blob-cache-control", blob_cache_control);
-        }
-        if let Some(blob_content_disposition) = options.blob_content_disposition {
-            request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
-        }
-        if let Some(blob_content_encoding) = options.blob_content_encoding {
-            request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
-        }
-        if let Some(blob_content_language) = options.blob_content_language {
-            request.insert_header("x-ms-blob-content-language", blob_content_language);
-        }
-        if let Some(blob_content_md5) = options.blob_content_md5 {
-            request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
-        }
-        if let Some(blob_content_type) = options.blob_content_type {
-            request.insert_header("x-ms-blob-content-type", blob_content_type);
-        }
-        request.insert_header("x-ms-blob-type", "BlockBlob");
-        if let Some(client_request_id) = options.client_request_id {
-            request.insert_header("x-ms-client-request-id", client_request_id);
-        }
-        request.insert_header("x-ms-copy-source", copy_source);
-        if let Some(copy_source_authorization) = options.copy_source_authorization {
-            request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
-        }
-        if let Some(copy_source_blob_properties) = options.copy_source_blob_properties {
-            request.insert_header(
-                "x-ms-copy-source-blob-properties",
-                copy_source_blob_properties.to_string(),
-            );
-        }
-        if let Some(copy_source_tags) = options.copy_source_tags {
-            request.insert_header("x-ms-copy-source-tag-option", copy_source_tags.to_string());
-        }
-        if let Some(encryption_algorithm) = options.encryption_algorithm {
-            request.insert_header(
-                "x-ms-encryption-algorithm",
-                encryption_algorithm.to_string(),
-            );
-        }
-        if let Some(encryption_key) = options.encryption_key {
-            request.insert_header("x-ms-encryption-key", encryption_key);
-        }
-        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
-            request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
-        }
-        if let Some(encryption_scope) = options.encryption_scope {
-            request.insert_header("x-ms-encryption-scope", encryption_scope);
-        }
-        if let Some(file_request_intent) = options.file_request_intent {
-            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
-        }
-        if let Some(if_tags) = options.if_tags {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
-        }
-        if let Some(source_content_md5) = options.source_content_md5 {
-            request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
-        }
-        if let Some(source_if_match) = options.source_if_match {
-            request.insert_header("x-ms-source-if-match", source_if_match);
-        }
-        if let Some(source_if_modified_since) = options.source_if_modified_since {
-            request.insert_header(
-                "x-ms-source-if-modified-since",
-                to_rfc7231(&source_if_modified_since),
-            );
-        }
-        if let Some(source_if_none_match) = options.source_if_none_match {
-            request.insert_header("x-ms-source-if-none-match", source_if_none_match);
-        }
-        if let Some(source_if_tags) = options.source_if_tags {
-            request.insert_header("x-ms-source-if-tags", source_if_tags);
-        }
-        if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
-            request.insert_header(
-                "x-ms-source-if-unmodified-since",
-                to_rfc7231(&source_if_unmodified_since),
-            );
-        }
-        if let Some(blob_tags_string) = options.blob_tags_string {
-            request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
@@ -848,6 +689,165 @@ impl BlockBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
+    }
+
+    /// The Put Blob from URL operation creates a new Block Blob where the contents of the blob are read from a given URL. This
+    /// API is supported beginning with the 2020-04-08 version. Partial updates are not supported with Put Blob from URL; the
+    /// content of an existing blob is overwritten with the content of the new blob. To perform partial updates to a block blob’s
+    /// contents using a source URL, use the Put Block from URL API in conjunction with Put Block List.
+    ///
+    /// # Arguments
+    ///
+    /// * `content_length` - The length of the request.
+    /// * `copy_source` - Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that
+    ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
+    ///   either be public or must be authenticated via a shared access signature.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.uploadBlobFromUrl")]
+    pub async fn upload_blob_from_url(
+        &self,
+        content_length: u64,
+        copy_source: String,
+        options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>> {
+        let options = options.unwrap_or_default();
+        let ctx = Context::with_context(&options.method_options.context);
+        let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
+        url.query_pairs_mut()
+            .append_key_only("BlockBlob")
+            .append_key_only("fromUrl");
+        if let Some(timeout) = options.timeout {
+            url.query_pairs_mut()
+                .append_pair("timeout", &timeout.to_string());
+        }
+        let mut request = Request::new(url, Method::Put);
+        request.insert_header("accept", "application/xml");
+        request.insert_header("content-length", content_length.to_string());
+        if let Some(transactional_content_md5) = options.transactional_content_md5 {
+            request.insert_header("content-md5", encode(transactional_content_md5));
+        }
+        if let Some(if_match) = options.if_match {
+            request.insert_header("if-match", if_match);
+        }
+        if let Some(if_modified_since) = options.if_modified_since {
+            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+        }
+        if let Some(if_none_match) = options.if_none_match {
+            request.insert_header("if-none-match", if_none_match);
+        }
+        if let Some(if_unmodified_since) = options.if_unmodified_since {
+            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+        }
+        if let Some(tier) = options.tier {
+            request.insert_header("x-ms-access-tier", tier.to_string());
+        }
+        if let Some(blob_cache_control) = options.blob_cache_control {
+            request.insert_header("x-ms-blob-cache-control", blob_cache_control);
+        }
+        if let Some(blob_content_disposition) = options.blob_content_disposition {
+            request.insert_header("x-ms-blob-content-disposition", blob_content_disposition);
+        }
+        if let Some(blob_content_encoding) = options.blob_content_encoding {
+            request.insert_header("x-ms-blob-content-encoding", blob_content_encoding);
+        }
+        if let Some(blob_content_language) = options.blob_content_language {
+            request.insert_header("x-ms-blob-content-language", blob_content_language);
+        }
+        if let Some(blob_content_md5) = options.blob_content_md5 {
+            request.insert_header("x-ms-blob-content-md5", encode(blob_content_md5));
+        }
+        if let Some(blob_content_type) = options.blob_content_type {
+            request.insert_header("x-ms-blob-content-type", blob_content_type);
+        }
+        request.insert_header("x-ms-blob-type", "BlockBlob");
+        if let Some(client_request_id) = options.client_request_id {
+            request.insert_header("x-ms-client-request-id", client_request_id);
+        }
+        request.insert_header("x-ms-copy-source", copy_source);
+        if let Some(copy_source_authorization) = options.copy_source_authorization {
+            request.insert_header("x-ms-copy-source-authorization", copy_source_authorization);
+        }
+        if let Some(copy_source_blob_properties) = options.copy_source_blob_properties {
+            request.insert_header(
+                "x-ms-copy-source-blob-properties",
+                copy_source_blob_properties.to_string(),
+            );
+        }
+        if let Some(copy_source_tags) = options.copy_source_tags {
+            request.insert_header("x-ms-copy-source-tag-option", copy_source_tags.to_string());
+        }
+        if let Some(encryption_algorithm) = options.encryption_algorithm {
+            request.insert_header(
+                "x-ms-encryption-algorithm",
+                encryption_algorithm.to_string(),
+            );
+        }
+        if let Some(encryption_key) = options.encryption_key {
+            request.insert_header("x-ms-encryption-key", encryption_key);
+        }
+        if let Some(encryption_key_sha256) = options.encryption_key_sha256 {
+            request.insert_header("x-ms-encryption-key-sha256", encryption_key_sha256);
+        }
+        if let Some(encryption_scope) = options.encryption_scope {
+            request.insert_header("x-ms-encryption-scope", encryption_scope);
+        }
+        if let Some(file_request_intent) = options.file_request_intent {
+            request.insert_header("x-ms-file-request-intent", file_request_intent.to_string());
+        }
+        if let Some(if_tags) = options.if_tags {
+            request.insert_header("x-ms-if-tags", if_tags);
+        }
+        if let Some(lease_id) = options.lease_id {
+            request.insert_header("x-ms-lease-id", lease_id);
+        }
+        if let Some(metadata) = options.metadata {
+            for (k, v) in &metadata {
+                request.insert_header(format!("x-ms-meta-{k}"), v);
+            }
+        }
+        if let Some(source_content_md5) = options.source_content_md5 {
+            request.insert_header("x-ms-source-content-md5", encode(source_content_md5));
+        }
+        if let Some(source_if_match) = options.source_if_match {
+            request.insert_header("x-ms-source-if-match", source_if_match);
+        }
+        if let Some(source_if_modified_since) = options.source_if_modified_since {
+            request.insert_header(
+                "x-ms-source-if-modified-since",
+                to_rfc7231(&source_if_modified_since),
+            );
+        }
+        if let Some(source_if_none_match) = options.source_if_none_match {
+            request.insert_header("x-ms-source-if-none-match", source_if_none_match);
+        }
+        if let Some(source_if_tags) = options.source_if_tags {
+            request.insert_header("x-ms-source-if-tags", source_if_tags);
+        }
+        if let Some(source_if_unmodified_since) = options.source_if_unmodified_since {
+            request.insert_header(
+                "x-ms-source-if-unmodified-since",
+                to_rfc7231(&source_if_unmodified_since),
+            );
+        }
+        if let Some(blob_tags_string) = options.blob_tags_string {
+            request.insert_header("x-ms-tags", blob_tags_string);
+        }
+        request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
