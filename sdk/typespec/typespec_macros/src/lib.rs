@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
 use syn::{parse_macro_input, DeriveInput};
 
 extern crate proc_macro;
