@@ -13,7 +13,8 @@ documentation = "https://docs.rs/azure_storage_blob"
 keywords = ["sdk", "azure", "storage", "blob", "blobs"]
 categories = ["api-bindings"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["azure_core/default"]
 
 [dependencies]
 async-trait.workspace = true

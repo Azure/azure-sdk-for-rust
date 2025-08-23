@@ -13,6 +13,9 @@ documentation = "https://docs.rs/azure_security_keyvault_certificates"
 keywords = ["sdk", "azure", "keyvault", "security", "certificates"]
 categories = ["api-bindings"]
 
+[features]
+default = ["azure_core/default"]
+
 [dependencies]
 async-trait = { workspace = true }
 azure_core = { workspace = true }
