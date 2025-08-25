@@ -44,6 +44,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
 in_memory_checkpoint_store = []
+default = ["azure_core_amqp/default"]
 
 [[bench]]
 name = "benchmarks"
