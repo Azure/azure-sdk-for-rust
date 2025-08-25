@@ -8,7 +8,7 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 
 ## Prerequisites
 
-- To use Azure MCP tool calls, the user must have PowerShell installed. Provide [PowerShell installation instructions](https://learn.microsoft.com/powershell/scripting/install/installing-powershell) if not installed, and recommend restarting the IDE to start the MCP server.
+- To use Azure SDK MCP tool calls, the user must have PowerShell installed. Provide [PowerShell installation instructions](https://learn.microsoft.com/powershell/scripting/install/installing-powershell) if not installed, and recommend restarting the IDE to start the MCP server.
 
 ## Code Generation
 
