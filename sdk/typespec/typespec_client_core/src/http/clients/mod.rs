@@ -3,14 +3,14 @@
 
 //! Built-in HTTP clients.
 
-#[cfg(not(any(feature = "reqwest", feature = "reqwest_rustls")))]
+#[cfg(not(feature = "reqwest"))]
 mod noop;
-#[cfg(any(feature = "reqwest", feature = "reqwest_rustls"))]
+#[cfg(feature = "reqwest")]
 mod reqwest;
 
-#[cfg(not(any(feature = "reqwest", feature = "reqwest_rustls")))]
+#[cfg(not(feature = "reqwest"))]
 use self::noop::new_noop_client;
-#[cfg(any(feature = "reqwest", feature = "reqwest_rustls"))]
+#[cfg(feature = "reqwest")]
 use self::reqwest::new_reqwest_client;
 
 use crate::http::{RawResponse, Request};
@@ -20,11 +20,11 @@ use typespec::error::Result;
 
 /// Create a new [`HttpClient`].
 pub fn new_http_client() -> Arc<dyn HttpClient> {
-    #[cfg(any(feature = "reqwest", feature = "reqwest_rustls"))]
+    #[cfg(feature = "reqwest")]
     {
         new_reqwest_client()
     }
-    #[cfg(not(any(feature = "reqwest", feature = "reqwest_rustls")))]
+    #[cfg(not(feature = "reqwest"))]
     {
         new_noop_client()
     }

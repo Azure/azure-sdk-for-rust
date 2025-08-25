@@ -13,6 +13,9 @@ categories = ["api-bindings", "development-tools::debugging"]
 edition.workspace = true
 rust-version.workspace = true
 
+[features]
+default = ["azure_core/default"]
+
 [dependencies]
 azure_core.workspace = true
 opentelemetry.workspace = true

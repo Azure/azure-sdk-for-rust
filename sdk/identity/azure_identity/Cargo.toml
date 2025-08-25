@@ -23,7 +23,6 @@ serde.workspace = true
 time.workspace = true
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
-typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
 
 [dev-dependencies]
@@ -37,19 +36,9 @@ tokio.workspace = true
 tracing-subscriber.workspace = true
 
 [features]
-default = ["reqwest"]
-reqwest = ["azure_core/reqwest"]
-reqwest_rustls = ["azure_core/reqwest_rustls"]
+default = ["azure_core/default"]
 tokio = ["dep:tokio", "azure_core/tokio", "tokio/process"]
 client_certificate = ["openssl"]
 
 [lints]
 workspace = true
-
-[package.metadata.docs.rs]
-features = [
-  "client_certificate",
-  "reqwest",
-  "reqwest_rustls",
-  "tokio",
-]
