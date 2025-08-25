@@ -150,7 +150,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // Regular Scenario
     blob_client
         .block_blob_client()
-        .upload_blob_from_url(12, source_url.clone(), None)
+        .upload_blob_from_url(source_url.clone(), None)
         .await?;
 
     let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().with_if_not_exists();
@@ -158,7 +158,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // No Overwrite Existing Blob Scenario
     let response = blob_client
         .block_blob_client()
-        .upload_blob_from_url(12, overwrite_url.clone(), Some(create_options))
+        .upload_blob_from_url(overwrite_url.clone(), Some(create_options))
         .await;
     // Assert
     let error = response.unwrap_err().http_status();
@@ -167,14 +167,13 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // Overwrite Existing Blob Scenario
     blob_client
         .block_blob_client()
-        .upload_blob_from_url(12, overwrite_url.clone(), None)
+        .upload_blob_from_url(overwrite_url.clone(), None)
         .await?;
 
     // Public Resource Scenario
     blob_client
         .block_blob_client()
         .upload_blob_from_url(
-            500,
             "https://www.gutenberg.org/cache/epub/1533/pg1533.txt".into(),
             None,
         )
@@ -198,8 +197,9 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
 
     blob_client
         .block_blob_client()
-        .upload_blob_from_url(12, overwrite_url.clone(), Some(source_auth_options))
+        .upload_blob_from_url(overwrite_url.clone(), Some(source_auth_options))
         .await?;
 
+    container_client.delete_container(None).await?;
     Ok(())
 }

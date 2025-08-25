@@ -709,7 +709,6 @@ impl BlockBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `content_length` - The length of the request.
     /// * `copy_source` - Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that
     ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
     ///   either be public or must be authenticated via a shared access signature.
@@ -717,7 +716,6 @@ impl BlockBlobClient {
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.uploadBlobFromUrl")]
     pub async fn upload_blob_from_url(
         &self,
-        content_length: u64,
         copy_source: String,
         options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>,
     ) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>> {
@@ -737,7 +735,7 @@ impl BlockBlobClient {
         }
         let mut request = Request::new(url, Method::Put);
         request.insert_header("accept", "application/xml");
-        request.insert_header("content-length", content_length.to_string());
+        request.insert_header("content-length", "0");
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
         }
