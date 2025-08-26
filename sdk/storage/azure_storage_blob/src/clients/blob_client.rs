@@ -30,89 +30,94 @@ use azure_core::{
 };
 use std::sync::Arc;
 
+pub fn url_encode(s: impl AsRef<[u8]>) -> String {
+    url::form_urlencoded::byte_serialize(s.as_ref()).collect::<String>()
+}
+
+pub fn rebuild_blob_url(input: &str) -> Option<String> {
+    // Extract storage account
+    let storage_account = input
+        .split(".blob")
+        .next()
+        .or_else(|| input.split(".dfs").next())?
+        .split("//")
+        .last()?;
+
+    // Extract container name
+    let path_segments = input.split('/').collect::<Vec<&str>>();
+    let container_name = path_segments.get(3)?;
+
+    // Find final '?' that has '=' after it
+    let mut query_start_index = None;
+    for (i, c) in input.char_indices().rev() {
+        if c == '?' && input[i + 1..].contains('=') {
+            query_start_index = Some(i);
+            break;
+        }
+    }
+
+    let query_start = query_start_index?;
+    let query_string = &input[query_start..];
+
+    // Extract blob name
+    let container_pos = input.find(container_name)? + container_name.len() + 1;
+    let blob_raw = &input[container_pos..query_start];
+    let blob_name = url_encode(blob_raw);
+
+    // Rebuild the URL
+    let rebuilt_url = format!(
+        "https://{}.blob.core.windows.net/{}/{}{}",
+        storage_account, container_name, blob_name, query_string
+    );
+
+    Some(rebuilt_url)
+}
+
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
     pub(super) client: GeneratedBlobClient,
 }
 
 impl GeneratedBlobClient {
-    fn from_url_with_credential(
+    fn from_url(
         blob_url: &str,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
-        let blob_url = Url::parse(blob_url)?;
-        if !blob_url.scheme().starts_with("http") {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                format!("{blob_url} must use http(s)"),
-            ));
-        }
+        let blob_url = rebuild_blob_url(blob_url).expect("Something exploded in building the URL.");
 
-        let mut segments = blob_url
-            .path_segments()
-            .expect("Failed to get path segments");
-        let container_name = segments
-            .next()
-            .expect("Failed to parse container_name")
-            .to_string();
-        let blob_name = segments.collect::<Vec<_>>().join("/");
+        println!("{}", blob_url.clone());
 
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
-            credential,
-            vec!["https://storage.azure.com/.default"],
-        ));
-
-        Ok(Self {
-            blob_name,
-            container_name,
-            blob_url,
-            version: options.version,
-            pipeline: Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
-                Vec::default(),
-                vec![auth_policy],
-            ),
-        })
-    }
-
-    fn from_url_with_no_credential(
-        blob_url: &str,
-        options: Option<BlobClientOptions>,
-    ) -> Result<Self> {
-        let options = options.unwrap_or_default();
-        let blob_url = Url::parse(blob_url)?;
-        if !blob_url.scheme().starts_with("http") {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                format!("{blob_url} must use http(s)"),
-            ));
-        }
-
-        let mut segments = blob_url
-            .path_segments()
-            .expect("Failed to get path segments");
-        let container_name = segments
-            .next()
-            .expect("Failed to parse container_name")
-            .to_string();
-        let blob_name = segments.collect::<Vec<_>>().join("/");
-
-        Ok(Self {
-            blob_name,
-            container_name,
-            blob_url,
-            version: options.version,
-            pipeline: Pipeline::new(
+        let pipeline = match credential {
+            Some(cred) => {
+                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                    cred,
+                    vec!["https://storage.azure.com/.default"],
+                ));
+                Pipeline::new(
+                    option_env!("CARGO_PKG_NAME"),
+                    option_env!("CARGO_PKG_VERSION"),
+                    options.client_options,
+                    Vec::default(),
+                    vec![auth_policy],
+                )
+            }
+            None => Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
                 options.client_options,
                 Vec::default(),
                 Vec::default(),
             ),
+        };
+
+        Ok(Self {
+            blob_name: "dummy".into(),
+            container_name: "dummy".into(),
+            blob_url: Url::parse(&blob_url)?,
+            version: options.version,
+            pipeline,
         })
     }
 }
@@ -155,8 +160,7 @@ impl BlobClient {
             .expect("Cannot be base")
             .extend([&container_name, &blob_name]);
 
-        let client =
-            GeneratedBlobClient::from_url_with_credential(url.as_str(), credential, Some(options))?;
+        let client = GeneratedBlobClient::from_url(url.as_str(), Some(credential), Some(options))?;
         Ok(Self { client })
     }
 
@@ -170,7 +174,7 @@ impl BlobClient {
             .push(storage_headers_policy);
 
         let url = Url::parse(blob_url)?;
-        let client = GeneratedBlobClient::from_url_with_no_credential(url.as_str(), Some(options))?;
+        let client = GeneratedBlobClient::from_url(url.as_str(), None, Some(options))?;
 
         Ok(Self { client })
     }
