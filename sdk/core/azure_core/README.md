@@ -37,8 +37,11 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 [Client options](#configuring-service-clients-using-clientoptions) |
 [Accessing the response](#accessing-http-response-details-using-responset) |
-[Handling Errors Results](#handling-errors-results) |
-[Consuming Service Methods Returning `Pager<T>`](#consuming-service-methods-returning-pagert)
+[Handling errors](#handling-errors) |
+[Iterating through pages of resources](#consuming-service-methods-returning-pagert) |
+[Waiting on ong-running operations](#consuming-service-methods-returning-pollert) |
+[Replacing the HTTP client](#replacing-the-http-client) |
+[Replacing the async runtime](#replacing-the-async-runtime)
 
 <!-- CLIENT COMMON BAR -->
 
@@ -49,13 +52,44 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `derive`: enable derive macros e.g., `SafeDebug`.
 - `hmac_openssl`: enables HMAC signing using `openssl`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.
 - `hmac_rust`: enables HMAC signing using rust-native libraries `sha2` and `hmac`. If both `hmac_openssl` and `hmac_rust` are enabled, `hmac_openssl` is used.
-- `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
+- `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`.
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
 - `reqwest_native-tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
 - `tokio`: enables and sets `tokio` as the default async runtime.
 - `wasm_bindgen`: enables the async runtime for WASM.
 - `xml`: enables XML support.
+
+### Enabling dependencies' features
+
+We define features to avoid dependencies which may be unnecessary for some applications or even some client libraries e.g.,
+some Azure services do not support the `accept-encoding` request header nor send `content-encoding` back so there's no need to add `reqwest_gzip` by default
+for all client libraries. We also want to support developers that want to use additional features of some dependencies like `reqwest`
+or even replace some dependencies completely like `reqwest` or `tokio` to use different HTTP clients or async runtimes.
+
+We do not define features to provide parity with all dependencies' features since the [resolver](https://doc.rust-lang.org/cargo/reference/resolver.html)
+will unify features e.g., you can add `reqwest`'s `system-proxy` feature without making any changes to Azure SDK dependencies:
+
+```toml
+[dependencies]
+azure_identity = "1"
+azure_security_keyvault_secrets = "1"
+reqwest = { version = "0.12.23", features = ["system-proxy"] }
+```
+
+Similarly, you can choose to support `reqwest::Client` but use `rustls-tls` with a different TLS provider by disabling our default features
+and adding only what you need, such as our `reqwest` feature just to enable the `HttpClient` trait implementation on `reqwest::Client` and
+add a dependency on `reqwest` with the feature you want:
+
+```toml
+[dependencies]
+azure_core = { version = "1", default-features = false, features = ["reqwest"] }
+azure_identity = { version = "1", default-features = false }
+azure_security_keyvault_secrets = { version = "1", default-features = false }
+reqwest = { version = "0.12.23", features = ["rustls-tls-webpki-roots"] }
+```
+
+You could even completely replace `reqwest` and provide your own `HttpClient` implementation. See [an example](#other-http-client) below.
 
 ## Examples
 
@@ -143,7 +177,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### Handling errors results
+### Handling errors
 
 When a service call fails, the returned `Result` will contain an `Error`. The `Error` type provides a status property with an HTTP status code and an error_code property with a service-specific error code.
 
@@ -424,7 +458,7 @@ let client = SecretClient::new(
 .unwrap();
 ```
 
-#### Other
+#### Other HTTP client
 
 If you do not want to take a dependency on [`reqwest`] at all - perhaps because you [want to use a different async runtime](#replacing-the-async-runtime) other than [`tokio`] -
 you can implement the `HttpClient` (recommended) or the `Policy` trait yourself.
