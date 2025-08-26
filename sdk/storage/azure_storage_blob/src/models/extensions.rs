@@ -2,22 +2,18 @@
 // Licensed under the MIT License.
 
 use crate::models::{
-    AppendBlobClientCreateOptions, BlobTag, BlobTags, PageBlobClientCreateOptions,
+    AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions,
+    PageBlobClientCreateOptions,
 };
 use azure_core::error::ErrorKind;
 use std::collections::HashMap;
 
-/// Provides usage helpers for setting the `PageBlobClientCreateOptions` optional configurations.
-pub trait PageBlobClientCreateOptionsExt {
-    /// Augments the current options bag to only create if the Page blob does not already exist.
-    /// # Arguments
-    ///
-    /// * `self` - The options bag to be modified.
-    fn with_if_not_exists(self) -> Self;
-}
-
-impl PageBlobClientCreateOptionsExt for PageBlobClientCreateOptions<'_> {
-    fn with_if_not_exists(self) -> Self {
+/// Augments the current options bag to only create if the Page blob does not already exist.
+/// # Arguments
+///
+/// * `self` - The options bag to be modified.
+impl<'a> PageBlobClientCreateOptions<'a> {
+    pub fn with_if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
             ..self
@@ -25,17 +21,25 @@ impl PageBlobClientCreateOptionsExt for PageBlobClientCreateOptions<'_> {
     }
 }
 
-/// Provides usage helpers for setting the `AppendBlobClientCreateOptions` optional configurations.
-pub trait AppendBlobClientCreateOptionsExt {
-    /// Augments the current options bag to only create if the Append blob does not already exist.
-    /// # Arguments
-    ///
-    /// * `self` - The options bag to be modified.
-    fn with_if_not_exists(self) -> Self;
+/// Augments the current options bag to only create if the Append blob does not already exist.
+/// # Arguments
+///
+/// * `self` - The options bag to be modified.
+impl<'a> AppendBlobClientCreateOptions<'a> {
+    pub fn with_if_not_exists(self) -> Self {
+        Self {
+            if_none_match: Some("*".into()),
+            ..self
+        }
+    }
 }
 
-impl AppendBlobClientCreateOptionsExt for AppendBlobClientCreateOptions<'_> {
-    fn with_if_not_exists(self) -> Self {
+/// Augments the current options bag to only create if the Block blob does not already exist.
+/// # Arguments
+///
+/// * `self` - The options bag to be modified.
+impl<'a> BlockBlobClientUploadBlobFromUrlOptions<'a> {
+    pub fn with_if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
             ..self

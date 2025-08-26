@@ -3,7 +3,7 @@
 
 use azure_core::{
     http::{ClientOptions, NoFormat, RequestContent, Response},
-    Result,
+    Bytes, Result,
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
@@ -95,20 +95,31 @@ pub async fn get_container_client(
     Ok(container_client)
 }
 
-/// Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17.
+/// Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17 if no data specified.
 ///
 /// # Arguments
 ///
 /// * `blob_client` - A reference to a BlobClient instance.
+/// * `data` - Blob content to be uploaded.
 pub async fn create_test_blob(
     blob_client: &BlobClient,
+    data: Option<RequestContent<Bytes, NoFormat>>,
 ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
-    blob_client
-        .upload(
-            RequestContent::from(b"hello rusty world".to_vec()),
-            true,
-            17,
-            None,
-        )
-        .await
+    match data {
+        Some(content) => {
+            blob_client
+                .upload(content.clone(), true, content.body().len() as u64, None)
+                .await
+        }
+        None => {
+            blob_client
+                .upload(
+                    RequestContent::from(b"hello rusty world".to_vec()),
+                    true,
+                    17,
+                    None,
+                )
+                .await
+        }
+    }
 }

@@ -14,6 +14,7 @@ use azure_storage_blob::models::{
     BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
     LeaseState,
 };
+
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
@@ -33,7 +34,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     assert_eq!(StatusCode::NotFound, error.unwrap());
 
     container_client.create_container(None).await?;
-    create_test_blob(&blob_client).await?;
+    create_test_blob(&blob_client, None).await?;
 
     // No Option Scenario
     let response = blob_client.get_properties(None).await?;
@@ -59,7 +60,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
-    create_test_blob(&blob_client).await?;
+    create_test_blob(&blob_client, None).await?;
 
     // Set Content Settings
     let set_properties_options = BlobClientSetPropertiesOptions {
@@ -157,7 +158,7 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
-    create_test_blob(&blob_client).await?;
+    create_test_blob(&blob_client, None).await?;
 
     // Existence Check
     blob_client.get_properties(None).await?;
@@ -263,7 +264,7 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
-    create_test_blob(&blob_client).await?;
+    create_test_blob(&blob_client, None).await?;
 
     let original_response = blob_client.get_properties(None).await?;
     let og_access_tier = original_response.access_tier()?;
@@ -289,7 +290,7 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
     let blob_name = get_blob_name(recording);
     let blob_client = container_client.blob_client(blob_name.clone());
     let other_blob_client = container_client.blob_client(blob_name);
-    create_test_blob(&blob_client).await?;
+    create_test_blob(&blob_client, None).await?;
 
     // Acquire Lease
     let acquire_response = blob_client.acquire_lease(15, None).await?;
@@ -344,7 +345,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
     let container_client = get_container_client(recording, true).await?;
     let blob_name = get_blob_name(recording);
     let blob_client = container_client.blob_client(blob_name.clone());
-    create_test_blob(&blob_client).await?;
+    create_test_blob(&blob_client, None).await?;
     let acquire_response = blob_client.acquire_lease(-1, None).await?;
     let lease_id = acquire_response.lease_id()?.unwrap();
 
@@ -432,7 +433,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     recording.set_matcher(Matcher::BodilessMatcher).await?;
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
-    create_test_blob(&blob_client).await?;
+    create_test_blob(&blob_client, None).await?;
 
     // Set Tags with Tags Specified
     let blob_tags = HashMap::from([

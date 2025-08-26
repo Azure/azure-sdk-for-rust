@@ -258,10 +258,7 @@ pub struct BlobItemInternal {
     pub name: Option<BlobName>,
 
     /// The object replication metadata of the blob.
-    #[serde(
-        rename = "ObjectReplicationMetadata",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "OrMetadata", skip_serializing_if = "Option::is_none")]
     pub object_replication_metadata: Option<ObjectReplicationMetadata>,
 
     /// The properties of the blob.
@@ -641,10 +638,6 @@ pub struct Block {
 #[derive(SafeDebug)]
 pub struct BlockBlobClientCommitBlockListResult;
 
-/// Contains results for `BlockBlobClient::put_blob_from_url()`
-#[derive(SafeDebug)]
-pub struct BlockBlobClientPutBlobFromUrlResult;
-
 /// Contains results for `BlockBlobClient::query()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientQueryResult;
@@ -656,6 +649,10 @@ pub struct BlockBlobClientStageBlockFromUrlResult;
 /// Contains results for `BlockBlobClient::stage_block()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockResult;
+
+/// Contains results for `BlockBlobClient::upload_blob_from_url()`
+#[derive(SafeDebug)]
+pub struct BlockBlobClientUploadBlobFromUrlResult;
 
 /// Contains results for `BlockBlobClient::upload()`
 #[derive(SafeDebug)]

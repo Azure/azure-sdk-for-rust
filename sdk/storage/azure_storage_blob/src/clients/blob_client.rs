@@ -182,9 +182,8 @@ impl BlobClient {
             options.if_none_match = Some(String::from("*"));
         }
 
-        let block_blob_client = self.client.get_block_blob_client();
-
-        block_blob_client
+        self.client
+            .get_block_blob_client()
             .upload(data, content_length, Some(options))
             .await
     }

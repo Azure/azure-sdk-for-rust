@@ -1,10 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{http::RequestContent, Bytes};
+use azure_core::{
+    http::{RequestContent, StatusCode},
+    Bytes,
+};
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::models::{BlobClientDownloadResultHeaders, BlockListType, BlockLookupList};
-use azure_storage_blob_test::{get_blob_name, get_container_client};
+use azure_storage_blob::models::{
+    BlobClientDownloadResultHeaders, BlockBlobClientUploadBlobFromUrlOptions, BlockListType,
+    BlockLookupList,
+};
+use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
 use std::error::Error;
 
 #[recorded::test]
@@ -103,6 +109,96 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             .len()
     );
     assert!(block_list.uncommitted_blocks.is_none());
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let source_blob_client = container_client.blob_client(get_blob_name(recording));
+    create_test_blob(
+        &source_blob_client,
+        Some(RequestContent::from(b"initialD ata".to_vec())),
+    )
+    .await?;
+    let source_url = format!(
+        "{}{}/{}",
+        source_blob_client.endpoint(),
+        source_blob_client.container_name(),
+        source_blob_client.blob_name()
+    );
+
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+
+    let overwrite_blob_client = container_client.blob_client(get_blob_name(recording));
+    create_test_blob(
+        &overwrite_blob_client,
+        Some(RequestContent::from(b"overruled!".to_vec())),
+    )
+    .await?;
+    let overwrite_url = format!(
+        "{}{}/{}",
+        overwrite_blob_client.endpoint(),
+        overwrite_blob_client.container_name(),
+        overwrite_blob_client.blob_name()
+    );
+
+    // Regular Scenario
+    blob_client
+        .block_blob_client()
+        .upload_blob_from_url(source_url.clone(), None)
+        .await?;
+
+    let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().with_if_not_exists();
+
+    // No Overwrite Existing Blob Scenario
+    let response = blob_client
+        .block_blob_client()
+        .upload_blob_from_url(overwrite_url.clone(), Some(create_options))
+        .await;
+    // Assert
+    let error = response.unwrap_err().http_status();
+    assert_eq!(StatusCode::Conflict, error.unwrap());
+
+    // Overwrite Existing Blob Scenario
+    blob_client
+        .block_blob_client()
+        .upload_blob_from_url(overwrite_url.clone(), None)
+        .await?;
+
+    // Public Resource Scenario
+    blob_client
+        .block_blob_client()
+        .upload_blob_from_url(
+            "https://www.gutenberg.org/cache/epub/1533/pg1533.txt".into(),
+            None,
+        )
+        .await?;
+
+    // Source Authorization Scenario
+    let access_token = format!(
+        "Bearer {}",
+        recording
+            .credential()
+            .get_token(&["https://storage.azure.com/.default"], None)
+            .await?
+            .token
+            .secret()
+    );
+
+    let source_auth_options = BlockBlobClientUploadBlobFromUrlOptions {
+        copy_source_authorization: Some(access_token),
+        ..Default::default()
+    };
+
+    blob_client
+        .block_blob_client()
+        .upload_blob_from_url(overwrite_url.clone(), Some(source_auth_options))
+        .await?;
 
     container_client.delete_container(None).await?;
     Ok(())
