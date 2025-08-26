@@ -8,6 +8,7 @@
 
 ### Breaking Changes
 
+- Removed feature `reqwest_rustls_tls`. See [README.md](https://github.com/heaths/azure-sdk-for-rust/blob/main/sdk/typespec/typespec_client_core/README.md) for alternative HTTP client configuration.
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` to copy if needed.
 - Removed the `setters` macro.
 

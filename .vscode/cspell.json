@@ -147,6 +147,7 @@
     {
       "filename": "**/*.md",
       "dictionaries": [
+        "crates",
         "rust",
         "rust-custom"
       ],

@@ -66,6 +66,7 @@ typespec_client_core
 typespec_client_core
 typespec_macros
 typespec_macros
+ureq
 url
 uuid
 zerofrom

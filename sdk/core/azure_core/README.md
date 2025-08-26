@@ -363,9 +363,133 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 Awaiting `wait()` will only fail if the HTTP status code does not indicate successfully fetching the status monitor.
 
+### Replacing the HTTP client
+
+Though `azure_core` uses [`reqwest`] for its default HTTP client, you can replace it with either a customized `reqwest::Client` or an entirely different HTTP client.
+
+#### Reqwest
+
+We define a `reqwest` feature that provides a blanket implementation of our `HttpClient` trait for `reqwest::Client` and depends on the `reqwest` crate.
+If you just want to configure a `reqwest::Client` to use different options including a different TLS provider, optionally add a dependency on `reqwest` and enable whichever feature you want:
+
+```sh
+cargo add reqwest -F rustls-tls-native-roots
+```
+
+You can then disable default features of any of the Azure SDK crates and add a dependency on `azure_core` with the `reqwest` feature for the blanket `HttpClient` implementation:
+
+```sh
+cargo add azure_core --no-default-features -F reqwest
+```
+
+You should end up with a `Cargo.toml` that looks something like:
+
+```toml
+[dependencies]
+azure_core = { version = "1", default-features = false, features = ["reqwest"] }
+azure_identity = { version = "1", default-features = false }
+azure_security_keyvault_secrets = { version = "1", default-features = false }
+reqwest = { version = "0.12.23", default-features = false, features = [
+    "deflate",
+    "gzip",
+    "rustls-tls-native-roots",
+] }
+```
+
+In many cases with `reqwest`, importing features may be enough. See their [documentation][`reqwest`] for more information.
+If you do need to write code to customize the `reqwest::Client`, you can pass it in `ClientOptions` to any of our client libraries:
+
+```rust no_run
+use azure_core::http::{ClientOptions, TransportOptions};
+use azure_identity::DeveloperToolsCredential;
+use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
+use std::sync::Arc;
+
+let http_client = Arc::new(reqwest::ClientBuilder::new().gzip(true).build().unwrap());
+
+let options = SecretClientOptions {
+    client_options: ClientOptions {
+        transport: Some(TransportOptions::new(http_client)),
+        ..Default::default()
+    },
+    ..Default::default()
+};
+
+let credential = DeveloperToolsCredential::new(None).unwrap();
+let client = SecretClient::new(
+    "https://your-key-vault-name.vault.azure.net/",
+    credential.clone(),
+    Some(options),
+)
+.unwrap();
+```
+
+#### Other
+
+If you do not want to take a dependency on [`reqwest`] at all - perhaps because you [want to use a different async runtime](#replacing-the-async-runtime) other than [`tokio`] -
+you can implement the `HttpClient` (recommended) or the `Policy` trait yourself.
+
+Similar to [customizing `reqwest` above](#reqwest), you can disable default features for Azure SDK crates. In this example where we do not want a dependency on `reqwest` at all,
+we need to import `azure_core` with no default features only to implement `HttpClient` so that your `Cargo.toml` looks something like:
+
+```toml
+[dependencies]
+azure_core = { version = "1", default-features = false }
+azure_identity = { version = "1", default-features = false }
+azure_security_keyvault_secrets = { version = "1", default-features = false }
+http = "1"
+ureq = { version = "3", default-features = false, features = [
+    "gzip",
+    "native-tls",
+] }
+```
+
+Then we need to implement `HttpClient` for another HTTP client like [`ureq`](https://docs.rs/ureq):
+
+```rust no_run
+use azure_core::{error::{ErrorKind, ResultExt as _}, http::{HttpClient, RawResponse, Request}};
+use ureq::tls::{TlsConfig, TlsProvider};
+
+#[derive(Debug)]
+struct Agent(ureq::Agent);
+
+impl Default for Agent {
+    fn default() -> Self {
+        Self(
+            ureq::Agent::config_builder()
+                .https_only(true)
+                .tls_config(
+                    TlsConfig::builder()
+                        .provider(TlsProvider::NativeTls)
+                        .build(),
+                )
+                .build()
+                .into(),
+        )
+    }
+}
+
+#[async_trait::async_trait]
+impl HttpClient for Agent {
+    async fn execute_request(&self, request: &Request) -> azure_core::Result<RawResponse> {
+        let request: ::http::request::Request<Vec<u8>> = todo!("convert our request into their request");
+        let response = self
+            .0
+            .run(request)
+            .with_context(ErrorKind::Io, || "failed to send request")?;
+
+        Ok(todo!("convert their response into our response"))
+    }
+}
+```
+
+See the [example](https://github.com/heaths/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_ureq_client.rs) for a full sample implementation.
+
+After you've implemented `HttpClient`, you pass it in `ClientOptions` to any of our client libraries as [shown for `reqwest` above](#reqwest).
+
 ### Replacing the async runtime
 
-Internally, the Azure SDK uses either the `tokio` async runtime (with the `tokio` feature), or it implements asynchronous functionality using functions in the `std` namespace.
+Internally, the Azure SDK uses either the [`tokio`] async runtime (with the `tokio` feature), or it implements asynchronous functionality using functions in the `std` namespace.
 
 If your application uses a different asynchronous runtime, you can replace the asynchronous runtime used for internal functions by providing your own implementation of the `azure_core::async_runtime::AsyncRuntime` trait.
 
@@ -483,9 +607,11 @@ When you submit a pull request, a CLA-bot will automatically determine whether y
 
 This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
 
-[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/core/azure_core/src
-[Package (crates.io)]: https://crates.io/crates/azure_core
 [API Reference Documentation]: https://docs.rs/azure_core
-[CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
+[CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [guidelines]: https://azure.github.io/azure-sdk/rust_introduction.html
+[Package (crates.io)]: https://crates.io/crates/azure_core
+[`reqwest`]: https://docs.rs/reqwest
+[`tokio`]: https://docs.rs/tokio
+[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/core/azure_core/src
