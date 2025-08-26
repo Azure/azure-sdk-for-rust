@@ -37,7 +37,7 @@ use azure_core::{
     time::to_rfc7231,
     tracing, Error, Result,
 };
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 #[tracing::client]
 pub struct BlobClient {
@@ -67,6 +67,8 @@ impl BlobClient {
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("azure_storage_blob")]
+    // Ideally we would like to remove this entirely / obscure it, unless we can replace it with just a matching implementation to from_url() we impl to this client from our handwritten BlobClient
+    // We will not use it.
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -87,7 +89,7 @@ impl BlobClient {
             vec!["https://storage.azure.com/.default"],
         ));
         Ok(Self {
-            blob_url: Url::from_str(&blob_url)?,
+            blob_url: Url::parse(&blob_url)?,
             version: options.version,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
