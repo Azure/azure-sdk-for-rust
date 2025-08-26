@@ -37,7 +37,7 @@ typespec_macros.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
-default = ["fe2o3_amqp"]
+default = ["fe2o3_amqp", "fe2o3-amqp/native-tls"]
 cplusplus = []
 test = []
 fe2o3_amqp = [
