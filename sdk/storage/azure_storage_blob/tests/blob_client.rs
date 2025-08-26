@@ -430,7 +430,7 @@ use tokio::time;
 #[recorded::test]
 async fn test_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // SAS
-    let blob_url = "SAS URL";
+    let blob_url = "<SAS URL>";
 
     let sas_blob_client = BlobClient::from_blob_url(blob_url, None)?;
 
@@ -441,24 +441,24 @@ async fn test_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// #[recorded::test]
-// async fn test_regular(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-//     let recording = ctx.recording();
-//     let endpoint = "https://ruststoragedev.blob.core.windows.net/";
-//     let container_name = "container0vgpjc2p";
-//     let blob_name = "s?cuffed?snapshot";
-//     let credential = recording.credential();
-//     let blob_client = BlobClient::new(
-//         endpoint,
-//         container_name.into(),
-//         blob_name.into(),
-//         credential,
-//         None,
-//     )?;
+#[recorded::test]
+async fn test_regular(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let endpoint = "https://ruststoragedev.blob.core.windows.net/";
+    let container_name = "container0vgpjc2p";
+    let blob_name = "s?cuffed?snapshot";
+    let credential = recording.credential();
+    let blob_client = BlobClient::new(
+        endpoint,
+        container_name.into(),
+        blob_name.into(),
+        credential,
+        None,
+    )?;
 
-//     let blob_properties = blob_client.get_properties(None).await?;
-//     let content_length = blob_properties.content_length()?;
-//     assert_eq!(17, content_length.unwrap());
+    let blob_properties = blob_client.get_properties(None).await?;
+    let content_length = blob_properties.content_length()?;
+    assert_eq!(17, content_length.unwrap());
 
-//     Ok(())
-// }
+    Ok(())
+}

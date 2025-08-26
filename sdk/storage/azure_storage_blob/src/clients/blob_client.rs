@@ -30,49 +30,6 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-pub fn url_encode(s: impl AsRef<[u8]>) -> String {
-    url::form_urlencoded::byte_serialize(s.as_ref()).collect::<String>()
-}
-
-pub fn rebuild_blob_url(input: &str) -> Option<String> {
-    // Extract storage account
-    let storage_account = input
-        .split(".blob")
-        .next()
-        .or_else(|| input.split(".dfs").next())?
-        .split("//")
-        .last()?;
-
-    // Extract container name
-    let path_segments = input.split('/').collect::<Vec<&str>>();
-    let container_name = path_segments.get(3)?;
-
-    // Find final '?' that has '=' after it
-    let mut query_start_index = None;
-    for (i, c) in input.char_indices().rev() {
-        if c == '?' && input[i + 1..].contains('=') {
-            query_start_index = Some(i);
-            break;
-        }
-    }
-
-    let query_start = query_start_index?;
-    let query_string = &input[query_start..];
-
-    // Extract blob name
-    let container_pos = input.find(container_name)? + container_name.len() + 1;
-    let blob_raw = &input[container_pos..query_start];
-    let blob_name = url_encode(blob_raw);
-
-    // Rebuild the URL
-    let rebuilt_url = format!(
-        "https://{}.blob.core.windows.net/{}/{}{}",
-        storage_account, container_name, blob_name, query_string
-    );
-
-    Some(rebuilt_url)
-}
-
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
     pub(super) client: GeneratedBlobClient,
@@ -85,9 +42,6 @@ impl GeneratedBlobClient {
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
-        let blob_url = rebuild_blob_url(blob_url).expect("Something exploded in building the URL.");
-
-        println!("{}", blob_url.clone());
 
         let pipeline = match credential {
             Some(cred) => {
@@ -115,7 +69,7 @@ impl GeneratedBlobClient {
         Ok(Self {
             blob_name: "dummy".into(),
             container_name: "dummy".into(),
-            blob_url: Url::parse(&blob_url)?,
+            blob_url: Url::parse(blob_url)?,
             version: options.version,
             pipeline,
         })
@@ -156,6 +110,7 @@ impl BlobClient {
         }
 
         // In regular ctor, since struct now holds blob_url, we have to build the blob_url given endpoint + container_name + blob_name
+        // This is a URL tool so automatically encodes :D
         url.path_segments_mut()
             .expect("Cannot be base")
             .extend([&container_name, &blob_name]);
