@@ -4,6 +4,8 @@
 #![doc = include_str!("../README.md")]
 
 pub mod credentials;
+#[cfg(doctest)]
+mod docs;
 pub mod http;
 pub mod proxy;
 pub mod recorded;

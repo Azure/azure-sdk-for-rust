@@ -50,7 +50,7 @@ A `User-Agent` header is sent in requests by default with a value similar to:
 
 > azsdk-rust-security_keyvault_secrets/0.4.0 (1.86.0; linux; aarch64)
 
-You can assign an optional application ID for your own telemetry by setting `UserPolicyOptions::application_id`. This will appear at the beginning of the `User-Agent` header.
+You can assign an optional application ID for your own telemetry by setting `UserAgentOptions::application_id`. This will appear at the beginning of the `User-Agent` header.
 
 To disable sending the `User-Agent` header entirely, you can write a `Policy` that will remove it:
 
