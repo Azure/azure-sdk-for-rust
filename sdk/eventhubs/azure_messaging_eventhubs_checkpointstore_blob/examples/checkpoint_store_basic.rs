@@ -64,16 +64,13 @@ fn configure_tracing() {
     // Create a new tracing::Fmt layer to print the logs to stdout. It has a
     // default filter of `info` level and above, and `debug` and above for logs
     // from OpenTelemetry crates. The filter levels can be customized as needed.
-    let filter_fmt = EnvFilter::new("trace").add_directive("opentelemetry=trace".parse().unwrap());
-    let fmt_layer = tracing_subscriber::fmt::layer()
-        .with_thread_names(true)
-        .with_filter(filter_fmt);
+    //let filter_fmt = EnvFilter::new("trace").add_directive("opentelemetry=trace".parse().unwrap());
+    // let fmt_layer = tracing_subscriber::fmt::layer()
+    //     .with_thread_names(true)
+    //     .with_filter(filter_fmt);
 
-    // Add the opentelemetry and format layers to the subscriber, both will be
-    // used for logging.
     tracing_subscriber::registry()
         .with(otel_layer)
-        .with(fmt_layer)
         .init();
 }
 
@@ -81,6 +78,7 @@ fn configure_tracing() {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
     configure_tracing();
+    //    tracing_subscriber::fmt::init();
 
     // Configuration - replace with your actual values
     let storage_account_url =
