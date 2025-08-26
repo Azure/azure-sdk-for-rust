@@ -397,7 +397,7 @@ reqwest = { version = "0.12.23", default-features = false, features = [
 ```
 
 In many cases with `reqwest`, importing features may be enough. See their [documentation][`reqwest`] for more information.
-If you do need to write code to customize the `reqwest::Client`, you can pass it in `ClientOptions` to any of our client libraries:
+If you do need to write code to customize the `reqwest::Client`, you can pass it in `ClientOptions` to our client libraries:
 
 ```rust no_run
 use azure_core::http::{ClientOptions, TransportOptions};
@@ -483,9 +483,9 @@ impl HttpClient for Agent {
 }
 ```
 
-See the [example](https://github.com/heaths/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_ureq_client.rs) for a full sample implementation.
+See the [example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/examples/core_ureq_client.rs) for a full sample implementation.
 
-After you've implemented `HttpClient`, you pass it in `ClientOptions` to any of our client libraries as [shown for `reqwest` above](#reqwest).
+After you've implemented `HttpClient`, you pass it in `ClientOptions` to our client libraries as [shown for `reqwest` above](#reqwest).
 
 ### Replacing the async runtime
 
