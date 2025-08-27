@@ -60,15 +60,8 @@ impl TestServiceClient {
         // and leak them to a 'static lifetime for use here (acceptable in tests).
         options.client_options.logging = Some(match options.client_options.logging {
             Some(logging_options) => {
-                // Create leaked, owned header strings to guarantee a 'static lifetime.
-                let mut headers_vec: Vec<&'static str> = logging_options
-                    .additional_allowed_header_names
-                    .iter()
-                    .map(|s| {
-                        let leaked: &'static mut str = Box::leak(s.to_string().into_boxed_str());
-                        &*leaked
-                    })
-                    .collect();
+                let mut headers_vec: Vec<&'static str> =
+                    logging_options.additional_allowed_header_names.to_vec();
                 if !headers_vec.contains(&"access-control-allow-origin") {
                     headers_vec.push("access-control-allow-origin");
                 }

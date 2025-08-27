@@ -154,12 +154,7 @@ where
                     let status = response.status();
                     if !RETRY_STATUSES.contains(&status) {
                         if status.is_success() {
-                            trace!(
-                                // ?request,
-                                // ?response,
-                                "server returned success status {}",
-                                status,
-                            );
+                            trace!("server returned success status {}", status,);
                         } else {
                             debug!(
                                 "server returned status which will not be retried: {}",

@@ -42,7 +42,6 @@ impl Policy for TransportPolicy {
         }
 
         debug!(
-            //            ?request,
             "sending request '{}'",
             request.url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS)
         );
