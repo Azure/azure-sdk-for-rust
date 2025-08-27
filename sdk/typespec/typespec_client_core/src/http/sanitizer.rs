@@ -91,17 +91,16 @@ impl Sanitizer for Headers {
         // If the debug feature is enabled, don't sanitize.
         if cfg!(feature = "debug") {
             for (name, value) in self.iter() {
-                sanitized.push_str(&format!("{}={}", name.as_str(), value.as_str()));
+                sanitized.push_str(&format!("{}: {} ", name.as_str(), value.as_str()));
             }
         } else {
             // Output the headers in a similar format to how they would appear in an HTTP request
             for (name, value) in self.iter() {
                 if !allowed_patterns.contains(&name.as_str()) {
-                    sanitized.push_str(&format!("{}: {}", name.as_str(), REDACTED_PATTERN));
+                    sanitized.push_str(&format!("{}: {} ", name.as_str(), REDACTED_PATTERN));
                 } else {
-                    sanitized.push_str(&format!("{}: {}", name.as_str(), value.as_str()));
+                    sanitized.push_str(&format!("{}: {} ", name.as_str(), value.as_str()));
                 }
-                sanitized.push(' ');
             }
         }
 

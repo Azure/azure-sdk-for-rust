@@ -46,7 +46,7 @@ impl Policy for LoggingPolicy {
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
         trace!(
-            "==> OUTGOING REQUEST: url: {}, method: {}, headers: {{ {} }}, body: <omitted>",
+            "==> OUTGOING REQUEST: url: {}, method: {}, headers: {{ {} }}",
             request.url.sanitize(&self.allowed_query_params),
             request.method(),
             request.headers().sanitize(&self.allowed_headers)
@@ -55,10 +55,16 @@ impl Policy for LoggingPolicy {
 
         if let Ok(response) = &response {
             trace!(
-                "<== RESPONSE: url: {}, status: {}, headers: {{ {} }}",
+                "<== INCOMING RESPONSE: url: {}, status: {}, headers: {{ {} }}",
                 request.url.sanitize(&self.allowed_query_params),
                 response.status(),
                 response.headers().sanitize(&self.allowed_headers)
+            )
+        } else {
+            trace!(
+                "<== FAILED INCOMING RESPONSE: url: {}, error: {}",
+                request.url.sanitize(&self.allowed_query_params),
+                response.as_ref().err().unwrap()
             )
         }
 
@@ -137,8 +143,8 @@ mod tests {
     #[tokio::test]
     async fn test_logging_policy_custom_headers() {
         let options = LoggingOptions {
-            additional_allowed_header_names: &["custom-header"],
-            additional_allowed_query_params: &[],
+            additional_allowed_header_names: vec!["custom-header"],
+            additional_allowed_query_params: vec![],
         };
         let policy = LoggingPolicy::new(options);
         let ctx = Context::default();
