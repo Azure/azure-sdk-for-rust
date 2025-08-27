@@ -10,7 +10,6 @@ use azure_messaging_eventhubs::{models::EventData, ProducerClient, SendEventOpti
 use core::f32;
 use opentelemetry_appender_tracing::layer;
 use opentelemetry_sdk::{logs::SdkLoggerProvider, Resource};
-use tracing::error;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
 fn configure_tracing() {

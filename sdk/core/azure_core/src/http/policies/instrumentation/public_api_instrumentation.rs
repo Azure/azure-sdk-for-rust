@@ -306,7 +306,7 @@ mod tests {
         ))));
 
         let request_instrumentation_policy =
-            RequestInstrumentationPolicy::new(Some(mock_tracer.clone()));
+            RequestInstrumentationPolicy::new(Some(mock_tracer.clone()), None);
 
         let next: Vec<Arc<dyn Policy>> = vec![
             Arc::new(request_instrumentation_policy),
