@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-// cspell:ignore appender
 
 //! This sample demonstrates how to send events to an Event Hub partition using the `ProducerClient`.
 

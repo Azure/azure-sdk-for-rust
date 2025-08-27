@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn sanitize_url_with_allowed_query_parameters() {
         let url = Url::parse("https://example.com/api?key=secret123&user=admin").unwrap();
-        let patterns = HashSet::from(["secret123", "admin"]);
+        let patterns = HashSet::from(["key", "user"]);
 
         let sanitized = url.sanitize(&patterns);
         assert_eq!(
@@ -127,7 +127,7 @@ mod tests {
     #[test]
     fn sanitize_url_with_redacted_parameters() {
         let url = Url::parse("https://example.com/api?foo=bar").unwrap();
-        let patterns = HashSet::from(["secret123", "admin"]);
+        let patterns = HashSet::from(["key", "admin"]);
 
         let sanitized = url.sanitize(&patterns);
         assert_eq!(sanitized, "https://example.com/api?foo=REDACTED");
