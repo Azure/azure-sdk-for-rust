@@ -27,12 +27,13 @@ tokio = { workspace = true }
 typespec_client_core = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]
-azure_core_test = { workspace = true, features = ["tracing"] }
+azure_core_test = { workspace = true, features = [
+  "tracing",
+] }
 azure_identity.workspace = true
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 rand.workspace = true
 tokio.workspace = true
-typespec_client_core = { workspace = true, features = ["debug", "test"] }
 
 [build-dependencies]
 rustc_version.workspace = true
