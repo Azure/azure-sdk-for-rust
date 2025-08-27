@@ -39,7 +39,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 [Accessing the response](#accessing-http-response-details-using-responset) |
 [Handling errors](#handling-errors) |
 [Iterating through pages of resources](#consuming-service-methods-returning-pagert) |
-[Waiting on ong-running operations](#consuming-service-methods-returning-pollert) |
+[Waiting on long-running operations](#consuming-service-methods-returning-pollert) |
 [Replacing the HTTP client](#replacing-the-http-client) |
 [Replacing the async runtime](#replacing-the-async-runtime)
 

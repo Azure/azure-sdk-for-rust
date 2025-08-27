@@ -86,6 +86,7 @@
     "vcpkg",
     "versionid",
     "virtualmachine",
+    "webpki",
     "worktree"
   ],
   "dictionaryDefinitions": [
