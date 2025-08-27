@@ -155,8 +155,8 @@ where
                     if !RETRY_STATUSES.contains(&status) {
                         if status.is_success() {
                             trace!(
-                                ?request,
-                                ?response,
+                                // ?request,
+                                // ?response,
                                 "server returned success status {}",
                                 status,
                             );

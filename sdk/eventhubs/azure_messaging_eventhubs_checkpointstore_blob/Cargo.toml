@@ -26,10 +26,15 @@ tracing = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
 
 [dev-dependencies]
+azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
+opentelemetry.workspace = true
+opentelemetry-appender-tracing = { version = "0.30" }
+opentelemetry-stdout = { version = "0.30" }
+opentelemetry_sdk.workspace = true
 tokio.workspace = true
-tracing-subscriber.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
 default = ["azure_core/default"]

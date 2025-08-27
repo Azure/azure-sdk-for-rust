@@ -13,6 +13,21 @@ use crate::http::{policies::Policy, Context};
 use std::fmt::Debug;
 use std::sync::Arc;
 
+/// Controls what HTTP headers and query parameters are logged by default.
+///
+/// Headers and query parameters not in the allow list will be redacted.
+///
+/// This list is added to the default allow list of headers and query parameters.
+///
+#[derive(Clone, Debug, Default)]
+pub struct LoggingOptions {
+    /// The allowed header names to be logged.
+    pub additional_allowed_header_names: Vec<&'static str>,
+
+    /// The allowed query parameters to be logged.
+    pub additional_allowed_query_params: Vec<&'static str>,
+}
+
 /// Client options allow customization of general client policies, retry options, and more.
 #[derive(Clone, Debug, Default)]
 pub struct ClientOptions {
@@ -27,6 +42,8 @@ pub struct ClientOptions {
 
     /// Transport options.
     pub transport: Option<TransportOptions>,
+
+    pub logging: Option<LoggingOptions>,
 }
 
 /// Method options allow customization of client method calls.

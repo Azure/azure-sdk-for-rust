@@ -5,7 +5,7 @@ use crate::http::{
     headers::{Header, HeaderValue, CONTENT_LENGTH},
     options::TransportOptions,
     policies::{Policy, PolicyResult},
-    Context, Method, Request,
+    Context, Method, Request, Sanitizer, DEFAULT_ALLOWED_QUERY_PARAMETERS,
 };
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -41,7 +41,11 @@ impl Policy for TransportPolicy {
             request.add_mandatory_header(EMPTY_CONTENT_LENGTH);
         }
 
-        debug!(?request, "sending request '{}'", request.url);
+        debug!(
+            //            ?request,
+            "sending request '{}'",
+            request.url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS)
+        );
         let response = { self.transport_options.send(ctx, request) };
 
         response.await

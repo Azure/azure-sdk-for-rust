@@ -10,7 +10,7 @@ use crate::stream::SeekableStream;
 use crate::{
     http::{
         headers::{AsHeaders, Header, HeaderName, HeaderValue, Headers},
-        JsonFormat, Method, Url,
+        JsonFormat, Method, Sanitizer, Url, DEFAULT_ALLOWED_QUERY_PARAMETERS,
     },
     json::to_json,
     time::OffsetDateTime,
@@ -237,8 +237,8 @@ impl Request {
 impl fmt::Debug for Request {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Request")
-            // Format URL as simple string instead of struct.
-            .field("url", &self.url.as_str())
+            // Format URL as simple string instead of struct. Sanitize all query parameters because we don't have an allow list.
+            .field("url", &self.url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS))
             .field("method", &self.method)
             .field("headers", &self.headers)
             .field("body", &self.body)

@@ -8,7 +8,8 @@ pub use instrumentation::*;
 use std::sync::Arc;
 use typespec_client_core::http::policies::Policy;
 pub use typespec_client_core::http::{
-    ClientMethodOptions, ExponentialRetryOptions, FixedRetryOptions, RetryOptions, TransportOptions,
+    ClientMethodOptions, ExponentialRetryOptions, FixedRetryOptions, LoggingOptions, RetryOptions,
+    TransportOptions,
 };
 pub use user_agent::*;
 
@@ -35,6 +36,11 @@ pub struct ClientOptions {
     /// If not specified, defaults to no instrumentation.
     ///
     pub instrumentation: Option<InstrumentationOptions>,
+
+    /// Logging options
+    ///
+    /// Specifies which headers and query parameters should be logged. All headers and query parameters not in the allow list will be redacted.
+    pub logging: Option<LoggingOptions>,
 }
 
 pub(crate) struct CoreClientOptions {
@@ -54,6 +60,7 @@ impl ClientOptions {
             per_try_policies: self.per_try_policies,
             retry: self.retry,
             transport: self.transport,
+            logging: self.logging,
         };
 
         (

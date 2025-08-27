@@ -91,6 +91,8 @@ reqwest = { version = "0.12.23", features = ["rustls-tls-webpki-roots"] }
 
 You could even completely replace `reqwest` and provide your own `HttpClient` implementation. See [an example](#other-http-client) below.
 
+** NOTE:** The `debug` feature may expose PII and/or secrets to logs or tracing spans which would normally be redacted.
+
 ## Examples
 
 **NOTE:** Samples in this file apply only to packages that follow [Azure SDK Design Guidelines][guidelines]. Names of such packages typically start with `azure_`.
