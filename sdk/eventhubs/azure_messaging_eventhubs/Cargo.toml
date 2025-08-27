@@ -1,8 +1,6 @@
 # Copyright (c) Microsoft Corp. All Rights Reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-# cspell:ignore appender
-
 [package]
 name = "azure_messaging_eventhubs"
 version = "0.7.0"
@@ -41,9 +39,6 @@ azure_messaging_eventhubs = { path = ".", features = [
 ] }
 criterion.workspace = true
 fe2o3-amqp = { workspace = true, features = ["tracing"] }
-opentelemetry-appender-tracing = { version = "0.30" }
-opentelemetry-stdout = { version = "0.30" }
-opentelemetry_sdk.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
