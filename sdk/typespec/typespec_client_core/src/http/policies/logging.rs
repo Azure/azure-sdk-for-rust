@@ -8,7 +8,7 @@ use crate::http::{
 };
 use std::collections::HashSet;
 use std::sync::Arc;
-use tracing::trace;
+use tracing::info;
 
 /// [`Policy`] to log  a request and response.
 #[derive(Clone, Debug, Default)]
@@ -45,7 +45,7 @@ impl Policy for LoggingPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        trace!(
+        info!(
             "==> OUTGOING REQUEST: url: {}, method: {}, headers: {{ {} }}",
             request.url.sanitize(&self.allowed_query_params),
             request.method(),
@@ -54,14 +54,14 @@ impl Policy for LoggingPolicy {
         let response = next[0].send(ctx, request, &next[1..]).await;
 
         if let Ok(response) = &response {
-            trace!(
+            info!(
                 "<== INCOMING RESPONSE: url: {}, status: {}, headers: {{ {} }}",
                 request.url.sanitize(&self.allowed_query_params),
                 response.status(),
                 response.headers().sanitize(&self.allowed_headers)
             )
         } else {
-            trace!(
+            info!(
                 "<== FAILED INCOMING RESPONSE: url: {}, error: {}",
                 request.url.sanitize(&self.allowed_query_params),
                 response.as_ref().err().unwrap()
