@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::RetryPolicy;
-use crate::time::Duration;
+use crate::{http::headers::HeaderName, time::Duration};
 
 /// Retry policy with exponential back-off.
 ///
@@ -17,6 +17,7 @@ pub struct ExponentialRetryPolicy {
     max_retries: u32,
     max_elapsed: Duration,
     max_delay: Duration,
+    retry_after_headers: Vec<(HeaderName, bool)>,
 }
 
 impl ExponentialRetryPolicy {
@@ -25,12 +26,14 @@ impl ExponentialRetryPolicy {
         max_retries: u32,
         max_elapsed: Duration,
         max_delay: Duration,
+        retry_after_headers: &[(HeaderName, bool)],
     ) -> Self {
         Self {
             initial_delay: initial_delay.max(Duration::milliseconds(1)),
             max_retries,
             max_elapsed,
             max_delay: max_delay.max(Duration::seconds(1)),
+            retry_after_headers: retry_after_headers.to_vec(),
         }
     }
 }
@@ -38,6 +41,10 @@ impl ExponentialRetryPolicy {
 impl RetryPolicy for ExponentialRetryPolicy {
     fn is_expired(&self, time_since_start: Duration, retry_count: u32) -> bool {
         retry_count >= self.max_retries || time_since_start >= self.max_elapsed
+    }
+
+    fn get_retry_headers(&self) -> Option<&[(HeaderName, bool)]> {
+        Some(&self.retry_after_headers)
     }
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
@@ -55,8 +62,12 @@ impl RetryPolicy for ExponentialRetryPolicy {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
-    use crate::http::ExponentialRetryOptions;
+    use crate::http::{
+        headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
+        ExponentialRetryOptions,
+    };
 
     #[test]
     fn exponentially_increases_correctly() {
@@ -66,6 +77,11 @@ mod tests {
             options.max_retries,
             options.max_total_elapsed,
             options.max_delay,
+            &[
+                (RETRY_AFTER, true),
+                (X_MS_RETRY_AFTER_MS, false),
+                (RETRY_AFTER_MS, false),
+            ],
         );
 
         let mut elapsed_time = Duration::seconds(0);
