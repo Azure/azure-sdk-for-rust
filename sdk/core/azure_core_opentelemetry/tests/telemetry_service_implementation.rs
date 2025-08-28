@@ -54,29 +54,20 @@ impl TestServiceClient {
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
 
-        // Ensure "server" is in the allowed headers list
-        // The LoggingOptions stores borrowed slices; to ensure the references live long enough
-        // for the client options (which may be moved elsewhere), we create owned boxed slices
-        // and leak them to a 'static lifetime for use here (acceptable in tests).
-        options.client_options.logging = Some(match options.client_options.logging {
-            Some(logging_options) => {
-                let mut headers_vec: Vec<&'static str> =
-                    logging_options.additional_allowed_header_names.to_vec();
-                if !headers_vec.contains(&"access-control-allow-origin") {
-                    headers_vec.push("access-control-allow-origin");
-                }
-
-                azure_core::http::LoggingOptions {
-                    additional_allowed_header_names: headers_vec,
-                    additional_allowed_query_params: logging_options
-                        .additional_allowed_query_params,
-                }
-            }
-            None => azure_core::http::LoggingOptions {
-                additional_allowed_header_names: vec!["access-control-allow-origin"],
-                additional_allowed_query_params: vec![],
-            },
-        });
+        // Ensure "access-control-allow-origin" is in the allowed headers list
+        let mut headers_vec: Vec<&'static str> = options
+            .client_options
+            .logging
+            .additional_allowed_header_names
+            .to_vec();
+        if !headers_vec.contains(&"access-control-allow-origin") {
+            headers_vec.push("access-control-allow-origin");
+        }
+        // And update the allowed header names with the new headers.
+        options
+            .client_options
+            .logging
+            .additional_allowed_header_names = headers_vec;
 
         let mut endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
@@ -306,10 +297,10 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
             instrumentation: Some(InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
             }),
-            logging: Some(azure_core::http::LoggingOptions {
+            logging: azure_core::http::LoggingOptions {
                 additional_allowed_header_names: vec!["access-control-allow-credentials"],
-                additional_allowed_query_params: vec![],
-            }),
+                ..Default::default()
+            },
             ..Default::default()
         },
         ..Default::default()

@@ -43,7 +43,7 @@ pub struct ClientOptions {
     /// Transport options.
     pub transport: Option<TransportOptions>,
 
-    pub logging: Option<LoggingOptions>,
+    pub logging: LoggingOptions,
 }
 
 /// Method options allow customization of client method calls.

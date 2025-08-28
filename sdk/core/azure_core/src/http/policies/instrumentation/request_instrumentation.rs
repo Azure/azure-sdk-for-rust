@@ -43,7 +43,7 @@ impl RequestInstrumentationPolicy {
     ///
     pub fn new(
         tracer: Option<Arc<dyn crate::tracing::Tracer>>,
-        log_options: Option<&LoggingOptions>,
+        log_options: &LoggingOptions,
     ) -> Self {
         // Merge the customer or service provided log options with the default allowed query parameters for sanitization.
         // This ensures that any query parameters that are allowed to be logged are also allowed to be propagated in the URL_FULL_ATTRIBUTE.
@@ -52,10 +52,7 @@ impl RequestInstrumentationPolicy {
         // Note that the allowed header names are not used in this policy, as we do not log headers here.
         let mut allowed_query_params: HashSet<&'static str> =
             DEFAULT_ALLOWED_QUERY_PARAMETERS.iter().copied().collect();
-        if let Some(log_options) = log_options {
-            allowed_query_params
-                .extend(log_options.additional_allowed_query_params.iter().copied());
-        }
+        allowed_query_params.extend(log_options.additional_allowed_query_params.iter().copied());
 
         Self {
             tracer,
@@ -234,7 +231,7 @@ pub(crate) mod tests {
         );
         let policy = Arc::new(RequestInstrumentationPolicy::new(
             Some(tracer.clone()),
-            None,
+            &LoggingOptions::default(),
         ));
 
         let transport = TransportPolicy::new(TransportOptions::new(Arc::new(MockHttpClient::new(
@@ -311,19 +308,20 @@ pub(crate) mod tests {
 
     #[test]
     fn test_request_instrumentation_policy_creation() {
-        let policy = RequestInstrumentationPolicy::new(None, None);
+        let policy = RequestInstrumentationPolicy::new(None, &LoggingOptions::default());
         assert!(policy.tracer.is_none());
 
         let mock_tracer_provider = Arc::new(MockTracingProvider::new());
         let tracer =
             mock_tracer_provider.get_tracer(Some("test namespace"), "test_crate", Some("1.0.0"));
-        let policy_with_tracer = RequestInstrumentationPolicy::new(Some(tracer), None);
+        let policy_with_tracer =
+            RequestInstrumentationPolicy::new(Some(tracer), &LoggingOptions::default());
         assert!(policy_with_tracer.tracer.is_some());
     }
 
     #[test]
     fn test_request_instrumentation_policy_without_tracer() {
-        let policy = RequestInstrumentationPolicy::new(None, None);
+        let policy = RequestInstrumentationPolicy::new(None, &LoggingOptions::default());
         assert!(policy.tracer.is_none());
     }
 

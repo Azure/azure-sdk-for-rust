@@ -54,9 +54,7 @@ impl Pipeline {
 
         pipeline.push(Arc::new(CustomHeadersPolicy::default()));
 
-        pipeline.push(Arc::new(LoggingPolicy::new(
-            options.logging.unwrap_or_default(),
-        )));
+        pipeline.push(Arc::new(LoggingPolicy::new(options.logging)));
 
         pipeline.extend_from_slice(&per_try_policies);
         pipeline.extend_from_slice(&options.per_try_policies);

@@ -40,7 +40,7 @@ pub struct ClientOptions {
     /// Logging options
     ///
     /// Specifies which headers and query parameters should be logged. All headers and query parameters not in the allow list will be redacted.
-    pub logging: Option<LoggingOptions>,
+    pub logging: LoggingOptions,
 }
 
 pub(crate) struct CoreClientOptions {
