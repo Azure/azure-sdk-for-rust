@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore appender
+// cspell:ignore appender OTLP
 
 //! Basic example showing how to create and use a blob checkpoint store.
 

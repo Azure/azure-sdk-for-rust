@@ -1,3 +1,8 @@
+# Copyright (c) Microsoft Corp. All Rights Reserved.
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+# cspell:ignore appender
+
 [package]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
 version = "0.1.0"
