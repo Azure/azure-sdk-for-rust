@@ -14,14 +14,21 @@ pub struct FixedRetryPolicy {
     delay: Duration,
     max_retries: u32,
     max_elapsed: Duration,
+    retry_headers: Vec<(crate::http::headers::HeaderName, bool)>,
 }
 
 impl FixedRetryPolicy {
-    pub(crate) fn new(delay: Duration, max_retries: u32, max_elapsed: Duration) -> Self {
+    pub(crate) fn new(
+        delay: Duration,
+        max_retries: u32,
+        max_elapsed: Duration,
+        retry_headers: &[(crate::http::headers::HeaderName, bool)],
+    ) -> Self {
         Self {
             delay: delay.max(Duration::milliseconds(10)),
             max_retries,
             max_elapsed,
+            retry_headers: retry_headers.to_vec(),
         }
     }
 }
@@ -29,6 +36,10 @@ impl FixedRetryPolicy {
 impl super::RetryPolicy for FixedRetryPolicy {
     fn is_expired(&self, time_since_start: Duration, retry_count: u32) -> bool {
         retry_count >= self.max_retries || time_since_start >= self.max_elapsed
+    }
+
+    fn get_retry_headers(&self) -> Option<&[(crate::http::headers::HeaderName, bool)]> {
+        Some(&self.retry_headers)
     }
 
     fn sleep_duration(&self, _retry_count: u32) -> Duration {
