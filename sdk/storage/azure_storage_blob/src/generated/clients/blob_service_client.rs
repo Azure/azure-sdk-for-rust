@@ -20,9 +20,10 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         headers::ERROR_CODE,
+        pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, PagerState, Pipeline,
-        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Context, Method, NoFormat, PageIterator, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url, XmlFormat,
     },
     tracing, xml, Error, Result,
 };
