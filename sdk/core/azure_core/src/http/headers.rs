@@ -21,6 +21,7 @@ pub(crate) const CLIENT_VERSION: HeaderName = HeaderName::from_static("x-ms-clie
 pub(crate) const CONTENT_DISPOSITION: HeaderName =
     HeaderName::from_static("x-ms-blob-content-disposition");
 pub(crate) const CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
+pub const ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-error-code");
 pub(crate) const IF_SEQUENCE_NUMBER_EQ: HeaderName =
     HeaderName::from_static("x-ms-if-sequence-number-eq");
 pub(crate) const IF_SEQUENCE_NUMBER_LE: HeaderName =
@@ -39,6 +40,7 @@ pub(crate) const PROPOSED_LEASE_ID: HeaderName = HeaderName::from_static("x-ms-p
 pub(crate) const RANGE_GET_CONTENT_CRC64: HeaderName =
     HeaderName::from_static("x-ms-range-get-content-crc64");
 pub(crate) const REQUEST_ID: HeaderName = HeaderName::from_static("x-ms-request-id");
+pub const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
 pub(crate) const SOURCE_IF_MATCH: HeaderName = HeaderName::from_static("x-ms-source-if-match");
 pub(crate) const SOURCE_IF_MODIFIED_SINCE: HeaderName =
     HeaderName::from_static("x-ms-source-if-modified-since");
@@ -49,8 +51,6 @@ pub(crate) const SOURCE_IF_UNMODIFIED_SINCE: HeaderName =
 pub(crate) const SOURCE_LEASE_ID: HeaderName = HeaderName::from_static("x-ms-source-lease-id");
 pub(crate) const USER: HeaderName = HeaderName::from_static("x-ms-user");
 pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
-pub const ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-error-code");
-pub const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
 pub const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
 
 /// Constants related to the Content-Type header
