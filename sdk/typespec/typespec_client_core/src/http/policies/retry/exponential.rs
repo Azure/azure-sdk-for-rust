@@ -62,7 +62,6 @@ impl RetryPolicy for ExponentialRetryPolicy {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use crate::http::{
         headers::{HeaderName, RETRY_AFTER},
