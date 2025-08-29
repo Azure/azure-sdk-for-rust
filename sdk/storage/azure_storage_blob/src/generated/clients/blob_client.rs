@@ -41,9 +41,7 @@ use std::sync::Arc;
 
 #[tracing::client]
 pub struct BlobClient {
-    pub(crate) blob_name: String,
-    pub(crate) container_name: String,
-    pub(crate) endpoint: Url,
+    pub(crate) blob_url: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
 }
@@ -69,11 +67,12 @@ impl BlobClient {
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("azure_storage_blob")]
+    // Ideally we would like to remove this entirely / obscure it, unless we can replace it with just a matching implementation to from_url() we impl to this client from our handwritten BlobClient
+    // We will not use it.
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        container_name: String,
-        blob_name: String,
+        blob_url: String,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -90,9 +89,7 @@ impl BlobClient {
             vec!["https://storage.azure.com/.default"],
         ));
         Ok(Self {
-            blob_name,
-            container_name,
-            endpoint,
+            blob_url: Url::parse(&blob_url)?,
             version: options.version,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
@@ -105,8 +102,8 @@ impl BlobClient {
     }
 
     /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
+    pub fn blob_url(&self) -> &Url {
+        &self.blob_url
     }
 
     /// The Abort Copy From URL operation aborts a pending Copy From URL operation, and leaves a destination blob with zero length
@@ -885,11 +882,7 @@ impl BlobClient {
     ) -> Result<Response<BlobClientGetPropertiesResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
+        let mut url = self.blob_url.clone();
         if let Some(snapshot) = options.snapshot {
             url.query_pairs_mut().append_pair("snapshot", &snapshot);
         }
