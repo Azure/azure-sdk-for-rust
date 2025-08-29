@@ -1,6 +1,5 @@
-use azure_core::http::{
-    RequestContent, {ClientOptions, Response},
-};
+use azure_core::http::{ClientOptions, Response};
+use azure_core::time::OffsetDateTime;
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
@@ -85,11 +84,9 @@ async fn test_set_queue_properties(ctx: TestContext) -> Result<()> {
         .await?
         .into_body()
         .await?;
-    let properties_xml = quick_xml::se::to_string(&properties).unwrap();
-    let properties_bytes = properties_xml.into_bytes();
 
     let response = queue_service_client
-        .set_properties(RequestContent::from(properties_bytes), None)
+        .set_properties(properties.try_into()?, None)
         .await
         .unwrap();
 
@@ -168,7 +165,7 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
     // assert that last_sync_time is greater than Fri, 1 Jun 2025 00:00:00 GMT
     assert!(
         geo_replication.last_sync_time.unwrap()
-            > time::OffsetDateTime::from_unix_timestamp(1748728800).unwrap(),
+            > OffsetDateTime::from_unix_timestamp(1748728800).unwrap(),
         "Last sync time should be after 2025-06-01T00:00:00Z"
     );
 

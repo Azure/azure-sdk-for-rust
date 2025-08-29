@@ -23,17 +23,11 @@ name = "queue_service_client"
 path = "samples/queue_service_client.rs"
 
 [features]
-default = ["reqwest"]
-reqwest = ["dep:reqwest"]
+default = ["azure_core/default"]
 
 [dependencies]
 azure_core = { workspace = true, features = ["xml"] }
-quick-xml.workspace = true
-rand.workspace = true
-reqwest = { workspace = true, optional = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
-time = { workspace = true }
 typespec_client_core = { workspace = true, features = ["derive"] }
 
 [lints]
@@ -43,4 +37,5 @@ workspace = true
 azure_core_test.workspace = true
 azure_identity.workspace = true
 futures.workspace = true
+rand.workspace = true
 tokio = { workspace = true, features = ["macros"] }

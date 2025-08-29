@@ -522,12 +522,8 @@ dependencies = [
  "azure_core_test",
  "azure_identity",
  "futures",
- "quick-xml",
  "rand 0.9.2",
- "reqwest",
  "serde",
- "serde_json",
- "time",
  "tokio",
  "typespec_client_core",
 ]

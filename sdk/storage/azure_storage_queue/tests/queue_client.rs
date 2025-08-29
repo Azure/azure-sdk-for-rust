@@ -1,6 +1,4 @@
-use azure_core::http::{
-    RequestContent, {ClientOptions, Response},
-};
+use azure_core::http::{ClientOptions, Response};
 use azure_core::Result;
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
@@ -239,13 +237,12 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
 
         // Update the message in the queue
         let option = Some(QueueClientUpdateOptions {
-            queue_message: Some(RequestContent::from(
-                quick_xml::se::to_string(&QueueMessage {
+            queue_message: Some(
+                QueueMessage {
                     message_text: Some("Updated message text from Rust".to_string()),
-                })
-                .unwrap()
-                .into_bytes(),
-            )),
+                }
+                .try_into()?,
+            ),
             ..Default::default()
         });
 
