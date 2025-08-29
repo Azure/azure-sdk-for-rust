@@ -102,6 +102,15 @@ impl RetryOptions {
         }
     }
 
+    /// Defines a set of HTTP headers which, if present on a response,
+    /// indicate that the response should be retried after a delay.
+    /// The boolean indicates whether the header value is a number of seconds to wait.
+    /// If true, the header value is a header which conforms to the `Retry-After` HTTP header specification.
+    /// If false, the header value is a number of milliseconds to wait.
+    ///
+    /// # Arguments
+    /// * `headers` - A list of HTTP headers to check for retry information.
+    ///
     pub fn with_retry_after_headers(
         mut self,
         headers: &[(HeaderName, bool)],
