@@ -3,6 +3,7 @@
 
 use super::policies::ClientRequestIdPolicy;
 use crate::http::{
+    headers::{ERROR_CODE, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
     policies::{
         Policy, PublicApiInstrumentationPolicy, RequestInstrumentationPolicy, UserAgentPolicy,
     },
@@ -13,7 +14,7 @@ use std::{
     ops::Deref,
     sync::Arc,
 };
-use typespec_client_core::http;
+use typespec_client_core::http::{self, headers::RETRY_AFTER};
 
 /// Execution pipeline.
 ///
@@ -50,7 +51,7 @@ impl Pipeline {
         per_call_policies: Vec<Arc<dyn Policy>>,
         per_try_policies: Vec<Arc<dyn Policy>>,
     ) -> Self {
-        let (core_client_options, options) = options.deconstruct();
+        let (core_client_options, mut options) = options.deconstruct();
 
         // Create a fallback tracer if no tracer provider is set.
         // This is useful for service clients that have not yet been instrumented.
@@ -90,6 +91,15 @@ impl Pipeline {
                 RequestInstrumentationPolicy::new(Some(tracer.clone()), &options.logging);
             push_unique(&mut per_try_policies, request_instrumentation_policy);
         }
+
+        options.retry = Some(options.retry.unwrap_or_default().with_retry_after_headers(
+            &[
+                (RETRY_AFTER_MS, false),
+                (X_MS_RETRY_AFTER_MS, false),
+                (RETRY_AFTER, true),
+            ],
+            Some(ERROR_CODE),
+        ));
 
         Self(http::Pipeline::new(
             options,
