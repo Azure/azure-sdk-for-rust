@@ -79,6 +79,18 @@ impl Deref for RetryPolicyCount {
     }
 }
 
+/// Headers that may be used to determine how long to wait before retrying a request.
+/// The boolean indicates if the header is a standard `Retry-After` header (true)
+/// or a service-specific header (false).
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct RetryHeaders {
+    /// The headers that may indicate how long to wait before retrying.
+    pub retry_headers: Vec<(HeaderName, bool)>,
+
+    /// An optional header that may contain an error code.
+    pub error_header: Option<HeaderName>,
+}
+
 /// A retry policy.
 ///
 /// In the simple form, the policies need only differ in how
@@ -97,7 +109,7 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
 
     /// Get the headers that may indicate how long to wait before retrying.
     /// If `None` is returned, no headers will be checked.
-    fn get_retry_headers(&self) -> Option<&[(HeaderName, bool)]>;
+    fn get_retry_headers(&self) -> Option<&RetryHeaders>;
 
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
@@ -167,23 +179,28 @@ where
                         return Ok(response);
                     }
 
+                    let retry_headers = self.get_retry_headers();
                     // For a 429 response (TooManyRequests) or 503 (ServiceUnavailable),
                     // use any "retry-after" headers returned by the server to determine how long to wait before retrying.
                     // https://learn.microsoft.com/en-us/azure/architecture/best-practices/retry-service-specific#retry-usage-guidance
                     let retry_after = match status {
                         StatusCode::TooManyRequests | StatusCode::ServiceUnavailable => {
-                            self.get_retry_headers().and_then(|headers| {
+                            retry_headers.and_then(|headers| {
                                 get_retry_after(
                                     response.headers(),
                                     OffsetDateTime::now_utc,
-                                    headers,
+                                    &headers.retry_headers,
                                 )
                             })
                         }
                         _ => None,
                     };
 
-                    let http_error = HttpError::new(response).await;
+                    let http_error = HttpError::new(
+                        response,
+                        retry_headers.and_then(|h| h.error_header.clone()),
+                    )
+                    .await;
 
                     let error_kind = ErrorKind::http_response(
                         status,

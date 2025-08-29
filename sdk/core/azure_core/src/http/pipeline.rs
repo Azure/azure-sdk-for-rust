@@ -3,6 +3,7 @@
 
 use super::policies::ClientRequestIdPolicy;
 use crate::http::{
+    headers::{ERROR_CODE, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
     policies::{
         Policy, PublicApiInstrumentationPolicy, RequestInstrumentationPolicy, UserAgentPolicy,
     },
@@ -13,10 +14,7 @@ use std::{
     ops::Deref,
     sync::Arc,
 };
-use typespec_client_core::http::{
-    self,
-    headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
-};
+use typespec_client_core::http::{self, headers::RETRY_AFTER};
 
 /// Execution pipeline.
 ///
@@ -94,16 +92,14 @@ impl Pipeline {
             push_unique(&mut per_try_policies, request_instrumentation_policy);
         }
 
-        options.retry = Some(
-            options
-                .retry
-                .unwrap_or_default()
-                .with_retry_after_headers(&[
-                    (RETRY_AFTER_MS, false),
-                    (X_MS_RETRY_AFTER_MS, false),
-                    (RETRY_AFTER, true),
-                ]),
-        );
+        options.retry = Some(options.retry.unwrap_or_default().with_retry_after_headers(
+            &[
+                (RETRY_AFTER_MS, false),
+                (X_MS_RETRY_AFTER_MS, false),
+                (RETRY_AFTER, true),
+            ],
+            Some(ERROR_CODE),
+        ));
 
         Self(http::Pipeline::new(
             options,

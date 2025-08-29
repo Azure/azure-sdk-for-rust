@@ -19,10 +19,10 @@ use azure_core::{
     error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
-        pager::{PagerResult, PagerState},
+        headers::ERROR_CODE,
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, Pager, Pipeline, RawResponse, Request,
-        RequestContent, Response, Url,
+        ClientOptions, Context, Method, NoFormat, Pager, PagerResult, PagerState, Pipeline,
+        RawResponse, Request, RequestContent, Response, Url,
     },
     json, tracing, Error, Result,
 };
@@ -119,7 +119,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -157,7 +157,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -195,7 +195,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -236,7 +236,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -296,7 +296,7 @@ impl SecretClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -369,7 +369,7 @@ impl SecretClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -445,7 +445,7 @@ impl SecretClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -495,7 +495,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -533,7 +533,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -570,7 +570,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -613,7 +613,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -658,7 +658,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
