@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::http::{
-    policies::{CustomHeadersPolicy, Policy, TransportPolicy},
+    policies::{CustomHeadersPolicy, LoggingPolicy, Policy, TransportPolicy},
     ClientOptions, Context, RawResponse, Request,
 };
 use std::sync::Arc;
@@ -53,6 +53,8 @@ impl Pipeline {
         pipeline.push(retry_policy);
 
         pipeline.push(Arc::new(CustomHeadersPolicy::default()));
+
+        pipeline.push(Arc::new(LoggingPolicy::new(options.logging)));
 
         pipeline.extend_from_slice(&per_try_policies);
         pipeline.extend_from_slice(&options.per_try_policies);

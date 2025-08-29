@@ -1,36 +1,63 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Basic example showing how to create and use a blob checkpoint store.
+// cspell:ignore appender OTLP
 
+//! Basic example showing how to create and use a blob checkpoint store.
+//!
+//! This example demonstrates creating a `BlobCheckpointStore`, claiming ownership of a partition,
+//! updating checkpoints, and listing existing ownerships and checkpoints.
+//!
+//! It also uses the OpenTelemetry SDK to set up tracing and logging with a stdout exporter.
+
+use azure_core::http::{ClientOptions, InstrumentationOptions};
+use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::{
     models::{Checkpoint, Ownership},
     CheckpointStore,
 };
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
-use azure_storage_blob::BlobContainerClient;
-use tracing::{info, Level};
+use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
+use tracing::info;
+
+use opentelemetry_appender_tracing::layer;
+use opentelemetry_sdk::{logs::SdkLoggerProvider, Resource};
+use tracing_subscriber::{prelude::*, EnvFilter};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
-    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
+    configure_tracing();
+    //    tracing_subscriber::fmt::init();
 
     // Configuration - replace with your actual values
-    let storage_account_url = std::env::var("AZURE_STORAGE_BLOB_ENDPOINT")
-        .unwrap_or_else(|_| "https://yourstorageaccount.blob.core.windows.net".to_string());
+    let storage_account_url =
+        std::env::var("AZURE_STORAGE_BLOB_ENDPOINT").expect("Missing AZURE_STORAGE_BLOB_ENDPOINT");
 
-    let container =
-        std::env::var("AZURE_STORAGE_CONTAINER").expect("Missing AZURE_STORAGE_CONTAINER");
+    let container = std::env::var("AZURE_STORAGE_BLOB_CONTAINER")
+        .expect("Missing AZURE_STORAGE_BLOB_CONTAINER");
 
     info!("Creating blob checkpoint store...");
 
     // Create Azure credential and blob service client
     let credential = DeveloperToolsCredential::new(None)?;
 
-    let blob_container_client =
-        BlobContainerClient::new(&storage_account_url, container, credential, None)?;
+    // Instantiate a blob client with OpenTelemetry instrumentation enabled
+    let blob_container_client = BlobContainerClient::new(
+        &storage_account_url,
+        container,
+        credential,
+        Some(BlobContainerClientOptions {
+            client_options: ClientOptions {
+                instrumentation: Some(InstrumentationOptions {
+                    tracer_provider: Some(OpenTelemetryTracerProvider::from_global_provider()),
+                }),
+                ..Default::default()
+            },
+            ..Default::default()
+        }),
+    )?;
 
     // Create the checkpoint store
     let checkpoint_store = BlobCheckpointStore::new(blob_container_client);
@@ -102,4 +129,61 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Example completed successfully!");
 
     Ok(())
+}
+
+// Configure tracing with OpenTelemetry and a stdout exporter as well as with the
+// `tracing` crate.
+fn configure_tracing() {
+    let exporter = opentelemetry_stdout::LogExporter::default();
+    let provider: SdkLoggerProvider = SdkLoggerProvider::builder()
+        .with_resource(
+            Resource::builder()
+                .with_service_name("log-appender-tracing-example")
+                .build(),
+        )
+        .with_simple_exporter(exporter)
+        .build();
+
+    // To prevent a telemetry-induced-telemetry loop, OpenTelemetry's own internal
+    // logging is properly suppressed. However, logs emitted by external components
+    // (such as reqwest, tonic, etc.) are not suppressed as they do not propagate
+    // OpenTelemetry context. Until this issue is addressed
+    // (https://github.com/open-telemetry/opentelemetry-rust/issues/2877),
+    // filtering like this is the best way to suppress such logs.
+    //
+    // The filter levels are set as follows:
+    // - Allow `info` level and above by default.
+    // - Completely restrict logs from `hyper`, `tonic`, `h2`, and `reqwest`.
+    //
+    // Note: This filtering will also drop logs from these components even when
+    // they are used outside of the OTLP Exporter.
+    let filter_otel = EnvFilter::new("trace")
+        .add_directive("hyper=off".parse().unwrap())
+        .add_directive("hyper_util=off".parse().unwrap())
+        .add_directive("opentelemetry=off".parse().unwrap())
+        .add_directive("tonic=off".parse().unwrap())
+        .add_directive("reqwest=off".parse().unwrap())
+        .add_directive("h2=off".parse().unwrap());
+    let otel_layer = layer::OpenTelemetryTracingBridge::new(&provider).with_filter(filter_otel);
+
+    let opentelemetry_sdk = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+        .with_simple_exporter(opentelemetry_stdout::SpanExporter::default())
+        .build();
+
+    opentelemetry::global::set_tracer_provider(opentelemetry_sdk);
+
+    // Create a new tracing::Fmt layer to print the logs to stdout. It has a
+    // default filter of `info` level and above, and `debug` and above for logs
+    // from OpenTelemetry crates. The filter levels can be customized as needed.
+    let filter_fmt = EnvFilter::new("trace").add_directive("opentelemetry=trace".parse().unwrap());
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .with_thread_names(true)
+        .with_filter(filter_fmt);
+
+    // Add the opentelemetry and format layers to the subscriber, both will be
+    // used for logging.
+    tracing_subscriber::registry()
+        .with(otel_layer)
+        .with(fmt_layer)
+        .init();
 }

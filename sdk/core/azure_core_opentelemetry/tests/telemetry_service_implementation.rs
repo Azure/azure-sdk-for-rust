@@ -17,18 +17,18 @@ use azure_core::{
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::{InMemorySpanExporter, SdkTracerProvider};
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 
 #[derive(Clone, SafeDebug)]
 pub struct TestServiceClientOptions {
-    pub azure_client_options: ClientOptions,
+    pub client_options: ClientOptions,
     pub api_version: Option<String>,
 }
 
 impl Default for TestServiceClientOptions {
     fn default() -> Self {
         Self {
-            azure_client_options: ClientOptions::default(),
+            client_options: ClientOptions::default(),
             api_version: Some("2023-10-01".to_string()),
         }
     }
@@ -52,7 +52,23 @@ impl TestServiceClient {
         _credential: Arc<dyn TokenCredential>,
         options: Option<TestServiceClientOptions>,
     ) -> Result<Self> {
-        let options = options.unwrap_or_default();
+        let mut options = options.unwrap_or_default();
+
+        // Ensure "access-control-allow-origin" is in the allowed headers list
+        let mut headers_vec: Vec<Cow<'static, str>> = options
+            .client_options
+            .logging
+            .additional_allowed_header_names
+            .to_vec();
+        if !headers_vec.contains(&Cow::Borrowed("access-control-allow-origin")) {
+            headers_vec.push("access-control-allow-origin".into());
+        }
+        // And update the allowed header names with the new headers.
+        options
+            .client_options
+            .logging
+            .additional_allowed_header_names = headers_vec;
+
         let mut endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
             return Err(azure_core::Error::message(
@@ -62,7 +78,7 @@ impl TestServiceClient {
         }
         endpoint.set_query(None);
 
-        let tracer = if let Some(tracer_options) = &options.azure_client_options.instrumentation {
+        let tracer = if let Some(tracer_options) = &options.client_options.instrumentation {
             tracer_options
                 .tracer_provider
                 .as_ref()
@@ -83,7 +99,7 @@ impl TestServiceClient {
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
-                options.azure_client_options,
+                options.client_options,
                 Vec::default(),
                 Vec::default(),
             ),
@@ -241,7 +257,7 @@ async fn test_service_client_new(ctx: TestContext) -> Result<()> {
     let mut options = TestServiceClientOptions {
         ..Default::default()
     };
-    recording.instrument(&mut options.azure_client_options);
+    recording.instrument(&mut options.client_options);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     assert_eq!(client.endpoint().as_str(), "https://www.microsoft.com/");
@@ -257,7 +273,7 @@ async fn test_service_client_get(ctx: TestContext) -> Result<()> {
     let endpoint = "https://azuresdkforcpp.azurewebsites.net";
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions::default();
-    recording.instrument(&mut options.azure_client_options);
+    recording.instrument(&mut options.client_options);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     let response = client.get("get", None).await;
@@ -277,15 +293,19 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
     let endpoint = "https://azuresdkforcpp.azurewebsites.net";
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
-        azure_client_options: ClientOptions {
+        client_options: ClientOptions {
             instrumentation: Some(InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
             }),
+            logging: azure_core::http::LoggingOptions {
+                additional_allowed_header_names: vec!["access-control-allow-credentials".into()],
+                ..Default::default()
+            },
             ..Default::default()
         },
         ..Default::default()
     };
-    recording.instrument(&mut options.azure_client_options);
+    recording.instrument(&mut options.client_options);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     let response = client.get("get", None).await;
@@ -332,7 +352,7 @@ async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
     let endpoint = "https://azuresdkforcpp.azurewebsites.net";
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
-        azure_client_options: ClientOptions {
+        client_options: ClientOptions {
             instrumentation: Some(InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
             }),
@@ -340,9 +360,9 @@ async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
         },
         ..Default::default()
     };
-    recording.instrument(&mut options.azure_client_options);
+    recording.instrument(&mut options.client_options);
 
-    let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
+    let client = TestServiceClient::new(endpoint, credential.clone(), Some(options)).unwrap();
     let response = client.get("failing_url", None).await;
     info!("Response: {:?}", response);
 
@@ -393,7 +413,7 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
     let endpoint = "https://azuresdkforcpp.azurewebsites.net";
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
-        azure_client_options: ClientOptions {
+        client_options: ClientOptions {
             instrumentation: Some(InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
             }),
@@ -401,7 +421,7 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
         },
         ..Default::default()
     };
-    recording.instrument(&mut options.azure_client_options);
+    recording.instrument(&mut options.client_options);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     let response = client.get_with_function_tracing("get", None).await;
@@ -456,7 +476,7 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
     let endpoint = "https://azuresdkforcpp.azurewebsites.net";
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
-        azure_client_options: ClientOptions {
+        client_options: ClientOptions {
             instrumentation: Some(InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
             }),
@@ -464,7 +484,7 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
         },
         ..Default::default()
     };
-    recording.instrument(&mut options.azure_client_options);
+    recording.instrument(&mut options.client_options);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     let response = client.get_with_function_tracing("failing_url", None).await;

@@ -14,6 +14,7 @@ mod pipeline;
 pub mod policies;
 pub mod request;
 pub mod response;
+mod sanitizer;
 
 pub use clients::*;
 pub use context::*;
@@ -24,6 +25,7 @@ pub use options::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
 pub use response::{RawResponse, Response};
+pub use sanitizer::*;
 
 // Re-export important types.
 pub use typespec::http::StatusCode;

@@ -5,7 +5,7 @@ use crate::http::{
     headers::{HeaderName, HeaderValue, Headers},
     request::{Body, Request},
     response::PinnedStream,
-    HttpClient, Method, RawResponse,
+    HttpClient, Method, RawResponse, Sanitizer, DEFAULT_ALLOWED_QUERY_PARAMETERS,
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;
@@ -54,7 +54,10 @@ impl HttpClient for ::reqwest::Client {
         }
         .context(ErrorKind::Other, "failed to build `reqwest` request")?;
 
-        debug!("performing request {method} '{url}' with `reqwest`");
+        debug!(
+            "performing request {method} '{}' with `reqwest`",
+            url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS)
+        );
         let rsp = self
             .execute(reqwest_request)
             .await
