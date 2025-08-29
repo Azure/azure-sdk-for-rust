@@ -6,6 +6,7 @@
 use crate::http::{headers::Headers, Url};
 use std::{borrow::Cow, collections::HashSet, sync::LazyLock};
 
+/// Default set of allowed headers. Headers not in this list will be redacted.
 pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<Cow<'static, str>>> =
     LazyLock::new(|| {
         [
@@ -41,6 +42,7 @@ pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<Cow<'static, str>>> =
         .collect()
     });
 
+/// Default set of allowed query parameters. Query parameters not in this list will be redacted.
 pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: LazyLock<HashSet<Cow<'static, str>>> =
     LazyLock::new(|| ["api-version"].iter().map(|s| Cow::Borrowed(*s)).collect());
 
