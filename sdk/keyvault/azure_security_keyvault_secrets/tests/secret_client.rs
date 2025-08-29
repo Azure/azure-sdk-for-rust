@@ -107,6 +107,8 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
 
 #[recorded::test]
 async fn list_secrets(ctx: TestContext) -> Result<()> {
+    use azure_core::http::RequestContent;
+
     let recording = ctx.recording();
 
     let mut options = SecretClientOptions::default();
@@ -121,14 +123,22 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     // Create several secrets.
     let mut names = vec!["list-secrets-1", "list-secrets-2"];
     let secret1 = client
-        .set_secret(names[0], r#"{"value":"secret-value-1"}"#.try_into()?, None)
+        .set_secret(
+            names[0],
+            RequestContent::from_str(r#"{"value":"secret-value-1"}"#),
+            None,
+        )
         .await?
         .into_body()
         .await?;
     assert_eq!(secret1.value, Some("secret-value-1".into()));
 
     let secret2 = client
-        .set_secret(names[1], r#"{"value":"secret-value-2"}"#.try_into()?, None)
+        .set_secret(
+            names[1],
+            RequestContent::from_str(r#"{"value":"secret-value-2"}"#),
+            None,
+        )
         .await?
         .into_body()
         .await?;

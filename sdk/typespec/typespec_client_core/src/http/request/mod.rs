@@ -18,7 +18,7 @@ use crate::{
 use bytes::Bytes;
 use serde::Serialize;
 use serde_json::Value;
-use std::{collections::HashMap, convert::Infallible, fmt, marker::PhantomData, str::FromStr};
+use std::{collections::HashMap, fmt, marker::PhantomData};
 use time::format_description::well_known::Rfc3339;
 
 /// An HTTP Body.
@@ -260,12 +260,38 @@ impl<T, F> RequestContent<T, F> {
         &self.body
     }
 
-    /// Create a new `RequestContent` from byte slice.
-    pub fn from(bytes: Vec<u8>) -> Self {
+    /// Create a new `RequestContent` from a `Vec<u8>`.
+    ///
+    /// Allocation may be avoided in some cases.
+    pub fn from(body: Vec<u8>) -> Self {
         Self {
-            body: Body::Bytes(Bytes::from(bytes)),
+            body: Body::Bytes(Bytes::from(body)),
             phantom: PhantomData,
         }
+    }
+
+    /// Copies bytes into a new `RequestContent`.
+    pub fn from_slice(body: &[u8]) -> Self {
+        Self {
+            body: Body::Bytes(Bytes::copy_from_slice(body)),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Create a new `RequestContent` from a static slice.
+    ///
+    /// This should not allocate.
+    pub fn from_static(body: &'static [u8]) -> Self {
+        Self {
+            body: Body::Bytes(Bytes::from_static(body)),
+            phantom: PhantomData,
+        }
+    }
+
+    /// Copies UTF-8 bytes into a new `RequestContent`.
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(body: &str) -> Self {
+        Self::from_slice(body.as_bytes())
     }
 }
 
@@ -291,58 +317,12 @@ impl<T, F> From<Body> for RequestContent<T, F> {
     }
 }
 
-impl<T, F> TryFrom<Bytes> for RequestContent<T, F> {
-    type Error = crate::Error;
-    fn try_from(body: Bytes) -> Result<Self, Self::Error> {
-        Ok(Self {
+impl<T, F> From<Bytes> for RequestContent<T, F> {
+    fn from(body: Bytes) -> Self {
+        Self {
             body: Body::Bytes(body),
             phantom: PhantomData,
-        })
-    }
-}
-
-impl<T, F> TryFrom<Vec<u8>> for RequestContent<T, F> {
-    type Error = crate::Error;
-    fn try_from(body: Vec<u8>) -> Result<Self, Self::Error> {
-        Ok(Self {
-            body: Bytes::from(body).into(),
-            phantom: PhantomData,
-        })
-    }
-}
-
-impl<T, F> TryFrom<&'static str> for RequestContent<T, F> {
-    type Error = crate::Error;
-    fn try_from(body: &'static str) -> Result<Self, Self::Error> {
-        Ok(Self {
-            body: Bytes::from_static(body.as_bytes()).into(),
-            phantom: PhantomData,
-        })
-    }
-}
-
-#[allow(
-    clippy::infallible_try_from,
-    reason = "maintain a consistent pattern of `try_into()`"
-)]
-impl<F> TryFrom<bool> for RequestContent<bool, F> {
-    type Error = Infallible;
-    fn try_from(body: bool) -> Result<Self, Infallible> {
-        Ok(Self {
-            body: Bytes::from(body.to_string()).into(),
-            phantom: PhantomData,
-        })
-    }
-}
-
-impl<T, F> FromStr for RequestContent<T, F> {
-    type Err = crate::Error;
-    fn from_str(body: &str) -> Result<Self, Self::Err> {
-        let body: Bytes = Bytes::copy_from_slice(body.as_bytes());
-        Ok(Self {
-            body: Body::Bytes(body),
-            phantom: PhantomData,
-        })
+        }
     }
 }
 
@@ -352,6 +332,7 @@ impl<T, F> FromStr for RequestContent<T, F> {
 mod decimal {
     use super::*;
     use rust_decimal::Decimal;
+    use std::convert::Infallible;
 
     #[allow(
         clippy::infallible_try_from,
@@ -406,6 +387,16 @@ mod json {
 
     macro_rules! impl_try_from {
         ($t:ty) => {
+            impl<T> ::core::convert::TryFrom<$t> for $crate::http::RequestContent<T, $crate::http::JsonFormat> {
+                type Error = $crate::Error;
+                fn try_from(value: $t) -> $crate::Result<Self> {
+                    Ok(Self {
+                        body: $crate::json::to_json(&value)?.into(),
+                        phantom: ::core::marker::PhantomData,
+                    })
+                }
+            }
+
             impl<T> ::core::convert::TryFrom<::std::vec::Vec<$t>> for $crate::http::RequestContent<T, $crate::http::JsonFormat> {
                 type Error = $crate::Error;
                 fn try_from(value: ::std::vec::Vec<$t>) -> $crate::Result<Self> {
@@ -450,16 +441,6 @@ mod json {
     impl_try_from!(i32, i64);
     impl_try_from!(f32, f64);
     impl_try_from!(Value);
-
-    impl TryFrom<Value> for RequestContent<Value, JsonFormat> {
-        type Error = crate::Error;
-        fn try_from(body: Value) -> crate::Result<Self> {
-            Ok(Self {
-                body: crate::json::to_json(&body)?.into(),
-                phantom: PhantomData,
-            })
-        }
-    }
 
     impl<T, F> TryFrom<Vec<OffsetDateTime>> for RequestContent<T, F> {
         type Error = crate::Error;
@@ -685,25 +666,18 @@ mod tests {
     #[test]
     fn tryfrom_bytes() {
         let actual = Bytes::from(r#"{"str":"test","num":1,"b":true}"#.to_string());
-        assert_eq!(*EXPECTED, actual.try_into().unwrap());
+        assert_eq!(*EXPECTED, actual.into());
     }
 
     #[test]
     fn tryfrom_vec() {
         let actual: Vec<u8> = r#"{"str":"test","num":1,"b":true}"#.bytes().collect();
-        assert_eq!(*EXPECTED, actual.try_into().unwrap());
+        assert_eq!(*EXPECTED, RequestContent::from(actual));
     }
 
     #[test]
     fn tryfrom_str() {
         let actual = r#"{"str":"test","num":1,"b":true}"#;
-        assert_eq!(*EXPECTED, actual.try_into().unwrap());
-    }
-
-    #[test]
-    fn fromstr_parse() {
-        let actual: RequestContent<Expected> =
-            r#"{"str":"test","num":1,"b":true}"#.parse().unwrap();
-        assert_eq!(*EXPECTED, actual);
+        assert_eq!(*EXPECTED, RequestContent::from_str(actual));
     }
 }

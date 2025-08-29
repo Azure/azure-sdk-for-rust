@@ -51,49 +51,49 @@ impl Page for ListIssuerPropertiesResult {
 impl TryFrom<CertificatePolicy> for RequestContent<CertificatePolicy> {
     type Error = azure_core::Error;
     fn try_from(value: CertificatePolicy) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<Contacts> for RequestContent<Contacts> {
     type Error = azure_core::Error;
     fn try_from(value: Contacts) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<CreateCertificateParameters> for RequestContent<CreateCertificateParameters> {
     type Error = azure_core::Error;
     fn try_from(value: CreateCertificateParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<ImportCertificateParameters> for RequestContent<ImportCertificateParameters> {
     type Error = azure_core::Error;
     fn try_from(value: ImportCertificateParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<MergeCertificateParameters> for RequestContent<MergeCertificateParameters> {
     type Error = azure_core::Error;
     fn try_from(value: MergeCertificateParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<RestoreCertificateParameters> for RequestContent<RestoreCertificateParameters> {
     type Error = azure_core::Error;
     fn try_from(value: RestoreCertificateParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<SetIssuerParameters> for RequestContent<SetIssuerParameters> {
     type Error = azure_core::Error;
     fn try_from(value: SetIssuerParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
@@ -102,7 +102,7 @@ impl TryFrom<UpdateCertificateOperationParameter>
 {
     type Error = azure_core::Error;
     fn try_from(value: UpdateCertificateOperationParameter) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
@@ -111,13 +111,13 @@ impl TryFrom<UpdateCertificatePropertiesParameters>
 {
     type Error = azure_core::Error;
     fn try_from(value: UpdateCertificatePropertiesParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<UpdateIssuerParameters> for RequestContent<UpdateIssuerParameters> {
     type Error = azure_core::Error;
     fn try_from(value: UpdateIssuerParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }

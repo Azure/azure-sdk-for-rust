@@ -4,10 +4,17 @@
 
 ### Features Added
 
+- Added `RequestContent::from_slice()`.
+- Added `TryFrom<T> for RequestContent<T, JsonFormat>` for JSON primitives.
+- Added support for WASM to the `async_runtime` module.
 - Added logging policy to log HTTP requests and responses in the pipeline. As a part of this change, sanitization support was added to places which log HTTP headers and URLs. The `azure_core::http::ClientOptions` has been enhanced with a `LoggingOptions` which allows a user/service client to specify headers or URL query parameters which should be allowed. Note that the sanitization feature is disabled if you build with the `debug` feature enabled.
 
 ### Breaking Changes
 
+- Changed `FromStr for RequestContent<T, F>` to `RequestContent::from_str()`.
+- Changed `TryFrom<&'static str> for RequestContent<T, F>` to `RequestContent::from_static()`.
+- Changed `TryFrom<Bytes> for RequestContent<T, F>` to `From<Bytes> for RequestContent<T, F>` because it was already infallible.
+- Removed `TryFrom<Vec<u8>> for RequestContent<T, F>` since `RequestContent::from()` already exists.
 - Removed feature `reqwest_rustls_tls`. See [README.md](https://github.com/heaths/azure-sdk-for-rust/blob/main/sdk/core/azure_core/README.md) for alternative HTTP client configuration.
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` for `typespec_client_core` to copy if needed.
 - Removed the `setters` macro.
