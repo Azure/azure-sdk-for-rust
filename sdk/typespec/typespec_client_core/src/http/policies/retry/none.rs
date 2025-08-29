@@ -16,7 +16,6 @@ use typespec::error::{Error, ErrorKind};
 /// Use this policy as a stub to disable retry policies altogether.
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct NoRetryPolicy {
-    //    _priv: std::marker::PhantomData<u32>,
     retry_headers: RetryHeaders,
 }
 
