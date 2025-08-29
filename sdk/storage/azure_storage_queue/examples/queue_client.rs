@@ -1,12 +1,7 @@
 use std::collections::HashMap;
 
-mod helpers;
-use helpers::endpoint::get_endpoint;
-use helpers::logs::log_operation_result;
-use helpers::random_queue_name::get_random_queue_name;
-
 use azure_core::{
-    http::{Response, XmlFormat},
+    http::{Response, StatusCode, XmlFormat},
     Error,
 };
 use azure_identity::DeveloperToolsCredential;
@@ -227,4 +222,48 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log_operation_result(&result, "check_non_existent");
 
     Ok(())
+}
+
+fn get_endpoint() -> String {
+    // Retrieve the storage account endpoint from environment variable.
+    let storage_account_name = std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME");
+    let storage_account_name = match storage_account_name {
+        Ok(url) => url,
+        Err(_) => {
+            eprintln!("Environment variable AZURE_QUEUE_STORAGE_ACCOUNT_NAME is not set");
+            std::process::exit(1);
+        }
+    };
+
+    format!("https://{}.queue.core.windows.net/", storage_account_name)
+}
+
+fn get_random_queue_name() -> String {
+    use rand::Rng;
+    let mut rng = rand::rng();
+    let random_suffix: u32 = rng.random_range(1000..9999);
+    format!("sdk-test-queue-{}", random_suffix)
+}
+
+fn log_operation_result<T>(result: &Result<T, Error>, operation: &str)
+where
+    T: std::fmt::Debug,
+{
+    match result {
+        Ok(response) => println!("Successfully {}: {:?}", operation, response),
+        Err(e) => match e.http_status() {
+            Some(StatusCode::NotFound) => println!("Unable to {}, resource not found", operation),
+            Some(StatusCode::Forbidden) => println!(
+                "Unable to {}, access forbidden - check credentials",
+                operation
+            ),
+            _ => {
+                eprintln!("Error during {}: {}", operation, e);
+                if let Some(status) = e.http_status() {
+                    eprintln!("HTTP Status: {}", status);
+                }
+                eprintln!("Full Error: {:#?}", e);
+            }
+        },
+    }
 }

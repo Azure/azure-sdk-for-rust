@@ -13,15 +13,6 @@ documentation = "https://docs.rs/azure_storage_queue"
 keywords = ["sdk", "azure", "storage", "queue", "queues"]
 categories = ["api-bindings"]
 
-# Manual example definitions pointing to samples/ directory
-[[example]]
-name = "queue_client"
-path = "samples/queue_client.rs"
-
-[[example]]
-name = "queue_service_client"
-path = "samples/queue_service_client.rs"
-
 [features]
 default = ["azure_core/default"]
 
