@@ -10,7 +10,8 @@ use crate::models::{
 use azure_core::{
     http::{
         poller::{get_retry_after, PollerResult, PollerState, StatusMonitor as _},
-        Body, Method, Poller, PollerStatus, RawResponse, Request, RequestContent, Url,
+        poller::{Poller, PollerStatus},
+        Body, Method, RawResponse, Request, RequestContent, Url,
     },
     json, Result,
 };

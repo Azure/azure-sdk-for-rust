@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Types and methods for pageable responses.
+
 use crate::http::{headers::HeaderName, response::Response, DeserializeWith, Format, JsonFormat};
 use async_trait::async_trait;
 use futures::{stream::unfold, FutureExt, Stream};
@@ -175,7 +177,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, ItemIterator, Page, PagerResult, PagerState, Pipeline, RawResponse, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, RawResponse, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -233,7 +235,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using headers:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, ItemIterator, Page, PagerResult, PagerState, Pipeline, Request, Response, Method, headers::HeaderName}};
+    /// # use azure_core::{Result, http::{Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, Request, Response, Method, headers::HeaderName}};
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
     /// struct ListItemsResult {
@@ -377,7 +379,7 @@ impl<P> PageIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, PageIterator, PagerResult, PagerState, Pipeline, RawResponse, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, RawResponse, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -426,7 +428,7 @@ impl<P> PageIterator<P> {
     /// To page results using headers:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, PageIterator, PagerResult, PagerState, Pipeline, Request, Response, Method, headers::HeaderName}};
+    /// # use azure_core::{Result, http::{Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, Request, Response, Method, headers::HeaderName}};
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
     /// struct ListItemsResult {
@@ -646,7 +648,8 @@ fn iter_from_callback<
 mod tests {
     use crate::http::{
         headers::{HeaderName, HeaderValue},
-        PageIterator, Pager, PagerResult, PagerState, RawResponse, Response, StatusCode,
+        pager::{PageIterator, Pager, PagerResult, PagerState},
+        RawResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
     use futures::{StreamExt as _, TryStreamExt as _};

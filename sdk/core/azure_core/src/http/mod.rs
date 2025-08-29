@@ -6,7 +6,7 @@
 pub mod headers;
 mod models;
 mod options;
-mod pager;
+pub mod pager;
 mod pipeline;
 pub mod policies;
 pub mod poller;
@@ -14,9 +14,9 @@ pub mod request;
 
 pub use models::*;
 pub use options::*;
-pub use pager::*;
+pub use pager::{ItemIterator, PageIterator, Pager};
 pub use pipeline::*;
-pub use poller::{Poller, PollerStatus};
+pub use poller::Poller;
 pub use request::{Body, Request, RequestContent};
 pub use response::{RawResponse, Response};
 
