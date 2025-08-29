@@ -21,5 +21,5 @@ pub(crate) const IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-ma
 pub(crate) const IF_UNMODIFIED_SINCE: HeaderName = HeaderName::from_static("if-unmodified-since");
 pub const LAST_MODIFIED: HeaderName = HeaderName::from_static("last-modified");
 pub const PREFER: HeaderName = HeaderName::from_static("prefer");
-pub(crate) const RETRY_AFTER: HeaderName = HeaderName::from_static("retry-after");
+pub const RETRY_AFTER: HeaderName = HeaderName::from_static("retry-after");
 pub const USER_AGENT: HeaderName = HeaderName::from_static("user-agent");
