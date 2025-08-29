@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::RetryPolicy;
-use crate::{http::headers::HeaderName, time::Duration};
+use crate::{http::policies::RetryHeaders, time::Duration};
 
 /// Retry policy with exponential back-off.
 ///
@@ -17,7 +17,7 @@ pub struct ExponentialRetryPolicy {
     max_retries: u32,
     max_elapsed: Duration,
     max_delay: Duration,
-    retry_after_headers: Vec<(HeaderName, bool)>,
+    retry_headers: RetryHeaders,
 }
 
 impl ExponentialRetryPolicy {
@@ -26,14 +26,14 @@ impl ExponentialRetryPolicy {
         max_retries: u32,
         max_elapsed: Duration,
         max_delay: Duration,
-        retry_after_headers: &[(HeaderName, bool)],
+        retry_headers: RetryHeaders,
     ) -> Self {
         Self {
             initial_delay: initial_delay.max(Duration::milliseconds(1)),
             max_retries,
             max_elapsed,
             max_delay: max_delay.max(Duration::seconds(1)),
-            retry_after_headers: retry_after_headers.to_vec(),
+            retry_headers,
         }
     }
 }
@@ -43,8 +43,8 @@ impl RetryPolicy for ExponentialRetryPolicy {
         retry_count >= self.max_retries || time_since_start >= self.max_elapsed
     }
 
-    fn get_retry_headers(&self) -> Option<&[(HeaderName, bool)]> {
-        Some(&self.retry_after_headers)
+    fn get_retry_headers(&self) -> Option<&RetryHeaders> {
+        Some(&self.retry_headers)
     }
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
@@ -65,7 +65,7 @@ mod tests {
 
     use super::*;
     use crate::http::{
-        headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
+        headers::{HeaderName, RETRY_AFTER},
         ExponentialRetryOptions,
     };
 
@@ -77,11 +77,14 @@ mod tests {
             options.max_retries,
             options.max_total_elapsed,
             options.max_delay,
-            &[
-                (RETRY_AFTER, true),
-                (X_MS_RETRY_AFTER_MS, false),
-                (RETRY_AFTER_MS, false),
-            ],
+            RetryHeaders {
+                retry_headers: vec![
+                    (HeaderName::from_static("x-ms-retry-after"), false),
+                    (HeaderName::from_static("retry-after-ms"), false),
+                    (RETRY_AFTER, true),
+                ],
+                error_header: Some(HeaderName::from_static("x-ms-error-code")),
+            },
         );
 
         let mut elapsed_time = Duration::seconds(0);

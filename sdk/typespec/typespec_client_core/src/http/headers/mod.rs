@@ -4,10 +4,8 @@
 //! HTTP headers.
 
 mod common;
-mod microsoft;
 
 pub use common::*;
-pub use microsoft::*;
 
 use std::{borrow::Cow, convert::Infallible, fmt, str::FromStr};
 use typespec::error::{Error, ErrorKind, ResultExt};

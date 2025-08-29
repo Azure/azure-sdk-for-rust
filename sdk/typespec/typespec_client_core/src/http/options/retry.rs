@@ -4,7 +4,10 @@
 use crate::{
     http::{
         headers::{HeaderName, RETRY_AFTER},
-        policies::{ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryPolicy},
+        policies::{
+            ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryHeaders,
+            RetryPolicy,
+        },
     },
     time::Duration,
 };
@@ -57,7 +60,7 @@ impl Default for RetryMode {
 pub struct RetryOptions {
     /// The algorithm to use for calculating retry delays.
     mode: RetryMode,
-    retry_after_headers: Vec<(HeaderName, bool)>,
+    retry_headers: RetryHeaders,
 }
 
 impl RetryOptions {
@@ -65,7 +68,10 @@ impl RetryOptions {
     pub fn exponential(options: ExponentialRetryOptions) -> Self {
         Self {
             mode: RetryMode::Exponential(options),
-            retry_after_headers: vec![(RETRY_AFTER, true)],
+            retry_headers: RetryHeaders {
+                retry_headers: vec![(RETRY_AFTER, true)],
+                error_header: None,
+            },
         }
     }
 
@@ -73,7 +79,10 @@ impl RetryOptions {
     pub fn fixed(options: FixedRetryOptions) -> Self {
         Self {
             mode: RetryMode::Fixed(options),
-            retry_after_headers: vec![(RETRY_AFTER, true)],
+            retry_headers: RetryHeaders {
+                retry_headers: vec![(RETRY_AFTER, true)],
+                error_header: None,
+            },
         }
     }
 
@@ -81,7 +90,7 @@ impl RetryOptions {
     pub fn custom<T: RetryPolicy + 'static>(policy: Arc<T>) -> Self {
         Self {
             mode: RetryMode::Custom(policy),
-            retry_after_headers: vec![],
+            retry_headers: RetryHeaders::default(),
         }
     }
 
@@ -89,12 +98,17 @@ impl RetryOptions {
     pub fn none() -> Self {
         Self {
             mode: RetryMode::None,
-            retry_after_headers: vec![],
+            retry_headers: RetryHeaders::default(),
         }
     }
 
-    pub fn with_retry_after_headers(mut self, headers: &[(HeaderName, bool)]) -> Self {
-        self.retry_after_headers = headers.to_vec();
+    pub fn with_retry_after_headers(
+        mut self,
+        headers: &[(HeaderName, bool)],
+        error_header: Option<HeaderName>,
+    ) -> Self {
+        self.retry_headers.retry_headers = headers.to_vec();
+        self.retry_headers.error_header = error_header;
         self
     }
 
@@ -105,16 +119,16 @@ impl RetryOptions {
                 options.max_retries,
                 options.max_total_elapsed,
                 options.max_delay,
-                self.retry_after_headers.as_slice(),
+                self.retry_headers.clone(),
             )),
             RetryMode::Fixed(options) => Arc::new(FixedRetryPolicy::new(
                 options.delay,
                 options.max_retries,
                 options.max_total_elapsed,
-                self.retry_after_headers.as_slice(),
+                self.retry_headers.clone(),
             )),
             RetryMode::Custom(c) => c.clone(),
-            RetryMode::None => Arc::new(NoRetryPolicy::default()),
+            RetryMode::None => Arc::new(NoRetryPolicy::new(self.retry_headers.clone())),
         }
     }
 }

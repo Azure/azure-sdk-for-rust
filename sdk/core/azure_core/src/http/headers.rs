@@ -85,6 +85,9 @@ pub const SOURCE_RANGE: HeaderName = HeaderName::from_static("x-ms-source-range"
 pub const TAGS: HeaderName = HeaderName::from_static("x-ms-tags");
 pub const USER: HeaderName = HeaderName::from_static("x-ms-user");
 pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
+pub const ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-error-code");
+pub const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
+pub const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
 
 /// Constants related to the Content-Type header
 ///
