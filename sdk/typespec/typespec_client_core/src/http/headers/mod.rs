@@ -12,6 +12,8 @@ pub use microsoft::*;
 use std::{borrow::Cow, convert::Infallible, fmt, str::FromStr};
 use typespec::error::{Error, ErrorKind, ResultExt};
 
+use crate::http::{DEFAULT_ALLOWED_HEADER_NAMES, REDACTED_PATTERN};
+
 /// A trait for converting a type into request headers.
 pub trait AsHeaders {
     type Error: std::error::Error + Send + Sync + 'static;
@@ -230,12 +232,18 @@ impl Headers {
 
 impl fmt::Debug for Headers {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        #[allow(dead_code)]
-        const SANITIZED_VALUE: &str = "*****";
-
-        // TODO: Sanitize all bug safe headers.
+        // TODO: Sanitize all but safe headers.
         f.debug_map()
-            .entries(self.0.keys().map(|k| (k.as_str(), SANITIZED_VALUE)))
+            .entries(self.0.iter().map(|(k, v)| {
+                (
+                    k.as_str(),
+                    if DEFAULT_ALLOWED_HEADER_NAMES.contains(k.as_str()) {
+                        v.as_str()
+                    } else {
+                        REDACTED_PATTERN
+                    },
+                )
+            }))
             .finish()
     }
 }
