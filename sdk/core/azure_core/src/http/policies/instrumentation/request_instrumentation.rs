@@ -11,7 +11,7 @@ use crate::{
     http::{headers, Context, Request},
     tracing::{Span, SpanKind},
 };
-use std::{collections::HashSet, sync::Arc};
+use std::{borrow::Cow, collections::HashSet, sync::Arc};
 use typespec_client_core::{
     http::{
         policies::{Policy, PolicyResult, RetryPolicyCount},
@@ -24,7 +24,7 @@ use typespec_client_core::{
 #[derive(Clone, Debug)]
 pub(crate) struct RequestInstrumentationPolicy {
     tracer: Option<Arc<dyn crate::tracing::Tracer>>,
-    allowed_query_params: HashSet<&'static str>,
+    allowed_query_params: HashSet<Cow<'static, str>>,
 }
 
 impl RequestInstrumentationPolicy {
@@ -43,16 +43,16 @@ impl RequestInstrumentationPolicy {
     ///
     pub fn new(
         tracer: Option<Arc<dyn crate::tracing::Tracer>>,
-        log_options: &LoggingOptions,
+        logging_options: &LoggingOptions,
     ) -> Self {
         // Merge the customer or service provided log options with the default allowed query parameters for sanitization.
         // This ensures that any query parameters that are allowed to be logged are also allowed to be propagated in the URL_FULL_ATTRIBUTE.
         // If no log options are provided, we just use the default allowed query parameters.
         // This ensures that we do not accidentally propagate any sensitive information in the URL_FULL_ATTRIBUTE.
         // Note that the allowed header names are not used in this policy, as we do not log headers here.
-        let mut allowed_query_params: HashSet<&'static str> =
-            DEFAULT_ALLOWED_QUERY_PARAMETERS.iter().copied().collect();
-        allowed_query_params.extend(log_options.additional_allowed_query_params.iter().copied());
+        let mut allowed_query_params: HashSet<Cow<'static, str>> =
+            DEFAULT_ALLOWED_QUERY_PARAMETERS.clone();
+        allowed_query_params.extend(logging_options.additional_allowed_query_params.clone());
 
         Self {
             tracer,

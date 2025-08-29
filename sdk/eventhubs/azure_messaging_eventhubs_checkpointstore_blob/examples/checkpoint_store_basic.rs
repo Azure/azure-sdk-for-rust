@@ -4,6 +4,10 @@
 // cspell:ignore appender OTLP
 
 //! Basic example showing how to create and use a blob checkpoint store.
+//! This example demonstrates creating a `BlobCheckpointStore`, claiming ownership of a partition,
+//! updating checkpoints, and listing existing ownerships and checkpoints.
+//!
+//! It also uses the OpenTelemetry SDK to set up tracing and logging with a stdout exporter.
 
 use azure_core::http::{ClientOptions, InstrumentationOptions};
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
@@ -19,60 +23,6 @@ use tracing::info;
 use opentelemetry_appender_tracing::layer;
 use opentelemetry_sdk::{logs::SdkLoggerProvider, Resource};
 use tracing_subscriber::{prelude::*, EnvFilter};
-
-// Configure tracing with OpenTelemetry and a stdout exporter as well as with the
-// `tracing` crate.
-fn configure_tracing() {
-    let exporter = opentelemetry_stdout::LogExporter::default();
-    let provider: SdkLoggerProvider = SdkLoggerProvider::builder()
-        .with_resource(
-            Resource::builder()
-                .with_service_name("log-appender-tracing-example")
-                .build(),
-        )
-        .with_simple_exporter(exporter)
-        .build();
-
-    // To prevent a telemetry-induced-telemetry loop, OpenTelemetry's own internal
-    // logging is properly suppressed. However, logs emitted by external components
-    // (such as reqwest, tonic, etc.) are not suppressed as they do not propagate
-    // OpenTelemetry context. Until this issue is addressed
-    // (https://github.com/open-telemetry/opentelemetry-rust/issues/2877),
-    // filtering like this is the best way to suppress such logs.
-    //
-    // The filter levels are set as follows:
-    // - Allow `info` level and above by default.
-    // - Completely restrict logs from `hyper`, `tonic`, `h2`, and `reqwest`.
-    //
-    // Note: This filtering will also drop logs from these components even when
-    // they are used outside of the OTLP Exporter.
-    let filter_otel = EnvFilter::new("trace")
-        .add_directive("hyper=off".parse().unwrap())
-        .add_directive("hyper_util=off".parse().unwrap())
-        .add_directive("opentelemetry=off".parse().unwrap())
-        .add_directive("tonic=off".parse().unwrap())
-        .add_directive("reqwest=off".parse().unwrap())
-        .add_directive("h2=off".parse().unwrap());
-    let otel_layer = layer::OpenTelemetryTracingBridge::new(&provider).with_filter(filter_otel);
-
-    let opentelemetry_sdk = opentelemetry_sdk::trace::SdkTracerProvider::builder()
-        .with_simple_exporter(opentelemetry_stdout::SpanExporter::default())
-        .build();
-
-    opentelemetry::global::set_tracer_provider(opentelemetry_sdk);
-
-    // Create a new tracing::Fmt layer to print the logs to stdout. It has a
-    // default filter of `info` level and above, and `debug` and above for logs
-    // from OpenTelemetry crates. The filter levels can be customized as needed.
-    //let filter_fmt = EnvFilter::new("trace").add_directive("opentelemetry=trace".parse().unwrap());
-    // let fmt_layer = tracing_subscriber::fmt::layer()
-    //     .with_thread_names(true)
-    //     .with_filter(filter_fmt);
-
-    tracing_subscriber::registry()
-        .with(otel_layer)
-        .init();
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -178,4 +128,61 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Example completed successfully!");
 
     Ok(())
+}
+
+// Configure tracing with OpenTelemetry and a stdout exporter as well as with the
+// `tracing` crate.
+fn configure_tracing() {
+    let exporter = opentelemetry_stdout::LogExporter::default();
+    let provider: SdkLoggerProvider = SdkLoggerProvider::builder()
+        .with_resource(
+            Resource::builder()
+                .with_service_name("log-appender-tracing-example")
+                .build(),
+        )
+        .with_simple_exporter(exporter)
+        .build();
+
+    // To prevent a telemetry-induced-telemetry loop, OpenTelemetry's own internal
+    // logging is properly suppressed. However, logs emitted by external components
+    // (such as reqwest, tonic, etc.) are not suppressed as they do not propagate
+    // OpenTelemetry context. Until this issue is addressed
+    // (https://github.com/open-telemetry/opentelemetry-rust/issues/2877),
+    // filtering like this is the best way to suppress such logs.
+    //
+    // The filter levels are set as follows:
+    // - Allow `info` level and above by default.
+    // - Completely restrict logs from `hyper`, `tonic`, `h2`, and `reqwest`.
+    //
+    // Note: This filtering will also drop logs from these components even when
+    // they are used outside of the OTLP Exporter.
+    let filter_otel = EnvFilter::new("trace")
+        .add_directive("hyper=off".parse().unwrap())
+        .add_directive("hyper_util=off".parse().unwrap())
+        .add_directive("opentelemetry=off".parse().unwrap())
+        .add_directive("tonic=off".parse().unwrap())
+        .add_directive("reqwest=off".parse().unwrap())
+        .add_directive("h2=off".parse().unwrap());
+    let otel_layer = layer::OpenTelemetryTracingBridge::new(&provider).with_filter(filter_otel);
+
+    let opentelemetry_sdk = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+        .with_simple_exporter(opentelemetry_stdout::SpanExporter::default())
+        .build();
+
+    opentelemetry::global::set_tracer_provider(opentelemetry_sdk);
+
+    // Create a new tracing::Fmt layer to print the logs to stdout. It has a
+    // default filter of `info` level and above, and `debug` and above for logs
+    // from OpenTelemetry crates. The filter levels can be customized as needed.
+    let filter_fmt = EnvFilter::new("trace").add_directive("opentelemetry=trace".parse().unwrap());
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .with_thread_names(true)
+        .with_filter(filter_fmt);
+
+    // Add the opentelemetry and format layers to the subscriber, both will be
+    // used for logging.
+    tracing_subscriber::registry()
+        .with(otel_layer)
+        .with(fmt_layer)
+        .init();
 }

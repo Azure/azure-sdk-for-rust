@@ -6,28 +6,28 @@ use crate::http::{
     sanitizer::{Sanitizer, DEFAULT_ALLOWED_HEADER_NAMES, DEFAULT_ALLOWED_QUERY_PARAMETERS},
     Context, LoggingOptions, Request,
 };
-use std::collections::HashSet;
 use std::sync::Arc;
+use std::{borrow::Cow, collections::HashSet};
 use tracing::info;
 
 /// [`Policy`] to log  a request and response.
 #[derive(Clone, Debug, Default)]
 pub struct LoggingPolicy {
-    allowed_headers: HashSet<&'static str>,
-    allowed_query_params: HashSet<&'static str>,
+    allowed_headers: HashSet<Cow<'static, str>>,
+    allowed_query_params: HashSet<Cow<'static, str>>,
 }
 
 impl LoggingPolicy {
     /// Create a new `LoggingPolicy`.
     pub fn new(options: LoggingOptions) -> Self {
         // Create owned HashSet from the defaults and extend with any additional entries
-        let mut allowed_headers: HashSet<&'static str> =
-            DEFAULT_ALLOWED_HEADER_NAMES.iter().copied().collect();
-        allowed_headers.extend(options.additional_allowed_header_names.iter().copied());
+        let mut allowed_headers: HashSet<Cow<'static, str>> =
+            (*DEFAULT_ALLOWED_HEADER_NAMES).clone();
+        allowed_headers.extend(options.additional_allowed_header_names);
 
-        let mut allowed_query_params: HashSet<&'static str> =
-            DEFAULT_ALLOWED_QUERY_PARAMETERS.iter().copied().collect();
-        allowed_query_params.extend(options.additional_allowed_query_params.iter().copied());
+        let mut allowed_query_params: HashSet<Cow<'static, str>> =
+            (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone();
+        allowed_query_params.extend(options.additional_allowed_query_params);
 
         Self {
             allowed_headers,
@@ -46,7 +46,7 @@ impl Policy for LoggingPolicy {
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
         info!(
-            "==> OUTGOING REQUEST: url: {}, method: {}, headers: {{ {} }}",
+            "==> Request: url: {}, method: {}, headers: {{ {} }}",
             request.url.sanitize(&self.allowed_query_params),
             request.method(),
             request.headers().sanitize(&self.allowed_headers)
@@ -55,14 +55,14 @@ impl Policy for LoggingPolicy {
 
         if let Ok(response) = &response {
             info!(
-                "<== INCOMING RESPONSE: url: {}, status: {}, headers: {{ {} }}",
+                "<== Response: {{ url: {}, status: {}, headers: {{ {} }} }}",
                 request.url.sanitize(&self.allowed_query_params),
                 response.status(),
                 response.headers().sanitize(&self.allowed_headers)
             )
         } else {
             info!(
-                "<== FAILED INCOMING RESPONSE: url: {}, error: {}",
+                "<== Failed response: {{ url: {}, error: {} }}",
                 request.url.sanitize(&self.allowed_query_params),
                 response.as_ref().err().unwrap()
             )
@@ -91,8 +91,8 @@ mod tests {
     async fn test_logging_policy_configuration() {
         // Test with additional allowed values
         let options = LoggingOptions {
-            additional_allowed_header_names: vec!["custom-header"],
-            additional_allowed_query_params: vec!["custom-param"],
+            additional_allowed_header_names: vec!["custom-header".into()],
+            additional_allowed_query_params: vec!["custom-param".into()],
         };
         let policy = LoggingPolicy::new(options);
 
@@ -110,8 +110,8 @@ mod tests {
     #[tokio::test]
     async fn test_logging_policy_request_sanitization() {
         let options = LoggingOptions {
-            additional_allowed_header_names: vec!["content-type"],
-            additional_allowed_query_params: vec!["allowed"],
+            additional_allowed_header_names: vec!["content-type".into()],
+            additional_allowed_query_params: vec!["allowed".into()],
         };
         let policy = LoggingPolicy::new(options);
         let ctx = Context::default();
@@ -143,7 +143,7 @@ mod tests {
     #[tokio::test]
     async fn test_logging_policy_custom_headers() {
         let options = LoggingOptions {
-            additional_allowed_header_names: vec!["custom-header"],
+            additional_allowed_header_names: vec!["custom-header".into()],
             additional_allowed_query_params: vec![],
         };
         let policy = LoggingPolicy::new(options);

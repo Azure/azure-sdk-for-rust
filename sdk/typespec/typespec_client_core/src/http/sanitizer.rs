@@ -4,44 +4,45 @@
 // cspell:ignore traceparent tracestate
 
 use crate::http::{headers::Headers, Url};
-use std::{collections::HashSet, sync::LazyLock};
+use std::{borrow::Cow, collections::HashSet, sync::LazyLock};
 
-pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
-    [
-        "accept",
-        "cache-control",
-        "connection",
-        "content-length",
-        "content-type",
-        "date",
-        "etag",
-        "expires",
-        "if-match",
-        "if-modified-since",
-        "if-none-match",
-        "if-unmodified-since",
-        "last-modified",
-        "ms-cv",
-        "pragma",
-        "request-id",
-        "retry-after",
-        "server",
-        "traceparent",
-        "tracestate",
-        "transfer-encoding",
-        "user-agent",
-        "www-authenticate",
-        "x-ms-request-id",
-        "x-ms-client-request-id",
-        "x-ms-return-client-request-id",
-    ]
-    .iter()
-    .copied()
-    .collect()
-});
+pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<Cow<'static, str>>> =
+    LazyLock::new(|| {
+        [
+            "accept",
+            "cache-control",
+            "connection",
+            "content-length",
+            "content-type",
+            "date",
+            "etag",
+            "expires",
+            "if-match",
+            "if-modified-since",
+            "if-none-match",
+            "if-unmodified-since",
+            "last-modified",
+            "ms-cv",
+            "pragma",
+            "request-id",
+            "retry-after",
+            "server",
+            "traceparent",
+            "tracestate",
+            "transfer-encoding",
+            "user-agent",
+            "www-authenticate",
+            "x-ms-request-id",
+            "x-ms-client-request-id",
+            "x-ms-return-client-request-id",
+        ]
+        .iter()
+        .map(|s| Cow::Borrowed(*s))
+        .collect()
+    });
 
-pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: LazyLock<HashSet<&'static str>> =
-    LazyLock::new(|| ["api-version"].iter().copied().collect());
+pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: LazyLock<HashSet<Cow<'static, str>>> =
+    LazyLock::new(|| ["api-version"].iter().map(|s| Cow::Borrowed(*s)).collect());
 
 pub const REDACTED_PATTERN: &str = "REDACTED";
 
@@ -56,11 +57,11 @@ pub trait Sanitizer {
     /// # Returns
     ///
     /// A String containing the sanitized URL
-    fn sanitize(&self, allowed_patterns: &HashSet<&'static str>) -> String;
+    fn sanitize(&self, allowed_patterns: &HashSet<Cow<'static, str>>) -> String;
 }
 
 impl Sanitizer for Url {
-    fn sanitize(&self, allowed_patterns: &HashSet<&'static str>) -> String {
+    fn sanitize(&self, allowed_patterns: &HashSet<Cow<'static, str>>) -> String {
         // Special case the "no query" case to avoid unnecessary allocations
         if self.query().is_none() || cfg!(feature = "debug") {
             return self.as_str().to_string();
@@ -70,7 +71,7 @@ impl Sanitizer for Url {
 
         // Iterate through the query pairs and only add those query parameters which are in the allowed patterns
         for query in self.query_pairs() {
-            if !allowed_patterns.contains(&query.0.as_ref()) {
+            if !allowed_patterns.contains(query.0.as_ref()) {
                 target_url
                     .query_pairs_mut()
                     .append_pair(&query.0, REDACTED_PATTERN);
@@ -86,7 +87,7 @@ impl Sanitizer for Url {
 }
 
 impl Sanitizer for Headers {
-    fn sanitize(&self, allowed_patterns: &HashSet<&'static str>) -> String {
+    fn sanitize(&self, allowed_patterns: &HashSet<Cow<'static, str>>) -> String {
         let mut sanitized = String::new();
         // If the debug feature is enabled, don't sanitize.
         if cfg!(feature = "debug") {
@@ -96,7 +97,7 @@ impl Sanitizer for Headers {
         } else {
             // Output the headers in a similar format to how they would appear in an HTTP request
             for (name, value) in self.iter() {
-                if !allowed_patterns.contains(&name.as_str()) {
+                if !allowed_patterns.contains(name.as_str()) {
                     sanitized.push_str(&format!("{}: {} ", name.as_str(), REDACTED_PATTERN));
                 } else {
                     sanitized.push_str(&format!("{}: {} ", name.as_str(), value.as_str()));
@@ -115,7 +116,7 @@ mod tests {
     #[test]
     fn sanitize_url_with_allowed_query_parameters() {
         let url = Url::parse("https://example.com/api?key=secret123&user=admin").unwrap();
-        let patterns = HashSet::from(["key", "user"]);
+        let patterns = HashSet::from([Cow::Borrowed("key"), Cow::Borrowed("user")]);
 
         let sanitized = url.sanitize(&patterns);
         assert_eq!(
@@ -127,7 +128,7 @@ mod tests {
     #[test]
     fn sanitize_url_with_redacted_parameters() {
         let url = Url::parse("https://example.com/api?foo=bar").unwrap();
-        let patterns = HashSet::from(["key", "admin"]);
+        let patterns = HashSet::from([Cow::Borrowed("key"), Cow::Borrowed("admin")]);
 
         let sanitized = url.sanitize(&patterns);
         assert_eq!(sanitized, "https://example.com/api?foo=REDACTED");
@@ -136,7 +137,7 @@ mod tests {
     #[test]
     fn sanitize_url_with_no_query_parameters() {
         let url = Url::parse("https://example.com/api").unwrap();
-        let patterns = HashSet::from(["secret123", "admin"]);
+        let patterns = HashSet::from([Cow::Borrowed("secret123"), Cow::Borrowed("admin")]);
 
         let sanitized = url.sanitize(&patterns);
         assert_eq!(sanitized, "https://example.com/api");

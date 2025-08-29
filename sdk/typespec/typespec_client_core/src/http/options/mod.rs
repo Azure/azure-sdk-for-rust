@@ -10,6 +10,7 @@ pub use retry::*;
 pub use transport::*;
 
 use crate::http::{policies::Policy, Context};
+use std::borrow::Cow;
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -22,10 +23,10 @@ use std::sync::Arc;
 #[derive(Clone, Debug, Default)]
 pub struct LoggingOptions {
     /// The allowed header names to be logged.
-    pub additional_allowed_header_names: Vec<&'static str>,
+    pub additional_allowed_header_names: Vec<Cow<'static, str>>,
 
     /// The allowed query parameters to be logged.
-    pub additional_allowed_query_params: Vec<&'static str>,
+    pub additional_allowed_query_params: Vec<Cow<'static, str>>,
 }
 
 /// Client options allow customization of general client policies, retry options, and more.

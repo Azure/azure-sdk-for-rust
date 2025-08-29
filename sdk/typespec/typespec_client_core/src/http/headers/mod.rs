@@ -237,7 +237,7 @@ impl fmt::Debug for Headers {
             .entries(self.0.iter().map(|(k, v)| {
                 (
                     k.as_str(),
-                    if DEFAULT_ALLOWED_HEADER_NAMES.contains(&k.as_str()) {
+                    if DEFAULT_ALLOWED_HEADER_NAMES.contains(k.as_str()) {
                         v.as_str()
                     } else {
                         REDACTED_PATTERN

@@ -17,7 +17,7 @@ use azure_core::{
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::{InMemorySpanExporter, SdkTracerProvider};
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 
 #[derive(Clone, SafeDebug)]
 pub struct TestServiceClientOptions {
@@ -55,13 +55,13 @@ impl TestServiceClient {
         let mut options = options.unwrap_or_default();
 
         // Ensure "access-control-allow-origin" is in the allowed headers list
-        let mut headers_vec: Vec<&'static str> = options
+        let mut headers_vec: Vec<Cow<'static, str>> = options
             .client_options
             .logging
             .additional_allowed_header_names
             .to_vec();
-        if !headers_vec.contains(&"access-control-allow-origin") {
-            headers_vec.push("access-control-allow-origin");
+        if !headers_vec.contains(&Cow::Borrowed("access-control-allow-origin")) {
+            headers_vec.push("access-control-allow-origin".into());
         }
         // And update the allowed header names with the new headers.
         options
@@ -298,7 +298,7 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
                 tracer_provider: Some(azure_provider),
             }),
             logging: azure_core::http::LoggingOptions {
-                additional_allowed_header_names: vec!["access-control-allow-credentials"],
+                additional_allowed_header_names: vec!["access-control-allow-credentials".into()],
                 ..Default::default()
             },
             ..Default::default()
