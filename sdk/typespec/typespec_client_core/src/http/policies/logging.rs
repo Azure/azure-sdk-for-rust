@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::{borrow::Cow, collections::HashSet};
 use tracing::info;
 
-/// [`Policy`] to log  a request and response.
+/// [`Policy`] to log a request and response.
 #[derive(Clone, Debug, Default)]
 pub struct LoggingPolicy {
     allowed_headers: HashSet<Cow<'static, str>>,

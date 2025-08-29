@@ -4,6 +4,7 @@
 // cspell:ignore appender OTLP
 
 //! Basic example showing how to create and use a blob checkpoint store.
+//!
 //! This example demonstrates creating a `BlobCheckpointStore`, claiming ownership of a partition,
 //! updating checkpoints, and listing existing ownerships and checkpoints.
 //!
