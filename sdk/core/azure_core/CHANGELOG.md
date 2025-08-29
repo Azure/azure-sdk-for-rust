@@ -4,8 +4,16 @@
 
 ### Features Added
 
+- Added `RequestContent::from_slice()`.
+- Added `TryFrom<T> for RequestContent<T, JsonFormat>` for JSON primitives.
+- Added support for WASM to the `async_runtime` module.
+
 ### Breaking Changes
 
+- Changed `FromStr for RequestContent<T, F>` to `RequestContent::from_str()`.
+- Changed `TryFrom<&'static str> for RequestContent<T, F>` to `RequestContent::from_static()`.
+- Changed `TryFrom<Bytes> for RequestContent<T, F>` to `From<Bytes> for RequestContent<T, F>` because it was already infallible.
+- Removed `TryFrom<Vec<u8>> for RequestContent<T, F>` since `RequestContent::from()` already exists.
 - Removed feature `reqwest_rustls_tls`. See [README.md](https://github.com/heaths/azure-sdk-for-rust/blob/main/sdk/core/azure_core/README.md) for alternative HTTP client configuration.
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` for `typespec_client_core` to copy if needed.
 - Removed the `setters` macro.

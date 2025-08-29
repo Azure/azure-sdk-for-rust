@@ -39,69 +39,69 @@ impl Page for ListKeyPropertiesResult {
 impl TryFrom<CreateKeyParameters> for RequestContent<CreateKeyParameters> {
     type Error = azure_core::Error;
     fn try_from(value: CreateKeyParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<GetRandomBytesParameters> for RequestContent<GetRandomBytesParameters> {
     type Error = azure_core::Error;
     fn try_from(value: GetRandomBytesParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<ImportKeyParameters> for RequestContent<ImportKeyParameters> {
     type Error = azure_core::Error;
     fn try_from(value: ImportKeyParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<KeyOperationParameters> for RequestContent<KeyOperationParameters> {
     type Error = azure_core::Error;
     fn try_from(value: KeyOperationParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<KeyRotationPolicy> for RequestContent<KeyRotationPolicy> {
     type Error = azure_core::Error;
     fn try_from(value: KeyRotationPolicy) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<ReleaseParameters> for RequestContent<ReleaseParameters> {
     type Error = azure_core::Error;
     fn try_from(value: ReleaseParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<RestoreKeyParameters> for RequestContent<RestoreKeyParameters> {
     type Error = azure_core::Error;
     fn try_from(value: RestoreKeyParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<SignParameters> for RequestContent<SignParameters> {
     type Error = azure_core::Error;
     fn try_from(value: SignParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<UpdateKeyPropertiesParameters> for RequestContent<UpdateKeyPropertiesParameters> {
     type Error = azure_core::Error;
     fn try_from(value: UpdateKeyPropertiesParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<VerifyParameters> for RequestContent<VerifyParameters> {
     type Error = azure_core::Error;
     fn try_from(value: VerifyParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
