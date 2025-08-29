@@ -14,7 +14,7 @@ pub mod request;
 
 pub use models::*;
 pub use options::*;
-pub use pager::{ItemIterator, PageIterator, Pager};
+pub use pager::{ItemIterator, PageIterator, Pager, PagerResult, PagerState};
 pub use pipeline::*;
 pub use poller::Poller;
 pub use request::{Body, Request, RequestContent};
