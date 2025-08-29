@@ -8,13 +8,12 @@ use crate::generated::{
 use azure_core::{
     credentials::TokenCredential,
     http::{NoFormat, RawResponse, RequestContent, Response, StatusCode, Url, XmlFormat},
-    xml, Bytes, Result,
+    xml, Result,
 };
 use std::{collections::HashMap, sync::Arc};
 
 /// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
 pub struct QueueClient {
-    pub(super) endpoint: Url,
     pub(super) client: GeneratedQueueClient,
 }
 
@@ -63,10 +62,7 @@ impl QueueClient {
             queue_name.to_string(),
             Some(options),
         )?;
-        Ok(Self {
-            endpoint: endpoint.parse()?,
-            client,
-        })
+        Ok(Self { client })
     }
 
     /// Creates a new queue under the given account.

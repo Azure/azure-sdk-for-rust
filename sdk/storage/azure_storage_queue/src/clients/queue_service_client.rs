@@ -10,18 +10,13 @@ use crate::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
-        Context, Method, NoFormat, PageIterator, RawResponse, Request, RequestContent, Response,
-        StatusCode, Url, XmlFormat,
-    },
-    xml, Bytes, Result,
+    http::{NoFormat, PageIterator, RequestContent, Response, Url, XmlFormat},
+    Result,
 };
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage queue, although that queue may not yet exist.
 pub struct QueueServiceClient {
-    pub(super) endpoint: Url,
     pub(super) client: GeneratedQueueClient,
 }
 
@@ -54,10 +49,7 @@ impl QueueServiceClient {
         let options = options.unwrap_or_default();
 
         let client = GeneratedQueueClient::new(endpoint, credential.clone(), Some(options))?;
-        Ok(Self {
-            endpoint: endpoint.parse()?,
-            client,
-        })
+        Ok(Self { client })
     }
 
     /// Returns a new instance of QueueClient.
@@ -71,7 +63,6 @@ impl QueueServiceClient {
     /// Returns a `QueueClient` that can be used to interact with the specified queue.
     pub fn queue_client(&self, queue_name: String) -> QueueClient {
         QueueClient {
-            endpoint: self.endpoint.clone(),
             client: self.client.get_queue_client(queue_name),
         }
     }
