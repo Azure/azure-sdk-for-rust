@@ -1,15 +1,31 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#[cfg(not(any(
+    all(feature = "spin", target_arch = "wasm32", target_os = "wasi"),
+    all(feature = "reqwest", not(all(target_arch = "wasm32", target_os = "wasi")))
+)))]
 use crate::{
     error::Result,
     http::{RawResponse, Request},
 };
+#[cfg(not(any(
+    all(feature = "spin", target_arch = "wasm32", target_os = "wasi"),
+    all(feature = "reqwest", not(all(target_arch = "wasm32", target_os = "wasi")))
+)))]
 use async_trait::async_trait;
 
+#[cfg(not(any(
+    all(feature = "spin", target_arch = "wasm32", target_os = "wasi"),
+    all(feature = "reqwest", not(all(target_arch = "wasm32", target_os = "wasi")))
+)))]
 #[derive(Debug)]
 struct NoopClient;
 
+#[cfg(not(any(
+    all(feature = "spin", target_arch = "wasm32", target_os = "wasi"),
+    all(feature = "reqwest", not(all(target_arch = "wasm32", target_os = "wasi")))
+)))]
 pub(crate) fn new_noop_client() -> std::sync::Arc<dyn super::HttpClient> {
     std::sync::Arc::new(NoopClient)
 }
@@ -17,6 +33,10 @@ pub(crate) fn new_noop_client() -> std::sync::Arc<dyn super::HttpClient> {
 // TODO: We probably don't want to limit this to wasm32 since there will be wasm environments with threads. This should be a feature flag.
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg(not(any(
+    all(feature = "spin", target_arch = "wasm32", target_os = "wasi"),
+    all(feature = "reqwest", not(all(target_arch = "wasm32", target_os = "wasi")))
+)))]
 impl super::HttpClient for NoopClient {
     #[allow(clippy::diverging_sub_expression)]
     async fn execute_request(&self, request: &Request) -> Result<RawResponse> {

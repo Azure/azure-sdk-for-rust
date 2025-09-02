@@ -12,6 +12,7 @@ keywords = ["typespec"]
 
 [dependencies]
 async-trait.workspace = true
+cfg-if.workspace = true
 base64.workspace = true
 bytes.workspace = true
 dyn-clone.workspace = true

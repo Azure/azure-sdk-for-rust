@@ -24,13 +24,14 @@
 //! # }
 //! ```
 use crate::time::Duration;
+use cfg_if::cfg_if;
 use std::{
     future::Future,
     pin::Pin,
     sync::{Arc, OnceLock},
 };
 
-#[cfg_attr(any(feature = "tokio", feature = "wasm_bindgen"), allow(dead_code))]
+#[cfg_attr(any(feature = "tokio", feature = "wasm_bindgen", feature = "spin"), allow(dead_code))]
 mod standard_runtime;
 
 #[cfg(feature = "tokio")]
@@ -184,21 +185,18 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
     }
 }
 
-#[allow(unreachable_code)]
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
-    #[cfg(all(target_arch = "wasm32", target_os = "wasi", feature = "spin"))]
-    {
-        return Arc::new(spin_runtime::SpinRuntime) as Arc<dyn AsyncRuntime>;
+    cfg_if! {
+        if #[cfg(all(target_arch = "wasm32", target_os = "wasi", feature = "spin"))] {
+            Arc::new(spin_runtime::SpinRuntime) as Arc<dyn AsyncRuntime>
+        } else if #[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))] {
+            Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>
+        } else if #[cfg(feature = "tokio")] {
+            Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>
+        } else {
+            Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
+        }
     }
-    #[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
-    {
-        return Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>;
-    }
-    #[cfg(feature = "tokio")]
-    {
-        return Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>;
-    }
-    Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
 }
 
 #[cfg(all(target_arch = "wasm32", target_os = "wasi", feature = "spin"))]

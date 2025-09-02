@@ -120,6 +120,7 @@ rand_chacha = "0.9"
 reqwest = { version = "0.12.23", features = [
   "stream",
 ], default-features = false }
+cfg-if = "1.0"
 rust_decimal.version = "1.37.2"
 rustc_version = "0.4"
 serde = { version = "1.0", features = ["derive"] }
@@ -149,8 +150,8 @@ wasm-bindgen-futures = "0.4"
 wasm-bindgen-test = "0.3"
 zerofrom = "0.1.5"
 zip = { version = "4.0.0", default-features = false, features = ["deflate"] }
-spin-executor = { version = "3.0.1" }
-spin-sdk = { version = "3.0.1" }
+spin-executor = { version = "5.0.0" }
+spin-sdk = { version = "5.0.0" }
 
 [workspace.lints.clippy]
 large_futures = "deny"
