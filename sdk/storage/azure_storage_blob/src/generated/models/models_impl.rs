@@ -13,34 +13,34 @@ use azure_core::{
 impl TryFrom<BlobServiceProperties> for RequestContent<BlobServiceProperties, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: BlobServiceProperties) -> Result<Self> {
-        Ok(to_xml(&value)?.into())
+        RequestContent::try_from(to_xml(&value)?)
     }
 }
 
 impl TryFrom<BlobTags> for RequestContent<BlobTags, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: BlobTags) -> Result<Self> {
-        Ok(to_xml(&value)?.into())
+        RequestContent::try_from(to_xml(&value)?)
     }
 }
 
 impl TryFrom<BlockLookupList> for RequestContent<BlockLookupList, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: BlockLookupList) -> Result<Self> {
-        Ok(to_xml(&value)?.into())
+        RequestContent::try_from(to_xml(&value)?)
     }
 }
 
 impl TryFrom<KeyInfo> for RequestContent<KeyInfo, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: KeyInfo) -> Result<Self> {
-        Ok(to_xml(&value)?.into())
+        RequestContent::try_from(to_xml(&value)?)
     }
 }
 
 impl TryFrom<QueryRequest> for RequestContent<QueryRequest, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: QueryRequest) -> Result<Self> {
-        Ok(to_xml(&value)?.into())
+        RequestContent::try_from(to_xml(&value)?)
     }
 }
