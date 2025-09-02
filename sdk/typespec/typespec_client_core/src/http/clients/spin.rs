@@ -1,4 +1,5 @@
 //! Spin HTTP backend for wasm32-wasip2 environments.
+#![cfg(all(target_arch = "wasm32", target_os = "wasi", feature = "spin"))]
 
 use crate::http::{
     headers::{HeaderName, HeaderValue, Headers},

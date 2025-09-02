@@ -95,6 +95,15 @@ features = [
   "xml",
 ]
 
+# On wasm32-wasi targets, auto-enable the spin backend in the dependency.
+[target.wasm32-wasip2.dependencies]
+typespec_client_core = { workspace = true, default-features = false, features = [
+  "derive",
+  "http",
+  "json",
+  "spin",
+] }
+
 [[bench]]
 name = "benchmarks"
 harness = false

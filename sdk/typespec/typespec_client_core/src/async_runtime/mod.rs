@@ -184,30 +184,28 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
     }
 }
 
+#[allow(unreachable_code)]
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
-    #[cfg(all(target_arch = "wasm32", feature = "spin"))]
+    #[cfg(all(target_arch = "wasm32", target_os = "wasi", feature = "spin"))]
     {
         return Arc::new(spin_runtime::SpinRuntime) as Arc<dyn AsyncRuntime>;
     }
     #[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
     {
-        Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>
+        return Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>;
     }
     #[cfg(feature = "tokio")]
     {
-        Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>
+        return Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>;
     }
-    #[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
-    {
-        Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
-    }
+    Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
 }
 
-#[cfg(all(target_arch = "wasm32", feature = "spin"))]
+#[cfg(all(target_arch = "wasm32", target_os = "wasi", feature = "spin"))]
 mod spin_runtime {
     use super::{AsyncRuntime, SpawnedTask, TaskFuture};
     use crate::time::Duration;
-    use futures::FutureExt;
+    // Only reference spin_executor when the feature is on and we're in WASI.
 
     pub(crate) struct SpinRuntime;
 
