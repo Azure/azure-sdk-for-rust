@@ -1,22 +1,52 @@
 {
-  "tasks": [
-    {
-      "label": "Start docs site (requires nightly)",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "command": "cargo",
-      "args": [
-        "watch",
-        "-s",
-        "RUSTDOCFLAGS=\"--cfg=docsrs --enable-index-page -Z unstable-options\" cargo +nightly doc --all-features --workspace --no-deps",
-        "-s",
-        "http-server --index --port 8080 ./target/doc"
-      ],
-      "isBackground": true,
-      "problemMatcher": [
-        "$rustc"
-      ]
-    }
-  ]
+	"tasks": [
+		{
+			"label": "Start docs site (requires nightly)",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"command": "cargo",
+			"args": [
+				"watch",
+				"-s",
+				"RUSTDOCFLAGS=\"--cfg=docsrs --enable-index-page -Z unstable-options\" cargo +nightly doc --all-features --workspace --no-deps",
+				"-s",
+				"http-server --index --port 8080 ./target/doc"
+			],
+			"isBackground": true,
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"label": "build-wasi-p2-azure-core-spin",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"build",
+				"-p",
+				"azure_core",
+				"--target",
+				"wasm32-wasip2",
+				"--no-default-features",
+				"--features",
+				"spin,json,http"
+			]
+		},
+		{
+			"label": "build-wasi-p2-azure-core-spin",
+			"type": "shell",
+			"command": "cargo",
+			"args": [
+				"build",
+				"-p",
+				"azure_core",
+				"--target",
+				"wasm32-wasip2",
+				"--no-default-features",
+				"--features",
+				"spin"
+			]
+		}
+	]
 }

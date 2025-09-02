@@ -7,11 +7,15 @@
 mod noop;
 #[cfg(feature = "reqwest")]
 mod reqwest;
+#[cfg(all(feature = "spin", target_arch = "wasm32"))]
+mod spin;
 
 #[cfg(not(feature = "reqwest"))]
 use self::noop::new_noop_client;
 #[cfg(feature = "reqwest")]
 use self::reqwest::new_reqwest_client;
+#[cfg(all(feature = "spin", target_arch = "wasm32"))]
+use self::spin::new_spin_client;
 
 use crate::http::{RawResponse, Request};
 use async_trait::async_trait;
@@ -20,11 +24,15 @@ use typespec::error::Result;
 
 /// Create a new [`HttpClient`].
 pub fn new_http_client() -> Arc<dyn HttpClient> {
-    #[cfg(feature = "reqwest")]
+    #[cfg(all(feature = "reqwest", not(all(feature = "spin", target_arch = "wasm32"))))]
     {
         new_reqwest_client()
     }
-    #[cfg(not(feature = "reqwest"))]
+    #[cfg(all(feature = "spin", target_arch = "wasm32"))]
+    {
+        new_spin_client()
+    }
+    #[cfg(not(any(feature = "reqwest", all(feature = "spin", target_arch = "wasm32"))))]
     {
         new_noop_client()
     }

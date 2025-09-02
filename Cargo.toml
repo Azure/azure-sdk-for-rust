@@ -149,6 +149,8 @@ wasm-bindgen-futures = "0.4"
 wasm-bindgen-test = "0.3"
 zerofrom = "0.1.5"
 zip = { version = "4.0.0", default-features = false, features = ["deflate"] }
+spin-executor = { version = "3.0.1" }
+spin-sdk = { version = "3.0.1" }
 
 [workspace.lints.clippy]
 large_futures = "deny"

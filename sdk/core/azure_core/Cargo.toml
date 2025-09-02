@@ -73,6 +73,7 @@ reqwest_native_tls = ["reqwest", "typespec_client_core/reqwest_native_tls"]
 test = ["typespec_client_core/test"]
 tokio = ["dep:tokio", "typespec_client_core/tokio"]
 wasm_bindgen = ["typespec_client_core/wasm_bindgen"]
+spin = ["typespec_client_core/spin"]
 xml = ["typespec_client_core/xml"]
 
 [lints]
@@ -90,6 +91,7 @@ features = [
   "reqwest_native_tls",
   "tokio",
   "wasm_bindgen",
+  "spin",
   "xml",
 ]
 

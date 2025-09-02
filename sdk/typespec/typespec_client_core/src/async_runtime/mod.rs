@@ -185,6 +185,10 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
 }
 
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
+    #[cfg(all(target_arch = "wasm32", feature = "spin"))]
+    {
+        return Arc::new(spin_runtime::SpinRuntime) as Arc<dyn AsyncRuntime>;
+    }
     #[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
     {
         Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>
@@ -196,5 +200,36 @@ fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
     #[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
     {
         Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
+    }
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "spin"))]
+mod spin_runtime {
+    use super::{AsyncRuntime, SpawnedTask, TaskFuture};
+    use crate::time::Duration;
+    use futures::FutureExt;
+
+    pub(crate) struct SpinRuntime;
+
+    impl AsyncRuntime for SpinRuntime {
+        fn spawn(&self, f: TaskFuture) -> SpawnedTask {
+            // Spin executor runs the future to completion; wrap in a future to fit the trait.
+            // In wasm, SpawnedTask is non-Send, which matches spin environments.
+            Box::pin(async move {
+                spin_executor::run(async move { f.await });
+                Ok(())
+            })
+        }
+
+        fn sleep(&self, duration: Duration) -> TaskFuture {
+            // No direct sleep in spin-executor; use gloo-timers if available isn't guaranteed here.
+            // Implement a simple timer via spin_executor by awaiting a future that yields after duration using web timers is not available.
+            // Fallback: busy-waiting is not acceptable; instead, use a single-shot spin sleep via spin's timer once available.
+            // For now, provide a no-op sleep to keep compatibility.
+            Box::pin(async move {
+                // TODO: consider integrating a WASI clock once stabilized.
+                let _ = duration;
+            })
+        }
     }
 }
