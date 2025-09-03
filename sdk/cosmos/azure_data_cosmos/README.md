@@ -14,6 +14,18 @@ Install the Azure Cosmos DB SDK for Rust with cargo:
 cargo add azure_data_cosmos
 ```
 
+### Using rustls instead of OpenSSL
+
+By default, this crate uses OpenSSL for TLS connections through its dependency on `azure_core`, which enables `reqwest_native_tls` by default. For cross-platform compatibility, you can use rustls instead by configuring your `Cargo.toml`:
+
+```toml
+[dependencies]
+azure_data_cosmos = { version = "0.27", default-features = false, features = ["hmac_rust"] }
+reqwest = { version = "0.12", features = ["rustls-tls"] }
+```
+
+**Important**: When disabling default features, you must include `hmac_rust` for cryptographic operations to work properly. The `hmac_rust` feature provides a pure Rust implementation of HMAC that works well with rustls for a fully Rust-native TLS stack.
+
 ### Prerequisites
 
 * An [Azure subscription] or free Azure Cosmos DB trial account.

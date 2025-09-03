@@ -15,7 +15,7 @@ categories = ["api-bindings"]
 
 [dependencies]
 async-trait.workspace = true
-azure_core.workspace = true
+azure_core = { workspace = true, default-features = false, features = ["reqwest"] }
 futures.workspace = true
 serde_json.workspace = true
 serde.workspace = true
@@ -36,11 +36,12 @@ tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 workspace = true
 
 [features]
-default = ["hmac_rust"]
+default = ["hmac_rust", "reqwest_native_tls"]
 key_auth = [] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
 preview_query_engine = ["serde_json/raw_value"] # Enables support for the PREVIEW external query engine
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
+reqwest_native_tls = ["azure_core/reqwest_native_tls"]
 
 [package.metadata.docs.rs]
 features = ["key_auth"]
