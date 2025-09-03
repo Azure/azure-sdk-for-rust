@@ -3,6 +3,7 @@
 
 //! HTTP headers.
 
+// cspell:ignore hasher
 mod common;
 
 pub use common::*;
