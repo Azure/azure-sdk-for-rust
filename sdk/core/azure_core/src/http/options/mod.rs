@@ -8,8 +8,8 @@ pub use instrumentation::*;
 use std::sync::Arc;
 use typespec_client_core::http::policies::Policy;
 pub use typespec_client_core::http::{
-    ClientMethodOptions, ExponentialRetryOptions, FixedRetryOptions, LoggingOptions, RetryOptions,
-    TransportOptions,
+    ClientMethodOptions, ExponentialRetryOptions, FixedRetryOptions, LoggingOptions,
+    PipelineOptions, RetryOptions, TransportOptions,
 };
 pub use user_agent::*;
 

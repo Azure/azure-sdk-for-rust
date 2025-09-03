@@ -12,7 +12,7 @@ pub use none::*;
 use crate::{
     error::HttpError,
     http::{
-        headers::{Headers, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
+        headers::{HeaderName, Headers},
         policies::{Policy, PolicyResult},
         Context, Request, StatusCode,
     },
@@ -35,37 +35,37 @@ type DateTimeFn = fn() -> OffsetDateTime;
 
 /// Get the duration to delay between retry attempts, provided by the headers from the response.
 ///
-/// This function checks for retry-after headers in the following order:
-///
-/// 1. `retry-after-ms`
-/// 2. `x-ms-retry-after-ms`
-/// 3. `retry-after`
+/// This function checks for retry-after headers in the order specified by `retry_headers`.
 ///
 /// If no header is provided, `None` is returned.
-pub fn get_retry_after(headers: &Headers, now: DateTimeFn) -> Option<Duration> {
+pub fn get_retry_after(
+    headers: &Headers,
+    now: DateTimeFn,
+    retry_headers: &[HeaderName],
+) -> Option<Duration> {
     // TODO: Only check Microsoft headers when constructed from azure_core (https://github.com/Azure/azure-sdk-for-rust/issues/1753)
-    [RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER]
-        .iter()
-        .find_map(|header| {
-            headers.get_str(header).ok().and_then(|v| {
-                if header == &RETRY_AFTER {
-                    // RETRY_AFTER values are either in seconds or a HTTP date
-                    v.parse::<i64>().ok().map(Duration::seconds).or_else(|| {
-                        try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
-                            let now = now();
-                            if retry_after_datetime < now {
-                                Duration::seconds(0)
-                            } else {
-                                time::diff(retry_after_datetime, now)
-                            }
-                        })
+    retry_headers.iter().find_map(|header| {
+        headers.get_str(header).ok().and_then(|v| {
+            // The standard behavior for retry headers is to parse as an integer number of seconds,
+            // or as an HTTP date if the header is the standard Retry-After header.
+            if header.is_standard {
+                // RETRY_AFTER values are either in seconds or a HTTP date
+                v.parse::<i64>().ok().map(Duration::seconds).or_else(|| {
+                    try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
+                        let now = now();
+                        if retry_after_datetime < now {
+                            Duration::seconds(0)
+                        } else {
+                            time::diff(retry_after_datetime, now)
+                        }
                     })
-                } else {
-                    // RETRY_AFTER_MS or X_MS_RETRY_AFTER_MS values are in milliseconds
-                    v.parse::<i64>().ok().map(Duration::milliseconds)
-                }
-            })
+                })
+            } else {
+                // We assume that all non-standard headers are represented in as an integer number of milliseconds
+                v.parse::<i64>().ok().map(Duration::milliseconds)
+            }
         })
+    })
 }
 
 /// A wrapper around a retry count to be used in the context of a retry policy.
@@ -79,6 +79,18 @@ impl Deref for RetryPolicyCount {
     fn deref(&self) -> &Self::Target {
         &self.0
     }
+}
+
+/// Headers that may be used to determine how long to wait before retrying a request.
+/// The boolean indicates if the header is a standard `Retry-After` header (true)
+/// or a service-specific header (false).
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct RetryHeaders {
+    /// The headers that may indicate how long to wait before retrying.
+    pub retry_headers: Vec<HeaderName>,
+
+    /// An optional header that may contain an error code.
+    pub error_header: Option<HeaderName>,
 }
 
 /// A retry policy.
@@ -96,6 +108,11 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     ///
     /// Must return true if no more retries should be attempted.
     fn is_expired(&self, duration_since_start: Duration, retry_count: u32) -> bool;
+
+    /// Get the headers that may indicate how long to wait before retrying.
+    /// If `None` is returned, no headers will be checked.
+    fn get_retry_headers(&self) -> Option<&RetryHeaders>;
+
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
     /// A Future that will wait until the request can be retried.
@@ -164,17 +181,28 @@ where
                         return Ok(response);
                     }
 
+                    let retry_headers = self.get_retry_headers();
                     // For a 429 response (TooManyRequests) or 503 (ServiceUnavailable),
                     // use any "retry-after" headers returned by the server to determine how long to wait before retrying.
                     // https://learn.microsoft.com/en-us/azure/architecture/best-practices/retry-service-specific#retry-usage-guidance
                     let retry_after = match status {
                         StatusCode::TooManyRequests | StatusCode::ServiceUnavailable => {
-                            get_retry_after(response.headers(), OffsetDateTime::now_utc)
+                            retry_headers.and_then(|headers| {
+                                get_retry_after(
+                                    response.headers(),
+                                    OffsetDateTime::now_utc,
+                                    &headers.retry_headers,
+                                )
+                            })
                         }
                         _ => None,
                     };
 
-                    let http_error = HttpError::new(response).await;
+                    let http_error = HttpError::new(
+                        response,
+                        retry_headers.and_then(|h| h.error_header.clone()),
+                    )
+                    .await;
 
                     let error_kind = ErrorKind::http_response(
                         status,
@@ -221,11 +249,15 @@ where
 mod test {
     use super::*;
     use crate::http::{
-        headers::Headers, Context, FixedRetryOptions, Method, RawResponse, Request, RetryOptions,
-        Url,
+        headers::{Headers, RETRY_AFTER},
+        Context, FixedRetryOptions, Method, RawResponse, Request, RetryOptions, Url,
     };
     use ::time::macros::datetime;
     use std::sync::{Arc, Mutex};
+
+    const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
+    const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
+    const MS_ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-error-code");
 
     // Policy that counts the requests it receives and returns responses having a given status code
     #[derive(Debug)]
@@ -273,42 +305,51 @@ mod test {
         // Test parsing a valid HTTP date that is 10 secs in the future
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "Fri, 01 Jan 2021 00:00:10 GMT");
-        let retry_after = get_retry_after(&headers, datetime_now);
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, Some(Duration::seconds(10)));
 
         // Test parsing a valid HTTP date that is in the past returns 0
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "Thu, 31 Dec 2020 23:59:50 GMT");
-        let retry_after = get_retry_after(&headers, datetime_now);
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, Some(Duration::seconds(0)));
 
         // Test that when no retry headers are present, None is returned
         let headers = Headers::new();
-        let retry_after = get_retry_after(&headers, datetime_now);
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, None);
 
         // Test parsing an invalid HTTP date
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "invalid");
-        let retry_after = get_retry_after(&headers, datetime_now);
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, None);
 
         // Test `RETRY_AFTER` parsing an integer value
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "123");
-        let retry_after = get_retry_after(&headers, datetime_now);
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, Some(Duration::seconds(123)));
     }
 
     #[tokio::test]
     async fn test_retry_statuses() {
         let retries = 2u32;
+        let retry_headers = RetryHeaders {
+            retry_headers: vec![X_MS_RETRY_AFTER_MS, RETRY_AFTER_MS, RETRY_AFTER],
+            error_header: Some(MS_ERROR_CODE),
+        };
         let retry_policy = RetryOptions::fixed(FixedRetryOptions {
             delay: Duration::nanoseconds(1),
             max_retries: retries,
             ..Default::default()
         })
-        .to_policy();
+        .to_policy(retry_headers);
         let ctx = Context::new();
         let url = Url::parse("http://localhost").unwrap();
 
