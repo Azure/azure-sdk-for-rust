@@ -2,12 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    http::{
-        headers::{HeaderName, RETRY_AFTER},
-        policies::{
-            ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryHeaders,
-            RetryPolicy,
-        },
+    http::policies::{
+        ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryHeaders, RetryPolicy,
     },
     time::Duration,
 };
@@ -60,7 +56,6 @@ impl Default for RetryMode {
 pub struct RetryOptions {
     /// The algorithm to use for calculating retry delays.
     mode: RetryMode,
-    retry_headers: RetryHeaders,
 }
 
 impl RetryOptions {
@@ -68,10 +63,6 @@ impl RetryOptions {
     pub fn exponential(options: ExponentialRetryOptions) -> Self {
         Self {
             mode: RetryMode::Exponential(options),
-            retry_headers: RetryHeaders {
-                retry_headers: vec![RETRY_AFTER],
-                error_header: None,
-            },
         }
     }
 
@@ -79,10 +70,6 @@ impl RetryOptions {
     pub fn fixed(options: FixedRetryOptions) -> Self {
         Self {
             mode: RetryMode::Fixed(options),
-            retry_headers: RetryHeaders {
-                retry_headers: vec![RETRY_AFTER],
-                error_header: None,
-            },
         }
     }
 
@@ -90,7 +77,6 @@ impl RetryOptions {
     pub fn custom<T: RetryPolicy + 'static>(policy: Arc<T>) -> Self {
         Self {
             mode: RetryMode::Custom(policy),
-            retry_headers: RetryHeaders::default(),
         }
     }
 
@@ -98,46 +84,26 @@ impl RetryOptions {
     pub fn none() -> Self {
         Self {
             mode: RetryMode::None,
-            retry_headers: RetryHeaders::default(),
         }
     }
 
-    /// Defines a set of HTTP headers which, if present on a response,
-    /// indicate that the response should be retried after a delay.
-    /// The boolean indicates whether the header value is a number of seconds to wait.
-    /// If true, the header value is a header which conforms to the `Retry-After` HTTP header specification.
-    /// If false, the header value is a number of milliseconds to wait.
-    ///
-    /// # Arguments
-    /// * `headers` - A list of HTTP headers to check for retry information.
-    ///
-    pub fn with_retry_after_headers(
-        mut self,
-        headers: &[HeaderName],
-        error_header: Option<HeaderName>,
-    ) -> Self {
-        self.retry_headers.retry_headers = headers.to_vec();
-        self.retry_headers.error_header = error_header;
-        self
-    }
-
-    pub(crate) fn to_policy(&self) -> Arc<dyn Policy> {
+    pub(crate) fn to_policy(&self, retry_headers: RetryHeaders) -> Arc<dyn Policy> {
         match &self.mode {
             RetryMode::Exponential(options) => Arc::new(ExponentialRetryPolicy::new(
                 options.initial_delay,
                 options.max_retries,
                 options.max_total_elapsed,
                 options.max_delay,
-                self.retry_headers.clone(),
+                retry_headers,
             )),
             RetryMode::Fixed(options) => Arc::new(FixedRetryPolicy::new(
                 options.delay,
                 options.max_retries,
                 options.max_total_elapsed,
-                self.retry_headers.clone(),
+                retry_headers,
             )),
             RetryMode::Custom(c) => c.clone(),
-            RetryMode::None => Arc::new(NoRetryPolicy::new(self.retry_headers.clone())),
+            RetryMode::None => Arc::new(NoRetryPolicy::new(retry_headers)),
         }
     }
 }

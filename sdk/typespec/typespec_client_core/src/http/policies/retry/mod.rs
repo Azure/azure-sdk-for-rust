@@ -48,7 +48,7 @@ pub fn get_retry_after(
         headers.get_str(header).ok().and_then(|v| {
             // The standard behavior for retry headers is to parse as an integer number of seconds,
             // or as an HTTP date if the header is the standard Retry-After header.
-            if header.is_standard() {
+            if header.is_standard {
                 // RETRY_AFTER values are either in seconds or a HTTP date
                 v.parse::<i64>().ok().map(Duration::seconds).or_else(|| {
                     try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
@@ -351,12 +351,20 @@ mod test {
     #[tokio::test]
     async fn test_retry_statuses() {
         let retries = 2u32;
+        let retry_headers = RetryHeaders {
+            retry_headers: vec![
+                HeaderName::from_static("x-ms-retry-after"),
+                HeaderName::from_static("retry-after-ms"),
+                RETRY_AFTER,
+            ],
+            error_header: Some(HeaderName::from_static("x-ms-error-code")),
+        };
         let retry_policy = RetryOptions::fixed(FixedRetryOptions {
             delay: Duration::nanoseconds(1),
             max_retries: retries,
             ..Default::default()
         })
-        .to_policy();
+        .to_policy(retry_headers);
         let ctx = Context::new();
         let url = Url::parse("http://localhost").unwrap();
 

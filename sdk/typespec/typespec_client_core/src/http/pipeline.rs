@@ -3,7 +3,7 @@
 
 use crate::http::{
     policies::{CustomHeadersPolicy, LoggingPolicy, Policy, TransportPolicy},
-    ClientOptions, Context, RawResponse, Request,
+    ClientOptions, Context, PipelineOptions, RawResponse, Request,
 };
 use std::sync::Arc;
 
@@ -33,10 +33,18 @@ pub struct Pipeline {
 
 impl Pipeline {
     /// Creates a new pipeline with user-specified and client library-specified policies.
+    ///
+    /// # Arguments
+    /// * `options` - The client options.
+    /// * `per_call_policies` - Policies to be executed per call, before the policies in `ClientOptions::per_call_policies`.
+    /// * `per_try_policies` - Policies to be executed per try, before the policies in `ClientOptions::per_try_policies`.
+    /// * `pipeline_options` - Additional options for the pipeline.
+    ///
     pub fn new(
         options: ClientOptions,
         per_call_policies: Vec<Arc<dyn Policy>>,
         per_try_policies: Vec<Arc<dyn Policy>>,
+        pipeline_options: PipelineOptions,
     ) -> Self {
         let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
             options.per_call_policies.len()
@@ -49,7 +57,10 @@ impl Pipeline {
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.extend_from_slice(&options.per_call_policies);
 
-        let retry_policy = options.retry.unwrap_or_default().to_policy();
+        let retry_policy = options
+            .retry
+            .unwrap_or_default()
+            .to_policy(pipeline_options.retry_headers);
         pipeline.push(retry_policy);
 
         pipeline.push(Arc::new(CustomHeadersPolicy::default()));
@@ -85,11 +96,13 @@ impl Pipeline {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use crate::{
         http::{
-            headers::Headers, policies::PolicyResult, JsonFormat, Method, RawResponse, Response,
-            StatusCode, TransportOptions,
+            headers::{Headers, RETRY_AFTER},
+            policies::{PolicyResult, RetryHeaders},
+            JsonFormat, Method, RawResponse, Response, StatusCode, TransportOptions,
         },
         stream::BytesStream,
     };
@@ -129,7 +142,13 @@ mod tests {
                 transport: Some(TransportOptions::new_custom_policy(Arc::new(Responder {}))),
                 ..Default::default()
             };
-            let pipeline = Pipeline::new(options, Vec::new(), Vec::new());
+            let pipeline_options = PipelineOptions {
+                retry_headers: RetryHeaders {
+                    retry_headers: vec![RETRY_AFTER],
+                    error_header: None,
+                },
+            };
+            let pipeline = Pipeline::new(options, Vec::new(), Vec::new(), pipeline_options);
             let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
             let raw_response = pipeline.send(&Context::default(), &mut request).await?;
             Ok(raw_response.into())

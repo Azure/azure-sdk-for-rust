@@ -265,8 +265,12 @@ impl From<std::collections::HashMap<HeaderName, HeaderValue>> for Headers {
 /// A header name.
 #[derive(Clone, Debug, Eq, PartialOrd, Ord)]
 pub struct HeaderName {
+    /// Name of the header.
     name: Cow<'static, str>,
-    is_standard: bool,
+
+    /// Marker indicating if the header is a standard header or not.
+    /// Note that this field is not part of equality or hashing.
+    pub(crate) is_standard: bool,
 }
 
 impl HeaderName {
@@ -286,11 +290,6 @@ impl HeaderName {
             name: Cow::Borrowed(s),
             is_standard: true,
         }
-    }
-
-    /// Returns true if this is a standard header name.
-    pub const fn is_standard(&self) -> bool {
-        self.is_standard
     }
 
     fn from_cow<C>(c: C) -> Self
@@ -316,7 +315,7 @@ impl HeaderName {
 
 impl PartialEq for HeaderName {
     fn eq(&self, other: &Self) -> bool {
-        self.is_standard == other.is_standard && self.name.eq_ignore_ascii_case(&other.name)
+        self.name.eq_ignore_ascii_case(&other.name)
     }
 }
 
@@ -328,9 +327,8 @@ impl PartialEq<&str> for HeaderName {
 
 impl std::hash::Hash for HeaderName {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        // Keep hashing consistent with PartialEq: include is_standard and the case-insensitive name.
-        std::hash::Hash::hash(&self.is_standard, state);
-        state.write(self.name.as_bytes());
+        // Keep hashing consistent with PartialEq: include the case-insensitive name.
+        std::hash::Hash::hash(&self.name, state);
     }
 }
 

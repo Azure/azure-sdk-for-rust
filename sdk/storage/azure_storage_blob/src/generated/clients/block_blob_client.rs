@@ -89,6 +89,7 @@ impl BlockBlobClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
             ),
         })
     }
