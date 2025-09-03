@@ -44,7 +44,7 @@ impl Pipeline {
         options: ClientOptions,
         per_call_policies: Vec<Arc<dyn Policy>>,
         per_try_policies: Vec<Arc<dyn Policy>>,
-        pipeline_options: PipelineOptions,
+        pipeline_options: Option<PipelineOptions>,
     ) -> Self {
         let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
             options.per_call_policies.len()
@@ -56,6 +56,8 @@ impl Pipeline {
 
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.extend_from_slice(&options.per_call_policies);
+
+        let pipeline_options = pipeline_options.unwrap_or_default();
 
         let retry_policy = options
             .retry
@@ -148,7 +150,7 @@ mod tests {
                     error_header: None,
                 },
             };
-            let pipeline = Pipeline::new(options, Vec::new(), Vec::new(), pipeline_options);
+            let pipeline = Pipeline::new(options, Vec::new(), Vec::new(), Some(pipeline_options));
             let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
             let raw_response = pipeline.send(&Context::default(), &mut request).await?;
             Ok(raw_response.into())

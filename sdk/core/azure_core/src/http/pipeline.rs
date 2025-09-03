@@ -114,7 +114,7 @@ impl Pipeline {
             options,
             per_call_policies,
             per_try_policies,
-            pipeline_options,
+            Some(pipeline_options),
         ))
     }
 }
