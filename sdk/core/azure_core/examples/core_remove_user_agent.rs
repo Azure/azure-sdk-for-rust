@@ -30,12 +30,8 @@ impl Policy for RemoveUserAgent {
     ) -> PolicyResult {
         let headers = request.headers_mut();
 
-        println!("Before remove: headers = {headers:#?}");
-
         // Note: HTTP headers are case-insensitive but client-added headers are normalized to lowercase.
         headers.remove("user-agent");
-
-        println!("After remove: headers = {headers:#?}");
 
         next[0].send(ctx, request, &next[1..]).await
     }
