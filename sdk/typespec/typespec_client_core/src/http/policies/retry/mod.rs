@@ -255,6 +255,10 @@ mod test {
     use ::time::macros::datetime;
     use std::sync::{Arc, Mutex};
 
+    const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
+    const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
+    const MS_ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-error-code");
+
     // Policy that counts the requests it receives and returns responses having a given status code
     #[derive(Debug)]
     struct StatusResponder {
@@ -301,50 +305,35 @@ mod test {
         // Test parsing a valid HTTP date that is 10 secs in the future
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "Fri, 01 Jan 2021 00:00:10 GMT");
-        let retry_after = get_retry_after(
-            &headers,
-            datetime_now,
-            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
-        );
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, Some(Duration::seconds(10)));
 
         // Test parsing a valid HTTP date that is in the past returns 0
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "Thu, 31 Dec 2020 23:59:50 GMT");
-        let retry_after = get_retry_after(
-            &headers,
-            datetime_now,
-            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
-        );
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, Some(Duration::seconds(0)));
 
         // Test that when no retry headers are present, None is returned
         let headers = Headers::new();
-        let retry_after = get_retry_after(
-            &headers,
-            datetime_now,
-            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
-        );
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, None);
 
         // Test parsing an invalid HTTP date
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "invalid");
-        let retry_after = get_retry_after(
-            &headers,
-            datetime_now,
-            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
-        );
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, None);
 
         // Test `RETRY_AFTER` parsing an integer value
         let mut headers = Headers::new();
         headers.insert(RETRY_AFTER, "123");
-        let retry_after = get_retry_after(
-            &headers,
-            datetime_now,
-            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
-        );
+        let retry_after =
+            get_retry_after(&headers, datetime_now, &[X_MS_RETRY_AFTER_MS, RETRY_AFTER]);
         assert_eq!(retry_after, Some(Duration::seconds(123)));
     }
 
@@ -352,12 +341,8 @@ mod test {
     async fn test_retry_statuses() {
         let retries = 2u32;
         let retry_headers = RetryHeaders {
-            retry_headers: vec![
-                HeaderName::from_static("x-ms-retry-after"),
-                HeaderName::from_static("retry-after-ms"),
-                RETRY_AFTER,
-            ],
-            error_header: Some(HeaderName::from_static("x-ms-error-code")),
+            retry_headers: vec![X_MS_RETRY_AFTER_MS, RETRY_AFTER_MS, RETRY_AFTER],
+            error_header: Some(MS_ERROR_CODE),
         };
         let retry_policy = RetryOptions::fixed(FixedRetryOptions {
             delay: Duration::nanoseconds(1),
