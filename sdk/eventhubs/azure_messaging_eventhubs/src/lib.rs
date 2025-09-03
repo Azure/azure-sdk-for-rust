@@ -6,7 +6,7 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
-#[cfg(feature = "test")]
+#[cfg(feature = "in_memory_checkpoint_store")]
 mod in_memory_checkpoint_store;
 
 mod common;
@@ -46,5 +46,5 @@ pub use common::retry::RetryOptions;
 
 pub use crate::error::{ErrorKind, EventHubsError};
 
-#[cfg(feature = "test")]
+#[cfg(feature = "in_memory_checkpoint_store")]
 pub use in_memory_checkpoint_store::InMemoryCheckpointStore;

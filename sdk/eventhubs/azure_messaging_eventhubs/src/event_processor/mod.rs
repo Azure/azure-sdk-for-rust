@@ -86,10 +86,6 @@ pub trait CheckpointStore: Send + Sync {
     /// Returns an error if the update fails.
     ///
     async fn update_checkpoint(&self, checkpoint: Checkpoint) -> Result<()>;
-
-    /// Updates the ownership for the specified partition.
-    #[cfg(feature = "test")]
-    async fn update_ownership(&self, ownership: Ownership) -> Result<()>;
 }
 
 #[derive(Clone, Debug, Copy)]

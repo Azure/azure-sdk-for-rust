@@ -6,9 +6,8 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_tag_setTag, BlobsBlob, Clear_rangeClearRange, Committed_blocksBlock,
-        Container_itemsContainer, CorsCorsRule, Page_rangePageRange, SchemaField,
-        Uncommitted_blocksBlock,
+        Blob_tag_setTag, BlobsBlob, Committed_blocksBlock, Container_itemsContainer, CorsCorsRule,
+        SchemaField, Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobImmutabilityPolicyMode, BlobType, CopyStatus,
     GeoReplicationStatusType, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
@@ -159,10 +158,6 @@ pub struct BlobClientSetImmutabilityPolicyResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetLegalHoldResult;
 
-/// Contains results for `BlobClient::set_tags()`
-#[derive(SafeDebug)]
-pub struct BlobClientSetTagsResult;
-
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
@@ -263,10 +258,7 @@ pub struct BlobItemInternal {
     pub name: Option<BlobName>,
 
     /// The object replication metadata of the blob.
-    #[serde(
-        rename = "ObjectReplicationMetadata",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "OrMetadata", skip_serializing_if = "Option::is_none")]
     pub object_replication_metadata: Option<ObjectReplicationMetadata>,
 
     /// The properties of the blob.
@@ -456,7 +448,7 @@ pub struct BlobPropertiesInternal {
     pub encryption_scope: Option<String>,
 
     /// The blog ETag.
-    #[serde(rename = "ETag", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 
     /// The expire time of the blob.
@@ -550,6 +542,51 @@ pub struct BlobPropertiesInternal {
 #[derive(SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoResult;
 
+/// The service properties.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename = "StorageServiceProperties")]
+pub struct BlobServiceProperties {
+    /// The CORS properties.
+    #[serde(
+        default,
+        deserialize_with = "CorsCorsRule::unwrap",
+        rename = "Cors",
+        serialize_with = "CorsCorsRule::wrap",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub cors: Option<Vec<CorsRule>>,
+
+    /// The default service version.
+    #[serde(
+        rename = "DefaultServiceVersion",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub default_service_version: Option<String>,
+
+    /// The delete retention policy.
+    #[serde(
+        rename = "DeleteRetentionPolicy",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub delete_retention_policy: Option<RetentionPolicy>,
+
+    /// The hour metrics properties.
+    #[serde(rename = "HourMetrics", skip_serializing_if = "Option::is_none")]
+    pub hour_metrics: Option<Metrics>,
+
+    /// The logging properties.
+    #[serde(rename = "Logging", skip_serializing_if = "Option::is_none")]
+    pub logging: Option<Logging>,
+
+    /// The minute metrics properties.
+    #[serde(rename = "MinuteMetrics", skip_serializing_if = "Option::is_none")]
+    pub minute_metrics: Option<Metrics>,
+
+    /// The static website properties.
+    #[serde(rename = "StaticWebsite", skip_serializing_if = "Option::is_none")]
+    pub static_website: Option<StaticWebsite>,
+}
+
 /// The blob tags.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "Tag")]
@@ -601,10 +638,6 @@ pub struct Block {
 #[derive(SafeDebug)]
 pub struct BlockBlobClientCommitBlockListResult;
 
-/// Contains results for `BlockBlobClient::put_blob_from_url()`
-#[derive(SafeDebug)]
-pub struct BlockBlobClientPutBlobFromUrlResult;
-
 /// Contains results for `BlockBlobClient::query()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientQueryResult;
@@ -616,6 +649,10 @@ pub struct BlockBlobClientStageBlockFromUrlResult;
 /// Contains results for `BlockBlobClient::stage_block()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockResult;
+
+/// Contains results for `BlockBlobClient::upload_blob_from_url()`
+#[derive(SafeDebug)]
+pub struct BlockBlobClientUploadBlobFromUrlResult;
 
 /// Contains results for `BlockBlobClient::upload()`
 #[derive(SafeDebug)]
@@ -1115,9 +1152,9 @@ pub struct PageBlobClientCreateResult;
 #[derive(SafeDebug)]
 pub struct PageBlobClientResizeResult;
 
-/// Contains results for `PageBlobClient::update_sequence_number()`
+/// Contains results for `PageBlobClient::set_sequence_number()`
 #[derive(SafeDebug)]
-pub struct PageBlobClientUpdateSequenceNumberResult;
+pub struct PageBlobClientSetSequenceNumberResult;
 
 /// Contains results for `PageBlobClient::upload_pages_from_url()`
 #[derive(SafeDebug)]
@@ -1132,13 +1169,7 @@ pub struct PageBlobClientUploadPagesResult;
 #[non_exhaustive]
 pub struct PageList {
     /// The clear ranges.
-    #[serde(
-        default,
-        deserialize_with = "Clear_rangeClearRange::unwrap",
-        rename = "ClearRange",
-        serialize_with = "Clear_rangeClearRange::wrap",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "ClearRange", skip_serializing_if = "Option::is_none")]
     pub clear_range: Option<Vec<ClearRange>>,
 
     /// The next marker.
@@ -1146,13 +1177,7 @@ pub struct PageList {
     pub next_marker: Option<String>,
 
     /// The page ranges.
-    #[serde(
-        default,
-        deserialize_with = "Page_rangePageRange::unwrap",
-        rename = "PageRange",
-        serialize_with = "Page_rangePageRange::wrap",
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "PageRange", skip_serializing_if = "Option::is_none")]
     pub page_range: Option<Vec<PageRange>>,
 }
 
@@ -1293,50 +1318,6 @@ pub struct StaticWebsite {
     /// The index document.
     #[serde(rename = "IndexDocument", skip_serializing_if = "Option::is_none")]
     pub index_document: Option<String>,
-}
-
-/// The service properties.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-pub struct StorageServiceProperties {
-    /// The CORS properties.
-    #[serde(
-        default,
-        deserialize_with = "CorsCorsRule::unwrap",
-        rename = "Cors",
-        serialize_with = "CorsCorsRule::wrap",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub cors: Option<Vec<CorsRule>>,
-
-    /// The default service version.
-    #[serde(
-        rename = "DefaultServiceVersion",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub default_service_version: Option<String>,
-
-    /// The delete retention policy.
-    #[serde(
-        rename = "DeleteRetentionPolicy",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub delete_retention_policy: Option<RetentionPolicy>,
-
-    /// The hour metrics properties.
-    #[serde(rename = "HourMetrics", skip_serializing_if = "Option::is_none")]
-    pub hour_metrics: Option<Metrics>,
-
-    /// The logging properties.
-    #[serde(rename = "Logging", skip_serializing_if = "Option::is_none")]
-    pub logging: Option<Logging>,
-
-    /// The minute metrics properties.
-    #[serde(rename = "MinuteMetrics", skip_serializing_if = "Option::is_none")]
-    pub minute_metrics: Option<Metrics>,
-
-    /// The static website properties.
-    #[serde(rename = "StaticWebsite", skip_serializing_if = "Option::is_none")]
-    pub static_website: Option<StaticWebsite>,
 }
 
 /// Stats for the storage service.

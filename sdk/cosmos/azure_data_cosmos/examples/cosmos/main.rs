@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_data_cosmos::CosmosClient;
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use clap::{Args, CommandFactory, Parser, Subcommand};
 use std::error::Error;
 
@@ -94,7 +94,7 @@ fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
             Err("cannot authenticate with a key unless the 'key_auth' feature is enabled".into())
         }
     } else {
-        let cred = DefaultAzureCredential::new().unwrap();
+        let cred = DeveloperToolsCredential::new(None).unwrap();
         Ok(CosmosClient::new(&args.endpoint, cred, None)?)
     }
 }

@@ -6,8 +6,10 @@
 #![doc = include_str!("../README.md")]
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 pub mod clients;
+#[expect(deprecated, reason = "requires emitter update")]
 mod generated;
 mod parsers;
 mod pipeline;

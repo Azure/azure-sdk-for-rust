@@ -6,6 +6,11 @@
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
+if ($IsMacOS) {
+  Write-Host "AMQP tests are not supported on macOS. Skipping test setup."
+  exit 0
+}
+
 # Create the test binary *outside* the repo root to avoid polluting the repo.
 $WorkingDirectory = ([System.IO.Path]::Combine($RepoRoot, "../TestArtifacts"))
 

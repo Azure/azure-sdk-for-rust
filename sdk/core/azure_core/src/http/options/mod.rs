@@ -1,14 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-mod request_instrumentation;
+mod instrumentation;
 mod user_agent;
 
-pub use request_instrumentation::*;
+pub use instrumentation::*;
 use std::sync::Arc;
 use typespec_client_core::http::policies::Policy;
 pub use typespec_client_core::http::{
-    ClientMethodOptions, ExponentialRetryOptions, FixedRetryOptions, RetryOptions, TransportOptions,
+    ClientMethodOptions, ExponentialRetryOptions, FixedRetryOptions, LoggingOptions,
+    PipelineOptions, RetryOptions, TransportOptions,
 };
 pub use user_agent::*;
 
@@ -34,12 +35,17 @@ pub struct ClientOptions {
     ///
     /// If not specified, defaults to no instrumentation.
     ///
-    pub request_instrumentation: Option<RequestInstrumentationOptions>,
+    pub instrumentation: Option<InstrumentationOptions>,
+
+    /// Logging options
+    ///
+    /// Specifies which headers and query parameters should be logged. All headers and query parameters not in the allow list will be redacted.
+    pub logging: LoggingOptions,
 }
 
 pub(crate) struct CoreClientOptions {
     pub(crate) user_agent: UserAgentOptions,
-    pub(crate) request_instrumentation: RequestInstrumentationOptions,
+    pub(crate) instrumentation: InstrumentationOptions,
 }
 
 impl ClientOptions {
@@ -54,12 +60,13 @@ impl ClientOptions {
             per_try_policies: self.per_try_policies,
             retry: self.retry,
             transport: self.transport,
+            logging: self.logging,
         };
 
         (
             CoreClientOptions {
                 user_agent: self.user_agent.unwrap_or_default(),
-                request_instrumentation: self.request_instrumentation.unwrap_or_default(),
+                instrumentation: self.instrumentation.unwrap_or_default(),
             },
             options,
         )

@@ -1,9 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::http::{RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
+    AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
     BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
+    BlobServiceProperties,
 };
 use azure_storage_blob_test::{get_blob_service_client, get_container_name};
 use futures::StreamExt;
@@ -21,8 +24,8 @@ async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
         .await?;
 
     // Assert
-    let storage_service_properties = response.into_body().await?;
-    let hour_metrics = storage_service_properties.hour_metrics;
+    let blob_service_properties = response.into_body().await?;
+    let hour_metrics = blob_service_properties.hour_metrics;
     assert!(hour_metrics.is_some());
     Ok(())
 }
@@ -119,6 +122,49 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     for container_client in container_clients {
         container_client.delete_container(None).await?;
     }
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+
+    // Storage Service Properties
+    let blob_service_properties = BlobServiceProperties {
+        default_service_version: Some("2022-11-02".to_string()),
+        ..Default::default()
+    };
+    let request_content: RequestContent<BlobServiceProperties, XmlFormat> =
+        blob_service_properties.try_into()?;
+
+    service_client.set_properties(request_content, None).await?;
+
+    // Assert
+    let response = service_client.get_properties(None).await?;
+    let blob_service_properties = response.into_body().await?;
+    let default_service_version = blob_service_properties.default_service_version;
+    assert_eq!("2022-11-02".to_string(), default_service_version.unwrap());
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+
+    // Act
+    let response = service_client.get_account_info(None).await?;
+
+    // Assert
+    let sku_name = response.sku_name()?;
+    let account_kind = response.account_kind()?;
+
+    assert!(sku_name.is_some());
+    assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
 
     Ok(())
 }

@@ -6,7 +6,7 @@
 use azure_core::stream::SeekableStream;
 #[cfg(not(target_arch = "wasm32"))]
 use azure_core::{
-    http::{Body, RequestContent},
+    http::{Body, NoFormat, RequestContent},
     Bytes,
 };
 use futures::{io::AsyncRead, stream::Stream};
@@ -208,7 +208,7 @@ where
 
 #[cfg(not(target_arch = "wasm32"))]
 impl<I, const LENGTH: usize, const CHUNK: usize> From<&GeneratedStream<I, LENGTH, CHUNK>>
-    for RequestContent<Bytes>
+    for RequestContent<Bytes, NoFormat>
 where
     for<'a> I: Clone + Send + Sync + 'a,
     Cycle<I>: Iterator<Item = u8> + Unpin,
@@ -220,7 +220,7 @@ where
 
 #[cfg(not(target_arch = "wasm32"))]
 impl<I, const LENGTH: usize, const CHUNK: usize> From<GeneratedStream<I, LENGTH, CHUNK>>
-    for RequestContent<Bytes>
+    for RequestContent<Bytes, NoFormat>
 where
     for<'a> I: Clone + Send + Sync + 'a,
     Cycle<I>: Iterator<Item = u8> + Unpin,

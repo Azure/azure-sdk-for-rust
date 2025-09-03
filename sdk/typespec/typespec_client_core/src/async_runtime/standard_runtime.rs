@@ -14,6 +14,7 @@ use std::{
     task::{Context, Poll, Waker},
     thread,
 };
+#[cfg(not(target_arch = "wasm32"))]
 use std::{future::Future, pin::Pin};
 #[cfg(not(target_arch = "wasm32"))]
 use tracing::debug;
@@ -80,7 +81,6 @@ impl Future for ThreadJoinFuture {
 }
 
 /// An [`AsyncRuntime`] using [`std::thread::spawn`].
-#[allow(dead_code)]
 pub(crate) struct StdRuntime;
 
 impl AsyncRuntime for StdRuntime {
@@ -150,7 +150,7 @@ impl AsyncRuntime for StdRuntime {
     /// Uses a simple thread based implementation for sleep. A more efficient
     /// implementation is available by using the `tokio` crate feature.
     #[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
-    fn sleep(&self, duration: Duration) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> {
+    fn sleep(&self, duration: Duration) -> TaskFuture {
         #[cfg(target_arch = "wasm32")]
         {
             panic!("sleep is not supported on wasm32")
@@ -163,9 +163,9 @@ impl AsyncRuntime for StdRuntime {
     }
 }
 
-#[derive(Debug)]
 #[cfg(not(target_arch = "wasm32"))]
-pub struct Sleep {
+#[derive(Debug)]
+struct Sleep {
     signal: Option<Arc<AtomicBool>>,
     duration: Duration,
 }

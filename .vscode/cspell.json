@@ -33,6 +33,7 @@
     "azsdk",
     "azurecli",
     "bugbug",
+    "checkpointstore",
     "clippy",
     "contoso",
     "cplusplus",
@@ -62,30 +63,33 @@
     "newtonsoft",
     "oidc",
     "oncreate",
-    "otel",
     "opentelemetry",
+    "otel",
     "pageable",
     "pageables",
     "pkce",
     "pkcs",
-    "pwsh",
     "posix",
+    "pwsh",
     "reqwest",
     "runtimes",
     "rustup",
+    "schannel",
     "seekable",
     "servicebus",
+    "spector",
     "stylesheet",
     "subclient",
     "telemetered",
     "typespec",
     "undelete",
-    "upvote",
     "uninlined",
+    "upvote",
     "userdelegationkey",
     "vcpkg",
     "versionid",
     "virtualmachine",
+    "webpki",
     "worktree"
   ],
   "dictionaryDefinitions": [
@@ -126,6 +130,11 @@
       "noSuggest": true
     },
     {
+      "name": "servicebus",
+      "path": "../sdk/servicebus/.dict.txt",
+      "noSuggest": true
+    },
+    {
       "name": "storage",
       "path": "../sdk/storage/.dict.txt",
       "noSuggest": true
@@ -142,6 +151,7 @@
     {
       "filename": "**/*.md",
       "dictionaries": [
+        "crates",
         "rust",
         "rust-custom"
       ],
@@ -201,6 +211,14 @@
         "crates",
         "rust-custom",
         "cosmos"
+      ]
+    },
+    {
+      "filename": "sdk/servicebus/**",
+      "dictionaries": [
+        "crates",
+        "rust-custom",
+        "servicebus"
       ]
     },
     {

@@ -3,7 +3,7 @@
 
 //! This sample demonstrates how to send AMQP messages to an Event Hub partition using the `ProducerClient`.
 
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::{
     models::{AmqpMessage, AmqpValue},
     ProducerClient,
@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set up the Event Hub client
     let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     let client = ProducerClient::builder()
         .open(

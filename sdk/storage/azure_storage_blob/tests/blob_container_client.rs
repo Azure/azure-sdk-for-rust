@@ -4,7 +4,8 @@
 use azure_core::http::StatusCode;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    BlobContainerClientAcquireLeaseResultHeaders, BlobContainerClientChangeLeaseResultHeaders,
+    AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
+    BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
     BlobContainerClientSetMetadataOptions, BlobType, LeaseState,
 };
@@ -63,12 +64,8 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
 
     // Set Metadata With Values
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
-    let set_metadata_options = BlobContainerClientSetMetadataOptions {
-        metadata: Some(update_metadata.clone()),
-        ..Default::default()
-    };
     container_client
-        .set_metadata(Some(set_metadata_options))
+        .set_metadata(update_metadata.clone(), None)
         .await?;
 
     // Assert
@@ -77,7 +74,7 @@ async fn test_set_container_metadata(ctx: TestContext) -> Result<(), Box<dyn Err
     assert_eq!(update_metadata, response_metadata);
 
     // Set Metadata No Values (Clear Metadata)
-    container_client.set_metadata(None).await?;
+    container_client.set_metadata(HashMap::new(), None).await?;
 
     // Assert
     let response = container_client.get_properties(None).await?;
@@ -96,8 +93,8 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let blob_names = ["testblob1".to_string(), "testblob2".to_string()];
 
     container_client.create_container(None).await?;
-    create_test_blob(&container_client.blob_client(blob_names[0].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[1].clone())).await?;
+    create_test_blob(&container_client.blob_client(blob_names[0].clone()), None).await?;
+    create_test_blob(&container_client.blob_client(blob_names[1].clone()), None).await?;
 
     let mut list_blobs_response = container_client.list_blobs(None)?;
 
@@ -106,9 +103,12 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let blob_list = list_blob_segment_response.segment.blob_items;
     for blob in blob_list {
         let blob_name = blob.name.unwrap().content.unwrap();
-        let blob_type = blob.properties.unwrap().blob_type.unwrap();
+        let properties = blob.properties.unwrap();
+        let blob_type = properties.blob_type.unwrap();
+        let etag = properties.etag;
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
+        assert!(etag.is_some());
     }
 
     container_client.delete_container(None).await?;
@@ -128,10 +128,10 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     ];
 
     container_client.create_container(None).await?;
-    create_test_blob(&container_client.blob_client(blob_names[0].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[1].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[2].clone())).await?;
-    create_test_blob(&container_client.blob_client(blob_names[3].clone())).await?;
+    create_test_blob(&container_client.blob_client(blob_names[0].clone()), None).await?;
+    create_test_blob(&container_client.blob_client(blob_names[1].clone()), None).await?;
+    create_test_blob(&container_client.blob_client(blob_names[2].clone()), None).await?;
+    create_test_blob(&container_client.blob_client(blob_names[3].clone()), None).await?;
 
     // Continuation Token with Token Provided
     let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
@@ -227,11 +227,10 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
     let set_metadata_options = BlobContainerClientSetMetadataOptions {
         lease_id: Some(lease_id.clone()),
-        metadata: Some(update_metadata.clone()),
         ..Default::default()
     };
     container_client
-        .set_metadata(Some(set_metadata_options))
+        .set_metadata(update_metadata, Some(set_metadata_options))
         .await?;
 
     // Change Lease
@@ -273,5 +272,24 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
         .await?;
 
     container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+
+    // Act
+    let response = container_client.get_account_info(None).await?;
+
+    // Assert
+    let sku_name = response.sku_name()?;
+    let account_kind = response.account_kind()?;
+
+    assert!(sku_name.is_some());
+    assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
+
     Ok(())
 }

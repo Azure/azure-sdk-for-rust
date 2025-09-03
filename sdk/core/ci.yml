@@ -17,5 +17,9 @@ extends:
     Artifacts:
     - name: azure_core
       safeName: AzureCore
+    - name: azure_core_macros
+      safeName: AzureCoreMacros
     - name: azure_core_amqp
       safeName: AzureCoreAmqp
+    - name: azure_core_opentelemetry
+      safeName: AzureCoreOpentelemetry

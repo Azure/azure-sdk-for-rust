@@ -10,7 +10,6 @@ pub mod async_runtime;
 pub mod base64;
 pub mod error;
 pub mod fmt;
-pub mod fs;
 #[cfg(feature = "http")]
 pub mod http;
 #[cfg(feature = "json")]

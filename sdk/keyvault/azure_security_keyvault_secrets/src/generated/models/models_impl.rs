@@ -10,7 +10,7 @@ use super::{
 };
 use async_trait::async_trait;
 use azure_core::{
-    http::{Page, RequestContent},
+    http::{pager::Page, RequestContent},
     json::to_json,
     Result,
 };
@@ -38,14 +38,14 @@ impl Page for ListSecretPropertiesResult {
 impl TryFrom<RestoreSecretParameters> for RequestContent<RestoreSecretParameters> {
     type Error = azure_core::Error;
     fn try_from(value: RestoreSecretParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
 impl TryFrom<SetSecretParameters> for RequestContent<SetSecretParameters> {
     type Error = azure_core::Error;
     fn try_from(value: SetSecretParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }
 
@@ -54,6 +54,6 @@ impl TryFrom<UpdateSecretPropertiesParameters>
 {
     type Error = azure_core::Error;
     fn try_from(value: UpdateSecretPropertiesParameters) -> Result<Self> {
-        RequestContent::try_from(to_json(&value)?)
+        Ok(to_json(&value)?.into())
     }
 }

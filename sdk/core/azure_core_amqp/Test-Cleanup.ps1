@@ -4,6 +4,12 @@
 
 . "$PSScriptRoot\..\..\..\eng\common\scripts\common.ps1"
 
+if ($IsMacOS) {
+  Write-Host "AMQP tests are not supported on macOS. Skipping test setup."
+  exit 0
+}
+
+
 Write-Host "Test Broker output:"
 Receive-Job -Id $env:TEST_BROKER_JOBID
 

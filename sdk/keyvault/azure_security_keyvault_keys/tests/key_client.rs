@@ -104,6 +104,8 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
 
 #[recorded::test]
 async fn list_keys(ctx: TestContext) -> Result<()> {
+    use azure_core::http::RequestContent;
+
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
@@ -120,7 +122,7 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
     let secret1 = client
         .create_key(
             names[0],
-            r#"{"kty":"EC","curve":"P-384"}"#.try_into()?,
+            RequestContent::from_str(r#"{"kty":"EC","curve":"P-384"}"#),
             None,
         )
         .await?
@@ -131,7 +133,7 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
     let secret2 = client
         .create_key(
             names[1],
-            r#"{"kty":"EC","curve":"P-384"}"#.try_into()?,
+            RequestContent::from_str(r#"{"kty":"EC","curve":"P-384"}"#),
             None,
         )
         .await?

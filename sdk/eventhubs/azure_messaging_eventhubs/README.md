@@ -2,7 +2,7 @@
 
 # Azure Event Hubs client library for Rust
 
-[Azure Event Hubs](https://azure.microsoft.com/services/event-hubs/) is a big data streaming platform and event ingestion service from Microsoft. For more information about Event Hubs see: [link](https://learn.microsoft.com/azure/event-hubs/event-hubs-about).
+[Azure Event Hubs](https://azure.microsoft.com/services/event-hubs/) is a big data streaming platform and event ingestion service from Microsoft. For more information about Event Hubs see [this link](https://learn.microsoft.com/azure/event-hubs/event-hubs-about).
 
 The Azure Event Hubs client library allows you to send single events or batches of events to an event hub and consume events from an event hub.
 
@@ -20,7 +20,7 @@ cargo add azure_messaging_eventhubs
 
 ### Prerequisites
 
-* A Rust Compiler. See [here](https://www.rust-lang.org/tools/install) for installation instructions.
+* A Rust Compiler. See [the rust compiler installation instructions](https://www.rust-lang.org/tools/install).
 * An [Azure subscription]
 * The [Azure CLI]
 * An [Event Hub namespace](https://learn.microsoft.com/azure/event-hubs/).
@@ -52,20 +52,20 @@ cargo add azure_identity tokio
 
 In order to interact with the Azure Event Hubs service, you'll need to create an instance of the `ProducerClient` or the `ConsumerClient`. You need an **event hub namespace host URL** (which you may see as `serviceBusEndpoint` in the Azure CLI response when creating the Even Hubs Namespace), an **Event Hub name** (which you may see as `name` in the Azure CLI response when crating the Event Hub instance), and credentials to instantiate a client object.
 
-The example shown below uses a [`DefaultAzureCredential`][default_cred_ref], which is appropriate for most local development environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
+The example shown below uses a `DeveloperToolsCredential`, which is appropriate for most local development environments. Additionally, we recommend using a managed identity for authentication in production environments. You can find more information on different ways of authenticating and their corresponding credential types in the [Azure Identity] documentation.
 
-The `DefaultAzureCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
+The `DeveloperToolsCredential` will automatically pick up on an Azure CLI authentication. Ensure you are logged in with the Azure CLI:
 
 ```azurecli
 az login
 ```
 
-Instantiate a `DefaultAzureCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
+Instantiate a `DeveloperToolsCredential` to pass to the client. The same instance of a token credential can be used with multiple clients if they will be authenticating with the same identity.
 
 ### Create an Event Hubs message producer and send an event
 
 ```rust no_run
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ProducerClient;
 
 #[tokio::main]
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub = "<EVENTHUB_NAME>";
 
     // Create new credential
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     // Create and open a new ProducerClient
     let producer = ProducerClient::builder()
@@ -87,7 +87,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-# Key concepts
+## Key concepts
 
 An Event Hub [**namespace**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#namespace) can have multiple Event Hub instances.
 Each Event Hub instance, in turn, contains [**partitions**](https://learn.microsoft.com/azure/event-hubs/event-hubs-features#partitions) which store events.
@@ -105,9 +105,9 @@ Consuming events is done using an `EventReceiver`, which can be opened from the 
     The Processor is useful when you want to have the partition assignment be dynamically chosen, and balanced with other Processor instances.
     -->
 
-More information about Event Hubs features and terminology can be found here: [link](https://learn.microsoft.com/azure/event-hubs/event-hubs-features)
+More information about Event Hubs features and terminology can be found at the [Event Hubs features documentation]](<https://learn.microsoft.com/azure/event-hubs/event-hubs-features>)
 
-# Examples
+## Examples
 
 Additional examples for various scenarios can be found on in the examples directory in our GitHub repo for
 [Event Hubs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/examples).
@@ -121,18 +121,18 @@ Additional examples for various scenarios can be found on in the examples direct
 * [Open an Event Hubs message consumer on an Event Hubs instance](#open-an-event-hubs-message-consumer-on-an-event-hub-instance)
 * [Receive events](#receive-events)
 
-## Open an Event Hubs message producer on an Event Hub instance
+### Open an Event Hubs message producer on an Event Hub instance
 
 ```rust no_run
 use azure_core::Error;
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ProducerClient;
 
 async fn open_producer_client() -> Result<ProducerClient, Error> {
     let host = "<EVENTHUBS_HOST>";
     let eventhub = "<EVENTHUB_NAME>";
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     let producer = ProducerClient::builder()
         .open(host, eventhub, credential.clone())
@@ -142,13 +142,13 @@ async fn open_producer_client() -> Result<ProducerClient, Error> {
 }
 ```
 
-## Send events
+### Send events
 
 There are two mechanisms used to send events to an Event Hub instance. The first directly
 sends individual messages to the Event Hub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
-### Send events directly to the Event Hub
+#### Send events directly to the Event Hub
 
 ```rust no_run
 use azure_core::Error;
@@ -161,7 +161,7 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
 }
 ```
 
-### Send events using a batch operation
+#### Send events using a batch operation
 
 ```rust no_run
 use azure_core::Error;
@@ -172,25 +172,25 @@ async fn send_events(producer: &ProducerClient) -> Result<(), Error> {
     assert_eq!(batch.len(), 0);
     assert!(batch.try_add_event_data(vec![1, 2, 3, 4], None)?);
 
-    let res = producer.send_batch(&batch, None).await;
+    let res = producer.send_batch(batch, None).await;
     assert!(res.is_ok());
 
     Ok(())
 }
 ```
 
-## Open an Event Hubs message consumer on an Event Hub instance
+### Open an Event Hubs message consumer on an Event Hub instance
 
 ```rust no_run
 use azure_core::Error;
-use azure_identity::DefaultAzureCredential;
+use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ConsumerClient;
 
 async fn open_consumer_client() -> Result<ConsumerClient, Error> {
     let host = "<EVENTHUBS_HOST>".to_string();
     let eventhub = "<EVENTHUB_NAME>".to_string();
 
-    let credential = DefaultAzureCredential::new()?;
+    let credential = DeveloperToolsCredential::new(None)?;
 
     let consumer = azure_messaging_eventhubs::ConsumerClient::builder()
         .open(&host, eventhub, credential.clone())
@@ -200,7 +200,7 @@ async fn open_consumer_client() -> Result<ConsumerClient, Error> {
 }
 ```
 
-## Receive events
+### Receive events
 
 The following example shows how to receive events from partition 0 on an Event Hubs instance.
 
@@ -252,18 +252,18 @@ async fn receive_events(client: &ConsumerClient) -> Result<(), Error> {
 }
 ```
 
-# Troubleshooting
+## Troubleshooting
 
-## General
+### General
 
 When you interact with the Azure Event Hubs client library using the Rust SDK, errors returned by the service are returned as `azure_core::Error` values using `ErrorKind::Other` which are `azure_messaging_eventhubs::Error` values.
 
-## Logging
+### Logging
 
 The Event Hubs SDK client uses the [tracing](https://docs.rs/tracing/latest/tracing/) package to
 enable diagnostics.
 
-# Contributing
+## Contributing
 
 See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
 
@@ -273,11 +273,11 @@ When you submit a pull request, a CLA-bot will automatically determine whether y
 
 This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
 
-## Reporting security issues and security bugs
+### Reporting security issues and security bugs
 
 Security issues and bugs should be reported privately, via email, to the Microsoft Security Response Center (MSRC) <secure@microsoft.com>. You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we received your original message. Further information, including the MSRC PGP key, can be found in the [Security TechCenter](https://www.microsoft.com/msrc/faqs-report-an-issue).
 
-## License
+### License
 
 Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sdk-for-cpp/blob/main/LICENSE.txt) license.
 
@@ -287,7 +287,7 @@ Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sd
 [API reference documentation]: https://docs.rs/azure_messaging_eventhubs/latest/azure_messaging_eventhubs
 [Azure CLI]: https://learn.microsoft.com/cli/azure
 [Azure subscription]: https://azure.microsoft.com/free/
-[Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
+[Azure Identity]: https://aka.ms/azsdk/rust/identity/docs
 [Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
 [Product documentation]: https://learn.microsoft.com/azure/event-hubs/
 [Cargo]: https://crates.io/
@@ -295,4 +295,3 @@ Azure SDK for Rust is licensed under the [MIT](https://github.com/Azure/azure-sd
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/src
 [CONTRIBUTING.md]: https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md
 [Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-[default_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.DefaultAzureCredential.html

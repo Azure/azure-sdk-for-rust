@@ -60,10 +60,12 @@ fn http_transport_test(c: &mut Criterion) {
         });
     });
 }
+
 // Main benchmark configuration
 criterion_group! {
     name = benchmarks;
     config = Criterion::default();
     targets = url_parsing_benchmark, http_transport_test
 }
+
 criterion_main!(benchmarks);

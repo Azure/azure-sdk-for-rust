@@ -2,7 +2,7 @@
 
 [![Take Our Design Discussion Survey](https://img.shields.io/badge/Take%20Our%20Design%20Discussion%20Survey-008000?style=flat&link=https://www.surveymonkey.com/r/repo-badge)](https://www.surveymonkey.com/r/repo-badge)
 
-This repository is for the active development of the Azure SDK for Rust. For consumers of the SDK, we recommend visiting [Docs.rs](https://docs.rs/) and looking up the docs for any of libraries in the SDK.
+This repository is for the active development of the Azure SDK for Rust.
 
 ## Crates 📦
 
@@ -36,7 +36,6 @@ Building each crate should be as straight forward as `cargo build`, but check ea
 
 ## Need help?
 
-- For reference documentation visit [docs.rs](https://docs.rs/).
 - For examples, go to the `examples` subdirectory in any library's project folder e.g., `/sdk/identity/azure_identity/examples`
 - Have a question, or find a bug? File an issue via [GitHub Issues](https://github.com/Azure/azure-sdk-for-rust/issues/new/choose).
 - Check [previous questions](https://stackoverflow.com/questions/tagged/azure+rust) or ask new ones on StackOverflow using the `azure` and `rust` tags.
@@ -51,7 +50,7 @@ A `User-Agent` header is sent in requests by default with a value similar to:
 
 > azsdk-rust-security_keyvault_secrets/0.4.0 (1.86.0; linux; aarch64)
 
-You can assign an optional application ID for your own telemetry by setting `UserPolicyOptions::application_id`. This will appear at the beginning of the `User-Agent` header.
+You can assign an optional application ID for your own telemetry by setting `UserAgentOptions::application_id`. This will appear at the beginning of the `User-Agent` header.
 
 To disable sending the `User-Agent` header entirely, you can write a `Policy` that will remove it:
 

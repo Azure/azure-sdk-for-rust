@@ -138,6 +138,7 @@ pub fn diff(first: OffsetDateTime, second: OffsetDateTime) -> Duration {
     (first - second).abs()
 }
 
+#[cfg(feature = "json")]
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -5,16 +5,17 @@ use crate::{
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::{
         BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
-        BlobContainerClientChangeLeaseResult, BlobContainerClientGetPropertiesResult,
-        BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
+        BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
+        BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
+        BlobContainerClientRenewLeaseResult,
     },
     models::{
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
-        BlobContainerClientDeleteOptions, BlobContainerClientGetPropertiesOptions,
-        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
-        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetMetadataOptions,
-        ListBlobsFlatSegmentResponse,
+        BlobContainerClientDeleteOptions, BlobContainerClientGetAccountInfoOptions,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
+        BlobContainerClientReleaseLeaseOptions, BlobContainerClientRenewLeaseOptions,
+        BlobContainerClientSetMetadataOptions, ListBlobsFlatSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -27,7 +28,7 @@ use azure_core::{
     },
     Result,
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 /// A client to interact with a specified Azure storage container.
 pub struct BlobContainerClient {
@@ -111,12 +112,14 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
+    /// * `metadata` - The metadata headers.
     /// * `options` - Optional configuration for the request.
     pub async fn set_metadata(
         &self,
+        metadata: HashMap<String, String>,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client.set_metadata(options).await
+        self.client.set_metadata(metadata, options).await
     }
 
     /// Marks the specified container for deletion. The container and any blobs contained within are later deleted during garbage collection.
@@ -232,5 +235,18 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientRenewLeaseOptions<'_>>,
     ) -> Result<Response<BlobContainerClientRenewLeaseResult, NoFormat>> {
         self.client.renew_lease(lease_id, options).await
+    }
+
+    /// Gets information related to the Storage account in which the container resides.
+    /// This includes the `sku_name` and `account_kind`.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_account_info(
+        &self,
+        options: Option<BlobContainerClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientGetAccountInfoResult, NoFormat>> {
+        self.client.get_account_info(options).await
     }
 }

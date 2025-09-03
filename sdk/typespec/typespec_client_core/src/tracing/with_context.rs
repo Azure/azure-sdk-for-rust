@@ -1,8 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell: ignore cloneable
-
 use super::Span;
 use crate::http::Context;
 use pin_project::pin_project;

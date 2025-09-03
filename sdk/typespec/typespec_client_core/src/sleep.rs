@@ -13,16 +13,17 @@ use crate::{async_runtime::get_async_runtime, time::Duration};
 /// # Returns
 /// A future that resolves when the sleep duration has elapsed.
 ///
-/// # Example
-/// ```
+/// # Examples
+///
+/// ``` no_run
 /// use typespec_client_core::{sleep, time::Duration};
 ///
-/// #[tokio::main]
-/// async fn main() {
-///     // Sleep for 1 second
-///     sleep(Duration::seconds(1)).await;
-///     println!("Slept for 1 second");
-/// }
+/// # #[tokio::main]
+/// # async fn main() {
+/// // Sleep for 1 second
+/// sleep(Duration::seconds(1)).await;
+/// println!("Slept for 1 second");
+/// # }
 /// ```
 pub async fn sleep(duration: Duration) {
     get_async_runtime().sleep(duration).await

@@ -33,7 +33,7 @@ struct EventDataBatchState {
 /// # use azure_identity::TokenCredentialOptions;
 ///
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
-/// # let credentials = azure_identity::DefaultAzureCredential::new()?;
+/// # let credentials = azure_identity::DeveloperToolsCredential::new(None)?;
 /// # let producer_client = ProducerClient::builder()
 /// #     .open("fully_qualified_domain_name", "event_hub_name", credentials.clone()).await?;
 /// #
@@ -43,7 +43,7 @@ struct EventDataBatchState {
 /// batch.try_add_event_data("Hello, Event Hub!", None)?;
 /// batch.try_add_event_data("This is another event.", None)?;
 ///
-/// producer_client.send_batch(&batch, None).await?;
+/// producer_client.send_batch(batch, None).await?;
 ///
 /// # Ok(())
 /// # }
@@ -163,7 +163,7 @@ impl<'a> EventDataBatch<'a> {
     /// # use azure_messaging_eventhubs::models::EventData;
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
+    /// # let my_credential = azure_identity::DeveloperToolsCredential::new(None)?;
     /// # let producer_client = ProducerClient::builder().open("fully_qualified_domain_name", "event_hub_name", my_credential.clone()).await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///
@@ -207,7 +207,7 @@ impl<'a> EventDataBatch<'a> {
     /// # use azure_messaging_eventhubs::models::AmqpMessage;
     ///
     /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
-    /// # let my_credential = azure_identity::DefaultAzureCredential::new()?;
+    /// # let my_credential = azure_identity::DeveloperToolsCredential::new(None)?;
     /// # let producer_client = ProducerClient::builder().open("fully_qualified_domain_name", "event_hub_name", my_credential.clone()).await?;
     /// let mut batch = producer_client.create_batch(None).await?;
     ///

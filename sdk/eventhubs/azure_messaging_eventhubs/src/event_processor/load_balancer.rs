@@ -378,12 +378,9 @@ pub(crate) mod tests {
         event_processor::Ownership, in_memory_checkpoint_store::InMemoryCheckpointStore,
         models::ConsumerClientDetails, CheckpointStore,
     };
-    use azure_core::Result;
+    use azure_core::{time::OffsetDateTime, Result};
+    use azure_core_test::{recorded, TestContext};
     use tracing::info;
-
-    pub fn test_setup() {
-        crate::consumer::tests::setup();
-    }
 
     fn map_to_strings<T, U>(source: &[T], mapper: U) -> Vec<String>
     where
@@ -468,10 +465,10 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    pub async fn processor_load_balancers_greedy_enough_unowned_partitions() -> Result<()> {
-        test_setup();
-
+    #[recorded::test]
+    pub async fn processor_load_balancers_greedy_enough_unowned_partitions(
+        _ctx: TestContext,
+    ) -> Result<()> {
         let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
         checkpoint_store
             .claim_ownership(&[
@@ -509,10 +506,10 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    pub async fn processor_load_balancers_balanced_unowned_partitions() -> Result<()> {
-        test_setup();
-
+    #[recorded::test]
+    pub async fn processor_load_balancers_balanced_unowned_partitions(
+        _ctx: TestContext,
+    ) -> Result<()> {
         let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
         checkpoint_store
             .claim_ownership(&[
@@ -575,10 +572,8 @@ pub(crate) mod tests {
         common
     }
 
-    #[tokio::test]
-    async fn processor_load_balancers_greedy_forced_to_steal() -> Result<()> {
-        test_setup();
-
+    #[recorded::test]
+    async fn processor_load_balancers_greedy_forced_to_steal(_ctx: TestContext) -> Result<()> {
         let some_other_client_id = "some-other-client-id";
         let stealing_client_id = "stealing-client-id";
 
@@ -670,9 +665,9 @@ pub(crate) mod tests {
             .etag
             .clone();
         let mut ownership = ownership.clone();
-        ownership.last_modified_time = Some(SystemTime::now() - Duration::seconds(3600));
+        ownership.last_modified_time = Some(OffsetDateTime::now_utc() - Duration::seconds(3600));
         ownership.etag = etag;
-        checkpoint_store.update_ownership(ownership).await?;
+        checkpoint_store.claim_ownership(&[ownership]).await?;
         Ok(())
     }
 
@@ -700,14 +695,14 @@ pub(crate) mod tests {
         let mut ownership = ownership.clone();
         ownership.owner_id = None;
         ownership.etag = etag;
-        checkpoint_store.update_ownership(ownership).await?;
+        checkpoint_store.claim_ownership(&[ownership]).await?;
         Ok(())
     }
 
-    #[tokio::test]
-    async fn processor_load_balancers_any_strategy_grab_expired_partition() -> Result<()> {
-        test_setup();
-
+    #[recorded::test]
+    async fn processor_load_balancers_any_strategy_grab_expired_partition(
+        _ctx: TestContext,
+    ) -> Result<()> {
         for strategy in [ProcessorStrategy::Greedy, ProcessorStrategy::Balanced] {
             const CLIENT_A: &str = "clientA";
             const CLIENT_B: &str = "clientB";
@@ -751,10 +746,10 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn processor_load_balancers_any_strategy_fully_balanced_odd() -> Result<()> {
-        test_setup();
-
+    #[recorded::test]
+    async fn processor_load_balancers_any_strategy_fully_balanced_odd(
+        _ctx: TestContext,
+    ) -> Result<()> {
         for strategy in [ProcessorStrategy::Greedy, ProcessorStrategy::Balanced] {
             const CLIENT_A: &str = "clientA";
             const CLIENT_B: &str = "clientB";
@@ -824,10 +819,10 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn processor_load_balancers_any_strategy_fully_balanced_even() -> Result<()> {
-        test_setup();
-
+    #[recorded::test]
+    async fn processor_load_balancers_any_strategy_fully_balanced_even(
+        _ctx: TestContext,
+    ) -> Result<()> {
         for strategy in [ProcessorStrategy::Greedy, ProcessorStrategy::Balanced] {
             const CLIENT_A: &str = "clientA";
             const CLIENT_B: &str = "clientB";
@@ -891,11 +886,10 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    #[tokio::test]
+    #[recorded::test]
     async fn processor_load_balancers_any_strategy_grab_extra_partition_because_above_max(
+        _ctx: TestContext,
     ) -> Result<()> {
-        test_setup();
-
         for strategy in [ProcessorStrategy::Greedy, ProcessorStrategy::Balanced] {
             const CLIENT_A: &str = "clientA";
             const CLIENT_B: &str = "clientB";
@@ -936,10 +930,10 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn processor_load_balancers_any_strategy_steals_to_balance() -> Result<()> {
-        test_setup();
-
+    #[recorded::test]
+    async fn processor_load_balancers_any_strategy_steals_to_balance(
+        _ctx: TestContext,
+    ) -> Result<()> {
         for strategy in [ProcessorStrategy::Greedy, ProcessorStrategy::Balanced] {
             const LOTS_CLIENT_ID: &str = "has-too-many-client-id";
             const LITTLE_CLIENT_ID: &str = "has-too-few-id";
@@ -1009,10 +1003,10 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn processor_load_balancers_any_strategy_grab_relinquished_partition() -> Result<()> {
-        test_setup();
-
+    #[recorded::test]
+    async fn processor_load_balancers_any_strategy_grab_relinquished_partition(
+        _ctx: TestContext,
+    ) -> Result<()> {
         for strategy in [ProcessorStrategy::Greedy, ProcessorStrategy::Balanced] {
             const CLIENT_A: &str = "clientA";
             const CLIENT_B: &str = "clientB";
@@ -1056,9 +1050,8 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn unit_test_load_balancer_balanced() -> Result<()> {
-        test_setup();
+    #[recorded::test]
+    async fn unit_test_load_balancer_balanced(_ctx: TestContext) -> Result<()> {
         info!("Unit test for load balancer");
 
         //cspell: ignore abbc abbcc aaaabbb
@@ -1104,9 +1097,8 @@ pub(crate) mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn unit_test_load_balancer_unbalanced() -> Result<()> {
-        test_setup();
+    #[recorded::test]
+    async fn unit_test_load_balancer_unbalanced(_ctx: TestContext) -> Result<()> {
         info!("Unit test for load balancer (unbalanced)");
 
         //cspell: ignore aaaabb aaabbbcccd aaabbbccde aaaabbc

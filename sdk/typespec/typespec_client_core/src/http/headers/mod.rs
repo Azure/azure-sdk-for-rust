@@ -3,14 +3,15 @@
 
 //! HTTP headers.
 
+// cspell:ignore hasher
 mod common;
-mod microsoft;
 
 pub use common::*;
-pub use microsoft::*;
 
 use std::{borrow::Cow, convert::Infallible, fmt, str::FromStr};
 use typespec::error::{Error, ErrorKind, ResultExt};
+
+use crate::http::{DEFAULT_ALLOWED_HEADER_NAMES, REDACTED_PATTERN};
 
 /// A trait for converting a type into request headers.
 pub trait AsHeaders {
@@ -230,12 +231,18 @@ impl Headers {
 
 impl fmt::Debug for Headers {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        #[allow(dead_code)]
-        const SANITIZED_VALUE: &str = "*****";
-
-        // TODO: Sanitize all bug safe headers.
+        // TODO: Sanitize all but safe headers.
         f.debug_map()
-            .entries(self.0.keys().map(|k| (k.as_str(), SANITIZED_VALUE)))
+            .entries(self.0.iter().map(|(k, v)| {
+                (
+                    k.as_str(),
+                    if DEFAULT_ALLOWED_HEADER_NAMES.contains(k.as_str()) {
+                        v.as_str()
+                    } else {
+                        REDACTED_PATTERN
+                    },
+                )
+            }))
             .finish()
     }
 }
@@ -257,14 +264,33 @@ impl From<std::collections::HashMap<HeaderName, HeaderValue>> for Headers {
 }
 
 /// A header name.
-#[derive(Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
-pub struct HeaderName(Cow<'static, str>);
+#[derive(Clone, Debug, Eq, PartialOrd, Ord)]
+pub struct HeaderName {
+    /// Name of the header.
+    name: Cow<'static, str>,
+
+    /// Marker indicating if the header is a standard header or not.
+    /// Note that this field is not part of equality or hashing.
+    pub(crate) is_standard: bool,
+}
 
 impl HeaderName {
     /// Create a header name from a static `str`.
     pub const fn from_static(s: &'static str) -> Self {
         ensure_no_uppercase(s);
-        Self(Cow::Borrowed(s))
+        Self {
+            name: Cow::Borrowed(s),
+            is_standard: false,
+        }
+    }
+
+    /// Create a header name from a static `str`.
+    pub(crate) const fn from_static_standard(s: &'static str) -> Self {
+        ensure_no_uppercase(s);
+        Self {
+            name: Cow::Borrowed(s),
+            is_standard: true,
+        }
     }
 
     fn from_cow<C>(c: C) -> Self
@@ -276,12 +302,34 @@ impl HeaderName {
             c.chars().all(|c| c.is_lowercase() || !c.is_alphabetic()),
             "header names must be lowercase: {c}"
         );
-        Self(c)
+        Self {
+            name: c,
+            is_standard: false,
+        }
     }
 
     /// Get a header name as a `str`.
     pub fn as_str(&self) -> &str {
-        self.0.as_ref()
+        self.name.as_ref()
+    }
+}
+
+impl PartialEq for HeaderName {
+    fn eq(&self, other: &Self) -> bool {
+        self.name.eq_ignore_ascii_case(&other.name)
+    }
+}
+
+impl PartialEq<&str> for HeaderName {
+    fn eq(&self, other: &&str) -> bool {
+        self.name.eq_ignore_ascii_case(other)
+    }
+}
+
+impl std::hash::Hash for HeaderName {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // Keep hashing consistent with PartialEq: include the case-insensitive name.
+        std::hash::Hash::hash(&self.name, state);
     }
 }
 

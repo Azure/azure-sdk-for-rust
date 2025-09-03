@@ -66,9 +66,9 @@ impl ConsumerClient {
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
-    ///     let my_credential = DefaultAzureCredential::new()?;
+    ///     let my_credential = DeveloperToolsCredential::new(None)?;
     /// let consumer = ConsumerClient::builder()
     ///    .open("my_namespace", "my_eventhub".to_string(), my_credential.clone()).await?;
     /// # Ok(())}
@@ -124,11 +124,11 @@ impl ConsumerClient {
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::new().unwrap();
+    ///     let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///     let consumer = ConsumerClient::builder()
     ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await.unwrap();
     ///
@@ -149,6 +149,12 @@ impl ConsumerClient {
     pub async fn close(self) -> Result<()> {
         trace!("Closing consumer client for {}.", self.endpoint);
         self.recoverable_connection.close_connection().await
+    }
+
+    /// Forces an error on the connection.
+    #[cfg(test)]
+    pub fn force_error(&self, error: azure_core::Error) -> Result<()> {
+        self.recoverable_connection.force_error(error)
     }
 
     /// Retrieves the details of the consumer client.
@@ -193,12 +199,12 @@ impl ConsumerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     /// use futures::stream::StreamExt;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let my_credential = DefaultAzureCredential::new()?;
+    ///     let my_credential = DeveloperToolsCredential::new(None)?;
     ///     let consumer = ConsumerClient::builder()
     ///        .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
     ///     let partition_id = "0".to_string();
@@ -295,11 +301,11 @@ impl ConsumerClient {
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main(){
-    ///     let my_credential = DefaultAzureCredential::new().unwrap();
+    ///     let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///     let consumer = ConsumerClient::builder()
     ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await.unwrap();
     ///
@@ -341,11 +347,11 @@ impl ConsumerClient {
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let my_credential = DefaultAzureCredential::new().unwrap();
+    ///     let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///     let consumer = ConsumerClient::builder()
     ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await.unwrap();
     ///     let partition_id = "0";
@@ -542,11 +548,11 @@ pub mod builders {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///    let my_credential = DefaultAzureCredential::new().unwrap();
+    ///    let my_credential = DeveloperToolsCredential::new(None).unwrap();
     ///   let consumer = ConsumerClient::builder()
     ///      .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
     ///   Ok(())
@@ -585,11 +591,11 @@ pub mod builders {
         ///
         /// ```no_run
         /// use azure_messaging_eventhubs::ConsumerClient;
-        /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+        /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
         ///
         /// #[tokio::main]
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-        ///    let my_credential = DefaultAzureCredential::new()?;
+        ///    let my_credential = DeveloperToolsCredential::new(None)?;
         ///    let consumer = ConsumerClient::builder()
         ///      .with_consumer_group("my_consumer_group".to_string())
         ///      .open("my_namespace", "my_eventhub".to_string(), my_credential).await?;
@@ -645,11 +651,11 @@ pub mod builders {
         ///
         /// ```
         /// use azure_messaging_eventhubs::ConsumerClient;
-        /// use azure_identity::{DefaultAzureCredential, TokenCredentialOptions};
+        /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
         ///
         /// #[tokio::main]
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-        ///     let my_credential = DefaultAzureCredential::new().unwrap();
+        ///     let my_credential = DeveloperToolsCredential::new(None).unwrap();
         ///     let result = ConsumerClient::builder()
         ///         .open("my_namespace", "my_eventhub".to_string(), my_credential).await;
         ///
@@ -697,29 +703,35 @@ pub mod builders {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use super::*;
+    use crate::{common::tests::force_errors, ConsumerClient, StartLocation, StartPosition};
+    use azure_core::{time::Duration, Result};
+    use azure_core_amqp::error::AmqpErrorKind;
+    use azure_core_test::{recorded, TestContext};
+    use std::{
+        sync::Arc,
+        time::{SystemTime, UNIX_EPOCH},
+    };
     use tracing::info;
 
-    static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
+    // static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
 
-    #[test]
-    pub(crate) fn setup() {
-        INIT_LOGGING.call_once(|| {
-            println!("Setting up test logger...");
+    // #[test]
+    // pub(crate) fn setup() {
+    //     INIT_LOGGING.call_once(|| {
+    //         println!("Setting up test logger...");
 
-            use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
-            tracing_subscriber::fmt()
-                .with_env_filter(EnvFilter::from_default_env())
-                .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
-                .with_ansi(std::env::var("NO_COLOR").map_or(true, |v| v.is_empty()))
-                .with_writer(std::io::stderr)
-                .init();
-        });
-    }
+    //         use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
+    //         tracing_subscriber::fmt()
+    //             .with_env_filter(EnvFilter::from_default_env())
+    //             .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+    //             .with_ansi(std::env::var("NO_COLOR").map_or(true, |v| v.is_empty()))
+    //             .with_writer(std::io::stderr)
+    //             .init();
+    //     });
+    // }
 
-    #[test]
-    fn test_start_position_builder_with_sequence_number() {
-        setup();
+    #[recorded::test]
+    async fn test_start_position_builder_with_sequence_number(_ctx: TestContext) -> Result<()> {
         let sequence_number = 12345i64;
         let start_position = StartPosition {
             location: StartLocation::SequenceNumber(sequence_number),
@@ -742,11 +754,11 @@ pub(crate) mod tests {
             StartPosition::start_expression(&Some(start_position)),
             "amqp.annotation.x-opt-sequence-number >='12345'"
         );
+        Ok(())
     }
 
-    #[test]
-    fn test_start_position_builder_with_enqueued_time() {
-        setup();
+    #[recorded::test]
+    async fn test_start_position_builder_with_enqueued_time(_ctx: TestContext) -> Result<()> {
         let enqueued_time = SystemTime::now();
         let start_position = StartPosition {
             location: StartLocation::EnqueuedTime(enqueued_time),
@@ -794,11 +806,11 @@ pub(crate) mod tests {
                     .as_millis()
             )
         );
+        Ok(())
     }
 
-    #[test]
-    fn test_start_position_builder_with_offset() {
-        setup();
+    #[recorded::test]
+    async fn test_start_position_builder_with_offset(_ctx: TestContext) -> Result<()> {
         let offset = "12345".to_string();
         let start_position = StartPosition {
             location: StartLocation::Offset(offset.clone()),
@@ -821,11 +833,11 @@ pub(crate) mod tests {
             "amqp.annotation.x-opt-offset >='12345'",
             StartPosition::start_expression(&Some(start_position)),
         );
+        Ok(())
     }
 
-    #[test]
-    fn test_start_position_builder_inclusive() {
-        setup();
+    #[recorded::test]
+    async fn test_start_position_builder_inclusive(_ctx: TestContext) -> Result<()> {
         let start_position = StartPosition {
             inclusive: true,
             ..Default::default()
@@ -833,5 +845,140 @@ pub(crate) mod tests {
         assert!(start_position.inclusive);
         let start_position = StartPosition::default();
         assert!(!start_position.inclusive);
+        Ok(())
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_consumer_properties_link(ctx: TestContext) -> Result<()> {
+        const TEST_NAME: &str = "force_errors_consumer_properties_link";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let consumer = Arc::new(
+            ConsumerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub, credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            consumer.clone(),
+            |consumer: Arc<ConsumerClient>| {
+                let consumer = consumer.clone();
+                async move {
+                    loop {
+                        consumer.get_eventhub_properties().await.unwrap();
+                    }
+                }
+            },
+            |consumer| {
+                consumer
+                    .force_error(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Amqp,
+                        azure_core_amqp::AmqpError::from(AmqpErrorKind::LinkClosedByRemote(
+                            Box::new(azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            )),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until forcing the error.
+            Duration::seconds(20), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_consumer_properties_session(ctx: TestContext) -> Result<()> {
+        const TEST_NAME: &str = "force_errors_consumer_properties_session";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let consumer = Arc::new(
+            ConsumerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub, credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            consumer.clone(),
+            |consumer: Arc<ConsumerClient>| {
+                let consumer = consumer.clone();
+                async move {
+                    loop {
+                        consumer.get_eventhub_properties().await.unwrap();
+                    }
+                }
+            },
+            |consumer| {
+                consumer
+                    .force_error(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Amqp,
+                        azure_core_amqp::AmqpError::from(AmqpErrorKind::SessionClosedByRemote(
+                            Box::new(azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            )),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until forcing the error.
+            Duration::seconds(20), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
+    }
+    #[recorded::test(live)]
+    async fn force_errors_consumer_properties_connection(ctx: TestContext) -> Result<()> {
+        const TEST_NAME: &str = "force_errors_consumer_properties_connection";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let consumer = Arc::new(
+            ConsumerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub, credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            consumer.clone(),
+            |consumer: Arc<ConsumerClient>| {
+                let consumer = consumer.clone();
+                async move {
+                    loop {
+                        consumer.get_eventhub_properties().await.unwrap();
+                    }
+                }
+            },
+            |consumer| {
+                consumer
+                    .force_error(azure_core::Error::new(
+                        azure_core::error::ErrorKind::Amqp,
+                        azure_core_amqp::AmqpError::from(AmqpErrorKind::ConnectionClosedByRemote(
+                            Box::new(azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            )),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until forcing the error.
+            Duration::seconds(20), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
     }
 }

@@ -1,6 +1,6 @@
 # Release History
 
-## 0.5.0 (Unreleased)
+## 0.6.0 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,16 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.5.0 (2025-08-05)
+
+### Breaking Changes
+
+- Removed the `CertificateClientExt` trait for `CertificateClient`. The `begin_create_certificate` and `resume_certificate_operation` methods are implemented for `CertificateClient` with the same method signatures.
+
+### Other Changes
+
+- Updated dependencies.
 
 ## 0.4.0 (2025-07-10)
 

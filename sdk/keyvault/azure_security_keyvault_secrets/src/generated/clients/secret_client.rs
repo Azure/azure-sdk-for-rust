@@ -19,9 +19,11 @@ use azure_core::{
     error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
+        headers::ERROR_CODE,
+        pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, Pager, PagerResult, Pipeline, RawResponse,
-        Request, RequestContent, Response, Url,
+        ClientOptions, Context, Method, NoFormat, Pager, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url,
     },
     json, tracing, Error, Result,
 };
@@ -81,6 +83,7 @@ impl SecretClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
             ),
         })
     }
@@ -118,7 +121,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -156,7 +159,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -194,7 +197,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -235,7 +238,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -271,9 +274,9 @@ impl SecretClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -285,7 +288,7 @@ impl SecretClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -295,7 +298,7 @@ impl SecretClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -344,9 +347,9 @@ impl SecretClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -358,7 +361,7 @@ impl SecretClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -368,7 +371,7 @@ impl SecretClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -420,9 +423,9 @@ impl SecretClient {
                 .append_pair("maxresults", &maxresults.to_string());
         }
         let api_version = self.api_version.clone();
-        Ok(Pager::from_callback(move |next_link: Option<Url>| {
+        Ok(Pager::from_callback(move |next_link: PagerState<Url>| {
             let url = match next_link {
-                Some(next_link) => {
+                PagerState::More(next_link) => {
                     let qp = next_link
                         .query_pairs()
                         .filter(|(name, _)| name.ne("api-version"));
@@ -434,7 +437,7 @@ impl SecretClient {
                         .append_pair("api-version", &api_version);
                     next_link
                 }
-                None => first_url.clone(),
+                PagerState::Initial => first_url.clone(),
             };
             let mut request = Request::new(url, Method::Get);
             request.insert_header("accept", "application/json");
@@ -444,7 +447,7 @@ impl SecretClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -494,7 +497,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -532,7 +535,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -569,7 +572,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -612,7 +615,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -657,7 +660,7 @@ impl SecretClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),

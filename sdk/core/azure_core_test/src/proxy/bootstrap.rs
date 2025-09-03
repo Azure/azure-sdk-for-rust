@@ -72,6 +72,9 @@ pub async fn start(
             .to_str()
             .ok_or_else(|| ErrorKind::Other.into_error())?
             .into(),
+        // Write exceptions to stdout; otherwise,
+        // reading from stderr on a separate thread hangs the process on Windows.
+        "--universal".into(),
     ]);
     options.unwrap_or_default().copy_to(&mut args);
     tracing::debug!(

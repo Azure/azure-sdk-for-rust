@@ -10,7 +10,7 @@ use crate::generated::{
         BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
         BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
         BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
-        FilterBlobSegment, KeyInfo, ListContainersSegmentResponse, StorageServiceProperties,
+        BlobServiceProperties, FilterBlobSegment, KeyInfo, ListContainersSegmentResponse,
         StorageServiceStats, UserDelegationKey,
     },
 };
@@ -19,9 +19,11 @@ use azure_core::{
     error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
+        headers::ERROR_CODE,
+        pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, Pipeline, RawResponse,
-        Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Context, Method, NoFormat, PageIterator, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url, XmlFormat,
     },
     tracing, xml, Error, Result,
 };
@@ -80,6 +82,7 @@ impl BlobServiceClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
             ),
         })
     }
@@ -137,7 +140,7 @@ impl BlobServiceClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -177,7 +180,7 @@ impl BlobServiceClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -212,7 +215,7 @@ impl BlobServiceClient {
     pub async fn get_properties(
         &self,
         options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<StorageServiceProperties, XmlFormat>> {
+    ) -> Result<Response<BlobServiceProperties, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -233,7 +236,7 @@ impl BlobServiceClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -274,7 +277,7 @@ impl BlobServiceClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -293,7 +296,7 @@ impl BlobServiceClient {
     #[tracing::function("Storage.Blob.getUserDelegationKey")]
     pub async fn get_user_delegation_key(
         &self,
-        key_info: RequestContent<KeyInfo>,
+        key_info: RequestContent<KeyInfo, XmlFormat>,
         options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
     ) -> Result<Response<UserDelegationKey, XmlFormat>> {
         let options = options.unwrap_or_default();
@@ -317,7 +320,7 @@ impl BlobServiceClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -369,9 +372,9 @@ impl BlobServiceClient {
         }
         let version = self.version.clone();
         Ok(PageIterator::from_callback(
-            move |marker: Option<String>| {
+            move |marker: PagerState<String>| {
                 let mut url = first_url.clone();
-                if let Some(marker) = marker {
+                if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
                         let mut new_url = url.clone();
                         new_url
@@ -395,7 +398,7 @@ impl BlobServiceClient {
                     let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                     if !rsp.status().is_success() {
                         let status = rsp.status();
-                        let http_error = HttpError::new(rsp).await;
+                        let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                         let error_kind = ErrorKind::http_response(
                             status,
                             http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -423,12 +426,12 @@ impl BlobServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `storage_service_properties` - The storage service properties to set.
+    /// * `blob_service_properties` - The storage service properties to set.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.setProperties")]
     pub async fn set_properties(
         &self,
-        storage_service_properties: RequestContent<StorageServiceProperties>,
+        blob_service_properties: RequestContent<BlobServiceProperties, XmlFormat>,
         options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
@@ -448,11 +451,11 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        request.set_body(storage_service_properties);
+        request.set_body(blob_service_properties);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),

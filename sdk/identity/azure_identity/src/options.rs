@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    env::Env,
-    process::{new_executor, Executor},
-};
+use crate::env::Env;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::process::{new_executor, Executor};
 use azure_core::{
     error::{ErrorKind, Result, ResultExt},
     http::{new_http_client, HttpClient, Url},
@@ -21,6 +20,7 @@ pub struct TokenCredentialOptions {
     pub(crate) env: Env,
     pub(crate) http_client: Arc<dyn HttpClient>,
     pub(crate) authority_host: String,
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) executor: Arc<dyn Executor>,
 }
 
@@ -38,6 +38,7 @@ impl Default for TokenCredentialOptions {
             env: Env::default(),
             http_client: new_http_client(),
             authority_host,
+            #[cfg(not(target_arch = "wasm32"))]
             executor: new_executor(),
         }
     }
@@ -64,6 +65,7 @@ impl TokenCredentialOptions {
     }
 
     /// The [`Executor`] to run commands.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn executor(&self) -> Arc<dyn Executor> {
         self.executor.clone()
     }

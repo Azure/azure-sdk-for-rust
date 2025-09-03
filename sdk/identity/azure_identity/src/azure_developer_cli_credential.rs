@@ -80,7 +80,7 @@ pub struct AzureDeveloperCliCredentialOptions {
     pub tenant_id: Option<String>,
 
     #[cfg(test)]
-    env: Option<Env>,
+    pub(crate) env: Option<Env>,
 }
 
 impl AzureDeveloperCliCredential {
@@ -105,8 +105,7 @@ impl AzureDeveloperCliCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for AzureDeveloperCliCredential {
     async fn get_token(
         &self,
@@ -119,7 +118,7 @@ impl TokenCredential for AzureDeveloperCliCredential {
                 "at least one scope required",
             ));
         }
-        let mut command = OsString::from("azd auth token -o json");
+        let mut command = OsString::from("azd auth token -o json --no-prompt");
         for scope in scopes {
             validate_scope(scope)?;
             command.push(" --scope ");
@@ -171,12 +170,15 @@ mod tests {
                     if cfg!(target_os = "windows") {
                         assert_eq!(program.to_string_lossy(), "cmd");
                         assert_eq!(args[0], "/C");
-                        assert!(args[1]
-                            .starts_with(&format!("cd {system_root} && azd auth token -o json")));
+                        assert!(args[1].starts_with(&format!(
+                            "cd {system_root} && azd auth token -o json --no-prompt"
+                        )));
                     } else {
                         assert_eq!(program, "/bin/sh");
                         assert_eq!(args[0], "-c");
-                        assert!(args[1].starts_with("cd /bin && azd auth token -o json"));
+                        assert!(
+                            args[1].starts_with("cd /bin && azd auth token -o json --no-prompt")
+                        );
                     }
                     for scope in LIVE_TEST_SCOPES {
                         assert!(args[1].contains(&format!(" --scope {scope}")));

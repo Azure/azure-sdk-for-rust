@@ -29,14 +29,16 @@ use azure_core::{
     error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
+        headers::ERROR_CODE,
+        pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, Pipeline, RawResponse,
-        Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Context, Method, NoFormat, PageIterator, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Error, Result,
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[tracing::client]
 pub struct BlobContainerClient {
@@ -95,6 +97,7 @@ impl BlobContainerClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
             ),
         })
     }
@@ -150,7 +153,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -203,7 +206,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -259,7 +262,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -316,7 +319,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -365,7 +368,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -427,7 +430,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -471,7 +474,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -512,7 +515,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -571,7 +574,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -628,9 +631,9 @@ impl BlobContainerClient {
         }
         let version = self.version.clone();
         Ok(PageIterator::from_callback(
-            move |marker: Option<String>| {
+            move |marker: PagerState<String>| {
                 let mut url = first_url.clone();
-                if let Some(marker) = marker {
+                if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
                         let mut new_url = url.clone();
                         new_url
@@ -654,7 +657,7 @@ impl BlobContainerClient {
                     let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                     if !rsp.status().is_success() {
                         let status = rsp.status();
-                        let http_error = HttpError::new(rsp).await;
+                        let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                         let error_kind = ErrorKind::http_response(
                             status,
                             http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -732,9 +735,9 @@ impl BlobContainerClient {
         }
         let version = self.version.clone();
         Ok(PageIterator::from_callback(
-            move |marker: Option<String>| {
+            move |marker: PagerState<String>| {
                 let mut url = first_url.clone();
-                if let Some(marker) = marker {
+                if let PagerState::More(marker) = marker {
                     if url.query_pairs().any(|(name, _)| name.eq("marker")) {
                         let mut new_url = url.clone();
                         new_url
@@ -758,7 +761,7 @@ impl BlobContainerClient {
                     let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                     if !rsp.status().is_success() {
                         let status = rsp.status();
-                        let http_error = HttpError::new(rsp).await;
+                        let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                         let error_kind = ErrorKind::http_response(
                             status,
                             http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -825,7 +828,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -872,7 +875,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -925,7 +928,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -972,7 +975,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -992,7 +995,7 @@ impl BlobContainerClient {
     #[tracing::function("Storage.Blob.Container.setAccessPolicy")]
     pub async fn set_access_policy(
         &self,
-        container_acl: RequestContent<Vec<SignedIdentifier>>,
+        container_acl: RequestContent<Vec<SignedIdentifier>, XmlFormat>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>> {
         let options = options.unwrap_or_default();
@@ -1029,7 +1032,7 @@ impl BlobContainerClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1043,10 +1046,12 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
+    /// * `metadata` - The metadata headers.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Container.setMetadata")]
     pub async fn set_metadata(
         &self,
+        metadata: HashMap<String, String>,
         options: Option<BlobContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
@@ -1072,16 +1077,14 @@ impl BlobContainerClient {
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
+        for (k, v) in &metadata {
+            request.insert_header(format!("x-ms-meta-{k}"), v);
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),

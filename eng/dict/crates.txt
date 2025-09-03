@@ -32,6 +32,7 @@ fe2o3-amqp-types
 flate2
 futures
 getrandom
+gloo
 hmac
 litemap
 log
@@ -65,6 +66,7 @@ typespec_client_core
 typespec_client_core
 typespec_macros
 typespec_macros
+ureq
 url
 uuid
 zerofrom

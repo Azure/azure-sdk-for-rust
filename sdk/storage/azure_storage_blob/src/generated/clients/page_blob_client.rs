@@ -9,7 +9,7 @@ use crate::generated::models::{
     PageBlobClientCreateOptions, PageBlobClientCreateResult,
     PageBlobClientGetPageRangesDiffOptions, PageBlobClientGetPageRangesOptions,
     PageBlobClientResizeOptions, PageBlobClientResizeResult,
-    PageBlobClientUpdateSequenceNumberOptions, PageBlobClientUpdateSequenceNumberResult,
+    PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResult,
     PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesFromUrlResult,
     PageBlobClientUploadPagesOptions, PageBlobClientUploadPagesResult, PageList,
     SequenceNumberActionType,
@@ -20,6 +20,7 @@ use azure_core::{
     error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
+        headers::ERROR_CODE,
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Context, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
         XmlFormat,
@@ -90,6 +91,7 @@ impl PageBlobClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
             ),
         })
     }
@@ -190,7 +192,7 @@ impl PageBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -255,7 +257,7 @@ impl PageBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -384,7 +386,7 @@ impl PageBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -457,7 +459,7 @@ impl PageBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -539,7 +541,7 @@ impl PageBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -620,7 +622,7 @@ impl PageBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -638,12 +640,12 @@ impl PageBlobClient {
     /// * `sequence_number_action` - Required if the x-ms-blob-sequence-number header is set for the request. This property applies
     ///   to page blobs only. This property indicates how the service should modify the blob's sequence number
     /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.updateSequenceNumber")]
-    pub async fn update_sequence_number(
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.setSequenceNumber")]
+    pub async fn set_sequence_number(
         &self,
         sequence_number_action: SequenceNumberActionType,
-        options: Option<PageBlobClientUpdateSequenceNumberOptions<'_>>,
-    ) -> Result<Response<PageBlobClientUpdateSequenceNumberResult, NoFormat>> {
+        options: Option<PageBlobClientSetSequenceNumberOptions<'_>>,
+    ) -> Result<Response<PageBlobClientSetSequenceNumberResult, NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = Context::with_context(&options.method_options.context);
         let mut url = self.endpoint.clone();
@@ -696,7 +698,7 @@ impl PageBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -717,7 +719,7 @@ impl PageBlobClient {
     #[tracing::function("Storage.Blob.Container.Blob.PageBlob.uploadPages")]
     pub async fn upload_pages(
         &self,
-        body: RequestContent<Bytes>,
+        body: RequestContent<Bytes, NoFormat>,
         content_length: u64,
         range: String,
         options: Option<PageBlobClientUploadPagesOptions<'_>>,
@@ -818,7 +820,7 @@ impl PageBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -960,7 +962,7 @@ impl PageBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),

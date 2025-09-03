@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
+    pager::PagerState,
     request::{options::ContentType, Request},
     response::Response,
     ClientOptions, Context, Method, RawResponse,
@@ -44,6 +45,7 @@ impl CosmosPipeline {
                 client_options,
                 Vec::new(),
                 vec![Arc::new(auth_policy)],
+                None,
             ),
         }
     }
@@ -101,7 +103,7 @@ impl CosmosPipeline {
             let mut req = base_request.clone();
             let ctx = ctx.clone();
             async move {
-                if let Some(continuation) = continuation {
+                if let PagerState::More(continuation) = continuation {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 

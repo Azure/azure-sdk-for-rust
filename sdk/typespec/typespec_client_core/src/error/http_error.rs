@@ -5,7 +5,7 @@
 use crate::json::from_json;
 use crate::{
     error::ErrorKind,
-    http::{headers, RawResponse, StatusCode},
+    http::{headers::HeaderName, RawResponse, StatusCode},
     Error,
 };
 use bytes::Bytes;
@@ -24,7 +24,7 @@ impl HttpError {
     /// Create an error from an HTTP response.
     ///
     /// This does not check whether the response was successful and should only be used with unsuccessful responses.
-    pub async fn new(response: RawResponse) -> Self {
+    pub async fn new(response: RawResponse, header_name: Option<HeaderName>) -> Self {
         let status = response.status();
         let headers: HashMap<String, String> = response
             .headers()
@@ -36,7 +36,7 @@ impl HttpError {
             .collect()
             .await
             .unwrap_or_else(|_| Bytes::from_static(b"(error reading body)"));
-        let details = ErrorDetails::new(&headers, &body);
+        let details = ErrorDetails::new(&headers, header_name, &body);
         HttpError {
             status,
             details,
@@ -187,8 +187,12 @@ struct ErrorDetails {
 }
 
 impl ErrorDetails {
-    fn new(headers: &HashMap<String, String>, body: &[u8]) -> Self {
-        let mut code = get_error_code_from_header(headers);
+    fn new(
+        headers: &HashMap<String, String>,
+        header_name: Option<HeaderName>,
+        body: &[u8],
+    ) -> Self {
+        let mut code = get_error_code_from_header(headers, header_name);
         code = code.or_else(|| get_error_code_from_body(body));
         let message = get_error_message_from_body(body);
         Self { code, message }
@@ -198,8 +202,15 @@ impl ErrorDetails {
 /// Gets the error code if it's present in the headers.
 ///
 /// For more info, see [guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
-fn get_error_code_from_header(headers: &HashMap<String, String>) -> Option<String> {
-    headers.get(headers::ERROR_CODE.as_str()).cloned()
+fn get_error_code_from_header(
+    headers: &HashMap<String, String>,
+    error_header_name: Option<HeaderName>,
+) -> Option<String> {
+    if let Some(error_header_name) = error_header_name {
+        headers.get(error_header_name.as_str()).cloned()
+    } else {
+        None
+    }
 }
 
 #[derive(Deserialize)]
@@ -346,7 +357,7 @@ mod tests {
             Headers::new(),
             Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey","key":"foo"}}}"#),
         );
-        let err = HttpError::new(response).await;
+        let err = HttpError::new(response, Some(HeaderName::from_static("x-ms-error-code"))).await;
 
         assert_eq!(err.status(), StatusCode::BadRequest);
         assert_eq!(err.error_code(), Some("InvalidRequest"));

@@ -1,5 +1,9 @@
 use async_trait::async_trait;
-use azure_core::http::{headers::Headers, ItemIterator, Page, PagerResult, RawResponse};
+use azure_core::http::{
+    headers::Headers,
+    pager::{Page, PagerResult},
+    ItemIterator, RawResponse,
+};
 use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::constants;

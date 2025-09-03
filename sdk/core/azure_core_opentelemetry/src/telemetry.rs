@@ -39,7 +39,7 @@ impl OpenTelemetryTracerProvider {
     /// # Returns
     /// An `Arc` to the newly created `OpenTelemetryTracerProvider` that uses the global provider.
     ///
-    pub fn new_from_global_provider() -> Arc<Self> {
+    pub fn from_global_provider() -> Arc<Self> {
         Arc::new(Self { inner: None })
     }
 }
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn test_create_tracer_provider_from_global() {
-        let tracer_provider = OpenTelemetryTracerProvider::new_from_global_provider();
+        let tracer_provider = OpenTelemetryTracerProvider::from_global_provider();
         let _tracer = tracer_provider.get_tracer(Some("My Namespace"), "test", Some("0.1.0"));
     }
 
@@ -110,7 +110,7 @@ mod tests {
         let provider = SdkTracerProvider::builder().build();
         opentelemetry::global::set_tracer_provider(provider);
 
-        let tracer_provider = OpenTelemetryTracerProvider::new_from_global_provider();
+        let tracer_provider = OpenTelemetryTracerProvider::from_global_provider();
         let _tracer = tracer_provider.get_tracer(Some("My Namespace"), "test", Some("0.1.0"));
     }
 }

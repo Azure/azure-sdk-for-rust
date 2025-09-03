@@ -2,14 +2,15 @@
 // Licensed under the MIT license.
 
 use super::RecoverableConnection;
-use crate::{common::retry_azure_operation, ErrorKind, EventHubsError};
+use crate::common::retry::ErrorRecoveryAction;
+use crate::{common::recover_azure_operation, ErrorKind, EventHubsError};
 use azure_core::{error::ErrorKind as AzureErrorKind, error::Result, http::Url};
 use azure_core_amqp::{
     error::AmqpErrorKind, AmqpError, AmqpMessage, AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis,
     AmqpSenderOptions, AmqpSession, AmqpTarget,
 };
 use std::error::Error;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use tracing::{debug, warn};
 
 /// Thin wrapper around the [`AmqpSenderApis`] trait that implements the retry functionality.
@@ -18,7 +19,7 @@ use tracing::{debug, warn};
 /// the retry functionality. That allows implementations which call into the Send API to not have
 /// to worry about retrying the operation themselves.
 pub(crate) struct RecoverableSender {
-    recoverable_connection: Arc<RecoverableConnection>,
+    recoverable_connection: Weak<RecoverableConnection>,
     path: Url,
 }
 
@@ -29,14 +30,14 @@ impl RecoverableSender {
     ///
     /// * `recoverable_connection` - The recoverable connection to use for sending messages.
     /// * `path` - The URL path of the sender.
-    pub fn new(recoverable_connection: Arc<RecoverableConnection>, path: Url) -> Self {
+    pub fn new(recoverable_connection: Weak<RecoverableConnection>, path: Url) -> Self {
         Self {
             recoverable_connection,
             path,
         }
     }
 
-    fn should_retry_send_operation(e: &azure_core::Error) -> bool {
+    fn should_retry_send_operation(e: &azure_core::Error) -> ErrorRecoveryAction {
         match e.kind() {
             AzureErrorKind::Amqp => {
                 warn!(err=?e, "Amqp operation failed: {e}");
@@ -49,16 +50,16 @@ impl RecoverableSender {
                         RecoverableConnection::should_retry_amqp_error(amqp_error)
                     } else {
                         debug!(err=?e, "Non AMQP error: {e}");
-                        false
+                        ErrorRecoveryAction::ReturnError
                     }
                 } else {
                     debug!("No source error found");
-                    false
+                    ErrorRecoveryAction::ReturnError
                 }
             }
             _ => {
                 debug!(err=?e, "Non AMQP error: {e}");
-                false
+                ErrorRecoveryAction::ReturnError
             }
         }
     }
@@ -76,14 +77,23 @@ impl AmqpSenderApis for RecoverableSender {
         M: Into<AmqpMessage> + std::fmt::Debug + Send,
     {
         let message_arc = Arc::new(message.into());
-        let outcome = retry_azure_operation(
+        let outcome = recover_azure_operation(
             move || {
                 //                let sender = self.sender.clone();
                 let options = options.clone();
                 let path = self.path.clone();
                 let message_clone = message_arc.clone();
                 async move {
-                    let sender = self.recoverable_connection.ensure_sender(&path).await?;
+                    let connection = self
+                        .recoverable_connection
+                        .upgrade()
+                        .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+
+                    // Check for forced error.
+                    #[cfg(test)]
+                    connection.get_forced_error()?;
+
+                    let sender = connection.ensure_sender(&path).await?;
                     let outcome = sender.send_ref(message_clone.as_ref(), options).await?;
                     // We treat all outcomes other than "rejected" as successful.
                     match outcome {
@@ -108,8 +118,20 @@ impl AmqpSenderApis for RecoverableSender {
                     }
                 }
             },
-            &self.recoverable_connection.retry_options,
-            Some(Self::should_retry_send_operation),
+            &self
+                .recoverable_connection
+                .upgrade()
+                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
+                .retry_options,
+            Self::should_retry_send_operation,
+            Some(move |connection: Weak<RecoverableConnection>, reason| {
+                let connection = connection.clone();
+                Box::pin(async move {
+                    // Use the static method from RecoverableConnection to recover from the error.
+                    RecoverableConnection::recover_from_error(connection, reason).await
+                })
+            }),
+            Some(self.recoverable_connection.clone()),
         )
         .await?;
         Ok(outcome)
@@ -146,6 +168,8 @@ impl AmqpSenderApis for RecoverableSender {
 
     async fn max_message_size(&self) -> azure_core::Result<Option<u64>> {
         self.recoverable_connection
+            .upgrade()
+            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
             .ensure_sender(&self.path)
             .await?
             .max_message_size()

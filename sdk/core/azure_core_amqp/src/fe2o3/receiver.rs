@@ -88,7 +88,9 @@ impl AmqpReceiverApis for Fe2o3AmqpReceiver {
         match res {
             Ok(_) => Ok(()),
             Err(e) => match e.kind() {
-                AmqpErrorKind::ClosedByRemote(_) => {
+                AmqpErrorKind::LinkClosedByRemote(_)
+                | AmqpErrorKind::SessionClosedByRemote(_)
+                | AmqpErrorKind::ConnectionClosedByRemote(_) => {
                     info!("Error detaching receiver: {:?} - ignored", e);
                     Ok(())
                 }
