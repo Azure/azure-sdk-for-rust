@@ -13,6 +13,7 @@ members = [
   "sdk/core/azure_core_test_macros",
   "sdk/core/azure_core_opentelemetry",
   "sdk/cosmos/azure_data_cosmos",
+  "sdk/cosmos/azure_data_cosmos_native",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
@@ -25,7 +26,6 @@ members = [
   "sdk/storage/azure_storage_common",
   "sdk/storage/azure_storage_blob",
   "sdk/storage/azure_storage_queue",
-  "sdk/cosmos/cosmosclient",
 ]
 exclude = [
   "eng/scripts",
