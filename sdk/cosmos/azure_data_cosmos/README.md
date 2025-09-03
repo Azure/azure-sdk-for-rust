@@ -20,8 +20,8 @@ By default, this crate uses OpenSSL for TLS connections through its dependency o
 
 ```toml
 [dependencies]
-azure_data_cosmos = { version = "0.27", default-features = false, features = ["hmac_rust"] }
-reqwest = { version = "0.12", features = ["rustls-tls"] }
+azure_data_cosmos = { version = "0.x", default-features = false, features = ["hmac_rust"] }
+reqwest = { version = "0.y", features = ["rustls-tls"] }
 ```
 
 **Important**: When disabling default features, you must include `hmac_rust` for cryptographic operations to work properly. The `hmac_rust` feature provides a pure Rust implementation of HMAC that works well with rustls for a fully Rust-native TLS stack.
