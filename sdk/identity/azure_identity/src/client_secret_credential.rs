@@ -88,7 +88,8 @@ impl ClientSecretCredential {
 
         let res = self.options.http_client().execute_request(&req).await?;
 
-        match res.status() {
+        let status_code = res.status();
+        match status_code {
             StatusCode::Ok => {
                 let token_response: EntraIdTokenResponse =
                     deserialize(CLIENT_SECRET_CREDENTIAL, res).await?;
@@ -108,7 +109,8 @@ impl ClientSecretCredential {
                         CLIENT_SECRET_CREDENTIAL, error_response.error_description
                     )
                 };
-                Err(Error::message(ErrorKind::Credential, message))
+                let err: Error = ErrorKind::http_response(status_code, Some(message)).into();
+                Err(Error::new(ErrorKind::Credential, err))
             }
         }
     }
