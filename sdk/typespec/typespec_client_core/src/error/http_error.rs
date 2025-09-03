@@ -24,7 +24,7 @@ impl HttpError {
     /// Create an error from an HTTP response.
     ///
     /// This does not check whether the response was successful and should only be used with unsuccessful responses.
-    pub async fn new(response: RawResponse, error_header_name: Option<HeaderName>) -> Self {
+    pub async fn new(response: RawResponse, header_name: Option<HeaderName>) -> Self {
         let status = response.status();
         let headers: HashMap<String, String> = response
             .headers()
@@ -36,7 +36,7 @@ impl HttpError {
             .collect()
             .await
             .unwrap_or_else(|_| Bytes::from_static(b"(error reading body)"));
-        let details = ErrorDetails::new(&headers, error_header_name, &body);
+        let details = ErrorDetails::new(&headers, header_name, &body);
         HttpError {
             status,
             details,
@@ -189,10 +189,10 @@ struct ErrorDetails {
 impl ErrorDetails {
     fn new(
         headers: &HashMap<String, String>,
-        error_header_name: Option<HeaderName>,
+        header_name: Option<HeaderName>,
         body: &[u8],
     ) -> Self {
-        let mut code = get_error_code_from_header(headers, error_header_name);
+        let mut code = get_error_code_from_header(headers, header_name);
         code = code.or_else(|| get_error_code_from_body(body));
         let message = get_error_message_from_body(body);
         Self { code, message }
