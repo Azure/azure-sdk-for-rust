@@ -481,7 +481,7 @@ where
 /// Get the retry duration from the operation response or [`PollerOptions`].
 pub fn get_retry_after(
     headers: &Headers,
-    retry_headers: &[(HeaderName, bool)],
+    retry_headers: &[HeaderName],
     options: &PollerOptions,
 ) -> Option<Duration> {
     #[cfg_attr(feature = "test", allow(unused_mut))]

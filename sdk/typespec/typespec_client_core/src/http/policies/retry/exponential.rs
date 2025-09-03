@@ -78,9 +78,9 @@ mod tests {
             options.max_delay,
             RetryHeaders {
                 retry_headers: vec![
-                    (HeaderName::from_static("x-ms-retry-after"), false),
-                    (HeaderName::from_static("retry-after-ms"), false),
-                    (RETRY_AFTER, true),
+                    HeaderName::from_static("x-ms-retry-after"),
+                    HeaderName::from_static("retry-after-ms"),
+                    RETRY_AFTER,
                 ],
                 error_header: Some(HeaderName::from_static("x-ms-error-code")),
             },

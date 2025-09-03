@@ -4,7 +4,7 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
-#[macro_use]
+    #[macro_use]
 mod macros;
 pub mod async_runtime;
 pub mod base64;

@@ -141,11 +141,7 @@ impl CertificateClient {
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
                         &headers,
-                        &[
-                            (RETRY_AFTER_MS, false),
-                            (X_MS_RETRY_AFTER_MS, false),
-                            (RETRY_AFTER, true),
-                        ],
+                        &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
                         &options.poller_options,
                     );
                     let bytes = body.collect().await?;
@@ -250,11 +246,7 @@ impl CertificateClient {
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
                         &headers,
-                        &[
-                            (RETRY_AFTER_MS, false),
-                            (X_MS_RETRY_AFTER_MS, false),
-                            (RETRY_AFTER, true),
-                        ],
+                        &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
                         &options.poller_options,
                     );
                     let bytes = body.collect().await?;

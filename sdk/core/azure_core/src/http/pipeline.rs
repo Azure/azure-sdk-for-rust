@@ -93,11 +93,7 @@ impl Pipeline {
         }
 
         options.retry = Some(options.retry.unwrap_or_default().with_retry_after_headers(
-            &[
-                (RETRY_AFTER_MS, false),
-                (X_MS_RETRY_AFTER_MS, false),
-                (RETRY_AFTER, true),
-            ],
+            &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
             Some(ERROR_CODE),
         ));
 

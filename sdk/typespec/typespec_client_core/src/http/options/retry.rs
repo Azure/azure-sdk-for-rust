@@ -69,7 +69,7 @@ impl RetryOptions {
         Self {
             mode: RetryMode::Exponential(options),
             retry_headers: RetryHeaders {
-                retry_headers: vec![(RETRY_AFTER, true)],
+                retry_headers: vec![RETRY_AFTER],
                 error_header: None,
             },
         }
@@ -80,7 +80,7 @@ impl RetryOptions {
         Self {
             mode: RetryMode::Fixed(options),
             retry_headers: RetryHeaders {
-                retry_headers: vec![(RETRY_AFTER, true)],
+                retry_headers: vec![RETRY_AFTER],
                 error_header: None,
             },
         }
@@ -113,7 +113,7 @@ impl RetryOptions {
     ///
     pub fn with_retry_after_headers(
         mut self,
-        headers: &[(HeaderName, bool)],
+        headers: &[HeaderName],
         error_header: Option<HeaderName>,
     ) -> Self {
         self.retry_headers.retry_headers = headers.to_vec();

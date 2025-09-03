@@ -41,12 +41,14 @@ type DateTimeFn = fn() -> OffsetDateTime;
 pub fn get_retry_after(
     headers: &Headers,
     now: DateTimeFn,
-    retry_headers: &[(HeaderName, bool)],
+    retry_headers: &[HeaderName],
 ) -> Option<Duration> {
     // TODO: Only check Microsoft headers when constructed from azure_core (https://github.com/Azure/azure-sdk-for-rust/issues/1753)
-    retry_headers.iter().find_map(|(header, is_standard)| {
+    retry_headers.iter().find_map(|header| {
         headers.get_str(header).ok().and_then(|v| {
-            if *is_standard {
+            // The standard behavior for retry headers is to parse as an integer number of seconds,
+            // or as an HTTP date if the header is the standard Retry-After header.
+            if header.is_standard() {
                 // RETRY_AFTER values are either in seconds or a HTTP date
                 v.parse::<i64>().ok().map(Duration::seconds).or_else(|| {
                     try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
@@ -59,7 +61,7 @@ pub fn get_retry_after(
                     })
                 })
             } else {
-                // RETRY_AFTER_MS or X_MS_RETRY_AFTER_MS values are in milliseconds
+                // We assume that all non-standard headers are represented in as an integer number of milliseconds
                 v.parse::<i64>().ok().map(Duration::milliseconds)
             }
         })
@@ -85,7 +87,7 @@ impl Deref for RetryPolicyCount {
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct RetryHeaders {
     /// The headers that may indicate how long to wait before retrying.
-    pub retry_headers: Vec<(HeaderName, bool)>,
+    pub retry_headers: Vec<HeaderName>,
 
     /// An optional header that may contain an error code.
     pub error_header: Option<HeaderName>,
@@ -302,10 +304,7 @@ mod test {
         let retry_after = get_retry_after(
             &headers,
             datetime_now,
-            &[
-                (HeaderName::from_static("x-ms-retry-after"), false),
-                (RETRY_AFTER, true),
-            ],
+            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
         );
         assert_eq!(retry_after, Some(Duration::seconds(10)));
 
@@ -315,10 +314,7 @@ mod test {
         let retry_after = get_retry_after(
             &headers,
             datetime_now,
-            &[
-                (HeaderName::from_static("x-ms-retry-after"), false),
-                (RETRY_AFTER, true),
-            ],
+            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
         );
         assert_eq!(retry_after, Some(Duration::seconds(0)));
 
@@ -327,10 +323,7 @@ mod test {
         let retry_after = get_retry_after(
             &headers,
             datetime_now,
-            &[
-                (HeaderName::from_static("x-ms-retry-after"), false),
-                (RETRY_AFTER, true),
-            ],
+            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
         );
         assert_eq!(retry_after, None);
 
@@ -340,10 +333,7 @@ mod test {
         let retry_after = get_retry_after(
             &headers,
             datetime_now,
-            &[
-                (HeaderName::from_static("x-ms-retry-after"), false),
-                (RETRY_AFTER, true),
-            ],
+            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
         );
         assert_eq!(retry_after, None);
 
@@ -353,10 +343,7 @@ mod test {
         let retry_after = get_retry_after(
             &headers,
             datetime_now,
-            &[
-                (HeaderName::from_static("x-ms-retry-after"), false),
-                (RETRY_AFTER, true),
-            ],
+            &[HeaderName::from_static("x-ms-retry-after"), RETRY_AFTER],
         );
         assert_eq!(retry_after, Some(Duration::seconds(123)));
     }

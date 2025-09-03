@@ -263,14 +263,34 @@ impl From<std::collections::HashMap<HeaderName, HeaderValue>> for Headers {
 }
 
 /// A header name.
-#[derive(Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
-pub struct HeaderName(Cow<'static, str>);
+#[derive(Clone, Debug, Eq, PartialOrd, Ord)]
+pub struct HeaderName {
+    name: Cow<'static, str>,
+    is_standard: bool,
+}
 
 impl HeaderName {
     /// Create a header name from a static `str`.
     pub const fn from_static(s: &'static str) -> Self {
         ensure_no_uppercase(s);
-        Self(Cow::Borrowed(s))
+        Self {
+            name: Cow::Borrowed(s),
+            is_standard: false,
+        }
+    }
+
+    /// Create a header name from a static `str`.
+    pub(crate) const fn from_static_standard(s: &'static str) -> Self {
+        ensure_no_uppercase(s);
+        Self {
+            name: Cow::Borrowed(s),
+            is_standard: true,
+        }
+    }
+
+    /// Returns true if this is a standard header name.
+    pub const fn is_standard(&self) -> bool {
+        self.is_standard
     }
 
     fn from_cow<C>(c: C) -> Self
@@ -282,12 +302,35 @@ impl HeaderName {
             c.chars().all(|c| c.is_lowercase() || !c.is_alphabetic()),
             "header names must be lowercase: {c}"
         );
-        Self(c)
+        Self {
+            name: c,
+            is_standard: false,
+        }
     }
 
     /// Get a header name as a `str`.
     pub fn as_str(&self) -> &str {
-        self.0.as_ref()
+        self.name.as_ref()
+    }
+}
+
+impl PartialEq for HeaderName {
+    fn eq(&self, other: &Self) -> bool {
+        self.is_standard == other.is_standard && self.name.eq_ignore_ascii_case(&other.name)
+    }
+}
+
+impl PartialEq<&str> for HeaderName {
+    fn eq(&self, other: &&str) -> bool {
+        self.name.eq_ignore_ascii_case(other)
+    }
+}
+
+impl std::hash::Hash for HeaderName {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // Keep hashing consistent with PartialEq: include is_standard and the case-insensitive name.
+        std::hash::Hash::hash(&self.is_standard, state);
+        state.write(self.name.as_bytes());
     }
 }
 
