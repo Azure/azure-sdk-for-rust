@@ -137,7 +137,7 @@ impl BlobCheckpointStore {
         let blob_content = RequestContent::<Bytes, NoFormat>::from(Vec::new());
         let options = BlockBlobClientUploadOptions {
             metadata: metadata.clone(),
-            if_match: Some("*".to_string()), // Upload without an etag, creating a new blob
+            if_none_match: Some("*".to_string()), // Upload without an etag, creating a new blob
             ..Default::default()
         };
 
