@@ -26,16 +26,55 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        JsonFormat, NoFormat, RequestContent, Response, Url, XmlFormat,
+        JsonFormat, NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
     Bytes, Result,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
 
+impl GeneratedBlobClient {
+    fn from_url(
+        blob_url: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let options = options.unwrap_or_default();
+
+        let pipeline = match credential {
+            Some(cred) => {
+                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                    cred,
+                    vec!["https://storage.azure.com/.default"],
+                ));
+                Pipeline::new(
+                    option_env!("CARGO_PKG_NAME"),
+                    option_env!("CARGO_PKG_VERSION"),
+                    options.client_options,
+                    Vec::default(),
+                    vec![auth_policy],
+                )
+            }
+            None => Pipeline::new(
+                option_env!("CARGO_PKG_NAME"),
+                option_env!("CARGO_PKG_VERSION"),
+                options.client_options,
+                Vec::default(),
+                Vec::default(),
+            ),
+        };
+
+        Ok(Self {
+            blob_url: Url::parse(blob_url)?,
+            version: options.version,
+            pipeline,
+        })
+    }
+}
+
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
-    pub(super) endpoint: Url,
+    pub(super) blob_url: Url,
     pub(super) client: GeneratedBlobClient,
 }
 
@@ -47,13 +86,13 @@ impl BlobClient {
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
     /// * `container_name` - The name of the container containing this blob.
     /// * `blob_name` - The name of the blob to interact with.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `credential` - Optional. An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
         container_name: String,
         blob_name: String,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
@@ -64,15 +103,41 @@ impl BlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let client = GeneratedBlobClient::new(
-            endpoint,
-            credential,
-            container_name,
-            blob_name,
-            Some(options),
-        )?;
+        let mut url = Url::parse(endpoint)?;
+        if !url.scheme().starts_with("http") {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                format!("{url} must use http(s)"),
+            ));
+        }
+
+        // Build Blob URL, Url crate handles encoding only path params
+        url.path_segments_mut()
+            .expect("Cannot be base")
+            .extend([&container_name, &blob_name]);
+
+        let client = GeneratedBlobClient::from_url(url.as_str(), credential, Some(options))?;
         Ok(Self {
-            endpoint: endpoint.parse()?,
+            blob_url: client.blob_url().clone(),
+            client,
+        })
+    }
+
+    pub fn from_blob_url(
+        blob_url: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let mut options = options.unwrap_or_default();
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+        let url = Url::parse(blob_url)?;
+        let client = GeneratedBlobClient::from_url(url.as_str(), credential, Some(options))?;
+        Ok(Self {
+            blob_url: client.blob_url().clone(),
             client,
         })
     }
@@ -83,7 +148,7 @@ impl BlobClient {
     ///
     pub fn append_blob_client(&self) -> AppendBlobClient {
         AppendBlobClient {
-            endpoint: self.client.endpoint.clone(),
+            blob_url: self.client.blob_url.clone(),
             client: self.client.get_append_blob_client(),
         }
     }
@@ -94,7 +159,7 @@ impl BlobClient {
     ///
     pub fn block_blob_client(&self) -> BlockBlobClient {
         BlockBlobClient {
-            endpoint: self.client.endpoint.clone(),
+            blob_url: self.client.blob_url.clone(),
             client: self.client.get_block_blob_client(),
         }
     }
@@ -105,24 +170,24 @@ impl BlobClient {
     ///
     pub fn page_blob_client(&self) -> PageBlobClient {
         PageBlobClient {
-            endpoint: self.client.endpoint.clone(),
+            blob_url: self.client.blob_url.clone(),
             client: self.client.get_page_blob_client(),
         }
     }
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
+    /// Gets the blob_url of the Storage blob this client is connected to.
+    pub fn blob_url(&self) -> &Url {
+        &self.blob_url
     }
 
     /// Gets the container name of the Storage account this client is connected to.
     pub fn container_name(&self) -> &str {
-        &self.client.container_name
+        // Add logic that would parse out container name from blob_url
     }
 
     /// Gets the blob name of the Storage account this client is connected to.
     pub fn blob_name(&self) -> &str {
-        &self.client.blob_name
+        // Add logic that would parse out blob_name name from blob_url
     }
 
     /// Returns all user-defined metadata, standard HTTP properties, and system properties for the blob.
