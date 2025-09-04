@@ -22,8 +22,8 @@ use azure_core::{
         headers::ERROR_CODE,
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, Pager, Pipeline, RawResponse, Request,
-        RequestContent, Response, Url,
+        ClientOptions, Method, NoFormat, Pager, Pipeline, RawResponse, Request, RequestContent,
+        Response, Url,
     },
     json, tracing, Error, Result,
 };
@@ -55,7 +55,7 @@ impl SecretClient {
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("azure_security_keyvault_secrets")]
+    #[tracing::new("KeyVault")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -108,8 +108,14 @@ impl SecretClient {
         secret_name: &str,
         options: Option<SecretClientBackupSecretOptions<'_>>,
     ) -> Result<Response<BackupSecretResult>> {
+        if secret_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/backup");
         path = path.replace("{secret-name}", secret_name);
@@ -146,8 +152,14 @@ impl SecretClient {
         secret_name: &str,
         options: Option<SecretClientDeleteSecretOptions<'_>>,
     ) -> Result<Response<DeletedSecret>> {
+        if secret_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -184,8 +196,14 @@ impl SecretClient {
         secret_name: &str,
         options: Option<SecretClientGetDeletedSecretOptions<'_>>,
     ) -> Result<Response<DeletedSecret>> {
+        if secret_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -224,8 +242,20 @@ impl SecretClient {
         secret_version: &str,
         options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<Response<Secret>> {
+        if secret_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_name cannot be empty",
+            ));
+        }
+        if secret_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
@@ -408,6 +438,12 @@ impl SecretClient {
         secret_name: &str,
         options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListSecretPropertiesResult>> {
+        if secret_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -484,8 +520,14 @@ impl SecretClient {
         secret_name: &str,
         options: Option<SecretClientPurgeDeletedSecretOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
+        if secret_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -493,7 +535,6 @@ impl SecretClient {
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/json");
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
@@ -522,8 +563,14 @@ impl SecretClient {
         secret_name: &str,
         options: Option<SecretClientRecoverDeletedSecretOptions<'_>>,
     ) -> Result<Response<Secret>> {
+        if secret_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedsecrets/{secret-name}/recover");
         path = path.replace("{secret-name}", secret_name);
@@ -560,7 +607,7 @@ impl SecretClient {
         options: Option<SecretClientRestoreSecretOptions<'_>>,
     ) -> Result<Response<Secret>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("secrets/restore")?;
         url.query_pairs_mut()
@@ -600,8 +647,14 @@ impl SecretClient {
         parameters: RequestContent<SetSecretParameters>,
         options: Option<SecretClientSetSecretOptions<'_>>,
     ) -> Result<Response<Secret>> {
+        if secret_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -644,8 +697,20 @@ impl SecretClient {
         parameters: RequestContent<UpdateSecretPropertiesParameters>,
         options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>,
     ) -> Result<Response<Secret>> {
+        if secret_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_name cannot be empty",
+            ));
+        }
+        if secret_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter secret_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);

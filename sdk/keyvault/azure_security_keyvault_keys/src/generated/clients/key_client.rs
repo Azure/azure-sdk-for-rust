@@ -28,8 +28,8 @@ use azure_core::{
         headers::ERROR_CODE,
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, Pager, Pipeline, RawResponse, Request,
-        RequestContent, Response, Url,
+        ClientOptions, Method, NoFormat, Pager, Pipeline, RawResponse, Request, RequestContent,
+        Response, Url,
     },
     json, tracing, Error, Result,
 };
@@ -61,7 +61,7 @@ impl KeyClient {
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("azure_security_keyvault_keys")]
+    #[tracing::new("KeyVault")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -120,8 +120,14 @@ impl KeyClient {
         key_name: &str,
         options: Option<KeyClientBackupKeyOptions<'_>>,
     ) -> Result<Response<BackupKeyResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/backup");
         path = path.replace("{key-name}", key_name);
@@ -162,8 +168,14 @@ impl KeyClient {
         parameters: RequestContent<CreateKeyParameters>,
         options: Option<KeyClientCreateKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/create");
         path = path.replace("{key-name}", key_name);
@@ -211,8 +223,20 @@ impl KeyClient {
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientDecryptOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/decrypt");
         path = path.replace("{key-name}", key_name);
@@ -253,8 +277,14 @@ impl KeyClient {
         key_name: &str,
         options: Option<KeyClientDeleteKeyOptions<'_>>,
     ) -> Result<Response<DeletedKey>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}");
         path = path.replace("{key-name}", key_name);
@@ -299,8 +329,20 @@ impl KeyClient {
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientEncryptOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/encrypt");
         path = path.replace("{key-name}", key_name);
@@ -340,8 +382,14 @@ impl KeyClient {
         key_name: &str,
         options: Option<KeyClientGetDeletedKeyOptions<'_>>,
     ) -> Result<Response<DeletedKey>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedkeys/{key-name}");
         path = path.replace("{key-name}", key_name);
@@ -381,8 +429,20 @@ impl KeyClient {
         key_version: &str,
         options: Option<KeyClientGetKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}");
         path = path.replace("{key-name}", key_name);
@@ -423,8 +483,20 @@ impl KeyClient {
         key_version: &str,
         options: Option<KeyClientGetKeyAttestationOptions<'_>>,
     ) -> Result<Response<Key>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/attestation");
         path = path.replace("{key-name}", key_name);
@@ -462,8 +534,14 @@ impl KeyClient {
         key_name: &str,
         options: Option<KeyClientGetKeyRotationPolicyOptions<'_>>,
     ) -> Result<Response<KeyRotationPolicy>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/rotationpolicy");
         path = path.replace("{key-name}", key_name);
@@ -500,7 +578,7 @@ impl KeyClient {
         options: Option<KeyClientGetRandomBytesOptions<'_>>,
     ) -> Result<Response<RandomBytes>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("rng")?;
         url.query_pairs_mut()
@@ -540,8 +618,14 @@ impl KeyClient {
         parameters: RequestContent<ImportKeyParameters>,
         options: Option<KeyClientImportKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}");
         path = path.replace("{key-name}", key_name);
@@ -726,6 +810,12 @@ impl KeyClient {
         key_name: &str,
         options: Option<KeyClientListKeyPropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListKeyPropertiesResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -802,8 +892,14 @@ impl KeyClient {
         key_name: &str,
         options: Option<KeyClientPurgeDeletedKeyOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedkeys/{key-name}");
         path = path.replace("{key-name}", key_name);
@@ -811,7 +907,6 @@ impl KeyClient {
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/json");
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
@@ -841,8 +936,14 @@ impl KeyClient {
         key_name: &str,
         options: Option<KeyClientRecoverDeletedKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedkeys/{key-name}/recover");
         path = path.replace("{key-name}", key_name);
@@ -883,8 +984,20 @@ impl KeyClient {
         parameters: RequestContent<ReleaseParameters>,
         options: Option<KeyClientReleaseOptions<'_>>,
     ) -> Result<Response<KeyReleaseResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/release");
         path = path.replace("{key-name}", key_name);
@@ -931,7 +1044,7 @@ impl KeyClient {
         options: Option<KeyClientRestoreKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("keys/restore")?;
         url.query_pairs_mut()
@@ -967,8 +1080,14 @@ impl KeyClient {
         key_name: &str,
         options: Option<KeyClientRotateKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/rotate");
         path = path.replace("{key-name}", key_name);
@@ -1009,8 +1128,20 @@ impl KeyClient {
         parameters: RequestContent<SignParameters>,
         options: Option<KeyClientSignOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/sign");
         path = path.replace("{key-name}", key_name);
@@ -1055,8 +1186,20 @@ impl KeyClient {
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientUnwrapKeyOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/unwrapkey");
         path = path.replace("{key-name}", key_name);
@@ -1101,8 +1244,20 @@ impl KeyClient {
         parameters: RequestContent<UpdateKeyPropertiesParameters>,
         options: Option<KeyClientUpdateKeyPropertiesOptions<'_>>,
     ) -> Result<Response<Key>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}");
         path = path.replace("{key-name}", key_name);
@@ -1143,8 +1298,14 @@ impl KeyClient {
         key_rotation_policy: RequestContent<KeyRotationPolicy>,
         options: Option<KeyClientUpdateKeyRotationPolicyOptions<'_>>,
     ) -> Result<Response<KeyRotationPolicy>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/rotationpolicy");
         path = path.replace("{key-name}", key_name);
@@ -1189,8 +1350,20 @@ impl KeyClient {
         parameters: RequestContent<VerifyParameters>,
         options: Option<KeyClientVerifyOptions<'_>>,
     ) -> Result<Response<KeyVerifyResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/verify");
         path = path.replace("{key-name}", key_name);
@@ -1237,8 +1410,20 @@ impl KeyClient {
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientWrapKeyOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        if key_version.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_version cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/wrapkey");
         path = path.replace("{key-name}", key_name);
