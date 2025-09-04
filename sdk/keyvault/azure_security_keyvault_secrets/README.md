@@ -169,7 +169,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::SecretClient;
+use azure_security_keyvault_secrets::{SecretClient, models::SecretClientGetSecretOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -181,6 +181,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Retrieve a secret using the secret client.
+    let get_options = SecretClientGetSecretOptions {
+        secret_version: Some("secret-version".to_string()),
+        ..Default::default()
+    };
     let secret = client
         .get_secret("secret-name", None)
         .await?

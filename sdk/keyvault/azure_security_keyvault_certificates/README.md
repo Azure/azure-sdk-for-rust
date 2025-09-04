@@ -197,7 +197,7 @@ Setting the `certificate-version` to an empty string will return the latest vers
 ```rust no_run
 use azure_core::base64;
 use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::CertificateClient;
+use azure_security_keyvault_certificates::{CertificateClient, models::CertificateClientGetCertificateOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -208,8 +208,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
+    let get_options = CertificateClientGetCertificateOptions{
+        certificate_version: Some("certificate-version".to_string()),
+        ..Default::default()
+    };
     let certificate = client
-        .get_certificate("certificate-name", None)
+        .get_certificate("certificate-name", Some(get_options))
         .await?
         .into_body()
         .await?;

@@ -152,7 +152,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_keys::KeyClient;
+use azure_security_keyvault_keys::{KeyClient, models::KeyClientGetKeyOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -164,6 +164,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Retrieve a public key as a JWK using the key client.
+
+    let key_options = KeyClientGetKeyOptions {
+        key_version: Some("key-version".to_string()),
+        ..Default::default()
+    };
     let key = client
         .get_key("key-name", None)
         .await?
