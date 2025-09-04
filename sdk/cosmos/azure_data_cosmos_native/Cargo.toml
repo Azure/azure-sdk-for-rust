@@ -17,7 +17,7 @@ crate-type = ["cdylib", "staticlib"]
 azure_data_cosmos = { path = "../azure_data_cosmos", features = ["c"] }
 
 [build-dependencies]
-cbindgen = "0.29.0"
+cbindgen.workspace = true
 
 [lints]
 workspace = true

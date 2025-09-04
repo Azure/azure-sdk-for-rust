@@ -49,10 +49,7 @@ reqwest.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing-subscriber.workspace = true
-ureq = { version = "3", default-features = false, features = [
-  "gzip",
-  "native-tls",
-] }
+ureq.workspace = true
 
 [features]
 default = [
