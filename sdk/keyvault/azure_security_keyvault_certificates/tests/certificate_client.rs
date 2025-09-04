@@ -7,9 +7,9 @@ use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, ErrorKind, TestContext, TestMode, SANITIZE_BODY_NAME};
 use azure_security_keyvault_certificates::{
     models::{
-        CertificateClientUpdateCertificateOptions, CertificatePolicy, CreateCertificateParameters,
-        CurveName, IssuerParameters, KeyProperties, KeyType, UpdateCertificatePropertiesParameters,
-        X509CertificateProperties,
+        CertificateClientUpdateCertificatePropertiesOptions, CertificatePolicy,
+        CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties, KeyType,
+        UpdateCertificatePropertiesParameters, X509CertificateProperties,
     },
     CertificateClient, CertificateClientOptions, ResourceExt as _,
 };
@@ -115,10 +115,10 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let certificate = client
-        .update_certificate(
+        .update_certificate_properties(
             "update-properties",
             parameters.try_into()?,
-            Some(CertificateClientUpdateCertificateOptions {
+            Some(CertificateClientUpdateCertificatePropertiesOptions {
                 certificate_version,
                 ..Default::default()
             }),

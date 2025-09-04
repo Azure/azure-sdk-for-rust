@@ -8,7 +8,6 @@
 
 ### Breaking Changes
 
-- Renamed `KeyClient::update_certificate_operation` to `update_certificate`.
 - Moved key version parameters to client method options.
 
 ### Bugs Fixed

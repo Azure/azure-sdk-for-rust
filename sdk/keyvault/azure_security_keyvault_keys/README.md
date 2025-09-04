@@ -178,7 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Update an existing key
 
-`update_key` updates a key previously stored in the Azure Key Vault. Only the attributes of the key are updated. To update the value, call `KeyClient::create_key` on a key with the same name.
+`update_key_properties` updates a key previously stored in the Azure Key Vault. Only the attributes of the key are updated. To update the value, call `KeyClient::create_key` on a key with the same name.
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
@@ -201,7 +201,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     client
-        .update_key("key-name", key_update_parameters.try_into()?, None)
+        .update_key_properties("key-name", key_update_parameters.try_into()?, None)
         .await?
         .into_body()
         .await?;

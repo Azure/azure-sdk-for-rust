@@ -195,7 +195,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Update an existing secret
 
-`update_secret` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
+`update_secret_properties` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
@@ -222,7 +222,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     client
-        .update_secret(
+        .update_secret_properties(
             "secret-name",
             secret_update_parameters.try_into()?,
             None,

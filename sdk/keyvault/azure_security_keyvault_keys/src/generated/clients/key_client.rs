@@ -13,11 +13,12 @@ use crate::generated::models::{
     KeyClientListKeyPropertiesOptions, KeyClientListKeyPropertiesVersionsOptions,
     KeyClientPurgeDeletedKeyOptions, KeyClientRecoverDeletedKeyOptions, KeyClientReleaseOptions,
     KeyClientRestoreKeyOptions, KeyClientRotateKeyOptions, KeyClientSignOptions,
-    KeyClientUnwrapKeyOptions, KeyClientUpdateKeyOptions, KeyClientUpdateKeyRotationPolicyOptions,
-    KeyClientVerifyOptions, KeyClientWrapKeyOptions, KeyOperationParameters, KeyOperationResult,
-    KeyReleaseResult, KeyRotationPolicy, KeyVerifyResult, ListDeletedKeyPropertiesResult,
-    ListKeyPropertiesResult, RandomBytes, ReleaseParameters, RestoreKeyParameters, SignParameters,
-    UpdateKeyPropertiesParameters, VerifyParameters,
+    KeyClientUnwrapKeyOptions, KeyClientUpdateKeyPropertiesOptions,
+    KeyClientUpdateKeyRotationPolicyOptions, KeyClientVerifyOptions, KeyClientWrapKeyOptions,
+    KeyOperationParameters, KeyOperationResult, KeyReleaseResult, KeyRotationPolicy,
+    KeyVerifyResult, ListDeletedKeyPropertiesResult, ListKeyPropertiesResult, RandomBytes,
+    ReleaseParameters, RestoreKeyParameters, SignParameters, UpdateKeyPropertiesParameters,
+    VerifyParameters,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -1198,11 +1199,11 @@ impl KeyClient {
     /// * `parameters` - The parameters of the key to update.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.updateKey")]
-    pub async fn update_key(
+    pub async fn update_key_properties(
         &self,
         key_name: &str,
         parameters: RequestContent<UpdateKeyPropertiesParameters>,
-        options: Option<KeyClientUpdateKeyOptions<'_>>,
+        options: Option<KeyClientUpdateKeyPropertiesOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
             return Err(azure_core::Error::message(

@@ -127,9 +127,9 @@ pub struct SecretClientSetSecretOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`SecretClient::update_secret()`](crate::generated::clients::SecretClient::update_secret())
+/// Options to be passed to [`SecretClient::update_secret_properties()`](crate::generated::clients::SecretClient::update_secret_properties())
 #[derive(Clone, Default, SafeDebug)]
-pub struct SecretClientUpdateSecretOptions<'a> {
+pub struct SecretClientUpdateSecretPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 

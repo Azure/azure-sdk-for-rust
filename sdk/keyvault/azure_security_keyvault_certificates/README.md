@@ -225,7 +225,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Update an existing certificate
 
-`update_certificate` updates a certificate previously stored in the Azure Key Vault.
+`update_certificate_properties` updates a certificate previously stored in the Azure Key Vault.
 Only the attributes of the certificate are updated. To regenerate the certificate, call `CertificateClient::create_certificate` on a certificate with the same name.
 
 ```rust no_run
@@ -251,7 +251,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     client
-        .update_certificate(
+        .update_certificate_properties(
             "certificate-name",
             certificate_update_parameters.try_into()?,
             None,

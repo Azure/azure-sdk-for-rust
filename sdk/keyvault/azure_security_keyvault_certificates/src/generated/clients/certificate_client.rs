@@ -18,8 +18,9 @@ use crate::generated::models::{
     CertificateClientPurgeDeletedCertificateOptions,
     CertificateClientRecoverDeletedCertificateOptions, CertificateClientRestoreCertificateOptions,
     CertificateClientSetContactsOptions, CertificateClientSetIssuerOptions,
-    CertificateClientUpdateCertificateOperationOptions, CertificateClientUpdateCertificateOptions,
-    CertificateClientUpdateCertificatePolicyOptions, CertificateClientUpdateIssuerOptions,
+    CertificateClientUpdateCertificateOperationOptions,
+    CertificateClientUpdateCertificatePolicyOptions,
+    CertificateClientUpdateCertificatePropertiesOptions, CertificateClientUpdateIssuerOptions,
     CertificateOperation, CertificatePolicy, Contacts, CreateCertificateParameters,
     DeletedCertificate, ImportCertificateParameters, Issuer, ListCertificatePropertiesResult,
     ListDeletedCertificatePropertiesResult, ListIssuerPropertiesResult, MergeCertificateParameters,
@@ -1241,60 +1242,6 @@ impl CertificateClient {
         Ok(rsp.into())
     }
 
-    /// Updates the specified attributes associated with the given certificate.
-    ///
-    /// The UpdateCertificate operation applies the specified update on the given certificate; the only elements updated are the
-    /// certificate's attributes. This operation requires the certificates/update permission.
-    ///
-    /// # Arguments
-    ///
-    /// * `certificate_name` - The name of the certificate in the given key vault.
-    /// * `parameters` - The parameters for certificate update.
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("KeyVault.updateCertificate")]
-    pub async fn update_certificate(
-        &self,
-        certificate_name: &str,
-        parameters: RequestContent<UpdateCertificatePropertiesParameters>,
-        options: Option<CertificateClientUpdateCertificateOptions<'_>>,
-    ) -> Result<Response<Certificate>> {
-        if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter certificate_name cannot be empty",
-            ));
-        }
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut path = String::from("certificates/{certificate-name}/{certificate-version}");
-        path = path.replace("{certificate-name}", certificate_name);
-        path = match options.certificate_version {
-            Some(certificate_version) => {
-                path.replace("{certificate-version}", &certificate_version)
-            }
-            None => path.replace("{certificate-version}", ""),
-        };
-        url = url.join(&path)?;
-        url.query_pairs_mut()
-            .append_pair("api-version", &self.api_version);
-        let mut request = Request::new(url, Method::Patch);
-        request.insert_header("accept", "application/json");
-        request.insert_header("content-type", "application/json");
-        request.set_body(parameters);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
-        Ok(rsp.into())
-    }
-
     /// Updates a certificate operation.
     ///
     /// Updates a certificate creation operation that is already in progress. This operation requires the certificates/update
@@ -1378,6 +1325,60 @@ impl CertificateClient {
         request.insert_header("accept", "application/json");
         request.insert_header("content-type", "application/json");
         request.set_body(certificate_policy);
+        let rsp = self.pipeline.send(&ctx, &mut request).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
+        Ok(rsp.into())
+    }
+
+    /// Updates the specified attributes associated with the given certificate.
+    ///
+    /// The UpdateCertificate operation applies the specified update on the given certificate; the only elements updated are the
+    /// certificate's attributes. This operation requires the certificates/update permission.
+    ///
+    /// # Arguments
+    ///
+    /// * `certificate_name` - The name of the certificate in the given key vault.
+    /// * `parameters` - The parameters for certificate update.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.updateCertificate")]
+    pub async fn update_certificate_properties(
+        &self,
+        certificate_name: &str,
+        parameters: RequestContent<UpdateCertificatePropertiesParameters>,
+        options: Option<CertificateClientUpdateCertificatePropertiesOptions<'_>>,
+    ) -> Result<Response<Certificate>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut path = String::from("certificates/{certificate-name}/{certificate-version}");
+        path = path.replace("{certificate-name}", certificate_name);
+        path = match options.certificate_version {
+            Some(certificate_version) => {
+                path.replace("{certificate-version}", &certificate_version)
+            }
+            None => path.replace("{certificate-version}", ""),
+        };
+        url = url.join(&path)?;
+        url.query_pairs_mut()
+            .append_pair("api-version", &self.api_version);
+        let mut request = Request::new(url, Method::Patch);
+        request.insert_header("accept", "application/json");
+        request.insert_header("content-type", "application/json");
+        request.set_body(parameters);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();

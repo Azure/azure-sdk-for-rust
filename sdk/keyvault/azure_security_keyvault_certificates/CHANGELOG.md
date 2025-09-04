@@ -8,7 +8,6 @@
 
 ### Breaking Changes
 
-- Renamed `CertificateClient::update_certificate_operation` to `update_certificate`.
 - Moved certificate version parameters to client method options.
 
 ### Bugs Fixed

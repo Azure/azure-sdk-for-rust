@@ -99,7 +99,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let key = client
-        .update_key("update-key", properties.try_into()?, None)
+        .update_key_properties("update-key", properties.try_into()?, None)
         .await?
         .into_body()
         .await?;

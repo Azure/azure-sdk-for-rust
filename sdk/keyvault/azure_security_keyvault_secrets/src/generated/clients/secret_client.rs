@@ -11,7 +11,8 @@ use crate::generated::models::{
     SecretClientListSecretPropertiesOptions, SecretClientListSecretPropertiesVersionsOptions,
     SecretClientPurgeDeletedSecretOptions, SecretClientRecoverDeletedSecretOptions,
     SecretClientRestoreSecretOptions, SecretClientSetSecretOptions,
-    SecretClientUpdateSecretOptions, SetSecretParameters, UpdateSecretPropertiesParameters,
+    SecretClientUpdateSecretPropertiesOptions, SetSecretParameters,
+    UpdateSecretPropertiesParameters,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -682,11 +683,11 @@ impl SecretClient {
     /// * `parameters` - The parameters for update secret operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.updateSecret")]
-    pub async fn update_secret(
+    pub async fn update_secret_properties(
         &self,
         secret_name: &str,
         parameters: RequestContent<UpdateSecretPropertiesParameters>,
-        options: Option<SecretClientUpdateSecretOptions<'_>>,
+        options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>,
     ) -> Result<Response<Secret>> {
         if secret_name.is_empty() {
             return Err(azure_core::Error::message(

@@ -217,9 +217,9 @@ pub struct KeyClientUnwrapKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
-/// Options to be passed to [`KeyClient::update_key()`](crate::generated::clients::KeyClient::update_key())
+/// Options to be passed to [`KeyClient::update_key_properties()`](crate::generated::clients::KeyClient::update_key_properties())
 #[derive(Clone, Default, SafeDebug)]
-pub struct KeyClientUpdateKeyOptions<'a> {
+pub struct KeyClientUpdateKeyPropertiesOptions<'a> {
     /// The version of the key to update.
     pub key_version: Option<String>,
 

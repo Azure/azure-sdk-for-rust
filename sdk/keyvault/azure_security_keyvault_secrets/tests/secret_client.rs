@@ -98,7 +98,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         )])),
     };
     let secret = client
-        .update_secret("update-secret", properties.try_into()?, None)
+        .update_secret_properties("update-secret", properties.try_into()?, None)
         .await?
         .into_body()
         .await?;

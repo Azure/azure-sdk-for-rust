@@ -8,7 +8,6 @@
 
 ### Breaking Changes
 
-- Renamed `SecretClient::update_secret_properties` to `update_secret`.
 - Moved secret version parameters to client method options.
 
 ### Bugs Fixed
