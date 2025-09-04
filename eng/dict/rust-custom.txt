@@ -12,3 +12,6 @@ rustflags
 rustls
 rustsec
 turbofish
+dylib
+cdylib
+staticlib
