@@ -13,7 +13,7 @@ use azure_core_test::{
     TestContext, TestMode,
 };
 use azure_security_keyvault_secrets::{
-    models::{SetSecretParameters, UpdateSecretPropertiesParameters},
+    models::{SecretClientGetSecretOptions, SetSecretParameters, UpdateSecretPropertiesParameters},
     ResourceExt as _, SecretClient, SecretClientOptions,
 };
 use azure_security_keyvault_test::Retry;
@@ -46,9 +46,15 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     assert_eq!(secret.value, Some("secret-value".into()));
 
     // Get a specific version of a secret.
-    let version = secret.resource_id()?.version.unwrap_or_default();
+    let secret_version = secret.resource_id()?.version;
     let secret = client
-        .get_secret("secret-roundtrip", version.as_ref(), None)
+        .get_secret(
+            "secret-roundtrip",
+            Some(SecretClientGetSecretOptions {
+                secret_version,
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;
@@ -88,18 +94,18 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         secret_attributes: secret.attributes,
         tags: Some(HashMap::from_iter(vec![(
             "test-name".into(),
-            "update_secret_properties".into(),
+            "update_secret".into(),
         )])),
     };
     let secret = client
-        .update_secret_properties("update-secret", "", properties.try_into()?, None)
+        .update_secret("update-secret", properties.try_into()?, None)
         .await?
         .into_body()
         .await?;
     assert_eq!(secret.content_type, Some("text/plain".into()));
     assert_eq!(
         secret.tags.expect("expected tags").get("test-name"),
-        Some(&String::from("update_secret_properties"))
+        Some(&String::from("update_secret"))
     );
 
     Ok(())
@@ -251,9 +257,15 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
                 assert_eq!(secret.value, Some("secret-value-instrument".into()));
 
                 // Get a specific version of a secret.
-                let version = secret.resource_id()?.version.unwrap_or_default();
+                let secret_version = secret.resource_id()?.version;
                 let secret = client
-                    .get_secret("secret-roundtrip-instrument", version.as_ref(), None)
+                    .get_secret(
+                        "secret-roundtrip-instrument",
+                        Some(SecretClientGetSecretOptions {
+                            secret_version,
+                            ..Default::default()
+                        }),
+                    )
                     .await?
                     .into_body()
                     .await?;
@@ -264,7 +276,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
         ExpectedInstrumentation {
             package_name: recording.var("CARGO_PKG_NAME", None),
             package_version: recording.var("CARGO_PKG_VERSION", None),
-            package_namespace: Some("azure_security_keyvault_secrets"),
+            package_namespace: Some("KeyVault"),
             api_calls: vec![
                 ExpectedApiInformation {
                     api_name: Some("KeyVault.setSecret"),

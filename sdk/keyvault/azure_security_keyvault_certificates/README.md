@@ -209,7 +209,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let certificate = client
-        .get_certificate("certificate-name", "certificate-version", None)
+        .get_certificate("certificate-name", None)
         .await?
         .into_body()
         .await?;
@@ -225,7 +225,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Update an existing certificate
 
-`update_certificate_properties` updates a certificate previously stored in the Azure Key Vault.
+`update_certificate` updates a certificate previously stored in the Azure Key Vault.
 Only the attributes of the certificate are updated. To regenerate the certificate, call `CertificateClient::create_certificate` on a certificate with the same name.
 
 ```rust no_run
@@ -251,9 +251,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     client
-        .update_certificate_properties(
+        .update_certificate(
             "certificate-name",
-            "",
             certificate_update_parameters.try_into()?,
             None,
         )
@@ -400,7 +399,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let signature = key_client
-        .sign("ec-signing-certificate", "", body.try_into()?, None)
+        .sign("ec-signing-certificate", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -434,7 +433,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    match client.get_certificate("certificate-name".into(), "".into(), None).await {
+    match client.get_certificate("certificate-name".into(), None).await {
         Ok(response) => println!("Certificate: {:#?}", response.into_body().await?.x509_thumbprint),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }

@@ -13,12 +13,11 @@ use crate::generated::models::{
     KeyClientListKeyPropertiesOptions, KeyClientListKeyPropertiesVersionsOptions,
     KeyClientPurgeDeletedKeyOptions, KeyClientRecoverDeletedKeyOptions, KeyClientReleaseOptions,
     KeyClientRestoreKeyOptions, KeyClientRotateKeyOptions, KeyClientSignOptions,
-    KeyClientUnwrapKeyOptions, KeyClientUpdateKeyPropertiesOptions,
-    KeyClientUpdateKeyRotationPolicyOptions, KeyClientVerifyOptions, KeyClientWrapKeyOptions,
-    KeyOperationParameters, KeyOperationResult, KeyReleaseResult, KeyRotationPolicy,
-    KeyVerifyResult, ListDeletedKeyPropertiesResult, ListKeyPropertiesResult, RandomBytes,
-    ReleaseParameters, RestoreKeyParameters, SignParameters, UpdateKeyPropertiesParameters,
-    VerifyParameters,
+    KeyClientUnwrapKeyOptions, KeyClientUpdateKeyOptions, KeyClientUpdateKeyRotationPolicyOptions,
+    KeyClientVerifyOptions, KeyClientWrapKeyOptions, KeyOperationParameters, KeyOperationResult,
+    KeyReleaseResult, KeyRotationPolicy, KeyVerifyResult, ListDeletedKeyPropertiesResult,
+    ListKeyPropertiesResult, RandomBytes, ReleaseParameters, RestoreKeyParameters, SignParameters,
+    UpdateKeyPropertiesParameters, VerifyParameters,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -212,14 +211,12 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
-    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the decryption operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.decrypt")]
     pub async fn decrypt(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientDecryptOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -229,18 +226,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/decrypt");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -318,14 +312,12 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
-    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the encryption operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.encrypt")]
     pub async fn encrypt(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientEncryptOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -335,18 +327,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/encrypt");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -419,14 +408,11 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key to get.
-    /// * `key_version` - Adding the version parameter retrieves a specific version of a key. This URI fragment is optional. If
-    ///   not specified, the latest version of the key is returned.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getKey")]
     pub async fn get_key(
         &self,
         key_name: &str,
-        key_version: &str,
         options: Option<KeyClientGetKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
@@ -435,18 +421,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -473,14 +456,11 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key to retrieve attestation for.
-    /// * `key_version` - Adding the version parameter retrieves attestation blob for specific version of a key. This URI fragment
-    ///   is optional. If not specified, the latest version of the key attestation blob is returned.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getKeyAttestation")]
     pub async fn get_key_attestation(
         &self,
         key_name: &str,
-        key_version: &str,
         options: Option<KeyClientGetKeyAttestationOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
@@ -489,18 +469,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/attestation");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -973,14 +950,12 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key to get.
-    /// * `key_version` - Adding the version parameter retrieves a specific version of a key.
     /// * `parameters` - The parameters for the key release operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.release")]
     pub async fn release(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<ReleaseParameters>,
         options: Option<KeyClientReleaseOptions<'_>>,
     ) -> Result<Response<KeyReleaseResult>> {
@@ -990,18 +965,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/release");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -1117,14 +1089,12 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
-    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the signing operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.sign")]
     pub async fn sign(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<SignParameters>,
         options: Option<KeyClientSignOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -1134,18 +1104,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/sign");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -1175,14 +1142,12 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
-    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for the key operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.unwrapKey")]
     pub async fn unwrap_key(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientUnwrapKeyOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -1192,18 +1157,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/unwrapkey");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -1233,16 +1195,14 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of key to update.
-    /// * `key_version` - The version of the key to update.
     /// * `parameters` - The parameters of the key to update.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.updateKey")]
-    pub async fn update_key_properties(
+    pub async fn update_key(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<UpdateKeyPropertiesParameters>,
-        options: Option<KeyClientUpdateKeyPropertiesOptions<'_>>,
+        options: Option<KeyClientUpdateKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
             return Err(azure_core::Error::message(
@@ -1250,18 +1210,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -1339,14 +1296,12 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
-    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for verify operations.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.verify")]
     pub async fn verify(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<VerifyParameters>,
         options: Option<KeyClientVerifyOptions<'_>>,
     ) -> Result<Response<KeyVerifyResult>> {
@@ -1356,18 +1311,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/verify");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -1399,14 +1351,12 @@ impl KeyClient {
     /// # Arguments
     ///
     /// * `key_name` - The name of the key.
-    /// * `key_version` - The version of the key.
     /// * `parameters` - The parameters for wrap operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.wrapKey")]
     pub async fn wrap_key(
         &self,
         key_name: &str,
-        key_version: &str,
         parameters: RequestContent<KeyOperationParameters>,
         options: Option<KeyClientWrapKeyOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
@@ -1416,18 +1366,15 @@ impl KeyClient {
                 "parameter key_name cannot be empty",
             ));
         }
-        if key_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter key_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("keys/{key-name}/{key-version}/wrapkey");
         path = path.replace("{key-name}", key_name);
-        path = path.replace("{key-version}", key_version);
+        path = match options.key_version {
+            Some(key_version) => path.replace("{key-version}", &key_version),
+            None => path.replace("{key-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);

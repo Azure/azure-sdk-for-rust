@@ -7,8 +7,9 @@ use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, ErrorKind, TestContext, TestMode, SANITIZE_BODY_NAME};
 use azure_security_keyvault_certificates::{
     models::{
-        CertificatePolicy, CreateCertificateParameters, CurveName, IssuerParameters, KeyProperties,
-        KeyType, UpdateCertificatePropertiesParameters, X509CertificateProperties,
+        CertificateClientUpdateCertificateOptions, CertificatePolicy, CreateCertificateParameters,
+        CurveName, IssuerParameters, KeyProperties, KeyType, UpdateCertificatePropertiesParameters,
+        X509CertificateProperties,
     },
     CertificateClient, CertificateClientOptions, ResourceExt as _,
 };
@@ -60,7 +61,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
 
     // Get the latest version of the certificate we just created.
     let certificate = client
-        .get_certificate("certificate-roundtrip", "", None)
+        .get_certificate("certificate-roundtrip", None)
         .await?
         .into_body()
         .await?;
@@ -98,11 +99,11 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
 
     // Get the latest version of the certificate we just created.
     let certificate = client
-        .get_certificate("update-properties", "", None)
+        .get_certificate("update-properties", None)
         .await?
         .into_body()
         .await?;
-    let version = certificate.resource_id()?.version;
+    let certificate_version = certificate.resource_id()?.version;
 
     // Update certificate properties.
     let parameters = UpdateCertificatePropertiesParameters {
@@ -114,11 +115,13 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let certificate = client
-        .update_certificate_properties(
+        .update_certificate(
             "update-properties",
-            version.as_deref().unwrap_or(""),
             parameters.try_into()?,
-            None,
+            Some(CertificateClientUpdateCertificateOptions {
+                certificate_version,
+                ..Default::default()
+            }),
         )
         .await?
         .into_body()
@@ -294,7 +297,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         value: Some(digest),
     };
     let signature = key_client
-        .sign(NAME, "", body.try_into()?, None)
+        .sign(NAME, body.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -343,7 +346,7 @@ async fn get_certificate_operation(ctx: TestContext) -> Result<()> {
 
     // Get the latest version of the certificate we just created.
     let certificate = client
-        .get_certificate(CERTIFICATE_NAME, "", None)
+        .get_certificate(CERTIFICATE_NAME, None)
         .await?
         .into_body()
         .await?;

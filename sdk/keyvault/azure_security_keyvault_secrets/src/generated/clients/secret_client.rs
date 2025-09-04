@@ -11,8 +11,7 @@ use crate::generated::models::{
     SecretClientListSecretPropertiesOptions, SecretClientListSecretPropertiesVersionsOptions,
     SecretClientPurgeDeletedSecretOptions, SecretClientRecoverDeletedSecretOptions,
     SecretClientRestoreSecretOptions, SecretClientSetSecretOptions,
-    SecretClientUpdateSecretPropertiesOptions, SetSecretParameters,
-    UpdateSecretPropertiesParameters,
+    SecretClientUpdateSecretOptions, SetSecretParameters, UpdateSecretPropertiesParameters,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -232,14 +231,11 @@ impl SecretClient {
     /// # Arguments
     ///
     /// * `secret_name` - The name of the secret.
-    /// * `secret_version` - The version of the secret. This URI fragment is optional. If not specified, the latest version of
-    ///   the secret is returned.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getSecret")]
     pub async fn get_secret(
         &self,
         secret_name: &str,
-        secret_version: &str,
         options: Option<SecretClientGetSecretOptions<'_>>,
     ) -> Result<Response<Secret>> {
         if secret_name.is_empty() {
@@ -248,18 +244,15 @@ impl SecretClient {
                 "parameter secret_name cannot be empty",
             ));
         }
-        if secret_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter secret_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
-        path = path.replace("{secret-version}", secret_version);
+        path = match options.secret_version {
+            Some(secret_version) => path.replace("{secret-version}", &secret_version),
+            None => path.replace("{secret-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -686,16 +679,14 @@ impl SecretClient {
     /// # Arguments
     ///
     /// * `secret_name` - The name of the secret.
-    /// * `secret_version` - The version of the secret.
     /// * `parameters` - The parameters for update secret operation.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.updateSecret")]
-    pub async fn update_secret_properties(
+    pub async fn update_secret(
         &self,
         secret_name: &str,
-        secret_version: &str,
         parameters: RequestContent<UpdateSecretPropertiesParameters>,
-        options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>,
+        options: Option<SecretClientUpdateSecretOptions<'_>>,
     ) -> Result<Response<Secret>> {
         if secret_name.is_empty() {
             return Err(azure_core::Error::message(
@@ -703,18 +694,15 @@ impl SecretClient {
                 "parameter secret_name cannot be empty",
             ));
         }
-        if secret_version.is_empty() {
-            return Err(azure_core::Error::message(
-                azure_core::error::ErrorKind::Other,
-                "parameter secret_version cannot be empty",
-            ));
-        }
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
-        path = path.replace("{secret-version}", secret_version);
+        path = match options.secret_version {
+            Some(secret_version) => path.replace("{secret-version}", &secret_version),
+            None => path.replace("{secret-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);

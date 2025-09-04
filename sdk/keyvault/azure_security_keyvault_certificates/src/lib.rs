@@ -6,7 +6,6 @@
 
 pub mod clients;
 #[allow(unused_imports)]
-#[expect(deprecated, reason = "requires emitter update")]
 mod generated;
 pub mod models;
 mod resource;

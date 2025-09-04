@@ -50,6 +50,10 @@ pub struct CertificateClientDeleteIssuerOptions<'a> {
 /// Options to be passed to [`CertificateClient::get_certificate()`](crate::generated::clients::CertificateClient::get_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientGetCertificateOptions<'a> {
+    /// The version of the certificate. This URI fragment is optional. If not specified, the latest version of the certificate
+    /// is returned.
+    pub certificate_version: Option<String>,
+
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -230,6 +234,16 @@ pub struct CertificateClientSetIssuerOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`CertificateClient::update_certificate()`](crate::generated::clients::CertificateClient::update_certificate())
+#[derive(Clone, Default, SafeDebug)]
+pub struct CertificateClientUpdateCertificateOptions<'a> {
+    /// The version of the certificate.
+    pub certificate_version: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
 /// Options to be passed to [`CertificateClient::update_certificate_operation()`](crate::generated::clients::CertificateClient::update_certificate_operation())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientUpdateCertificateOperationOptions<'a> {
@@ -240,13 +254,6 @@ pub struct CertificateClientUpdateCertificateOperationOptions<'a> {
 /// Options to be passed to [`CertificateClient::update_certificate_policy()`](crate::generated::clients::CertificateClient::update_certificate_policy())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientUpdateCertificatePolicyOptions<'a> {
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-}
-
-/// Options to be passed to [`CertificateClient::update_certificate_properties()`](crate::generated::clients::CertificateClient::update_certificate_properties())
-#[derive(Clone, Default, SafeDebug)]
-pub struct CertificateClientUpdateCertificatePropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }

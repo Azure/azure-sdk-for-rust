@@ -4,7 +4,12 @@
 
 ### Features Added
 
+- Updated to latest version of fixes for the "7.6" specification after TypeSpec migration.
+
 ### Breaking Changes
+
+- Renamed `SecretClient::update_secret_properties` to `update_secret`.
+- Moved secret version parameters to client method options.
 
 ### Bugs Fixed
 

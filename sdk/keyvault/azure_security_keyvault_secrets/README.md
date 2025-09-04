@@ -55,7 +55,7 @@ Instantiate a `DeveloperToolsCredential` to pass to the client. The same instanc
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{
-    models::{Secret, SetSecretParameters},
+    models::{Secret, SecretClientGetSecretOptions, SetSecretParameters},
     ResourceExt, SecretClient,
 };
 
@@ -82,11 +82,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Get version of created secret.
-    let version = secret.resource_id()?.version.unwrap_or_default();
+    let secret_version = secret.resource_id()?.version;
 
     // Retrieve a secret using the secret client.
     let secret: Secret = client
-        .get_secret("secret-name", version.as_ref(), None)
+        .get_secret("secret-name", Some(SecretClientGetSecretOptions {
+            secret_version,
+            ..Default::default()
+        }))
         .await?
         .into_body()
         .await?;
@@ -179,7 +182,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Retrieve a secret using the secret client.
     let secret = client
-        .get_secret("secret-name", "secret-version", None)
+        .get_secret("secret-name", None)
         .await?
         .into_body()
         .await?;
@@ -192,7 +195,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Update an existing secret
 
-`update_secret_properties` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
+`update_secret` updates a secret previously stored in the Azure Key Vault. Only the attributes of the secret are updated. To update the value, call `SecretClient::set_secret` on a secret with the same name.
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
@@ -219,9 +222,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     client
-        .update_secret_properties(
+        .update_secret(
             "secret-name",
-            "",
             secret_update_parameters.try_into()?,
             None,
         )
@@ -308,7 +310,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    match client.get_secret("secret-name", "", None).await {
+    match client.get_secret("secret-name", None).await {
         Ok(response) => println!("Secret Value: {:?}", response.into_body().await?.value),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }
