@@ -3,7 +3,7 @@
 
 use crate::{
     http::policies::{
-        ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryPolicy,
+        ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryHeaders, RetryPolicy,
     },
     time::Duration,
 };
@@ -87,21 +87,23 @@ impl RetryOptions {
         }
     }
 
-    pub(crate) fn to_policy(&self) -> Arc<dyn Policy> {
+    pub(crate) fn to_policy(&self, retry_headers: RetryHeaders) -> Arc<dyn Policy> {
         match &self.mode {
             RetryMode::Exponential(options) => Arc::new(ExponentialRetryPolicy::new(
                 options.initial_delay,
                 options.max_retries,
                 options.max_total_elapsed,
                 options.max_delay,
+                retry_headers,
             )),
             RetryMode::Fixed(options) => Arc::new(FixedRetryPolicy::new(
                 options.delay,
                 options.max_retries,
                 options.max_total_elapsed,
+                retry_headers,
             )),
             RetryMode::Custom(c) => c.clone(),
-            RetryMode::None => Arc::new(NoRetryPolicy::default()),
+            RetryMode::None => Arc::new(NoRetryPolicy::new(retry_headers)),
         }
     }
 }

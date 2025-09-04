@@ -3,6 +3,7 @@
 
 use super::policies::ClientRequestIdPolicy;
 use crate::http::{
+    headers::{ERROR_CODE, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
     policies::{
         Policy, PublicApiInstrumentationPolicy, RequestInstrumentationPolicy, UserAgentPolicy,
     },
@@ -13,7 +14,9 @@ use std::{
     ops::Deref,
     sync::Arc,
 };
-use typespec_client_core::http;
+use typespec_client_core::http::{
+    self, headers::RETRY_AFTER, policies::RetryHeaders, PipelineOptions,
+};
 
 /// Execution pipeline.
 ///
@@ -43,12 +46,21 @@ impl Pipeline {
     ///
     /// Crates can simply pass `option_env!("CARGO_PKG_NAME")` and `option_env!("CARGO_PKG_VERSION")` for the
     /// `crate_name` and `crate_version` arguments respectively.
+    ///
+    /// # Arguments
+    /// * `crate_name` - The name of the crate implementing the client library.
+    /// * `crate_version` - The version of the crate implementing the client library.
+    /// * `options` - The client options.
+    /// * `per_call_policies` - Policies to be executed per call, before the policies in `ClientOptions::per_call_policies`.
+    /// * `per_try_policies` - Policies to be executed per try, before the policies in `ClientOptions::per_try_policies`.
+    /// * `pipeline_options` - Additional options for the pipeline. If `None`, default options will be used.
     pub fn new(
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
         options: ClientOptions,
         per_call_policies: Vec<Arc<dyn Policy>>,
         per_try_policies: Vec<Arc<dyn Policy>>,
+        pipeline_options: Option<PipelineOptions>,
     ) -> Self {
         let (core_client_options, options) = options.deconstruct();
 
@@ -91,10 +103,18 @@ impl Pipeline {
             push_unique(&mut per_try_policies, request_instrumentation_policy);
         }
 
+        let pipeline_options = pipeline_options.unwrap_or_else(|| PipelineOptions {
+            retry_headers: RetryHeaders {
+                retry_headers: vec![X_MS_RETRY_AFTER_MS, RETRY_AFTER_MS, RETRY_AFTER],
+                error_header: Some(ERROR_CODE),
+            },
+        });
+
         Self(http::Pipeline::new(
             options,
             per_call_policies,
             per_try_policies,
+            Some(pipeline_options),
         ))
     }
 }
@@ -179,6 +199,7 @@ mod tests {
             options,
             per_call_policies,
             per_retry_policies,
+            None,
         );
 
         let mut request = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -232,6 +253,7 @@ mod tests {
             options,
             per_call_policies,
             per_retry_policies,
+            None,
         );
 
         let mut request = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -285,6 +307,7 @@ mod tests {
             options,
             per_call_policies,
             per_retry_policies,
+            None,
         );
 
         let mut request = Request::new("https://example.com".parse().unwrap(), Method::Get);
@@ -345,6 +368,7 @@ mod tests {
             options,
             per_call_policies,
             per_retry_policies,
+            None,
         );
 
         let mut request = Request::new("https://example.com".parse().unwrap(), Method::Get);

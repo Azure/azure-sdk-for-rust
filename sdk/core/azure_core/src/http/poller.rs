@@ -5,7 +5,10 @@
 
 use crate::{
     error::ErrorKind,
-    http::{headers::Headers, Format, Response, StatusCode},
+    http::{
+        headers::{HeaderName, Headers},
+        Format, Response, StatusCode,
+    },
     sleep,
     time::{Duration, OffsetDateTime},
 };
@@ -476,10 +479,15 @@ where
 }
 
 /// Get the retry duration from the operation response or [`PollerOptions`].
-pub fn get_retry_after(headers: &Headers, options: &PollerOptions) -> Option<Duration> {
+pub fn get_retry_after(
+    headers: &Headers,
+    retry_headers: &[HeaderName],
+    options: &PollerOptions,
+) -> Option<Duration> {
     #[cfg_attr(feature = "test", allow(unused_mut))]
-    let duration = crate::http::policies::get_retry_after(headers, OffsetDateTime::now_utc)
-        .or(options.frequency);
+    let duration =
+        crate::http::policies::get_retry_after(headers, OffsetDateTime::now_utc, retry_headers)
+            .or(options.frequency);
 
     #[cfg(feature = "test")]
     {
