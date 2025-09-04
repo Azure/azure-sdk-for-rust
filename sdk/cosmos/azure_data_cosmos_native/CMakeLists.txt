@@ -1,3 +1,5 @@
+# cSpell:ignore cosmosctest CRATETYPES endforeach
+
 project(cosmosctest C)
 cmake_minimum_required(VERSION 4.1)
 
