@@ -60,7 +60,10 @@ macro_rules! request_option {
 
         impl $name {
 
-            /// Creates a new instance of the request option.
+            /// Creates a new instance of the request option type, which can be used as an HTTP header or query parameter.
+            ///
+            /// This function is typically used to construct a value representing a request option for use in HTTP requests.
+            /// The specific usage (header or query parameter) depends on how the macro is invoked.
             pub fn new<S>(s: S) -> Self
             where
                 S: Into<std::borrow::Cow<'static, str>>,
