@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![warn(missing_docs)]
 
 mod tracing;
 mod tracing_client;
@@ -41,6 +43,13 @@ pub fn new(attr: TokenStream, item: TokenStream) -> TokenStream {
         .map_or_else(|e| e.into_compile_error().into(), |v| v.into())
 }
 
+/// Attribute client subclient struct declarations to enable distributed tracing.
+///
+/// To declare a subclient that will be traced, you should use the `#[tracing::subclient]` attribute
+/// exported from azure_core.
+///
+/// This macro will automatically instrument the subclient declaration with tracing information. It will also ensure that the subclient is created with the necessary tracing context.
+/// The `#[tracing::subclient]` attribute takes a single argument, which is a string representing the Azure Namespace name for the service being traced.
 #[proc_macro_attribute]
 pub fn subclient(attr: TokenStream, item: TokenStream) -> TokenStream {
     tracing_subclient::parse_subclient(attr.into(), item.into())
@@ -48,6 +57,15 @@ pub fn subclient(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 /// Attribute client public APIs to enable distributed tracing.
+///
+/// To declare a public API function that will be traced, you should use the `#[tracing::function]` attribute
+/// exported from azure_core.
+///
+/// This macro will automatically instrument the public API function with tracing information. It will also ensure that the function is executed with the necessary tracing context.
+///
+/// The `function` attribute takes one required argument, which is a string representing the name of the operation being traced.
+/// This name will be used in the tracing spans to identify the operation being performed. The name should be unique and match the
+/// typespec name for the operation being traced if possible.
 ///
 #[proc_macro_attribute]
 pub fn function(attr: TokenStream, item: TokenStream) -> TokenStream {
