@@ -3,7 +3,7 @@
 
 use crate::models::{
     AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions,
-    PageBlobClientCreateOptions,
+    BlockBlobClientUploadOptions, PageBlobClientCreateOptions,
 };
 use azure_core::error::ErrorKind;
 use std::collections::HashMap;
@@ -42,6 +42,24 @@ impl<'a> BlockBlobClientUploadBlobFromUrlOptions<'a> {
     pub fn with_if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
+            ..self
+        }
+    }
+}
+
+/// Augments the current options bag to include blob tags.
+/// # Arguments
+///
+/// * `self` - The options bag to be modified.
+/// * `tags` - A HashMap of key-value pairs representing the blob tags.
+impl<'a> BlockBlobClientUploadOptions<'a> {
+    pub fn with_tags(self, tags: HashMap<String, String>) -> Self {
+        let tags_string = url::form_urlencoded::Serializer::new(String::new())
+            .extend_pairs(tags.iter())
+            .finish();
+
+        Self {
+            blob_tags_string: Some(tags_string),
             ..self
         }
     }

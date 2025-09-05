@@ -7,8 +7,9 @@ use azure_core::{
 };
 use azure_core_test::Recording;
 use azure_storage_blob::{
-    models::BlockBlobClientUploadResult, BlobClient, BlobContainerClient,
-    BlobContainerClientOptions, BlobServiceClient, BlobServiceClientOptions,
+    models::{BlockBlobClientUploadOptions, BlockBlobClientUploadResult},
+    BlobClient, BlobContainerClient, BlobContainerClientOptions, BlobServiceClient,
+    BlobServiceClientOptions,
 };
 
 /// Takes in a Recording instance and returns an instrumented options bag and endpoint.
@@ -101,14 +102,16 @@ pub async fn get_container_client(
 ///
 /// * `blob_client` - A reference to a BlobClient instance.
 /// * `data` - Blob content to be uploaded.
+/// * `options` - Optional configuration for the upload request.
 pub async fn create_test_blob(
     blob_client: &BlobClient,
     data: Option<RequestContent<Bytes, NoFormat>>,
+    options: Option<BlockBlobClientUploadOptions<'_>>,
 ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
     match data {
         Some(content) => {
             blob_client
-                .upload(content.clone(), true, content.body().len() as u64, None)
+                .upload(content.clone(), true, content.body().len() as u64, options)
                 .await
         }
         None => {
@@ -117,7 +120,7 @@ pub async fn create_test_blob(
                     RequestContent::from(b"hello rusty world".to_vec()),
                     true,
                     17,
-                    None,
+                    options,
                 )
                 .await
         }

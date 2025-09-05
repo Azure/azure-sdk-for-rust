@@ -2,13 +2,17 @@
 // Licensed under the MIT License.
 
 use azure_core::http::{RequestContent, XmlFormat};
+use azure_core::Bytes;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
     BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-    BlobServiceProperties,
+    BlobServiceProperties, BlockBlobClientUploadOptions,
 };
-use azure_storage_blob_test::{get_blob_service_client, get_container_name};
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
+    get_container_name,
+};
 use futures::StreamExt;
 use std::collections::HashMap;
 use std::error::Error;
@@ -166,5 +170,70 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(sku_name.is_some());
     assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+    let container_client = get_container_client(recording, true).await?;
+
+    let blob1_name = get_blob_name(recording);
+    let blob1_client = container_client.blob_client(blob1_name.clone());
+    let blob1_data = Bytes::from("hello world");
+    let blob1_tags = HashMap::from([("foo".to_string(), "bar".to_string())]);
+    let blob1_upload_options =
+        BlockBlobClientUploadOptions::default().with_tags(blob1_tags.clone());
+    create_test_blob(
+        &blob1_client,
+        Some(RequestContent::from(blob1_data.into())),
+        Some(blob1_upload_options),
+    )
+    .await?;
+
+    let blob2_name = get_blob_name(recording);
+    let blob2_client = container_client.blob_client(blob2_name.clone());
+    let blob2_data = Bytes::from("ferris the crab");
+    let blob2_tags = HashMap::from([("fizz".to_string(), "buzz".to_string())]);
+    let blob2_upload_options =
+        BlockBlobClientUploadOptions::default().with_tags(blob2_tags.clone());
+    create_test_blob(
+        &blob2_client,
+        Some(RequestContent::from(blob2_data.into())),
+        Some(blob2_upload_options),
+    )
+    .await?;
+
+    // Find "hello world" blob by its tag {"foo": "bar"}
+    let response = service_client
+        .find_blobs_by_tags("\"foo\"='bar'", None)
+        .await?;
+    let filter_blob_segment = response.into_body().await?;
+    let blobs = filter_blob_segment.blobs.unwrap();
+    assert!(
+        blobs
+            .iter()
+            .any(|blob| blob.name.as_ref().unwrap() == &blob1_name),
+        "Failed to find \"{}\" in filtered blob results.",
+        blob1_name
+    );
+
+    // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
+    let response = service_client
+        .find_blobs_by_tags("\"fizz\"='buzz'", None)
+        .await?;
+    let filter_blob_segment = response.into_body().await?;
+    let blobs = filter_blob_segment.blobs.unwrap();
+    assert!(
+        blobs
+            .iter()
+            .any(|blob| blob.name.as_ref().unwrap() == &blob2_name),
+        "Failed to find \"{}\" in filtered blob results.",
+        blob2_name
+    );
+
+    container_client.delete_container(None).await?;
     Ok(())
 }
