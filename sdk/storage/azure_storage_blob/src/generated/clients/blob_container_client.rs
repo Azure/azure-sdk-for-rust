@@ -10,7 +10,7 @@ use crate::generated::{
         BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
         BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
-        BlobContainerClientFilterBlobsOptions, BlobContainerClientGetAccessPolicyOptions,
+        BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
         BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
         BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
         BlobContainerClientListBlobFlatSegmentOptions,
@@ -29,9 +29,11 @@ use azure_core::{
     error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
+        headers::ERROR_CODE,
+        pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, PagerState, Pipeline,
-        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Method, NoFormat, PageIterator, Pipeline, RawResponse, Request,
+        RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Error, Result,
@@ -469,34 +471,13 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
+    /// * `filter_expression` - Filters the results to return only to return only blobs whose tags match the specified expression.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`FilterBlobSegmentHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{FilterBlobSegment, FilterBlobSegmentHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<FilterBlobSegment, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::FilterBlobSegmentHeaders::date) - Date
-    ///
-    /// [`FilterBlobSegmentHeaders`]: crate::generated::models::FilterBlobSegmentHeaders
-    #[tracing::function("Storage.Blob.Container.filterBlobs")]
-    pub async fn filter_blobs(
+    #[tracing::function("Storage.Blob.Container.findBlobsByTags")]
+    pub async fn find_blobs_by_tags(
         &self,
-        options: Option<BlobContainerClientFilterBlobsOptions<'_>>,
+        filter_expression: &str,
+        options: Option<BlobContainerClientFindBlobsByTagsOptions<'_>>,
     ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
@@ -526,9 +507,8 @@ impl BlobContainerClient {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
         }
-        if let Some(where_param) = options.where_param {
-            url.query_pairs_mut().append_pair("where", &where_param);
-        }
+        url.query_pairs_mut()
+            .append_pair("where", filter_expression);
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");

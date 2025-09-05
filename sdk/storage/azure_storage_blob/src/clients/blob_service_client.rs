@@ -5,9 +5,10 @@ use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
     generated::models::BlobServiceClientGetAccountInfoResult,
     models::{
-        BlobServiceClientGetAccountInfoOptions, BlobServiceClientGetPropertiesOptions,
-        BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
-        BlobServiceProperties, ListContainersSegmentResponse,
+        BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
+        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
+        BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
+        ListContainersSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,
@@ -96,6 +97,24 @@ impl BlobServiceClient {
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
         self.client.list_containers_segment(options)
+    }
+
+    /// Returns a list of blobs across all containers whose tags match a given search expression.
+    ///
+    /// # Arguments
+    ///
+    /// * `filter_expression` - The expression to find blobs whose tags matches the specified condition.
+    /// eg. "\"yourtagname\"='firsttag' and \"yourtagname2\"='secondtag'"
+    /// To specify a container, eg. "@container='containerName' and \"Name\"='C'"
+    /// * `options` - Optional parameters for the request.
+    pub async fn find_blobs_by_tags(
+        &self,
+        filter_expression: &str,
+        options: Option<BlobServiceClientFindBlobsByTagsOptions<'_>>,
+    ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
+        self.client
+            .find_blobs_by_tags(filter_expression, options)
+            .await
     }
 
     /// Sets properties for a Storage account's Blob service endpoint, including properties for Storage Analytics and CORS rules.
