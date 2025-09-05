@@ -91,7 +91,7 @@ reqwest = { version = "0.12.23", features = ["rustls-tls-webpki-roots"] }
 
 You could even completely replace `reqwest` and provide your own `HttpClient` implementation. See [an example](#other-http-client) below.
 
-** NOTE:** The `debug` feature may expose PII and/or secrets to logs or tracing spans which would normally be redacted.
+**NOTE:** The `debug` feature may expose PII and/or secrets to logs or tracing spans which would normally be redacted.
 
 ## Examples
 
@@ -155,14 +155,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // call a service method, which returns Response<T>
-    let response = client.get_secret("secret-name", "", None).await?;
+    let response = client.get_secret("secret-name", None).await?;
 
     // Response<T> has two main accessors:
     // 1. The `into_body()` function consumes self to deserialize into a model type
     let secret = response.into_body().await?;
 
     // get response again because it was moved in above statement
-    let response: Response<Secret> = client.get_secret("secret-name", "", None).await?;
+    let response: Response<Secret> = client.get_secret("secret-name", None).await?;
 
     // 2. The deconstruct() method for accessing all the details of the HTTP response
     let (status, headers, body) = response.deconstruct();
@@ -198,7 +198,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    match client.get_secret("secret-name", "", None).await {
+    match client.get_secret("secret-name", None).await {
         Ok(secret) => println!("Secret: {:?}", secret.into_body().await?.value),
         Err(e) => match e.kind() {
             ErrorKind::HttpResponse { status, error_code, .. } if *status == StatusCode::NotFound => {
@@ -575,7 +575,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // get a secret
-    let secret = client.get_secret("secret-name", "", None)
+    let secret = client.get_secret("secret-name", None)
         .await?
         .into_body()
         .await?;

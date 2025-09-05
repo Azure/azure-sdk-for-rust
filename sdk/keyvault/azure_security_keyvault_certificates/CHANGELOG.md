@@ -4,7 +4,11 @@
 
 ### Features Added
 
+- Updated to latest version of fixes for the "7.6" specification after TypeSpec migration.
+
 ### Breaking Changes
+
+- Moved certificate version parameters to client method options.
 
 ### Bugs Fixed
 

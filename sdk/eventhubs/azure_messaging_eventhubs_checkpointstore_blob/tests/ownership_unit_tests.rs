@@ -4,11 +4,16 @@
 //! Unit tests for the blob checkpoint store models and utilities.
 
 use azure_core::{http::Etag, time::OffsetDateTime, Result};
-use azure_core_test::{recorded, TestContext};
+use azure_core_test::{recorded, Recording, TestContext};
 use azure_messaging_eventhubs::{models::Ownership, CheckpointStore};
 mod checkpoint_unit_tests;
 use checkpoint_unit_tests::create_test_checkpoint_store;
 use tracing::trace;
+
+fn create_test_namespace(recording: &Recording) -> String {
+    let namespace = recording.var("EVENTHUBS_HOST", None);
+    recording.random_string::<55>(Some(namespace.as_str()))
+}
 
 #[recorded::test]
 async fn list_ownerships(ctx: TestContext) -> Result<()> {
@@ -16,7 +21,7 @@ async fn list_ownerships(ctx: TestContext) -> Result<()> {
     const TEST_PARTITION_ID: &str = "list_ownerships";
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
-    let namespace = recording.var("EVENTHUBS_HOST", None);
+    let namespace = create_test_namespace(recording);
     let consumer_group = recording
         .var_opt("EVENTHUBS_CONSUMER_GROUP", None)
         .unwrap_or("$Default".to_string());
@@ -81,7 +86,7 @@ async fn claim_ownership_single_partition(ctx: TestContext) -> Result<()> {
 
     const TEST_PARTITION_ID: &str = "claim_ownership_single_partition";
 
-    let namespace = recording.var("EVENTHUBS_HOST", None);
+    let namespace = create_test_namespace(recording);
     let consumer_group = recording
         .var_opt("EVENTHUBS_CONSUMER_GROUP", None)
         .unwrap_or("$Default".to_string());
@@ -129,7 +134,7 @@ async fn claim_ownership_multiple_partitions(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
-    let namespace = recording.var("EVENTHUBS_HOST", None);
+    let namespace = create_test_namespace(recording);
     let consumer_group = recording
         .var_opt("EVENTHUBS_CONSUMER_GROUP", None)
         .unwrap_or("$Default".to_string());
@@ -213,7 +218,7 @@ async fn claim_ownership_update_existing(ctx: TestContext) -> Result<()> {
     const TEST_PARTITION_ID: &str = "ownership_update_existing";
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
-    let namespace = recording.var("EVENTHUBS_HOST", None);
+    let namespace = create_test_namespace(recording);
     let consumer_group = recording
         .var_opt("EVENTHUBS_CONSUMER_GROUP", None)
         .unwrap_or("$Default".to_string());
@@ -264,7 +269,7 @@ async fn claim_ownership_concurrent_update_should_fail(ctx: TestContext) -> Resu
     let recording = ctx.recording();
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
-    let namespace = recording.var("EVENTHUBS_HOST", None);
+    let namespace = create_test_namespace(recording);
     let consumer_group = recording
         .var_opt("EVENTHUBS_CONSUMER_GROUP", None)
         .unwrap_or("$Default".to_string());
@@ -309,7 +314,7 @@ async fn claim_ownership_no_owner_id(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
     let checkpoint_store = create_test_checkpoint_store(recording)?;
 
-    let namespace = recording.var("EVENTHUBS_HOST", None);
+    let namespace = create_test_namespace(recording);
     let consumer_group = recording
         .var_opt("EVENTHUBS_CONSUMER_GROUP", None)
         .unwrap_or("$Default".to_string());
