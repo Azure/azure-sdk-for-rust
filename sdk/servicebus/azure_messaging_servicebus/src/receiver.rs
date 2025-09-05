@@ -99,8 +99,8 @@
 //! ```
 
 use crate::{
-    client::ServiceBusClientOptions, message::SystemProperties, ErrorKind, ReceivedMessage, Result,
-    ServiceBusError,
+    clients::ServiceBusClientOptions, message::SystemProperties, ErrorKind, ReceivedMessage,
+    Result, ServiceBusError,
 };
 use async_lock::{Mutex, OnceCell};
 use azure_core::{fmt::SafeDebug, time::Duration, time::OffsetDateTime, Uuid};
@@ -112,6 +112,33 @@ use azure_core_amqp::{
 use futures::{select, FutureExt};
 use std::{collections::HashMap, sync::Arc};
 use tracing::{debug, trace, warn};
+
+/// Property key for lock token in Service Bus management operations.
+const LOCK_TOKEN_PROPERTY_KEY: &str = "lock-token";
+
+/// Property key for sequence numbers in Service Bus management operations.
+const SEQUENCE_NUMBERS_PROPERTY_KEY: &str = "sequence-numbers";
+
+/// Property key for receiver settle mode in Service Bus management operations.
+const RECEIVER_SETTLE_MODE_PROPERTY_KEY: &str = "receiver-settle-mode";
+
+/// Property key for message count in Service Bus management operations.
+const MESSAGE_COUNT_PROPERTY_KEY: &str = "message-count";
+
+/// Property key for from sequence number in Service Bus management operations.
+const FROM_SEQUENCE_NUMBER_PROPERTY_KEY: &str = "from-sequence-number";
+
+/// Service Bus management operation name for deferring messages.
+const DEFER_MESSAGE_OPERATION: &str = "com.microsoft:defer-message";
+
+/// Service Bus management operation name for receiving messages by sequence number.
+const RECEIVE_BY_SEQUENCE_NUMBER_OPERATION: &str = "com.microsoft:receive-by-sequence-number";
+
+/// Service Bus management operation name for renewing message locks.
+const RENEW_LOCK_OPERATION: &str = "com.microsoft:renew-lock";
+
+/// Service Bus management operation name for peeking messages.
+const PEEK_MESSAGE_OPERATION: &str = "com.microsoft:peek-message";
 
 /// Represents the lock style to use for a receiver - either `PeekLock` or `ReceiveAndDelete`.
 ///
@@ -1291,7 +1318,10 @@ impl Receiver {
         > = azure_core_amqp::AmqpOrderedMap::new();
 
         // Add the lock token as a string representation
-        application_properties.insert("lock-token".to_string(), lock_token.to_string().into());
+        application_properties.insert(
+            LOCK_TOKEN_PROPERTY_KEY.to_string(),
+            lock_token.to_string().into(),
+        );
 
         // Add any properties to modify if specified
         if let Some(properties) = options
@@ -1304,10 +1334,7 @@ impl Receiver {
         }
 
         let _response = management_client
-            .call(
-                "com.microsoft:defer-message".to_string(),
-                application_properties,
-            )
+            .call(DEFER_MESSAGE_OPERATION.to_string(), application_properties)
             .await
             .map_err(|e| {
                 ServiceBusError::new(ErrorKind::Amqp, format!("Failed to defer message: {:?}", e))
@@ -1515,18 +1542,24 @@ impl Receiver {
             .collect::<Vec<_>>()
             .join(",");
 
-        application_properties.insert("sequence-numbers".to_string(), sequence_numbers_str.into());
+        application_properties.insert(
+            SEQUENCE_NUMBERS_PROPERTY_KEY.to_string(),
+            sequence_numbers_str.into(),
+        );
 
         // Set receiver settle mode based on receive mode
         let settle_mode = match self.receive_mode {
             ReceiveMode::PeekLock => 1u32,
             ReceiveMode::ReceiveAndDelete => 0u32,
         };
-        application_properties.insert("receiver-settle-mode".to_string(), settle_mode.into());
+        application_properties.insert(
+            RECEIVER_SETTLE_MODE_PROPERTY_KEY.to_string(),
+            settle_mode.into(),
+        );
 
         let response = management_client
             .call(
-                "com.microsoft:receive-by-sequence-number".to_string(),
+                RECEIVE_BY_SEQUENCE_NUMBER_OPERATION.to_string(),
                 application_properties,
             )
             .await
@@ -1716,13 +1749,13 @@ impl Receiver {
         > = azure_core_amqp::AmqpOrderedMap::new();
 
         // Add the lock token as a string representation
-        application_properties.insert("lock-token".to_string(), lock_token.to_string().into());
+        application_properties.insert(
+            LOCK_TOKEN_PROPERTY_KEY.to_string(),
+            lock_token.to_string().into(),
+        );
 
         let response = management_client
-            .call(
-                "com.microsoft:renew-lock".to_string(),
-                application_properties,
-            )
+            .call(RENEW_LOCK_OPERATION.to_string(), application_properties)
             .await
             .map_err(|e| {
                 ServiceBusError::new(
@@ -1922,21 +1955,18 @@ impl Receiver {
         > = azure_core_amqp::AmqpOrderedMap::new();
 
         // Set the maximum number of messages to peek
-        application_properties.insert("message-count".to_string(), max_count.into());
+        application_properties.insert(MESSAGE_COUNT_PROPERTY_KEY.to_string(), max_count.into());
 
         // Set the starting sequence number if provided
         if let Some(from_sequence_number) = options.as_ref().and_then(|o| o.from_sequence_number) {
             application_properties.insert(
-                "from-sequence-number".to_string(),
+                FROM_SEQUENCE_NUMBER_PROPERTY_KEY.to_string(),
                 from_sequence_number.into(),
             );
         }
 
         let response = management_client
-            .call(
-                "com.microsoft:peek-message".to_string(),
-                application_properties,
-            )
+            .call(PEEK_MESSAGE_OPERATION.to_string(), application_properties)
             .await
             .map_err(|e| {
                 ServiceBusError::new(ErrorKind::Amqp, format!("Failed to peek messages: {:?}", e))
