@@ -29,6 +29,15 @@ pub type PolicyResult = typespec::error::Result<RawResponse>;
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait Policy: Send + Sync + std::fmt::Debug {
+    /// Send the request through this policy and the subsequent policies in the pipeline.
+    ///
+    /// # Arguments
+    /// * `ctx` - The context for the request.
+    /// * `request` - The mutable reference to the request to be sent.
+    /// * `next` - The slice of subsequent policies to call after this one.
+    ///
+    /// # Returns
+    /// A `PolicyResult` containing either the `RawResponse` or an error if the request failed at any point in the pipeline.
     async fn send(
         &self,
         ctx: &Context,

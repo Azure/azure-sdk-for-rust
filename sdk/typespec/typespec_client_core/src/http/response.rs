@@ -10,6 +10,7 @@ use serde::de::DeserializeOwned;
 use std::{fmt, marker::PhantomData, pin::Pin};
 use typespec::error::{ErrorKind, ResultExt};
 
+/// A pinned stream of bytes that can be sent as a response body.
 #[cfg(not(target_arch = "wasm32"))]
 pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send>>;
 #[cfg(target_arch = "wasm32")]

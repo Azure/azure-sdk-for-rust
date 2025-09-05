@@ -23,6 +23,7 @@ macro_rules! request_header {
     };
     ($(#[$outer:meta])* $name:ident, $header:ident, $(($variant:ident, $value:expr)), *) => {
         $crate::request_option!($(#[$outer])* $name);
+        #[allow(missing_docs)]
         impl $name {
             $(
                 pub const $variant: $name = $name::from_static($value);
@@ -58,6 +59,8 @@ macro_rules! request_option {
         pub struct $name(std::borrow::Cow<'static, str>);
 
         impl $name {
+
+            /// Creates a new instance of the request option.
             pub fn new<S>(s: S) -> Self
             where
                 S: Into<std::borrow::Cow<'static, str>>,
@@ -65,6 +68,7 @@ macro_rules! request_option {
                 Self(s.into())
             }
 
+            /// Creates a new instance of the request option from a static string slice.
             pub const fn from_static(s: &'static str) -> Self {
                 Self(std::borrow::Cow::Borrowed(s))
             }

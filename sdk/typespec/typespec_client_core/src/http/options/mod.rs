@@ -48,6 +48,7 @@ pub struct ClientOptions {
     /// Transport options.
     pub transport: Option<TransportOptions>,
 
+    /// Logging options.
     pub logging: LoggingOptions,
 }
 

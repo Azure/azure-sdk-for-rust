@@ -2,6 +2,9 @@
 // Licensed under the MIT License.
 
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![warn(missing_docs)]
+
+//! This crate contains procedural macros that are used to generate code for the TypeSpec SDK.
 
 use syn::{parse_macro_input, DeriveInput};
 
