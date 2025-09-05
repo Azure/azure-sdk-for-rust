@@ -55,7 +55,7 @@
 ####################
 
 # PRLabel: %Cosmos
-/sdk/cosmos/             @analogrelay @Pilchie @kirankumarkolli @tvaron3 @FabianMeiswinkel @kundadebdatta @nehrao1 @kushagraThapar
+/sdk/cosmos/             @Azure/azure-cosmos-rust-sdk
 
 # ServiceLabel: %Cosmos
 # AzureSDKOwners: @heaths

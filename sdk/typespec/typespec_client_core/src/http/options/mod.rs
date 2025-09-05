@@ -9,7 +9,11 @@ mod transport;
 pub use retry::*;
 pub use transport::*;
 
-use crate::http::{policies::Policy, Context};
+use crate::http::{
+    headers::RETRY_AFTER,
+    policies::{Policy, RetryHeaders},
+    Context,
+};
 use std::borrow::Cow;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -52,4 +56,23 @@ pub struct ClientOptions {
 pub struct ClientMethodOptions<'a> {
     /// The [`Context`] for this method call.
     pub context: Context<'a>,
+}
+
+/// Options for constructing a `Pipeline`
+#[derive(Clone, Debug)]
+pub struct PipelineOptions {
+    /// The set of headers which should be considered when
+    /// determining the interval to wait for retry attempts.
+    pub retry_headers: RetryHeaders,
+}
+
+impl Default for PipelineOptions {
+    fn default() -> Self {
+        Self {
+            retry_headers: RetryHeaders {
+                retry_headers: vec![RETRY_AFTER],
+                error_header: None,
+            },
+        }
+    }
 }

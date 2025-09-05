@@ -45,6 +45,7 @@ impl CosmosPipeline {
                 client_options,
                 Vec::new(),
                 vec![Arc::new(auth_policy)],
+                None,
             ),
         }
     }
