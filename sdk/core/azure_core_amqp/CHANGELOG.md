@@ -1,16 +1,10 @@
 # Release History
 
-## 0.7.0 (Unreleased)
-
-### Features Added
+## 0.7.0 (2025-09-05)
 
 ### Breaking Changes
 
 - Distinguish remote disconnect and remote closed errors by origin
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.6.0 (2025-08-01)
 

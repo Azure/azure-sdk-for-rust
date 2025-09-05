@@ -1,6 +1,6 @@
 # Release History
 
-## 0.28.0 (Unreleased)
+## 0.28.0 (2025-09-05)
 
 ### Features Added
 
@@ -19,10 +19,6 @@
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` for `typespec_client_core` to copy if needed.
 - Removed the `setters` macro.
 - Added the ability to configure pipeline configuration independently from `ClientOptions`. This adds a new optional `PipelineOptions` parameter to `azure_core::http::Pipeline::new()`. If not specified, it defaults to the expected options for `azure_core` services.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.27.0 (2025-08-01)
 

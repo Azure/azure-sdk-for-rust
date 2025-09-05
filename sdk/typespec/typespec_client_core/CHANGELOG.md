@@ -1,6 +1,6 @@
 # Release History
 
-## 0.7.0 (Unreleased)
+## 0.7.0 (2025-09-05)
 
 ### Features Added
 
@@ -19,10 +19,6 @@
 - Removed the `setters` macro.
 - Removed the cloud service specific retry headers from typespec_client_core. This change means that the `HttpError::new()` function takes an additional optional parameter which is an HTTP header which might contain an error code.
 - Added pipeline configuration options (`PipelineOptions`) to `typespec_client_core::http::Pipeline::new()` to enable customization of the options for an HTTP pipeline.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.6.0 (2025-08-01)
 
