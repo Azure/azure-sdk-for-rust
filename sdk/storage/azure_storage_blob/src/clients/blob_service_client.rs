@@ -104,8 +104,8 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `filter_expression` - The expression to find blobs whose tags matches the specified condition.
-    /// eg. "\"yourtagname\"='firsttag' and \"yourtagname2\"='secondtag'"
-    /// To specify a container, eg. "@container='containerName' and \"Name\"='C'"
+    ///   eg. "\"yourtagname\"='firsttag' and \"yourtagname2\"='secondtag'"
+    ///   To specify a container, eg. "@container='containerName' and \"Name\"='C'"
     /// * `options` - Optional parameters for the request.
     pub async fn find_blobs_by_tags(
         &self,

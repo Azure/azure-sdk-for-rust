@@ -123,6 +123,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     create_test_blob(
         &source_blob_client,
         Some(RequestContent::from(b"initialD ata".to_vec())),
+        None,
     )
     .await?;
     let source_url = format!(
@@ -138,6 +139,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     create_test_blob(
         &overwrite_blob_client,
         Some(RequestContent::from(b"overruled!".to_vec())),
+        None,
     )
     .await?;
     let overwrite_url = format!(
