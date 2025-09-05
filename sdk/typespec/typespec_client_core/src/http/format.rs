@@ -25,6 +25,13 @@ pub trait Format: std::fmt::Debug {}
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait DeserializeWith<F: Format>: Sized {
+    /// Deserialize the response body using the specified format.
+    ///
+    /// # Arguments
+    /// * `body` - The response body to deserialize.
+    ///
+    /// # Returns
+    /// A `Result` containing the deserialized value of type `Self`, or an error if deserialization fails.
     async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self>;
 }
 

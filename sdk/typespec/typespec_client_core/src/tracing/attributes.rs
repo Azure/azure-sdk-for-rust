@@ -40,8 +40,9 @@ pub enum AttributeValue {
 /// that can be useful for debugging, monitoring, and analysis.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Attribute {
-    /// A key-value pair attribute.
+    /// The key of the attribute, represented as a string.
     pub key: Cow<'static, str>,
+    /// The value of the attribute.
     pub value: AttributeValue,
 }
 

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#![allow(missing_docs)]
+
 use super::*;
 
 // HTTP headers are case-insensitive.

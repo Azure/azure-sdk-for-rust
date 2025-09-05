@@ -24,6 +24,7 @@ where
 }
 
 pub mod option {
+    //! RFC 7231 date and time parsing and formatting functions for optional [`OffsetDateTime`] values.
     use crate::time::{parse_rfc7231, to_rfc7231};
     use serde::{Deserialize, Deserializer, Serializer};
     use time::OffsetDateTime;

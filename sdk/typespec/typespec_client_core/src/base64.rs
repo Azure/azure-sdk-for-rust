@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore Hdvcmxk
+
 //! Base64 encoding and decoding functions.
 
 use base64::{
@@ -25,6 +27,21 @@ const URL_SAFE: GeneralPurpose = GeneralPurpose::new(
         .with_encode_padding(false),
 );
 
+/// Encode the input into a base64 string using the standard base64 encoding scheme.
+///
+/// # Arguments
+/// * `input` - The input data to encode, which can be any type that implements `AsRef<[u8]>`.
+///
+/// # Returns
+/// A `String` containing the base64 encoded representation of the input data.
+///
+/// # Examples
+/// ```rust
+/// # use typespec_client_core::base64;
+/// let data = b"Hello, world!";
+/// let encoded = base64::encode(data);
+/// assert_eq!(encoded, "SGVsbG8sIHdvcmxkIQ==");
+/// ```
 pub fn encode<T>(input: T) -> String
 where
     T: AsRef<[u8]>,
@@ -32,6 +49,21 @@ where
     STANDARD.encode(input)
 }
 
+/// Decode a base64 encoded string using the standard base64 decoding scheme.
+///
+/// # Arguments
+/// * `input` - The base64 encoded input data to decode, which can be any type that implements `AsRef<[u8]>`.
+///
+/// # Returns
+/// A `Result` containing a `Vec<u8>` with the decoded data, or an error if the input is not valid base64.
+///
+/// # Examples
+/// ```rust
+/// # use typespec_client_core::base64;
+/// let encoded = "SGVsbG8sIHdvcmxkIQ==";
+/// let decoded = base64::decode(encoded).expect("Decoding should succeed");
+/// assert_eq!(decoded, b"Hello, world!");
+/// ```
 pub fn decode<T>(input: T) -> crate::Result<Vec<u8>>
 where
     T: AsRef<[u8]>,
@@ -39,6 +71,21 @@ where
     Ok(STANDARD.decode(input)?)
 }
 
+/// Encode the input into a base64 string using the URL safe base64 encoding scheme (base64url).
+///
+/// # Arguments
+/// * `input` - The input data to encode, which can be any type that implements `AsRef<[u8]>`.
+///
+/// # Returns
+/// A `String` containing the base64url encoded representation of the input data.
+///
+/// # Examples
+/// ```rust
+/// # use typespec_client_core::base64;
+/// let data = b"Hello, world!";
+/// let encoded = base64::encode_url_safe(data);
+/// assert_eq!(encoded, "SGVsbG8sIHdvcmxkIQ");
+/// ```
 pub fn encode_url_safe<T>(input: T) -> String
 where
     T: AsRef<[u8]>,
@@ -46,6 +93,21 @@ where
     URL_SAFE.encode(input)
 }
 
+/// Decode a base64url encoded string using the URL safe base64 decoding scheme. (base64url)
+///
+/// # Arguments
+/// * `input` - The base64url encoded input data to decode, which can be any type that implements `AsRef<[u8]>`.
+///
+/// # Returns
+/// A `Result` containing a `Vec<u8>` with the decoded data, or an error if the input is not valid base64url.
+///
+/// # Examples
+/// ```rust
+/// # use typespec_client_core::base64;
+/// let encoded = "SGVsbG8sIHdvcmxkIQ";
+/// let decoded = base64::decode_url_safe(encoded).expect("Decoding should succeed");
+/// assert_eq!(decoded, b"Hello, world!");
+/// ```
 pub fn decode_url_safe<T>(input: T) -> crate::Result<Vec<u8>>
 where
     T: AsRef<[u8]>,

@@ -18,6 +18,10 @@ pub struct TransportPolicy {
 }
 
 impl TransportPolicy {
+    /// Create a new `TransportPolicy` with the given transport options.
+    ///
+    /// # Arguments
+    /// * `transport_options` - The transport options to use for this policy.
     pub fn new(transport_options: TransportOptions) -> Self {
         Self { transport_options }
     }

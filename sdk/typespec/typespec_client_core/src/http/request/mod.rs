@@ -37,6 +37,7 @@ pub enum Body {
 }
 
 impl Body {
+    /// Returns the length of the body in bytes.
     pub fn len(&self) -> usize {
         match self {
             Body::Bytes(bytes) => bytes.len(),
@@ -45,10 +46,14 @@ impl Body {
         }
     }
 
+    /// Returns `true` if the body is empty.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
+    /// Resets the body to the beginning, if it is a seekable stream.
+    ///
+    /// This function is a no-op for byte bodies.
     pub async fn reset(&mut self) -> crate::Result<()> {
         match self {
             Body::Bytes(_) => Ok(()),

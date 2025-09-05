@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![warn(missing_docs)]
+
 /// Core numeric traits and types
 pub mod numeric {
     /// Core trait for numeric operations
@@ -18,6 +22,13 @@ pub mod numeric {
 
 pub use numeric::NumericCore;
 
+/// Adds two `u64` values and returns the result.
+///
+/// # Examples
+/// ```
+/// let sum = add(5, 10);
+/// assert_eq!(sum, 15);
+/// ```
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
 }
