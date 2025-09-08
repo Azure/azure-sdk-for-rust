@@ -104,8 +104,15 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `filter_expression` - The expression to find blobs whose tags matches the specified condition.
-    ///   eg. "\"yourtagname\"='firsttag' and \"yourtagname2\"='secondtag'"
-    ///   To specify a container, eg. "@container='containerName' and \"Name\"='C'"
+    ///   eg.
+    /// ```text
+    /// "\"yourtagname\"='firsttag' and \"yourtagname2\"='secondtag'"
+    /// ```
+    ///   To specify a container, eg.
+    /// ```text
+    /// "@container='containerName' and \"Name\"='C'"
+    /// ```
+    ///   See [`format_filter_expression()`](crate::format_filter_expression) for help with the expected String format.
     /// * `options` - Optional parameters for the request.
     pub async fn find_blobs_by_tags(
         &self,

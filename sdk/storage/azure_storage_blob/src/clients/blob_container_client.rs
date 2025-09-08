@@ -12,10 +12,11 @@ use crate::{
     models::{
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
-        BlobContainerClientDeleteOptions, BlobContainerClientGetAccountInfoOptions,
-        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
-        BlobContainerClientReleaseLeaseOptions, BlobContainerClientRenewLeaseOptions,
-        BlobContainerClientSetMetadataOptions, ListBlobsFlatSegmentResponse,
+        BlobContainerClientDeleteOptions, BlobContainerClientFindBlobsByTagsOptions,
+        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetPropertiesOptions,
+        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetMetadataOptions,
+        FilterBlobSegment, ListBlobsFlatSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -157,6 +158,31 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListBlobsFlatSegmentResponse, XmlFormat>>> {
         self.client.list_blob_flat_segment(options)
+    }
+
+    /// Returns a list of blobs in the container whose tags match a given search expression.
+    ///
+    /// # Arguments
+    ///
+    /// * `filter_expression` - The expression to find blobs whose tags matches the specified condition.
+    ///   eg.
+    /// ```text
+    /// "\"yourtagname\"='firsttag' and \"yourtagname2\"='secondtag'"
+    /// ```
+    ///   To specify a container, eg.
+    /// ```text
+    /// "@container='containerName' and \"Name\"='C'"
+    /// ```
+    ///   See [`format_filter_expression()`](crate::format_filter_expression) for help with the expected String format.
+    /// * `options` - Optional parameters for the request.
+    pub async fn find_blobs_by_tags(
+        &self,
+        filter_expression: &str,
+        options: Option<BlobContainerClientFindBlobsByTagsOptions<'_>>,
+    ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
+        self.client
+            .find_blobs_by_tags(filter_expression, options)
+            .await
     }
 
     /// Requests a new lease on a container. The lease lock duration can be 15 to 60 seconds, or can be infinite.

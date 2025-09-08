@@ -1,16 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::StatusCode;
+use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
+use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
     BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
-    BlobContainerClientSetMetadataOptions, BlobType, LeaseState,
+    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_service_client, get_container_client, get_container_name,
+    create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
+    get_container_name,
 };
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -321,5 +323,62 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(sku_name.is_some());
     assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+    let container_client_1 = get_container_client(recording, true).await?;
+
+    // Create Test Blobs with Tags
+    let blob1_name = get_blob_name(recording);
+    create_test_blob(
+        &container_client_1.blob_client(blob1_name.clone()),
+        Some(RequestContent::from("hello world".as_bytes().into())),
+        Some(
+            BlockBlobClientUploadOptions::default()
+                .with_tags(HashMap::from([("foo".to_string(), "bar".to_string())])),
+        ),
+    )
+    .await?;
+    let blob2_name = get_blob_name(recording);
+    let blob2_tags = HashMap::from([("fizz".to_string(), "buzz".to_string())]);
+    create_test_blob(
+        &container_client_1.blob_client(blob2_name.clone()),
+        Some(RequestContent::from("ferris the crab".as_bytes().into())),
+        Some(BlockBlobClientUploadOptions::default().with_tags(blob2_tags.clone())),
+    )
+    .await?;
+
+    // Find "hello world" blob by its tag {"foo": "bar"}
+    let response = service_client
+        .find_blobs_by_tags("\"foo\"='bar'", None)
+        .await?;
+    let filter_blob_segment = response.into_body().await?;
+    let blobs = filter_blob_segment.blobs.unwrap();
+    assert!(
+        blobs
+            .iter()
+            .any(|blob| blob.name.as_ref().unwrap() == &blob1_name),
+        "Failed to find \"{blob1_name}\" in filtered blob results."
+    );
+
+    // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
+    let response = service_client
+        .find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)
+        .await?;
+    let filter_blob_segment = response.into_body().await?;
+    let blobs = filter_blob_segment.blobs.unwrap();
+    assert!(
+        blobs
+            .iter()
+            .any(|blob| blob.name.as_ref().unwrap() == &blob2_name),
+        "Failed to find \"{blob2_name}\" in filtered blob results."
+    );
+
+    container_client_1.delete_container(None).await?;
     Ok(())
 }
