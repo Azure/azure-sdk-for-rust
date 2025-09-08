@@ -140,8 +140,8 @@ extends:
     # The Prerelease and Release stages are conditioned on:
     # 1. Internal pipeline
     # 2. Only release from main or hotfix/*
-    # 2. Not weekly build
-    # 3. Manual trigger or force IncludeRelease
+    # 3. Not weekly build
+    # 4. Manual trigger or force IncludeRelease
     - ${{ if eq(variables['System.TeamProject'], 'internal') }}:
       - ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/')) }}:
         - ${{ if not(contains(variables['Build.DefinitionName'], 'weekly')) }}:
