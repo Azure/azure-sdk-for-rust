@@ -15,9 +15,13 @@ use crate::http::{DEFAULT_ALLOWED_HEADER_NAMES, REDACTED_PATTERN};
 
 /// A trait for converting a type into request headers.
 pub trait AsHeaders {
+    /// The error type which can occur when converting the type into headers.
     type Error: std::error::Error + Send + Sync + 'static;
+
+    /// The iterator type which yields header name/value pairs.
     type Iter: Iterator<Item = (HeaderName, HeaderValue)>;
 
+    /// Iterate over all the header name/value pairs.
     fn as_headers(&self) -> Result<Self::Iter, Self::Error>;
 }
 
@@ -54,6 +58,7 @@ where
 ///
 /// The [`FromHeaders::from_headers()`] method is usually used implicitly, through [`Headers::get()`] or [`Headers::get_optional()`].
 pub trait FromHeaders: Sized {
+    /// The error type which can occur when extracting the value from headers.
     type Error: std::error::Error + Send + Sync + 'static;
 
     /// Gets a list of the header names that [`FromHeaders::from_headers`] expects.
@@ -80,7 +85,9 @@ pub trait FromHeaders: Sized {
 // As soon as the migration to the pipeline architecture will be complete we will phase out
 // `add_to_builder`.
 pub trait Header {
+    /// Get the name of the header.
     fn name(&self) -> HeaderName;
+    /// Get the value of the header.
     fn value(&self) -> HeaderValue;
 }
 

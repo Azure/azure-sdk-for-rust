@@ -41,6 +41,9 @@ pub trait TracerProvider: Send + Sync + Debug {
     ) -> Arc<dyn Tracer>;
 }
 
+/// The Tracer trait is responsible for creating spans and managing the active span in distributed tracing.
+///
+/// This trait defines methods for starting new spans, starting spans with a parent, and retrieving the namespace of the tracer.
 pub trait Tracer: Send + Sync + Debug {
     /// Starts a new span with the given name and type.
     ///
@@ -99,20 +102,34 @@ pub trait Tracer: Send + Sync + Debug {
 /// so libraries should never set it.
 #[derive(Debug, PartialEq)]
 pub enum SpanStatus {
+    /// The span has not been set to any specific status.
     Unset,
-    Error { description: String },
+    /// The span has encountered an error, with a description of the error.
+    Error {
+        /// A description of the error that occurred during the span's execution.
+        description: String,
+    },
 }
 
+/// The kind of a span in distributed tracing.
+///
+/// This enum represents the different types of spans that can be created in distributed tracing, including internal operations, client requests, server requests, message production, and message consumption.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum SpanKind {
+    /// The default span kind, representing an internal operation within the library.
     #[default]
     Internal,
+    /// The span represents a client request.
     Client,
+    /// The span represents a server request.
     Server,
+    /// The span represents a message being produced. This is typically used for messaging systems where a message is sent to a queue or topic.
     Producer,
+    /// The span represents a message being consumed. This is typically used for messaging systems where a message is received from a queue or topic.
     Consumer,
 }
 
+/// A guard that ends a span when dropped.
 pub trait SpanGuard {
     /// Ends the span when dropped.
     fn end(self);
@@ -123,6 +140,7 @@ pub trait SpanGuard {
 /// This trait defines the methods that a span must implement to be used in distributed tracing.
 /// It includes methods for setting attributes, recording errors, and managing the span's lifecycle.
 pub trait Span: AsAny + Send + Sync {
+    /// Returns `true` if an application is listening for events on the span.
     fn is_recording(&self) -> bool;
 
     /// The 8 byte value which identifies the span.

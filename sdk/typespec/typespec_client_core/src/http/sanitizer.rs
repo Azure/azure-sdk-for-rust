@@ -46,7 +46,7 @@ pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<Cow<'static, str>>> =
 pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: LazyLock<HashSet<Cow<'static, str>>> =
     LazyLock::new(|| ["api-version"].iter().map(|s| Cow::Borrowed(*s)).collect());
 
-pub const REDACTED_PATTERN: &str = "REDACTED";
+pub(crate) const REDACTED_PATTERN: &str = "REDACTED";
 
 /// A trait that extends a type with sanitization capabilities
 pub trait Sanitizer {

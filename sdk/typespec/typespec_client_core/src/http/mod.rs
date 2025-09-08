@@ -33,6 +33,10 @@ pub use url::Url;
 
 /// Add a new query pair into the target [`Url`]'s query string.
 pub trait AppendToUrlQuery {
+    /// Append the query pair represented by `self` to the given `url`.
+    ///
+    /// # Arguments
+    /// * `url` - The mutable reference to the `Url` to which the query pair will be appended.
     fn append_to_url_query(&self, url: &mut Url);
 }
 

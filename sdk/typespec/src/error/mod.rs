@@ -22,7 +22,9 @@ pub enum ErrorKind {
     /// An HTTP status code that was not expected.
     #[cfg(feature = "http")]
     HttpResponse {
+        /// The HTTP status code that was returned.
         status: StatusCode,
+        /// An optional error code returned by the service.
         error_code: Option<String>,
     },
     /// An error performing IO.
@@ -170,6 +172,7 @@ impl Error {
         }
     }
 
+    /// If this error is an HTTP response error, return the associated status code.
     #[cfg(feature = "http")]
     pub fn http_status(&self) -> Option<StatusCode> {
         match &self.kind() {

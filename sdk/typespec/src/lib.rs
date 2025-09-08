@@ -3,6 +3,7 @@
 
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![warn(missing_docs)]
 
 pub mod error;
 #[cfg(feature = "http")]

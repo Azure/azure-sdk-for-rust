@@ -32,6 +32,7 @@ pub fn parse_unix_time(s: &str) -> crate::Result<OffsetDateTime> {
 }
 
 pub mod option {
+    //! Unix timestamp serde helpers for optional [`OffsetDateTime`] values.
     use serde::{Deserialize, Deserializer, Serializer};
     use time::{OffsetDateTime, UtcOffset};
 
