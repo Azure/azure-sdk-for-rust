@@ -46,7 +46,7 @@ mod tests;
 #[cfg(not(target_arch = "wasm32"))]
 pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 
-// WASM32 does not support `Send` futures, so we use a non-Send future type.
+/// A `TaskFuture` is a boxed future that represents a task that can be spawned and executed asynchronously.
 #[cfg(target_arch = "wasm32")]
 pub type TaskFuture = Pin<Box<dyn Future<Output = ()> + 'static>>;
 
@@ -61,6 +61,8 @@ pub type SpawnedTask = Pin<
     >,
 >;
 
+/// A `SpawnedTask` is a future that represents a running task.
+/// It can be awaited to block until the task has completed.
 #[cfg(target_arch = "wasm32")]
 pub type SpawnedTask =
     Pin<Box<dyn Future<Output = std::result::Result<(), Box<dyn std::error::Error>>> + 'static>>;
