@@ -31,7 +31,10 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-#[cfg_attr(any(feature = "tokio", feature = "wasm_bindgen", feature = "spin"), allow(dead_code))]
+#[cfg_attr(
+    any(feature = "tokio", feature = "wasm_bindgen", feature = "spin"),
+    allow(dead_code)
+)]
 mod standard_runtime;
 
 #[cfg(feature = "tokio")]

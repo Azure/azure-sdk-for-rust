@@ -14,7 +14,10 @@ mod spin;
 
 #[cfg(not(any(
     all(feature = "spin", target_arch = "wasm32", target_os = "wasi"),
-    all(feature = "reqwest", not(all(target_arch = "wasm32", target_os = "wasi")))
+    all(
+        feature = "reqwest",
+        not(all(target_arch = "wasm32", target_os = "wasi"))
+    )
 )))]
 use self::noop::new_noop_client;
 #[cfg(all(
@@ -26,8 +29,8 @@ use self::reqwest::new_reqwest_client;
 use self::spin::new_spin_client;
 
 use crate::http::{RawResponse, Request};
-use cfg_if::cfg_if;
 use async_trait::async_trait;
+use cfg_if::cfg_if;
 use std::sync::Arc;
 use typespec::error::Result;
 
