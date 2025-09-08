@@ -112,6 +112,27 @@ const TAG_COUNT: HeaderName = HeaderName::from_static("x-ms-tag-count");
 const VERSION_ID: HeaderName = HeaderName::from_static("x-ms-version-id");
 
 /// Provides access to typed response headers for `AppendBlobClient::append_block_from_url()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockFromUrlResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait AppendBlobClientAppendBlockFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -182,6 +203,27 @@ impl AppendBlobClientAppendBlockFromUrlResultHeaders
 }
 
 /// Provides access to typed response headers for `AppendBlobClient::append_block()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{AppendBlobClientAppendBlockResult, AppendBlobClientAppendBlockResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<AppendBlobClientAppendBlockResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait AppendBlobClientAppendBlockResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -252,6 +294,27 @@ impl AppendBlobClientAppendBlockResultHeaders
 }
 
 /// Provides access to typed response headers for `AppendBlobClient::create()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{AppendBlobClientCreateResult, AppendBlobClientCreateResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<AppendBlobClientCreateResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait AppendBlobClientCreateResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -308,6 +371,27 @@ impl AppendBlobClientCreateResultHeaders for Response<AppendBlobClientCreateResu
 }
 
 /// Provides access to typed response headers for `AppendBlobClient::seal()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{AppendBlobClientSealResult, AppendBlobClientSealResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<AppendBlobClientSealResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(is_sealed) = response.is_sealed()? {
+///         println!("x-ms-blob-sealed: {:?}", is_sealed);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait AppendBlobClientSealResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -334,6 +418,21 @@ impl AppendBlobClientSealResultHeaders for Response<AppendBlobClientSealResult, 
 }
 
 /// Provides access to typed response headers for `BlobClient::abort_copy_from_url()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientAbortCopyFromUrlResult, BlobClientAbortCopyFromUrlResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientAbortCopyFromUrlResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientAbortCopyFromUrlResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -348,6 +447,27 @@ impl BlobClientAbortCopyFromUrlResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobClient::acquire_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientAcquireLeaseResult, BlobClientAcquireLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientAcquireLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_id) = response.lease_id()? {
+///         println!("x-ms-lease-id: {:?}", lease_id);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientAcquireLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -374,6 +494,27 @@ impl BlobClientAcquireLeaseResultHeaders for Response<BlobClientAcquireLeaseResu
 }
 
 /// Provides access to typed response headers for `BlobClient::break_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientBreakLeaseResult, BlobClientBreakLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientBreakLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_time) = response.lease_time()? {
+///         println!("x-ms-lease-time: {:?}", lease_time);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientBreakLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -400,6 +541,27 @@ impl BlobClientBreakLeaseResultHeaders for Response<BlobClientBreakLeaseResult, 
 }
 
 /// Provides access to typed response headers for `BlobClient::change_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientChangeLeaseResult, BlobClientChangeLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientChangeLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_id) = response.lease_id()? {
+///         println!("x-ms-lease-id: {:?}", lease_id);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientChangeLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -426,6 +588,27 @@ impl BlobClientChangeLeaseResultHeaders for Response<BlobClientChangeLeaseResult
 }
 
 /// Provides access to typed response headers for `BlobClient::copy_from_url()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientCopyFromUrlResult, BlobClientCopyFromUrlResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientCopyFromUrlResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientCopyFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -487,6 +670,27 @@ impl BlobClientCopyFromUrlResultHeaders for Response<BlobClientCopyFromUrlResult
 }
 
 /// Provides access to typed response headers for `BlobClient::create_snapshot()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientCreateSnapshotResult, BlobClientCreateSnapshotResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientCreateSnapshotResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientCreateSnapshotResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -534,6 +738,21 @@ impl BlobClientCreateSnapshotResultHeaders for Response<BlobClientCreateSnapshot
 }
 
 /// Provides access to typed response headers for `BlobClient::delete_immutability_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteImmutabilityPolicyResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientDeleteImmutabilityPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -548,6 +767,27 @@ impl BlobClientDeleteImmutabilityPolicyResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobClient::download()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientDownloadResult, BlobClientDownloadResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientDownloadResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(cache_control) = response.cache_control()? {
+///         println!("Cache-Control: {:?}", cache_control);
+///     }
+///     if let Some(content_disposition) = response.content_disposition()? {
+///         println!("Content-Disposition: {:?}", content_disposition);
+///     }
+///     if let Some(content_encoding) = response.content_encoding()? {
+///         println!("Content-Encoding: {:?}", content_encoding);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientDownloadResultHeaders: private::Sealed {
     fn cache_control(&self) -> Result<Option<String>>;
     fn content_disposition(&self) -> Result<Option<String>>;
@@ -833,6 +1073,27 @@ impl BlobClientDownloadResultHeaders for Response<BlobClientDownloadResult, NoFo
 }
 
 /// Provides access to typed response headers for `BlobClient::get_account_info()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientGetAccountInfoResult, BlobClientGetAccountInfoResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientGetAccountInfoResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(account_kind) = response.account_kind()? {
+///         println!("x-ms-account-kind: {:?}", account_kind);
+///     }
+///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
+///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
+///     }
+///     if let Some(sku_name) = response.sku_name()? {
+///         println!("x-ms-sku-name: {:?}", sku_name);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientGetAccountInfoResultHeaders: private::Sealed {
     fn account_kind(&self) -> Result<Option<AccountKind>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
@@ -857,6 +1118,27 @@ impl BlobClientGetAccountInfoResultHeaders for Response<BlobClientGetAccountInfo
 }
 
 /// Provides access to typed response headers for `BlobClient::get_properties()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientGetPropertiesResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(cache_control) = response.cache_control()? {
+///         println!("Cache-Control: {:?}", cache_control);
+///     }
+///     if let Some(content_disposition) = response.content_disposition()? {
+///         println!("Content-Disposition: {:?}", content_disposition);
+///     }
+///     if let Some(content_encoding) = response.content_encoding()? {
+///         println!("Content-Encoding: {:?}", content_encoding);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientGetPropertiesResultHeaders: private::Sealed {
     fn cache_control(&self) -> Result<Option<String>>;
     fn content_disposition(&self) -> Result<Option<String>>;
@@ -1178,6 +1460,24 @@ impl BlobClientGetPropertiesResultHeaders for Response<BlobClientGetPropertiesRe
 }
 
 /// Provides access to typed response headers for `BlobClient::release_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientReleaseLeaseResult, BlobClientReleaseLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientReleaseLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientReleaseLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -1198,6 +1498,27 @@ impl BlobClientReleaseLeaseResultHeaders for Response<BlobClientReleaseLeaseResu
 }
 
 /// Provides access to typed response headers for `BlobClient::renew_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientRenewLeaseResult, BlobClientRenewLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientRenewLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_id) = response.lease_id()? {
+///         println!("x-ms-lease-id: {:?}", lease_id);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientRenewLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -1224,6 +1545,27 @@ impl BlobClientRenewLeaseResultHeaders for Response<BlobClientRenewLeaseResult, 
 }
 
 /// Provides access to typed response headers for `BlobClient::set_expiry()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientSetExpiryResult, BlobClientSetExpiryResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientSetExpiryResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientSetExpiryResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1250,6 +1592,27 @@ impl BlobClientSetExpiryResultHeaders for Response<BlobClientSetExpiryResult, No
 }
 
 /// Provides access to typed response headers for `BlobClient::set_immutability_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientSetImmutabilityPolicyResult, BlobClientSetImmutabilityPolicyResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientSetImmutabilityPolicyResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(immutability_policy_mode) = response.immutability_policy_mode()? {
+///         println!("x-ms-immutability-policy-mode: {:?}", immutability_policy_mode);
+///     }
+///     if let Some(immutability_policy_expires_on) = response.immutability_policy_expires_on()? {
+///         println!("x-ms-immutability-policy-until-date: {:?}", immutability_policy_expires_on);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientSetImmutabilityPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn immutability_policy_mode(&self) -> Result<Option<BlobImmutabilityPolicyMode>>;
@@ -1278,6 +1641,24 @@ impl BlobClientSetImmutabilityPolicyResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobClient::set_legal_hold()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientSetLegalHoldResult, BlobClientSetLegalHoldResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientSetLegalHoldResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(legal_hold) = response.legal_hold()? {
+///         println!("x-ms-legal-hold: {:?}", legal_hold);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientSetLegalHoldResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn legal_hold(&self) -> Result<Option<bool>>;
@@ -1296,6 +1677,27 @@ impl BlobClientSetLegalHoldResultHeaders for Response<BlobClientSetLegalHoldResu
 }
 
 /// Provides access to typed response headers for `BlobClient::start_copy_from_url()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientStartCopyFromUrlResult, BlobClientStartCopyFromUrlResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientStartCopyFromUrlResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientStartCopyFromUrlResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1344,6 +1746,21 @@ impl BlobClientStartCopyFromUrlResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobClient::undelete()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobClientUndeleteResult, BlobClientUndeleteResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobClientUndeleteResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobClientUndeleteResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -1356,6 +1773,27 @@ impl BlobClientUndeleteResultHeaders for Response<BlobClientUndeleteResult, NoFo
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::acquire_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientAcquireLeaseResult, BlobContainerClientAcquireLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientAcquireLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_id) = response.lease_id()? {
+///         println!("x-ms-lease-id: {:?}", lease_id);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientAcquireLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -1384,6 +1822,27 @@ impl BlobContainerClientAcquireLeaseResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::break_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientBreakLeaseResult, BlobContainerClientBreakLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientBreakLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_time) = response.lease_time()? {
+///         println!("x-ms-lease-time: {:?}", lease_time);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientBreakLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -1412,6 +1871,27 @@ impl BlobContainerClientBreakLeaseResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::change_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientChangeLeaseResult, BlobContainerClientChangeLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientChangeLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_id) = response.lease_id()? {
+///         println!("x-ms-lease-id: {:?}", lease_id);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientChangeLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -1440,6 +1920,27 @@ impl BlobContainerClientChangeLeaseResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::get_account_info()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientGetAccountInfoResult, BlobContainerClientGetAccountInfoResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientGetAccountInfoResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(account_kind) = response.account_kind()? {
+///         println!("x-ms-account-kind: {:?}", account_kind);
+///     }
+///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
+///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
+///     }
+///     if let Some(sku_name) = response.sku_name()? {
+///         println!("x-ms-sku-name: {:?}", sku_name);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientGetAccountInfoResultHeaders: private::Sealed {
     fn account_kind(&self) -> Result<Option<AccountKind>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
@@ -1466,6 +1967,27 @@ impl BlobContainerClientGetAccountInfoResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::get_properties()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientGetPropertiesResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(access) = response.access()? {
+///         println!("x-ms-blob-public-access: {:?}", access);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientGetPropertiesResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -1557,6 +2079,24 @@ impl BlobContainerClientGetPropertiesResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::release_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientReleaseLeaseResult, BlobContainerClientReleaseLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientReleaseLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientReleaseLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -1579,6 +2119,21 @@ impl BlobContainerClientReleaseLeaseResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::rename()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientRenameResult, BlobContainerClientRenameResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientRenameResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientRenameResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -1593,6 +2148,27 @@ impl BlobContainerClientRenameResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::renew_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientRenewLeaseResult, BlobContainerClientRenewLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientRenewLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_id) = response.lease_id()? {
+///         println!("x-ms-lease-id: {:?}", lease_id);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientRenewLeaseResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -1621,6 +2197,21 @@ impl BlobContainerClientRenewLeaseResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::restore()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientRestoreResult, BlobContainerClientRestoreResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientRestoreResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientRestoreResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -1635,6 +2226,27 @@ impl BlobContainerClientRestoreResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::set_access_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetAccessPolicyResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientSetAccessPolicyResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobContainerClientSetAccessPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1663,6 +2275,27 @@ impl BlobContainerClientSetAccessPolicyResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobServiceClient::get_account_info()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobServiceClientGetAccountInfoResult, BlobServiceClientGetAccountInfoResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobServiceClientGetAccountInfoResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(account_kind) = response.account_kind()? {
+///         println!("x-ms-account-kind: {:?}", account_kind);
+///     }
+///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
+///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
+///     }
+///     if let Some(sku_name) = response.sku_name()? {
+///         println!("x-ms-sku-name: {:?}", sku_name);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobServiceClientGetAccountInfoResultHeaders: private::Sealed {
     fn account_kind(&self) -> Result<Option<AccountKind>>;
     fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
@@ -1689,6 +2322,21 @@ impl BlobServiceClientGetAccountInfoResultHeaders
 }
 
 /// Provides access to typed response headers for `BlobClient::get_tags()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{BlobTags, BlobTagsHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobTags, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlobTagsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -1701,6 +2349,27 @@ impl BlobTagsHeaders for Response<BlobTags, XmlFormat> {
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::commit_block_list()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlockBlobClientCommitBlockListResult, BlockBlobClientCommitBlockListResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlockBlobClientCommitBlockListResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlockBlobClientCommitBlockListResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -1765,6 +2434,27 @@ impl BlockBlobClientCommitBlockListResultHeaders
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::query()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlockBlobClientQueryResult, BlockBlobClientQueryResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlockBlobClientQueryResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(accept_ranges) = response.accept_ranges()? {
+///         println!("Accept-Ranges: {:?}", accept_ranges);
+///     }
+///     if let Some(cache_control) = response.cache_control()? {
+///         println!("Cache-Control: {:?}", cache_control);
+///     }
+///     if let Some(content_disposition) = response.content_disposition()? {
+///         println!("Content-Disposition: {:?}", content_disposition);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlockBlobClientQueryResultHeaders: private::Sealed {
     fn accept_ranges(&self) -> Result<Option<String>>;
     fn cache_control(&self) -> Result<Option<String>>;
@@ -1980,6 +2670,27 @@ impl BlockBlobClientQueryResultHeaders for Response<BlockBlobClientQueryResult, 
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::stage_block_from_url()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockFromUrlResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(content_crc64) = response.content_crc64()? {
+///         println!("x-ms-content-crc64: {:?}", content_crc64);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlockBlobClientStageBlockFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn date(&self) -> Result<Option<OffsetDateTime>>;
@@ -2029,6 +2740,27 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::stage_block()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlockBlobClientStageBlockResult, BlockBlobClientStageBlockResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlockBlobClientStageBlockResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(content_crc64) = response.content_crc64()? {
+///         println!("x-ms-content-crc64: {:?}", content_crc64);
+///     }
+///     if let Some(encryption_key_sha256) = response.encryption_key_sha256()? {
+///         println!("x-ms-encryption-key-sha256: {:?}", encryption_key_sha256);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
@@ -2072,6 +2804,27 @@ impl BlockBlobClientStageBlockResultHeaders
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::upload_blob_from_url()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadBlobFromUrlResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlockBlobClientUploadBlobFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2130,6 +2883,27 @@ impl BlockBlobClientUploadBlobFromUrlResultHeaders
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::upload()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlockBlobClientUploadResult, BlockBlobClientUploadResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlockBlobClientUploadResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlockBlobClientUploadResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2186,6 +2960,27 @@ impl BlockBlobClientUploadResultHeaders for Response<BlockBlobClientUploadResult
 }
 
 /// Provides access to typed response headers for `BlockBlobClient::get_block_list()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{BlockList, BlockListHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlockList, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(blob_content_length) = response.blob_content_length()? {
+///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait BlockListHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -2226,6 +3021,21 @@ impl FilterBlobSegmentHeaders for Response<FilterBlobSegment, XmlFormat> {
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::list_blob_flat_segment()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{ListBlobsFlatSegmentResponse, ListBlobsFlatSegmentResponseHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<ListBlobsFlatSegmentResponse, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait ListBlobsFlatSegmentResponseHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -2238,6 +3048,21 @@ impl ListBlobsFlatSegmentResponseHeaders for Response<ListBlobsFlatSegmentRespon
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::list_blob_hierarchy_segment()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{ListBlobsHierarchySegmentResponse, ListBlobsHierarchySegmentResponseHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<ListBlobsHierarchySegmentResponse, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait ListBlobsHierarchySegmentResponseHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -2252,6 +3077,27 @@ impl ListBlobsHierarchySegmentResponseHeaders
 }
 
 /// Provides access to typed response headers for `PageBlobClient::clear_pages()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{PageBlobClientClearPagesResult, PageBlobClientClearPagesResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<PageBlobClientClearPagesResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait PageBlobClientClearPagesResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2291,6 +3137,27 @@ impl PageBlobClientClearPagesResultHeaders for Response<PageBlobClientClearPages
 }
 
 /// Provides access to typed response headers for `PageBlobClient::copy_incremental()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{PageBlobClientCopyIncrementalResult, PageBlobClientCopyIncrementalResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<PageBlobClientCopyIncrementalResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait PageBlobClientCopyIncrementalResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2332,6 +3199,27 @@ impl PageBlobClientCopyIncrementalResultHeaders
 }
 
 /// Provides access to typed response headers for `PageBlobClient::create()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{PageBlobClientCreateResult, PageBlobClientCreateResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<PageBlobClientCreateResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait PageBlobClientCreateResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2388,6 +3276,27 @@ impl PageBlobClientCreateResultHeaders for Response<PageBlobClientCreateResult, 
 }
 
 /// Provides access to typed response headers for `PageBlobClient::resize()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{PageBlobClientResizeResult, PageBlobClientResizeResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<PageBlobClientResizeResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(blob_sequence_number) = response.blob_sequence_number()? {
+///         println!("x-ms-blob-sequence-number: {:?}", blob_sequence_number);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait PageBlobClientResizeResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -2414,6 +3323,27 @@ impl PageBlobClientResizeResultHeaders for Response<PageBlobClientResizeResult, 
 }
 
 /// Provides access to typed response headers for `PageBlobClient::set_sequence_number()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{PageBlobClientSetSequenceNumberResult, PageBlobClientSetSequenceNumberResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<PageBlobClientSetSequenceNumberResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(blob_sequence_number) = response.blob_sequence_number()? {
+///         println!("x-ms-blob-sequence-number: {:?}", blob_sequence_number);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait PageBlobClientSetSequenceNumberResultHeaders: private::Sealed {
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
     fn etag(&self) -> Result<Option<String>>;
@@ -2442,6 +3372,27 @@ impl PageBlobClientSetSequenceNumberResultHeaders
 }
 
 /// Provides access to typed response headers for `PageBlobClient::upload_pages_from_url()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesFromUrlResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<PageBlobClientUploadPagesFromUrlResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait PageBlobClientUploadPagesFromUrlResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2505,6 +3456,27 @@ impl PageBlobClientUploadPagesFromUrlResultHeaders
 }
 
 /// Provides access to typed response headers for `PageBlobClient::upload_pages()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{PageBlobClientUploadPagesResult, PageBlobClientUploadPagesResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<PageBlobClientUploadPagesResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(content_md5) = response.content_md5()? {
+///         println!("Content-MD5: {:?}", content_md5);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait PageBlobClientUploadPagesResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
@@ -2602,6 +3574,21 @@ impl PageListHeaders for Response<PageList, XmlFormat> {
 }
 
 /// Provides access to typed response headers for `BlobServiceClient::get_statistics()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{StorageServiceStats, StorageServiceStatsHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<StorageServiceStats, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait StorageServiceStatsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -2614,6 +3601,21 @@ impl StorageServiceStatsHeaders for Response<StorageServiceStats, XmlFormat> {
 }
 
 /// Provides access to typed response headers for `BlobServiceClient::get_user_delegation_key()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{UserDelegationKey, UserDelegationKeyHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<UserDelegationKey, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait UserDelegationKeyHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -2626,6 +3628,27 @@ impl UserDelegationKeyHeaders for Response<UserDelegationKey, XmlFormat> {
 }
 
 /// Provides access to typed response headers for `BlobContainerClient::get_access_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{SignedIdentifier, VecSignedIdentifierHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<Vec<SignedIdentifier>, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait VecSignedIdentifierHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;

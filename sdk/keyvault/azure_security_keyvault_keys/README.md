@@ -152,7 +152,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_keys::KeyClient;
+use azure_security_keyvault_keys::{KeyClient, models::KeyClientGetKeyOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -164,8 +164,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     // Retrieve a public key as a JWK using the key client.
+
+    let key_options = KeyClientGetKeyOptions {
+        key_version: Some("key-version".to_string()),
+        ..Default::default()
+    };
     let key = client
-        .get_key("key-name", "key-version", None)
+        .get_key("key-name", None)
         .await?
         .into_body()
         .await?;
@@ -201,7 +206,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     client
-        .update_key_properties("key-name", "", key_update_parameters.try_into()?, None)
+        .update_key_properties("key-name", key_update_parameters.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -272,7 +277,10 @@ without the private key ever leaving the HSM.
 ```rust no_run
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_keys::{
-    models::{CreateKeyParameters, KeyOperationParameters, EncryptionAlgorithm, KeyType},
+    models::{
+        CreateKeyParameters, KeyClientWrapKeyOptions, KeyClientUnwrapKeyOptions,
+        KeyOperationParameters, EncryptionAlgorithm, KeyType,
+    },
     ResourceExt, KeyClient,
 };
 use rand::random;
@@ -298,7 +306,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?
         .into_body()
         .await?;
-    let version = key.resource_id()?.version.unwrap_or_default();
+    let key_version = key.resource_id()?.version;
 
     // Generate a symmetric data encryption key (DEK). You'd encrypt your data using this DEK.
     let dek = random::<u32>().to_le_bytes().to_vec();
@@ -310,15 +318,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
     let wrapped = client
-        .wrap_key("key-name", version.as_ref(), parameters.clone().try_into()?, None)
+        .wrap_key(
+            "key-name",
+            parameters.clone().try_into()?,
+            Some(KeyClientWrapKeyOptions {
+                key_version: key_version.clone(),
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;
+    assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
 
-    // Unwrap the DEK and decrypt your data.
+    // Unwrap the DEK.
     parameters.value = wrapped.result;
     let unwrapped = client
-        .unwrap_key("key-name", version.as_ref(), parameters.try_into()?, None)
+        .unwrap_key(
+            "key-name",
+            parameters.try_into()?,
+            Some(KeyClientUnwrapKeyOptions {
+                key_version,
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;
@@ -350,7 +373,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    match client.get_key("key-name".into(), "".into(), None).await {
+    match client.get_key("key-name".into(), None).await {
         Ok(response) => println!("Key: {:#?}", response.into_body().await?.key),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }

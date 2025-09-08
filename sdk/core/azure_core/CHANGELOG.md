@@ -1,6 +1,6 @@
 # Release History
 
-## 0.28.0 (Unreleased)
+## 0.28.0 (2025-09-05)
 
 ### Features Added
 
@@ -19,10 +19,7 @@
 - Removed feature `reqwest_rustls_tls`. See [README.md](https://github.com/heaths/azure-sdk-for-rust/blob/main/sdk/core/azure_core/README.md) for alternative HTTP client configuration.
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` for `typespec_client_core` to copy if needed.
 - Removed the `setters` macro.
-
-### Bugs Fixed
-
-### Other Changes
+- Added the ability to configure pipeline configuration independently from `ClientOptions`. This adds a new optional `PipelineOptions` parameter to `azure_core::http::Pipeline::new()`. If not specified, it defaults to the expected options for `azure_core` services.
 
 ## 0.27.0 (2025-08-01)
 

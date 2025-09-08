@@ -18,8 +18,9 @@ use azure_core::{
     error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
+        headers::ERROR_CODE,
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
+        ClientOptions, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
         XmlFormat,
     },
     time::to_rfc7231,
@@ -56,7 +57,7 @@ impl BlockBlobClient {
     /// * `container_name` - The name of the container.
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("azure_storage_blob")]
+    #[tracing::new("Storage.Blob.Container.Blob.BlockBlob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -88,6 +89,7 @@ impl BlockBlobClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
             ),
         })
     }
@@ -108,6 +110,42 @@ impl BlockBlobClient {
     ///
     /// * `blocks` - Blob Blocks.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientCommitBlockListResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlockBlobClientCommitBlockListResult, BlockBlobClientCommitBlockListResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockBlobClientCommitBlockListResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_md5) = response.content_md5()? {
+    ///         println!("Content-MD5: {:?}", content_md5);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::content_md5) - Content-MD5
+    /// * [`last_modified`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::etag) - etag
+    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::content_crc64) - x-ms-content-crc64
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
+    /// * [`version_id`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::version_id) - x-ms-version-id
+    ///
+    /// [`BlockBlobClientCommitBlockListResultHeaders`]: crate::generated::models::BlockBlobClientCommitBlockListResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.commitBlockList")]
     pub async fn commit_block_list(
         &self,
@@ -115,7 +153,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientCommitBlockListOptions<'_>>,
     ) -> Result<Response<BlockBlobClientCommitBlockListResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -127,7 +165,6 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
         }
@@ -220,7 +257,7 @@ impl BlockBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -237,6 +274,37 @@ impl BlockBlobClient {
     /// * `list_type` - Specifies whether to return the list of committed blocks, the list of uncommitted blocks, or both lists
     ///   together.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockListHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, XmlFormat}};
+    /// use azure_storage_blob::models::{BlockList, BlockListHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockList, XmlFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(blob_content_length) = response.blob_content_length()? {
+    ///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`last_modified`()](crate::generated::models::BlockListHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlockListHeaders::etag) - etag
+    /// * [`blob_content_length`()](crate::generated::models::BlockListHeaders::blob_content_length) - x-ms-blob-content-length
+    ///
+    /// [`BlockListHeaders`]: crate::generated::models::BlockListHeaders
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.getBlockList")]
     pub async fn get_block_list(
         &self,
@@ -244,7 +312,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientGetBlockListOptions<'_>>,
     ) -> Result<Response<BlockList, XmlFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -276,7 +344,7 @@ impl BlockBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -292,6 +360,63 @@ impl BlockBlobClient {
     ///
     /// * `query_request` - The query request
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientQueryResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlockBlobClientQueryResult, BlockBlobClientQueryResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockBlobClientQueryResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(accept_ranges) = response.accept_ranges()? {
+    ///         println!("Accept-Ranges: {:?}", accept_ranges);
+    ///     }
+    ///     if let Some(cache_control) = response.cache_control()? {
+    ///         println!("Cache-Control: {:?}", cache_control);
+    ///     }
+    ///     if let Some(content_disposition) = response.content_disposition()? {
+    ///         println!("Content-Disposition: {:?}", content_disposition);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`accept_ranges`()](crate::generated::models::BlockBlobClientQueryResultHeaders::accept_ranges) - Accept-Ranges
+    /// * [`cache_control`()](crate::generated::models::BlockBlobClientQueryResultHeaders::cache_control) - Cache-Control
+    /// * [`content_disposition`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_disposition) - Content-Disposition
+    /// * [`content_encoding`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_encoding) - Content-Encoding
+    /// * [`content_language`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_language) - Content-Language
+    /// * [`content_length`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_length) - Content-Length
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_md5) - Content-MD5
+    /// * [`content_range`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_range) - Content-Range
+    /// * [`date`()](crate::generated::models::BlockBlobClientQueryResultHeaders::date) - Date
+    /// * [`last_modified`()](crate::generated::models::BlockBlobClientQueryResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlockBlobClientQueryResultHeaders::etag) - etag
+    /// * [`blob_committed_block_count`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_committed_block_count) - x-ms-blob-committed-block-count
+    /// * [`blob_content_md5`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_content_md5) - x-ms-blob-content-md5
+    /// * [`blob_sequence_number`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
+    /// * [`blob_type`()](crate::generated::models::BlockBlobClientQueryResultHeaders::blob_type) - x-ms-blob-type
+    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientQueryResultHeaders::content_crc64) - x-ms-content-crc64
+    /// * [`copy_completion_time`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_completion_time) - x-ms-copy-completion-time
+    /// * [`copy_id`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_id) - x-ms-copy-id
+    /// * [`copy_progress`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_progress) - x-ms-copy-progress
+    /// * [`copy_source`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_source) - x-ms-copy-source
+    /// * [`copy_status`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_status) - x-ms-copy-status
+    /// * [`copy_status_description`()](crate::generated::models::BlockBlobClientQueryResultHeaders::copy_status_description) - x-ms-copy-status-description
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientQueryResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientQueryResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`duration`()](crate::generated::models::BlockBlobClientQueryResultHeaders::duration) - x-ms-lease-duration
+    /// * [`lease_state`()](crate::generated::models::BlockBlobClientQueryResultHeaders::lease_state) - x-ms-lease-state
+    /// * [`lease_status`()](crate::generated::models::BlockBlobClientQueryResultHeaders::lease_status) - x-ms-lease-status
+    /// * [`metadata`()](crate::generated::models::BlockBlobClientQueryResultHeaders::metadata) - x-ms-meta
+    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientQueryResultHeaders::is_server_encrypted) - x-ms-server-encrypted
+    ///
+    /// [`BlockBlobClientQueryResultHeaders`]: crate::generated::models::BlockBlobClientQueryResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.query")]
     pub async fn query(
         &self,
@@ -299,7 +424,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientQueryOptions<'_>>,
     ) -> Result<Response<BlockBlobClientQueryResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -354,7 +479,7 @@ impl BlockBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -374,6 +499,39 @@ impl BlockBlobClient {
     /// * `content_length` - The length of the request.
     /// * `body` - The body of the request.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientStageBlockResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlockBlobClientStageBlockResult, BlockBlobClientStageBlockResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockBlobClientStageBlockResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_md5) = response.content_md5()? {
+    ///         println!("Content-MD5: {:?}", content_md5);
+    ///     }
+    ///     if let Some(content_crc64) = response.content_crc64()? {
+    ///         println!("x-ms-content-crc64: {:?}", content_crc64);
+    ///     }
+    ///     if let Some(encryption_key_sha256) = response.encryption_key_sha256()? {
+    ///         println!("x-ms-encryption-key-sha256: {:?}", encryption_key_sha256);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::content_md5) - Content-MD5
+    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::content_crc64) - x-ms-content-crc64
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
+    ///
+    /// [`BlockBlobClientStageBlockResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.stageBlock")]
     pub async fn stage_block(
         &self,
@@ -383,7 +541,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientStageBlockOptions<'_>>,
     ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -397,7 +555,6 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
@@ -441,7 +598,7 @@ impl BlockBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -462,6 +619,40 @@ impl BlockBlobClient {
     /// * `content_length` - The length of the request.
     /// * `source_url` - Specify a URL to the copy source.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientStageBlockFromUrlResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockFromUrlResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_md5) = response.content_md5()? {
+    ///         println!("Content-MD5: {:?}", content_md5);
+    ///     }
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     if let Some(content_crc64) = response.content_crc64()? {
+    ///         println!("x-ms-content-crc64: {:?}", content_crc64);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::content_md5) - Content-MD5
+    /// * [`date`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::date) - Date
+    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::content_crc64) - x-ms-content-crc64
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
+    ///
+    /// [`BlockBlobClientStageBlockFromUrlResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.stageBlockFromUrl")]
     pub async fn stage_block_from_url(
         &self,
@@ -471,7 +662,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>,
     ) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -487,7 +678,6 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
@@ -549,7 +739,7 @@ impl BlockBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -569,6 +759,41 @@ impl BlockBlobClient {
     /// * `body` - The body of the request.
     /// * `content_length` - The length of the request.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientUploadResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlockBlobClientUploadResult, BlockBlobClientUploadResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockBlobClientUploadResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_md5) = response.content_md5()? {
+    ///         println!("Content-MD5: {:?}", content_md5);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadResultHeaders::content_md5) - Content-MD5
+    /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlockBlobClientUploadResultHeaders::etag) - etag
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientUploadResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientUploadResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientUploadResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
+    /// * [`version_id`()](crate::generated::models::BlockBlobClientUploadResultHeaders::version_id) - x-ms-version-id
+    ///
+    /// [`BlockBlobClientUploadResultHeaders`]: crate::generated::models::BlockBlobClientUploadResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.upload")]
     pub async fn upload(
         &self,
@@ -577,7 +802,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientUploadOptions<'_>>,
     ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -588,7 +813,6 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
@@ -692,7 +916,7 @@ impl BlockBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -713,6 +937,41 @@ impl BlockBlobClient {
     ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
     ///   either be public or must be authenticated via a shared access signature.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientUploadBlobFromUrlResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadBlobFromUrlResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_md5) = response.content_md5()? {
+    ///         println!("Content-MD5: {:?}", content_md5);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::content_md5) - Content-MD5
+    /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::etag) - etag
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
+    /// * [`version_id`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::version_id) - x-ms-version-id
+    ///
+    /// [`BlockBlobClientUploadBlobFromUrlResultHeaders`]: crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.uploadBlobFromUrl")]
     pub async fn upload_blob_from_url(
         &self,
@@ -720,7 +979,7 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>,
     ) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -734,7 +993,6 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-length", "0");
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
@@ -849,7 +1107,7 @@ impl BlockBlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),

@@ -7,8 +7,11 @@ use azure_core::{http::StatusCode, Result};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_keys::{
     models::{
-        CreateKeyParameters, CurveName, EncryptionAlgorithm, KeyOperationParameters, KeyType,
-        SignParameters, SignatureAlgorithm, UpdateKeyPropertiesParameters, VerifyParameters,
+        CreateKeyParameters, CurveName, EncryptionAlgorithm, KeyClientDecryptOptions,
+        KeyClientEncryptOptions, KeyClientGetKeyOptions, KeyClientSignOptions,
+        KeyClientUnwrapKeyOptions, KeyClientVerifyOptions, KeyClientWrapKeyOptions,
+        KeyOperationParameters, KeyType, SignParameters, SignatureAlgorithm,
+        UpdateKeyPropertiesParameters, VerifyParameters,
     },
     KeyClient, KeyClientOptions, ResourceExt as _,
 };
@@ -43,9 +46,15 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
     assert!(matches!(key.key, Some(ref jwk) if jwk.e == Some(vec![1, 0, 1])));
 
     // Get a specific version of a key.
-    let version = key.resource_id()?.version.unwrap_or_default();
+    let key_version = key.resource_id()?.version;
     let key = client
-        .get_key("key-roundtrip", version.as_ref(), None)
+        .get_key(
+            "key-roundtrip",
+            Some(KeyClientGetKeyOptions {
+                key_version,
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;
@@ -85,18 +94,18 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
         key_attributes: key.attributes,
         tags: Some(HashMap::from_iter(vec![(
             "test-name".into(),
-            "update_key_properties".into(),
+            "update_key".into(),
         )])),
         ..Default::default()
     };
     let key = client
-        .update_key_properties("update-key", "", properties.try_into()?, None)
+        .update_key_properties("update-key", properties.try_into()?, None)
         .await?
         .into_body()
         .await?;
     assert_eq!(
         key.tags.expect("expected tags").get("test-name"),
-        Some(&String::from("update_key_properties"))
+        Some(&String::from("update_key"))
     );
 
     Ok(())
@@ -240,7 +249,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
         .await?
         .into_body()
         .await?;
-    let version = key.resource_id()?.version.unwrap_or_default();
+    let key_version = key.resource_id()?.version;
 
     // Encrypt plaintext.
     let plaintext = b"plaintext".to_vec();
@@ -250,7 +259,14 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let encrypted = client
-        .encrypt(NAME, version.as_ref(), parameters.clone().try_into()?, None)
+        .encrypt(
+            NAME,
+            parameters.clone().try_into()?,
+            Some(KeyClientEncryptOptions {
+                key_version: key_version.clone(),
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;
@@ -259,7 +275,14 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     // Decrypt ciphertext.
     parameters.value = encrypted.result;
     let decrypted = client
-        .decrypt(NAME, version.as_ref(), parameters.try_into()?, None)
+        .decrypt(
+            NAME,
+            parameters.try_into()?,
+            Some(KeyClientDecryptOptions {
+                key_version,
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;
@@ -298,7 +321,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         .await?
         .into_body()
         .await?;
-    let version = key.resource_id()?.version.unwrap_or_default();
+    let key_version = key.resource_id()?.version;
 
     // Hash and sign plaintext.
     let plaintext = b"plaintext".to_vec();
@@ -309,7 +332,14 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         value: Some(digest.clone()),
     };
     let signed = client
-        .sign(NAME, version.as_ref(), parameters.try_into()?, None)
+        .sign(
+            NAME,
+            parameters.try_into()?,
+            Some(KeyClientSignOptions {
+                key_version: key_version.clone(),
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;
@@ -322,7 +352,14 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
         signature: signed.result,
     };
     let verified = client
-        .verify(NAME, version.as_ref(), parameters.try_into()?, None)
+        .verify(
+            NAME,
+            parameters.try_into()?,
+            Some(KeyClientVerifyOptions {
+                key_version,
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;
@@ -359,7 +396,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
         .await?
         .into_body()
         .await?;
-    let version = key.resource_id()?.version.unwrap_or_default();
+    let key_version = key.resource_id()?.version;
 
     // Generate a data encryption key.
     let dek = recording.random::<[u8; 32]>().to_vec();
@@ -371,7 +408,14 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let wrapped = client
-        .wrap_key(NAME, version.as_ref(), parameters.clone().try_into()?, None)
+        .wrap_key(
+            NAME,
+            parameters.clone().try_into()?,
+            Some(KeyClientWrapKeyOptions {
+                key_version: key_version.clone(),
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;
@@ -380,7 +424,14 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     // Unwrap the DEK.
     parameters.value = wrapped.result;
     let unwrapped = client
-        .unwrap_key(NAME, version.as_ref(), parameters.try_into()?, None)
+        .unwrap_key(
+            NAME,
+            parameters.try_into()?,
+            Some(KeyClientUnwrapKeyOptions {
+                key_version,
+                ..Default::default()
+            }),
+        )
         .await?
         .into_body()
         .await?;

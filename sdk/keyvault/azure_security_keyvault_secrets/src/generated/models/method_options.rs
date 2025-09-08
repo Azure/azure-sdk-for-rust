@@ -31,6 +31,9 @@ pub struct SecretClientGetDeletedSecretOptions<'a> {
 pub struct SecretClientGetSecretOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// The version of the secret. This URI fragment is optional. If not specified, the latest version of the secret is returned.
+    pub secret_version: Option<String>,
 }
 
 /// Options to be passed to [`SecretClient::list_deleted_secret_properties()`](crate::generated::clients::SecretClient::list_deleted_secret_properties())
@@ -129,4 +132,7 @@ pub struct SecretClientSetSecretOptions<'a> {
 pub struct SecretClientUpdateSecretPropertiesOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
+
+    /// The version of the secret.
+    pub secret_version: Option<String>,
 }

@@ -41,6 +41,7 @@ impl Client {
                 ClientOptions::default(),
                 Vec::default(),
                 Vec::default(),
+                None,
             ),
         })
     }

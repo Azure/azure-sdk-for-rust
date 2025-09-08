@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::time::Duration;
+use crate::{http::policies::RetryHeaders, time::Duration};
 
 /// Retry policy with a fixed back-off.
 ///
@@ -14,14 +14,21 @@ pub struct FixedRetryPolicy {
     delay: Duration,
     max_retries: u32,
     max_elapsed: Duration,
+    retry_headers: RetryHeaders,
 }
 
 impl FixedRetryPolicy {
-    pub(crate) fn new(delay: Duration, max_retries: u32, max_elapsed: Duration) -> Self {
+    pub(crate) fn new(
+        delay: Duration,
+        max_retries: u32,
+        max_elapsed: Duration,
+        retry_headers: RetryHeaders,
+    ) -> Self {
         Self {
             delay: delay.max(Duration::milliseconds(10)),
             max_retries,
             max_elapsed,
+            retry_headers,
         }
     }
 }
@@ -29,6 +36,10 @@ impl FixedRetryPolicy {
 impl super::RetryPolicy for FixedRetryPolicy {
     fn is_expired(&self, time_since_start: Duration, retry_count: u32) -> bool {
         retry_count >= self.max_retries || time_since_start >= self.max_elapsed
+    }
+
+    fn get_retry_headers(&self) -> Option<&RetryHeaders> {
+        Some(&self.retry_headers)
     }
 
     fn sleep_duration(&self, _retry_count: u32) -> Duration {

@@ -30,8 +30,9 @@ use azure_core::{
     error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
+        headers::ERROR_CODE,
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
+        ClientOptions, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
         XmlFormat,
     },
     time::to_rfc7231,
@@ -68,7 +69,7 @@ impl BlobClient {
     /// * `container_name` - The name of the container.
     /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("azure_storage_blob")]
+    #[tracing::new("Storage.Blob.Container.Blob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -100,6 +101,7 @@ impl BlobClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
             ),
         })
     }
@@ -116,6 +118,29 @@ impl BlobClient {
     ///
     /// * `copy_id` - The copy identifier provided in the x-ms-copy-id header of the original Copy Blob operation.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientAbortCopyFromUrlResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientAbortCopyFromUrlResult, BlobClientAbortCopyFromUrlResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientAbortCopyFromUrlResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::BlobClientAbortCopyFromUrlResultHeaders::date) - Date
+    ///
+    /// [`BlobClientAbortCopyFromUrlResultHeaders`]: crate::generated::models::BlobClientAbortCopyFromUrlResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.abortCopyFromUrl")]
     pub async fn abort_copy_from_url(
         &self,
@@ -123,7 +148,7 @@ impl BlobClient {
         options: Option<BlobClientAbortCopyFromUrlOptions<'_>>,
     ) -> Result<Response<BlobClientAbortCopyFromUrlResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -138,7 +163,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -151,7 +175,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -169,6 +193,37 @@ impl BlobClient {
     /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
     ///   non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientAcquireLeaseResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientAcquireLeaseResult, BlobClientAcquireLeaseResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientAcquireLeaseResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(lease_id) = response.lease_id()? {
+    ///         println!("x-ms-lease-id: {:?}", lease_id);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`last_modified`()](crate::generated::models::BlobClientAcquireLeaseResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientAcquireLeaseResultHeaders::etag) - etag
+    /// * [`lease_id`()](crate::generated::models::BlobClientAcquireLeaseResultHeaders::lease_id) - x-ms-lease-id
+    ///
+    /// [`BlobClientAcquireLeaseResultHeaders`]: crate::generated::models::BlobClientAcquireLeaseResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.acquireLease")]
     pub async fn acquire_lease(
         &self,
@@ -176,7 +231,7 @@ impl BlobClient {
         options: Option<BlobClientAcquireLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -190,7 +245,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -218,7 +272,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -234,13 +288,44 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientBreakLeaseResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientBreakLeaseResult, BlobClientBreakLeaseResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientBreakLeaseResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(lease_time) = response.lease_time()? {
+    ///         println!("x-ms-lease-time: {:?}", lease_time);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`last_modified`()](crate::generated::models::BlobClientBreakLeaseResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientBreakLeaseResultHeaders::etag) - etag
+    /// * [`lease_time`()](crate::generated::models::BlobClientBreakLeaseResultHeaders::lease_time) - x-ms-lease-time
+    ///
+    /// [`BlobClientBreakLeaseResultHeaders`]: crate::generated::models::BlobClientBreakLeaseResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.breakLease")]
     pub async fn break_lease(
         &self,
         options: Option<BlobClientBreakLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientBreakLeaseResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -254,7 +339,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -282,7 +366,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -300,6 +384,37 @@ impl BlobClient {
     ///   lease ID must match.
     /// * `proposed_lease_id` - Required. The proposed lease ID for the container.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientChangeLeaseResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientChangeLeaseResult, BlobClientChangeLeaseResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientChangeLeaseResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(lease_id) = response.lease_id()? {
+    ///         println!("x-ms-lease-id: {:?}", lease_id);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`last_modified`()](crate::generated::models::BlobClientChangeLeaseResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientChangeLeaseResultHeaders::etag) - etag
+    /// * [`lease_id`()](crate::generated::models::BlobClientChangeLeaseResultHeaders::lease_id) - x-ms-lease-id
+    ///
+    /// [`BlobClientChangeLeaseResultHeaders`]: crate::generated::models::BlobClientChangeLeaseResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.changeLease")]
     pub async fn change_lease(
         &self,
@@ -308,7 +423,7 @@ impl BlobClient {
         options: Option<BlobClientChangeLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientChangeLeaseResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -322,7 +437,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -349,7 +463,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -368,6 +482,42 @@ impl BlobClient {
     ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
     ///   either be public or must be authenticated via a shared access signature.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientCopyFromUrlResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientCopyFromUrlResult, BlobClientCopyFromUrlResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientCopyFromUrlResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_md5) = response.content_md5()? {
+    ///         println!("Content-MD5: {:?}", content_md5);
+    ///     }
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_md5`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::content_md5) - Content-MD5
+    /// * [`date`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::date) - Date
+    /// * [`last_modified`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::etag) - etag
+    /// * [`content_crc64`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::content_crc64) - x-ms-content-crc64
+    /// * [`copy_id`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::copy_id) - x-ms-copy-id
+    /// * [`encryption_scope`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`version_id`()](crate::generated::models::BlobClientCopyFromUrlResultHeaders::version_id) - x-ms-version-id
+    ///
+    /// [`BlobClientCopyFromUrlResultHeaders`]: crate::generated::models::BlobClientCopyFromUrlResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.copyFromUrl")]
     pub async fn copy_from_url(
         &self,
@@ -375,7 +525,7 @@ impl BlobClient {
         options: Option<BlobClientCopyFromUrlOptions<'_>>,
     ) -> Result<Response<BlobClientCopyFromUrlResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -389,7 +539,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -477,7 +626,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -492,13 +641,47 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientCreateSnapshotResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientCreateSnapshotResult, BlobClientCreateSnapshotResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientCreateSnapshotResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::date) - Date
+    /// * [`last_modified`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::etag) - etag
+    /// * [`is_server_encrypted`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
+    /// * [`snapshot`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::snapshot) - x-ms-snapshot
+    /// * [`version_id`()](crate::generated::models::BlobClientCreateSnapshotResultHeaders::version_id) - x-ms-version-id
+    ///
+    /// [`BlobClientCreateSnapshotResultHeaders`]: crate::generated::models::BlobClientCreateSnapshotResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.createSnapshot")]
     pub async fn create_snapshot(
         &self,
         options: Option<BlobClientCreateSnapshotOptions<'_>>,
     ) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -510,7 +693,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -557,7 +739,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -586,7 +768,7 @@ impl BlobClient {
         options: Option<BlobClientDeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -607,7 +789,6 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -637,7 +818,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -652,13 +833,36 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientDeleteImmutabilityPolicyResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientDeleteImmutabilityPolicyResult, BlobClientDeleteImmutabilityPolicyResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::BlobClientDeleteImmutabilityPolicyResultHeaders::date) - Date
+    ///
+    /// [`BlobClientDeleteImmutabilityPolicyResultHeaders`]: crate::generated::models::BlobClientDeleteImmutabilityPolicyResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.deleteImmutabilityPolicy")]
     pub async fn delete_immutability_policy(
         &self,
         options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>,
     ) -> Result<Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -677,7 +881,6 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -686,7 +889,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -702,13 +905,79 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientDownloadResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientDownloadResult, BlobClientDownloadResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientDownloadResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(cache_control) = response.cache_control()? {
+    ///         println!("Cache-Control: {:?}", cache_control);
+    ///     }
+    ///     if let Some(content_disposition) = response.content_disposition()? {
+    ///         println!("Content-Disposition: {:?}", content_disposition);
+    ///     }
+    ///     if let Some(content_encoding) = response.content_encoding()? {
+    ///         println!("Content-Encoding: {:?}", content_encoding);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`cache_control`()](crate::generated::models::BlobClientDownloadResultHeaders::cache_control) - Cache-Control
+    /// * [`content_disposition`()](crate::generated::models::BlobClientDownloadResultHeaders::content_disposition) - Content-Disposition
+    /// * [`content_encoding`()](crate::generated::models::BlobClientDownloadResultHeaders::content_encoding) - Content-Encoding
+    /// * [`content_language`()](crate::generated::models::BlobClientDownloadResultHeaders::content_language) - Content-Language
+    /// * [`content_length`()](crate::generated::models::BlobClientDownloadResultHeaders::content_length) - Content-Length
+    /// * [`content_md5`()](crate::generated::models::BlobClientDownloadResultHeaders::content_md5) - Content-MD5
+    /// * [`content_range`()](crate::generated::models::BlobClientDownloadResultHeaders::content_range) - Content-Range
+    /// * [`last_modified`()](crate::generated::models::BlobClientDownloadResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientDownloadResultHeaders::etag) - etag
+    /// * [`blob_committed_block_count`()](crate::generated::models::BlobClientDownloadResultHeaders::blob_committed_block_count) - x-ms-blob-committed-block-count
+    /// * [`blob_content_md5`()](crate::generated::models::BlobClientDownloadResultHeaders::blob_content_md5) - x-ms-blob-content-md5
+    /// * [`is_sealed`()](crate::generated::models::BlobClientDownloadResultHeaders::is_sealed) - x-ms-blob-sealed
+    /// * [`blob_sequence_number`()](crate::generated::models::BlobClientDownloadResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
+    /// * [`blob_type`()](crate::generated::models::BlobClientDownloadResultHeaders::blob_type) - x-ms-blob-type
+    /// * [`content_crc64`()](crate::generated::models::BlobClientDownloadResultHeaders::content_crc64) - x-ms-content-crc64
+    /// * [`copy_completion_time`()](crate::generated::models::BlobClientDownloadResultHeaders::copy_completion_time) - x-ms-copy-completion-time
+    /// * [`copy_id`()](crate::generated::models::BlobClientDownloadResultHeaders::copy_id) - x-ms-copy-id
+    /// * [`copy_progress`()](crate::generated::models::BlobClientDownloadResultHeaders::copy_progress) - x-ms-copy-progress
+    /// * [`copy_source`()](crate::generated::models::BlobClientDownloadResultHeaders::copy_source) - x-ms-copy-source
+    /// * [`copy_status`()](crate::generated::models::BlobClientDownloadResultHeaders::copy_status) - x-ms-copy-status
+    /// * [`copy_status_description`()](crate::generated::models::BlobClientDownloadResultHeaders::copy_status_description) - x-ms-copy-status-description
+    /// * [`creation_time`()](crate::generated::models::BlobClientDownloadResultHeaders::creation_time) - x-ms-creation-time
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlobClientDownloadResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlobClientDownloadResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`immutability_policy_mode`()](crate::generated::models::BlobClientDownloadResultHeaders::immutability_policy_mode) - x-ms-immutability-policy-mode
+    /// * [`immutability_policy_expires_on`()](crate::generated::models::BlobClientDownloadResultHeaders::immutability_policy_expires_on) - x-ms-immutability-policy-until-date
+    /// * [`is_current_version`()](crate::generated::models::BlobClientDownloadResultHeaders::is_current_version) - x-ms-is-current-version
+    /// * [`last_accessed`()](crate::generated::models::BlobClientDownloadResultHeaders::last_accessed) - x-ms-last-access-time
+    /// * [`duration`()](crate::generated::models::BlobClientDownloadResultHeaders::duration) - x-ms-lease-duration
+    /// * [`lease_state`()](crate::generated::models::BlobClientDownloadResultHeaders::lease_state) - x-ms-lease-state
+    /// * [`lease_status`()](crate::generated::models::BlobClientDownloadResultHeaders::lease_status) - x-ms-lease-status
+    /// * [`legal_hold`()](crate::generated::models::BlobClientDownloadResultHeaders::legal_hold) - x-ms-legal-hold
+    /// * [`metadata`()](crate::generated::models::BlobClientDownloadResultHeaders::metadata) - x-ms-meta
+    /// * [`object_replication_rules`()](crate::generated::models::BlobClientDownloadResultHeaders::object_replication_rules) - x-ms-or
+    /// * [`object_replication_policy_id`()](crate::generated::models::BlobClientDownloadResultHeaders::object_replication_policy_id) - x-ms-or-policy-id
+    /// * [`is_server_encrypted`()](crate::generated::models::BlobClientDownloadResultHeaders::is_server_encrypted) - x-ms-server-encrypted
+    /// * [`tag_count`()](crate::generated::models::BlobClientDownloadResultHeaders::tag_count) - x-ms-tag-count
+    /// * [`version_id`()](crate::generated::models::BlobClientDownloadResultHeaders::version_id) - x-ms-version-id
+    ///
+    /// [`BlobClientDownloadResultHeaders`]: crate::generated::models::BlobClientDownloadResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.download")]
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
     ) -> Result<Response<BlobClientDownloadResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -781,7 +1050,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -796,13 +1065,44 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientGetAccountInfoResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientGetAccountInfoResult, BlobClientGetAccountInfoResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientGetAccountInfoResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(account_kind) = response.account_kind()? {
+    ///         println!("x-ms-account-kind: {:?}", account_kind);
+    ///     }
+    ///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
+    ///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
+    ///     }
+    ///     if let Some(sku_name) = response.sku_name()? {
+    ///         println!("x-ms-sku-name: {:?}", sku_name);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`account_kind`()](crate::generated::models::BlobClientGetAccountInfoResultHeaders::account_kind) - x-ms-account-kind
+    /// * [`is_hierarchical_namespace_enabled`()](crate::generated::models::BlobClientGetAccountInfoResultHeaders::is_hierarchical_namespace_enabled) - x-ms-is-hns-enabled
+    /// * [`sku_name`()](crate::generated::models::BlobClientGetAccountInfoResultHeaders::sku_name) - x-ms-sku-name
+    ///
+    /// [`BlobClientGetAccountInfoResultHeaders`]: crate::generated::models::BlobClientGetAccountInfoResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.getAccountInfo")]
     pub async fn get_account_info(
         &self,
         options: Option<BlobClientGetAccountInfoOptions<'_>>,
     ) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -817,7 +1117,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -826,7 +1125,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -878,13 +1177,84 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientGetPropertiesResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientGetPropertiesResult, BlobClientGetPropertiesResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientGetPropertiesResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(cache_control) = response.cache_control()? {
+    ///         println!("Cache-Control: {:?}", cache_control);
+    ///     }
+    ///     if let Some(content_disposition) = response.content_disposition()? {
+    ///         println!("Content-Disposition: {:?}", content_disposition);
+    ///     }
+    ///     if let Some(content_encoding) = response.content_encoding()? {
+    ///         println!("Content-Encoding: {:?}", content_encoding);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`cache_control`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::cache_control) - Cache-Control
+    /// * [`content_disposition`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_disposition) - Content-Disposition
+    /// * [`content_encoding`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_encoding) - Content-Encoding
+    /// * [`content_language`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_language) - Content-Language
+    /// * [`content_length`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_length) - Content-Length
+    /// * [`content_md5`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::content_md5) - Content-MD5
+    /// * [`last_modified`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::etag) - etag
+    /// * [`access_tier`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::access_tier) - x-ms-access-tier
+    /// * [`access_tier_change_time`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::access_tier_change_time) - x-ms-access-tier-change-time
+    /// * [`access_tier_inferred`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::access_tier_inferred) - x-ms-access-tier-inferred
+    /// * [`archive_status`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::archive_status) - x-ms-archive-status
+    /// * [`blob_committed_block_count`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::blob_committed_block_count) - x-ms-blob-committed-block-count
+    /// * [`is_sealed`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::is_sealed) - x-ms-blob-sealed
+    /// * [`blob_sequence_number`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
+    /// * [`blob_type`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::blob_type) - x-ms-blob-type
+    /// * [`copy_completion_time`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::copy_completion_time) - x-ms-copy-completion-time
+    /// * [`destination_snapshot`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::destination_snapshot) - x-ms-copy-destination-snapshot
+    /// * [`copy_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::copy_id) - x-ms-copy-id
+    /// * [`copy_progress`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::copy_progress) - x-ms-copy-progress
+    /// * [`copy_source`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::copy_source) - x-ms-copy-source
+    /// * [`copy_status`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::copy_status) - x-ms-copy-status
+    /// * [`copy_status_description`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::copy_status_description) - x-ms-copy-status-description
+    /// * [`creation_time`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::creation_time) - x-ms-creation-time
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`expires_on`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::expires_on) - x-ms-expiry-time
+    /// * [`immutability_policy_mode`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::immutability_policy_mode) - x-ms-immutability-policy-mode
+    /// * [`immutability_policy_expires_on`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::immutability_policy_expires_on) - x-ms-immutability-policy-until-date
+    /// * [`is_incremental_copy`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::is_incremental_copy) - x-ms-incremental-copy
+    /// * [`is_current_version`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::is_current_version) - x-ms-is-current-version
+    /// * [`last_accessed`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::last_accessed) - x-ms-last-access-time
+    /// * [`duration`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::duration) - x-ms-lease-duration
+    /// * [`lease_state`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::lease_state) - x-ms-lease-state
+    /// * [`lease_status`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::lease_status) - x-ms-lease-status
+    /// * [`legal_hold`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::legal_hold) - x-ms-legal-hold
+    /// * [`metadata`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::metadata) - x-ms-meta
+    /// * [`object_replication_rules`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::object_replication_rules) - x-ms-or
+    /// * [`object_replication_policy_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::object_replication_policy_id) - x-ms-or-policy-id
+    /// * [`rehydrate_priority`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::rehydrate_priority) - x-ms-rehydrate-priority
+    /// * [`is_server_encrypted`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::is_server_encrypted) - x-ms-server-encrypted
+    /// * [`tag_count`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::tag_count) - x-ms-tag-count
+    /// * [`version_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::version_id) - x-ms-version-id
+    ///
+    /// [`BlobClientGetPropertiesResultHeaders`]: crate::generated::models::BlobClientGetPropertiesResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.getProperties")]
     pub async fn get_properties(
         &self,
         options: Option<BlobClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobClientGetPropertiesResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -901,7 +1271,6 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Head);
-        request.insert_header("accept", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
         }
@@ -939,7 +1308,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -954,13 +1323,36 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobTagsHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, XmlFormat}};
+    /// use azure_storage_blob::models::{BlobTags, BlobTagsHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobTags, XmlFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::BlobTagsHeaders::date) - Date
+    ///
+    /// [`BlobTagsHeaders`]: crate::generated::models::BlobTagsHeaders
     #[tracing::function("Storage.Blob.Container.Blob.getTags")]
     pub async fn get_tags(
         &self,
         options: Option<BlobClientGetTagsOptions<'_>>,
     ) -> Result<Response<BlobTags, XmlFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -993,7 +1385,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1011,6 +1403,33 @@ impl BlobClient {
     /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
     ///   lease ID must match.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientReleaseLeaseResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientReleaseLeaseResult, BlobClientReleaseLeaseResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientReleaseLeaseResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`last_modified`()](crate::generated::models::BlobClientReleaseLeaseResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientReleaseLeaseResultHeaders::etag) - etag
+    ///
+    /// [`BlobClientReleaseLeaseResultHeaders`]: crate::generated::models::BlobClientReleaseLeaseResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.releaseLease")]
     pub async fn release_lease(
         &self,
@@ -1018,7 +1437,7 @@ impl BlobClient {
         options: Option<BlobClientReleaseLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientReleaseLeaseResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1032,7 +1451,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -1058,7 +1476,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1075,6 +1493,37 @@ impl BlobClient {
     /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
     ///   lease ID must match.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientRenewLeaseResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientRenewLeaseResult, BlobClientRenewLeaseResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientRenewLeaseResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     if let Some(lease_id) = response.lease_id()? {
+    ///         println!("x-ms-lease-id: {:?}", lease_id);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`last_modified`()](crate::generated::models::BlobClientRenewLeaseResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientRenewLeaseResultHeaders::etag) - etag
+    /// * [`lease_id`()](crate::generated::models::BlobClientRenewLeaseResultHeaders::lease_id) - x-ms-lease-id
+    ///
+    /// [`BlobClientRenewLeaseResultHeaders`]: crate::generated::models::BlobClientRenewLeaseResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.renewLease")]
     pub async fn renew_lease(
         &self,
@@ -1082,7 +1531,7 @@ impl BlobClient {
         options: Option<BlobClientRenewLeaseOptions<'_>>,
     ) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1096,7 +1545,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -1122,7 +1570,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1138,6 +1586,37 @@ impl BlobClient {
     ///
     /// * `expiry_options` - Required. Indicates mode of the expiry time
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientSetExpiryResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientSetExpiryResult, BlobClientSetExpiryResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientSetExpiryResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::BlobClientSetExpiryResultHeaders::date) - Date
+    /// * [`last_modified`()](crate::generated::models::BlobClientSetExpiryResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientSetExpiryResultHeaders::etag) - etag
+    ///
+    /// [`BlobClientSetExpiryResultHeaders`]: crate::generated::models::BlobClientSetExpiryResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.setExpiry")]
     pub async fn set_expiry(
         &self,
@@ -1145,7 +1624,7 @@ impl BlobClient {
         options: Option<BlobClientSetExpiryOptions<'_>>,
     ) -> Result<Response<BlobClientSetExpiryResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1157,7 +1636,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -1170,7 +1648,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1185,13 +1663,44 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientSetImmutabilityPolicyResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientSetImmutabilityPolicyResult, BlobClientSetImmutabilityPolicyResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientSetImmutabilityPolicyResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     if let Some(immutability_policy_mode) = response.immutability_policy_mode()? {
+    ///         println!("x-ms-immutability-policy-mode: {:?}", immutability_policy_mode);
+    ///     }
+    ///     if let Some(immutability_policy_expires_on) = response.immutability_policy_expires_on()? {
+    ///         println!("x-ms-immutability-policy-until-date: {:?}", immutability_policy_expires_on);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders::date) - Date
+    /// * [`immutability_policy_mode`()](crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders::immutability_policy_mode) - x-ms-immutability-policy-mode
+    /// * [`immutability_policy_expires_on`()](crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders::immutability_policy_expires_on) - x-ms-immutability-policy-until-date
+    ///
+    /// [`BlobClientSetImmutabilityPolicyResultHeaders`]: crate::generated::models::BlobClientSetImmutabilityPolicyResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.setImmutabilityPolicy")]
     pub async fn set_immutability_policy(
         &self,
         options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>,
     ) -> Result<Response<BlobClientSetImmutabilityPolicyResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1210,7 +1719,6 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_unmodified_since) = options.if_unmodified_since {
             request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
@@ -1234,7 +1742,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1250,6 +1758,33 @@ impl BlobClient {
     ///
     /// * `legal_hold` - Required. Specifies the legal hold status to set on the blob.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientSetLegalHoldResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientSetLegalHoldResult, BlobClientSetLegalHoldResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientSetLegalHoldResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     if let Some(legal_hold) = response.legal_hold()? {
+    ///         println!("x-ms-legal-hold: {:?}", legal_hold);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::BlobClientSetLegalHoldResultHeaders::date) - Date
+    /// * [`legal_hold`()](crate::generated::models::BlobClientSetLegalHoldResultHeaders::legal_hold) - x-ms-legal-hold
+    ///
+    /// [`BlobClientSetLegalHoldResultHeaders`]: crate::generated::models::BlobClientSetLegalHoldResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.setLegalHold")]
     pub async fn set_legal_hold(
         &self,
@@ -1257,7 +1792,7 @@ impl BlobClient {
         options: Option<BlobClientSetLegalHoldOptions<'_>>,
     ) -> Result<Response<BlobClientSetLegalHoldResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1275,7 +1810,6 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -1285,7 +1819,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1306,7 +1840,7 @@ impl BlobClient {
         options: Option<BlobClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1318,7 +1852,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -1365,7 +1898,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1386,7 +1919,7 @@ impl BlobClient {
         options: Option<BlobClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1400,7 +1933,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -1445,7 +1977,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1468,7 +2000,7 @@ impl BlobClient {
         options: Option<BlobClientSetTagsOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1483,7 +2015,6 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));
         }
@@ -1505,7 +2036,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1530,7 +2061,7 @@ impl BlobClient {
         options: Option<BlobClientSetTierOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1548,7 +2079,6 @@ impl BlobClient {
             url.query_pairs_mut().append_pair("versionid", &version_id);
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         request.insert_header("x-ms-access-tier", tier.to_string());
         if let Some(client_request_id) = options.client_request_id {
@@ -1567,7 +2097,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1585,6 +2115,40 @@ impl BlobClient {
     ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
     ///   either be public or must be authenticated via a shared access signature.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientStartCopyFromUrlResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientStartCopyFromUrlResult, BlobClientStartCopyFromUrlResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientStartCopyFromUrlResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     if let Some(last_modified) = response.last_modified()? {
+    ///         println!("Last-Modified: {:?}", last_modified);
+    ///     }
+    ///     if let Some(etag) = response.etag()? {
+    ///         println!("etag: {:?}", etag);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::date) - Date
+    /// * [`last_modified`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::last_modified) - Last-Modified
+    /// * [`etag`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::etag) - etag
+    /// * [`copy_id`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::copy_id) - x-ms-copy-id
+    /// * [`copy_status`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::copy_status) - x-ms-copy-status
+    /// * [`version_id`()](crate::generated::models::BlobClientStartCopyFromUrlResultHeaders::version_id) - x-ms-version-id
+    ///
+    /// [`BlobClientStartCopyFromUrlResultHeaders`]: crate::generated::models::BlobClientStartCopyFromUrlResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.startCopyFromUrl")]
     pub async fn start_copy_from_url(
         &self,
@@ -1592,7 +2156,7 @@ impl BlobClient {
         options: Option<BlobClientStartCopyFromUrlOptions<'_>>,
     ) -> Result<Response<BlobClientStartCopyFromUrlResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1603,7 +2167,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(if_match) = options.if_match {
             request.insert_header("if-match", if_match);
@@ -1685,7 +2248,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1700,13 +2263,36 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientUndeleteResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlobClientUndeleteResult, BlobClientUndeleteResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlobClientUndeleteResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::BlobClientUndeleteResultHeaders::date) - Date
+    ///
+    /// [`BlobClientUndeleteResultHeaders`]: crate::generated::models::BlobClientUndeleteResultHeaders
     #[tracing::function("Storage.Blob.Container.Blob.undelete")]
     pub async fn undelete(
         &self,
         options: Option<BlobClientUndeleteOptions<'_>>,
     ) -> Result<Response<BlobClientUndeleteResult, NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("{containerName}/{blobName}");
         path = path.replace("{blobName}", &self.blob_name);
@@ -1718,7 +2304,6 @@ impl BlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -1727,7 +2312,7 @@ impl BlobClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),

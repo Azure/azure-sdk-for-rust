@@ -9,7 +9,6 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 pub mod clients;
-#[expect(deprecated, reason = "requires emitter update")]
 mod generated;
 mod parsers;
 mod pipeline;

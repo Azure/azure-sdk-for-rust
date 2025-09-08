@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use super::RetryPolicy;
-use crate::time::Duration;
+use crate::{http::policies::RetryHeaders, time::Duration};
 
 /// Retry policy with exponential back-off.
 ///
@@ -17,6 +17,7 @@ pub struct ExponentialRetryPolicy {
     max_retries: u32,
     max_elapsed: Duration,
     max_delay: Duration,
+    retry_headers: RetryHeaders,
 }
 
 impl ExponentialRetryPolicy {
@@ -25,12 +26,14 @@ impl ExponentialRetryPolicy {
         max_retries: u32,
         max_elapsed: Duration,
         max_delay: Duration,
+        retry_headers: RetryHeaders,
     ) -> Self {
         Self {
             initial_delay: initial_delay.max(Duration::milliseconds(1)),
             max_retries,
             max_elapsed,
             max_delay: max_delay.max(Duration::seconds(1)),
+            retry_headers,
         }
     }
 }
@@ -38,6 +41,10 @@ impl ExponentialRetryPolicy {
 impl RetryPolicy for ExponentialRetryPolicy {
     fn is_expired(&self, time_since_start: Duration, retry_count: u32) -> bool {
         retry_count >= self.max_retries || time_since_start >= self.max_elapsed
+    }
+
+    fn get_retry_headers(&self) -> Option<&RetryHeaders> {
+        Some(&self.retry_headers)
     }
 
     fn sleep_duration(&self, retry_count: u32) -> Duration {
@@ -56,7 +63,10 @@ impl RetryPolicy for ExponentialRetryPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http::ExponentialRetryOptions;
+    use crate::http::{
+        headers::{HeaderName, RETRY_AFTER},
+        ExponentialRetryOptions,
+    };
 
     #[test]
     fn exponentially_increases_correctly() {
@@ -66,6 +76,14 @@ mod tests {
             options.max_retries,
             options.max_total_elapsed,
             options.max_delay,
+            RetryHeaders {
+                retry_headers: vec![
+                    HeaderName::from_static("x-ms-retry-after"),
+                    HeaderName::from_static("retry-after-ms"),
+                    RETRY_AFTER,
+                ],
+                error_header: Some(HeaderName::from_static("x-ms-error-code")),
+            },
         );
 
         let mut elapsed_time = Duration::seconds(0);

@@ -32,10 +32,11 @@ use azure_core::{
     error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
+        headers::ERROR_CODE,
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, Pager, Pipeline, RawResponse, Request,
-        RequestContent, Response, Url,
+        ClientOptions, Method, NoFormat, Pager, Pipeline, RawResponse, Request, RequestContent,
+        Response, Url,
     },
     json, tracing, Error, Result,
 };
@@ -67,7 +68,7 @@ impl CertificateClient {
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("azure_security_keyvault_certificates")]
+    #[tracing::new("KeyVault")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
@@ -95,6 +96,7 @@ impl CertificateClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
             ),
         })
     }
@@ -119,8 +121,14 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientBackupCertificateOptions<'_>>,
     ) -> Result<Response<BackupCertificateResult>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/backup");
         path = path.replace("{certificate-name}", certificate_name);
@@ -132,7 +140,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -159,8 +167,14 @@ impl CertificateClient {
         parameters: RequestContent<CreateCertificateParameters>,
         options: Option<CertificateClientCreateCertificateOptions<'_>>,
     ) -> Result<Response<CertificateOperation>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/create");
         path = path.replace("{certificate-name}", certificate_name);
@@ -174,7 +188,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -199,8 +213,14 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientDeleteCertificateOptions<'_>>,
     ) -> Result<Response<DeletedCertificate>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}");
         path = path.replace("{certificate-name}", certificate_name);
@@ -212,7 +232,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -237,8 +257,14 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientDeleteCertificateOperationOptions<'_>>,
     ) -> Result<Response<CertificateOperation>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/pending");
         path = path.replace("{certificate-name}", certificate_name);
@@ -250,7 +276,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -274,7 +300,7 @@ impl CertificateClient {
         options: Option<CertificateClientDeleteContactsOptions<'_>>,
     ) -> Result<Response<Contacts>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("certificates/contacts")?;
         url.query_pairs_mut()
@@ -284,7 +310,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -309,8 +335,14 @@ impl CertificateClient {
         issuer_name: &str,
         options: Option<CertificateClientDeleteIssuerOptions<'_>>,
     ) -> Result<Response<Issuer>> {
+        if issuer_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter issuer_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/issuers/{issuer-name}");
         path = path.replace("{issuer-name}", issuer_name);
@@ -322,7 +354,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -339,22 +371,30 @@ impl CertificateClient {
     /// # Arguments
     ///
     /// * `certificate_name` - The name of the certificate in the given vault.
-    /// * `certificate_version` - The version of the certificate. This URI fragment is optional. If not specified, the latest
-    ///   version of the certificate is returned.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.getCertificate")]
     pub async fn get_certificate(
         &self,
         certificate_name: &str,
-        certificate_version: &str,
         options: Option<CertificateClientGetCertificateOptions<'_>>,
     ) -> Result<Response<Certificate>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/{certificate-version}");
         path = path.replace("{certificate-name}", certificate_name);
-        path = path.replace("{certificate-version}", certificate_version);
+        path = match options.certificate_version {
+            Some(certificate_version) => {
+                path.replace("{certificate-version}", &certificate_version)
+            }
+            None => path.replace("{certificate-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -363,7 +403,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -387,8 +427,14 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientGetCertificateOperationOptions<'_>>,
     ) -> Result<Response<CertificateOperation>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/pending");
         path = path.replace("{certificate-name}", certificate_name);
@@ -400,7 +446,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -425,8 +471,14 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientGetCertificatePolicyOptions<'_>>,
     ) -> Result<Response<CertificatePolicy>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/policy");
         path = path.replace("{certificate-name}", certificate_name);
@@ -438,7 +490,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -462,7 +514,7 @@ impl CertificateClient {
         options: Option<CertificateClientGetContactsOptions<'_>>,
     ) -> Result<Response<Contacts>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("certificates/contacts")?;
         url.query_pairs_mut()
@@ -472,7 +524,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -498,8 +550,14 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientGetDeletedCertificateOptions<'_>>,
     ) -> Result<Response<DeletedCertificate>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedcertificates/{certificate-name}");
         path = path.replace("{certificate-name}", certificate_name);
@@ -511,7 +569,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -536,8 +594,14 @@ impl CertificateClient {
         issuer_name: &str,
         options: Option<CertificateClientGetIssuerOptions<'_>>,
     ) -> Result<Response<Issuer>> {
+        if issuer_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter issuer_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/issuers/{issuer-name}");
         path = path.replace("{issuer-name}", issuer_name);
@@ -549,7 +613,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -578,8 +642,14 @@ impl CertificateClient {
         parameters: RequestContent<ImportCertificateParameters>,
         options: Option<CertificateClientImportCertificateOptions<'_>>,
     ) -> Result<Response<Certificate>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/import");
         path = path.replace("{certificate-name}", certificate_name);
@@ -593,7 +663,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -658,7 +728,7 @@ impl CertificateClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -695,6 +765,12 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientListCertificatePropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListCertificatePropertiesResult>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -734,7 +810,7 @@ impl CertificateClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -812,7 +888,7 @@ impl CertificateClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -884,7 +960,7 @@ impl CertificateClient {
                 let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
-                    let http_error = HttpError::new(rsp).await;
+                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
                     let error_kind = ErrorKind::http_response(
                         status,
                         http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -923,8 +999,14 @@ impl CertificateClient {
         parameters: RequestContent<MergeCertificateParameters>,
         options: Option<CertificateClientMergeCertificateOptions<'_>>,
     ) -> Result<Response<Certificate>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/pending/merge");
         path = path.replace("{certificate-name}", certificate_name);
@@ -938,7 +1020,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -964,8 +1046,14 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientPurgeDeletedCertificateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedcertificates/{certificate-name}");
         path = path.replace("{certificate-name}", certificate_name);
@@ -973,11 +1061,10 @@ impl CertificateClient {
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
-        request.insert_header("accept", "application/json");
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1003,8 +1090,14 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientRecoverDeletedCertificateOptions<'_>>,
     ) -> Result<Response<Certificate>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("deletedcertificates/{certificate-name}/recover");
         path = path.replace("{certificate-name}", certificate_name);
@@ -1016,7 +1109,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1041,7 +1134,7 @@ impl CertificateClient {
         options: Option<CertificateClientRestoreCertificateOptions<'_>>,
     ) -> Result<Response<Certificate>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("certificates/restore")?;
         url.query_pairs_mut()
@@ -1053,7 +1146,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1078,7 +1171,7 @@ impl CertificateClient {
         options: Option<CertificateClientSetContactsOptions<'_>>,
     ) -> Result<Response<Contacts>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url = url.join("certificates/contacts")?;
         url.query_pairs_mut()
@@ -1090,7 +1183,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1118,8 +1211,14 @@ impl CertificateClient {
         parameter: RequestContent<SetIssuerParameters>,
         options: Option<CertificateClientSetIssuerOptions<'_>>,
     ) -> Result<Response<Issuer>> {
+        if issuer_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter issuer_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/issuers/{issuer-name}");
         path = path.replace("{issuer-name}", issuer_name);
@@ -1133,7 +1232,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1160,8 +1259,14 @@ impl CertificateClient {
         certificate_operation: RequestContent<UpdateCertificateOperationParameter>,
         options: Option<CertificateClientUpdateCertificateOperationOptions<'_>>,
     ) -> Result<Response<CertificateOperation>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/pending");
         path = path.replace("{certificate-name}", certificate_name);
@@ -1175,7 +1280,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1202,8 +1307,14 @@ impl CertificateClient {
         certificate_policy: RequestContent<CertificatePolicy>,
         options: Option<CertificateClientUpdateCertificatePolicyOptions<'_>>,
     ) -> Result<Response<CertificatePolicy>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/policy");
         path = path.replace("{certificate-name}", certificate_name);
@@ -1217,7 +1328,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1235,23 +1346,32 @@ impl CertificateClient {
     /// # Arguments
     ///
     /// * `certificate_name` - The name of the certificate in the given key vault.
-    /// * `certificate_version` - The version of the certificate.
     /// * `parameters` - The parameters for certificate update.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("KeyVault.updateCertificate")]
     pub async fn update_certificate_properties(
         &self,
         certificate_name: &str,
-        certificate_version: &str,
         parameters: RequestContent<UpdateCertificatePropertiesParameters>,
         options: Option<CertificateClientUpdateCertificatePropertiesOptions<'_>>,
     ) -> Result<Response<Certificate>> {
+        if certificate_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter certificate_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/{certificate-name}/{certificate-version}");
         path = path.replace("{certificate-name}", certificate_name);
-        path = path.replace("{certificate-version}", certificate_version);
+        path = match options.certificate_version {
+            Some(certificate_version) => {
+                path.replace("{certificate-version}", &certificate_version)
+            }
+            None => path.replace("{certificate-version}", ""),
+        };
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
@@ -1262,7 +1382,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),
@@ -1289,8 +1409,14 @@ impl CertificateClient {
         parameter: RequestContent<UpdateIssuerParameters>,
         options: Option<CertificateClientUpdateIssuerOptions<'_>>,
     ) -> Result<Response<Issuer>> {
+        if issuer_name.is_empty() {
+            return Err(azure_core::Error::message(
+                azure_core::error::ErrorKind::Other,
+                "parameter issuer_name cannot be empty",
+            ));
+        }
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("certificates/issuers/{issuer-name}");
         path = path.replace("{issuer-name}", issuer_name);
@@ -1304,7 +1430,7 @@ impl CertificateClient {
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
         if !rsp.status().is_success() {
             let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
             let error_kind = ErrorKind::http_response(
                 status,
                 http_error.error_code().map(std::borrow::ToOwned::to_owned),

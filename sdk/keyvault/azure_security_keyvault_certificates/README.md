@@ -197,7 +197,7 @@ Setting the `certificate-version` to an empty string will return the latest vers
 ```rust no_run
 use azure_core::base64;
 use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_certificates::CertificateClient;
+use azure_security_keyvault_certificates::{CertificateClient, models::CertificateClientGetCertificateOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -208,8 +208,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
+    let get_options = CertificateClientGetCertificateOptions{
+        certificate_version: Some("certificate-version".to_string()),
+        ..Default::default()
+    };
     let certificate = client
-        .get_certificate("certificate-name", "certificate-version", None)
+        .get_certificate("certificate-name", Some(get_options))
         .await?
         .into_body()
         .await?;
@@ -253,7 +257,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client
         .update_certificate_properties(
             "certificate-name",
-            "",
             certificate_update_parameters.try_into()?,
             None,
         )
@@ -400,7 +403,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let signature = key_client
-        .sign("ec-signing-certificate", "", body.try_into()?, None)
+        .sign("ec-signing-certificate", body.try_into()?, None)
         .await?
         .into_body()
         .await?;
@@ -434,7 +437,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
 
-    match client.get_certificate("certificate-name".into(), "".into(), None).await {
+    match client.get_certificate("certificate-name".into(), None).await {
         Ok(response) => println!("Certificate: {:#?}", response.into_body().await?.x509_thumbprint),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }

@@ -50,6 +50,10 @@ pub struct CertificateClientDeleteIssuerOptions<'a> {
 /// Options to be passed to [`CertificateClient::get_certificate()`](crate::generated::clients::CertificateClient::get_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientGetCertificateOptions<'a> {
+    /// The version of the certificate. This URI fragment is optional. If not specified, the latest version of the certificate
+    /// is returned.
+    pub certificate_version: Option<String>,
+
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
@@ -247,6 +251,9 @@ pub struct CertificateClientUpdateCertificatePolicyOptions<'a> {
 /// Options to be passed to [`CertificateClient::update_certificate_properties()`](crate::generated::clients::CertificateClient::update_certificate_properties())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientUpdateCertificatePropertiesOptions<'a> {
+    /// The version of the certificate.
+    pub certificate_version: Option<String>,
+
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 }
