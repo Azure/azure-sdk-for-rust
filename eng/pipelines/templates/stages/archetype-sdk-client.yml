@@ -138,16 +138,18 @@ extends:
                     SubscriptionConfigurationFilePaths: ${{ cloud.value.SubscriptionConfigurationFilePaths }}
 
     # The Prerelease and Release stages are conditioned on:
-    # 1. Internal trigger, not Pull Request trigger
+    # 1. Internal pipeline
+    # 2. Only release from main or hotfix/*
     # 2. Not weekly build
     # 3. Manual trigger or force IncludeRelease
-    - ${{ if and(not(startsWith(variables['Build.SourceBranchName'], 'refs/pull/')), eq(variables['System.TeamProject'], 'internal')) }}:
-      - ${{ if not(contains(variables['Build.DefinitionName'], 'weekly')) }}:
-        - ${{ if or(in(variables['Build.Reason'], 'Manual', ''), eq(parameters.IncludeRelease, true)) }}:
-          - template: archetype-rust-release.yml
-            parameters:
-              DependsOn: "Build"
-              ServiceDirectory: ${{ parameters.ServiceDirectory }}
-              Artifacts: ${{ parameters.Artifacts }}
-              TestPipeline: ${{ eq(parameters.ServiceDirectory, 'template') }}
-              PipelineArtifactName: packages
+    - ${{ if eq(variables['System.TeamProject'], 'internal') }}:
+      - ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/')) }}:
+        - ${{ if not(contains(variables['Build.DefinitionName'], 'weekly')) }}:
+          - ${{ if or(in(variables['Build.Reason'], 'Manual', ''), eq(parameters.IncludeRelease, true)) }}:
+            - template: archetype-rust-release.yml
+              parameters:
+                DependsOn: "Build"
+                ServiceDirectory: ${{ parameters.ServiceDirectory }}
+                Artifacts: ${{ parameters.Artifacts }}
+                TestPipeline: ${{ eq(parameters.ServiceDirectory, 'template') }}
+                PipelineArtifactName: packages
