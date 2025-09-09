@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::http::{RequestContent, XmlFormat};
-use azure_core_test::{recorded, TestContext};
+use azure_core_test::{recorded, TestContext, TestMode};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
@@ -14,8 +14,8 @@ use azure_storage_blob_test::{
     get_container_name,
 };
 use futures::StreamExt;
-use std::collections::HashMap;
-use std::error::Error;
+use std::{collections::HashMap, error::Error, time::Duration};
+use tokio::time;
 
 #[recorded::test]
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -210,6 +210,11 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         Some(BlockBlobClientUploadOptions::default().with_tags(blob3_tags.clone())),
     )
     .await?;
+
+    // Sleep in live mode to allow tags to be indexed on the service
+    if recording.test_mode() == TestMode::Live {
+        time::sleep(Duration::from_secs(5)).await;
+    }
 
     // Find "hello world" blob by its tag {"foo": "bar"}
     let response = service_client

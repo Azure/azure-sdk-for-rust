@@ -173,7 +173,7 @@ impl BlobContainerClient {
     /// ```text
     /// "@container='containerName' and \"Name\"='C'"
     /// ```
-    ///   See [`format_filter_expression()`](crate::format_filter_expression) for help with the expected String format.
+    /// See [`format_filter_expression()`](crate::format_filter_expression) for help with the expected String format.
     /// * `options` - Optional parameters for the request.
     pub async fn find_blobs_by_tags(
         &self,
