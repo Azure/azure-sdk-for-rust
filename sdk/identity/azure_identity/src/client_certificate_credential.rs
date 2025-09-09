@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{EntraIdTokenResponse, TokenCache, TokenCredentialOptions};
+use crate::{get_authority_host, EntraIdTokenResponse, TokenCache};
 use azure_core::{
     base64,
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
-    error::{Error, ErrorKind},
+    error::{Error, ErrorKind, ResultExt},
     http::{
         check_success,
         headers::{self, content_type},
         request::Request,
-        HttpClient, Method, Url,
+        ClientOptions, Method, Pipeline, Url,
     },
     time::{Duration, OffsetDateTime},
     Uuid,
@@ -26,7 +26,6 @@ use openssl::{
     x509::X509,
 };
 use std::{str, sync::Arc};
-
 use url::form_urlencoded;
 
 /// Refresh time to use in seconds.
@@ -38,50 +37,28 @@ const AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY: &str = "AZURE_CLIENT_SEND_CER
 /// requests to Azure Active Directory.
 #[derive(Clone, Debug)]
 pub struct ClientCertificateCredentialOptions {
-    options: TokenCredentialOptions,
-    send_certificate_chain: bool,
+    /// The base URL for token requests.
+    ///
+    /// The default is `https://login.microsoftonline.com`.
+    pub authority_host: Option<String>,
+
+    /// Options for the credential's HTTP pipeline.
+    pub client_options: ClientOptions,
+
+    /// Whether to send the certificate chain.
+    pub send_certificate_chain: bool,
 }
 
-impl From<TokenCredentialOptions> for ClientCertificateCredentialOptions {
-    fn from(options: TokenCredentialOptions) -> Self {
-        let env = options.env();
-        let send_certificate_chain = env
-            .var(AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY)
+impl Default for ClientCertificateCredentialOptions {
+    fn default() -> Self {
+        let send_certificate_chain = std::env::var(AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY)
             .map(|s| s == "1" || s.to_lowercase() == "true")
             .unwrap_or(false);
         Self {
-            options,
+            authority_host: None,
+            client_options: ClientOptions::default(),
             send_certificate_chain,
         }
-    }
-}
-
-impl ClientCertificateCredentialOptions {
-    /// Create a new `TokenCredentialsOptions`. default() may also be used.
-    pub fn new(options: impl Into<TokenCredentialOptions>, send_certificate_chain: bool) -> Self {
-        Self {
-            options: options.into(),
-            send_certificate_chain,
-        }
-    }
-
-    pub fn options(&self) -> &TokenCredentialOptions {
-        &self.options
-    }
-
-    pub fn options_mut(&mut self) -> &mut TokenCredentialOptions {
-        &mut self.options
-    }
-
-    /// Enable/disable sending the certificate chain.
-    pub fn set_send_certificate_chain(&mut self, send_certificate_chain: bool) {
-        self.send_certificate_chain = send_certificate_chain;
-    }
-
-    /// Whether certificate chain is sent as part of the request or not. Default is
-    /// set to true.
-    pub fn send_certificate_chain(&self) -> bool {
-        self.send_certificate_chain
     }
 }
 
@@ -92,12 +69,11 @@ impl ClientCertificateCredentialOptions {
 /// The certificate is expected to be in base64 encoded PKCS12 format.
 #[derive(Debug)]
 pub struct ClientCertificateCredential {
-    tenant_id: String,
     client_id: String,
     client_certificate: Secret,
     client_certificate_pass: Secret,
-    http_client: Arc<dyn HttpClient>,
-    authority_host: Url,
+    endpoint: Url,
+    pipeline: Pipeline,
     send_certificate_chain: bool,
     cache: TokenCache,
 }
@@ -116,14 +92,30 @@ impl ClientCertificateCredential {
         P: Into<Secret>,
     {
         let options = options.into();
+
+        let authority_host = get_authority_host(None, options.authority_host)?;
+        let endpoint = authority_host
+            .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
+            .with_context(ErrorKind::DataConversion, || {
+                format!("tenant_id '{tenant_id}' could not be URL encoded")
+            })?;
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options,
+            Vec::default(),
+            Vec::default(),
+            None,
+        );
+
         Ok(Arc::new(ClientCertificateCredential {
-            tenant_id,
             client_id,
             client_certificate: client_certificate.into(),
             client_certificate_pass: client_certificate_pass.into(),
-            http_client: options.options().http_client().clone(),
-            authority_host: options.options().authority_host()?.clone(),
-            send_certificate_chain: options.send_certificate_chain(),
+            endpoint,
+            pipeline,
+            send_certificate_chain: options.send_certificate_chain,
             cache: TokenCache::new(),
         }))
     }
@@ -147,7 +139,7 @@ impl ClientCertificateCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.len() != 1 {
             return Err(Error::message(
@@ -162,10 +154,6 @@ impl ClientCertificateCredential {
                 "no scopes were provided",
             ));
         };
-
-        let url = self
-            .authority_host
-            .join(&format!("{}/oauth2/v2.0/token", self.tenant_id))?;
 
         let certificate = base64::decode(self.client_certificate.secret())
             .map_err(|_| Error::message(ErrorKind::Credential, "Base64 decode failed"))?;
@@ -222,7 +210,7 @@ impl ClientCertificateCredential {
 
         let payload = format!(
             r#"{{"aud":"{}","exp":{},"iss": "{}", "jti": "{}", "nbf": {}, "sub": "{}"}}"#,
-            url, expiry_time, self.client_id, uuid, current_time, self.client_id
+            self.endpoint, expiry_time, self.client_id, uuid, current_time, self.client_id
         );
         let payload = ClientCertificateCredential::as_jwt_part(payload.as_bytes());
 
@@ -245,16 +233,17 @@ impl ClientCertificateCredential {
             encoded.finish()
         };
 
-        let mut req = Request::new(url, Method::Post);
+        let mut req = Request::new(self.endpoint.clone(), Method::Post);
         req.insert_header(
             headers::CONTENT_TYPE,
             content_type::APPLICATION_X_WWW_FORM_URLENCODED,
         );
         req.set_body(encoded);
 
-        let rsp = self.http_client.execute_request(&req).await?;
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let rsp = self.pipeline.send(&ctx, &mut req).await?;
         let rsp = check_success(rsp).await?;
-
         let response: EntraIdTokenResponse = rsp.into_body().json().await?;
         Ok(AccessToken::new(
             response.access_token,
@@ -280,7 +269,7 @@ impl TokenCredential for ClientCertificateCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token(s, o))

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    credentials::{AccessToken, TokenCredential},
+    credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
     http::{
         headers::AUTHORIZATION,
@@ -12,7 +12,7 @@ use crate::{
 use async_lock::RwLock;
 use async_trait::async_trait;
 use std::sync::Arc;
-use typespec_client_core::http::{Context, Request};
+use typespec_client_core::http::{ClientMethodOptions, Context, Request};
 use typespec_client_core::time::{Duration, OffsetDateTime};
 
 /// Authentication policy for a bearer token.
@@ -66,7 +66,16 @@ impl Policy for BearerTokenCredentialPolicy {
                 drop(access_token);
                 let mut access_token = self.access_token.write().await;
                 if access_token.is_none() {
-                    *access_token = Some(self.credential.get_token(&self.scopes(), None).await?);
+                    let options = TokenRequestOptions {
+                        method_options: ClientMethodOptions {
+                            context: ctx.clone(),
+                        },
+                    };
+                    *access_token = Some(
+                        self.credential
+                            .get_token(&self.scopes(), Some(options))
+                            .await?,
+                    );
                 }
             }
             Some(token) if should_refresh(&token.expires_on) => {
@@ -78,7 +87,16 @@ impl Policy for BearerTokenCredentialPolicy {
                 // access_token shouldn't be None here, but check anyway to guarantee unwrap won't panic
                 if access_token.is_none() || access_token.as_ref().unwrap().expires_on == expires_on
                 {
-                    match self.credential.get_token(&self.scopes(), None).await {
+                    let options = TokenRequestOptions {
+                        method_options: ClientMethodOptions {
+                            context: ctx.clone(),
+                        },
+                    };
+                    match self
+                        .credential
+                        .get_token(&self.scopes(), Some(options))
+                        .await
+                    {
                         Ok(new_token) => {
                             *access_token = Some(new_token);
                         }
@@ -176,7 +194,7 @@ mod tests {
         async fn get_token(
             &self,
             _: &[&str],
-            _: Option<TokenRequestOptions>,
+            _: Option<TokenRequestOptions<'_>>,
         ) -> Result<AccessToken> {
             let i = self.calls.fetch_add(1, Ordering::SeqCst);
             self.tokens

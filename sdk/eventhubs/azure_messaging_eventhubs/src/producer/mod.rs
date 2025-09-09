@@ -38,7 +38,7 @@ pub struct SendBatchOptions {}
 ///
 /// ```no_run
 /// use azure_messaging_eventhubs::ProducerClient;
-/// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+/// use azure_identity::DeveloperToolsCredential;
 /// use std::error::Error;
 ///
 /// #[tokio::main]
@@ -237,7 +237,7 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     /// use std::error::Error;
     ///
     /// #[tokio::main]
@@ -279,7 +279,7 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     /// use std::error::Error;
     ///
     /// #[tokio::main]
@@ -347,7 +347,7 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     /// use std::error::Error;
     ///
     /// #[tokio::main]
@@ -384,7 +384,7 @@ impl ProducerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     /// use std::error::Error;
     ///
     /// #[tokio::main]
@@ -444,7 +444,7 @@ pub mod builders {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ProducerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     ///
     /// #[tokio::main]
     /// async fn main() {

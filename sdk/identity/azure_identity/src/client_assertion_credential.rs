@@ -2,15 +2,15 @@
 // Licensed under the MIT License.
 
 use crate::{
-    deserialize, validate_not_empty, validate_tenant_id, EntraIdErrorResponse,
-    EntraIdTokenResponse, TokenCache, TokenCredentialOptions,
+    deserialize, get_authority_host, validate_not_empty, validate_tenant_id, EntraIdErrorResponse,
+    EntraIdTokenResponse, TokenCache,
 };
 use azure_core::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     error::{ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
-        Method, Request, StatusCode, Url,
+        ClientMethodOptions, ClientOptions, Method, Pipeline, Request, StatusCode, Url,
     },
     time::{Duration, OffsetDateTime},
     Error,
@@ -28,7 +28,7 @@ pub struct ClientAssertionCredential<C> {
     endpoint: Url,
     assertion: C,
     cache: TokenCache,
-    options: TokenCredentialOptions,
+    pipeline: Pipeline,
 }
 
 /// Options for constructing a new [`ClientAssertionCredential`].
@@ -39,6 +39,11 @@ pub struct ClientAssertionCredentialOptions {
     /// Add the wildcard value "*" to allow the credential to acquire tokens for any tenant in which the application is registered.
     pub additionally_allowed_tenants: Vec<String>,
 
+    /// The base URL for token requests.
+    ///
+    /// The default is `https://login.microsoftonline.com`.
+    pub authority_host: Option<String>,
+
     /// Should be set true only by applications authenticating in disconnected clouds, or private clouds such as Azure Stack.
     ///
     /// It determines whether the credential requests Microsoft Entra instance metadata
@@ -46,8 +51,8 @@ pub struct ClientAssertionCredentialOptions {
     /// the application responsible for ensuring the configured authority is valid and trustworthy.
     pub disable_instance_discovery: bool,
 
-    /// Options for constructing credentials.
-    pub credential_options: TokenCredentialOptions,
+    /// Options for the credential's HTTP pipeline.
+    pub client_options: ClientOptions,
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -55,7 +60,7 @@ pub struct ClientAssertionCredentialOptions {
 /// Represents an entity capable of supplying a client assertion.
 pub trait ClientAssertion: Send + Sync + Debug {
     /// Supply the client assertion secret.
-    async fn secret(&self) -> azure_core::Result<String>;
+    async fn secret(&self, options: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String>;
 }
 
 impl<C: ClientAssertion> ClientAssertionCredential<C> {
@@ -82,33 +87,45 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
     ) -> azure_core::Result<Self> {
         validate_tenant_id(&tenant_id)?;
         validate_not_empty(&client_id, "no client ID specified")?;
-        let options = options.unwrap_or_default().credential_options;
-        let endpoint = options
-            .authority_host()?
+        let options = options.unwrap_or_default();
+        let authority_host = get_authority_host(None, options.authority_host)?;
+        let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
             .with_context(ErrorKind::DataConversion, || {
                 format!("tenant_id {tenant_id} could not be URL encoded")
             })?;
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            Vec::default(),
+            None,
+        );
         Ok(Self {
             client_id,
             assertion,
             endpoint,
             cache: TokenCache::new(),
-            options,
+            pipeline,
         })
     }
 
     async fn get_token_impl(
         &self,
         scopes: &[&str],
-        _: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         let mut req = Request::new(self.endpoint.clone(), Method::Post);
         req.insert_header(
             headers::CONTENT_TYPE,
             content_type::APPLICATION_X_WWW_FORM_URLENCODED,
         );
-        let assertion = self.assertion.secret().await?;
+        let options = options.unwrap_or_default();
+        let assertion = self
+            .assertion
+            .secret(Some(options.method_options.to_owned()))
+            .await?;
         let encoded: String = form_urlencoded::Serializer::new(String::new())
             .append_pair("client_assertion", assertion.as_str())
             .append_pair("client_assertion_type", ASSERTION_TYPE)
@@ -118,7 +135,8 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
             .finish();
         req.set_body(encoded);
 
-        let res = self.options.http_client.execute_request(&req).await?;
+        let ctx = options.method_options.context.to_borrowed();
+        let res = self.pipeline.send(&ctx, &mut req).await?;
 
         match res.status() {
             StatusCode::Ok => {
@@ -152,7 +170,7 @@ impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
@@ -168,7 +186,7 @@ pub(crate) mod tests {
         authority_hosts::AZURE_PUBLIC_CLOUD,
         http::{
             headers::{self, content_type, Headers},
-            Body, BufResponse, Method, Request,
+            Body, BufResponse, Method, Request, TransportOptions,
         },
         Bytes,
     };
@@ -223,7 +241,7 @@ pub(crate) mod tests {
     #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
     #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
     impl ClientAssertion for MockAssertion {
-        async fn secret(&self) -> azure_core::Result<String> {
+        async fn secret(&self, _: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String> {
             Ok(FAKE_ASSERTION.to_string())
         }
     }
@@ -247,8 +265,8 @@ pub(crate) mod tests {
             FAKE_CLIENT_ID.to_string(),
             MockAssertion {},
             Some(ClientAssertionCredentialOptions {
-                credential_options: TokenCredentialOptions {
-                    http_client: Arc::new(mock),
+                client_options: ClientOptions {
+                    transport: Some(TransportOptions::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -286,8 +304,8 @@ pub(crate) mod tests {
             FAKE_CLIENT_ID.to_string(),
             MockAssertion {},
             Some(ClientAssertionCredentialOptions {
-                credential_options: TokenCredentialOptions {
-                    http_client: Arc::new(mock),
+                client_options: ClientOptions {
+                    transport: Some(TransportOptions::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()
