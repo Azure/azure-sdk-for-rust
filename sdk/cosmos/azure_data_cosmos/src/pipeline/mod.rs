@@ -16,9 +16,7 @@ use azure_core::http::{
 use azure_core::{
     error::HttpError,
     http::{
-        request::{options::ContentType, Request},
-        response::Response,
-        ClientOptions, Context, Method, PagerState, RawResponse,
+        pager::PagerState, request::{options::ContentType, Request}, response::Response, ClientOptions, Context, Method, RawResponse
     },
 };
 use futures::TryStreamExt;
@@ -223,7 +221,7 @@ impl ResponseExt for RawResponse {
         if self.status().is_success() {
             Ok(self)
         } else {
-            let http_error = HttpError::new(self).await;
+            let http_error = HttpError::new(self, Some(constants::SUB_STATUS)).await;
             let status = http_error.status();
             let error_kind = azure_core::error::ErrorKind::http_response(
                 status,
