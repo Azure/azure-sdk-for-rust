@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use azure_core::http::{
     headers::Headers,
     pager::{Page, PagerResult},
-    ItemIterator, BufResponse,
+    BufResponse, ItemIterator,
 };
 use serde::{de::DeserializeOwned, Deserialize};
 

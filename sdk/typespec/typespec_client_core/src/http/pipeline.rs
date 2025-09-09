@@ -84,7 +84,7 @@ impl Pipeline {
         &self.pipeline
     }
 
-    /// Sends a [`Request`] through each configured [`Policy`] and gets a [`Bufesponse`] that is processed by each policy in reverse.
+    /// Sends a [`Request`] through each configured [`Policy`] and gets a [`BufResponse`] that is processed by each policy in reverse.
     pub async fn send(
         &self,
         ctx: &Context<'_>,

@@ -12,7 +12,7 @@ use azure_core::{
         headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
         poller::{get_retry_after, PollerResult, PollerState, StatusMonitor as _},
         poller::{Poller, PollerStatus},
-        Body, Method, BufResponse, Request, RequestContent, Url,
+        Body, BufResponse, Method, Request, RequestContent, Url,
     },
     json, Result,
 };

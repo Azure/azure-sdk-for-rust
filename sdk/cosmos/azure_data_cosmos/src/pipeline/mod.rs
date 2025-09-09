@@ -11,7 +11,7 @@ use azure_core::http::{
     pager::PagerState,
     request::{options::ContentType, Request},
     response::Response,
-    ClientOptions, Context, Method, BufResponse,
+    BufResponse, ClientOptions, Context, Method,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;

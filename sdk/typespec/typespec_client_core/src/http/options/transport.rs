@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::http::{clients, policies::Policy, Context, HttpClient, BufResponse, Request};
+use crate::http::{clients, policies::Policy, BufResponse, Context, HttpClient, Request};
 use std::sync::Arc;
 use typespec::error::Result;
 

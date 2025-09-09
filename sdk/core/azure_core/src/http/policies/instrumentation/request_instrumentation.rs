@@ -196,7 +196,7 @@ pub(crate) mod tests {
     use super::*;
     use crate::{
         http::{
-            headers::Headers, policies::TransportPolicy, Method, BufResponse, StatusCode,
+            headers::Headers, policies::TransportPolicy, BufResponse, Method, StatusCode,
             TransportOptions,
         },
         tracing::{AttributeValue, SpanStatus, TracerProvider},

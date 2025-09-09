@@ -193,7 +193,7 @@ mod tests {
         tests::*,
     };
     use azure_core::{
-        http::{headers::Headers, Method, BufResponse, Request, StatusCode, Url},
+        http::{headers::Headers, BufResponse, Method, Request, StatusCode, Url},
         Bytes,
     };
     use azure_core_test::recorded;

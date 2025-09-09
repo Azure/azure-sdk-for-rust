@@ -5,7 +5,7 @@ use crate::http::{
     headers::{HeaderName, HeaderValue, Headers},
     request::{Body, Request},
     response::PinnedStream,
-    HttpClient, Method, BufResponse, Sanitizer, DEFAULT_ALLOWED_QUERY_PARAMETERS,
+    BufResponse, HttpClient, Method, Sanitizer, DEFAULT_ALLOWED_QUERY_PARAMETERS,
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;

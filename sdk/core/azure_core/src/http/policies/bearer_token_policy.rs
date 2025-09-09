@@ -137,7 +137,7 @@ mod tests {
         Arc,
     };
     use typespec_client_core::{
-        http::{policies::TransportPolicy, Method, BufResponse, TransportOptions},
+        http::{policies::TransportPolicy, BufResponse, Method, TransportOptions},
         time::Duration,
     };
 

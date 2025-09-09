@@ -75,7 +75,7 @@ impl Policy for LoggingPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, Method, BufResponse, Request, StatusCode};
+    use crate::http::{headers::Headers, BufResponse, Method, Request, StatusCode};
     use futures::StreamExt;
     use url::Url;
 

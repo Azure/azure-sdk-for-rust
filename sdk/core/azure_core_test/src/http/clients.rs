@@ -3,7 +3,7 @@
 
 use async_trait::async_trait;
 use azure_core::{
-    http::{request::Request, HttpClient, BufResponse},
+    http::{request::Request, BufResponse, HttpClient},
     Result,
 };
 use futures::{future::BoxFuture, lock::Mutex};

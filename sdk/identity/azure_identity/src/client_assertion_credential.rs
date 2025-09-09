@@ -168,7 +168,7 @@ pub(crate) mod tests {
         authority_hosts::AZURE_PUBLIC_CLOUD,
         http::{
             headers::{self, content_type, Headers},
-            Body, Method, BufResponse, Request,
+            Body, BufResponse, Method, Request,
         },
         Bytes,
     };

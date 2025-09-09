@@ -19,7 +19,7 @@ pub struct RawResponse {
 }
 
 impl RawResponse {
-    /// Create an w HTTP response from raw bytes.
+    /// Create an HTTP response from raw bytes.
     pub fn from_bytes(status: StatusCode, headers: Headers, body: impl Into<Bytes>) -> Self {
         Self {
             status,

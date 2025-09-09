@@ -3,7 +3,7 @@
 
 use azure_core::{
     credentials::TokenCredential,
-    http::{headers::Headers, HttpClient, Method, BufResponse, StatusCode, TransportOptions},
+    http::{headers::Headers, BufResponse, HttpClient, Method, StatusCode, TransportOptions},
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
 use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};

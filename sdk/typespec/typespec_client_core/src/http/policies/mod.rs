@@ -3,7 +3,7 @@
 
 //! HTTP pipeline policies.
 
-use crate::http::{Context, BufResponse, Request};
+use crate::http::{BufResponse, Context, Request};
 use async_trait::async_trait;
 use std::sync::Arc;
 

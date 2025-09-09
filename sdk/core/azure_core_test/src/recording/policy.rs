@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use azure_core::{
     http::{
         policies::{Policy, PolicyResult},
-        Context, BufResponse, Request,
+        BufResponse, Context, Request,
     },
     test::RecordingMode,
 };

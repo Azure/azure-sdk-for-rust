@@ -5,7 +5,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         headers::{Headers, RETRY_AFTER},
-        HttpClient, Method, BufResponse, StatusCode, TransportOptions,
+        BufResponse, HttpClient, Method, StatusCode, TransportOptions,
     },
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};

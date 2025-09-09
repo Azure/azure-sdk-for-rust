@@ -4,7 +4,7 @@
 use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
-    http::{headers::Headers, ClientOptions, HttpClient, BufResponse, Request, TransportOptions},
+    http::{headers::Headers, BufResponse, ClientOptions, HttpClient, Request, TransportOptions},
 };
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{ResourceExt as _, SecretClient, SecretClientOptions};

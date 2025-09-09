@@ -215,7 +215,7 @@ mod tests {
         http::{
             headers::Headers,
             policies::{create_public_api_span, RequestInstrumentationPolicy, TransportPolicy},
-            Method, BufResponse, StatusCode, TransportOptions,
+            BufResponse, Method, StatusCode, TransportOptions,
         },
         tracing::{SpanStatus, TracerProvider},
         Result,
