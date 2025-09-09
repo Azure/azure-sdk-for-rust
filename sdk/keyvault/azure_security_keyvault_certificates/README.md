@@ -449,9 +449,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 You will notice that additional information is logged, like the Client Request ID of the operation.
 
 ```text
-Error: HttpError {
-    status: NotFound,
-    details: ErrorDetails {
+Error: ErrorResponse {
+    error: ErrorDetails {
         code: Some(
             "CertificateNotFound",
         ),

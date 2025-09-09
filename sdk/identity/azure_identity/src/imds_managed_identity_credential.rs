@@ -4,7 +4,7 @@
 use crate::{env::Env, TokenCache, TokenCredentialOptions, UserAssignedId};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
-    error::{http_response_from_body, Error, ErrorKind},
+    error::{Error, ErrorKind},
     http::{headers::HeaderName, request::Request, HttpClient, Method, StatusCode, Url},
     json::from_json,
     time::OffsetDateTime,
@@ -113,11 +113,8 @@ impl ImdsManagedIdentityCredential {
 
         let rsp = self.http_client.execute_request(&req).await?;
 
-        let (rsp_status, _, rsp_body) = rsp.deconstruct();
-        let rsp_body = rsp_body.collect().await?;
-
-        if !rsp_status.is_success() {
-            match rsp_status {
+        if !rsp.status().is_success() {
+            match rsp.status() {
                 StatusCode::BadRequest => {
                     return Err(Error::message(
                         ErrorKind::Credential,
@@ -130,13 +127,16 @@ impl ImdsManagedIdentityCredential {
                         "the request failed due to a gateway error",
                     ))
                 }
-                rsp_status => {
-                    return Err(http_response_from_body(rsp_status, &rsp_body).into_error())
+                _ => {
+                    return Err(Error::message(
+                        ErrorKind::Credential,
+                        format!("the request failed: {:?}", rsp.into_body().collect().await?),
+                    ));
                 }
             }
         }
 
-        let token_response: MsiTokenResponse = from_json(&rsp_body)?;
+        let token_response: MsiTokenResponse = from_json(rsp.into_body().collect().await?)?;
         Ok(AccessToken::new(
             token_response.access_token,
             token_response.expires_on,

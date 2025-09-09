@@ -26,5 +26,6 @@ pub use typespec_client_core::http::{
     Method, NoFormat, StatusCode, Url,
 };
 
+pub use crate::error::http::check_success;
 #[cfg(feature = "xml")]
 pub use typespec_client_core::http::XmlFormat;

@@ -21,7 +21,7 @@ mod with_context;
 pub use attributes::{Attribute, AttributeArray, AttributeValue};
 pub use with_context::{FutureExt, WithContext};
 
-/// The TracerProvider trait is the entrypoint for distributed tracing in the SDK.
+/// The `TracerProvider`` trait is the entrypoint for distributed tracing in the SDK.
 ///
 /// It provides a method to get a tracer for a specific name and package version.
 pub trait TracerProvider: Send + Sync + Debug {
@@ -41,7 +41,7 @@ pub trait TracerProvider: Send + Sync + Debug {
     ) -> Arc<dyn Tracer>;
 }
 
-/// The Tracer trait is responsible for creating spans and managing the active span in distributed tracing.
+/// The `Tracer` trait is responsible for creating spans and managing the active span in distributed tracing.
 ///
 /// This trait defines methods for starting new spans, starting spans with a parent, and retrieving the namespace of the tracer.
 pub trait Tracer: Send + Sync + Debug {

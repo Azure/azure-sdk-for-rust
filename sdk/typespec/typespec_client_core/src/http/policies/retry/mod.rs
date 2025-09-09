@@ -10,7 +10,6 @@ pub use fixed::*;
 pub use none::*;
 
 use crate::{
-    error::HttpError,
     http::{
         headers::{HeaderName, Headers},
         policies::{Policy, PolicyResult},
@@ -22,7 +21,7 @@ use crate::{
 use async_trait::async_trait;
 use std::{ops::Deref, sync::Arc};
 use tracing::{debug, trace};
-use typespec::error::{Error, ErrorKind, ResultExt};
+use typespec::error::{ErrorKind, ResultExt};
 
 /// Attempts to parse the supplied string as an HTTP date, of the form defined by RFC 7231 (e.g. `Fri, 01 Jan 2021 00:00:00 GMT`).
 /// Returns `None` if the string is not a valid HTTP date.
@@ -116,9 +115,11 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
     /// A Future that will wait until the request can be retried.
-    /// `error` is the [`Error`] value the led to a retry attempt.
+    ///
+    /// # Arguments
+    /// `retry_count` is the number of times the request has been retried.
     /// `retry_after` is the duration to wait before retrying, if provided by the server response.
-    async fn wait(&self, _error: &Error, retry_count: u32, retry_after: Option<Duration>) {
+    async fn wait(&self, retry_count: u32, retry_after: Option<Duration>) {
         let policy_sleep_duration = self.sleep_duration(retry_count);
         // If the server provided a retry-after header, use the max of that and the policy sleep duration
         let sleep_duration = retry_after.map_or(policy_sleep_duration, |retry_after| {
@@ -166,7 +167,7 @@ where
             let result = next[0].send(&ctx, request, &next[1..]).await;
             // only start keeping track of time after the first request is made
             let start = start.get_or_insert_with(OffsetDateTime::now_utc);
-            let (last_error, retry_after) = match result {
+            let (last_result, retry_after) = match result {
                 Ok(response) => {
                     let status = response.status();
                     if !RETRY_STATUSES.contains(&status) {
@@ -198,22 +199,11 @@ where
                         _ => None,
                     };
 
-                    let http_error = HttpError::new(
-                        response,
-                        retry_headers.and_then(|h| h.error_header.clone()),
-                    )
-                    .await;
-
-                    let error_kind = ErrorKind::http_response(
-                        status,
-                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
-                    );
-
                     debug!(
                         "server returned error status which requires retry: {}",
                         status
                     );
-                    (Error::new(error_kind, http_error), retry_after)
+                    (Ok(response), retry_after)
                 }
                 Err(error) => {
                     if error.kind() == &ErrorKind::Io {
@@ -223,7 +213,7 @@ where
                         );
                         // IO error so no Retry-After headers - leave the retry period up to the policy
                         let retry_after = None;
-                        (error, retry_after)
+                        (Err(error), retry_after)
                     } else {
                         return Err(
                             error.context("non-io error occurred which will not be retried")
@@ -234,12 +224,15 @@ where
 
             let time_since_start = OffsetDateTime::now_utc() - *start;
             if self.is_expired(time_since_start, retry_count) {
-                return Err(last_error
-                    .context("retry policy expired and the request will no longer be retried"));
+                return match last_result {
+                    Ok(result) => Ok(result),
+                    Err(last_error) => Err(last_error
+                        .context("retry policy expired and the request will no longer be retried")),
+                };
             }
             retry_count += 1;
 
-            self.wait(&last_error, retry_count, retry_after).await;
+            self.wait(retry_count, retry_after).await;
         }
     }
 }
