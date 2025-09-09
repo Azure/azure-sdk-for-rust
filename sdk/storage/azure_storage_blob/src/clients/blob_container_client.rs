@@ -2,20 +2,24 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
-    generated::models::{
-        BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
-        BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
-        BlobContainerClientRenewLeaseResult,
+    generated::{
+        clients::BlobContainerClient as GeneratedBlobContainerClient,
+        models::{
+            BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
+            BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
+            BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
+            BlobContainerClientRenewLeaseResult, SignedIdentifier,
+        },
     },
     models::{
         BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
         BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
-        BlobContainerClientDeleteOptions, BlobContainerClientGetAccountInfoOptions,
-        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
-        BlobContainerClientReleaseLeaseOptions, BlobContainerClientRenewLeaseOptions,
-        BlobContainerClientSetMetadataOptions, ListBlobsFlatSegmentResponse,
+        BlobContainerClientDeleteOptions, BlobContainerClientGetAccessPolicyOptions,
+        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetPropertiesOptions,
+        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
+        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetAccessPolicyOptions,
+        BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetMetadataOptions,
+        ListBlobsFlatSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -24,7 +28,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, PageIterator, Pager, Response, Url, XmlFormat,
+        NoFormat, PageIterator, Pager, RequestContent, Response, Url, XmlFormat,
     },
     Result,
 };
@@ -248,5 +252,33 @@ impl BlobContainerClient {
         options: Option<BlobContainerClientGetAccountInfoOptions<'_>>,
     ) -> Result<Response<BlobContainerClientGetAccountInfoResult, NoFormat>> {
         self.client.get_account_info(options).await
+    }
+
+    /// Sets the permissions for the specified container. The permissions indicate whether blobs in a
+    /// container may be accessed publicly.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_acl` - The access control list for the container.
+    /// * `options` - Optional configuration for the request.
+    pub async fn set_access_policy(
+        &self,
+        container_acl: RequestContent<Vec<SignedIdentifier>, XmlFormat>,
+        options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>> {
+        self.client.set_access_policy(container_acl, options).await
+    }
+
+    /// Gets the permissions for the specified container. The permissions indicate whether container data
+    /// may be accessed publicly.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn get_access_policy(
+        &self,
+        options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>,
+    ) -> Result<Response<Vec<SignedIdentifier>, XmlFormat>> {
+        self.client.get_access_policy(options).await
     }
 }
