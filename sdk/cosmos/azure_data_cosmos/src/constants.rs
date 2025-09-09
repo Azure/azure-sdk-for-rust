@@ -35,6 +35,7 @@ pub const POST_TRIGGER_INCLUDE: HeaderName =
     HeaderName::from_static("x-ms-documentdb-post-trigger-include");
 pub const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 pub const INDEXING_DIRECTIVE: HeaderName = HeaderName::from_static("x-ms-indexing-directive");
+pub const SUB_STATUS: HeaderName = HeaderName::from_static("x-ms-substatus");
 
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
 
