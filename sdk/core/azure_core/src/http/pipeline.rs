@@ -3,7 +3,7 @@
 
 use super::policies::ClientRequestIdPolicy;
 use crate::http::{
-    headers::{ERROR_CODE, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
+    headers::{RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
     policies::{
         Policy, PublicApiInstrumentationPolicy, RequestInstrumentationPolicy, UserAgentPolicy,
     },
@@ -106,7 +106,6 @@ impl Pipeline {
         let pipeline_options = pipeline_options.unwrap_or_else(|| PipelineOptions {
             retry_headers: RetryHeaders {
                 retry_headers: vec![X_MS_RETRY_AFTER_MS, RETRY_AFTER_MS, RETRY_AFTER],
-                error_header: Some(ERROR_CODE),
             },
         });
 

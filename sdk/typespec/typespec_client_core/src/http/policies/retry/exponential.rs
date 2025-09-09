@@ -82,7 +82,6 @@ mod tests {
                     HeaderName::from_static("retry-after-ms"),
                     RETRY_AFTER,
                 ],
-                error_header: Some(HeaderName::from_static("x-ms-error-code")),
             },
         );
 

@@ -147,7 +147,6 @@ mod tests {
             let pipeline_options = PipelineOptions {
                 retry_headers: RetryHeaders {
                     retry_headers: vec![RETRY_AFTER],
-                    error_header: None,
                 },
             };
             let pipeline = Pipeline::new(options, Vec::new(), Vec::new(), Some(pipeline_options));

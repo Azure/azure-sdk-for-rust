@@ -87,9 +87,6 @@ impl Deref for RetryPolicyCount {
 pub struct RetryHeaders {
     /// The headers that may indicate how long to wait before retrying.
     pub retry_headers: Vec<HeaderName>,
-
-    /// An optional header that may contain an error code.
-    pub error_header: Option<HeaderName>,
 }
 
 /// A retry policy.
@@ -250,7 +247,6 @@ mod test {
 
     const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
     const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
-    const MS_ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-error-code");
 
     // Policy that counts the requests it receives and returns responses having a given status code
     #[derive(Debug)]
@@ -335,7 +331,6 @@ mod test {
         let retries = 2u32;
         let retry_headers = RetryHeaders {
             retry_headers: vec![X_MS_RETRY_AFTER_MS, RETRY_AFTER_MS, RETRY_AFTER],
-            error_header: Some(MS_ERROR_CODE),
         };
         let retry_policy = RetryOptions::fixed(FixedRetryOptions {
             delay: Duration::nanoseconds(1),
@@ -355,10 +350,13 @@ mod test {
             };
             let next = vec![Arc::new(mock) as Arc<dyn Policy>];
 
-            retry_policy
+            // The pipeline should always return a success on an HTTP error, even if retries are exhausted.
+            let result = retry_policy
                 .send(&ctx, &mut request, &next)
                 .await
-                .expect_err("Policy should return an error after exhausting retries");
+                .expect("Policy should return a response after exhausting retries");
+
+            assert_eq!(result.status(), status);
 
             assert_eq!(
                 retries + 1,
