@@ -13,7 +13,6 @@ members = [
   "sdk/core/azure_core_test_macros",
   "sdk/core/azure_core_opentelemetry",
   "sdk/cosmos/azure_data_cosmos",
-  "sdk/cosmos/azure_data_cosmos_native",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
   "sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob",
@@ -96,10 +95,8 @@ async-trait = "0.1"
 base64 = "0.22"
 bytes = "1.0"
 cargo_metadata = "0.18.1"
-cbindgen = "0.29.0"
 clap = { version = "4.5.45", features = ["derive"] }
 criterion = { version = "0.5", features = ["async_tokio"] }
-dotenvy = "0.15.7"
 dyn-clone = "1.0"
 fe2o3-amqp = { version = "0.14", features = ["uuid"] }
 fe2o3-amqp-ext = { version = "0.14" }
@@ -150,10 +147,6 @@ tracing = "0.1.40"
 tracing-subscriber = "0.3"
 url = "2.2"
 uuid = { version = "1.18", features = ["v4"] }
-ureq = { version = "3", default-features = false, features = [
-  "gzip",
-  "native-tls",
-] }
 wasm-bindgen-futures = "0.4"
 wasm-bindgen-test = "0.3"
 zerofrom = "0.1.5"

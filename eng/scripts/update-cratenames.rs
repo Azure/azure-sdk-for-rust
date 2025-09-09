@@ -29,15 +29,7 @@ fn main() {
         .dependencies
         .as_ref()
         .expect("expected workspace dependencies");
-    let mut crate_names: Vec<String> = Vec::new();
-    for (name, _) in dependencies.iter() {
-        let name = name.to_string();
-        if name.contains('-') {
-            // When used in Rust code, hyphens are replaced with underscores.
-            crate_names.push(name.replace('-', "_"));
-        }
-        crate_names.push(name);
-    }
+    let mut crate_names: Vec<String> = dependencies.iter().map(|(name, _)| name.to_string()).collect();
 
     // Extract workspace members.
     for relative_path in workspace_manifest
@@ -53,7 +45,6 @@ fn main() {
                 .and_then(OsStr::to_str)
                 .expect("expected crate name")
                 .to_string();
-
             crate_names.push(crate_name);
         }
 
