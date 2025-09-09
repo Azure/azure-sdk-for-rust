@@ -13,8 +13,7 @@ use std::{collections::HashMap, str};
 
 /// An HTTP error response.
 ///
-/// Implements a standard "ErrorResponse" as described in the [API guidelines]
-/// (https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
+/// Implements a standard "ErrorResponse" as described in the [API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
@@ -41,8 +40,7 @@ impl TryFrom<Error> for ErrorResponse {
 
 /// Details about an error returned from a service.
 ///
-/// Implements a standard "ErrorDetails" as described in the [API guidelines]
-/// (https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
+/// Implements a standard "ErrorDetails" as described in the [API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorDetail {
@@ -104,8 +102,7 @@ impl ErrorDetail {
 
 /// Inner error information about an error returned from a service.
 ///
-/// Implements a standard "InnerError" as described in the [API guidelines]
-/// (https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
+/// Implements a standard "InnerError" as described in the [API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InnerError {
