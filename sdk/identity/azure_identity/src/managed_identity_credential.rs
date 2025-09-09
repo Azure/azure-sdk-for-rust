@@ -153,7 +153,7 @@ mod tests {
     use crate::env::Env;
     use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
     use azure_core::http::headers::Headers;
-    use azure_core::http::{Method, RawResponse, Request, StatusCode, Url};
+    use azure_core::http::{Method, BufResponse, Request, StatusCode, Url};
     use azure_core::time::OffsetDateTime;
     use azure_core::Bytes;
     use azure_core_test::{http::MockHttpClient, recorded};
@@ -236,7 +236,7 @@ mod tests {
                         assert_eq!(actual.headers().get_str(k).unwrap(), v.as_str())
                     });
 
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::default(),
                         Bytes::from(response_format.replacen(

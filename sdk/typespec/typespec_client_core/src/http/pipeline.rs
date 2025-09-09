@@ -3,7 +3,7 @@
 
 use crate::http::{
     policies::{CustomHeadersPolicy, LoggingPolicy, Policy, TransportPolicy},
-    ClientOptions, Context, PipelineOptions, RawResponse, Request,
+    BufResponse, ClientOptions, Context, PipelineOptions, Request,
 };
 use std::sync::Arc;
 
@@ -20,7 +20,7 @@ use std::sync::Arc;
 ///    re-executed in case of retries.
 /// 6. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
 /// 7. The transport policy is executed. Transport policy is always the last policy and is the policy that
-///    actually constructs the [`RawResponse`] to be passed up the pipeline.
+///    actually constructs the [`BufResponse`] to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
 /// policy of fail and return to the calling policy. Arbitrary policy "skip" must be avoided (but
@@ -84,12 +84,12 @@ impl Pipeline {
         &self.pipeline
     }
 
-    /// Sends a [`Request`] through each configured [`Policy`] and gets a [`RawResponse`] that is processed by each policy in reverse.
+    /// Sends a [`Request`] through each configured [`Policy`] and gets a [`Bufesponse`] that is processed by each policy in reverse.
     pub async fn send(
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
-    ) -> crate::Result<RawResponse> {
+    ) -> crate::Result<BufResponse> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
@@ -104,11 +104,11 @@ mod tests {
         http::{
             headers::{Headers, RETRY_AFTER},
             policies::{PolicyResult, RetryHeaders},
-            JsonFormat, Method, RawResponse, Response, StatusCode, TransportOptions,
+            BufResponse, JsonFormat, Method, Response, StatusCode, TransportOptions,
         },
         stream::BytesStream,
+        Bytes,
     };
-    use bytes::Bytes;
     use serde::Deserialize;
 
     #[tokio::test]
@@ -127,7 +127,7 @@ mod tests {
             ) -> PolicyResult {
                 let buffer = Bytes::from_static(br#"{"foo":1,"bar":"baz"}"#);
                 let stream: BytesStream = buffer.into();
-                let response = RawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
+                let response = BufResponse::new(StatusCode::Ok, Headers::new(), Box::pin(stream));
                 Ok(std::future::ready(response).await)
             }
         }

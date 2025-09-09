@@ -32,7 +32,7 @@ use azure_core::{
         headers::ERROR_CODE,
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Method, NoFormat, PageIterator, Pipeline, RawResponse, Request,
+        BufResponse, ClientOptions, Method, NoFormat, PageIterator, Pipeline, Request,
         RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
@@ -889,7 +889,7 @@ impl BlobContainerClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                    let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
                     if !rsp.status().is_success() {
                         let status = rsp.status();
                         let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
@@ -902,7 +902,7 @@ impl BlobContainerClient {
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListBlobsFlatSegmentResponse = xml::read_xml(&bytes)?;
-                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
@@ -1016,7 +1016,7 @@ impl BlobContainerClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                    let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
                     if !rsp.status().is_success() {
                         let status = rsp.status();
                         let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
@@ -1029,7 +1029,7 @@ impl BlobContainerClient {
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListBlobsHierarchySegmentResponse = xml::read_xml(&bytes)?;
-                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,

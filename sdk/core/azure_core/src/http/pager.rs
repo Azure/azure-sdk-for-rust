@@ -177,7 +177,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, RawResponse, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{BufResponse, Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -220,7 +220,7 @@ impl<P: Page> ItemIterator<P> {
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let bytes = body.collect().await?;
     ///         let result: ListItemsResult = json::from_json(&bytes)?;
-    ///         let resp: Response<ListItemsResult> = RawResponse::from_bytes(status, headers, bytes).into();
+    ///         let resp: Response<ListItemsResult> = BufResponse::from_bytes(status, headers, bytes).into();
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
@@ -379,7 +379,7 @@ impl<P> PageIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, RawResponse, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{BufResponse, Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -413,7 +413,7 @@ impl<P> PageIterator<P> {
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let bytes = body.collect().await?;
     ///         let result: ListItemsResult = json::from_json(&bytes)?;
-    ///         let resp: Response<ListItemsResult> = RawResponse::from_bytes(status, headers, bytes).into();
+    ///         let resp: Response<ListItemsResult> = BufResponse::from_bytes(status, headers, bytes).into();
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
@@ -649,7 +649,7 @@ mod tests {
     use crate::http::{
         headers::{HeaderName, HeaderValue},
         pager::{PageIterator, Pager, PagerResult, PagerState},
-        RawResponse, Response, StatusCode,
+        BufResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
     use futures::{StreamExt as _, TryStreamExt as _};
@@ -678,7 +678,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 PagerState::Initial => Ok(PagerResult::More {
-                    response: RawResponse::from_bytes(
+                    response: BufResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -691,7 +691,7 @@ mod tests {
                     continuation: "1",
                 }),
                 PagerState::More("1") => Ok(PagerResult::More {
-                    response: RawResponse::from_bytes(
+                    response: BufResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -704,7 +704,7 @@ mod tests {
                     continuation: "2",
                 }),
                 PagerState::More("2") => Ok(PagerResult::Done {
-                    response: RawResponse::from_bytes(
+                    response: BufResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -729,7 +729,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 PagerState::Initial => Ok(PagerResult::More {
-                    response: RawResponse::from_bytes(
+                    response: BufResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -786,7 +786,7 @@ mod tests {
             |continuation: PagerState<String>| async move {
                 match continuation.as_deref() {
                     PagerState::Initial => Ok(PagerResult::More {
-                        response: RawResponse::from_bytes(
+                        response: BufResponse::from_bytes(
                             StatusCode::Ok,
                             Default::default(),
                             r#"{"items":[1],"page":1}"#,
@@ -795,7 +795,7 @@ mod tests {
                         continuation: "next-token-1".to_string(),
                     }),
                     PagerState::More("next-token-1") => Ok(PagerResult::More {
-                        response: RawResponse::from_bytes(
+                        response: BufResponse::from_bytes(
                             StatusCode::Ok,
                             HashMap::from([(
                                 HeaderName::from_static("x-test-header"),
@@ -808,7 +808,7 @@ mod tests {
                         continuation: "next-token-2".to_string(),
                     }),
                     PagerState::More("next-token-2") => Ok(PagerResult::Done {
-                        response: RawResponse::from_bytes(
+                        response: BufResponse::from_bytes(
                             StatusCode::Ok,
                             HashMap::from([(
                                 HeaderName::from_static("x-test-header"),

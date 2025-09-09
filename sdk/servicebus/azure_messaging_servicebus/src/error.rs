@@ -115,10 +115,7 @@ impl From<azure_core::error::Error> for ServiceBusError {
     fn from(error: azure_core::error::Error) -> Self {
         let kind = match error.kind() {
             CoreErrorKind::Io => ErrorKind::Amqp,
-            CoreErrorKind::HttpResponse {
-                status: _,
-                error_code: _,
-            } => ErrorKind::InvalidRequest,
+            CoreErrorKind::HttpResponse { .. } => ErrorKind::InvalidRequest,
             CoreErrorKind::Other => ErrorKind::Unknown,
             _ => ErrorKind::Unknown,
         };

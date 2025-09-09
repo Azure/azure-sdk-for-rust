@@ -7,7 +7,7 @@ use azure_core::{
     http::{
         headers::Headers,
         policies::{Policy, PolicyResult},
-        Context, HttpClient, Method, RawResponse, Request, StatusCode, TransportOptions,
+        BufResponse, Context, HttpClient, Method, Request, StatusCode, TransportOptions,
     },
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -96,7 +96,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                     .any(|(name, _)| name.as_str().eq_ignore_ascii_case("user-agent")),
                 "user-agent header should be absent"
             );
-            Ok(RawResponse::from_bytes(
+            Ok(BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 r#"{"value":"secret-value"}"#,

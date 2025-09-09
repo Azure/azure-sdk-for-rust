@@ -3,7 +3,7 @@
 
 //! HTTP pipeline policies.
 
-use crate::http::{Context, RawResponse, Request};
+use crate::http::{Context, BufResponse, Request};
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -18,7 +18,7 @@ pub use retry::*;
 pub use transport::*;
 
 /// A specialized `Result` type for policies.
-pub type PolicyResult = typespec::error::Result<RawResponse>;
+pub type PolicyResult = typespec::error::Result<BufResponse>;
 
 /// A pipeline policy.
 ///

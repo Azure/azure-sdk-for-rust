@@ -193,7 +193,7 @@ mod tests {
         tests::*,
     };
     use azure_core::{
-        http::{headers::Headers, Method, RawResponse, Request, StatusCode, Url},
+        http::{headers::Headers, Method, BufResponse, Request, StatusCode, Url},
         Bytes,
     };
     use azure_core_test::recorded;
@@ -234,7 +234,7 @@ mod tests {
     async fn env_vars() {
         let temp_file = TempFile::new(FAKE_ASSERTION);
         let mock = MockSts::new(
-            vec![RawResponse::from_bytes(
+            vec![BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::default(),
                 Bytes::from(format!(
@@ -334,7 +334,7 @@ mod tests {
         let right_file = TempFile::new(FAKE_ASSERTION);
         let wrong_file = TempFile::new("wrong assertion");
         let mock = MockSts::new(
-            vec![RawResponse::from_bytes(
+            vec![BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::default(),
                 Bytes::from(format!(

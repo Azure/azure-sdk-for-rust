@@ -168,7 +168,7 @@ pub(crate) mod tests {
         authority_hosts::AZURE_PUBLIC_CLOUD,
         http::{
             headers::{self, content_type, Headers},
-            Body, Method, RawResponse, Request,
+            Body, Method, BufResponse, Request,
         },
         Bytes,
     };
@@ -232,7 +232,7 @@ pub(crate) mod tests {
     async fn get_token_error() {
         let expected = "error description from the response";
         let mock = MockSts::new(
-            vec![RawResponse::from_bytes(
+            vec![BufResponse::from_bytes(
                 StatusCode::BadRequest,
                 Headers::default(),
                 Bytes::from(format!(
@@ -271,7 +271,7 @@ pub(crate) mod tests {
     #[tokio::test]
     async fn get_token_success() {
         let mock = MockSts::new(
-            vec![RawResponse::from_bytes(
+            vec![BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::default(),
                 Bytes::from(format!(

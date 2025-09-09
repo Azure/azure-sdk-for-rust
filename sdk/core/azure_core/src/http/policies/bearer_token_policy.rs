@@ -137,7 +137,7 @@ mod tests {
         Arc,
     };
     use typespec_client_core::{
-        http::{policies::TransportPolicy, Method, RawResponse, TransportOptions},
+        http::{policies::TransportPolicy, Method, BufResponse, TransportOptions},
         time::Duration,
     };
 
@@ -222,7 +222,7 @@ mod tests {
 
                 assert_eq!(format!("Bearer {}", expected.token.secret()), authz);
 
-                Ok(RawResponse::from_bytes(
+                Ok(BufResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),

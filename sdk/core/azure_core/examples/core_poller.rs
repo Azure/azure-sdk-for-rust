@@ -5,7 +5,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         headers::{Headers, RETRY_AFTER},
-        HttpClient, Method, RawResponse, StatusCode, TransportOptions,
+        HttpClient, Method, BufResponse, StatusCode, TransportOptions,
     },
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -78,7 +78,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                         assert!(request.url().path().starts_with("/certificates/my-cert/create"));
                         let mut headers = Headers::new();
                         headers.insert(RETRY_AFTER, "0");
-                        Ok(RawResponse::from_bytes(
+                        Ok(BufResponse::from_bytes(
                             StatusCode::Ok,
                             headers,
                             r#"{"id":"https://my-vault.vault.azure.net/certificates/my-cert/pending","status":"inProgress"}"#,
@@ -88,7 +88,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                         // Polling GET for status
                         assert_eq!(request.method(), Method::Get);
                         assert!(request.url().path().starts_with("/certificates/my-cert/pending"));
-                        Ok(RawResponse::from_bytes(
+                        Ok(BufResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             r#"{"id":"https://my-vault.vault.azure.net/certificates/my-cert/pending","status":"completed","target":"https://my-vault.vault.azure.net/certificates/my-cert"}"#,

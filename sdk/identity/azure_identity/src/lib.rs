@@ -50,7 +50,7 @@ pub(crate) use virtual_machine_managed_identity_credential::*;
 
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    http::RawResponse,
+    http::BufResponse,
     Error, Result,
 };
 use serde::Deserialize;
@@ -73,7 +73,7 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-async fn deserialize<T>(credential_name: &str, res: RawResponse) -> Result<T>
+async fn deserialize<T>(credential_name: &str, res: BufResponse) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
@@ -185,7 +185,7 @@ mod tests {
     use async_trait::async_trait;
     use azure_core::{
         error::ErrorKind,
-        http::{RawResponse, Request},
+        http::{BufResponse, Request},
         Error, Result,
     };
     use std::{
@@ -284,7 +284,7 @@ mod tests {
     pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
 
     pub struct MockSts {
-        responses: Mutex<Vec<RawResponse>>,
+        responses: Mutex<Vec<BufResponse>>,
         on_request: Option<RequestCallback>,
     }
 
@@ -295,7 +295,7 @@ mod tests {
     }
 
     impl MockSts {
-        pub fn new(responses: Vec<RawResponse>, on_request: Option<RequestCallback>) -> Self {
+        pub fn new(responses: Vec<BufResponse>, on_request: Option<RequestCallback>) -> Self {
             Self {
                 responses: Mutex::new(responses),
                 on_request,
@@ -305,7 +305,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl azure_core::http::HttpClient for MockSts {
-        async fn execute_request(&self, request: &Request) -> Result<RawResponse> {
+        async fn execute_request(&self, request: &Request) -> Result<BufResponse> {
             self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {

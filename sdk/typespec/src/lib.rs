@@ -8,5 +8,10 @@
 pub mod error;
 #[cfg(feature = "http")]
 pub mod http;
+#[cfg(feature = "json")]
+pub mod json;
+#[cfg(feature = "xml")]
+pub mod xml;
 
+pub use bytes::Bytes;
 pub use error::{Error, Result};

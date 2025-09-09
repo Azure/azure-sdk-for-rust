@@ -3,8 +3,10 @@
 
 //! HTTP responses.
 
-use crate::http::{headers::Headers, DeserializeWith, Format, JsonFormat, StatusCode};
-use bytes::Bytes;
+use crate::{
+    http::{headers::Headers, DeserializeWith, Format, JsonFormat, RawResponse, StatusCode},
+    Bytes,
+};
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
 use std::{fmt, marker::PhantomData, pin::Pin};
@@ -19,13 +21,13 @@ pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
 /// A raw HTTP response with status, headers, and body.
 #[derive(Debug)]
-pub struct RawResponse {
+pub struct BufResponse {
     status: StatusCode,
     headers: Headers,
     body: ResponseBody,
 }
 
-impl RawResponse {
+impl BufResponse {
     /// Create a raw HTTP response from an asynchronous stream of bytes.
     pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
         Self {
@@ -63,6 +65,12 @@ impl RawResponse {
     pub fn into_body(self) -> ResponseBody {
         self.body
     }
+
+    /// Read the entire body and convert into a [`RawResponse`].
+    pub async fn try_into_raw_response(self) -> crate::Result<RawResponse> {
+        let body = self.body.collect().await?;
+        Ok(RawResponse::from_bytes(self.status, self.headers, body))
+    }
 }
 
 /// A typed HTTP response.
@@ -74,8 +82,8 @@ impl RawResponse {
 /// Given a `Response<T>`, a user can deserialize the body into the intended body type `T` by calling [`Response::into_body`].
 /// However, because the type `T` is just a marker type, you can also access the raw body using [`Response::into_raw_body`].
 pub struct Response<T, F = JsonFormat> {
-    raw: RawResponse,
-    _phantom: PhantomData<(T, F)>,
+    raw: BufResponse,
+    phantom: PhantomData<(T, F)>,
 }
 
 impl<T, F> Response<T, F> {
@@ -120,7 +128,7 @@ impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
     /// # pub struct SecretClient { }
     /// # impl SecretClient {
     /// #   pub async fn get_secret(&self) -> typespec_client_core::http::Response<GetSecretResponse> {
-    /// #    typespec_client_core::http::RawResponse::from_bytes(
+    /// #    typespec_client_core::http::BufResponse::from_bytes(
     /// #      StatusCode::Ok,
     /// #      typespec_client_core::http::headers::Headers::new(),
     /// #      "{\"name\":\"database_password\",\"value\":\"hunter2\"}",
@@ -156,16 +164,16 @@ impl<T, F> fmt::Debug for Response<T, F> {
     }
 }
 
-impl<T, F> From<RawResponse> for Response<T, F> {
-    fn from(raw: RawResponse) -> Self {
+impl<T, F> From<BufResponse> for Response<T, F> {
+    fn from(raw: BufResponse) -> Self {
         Self {
             raw,
-            _phantom: PhantomData,
+            phantom: PhantomData,
         }
     }
 }
 
-impl<T, F> From<Response<T, F>> for RawResponse {
+impl<T, F> From<Response<T, F>> for BufResponse {
     fn from(val: Response<T, F>) -> Self {
         val.raw
     }
@@ -251,7 +259,7 @@ impl fmt::Debug for ResponseBody {
 #[cfg(test)]
 mod tests {
     use crate::http::headers::Headers;
-    use crate::http::{RawResponse, Response, StatusCode};
+    use crate::http::{BufResponse, Response, StatusCode};
 
     #[tokio::test]
     async fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {
@@ -259,7 +267,7 @@ mod tests {
 
         {
             let response_t: Response<MyModel> =
-                RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice()).into();
+                BufResponse::from_bytes(StatusCode::Ok, Headers::new(), b"Hello".as_slice()).into();
             let body = response_t.into_raw_body();
             assert_eq!(b"Hello", &*body.collect().await?);
         }
@@ -271,13 +279,13 @@ mod tests {
     async fn can_convert_response_to_raw_response() -> Result<(), Box<dyn std::error::Error>> {
         pub struct MyModel;
 
-        // Test converting a typed Response to RawResponse using Into
+        // Test converting a typed Response to BufResponse using Into
         let typed_response: Response<MyModel> =
-            RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"Hello World".as_slice())
+            BufResponse::from_bytes(StatusCode::Ok, Headers::new(), b"Hello World".as_slice())
                 .into();
 
         // Convert using Into trait
-        let raw_response: RawResponse = typed_response.into();
+        let raw_response: BufResponse = typed_response.into();
 
         // Verify the raw response has the same data
         assert_eq!(raw_response.status(), StatusCode::Ok);
@@ -289,9 +297,10 @@ mod tests {
 
     mod json {
         use crate::http::headers::Headers;
-        use crate::http::RawResponse;
+        use crate::http::BufResponse;
         use crate::http::Response;
         use crate::http::StatusCode;
+        use crate::Bytes;
         use serde::Deserialize;
 
         /// An example JSON-serialized response type.
@@ -309,9 +318,16 @@ mod tests {
             next_link: Option<String>,
         }
 
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct ErrorResponse {
+            code: Option<String>,
+            message: Option<String>,
+        }
+
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse> {
-            RawResponse::from_bytes(
+            BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 r#"{"name":"my_secret","value":"my_value"}"#,
@@ -321,7 +337,7 @@ mod tests {
 
         /// A sample service client function to return a list of secrets.
         fn list_secrets() -> Response<GetSecretListResponse> {
-            RawResponse::from_bytes(
+            BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 r#"{"value":[{"name":"my_secret","value":"my_value"}],"nextLink":"?page=2"}"#,
@@ -366,7 +382,7 @@ mod tests {
             assert_eq!(model.next_link, Some("?page=2".to_string()));
 
             let response: Response<GetSecretListResponse> =
-                RawResponse::from_bytes(status, headers, bytes).into();
+                BufResponse::from_bytes(status, headers, bytes).into();
             assert_eq!(response.status(), StatusCode::Ok);
             let model = response
                 .into_body()
@@ -374,12 +390,37 @@ mod tests {
                 .expect("deserialize GetSecretListResponse again");
             assert_eq!(model.next_link, Some("?page=2".to_string()));
         }
+
+        #[tokio::test]
+        async fn try_into_raw_response() {
+            let stream = futures::stream::iter([
+                Ok(Bytes::from_static(br#"{"code":"BadParameter","#)),
+                Ok(Bytes::from_static(br#""message": "Bad parameter"}"#)),
+            ]);
+            let mut headers = Headers::new();
+            headers.insert("x-ms-error", "BadParameter");
+            let err = BufResponse::new(StatusCode::BadRequest, headers, Box::pin(stream));
+
+            let err = err
+                .try_into_raw_response()
+                .await
+                .expect("convert to RawResponse");
+            assert_eq!(err.status(), StatusCode::BadRequest);
+            assert!(err
+                .headers()
+                .iter()
+                .any(|(k, v)| k.as_str() == "x-ms-error" && v.as_str() == "BadParameter"));
+
+            let err: ErrorResponse = err.json().await.expect("convert to ErrorResponse");
+            assert_eq!(err.code, Some("BadParameter".into()));
+            assert_eq!(err.message, Some("Bad parameter".into()));
+        }
     }
 
     #[cfg(feature = "xml")]
     mod xml {
         use crate::http::headers::Headers;
-        use crate::http::RawResponse;
+        use crate::http::BufResponse;
         use crate::http::Response;
         use crate::http::StatusCode;
         use crate::http::XmlFormat;
@@ -394,7 +435,7 @@ mod tests {
 
         /// A sample service client function.
         fn get_secret() -> Response<GetSecretResponse, XmlFormat> {
-            RawResponse::from_bytes(
+            BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 "<GetSecretResponse><name>my_secret</name><value>my_value</value></GetSecretResponse>",

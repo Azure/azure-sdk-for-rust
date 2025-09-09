@@ -4,7 +4,7 @@
 use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
-    http::{headers::Headers, ClientOptions, HttpClient, RawResponse, Request, TransportOptions},
+    http::{headers::Headers, ClientOptions, HttpClient, BufResponse, Request, TransportOptions},
 };
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{ResourceExt as _, SecretClient, SecretClientOptions};
@@ -35,7 +35,7 @@ impl Default for Agent {
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for Agent {
-    async fn execute_request(&self, request: &Request) -> azure_core::Result<RawResponse> {
+    async fn execute_request(&self, request: &Request) -> azure_core::Result<BufResponse> {
         let request = into_request(request)?;
         let response = self
             .0
@@ -102,7 +102,7 @@ fn into_request(request: &Request) -> azure_core::Result<::http::Request<Vec<u8>
     Ok(req)
 }
 
-fn into_response(response: ::http::Response<ureq::Body>) -> azure_core::Result<RawResponse> {
+fn into_response(response: ::http::Response<ureq::Body>) -> azure_core::Result<BufResponse> {
     use ::http::response::Parts;
     use azure_core::http::StatusCode;
 
@@ -128,5 +128,5 @@ fn into_response(response: ::http::Response<ureq::Body>) -> azure_core::Result<R
         .read_to_vec()
         .with_context(ErrorKind::Io, || "failed to read response body")?;
 
-    Ok(RawResponse::from_bytes(status, response_headers, body))
+    Ok(BufResponse::from_bytes(status, response_headers, body))
 }

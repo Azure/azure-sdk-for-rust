@@ -196,7 +196,7 @@ pub(crate) mod tests {
     use super::*;
     use crate::{
         http::{
-            headers::Headers, policies::TransportPolicy, Method, RawResponse, StatusCode,
+            headers::Headers, policies::TransportPolicy, Method, BufResponse, StatusCode,
             TransportOptions,
         },
         tracing::{AttributeValue, SpanStatus, TracerProvider},
@@ -221,7 +221,7 @@ pub(crate) mod tests {
         callback: C,
     ) -> Arc<MockTracingProvider>
     where
-        C: FnMut(&Request) -> BoxFuture<'_, Result<RawResponse>> + Send + Sync + 'static,
+        C: FnMut(&Request) -> BoxFuture<'_, Result<BufResponse>> + Send + Sync + 'static,
     {
         let mock_tracer_provider = Arc::new(MockTracingProvider::new());
         let tracer = mock_tracer_provider.get_tracer(
@@ -259,7 +259,7 @@ pub(crate) mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
                     assert_eq!(req.method(), Method::Get);
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         vec![],
@@ -345,7 +345,7 @@ pub(crate) mod tests {
                             .get_optional_str(&HeaderName::from_static("traceparent")),
                         Some("00-<trace_id>-<span_id>-01")
                     );
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         vec![],
@@ -400,7 +400,7 @@ pub(crate) mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("host"));
                     assert_eq!(req.method(), Method::Get);
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         vec![],
@@ -448,7 +448,7 @@ pub(crate) mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("microsoft.com"));
                     assert_eq!(req.method(), Method::Put);
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::NotFound,
                         Headers::new(),
                         vec![],

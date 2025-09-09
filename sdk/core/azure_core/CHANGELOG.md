@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `RawResponse` to `ErrorKind::HttpResponse` that contains the HTTP status code, headers, and complete error response body.
 - Added `RequestContent::from_slice()`.
 - Added `TryFrom<T> for RequestContent<T, JsonFormat>` for JSON primitives.
 - Added support for WASM to the `async_runtime` module.
@@ -11,6 +12,7 @@
 
 ### Breaking Changes
 
+- Added the ability to configure pipeline configuration independently from `ClientOptions`. This adds a new optional `PipelineOptions` parameter to `azure_core::http::Pipeline::new()`. If not specified, it defaults to the expected options for `azure_core` services.
 - Changed `FromStr for RequestContent<T, F>` to `RequestContent::from_str()`.
 - Changed `TryFrom<&'static str> for RequestContent<T, F>` to `RequestContent::from_static()`.
 - Changed `TryFrom<Bytes> for RequestContent<T, F>` to `From<Bytes> for RequestContent<T, F>` because it was already infallible.
@@ -18,7 +20,7 @@
 - Removed feature `reqwest_rustls_tls`. See [README.md](https://github.com/heaths/azure-sdk-for-rust/blob/main/sdk/core/azure_core/README.md) for alternative HTTP client configuration.
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` for `typespec_client_core` to copy if needed.
 - Removed the `setters` macro.
-- Added the ability to configure pipeline configuration independently from `ClientOptions`. This adds a new optional `PipelineOptions` parameter to `azure_core::http::Pipeline::new()`. If not specified, it defaults to the expected options for `azure_core` services.
+- Renamed `RawResponse` to `BufResponse`. New `RawResponse` contains complete body as `Bytes` used in `ErrorKind::HttpResponse`.
 
 ## 0.27.0 (2025-08-01)
 

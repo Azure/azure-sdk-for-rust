@@ -40,7 +40,7 @@ mod client {
     use std::{cmp::min, task::Poll, time::Duration};
     use tracing::debug;
     use typespec_client_core::{
-        http::{headers::Headers, RawResponse, Response, StatusCode},
+        http::{headers::Headers, BufResponse, Response, StatusCode},
         Bytes,
     };
 
@@ -58,7 +58,7 @@ mod client {
     }
 
     #[tracing::instrument]
-    pub fn get_binary_data() -> typespec_client_core::Result<RawResponse> {
+    pub fn get_binary_data() -> typespec_client_core::Result<BufResponse> {
         let bytes = Bytes::from_static(b"Hello, world!");
         let response = SlowResponse {
             bytes: bytes.repeat(5).into(),
@@ -66,7 +66,7 @@ mod client {
             bytes_read: 0,
         };
 
-        Ok(RawResponse::new(
+        Ok(BufResponse::new(
             StatusCode::Ok,
             Headers::new(),
             Box::pin(response),
@@ -94,7 +94,7 @@ mod client {
             bytes_read: 0,
         };
 
-        Ok(RawResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response)).into())
+        Ok(BufResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response)).into())
     }
 
     struct SlowResponse {
