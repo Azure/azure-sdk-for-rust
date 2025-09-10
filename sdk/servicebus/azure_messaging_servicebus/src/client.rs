@@ -25,7 +25,7 @@ pub enum SubQueue {
 
 impl SubQueue {
     /// Returns the path suffix for the sub-queue.
-    pub fn as_path_suffix(&self) -> &'static str {
+    pub(crate) fn as_path_suffix(&self) -> &'static str {
         match self {
             SubQueue::DeadLetter => "/$DeadLetterQueue",
             SubQueue::Transfer => "/$Transfer/$DeadLetterQueue",
@@ -49,7 +49,7 @@ pub struct ServiceBusClientOptions {
 impl Default for ServiceBusClientOptions {
     fn default() -> Self {
         Self {
-            api_version: "2017-04".to_string(), // Default Service Bus API version
+            api_version: "2021-05".to_string(), // Default Service Bus API version
             application_id: None,
         }
     }
