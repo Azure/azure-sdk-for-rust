@@ -25,27 +25,29 @@ use std::collections::HashMap;
 /// Represents an access policy.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct AccessPolicy {
+    //TODO: Change from rfc7231 -> rfc3339 in generated code
     /// The date-time the policy expires.
     #[serde(
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "azure_core::time::rfc3339::option"
     )]
     pub expiry: Option<OffsetDateTime>,
-
-    /// The permissions for acl the policy.
-    #[serde(rename = "Permission", skip_serializing_if = "Option::is_none")]
-    pub permission: Option<String>,
 
     /// The date-time the policy is active.
     #[serde(
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "azure_core::time::rfc3339::option"
     )]
     pub start: Option<OffsetDateTime>,
+
+    // TODO: REORDER IN ACTUAL GENERATED CODE
+    /// The permissions for acl the policy.
+    #[serde(rename = "Permission", skip_serializing_if = "Option::is_none")]
+    pub permission: Option<String>,
 }
 
 /// Contains results for `AppendBlobClient::append_block_from_url()`
