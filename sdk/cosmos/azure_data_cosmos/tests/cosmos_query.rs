@@ -2,7 +2,7 @@
 
 use std::error::Error;
 
-use azure_core::{error::http::ErrorResponse, http::StatusCode};
+use azure_core::{error::ErrorResponse, http::StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::Query;
 use framework::{test_data, MockItem, TestAccount};

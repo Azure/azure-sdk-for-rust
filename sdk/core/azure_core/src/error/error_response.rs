@@ -40,11 +40,11 @@ impl TryFrom<Error> for ErrorResponse {
     fn try_from(value: Error) -> Result<Self, Self::Error> {
         match value.kind() {
             ErrorKind::HttpResponse { raw_response, .. } => {
-                let error_response: Option<ErrorResponse> = raw_response.as_ref().map(|raw| {
-                    serde_json::from_slice(raw.body()).expect("expected an HttpResponse error")
-                });
+                let error_response: Option<crate::Result<ErrorResponse>> = raw_response
+                    .as_ref()
+                    .map(|raw| serde_json::from_slice(raw.body()).map_err(Error::from));
                 match error_response {
-                    Some(err) => Ok(err),
+                    Some(result) => Ok(result?),
                     None => Err(value),
                 }
             }
@@ -140,7 +140,10 @@ pub async fn check_success(response: BufResponse) -> crate::Result<BufResponse> 
         Err(_) => {
             // If we can't parse the body, return a generic error with the status code and body
             let code = response.headers().get_optional_str(&ERROR_CODE);
-            let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
+            let error_kind = ErrorKind::http_response(
+                status,
+                Some(code.map_or_else(|| response.status().to_string(), str::to_owned)),
+            );
             return Err(Error::message(
                 error_kind,
                 format!(
