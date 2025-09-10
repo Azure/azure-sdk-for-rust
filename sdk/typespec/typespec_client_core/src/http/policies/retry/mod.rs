@@ -114,8 +114,9 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     /// A Future that will wait until the request can be retried.
     ///
     /// # Arguments
-    /// `retry_count` is the number of times the request has been retried.
-    /// `retry_after` is the duration to wait before retrying, if provided by the server response.
+    ///
+    /// * `retry_count` - the number of times the request has been retried.
+    /// * `retry_after` - the duration to wait before retrying, if provided by the server response.
     async fn wait(&self, retry_count: u32, retry_after: Option<Duration>) {
         let policy_sleep_duration = self.sleep_duration(retry_count);
         // If the server provided a retry-after header, use the max of that and the policy sleep duration
