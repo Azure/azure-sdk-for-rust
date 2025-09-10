@@ -21,7 +21,7 @@ use std::{collections::HashMap, str};
 /// Converting an `Error` to an `ErrorResponse`:
 ///
 ///``` no_run
-/// use azure_core::error::http::ErrorResponse;
+/// use azure_core::error::ErrorResponse;
 /// # let err = azure_core::Error::from(azure_core::error::ErrorKind::DataConversion);
 /// let error_response = ErrorResponse::try_from(err).expect("expected an ErrorResponse");
 ///```
