@@ -23,9 +23,9 @@ macro_rules! request_header {
     };
     ($(#[$outer:meta])* $name:ident, $header:ident, $(($variant:ident, $value:expr)), *) => {
         $crate::request_option!($(#[$outer])* $name);
-        #[allow(missing_docs)]
         impl $name {
             $(
+                #[allow(missing_docs)]
                 pub const $variant: $name = $name::from_static($value);
             )*
         }

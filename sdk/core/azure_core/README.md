@@ -184,7 +184,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 When a service call fails, the returned `Result` will contain an `Error`. The `Error` type provides a status property with an HTTP status code and an error_code property with a service-specific error code.
 
 ```rust no_run
-use azure_core::{error::{ErrorKind, HttpError}, http::{Response, StatusCode}};
+use azure_core::{error::ErrorKind, http::{Response, StatusCode}};
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::SecretClient;
 

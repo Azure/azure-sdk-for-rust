@@ -9,7 +9,7 @@ mod macros;
 use crate::http::headers::CONTENT_TYPE;
 
 request_header!(
-    /// The Content Type indicates the media type of the request body
+    #[doc = "The Content Type indicates the media type of the request body"]
     ContentType,
     CONTENT_TYPE,
     (APPLICATION_JSON, "application/json")

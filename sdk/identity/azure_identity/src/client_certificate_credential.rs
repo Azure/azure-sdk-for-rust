@@ -5,8 +5,9 @@ use crate::{EntraIdTokenResponse, TokenCache, TokenCredentialOptions};
 use azure_core::{
     base64,
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
-    error::{http_response_from_body, Error, ErrorKind},
+    error::{Error, ErrorKind},
     http::{
+        check_success,
         headers::{self, content_type},
         request::Request,
         HttpClient, Method, Url,
@@ -252,12 +253,7 @@ impl ClientCertificateCredential {
         req.set_body(encoded);
 
         let rsp = self.http_client.execute_request(&req).await?;
-        let rsp_status = rsp.status();
-
-        if !rsp_status.is_success() {
-            let rsp_body = rsp.into_body().collect().await?;
-            return Err(http_response_from_body(rsp_status, &rsp_body).into_error());
-        }
+        let rsp = check_success(rsp).await?;
 
         let response: EntraIdTokenResponse = rsp.into_body().json().await?;
         Ok(AccessToken::new(

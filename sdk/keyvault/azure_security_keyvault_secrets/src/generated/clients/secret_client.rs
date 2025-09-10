@@ -16,16 +16,15 @@ use crate::generated::models::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
-        headers::ERROR_CODE,
+        check_success,
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
         BufResponse, ClientOptions, Method, NoFormat, Pager, Pipeline, Request, RequestContent,
         Response, Url,
     },
-    json, tracing, Error, Result,
+    json, tracing, Result,
 };
 use std::sync::Arc;
 
@@ -125,15 +124,7 @@ impl SecretClient {
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -169,15 +160,7 @@ impl SecretClient {
         let mut request = Request::new(url, Method::Delete);
         request.insert_header("accept", "application/json");
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -213,15 +196,7 @@ impl SecretClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -260,15 +235,7 @@ impl SecretClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -320,15 +287,7 @@ impl SecretClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
-                if !rsp.status().is_success() {
-                    let status = rsp.status();
-                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-                    let error_kind = ErrorKind::http_response(
-                        status,
-                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
-                    );
-                    return Err(Error::new(error_kind, http_error));
-                }
+                let rsp = check_success(rsp).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
@@ -393,15 +352,7 @@ impl SecretClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
-                if !rsp.status().is_success() {
-                    let status = rsp.status();
-                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-                    let error_kind = ErrorKind::http_response(
-                        status,
-                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
-                    );
-                    return Err(Error::new(error_kind, http_error));
-                }
+                let rsp = check_success(rsp).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListSecretPropertiesResult = json::from_json(&bytes)?;
@@ -475,15 +426,7 @@ impl SecretClient {
             let pipeline = pipeline.clone();
             async move {
                 let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
-                if !rsp.status().is_success() {
-                    let status = rsp.status();
-                    let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-                    let error_kind = ErrorKind::http_response(
-                        status,
-                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
-                    );
-                    return Err(Error::new(error_kind, http_error));
-                }
+                let rsp = check_success(rsp).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListSecretPropertiesResult = json::from_json(&bytes)?;
@@ -530,15 +473,7 @@ impl SecretClient {
             .append_pair("api-version", &self.api_version);
         let mut request = Request::new(url, Method::Delete);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -574,15 +509,7 @@ impl SecretClient {
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -611,15 +538,7 @@ impl SecretClient {
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -660,15 +579,7 @@ impl SecretClient {
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -712,15 +623,7 @@ impl SecretClient {
         request.insert_header("content-type", "application/json");
         request.set_body(parameters);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 }

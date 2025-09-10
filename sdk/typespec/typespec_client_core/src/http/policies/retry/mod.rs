@@ -10,7 +10,6 @@ pub use fixed::*;
 pub use none::*;
 
 use crate::{
-    error::HttpError,
     http::{
         headers::{HeaderName, Headers},
         policies::{Policy, PolicyResult},
@@ -22,7 +21,7 @@ use crate::{
 use async_trait::async_trait;
 use std::{ops::Deref, sync::Arc};
 use tracing::{debug, trace};
-use typespec::error::{Error, ErrorKind, ResultExt};
+use typespec::error::{ErrorKind, ResultExt};
 
 /// Attempts to parse the supplied string as an HTTP date, of the form defined by RFC 7231 (e.g. `Fri, 01 Jan 2021 00:00:00 GMT`).
 /// Returns `None` if the string is not a valid HTTP date.
@@ -88,9 +87,6 @@ impl Deref for RetryPolicyCount {
 pub struct RetryHeaders {
     /// The headers that may indicate how long to wait before retrying.
     pub retry_headers: Vec<HeaderName>,
-
-    /// An optional header that may contain an error code.
-    pub error_header: Option<HeaderName>,
 }
 
 /// A retry policy.
@@ -116,9 +112,12 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
     /// A Future that will wait until the request can be retried.
-    /// `error` is the [`Error`] value the led to a retry attempt.
-    /// `retry_after` is the duration to wait before retrying, if provided by the server response.
-    async fn wait(&self, _error: &Error, retry_count: u32, retry_after: Option<Duration>) {
+    ///
+    /// # Arguments
+    ///
+    /// * `retry_count` - the number of times the request has been retried.
+    /// * `retry_after` - the duration to wait before retrying, if provided by the server response.
+    async fn wait(&self, retry_count: u32, retry_after: Option<Duration>) {
         let policy_sleep_duration = self.sleep_duration(retry_count);
         // If the server provided a retry-after header, use the max of that and the policy sleep duration
         let sleep_duration = retry_after.map_or(policy_sleep_duration, |retry_after| {
@@ -166,7 +165,7 @@ where
             let result = next[0].send(&ctx, request, &next[1..]).await;
             // only start keeping track of time after the first request is made
             let start = start.get_or_insert_with(OffsetDateTime::now_utc);
-            let (last_error, retry_after) = match result {
+            let (last_result, retry_after) = match result {
                 Ok(response) => {
                     let status = response.status();
                     if !RETRY_STATUSES.contains(&status) {
@@ -198,22 +197,11 @@ where
                         _ => None,
                     };
 
-                    let http_error = HttpError::new(
-                        response,
-                        retry_headers.and_then(|h| h.error_header.clone()),
-                    )
-                    .await;
-
-                    let error_kind = ErrorKind::http_response(
-                        status,
-                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
-                    );
-
                     debug!(
                         "server returned error status which requires retry: {}",
                         status
                     );
-                    (Error::new(error_kind, http_error), retry_after)
+                    (Ok(response), retry_after)
                 }
                 Err(error) => {
                     if error.kind() == &ErrorKind::Io {
@@ -223,7 +211,7 @@ where
                         );
                         // IO error so no Retry-After headers - leave the retry period up to the policy
                         let retry_after = None;
-                        (error, retry_after)
+                        (Err(error), retry_after)
                     } else {
                         return Err(
                             error.context("non-io error occurred which will not be retried")
@@ -234,12 +222,15 @@ where
 
             let time_since_start = OffsetDateTime::now_utc() - *start;
             if self.is_expired(time_since_start, retry_count) {
-                return Err(last_error
-                    .context("retry policy expired and the request will no longer be retried"));
+                return match last_result {
+                    Ok(result) => Ok(result),
+                    Err(last_error) => Err(last_error
+                        .context("retry policy expired and the request will no longer be retried")),
+                };
             }
             retry_count += 1;
 
-            self.wait(&last_error, retry_count, retry_after).await;
+            self.wait(retry_count, retry_after).await;
         }
     }
 }
@@ -257,7 +248,6 @@ mod test {
 
     const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
     const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
-    const MS_ERROR_CODE: HeaderName = HeaderName::from_static("x-ms-error-code");
 
     // Policy that counts the requests it receives and returns responses having a given status code
     #[derive(Debug)]
@@ -342,7 +332,6 @@ mod test {
         let retries = 2u32;
         let retry_headers = RetryHeaders {
             retry_headers: vec![X_MS_RETRY_AFTER_MS, RETRY_AFTER_MS, RETRY_AFTER],
-            error_header: Some(MS_ERROR_CODE),
         };
         let retry_policy = RetryOptions::fixed(FixedRetryOptions {
             delay: Duration::nanoseconds(1),
@@ -362,10 +351,13 @@ mod test {
             };
             let next = vec![Arc::new(mock) as Arc<dyn Policy>];
 
-            retry_policy
+            // The pipeline should always return a success on an HTTP error, even if retries are exhausted.
+            let result = retry_policy
                 .send(&ctx, &mut request, &next)
                 .await
-                .expect_err("Policy should return an error after exhausting retries");
+                .expect("Policy should return a response after exhausting retries");
+
+            assert_eq!(result.status(), status);
 
             assert_eq!(
                 retries + 1,

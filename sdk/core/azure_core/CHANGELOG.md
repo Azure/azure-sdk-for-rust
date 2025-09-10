@@ -9,6 +9,8 @@
 - Added `TryFrom<T> for RequestContent<T, JsonFormat>` for JSON primitives.
 - Added support for WASM to the `async_runtime` module.
 - Added logging policy to log HTTP requests and responses in the pipeline. As a part of this change, sanitization support was added to places which log HTTP headers and URLs. The `azure_core::http::ClientOptions` has been enhanced with a `LoggingOptions` which allows a user/service client to specify headers or URL query parameters which should be allowed. Note that the sanitization feature is disabled if you build with the `debug` feature enabled.
+- Added support for a new `azure_core::error::http::ErrorResponse` structure which describes an error according to the Azure REST API guidelines.
+- Added a new `azure_core::http::check_success(BufResponse)` function to convert a buffered response to an `ErrorKind::HttpResponse`.
 
 ### Breaking Changes
 
