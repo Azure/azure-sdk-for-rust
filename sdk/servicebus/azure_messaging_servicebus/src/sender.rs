@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::{client::ServiceBusClientOptions, ErrorKind, Message, Result, ServiceBusError};
+use crate::{clients::ServiceBusClientOptions, ErrorKind, Message, Result, ServiceBusError};
 use azure_core::fmt::SafeDebug;
 use azure_core_amqp::{
     AmqpConnection, AmqpMessage, AmqpSender, AmqpSenderApis, AmqpSession, AmqpSessionApis,
