@@ -54,9 +54,11 @@ impl<'a> BlockBlobClientUploadBlobFromUrlOptions<'a> {
 /// * `tags` - A HashMap of key-value pairs representing the blob tags.
 impl<'a> BlockBlobClientUploadOptions<'a> {
     pub fn with_tags(self, tags: HashMap<String, String>) -> Self {
-        let tags_string = url::form_urlencoded::Serializer::new(String::new())
-            .extend_pairs(tags.iter())
-            .finish();
+        let tags_string = tags
+            .iter()
+            .map(|(key, value)| format!("{}={}", key, value))
+            .collect::<Vec<_>>()
+            .join("&");
 
         Self {
             blob_tags_string: Some(tags_string),

@@ -338,8 +338,10 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
         &container_client.blob_client(blob1_name.clone()),
         Some(RequestContent::from("hello world".as_bytes().into())),
         Some(
-            BlockBlobClientUploadOptions::default()
-                .with_tags(HashMap::from([("foo".to_string(), "bar".to_string())])),
+            BlockBlobClientUploadOptions::default().with_tags(HashMap::from([
+                ("foo".to_string(), "bar".to_string()),
+                ("alice".to_string(), "bob".to_string()),
+            ])),
         ),
     )
     .await?;
