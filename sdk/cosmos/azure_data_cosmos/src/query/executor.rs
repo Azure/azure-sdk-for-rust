@@ -1,4 +1,4 @@
-use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
+use azure_core::http::{headers::Headers, BufResponse, Context, Method, Request};
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -181,7 +181,7 @@ async fn get_query_plan(
     context: Context<'_>,
     query: &Query,
     supported_features: &str,
-) -> azure_core::Result<RawResponse> {
+) -> azure_core::Result<BufResponse> {
     let url = http_pipeline.url(items_link);
     let mut request = pipeline::create_base_query_request(url, query)?;
     request.insert_header(constants::QUERY_ENABLE_CROSS_PARTITION, "True");
@@ -202,7 +202,7 @@ async fn get_pkranges(
     http_pipeline: &CosmosPipeline,
     container_link: &ResourceLink,
     context: Context<'_>,
-) -> azure_core::Result<RawResponse> {
+) -> azure_core::Result<BufResponse> {
     let pkranges_link = container_link.feed(ResourceType::PartitionKeyRanges);
     let url = http_pipeline.url(&pkranges_link);
     let mut base_request = Request::new(url, Method::Get);

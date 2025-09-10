@@ -247,7 +247,7 @@ where
     /// To poll a long-running operation:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{Context, Pipeline, RawResponse, Request, Response, Method, Url, poller::{Poller, PollerResult, PollerState, PollerStatus, StatusMonitor}}, json};
+    /// # use azure_core::{Result, http::{BufResponse, Context, Pipeline, Request, Response, Method, Url, poller::{Poller, PollerResult, PollerState, PollerStatus, StatusMonitor}}, json};
     /// # use serde::Deserialize;
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
@@ -291,7 +291,7 @@ where
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let bytes = body.collect().await?;
     ///         let result: OperationResult = json::from_json(&bytes)?;
-    ///         let resp: Response<OperationResult> = RawResponse::from_bytes(status, headers, bytes).into();
+    ///         let resp: Response<OperationResult> = BufResponse::from_bytes(status, headers, bytes).into();
     ///
     ///         match result.status() {
     ///             PollerStatus::InProgress => {
@@ -521,9 +521,12 @@ fn check_status_code<T, F: Format>(response: &Response<T, F>) -> crate::Result<(
         StatusCode::Ok | StatusCode::Accepted | StatusCode::Created | StatusCode::NoContent => {
             Ok(())
         }
+
+        // TODO: Construct error, but we need to drive asynchronously.
         _ => Err(ErrorKind::HttpResponse {
             status,
             error_code: None,
+            raw_response: None,
         }
         .into_error()),
     }
@@ -532,7 +535,7 @@ fn check_status_code<T, F: Format>(response: &Response<T, F>) -> crate::Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, HttpClient, Method, RawResponse, Request};
+    use crate::http::{headers::Headers, BufResponse, HttpClient, Method, Request};
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt as _;
     use std::sync::{Arc, Mutex};
@@ -564,14 +567,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(RawResponse::from_bytes(
+                        Ok(BufResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Succeeded status
-                        Ok(RawResponse::from_bytes(
+                        Ok(BufResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Succeeded"}"#.to_vec(),
@@ -593,7 +596,7 @@ mod tests {
 
                     let test_status: TestStatus = crate::json::from_json(&bytes)?;
                     let response: Response<TestStatus> =
-                        RawResponse::from_bytes(status, headers, bytes).into();
+                        BufResponse::from_bytes(status, headers, bytes).into();
 
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
@@ -646,14 +649,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 201 Created with InProgress status
-                        Ok(RawResponse::from_bytes(
+                        Ok(BufResponse::from_bytes(
                             StatusCode::Created,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 200 OK with Failed status
-                        Ok(RawResponse::from_bytes(
+                        Ok(BufResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"Failed"}"#.to_vec(),
@@ -675,7 +678,7 @@ mod tests {
 
                     let test_status: TestStatus = crate::json::from_json(&bytes)?;
                     let response: Response<TestStatus> =
-                        RawResponse::from_bytes(status, headers, bytes).into();
+                        BufResponse::from_bytes(status, headers, bytes).into();
 
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
@@ -728,14 +731,14 @@ mod tests {
 
                     if *count == 1 {
                         // First call returns 200 OK with InProgress status
-                        Ok(RawResponse::from_bytes(
+                        Ok(BufResponse::from_bytes(
                             StatusCode::Ok,
                             Headers::new(),
                             br#"{"status":"InProgress"}"#.to_vec(),
                         ))
                     } else {
                         // Second call returns 429 Too Many Requests
-                        Ok(RawResponse::from_bytes(
+                        Ok(BufResponse::from_bytes(
                             StatusCode::TooManyRequests,
                             Headers::new(),
                             vec![],
@@ -758,7 +761,7 @@ mod tests {
                     if status == StatusCode::Ok {
                         let test_status: TestStatus = crate::json::from_json(&bytes)?;
                         let response: Response<TestStatus> =
-                            RawResponse::from_bytes(status, headers, bytes).into();
+                            BufResponse::from_bytes(status, headers, bytes).into();
 
                         match test_status.status() {
                             PollerStatus::InProgress => Ok(PollerResult::InProgress {
@@ -771,7 +774,7 @@ mod tests {
                     } else {
                         // Return the error response which should trigger check_status_code
                         let response: Response<TestStatus> =
-                            RawResponse::from_bytes(status, headers, bytes).into();
+                            BufResponse::from_bytes(status, headers, bytes).into();
                         Ok(PollerResult::Done { response })
                     }
                 }

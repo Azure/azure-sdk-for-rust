@@ -12,7 +12,7 @@ use azure_core::{
         headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
         poller::{get_retry_after, PollerResult, PollerState, StatusMonitor as _},
         poller::{Poller, PollerStatus},
-        Body, Method, RawResponse, Request, RequestContent, Url,
+        Body, BufResponse, Method, Request, RequestContent, Url,
     },
     json, Result,
 };
@@ -137,7 +137,7 @@ impl CertificateClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                    let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
                         &headers,
@@ -146,7 +146,7 @@ impl CertificateClient {
                     );
                     let bytes = body.collect().await?;
                     let res: CertificateOperation = json::from_json(&bytes)?;
-                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
 
                     Ok(match res.status() {
                         PollerStatus::InProgress => PollerResult::InProgress {
@@ -242,7 +242,7 @@ impl CertificateClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                    let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
                         &headers,
@@ -251,7 +251,7 @@ impl CertificateClient {
                     );
                     let bytes = body.collect().await?;
                     let res: CertificateOperation = json::from_json(&bytes)?;
-                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
 
                     Ok(match res.status() {
                         PollerStatus::InProgress => PollerResult::InProgress {

@@ -3,7 +3,7 @@
 
 use crate::{
     error::Result,
-    http::{RawResponse, Request},
+    http::{BufResponse, Request},
 };
 use async_trait::async_trait;
 
@@ -19,7 +19,7 @@ pub(crate) fn new_noop_client() -> std::sync::Arc<dyn super::HttpClient> {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl super::HttpClient for NoopClient {
     #[allow(clippy::diverging_sub_expression)]
-    async fn execute_request(&self, request: &Request) -> Result<RawResponse> {
+    async fn execute_request(&self, request: &Request) -> Result<BufResponse> {
         panic!(
             "A request was called on the default http client `NoopClient`.\
 	This client does nothing but panic. Make sure to enable an http\

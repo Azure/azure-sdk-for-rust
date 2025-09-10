@@ -3,7 +3,7 @@
 
 use azure_core::{
     credentials::TokenCredential,
-    http::{headers::Headers, HttpClient, Method, RawResponse, StatusCode, TransportOptions},
+    http::{headers::Headers, BufResponse, HttpClient, Method, StatusCode, TransportOptions},
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
 use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
@@ -64,7 +64,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                 assert_eq!(request.method(), Method::Get);
                 assert_eq!(request.url().path(), "/secrets");
                 match idx {
-                    0 => Ok(RawResponse::from_bytes(
+                    0 => Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         // First page with continuation (nextLink)
@@ -74,7 +74,7 @@ fn setup() -> Result<(Arc<dyn TokenCredential>, Arc<dyn HttpClient>), Box<dyn st
                           ],
                           "nextLink":"https://my-vault.vault.azure.net/secrets?api-version=7.4&$skiptoken=page2"}"#,
                     )),
-                    1 => Ok(RawResponse::from_bytes(
+                    1 => Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         // Second (final) page without nextLink

@@ -3,19 +3,19 @@
 
 use async_trait::async_trait;
 use azure_core::{
-    http::{request::Request, HttpClient, RawResponse},
+    http::{request::Request, BufResponse, HttpClient},
     Result,
 };
 use futures::{future::BoxFuture, lock::Mutex};
 use std::fmt;
 
-/// An [`HttpClient`] from which you can assert [`Request`]s and return mock [`RawResponse`]s.
+/// An [`HttpClient`] from which you can assert [`Request`]s and return mock [`BufResponse`]s.
 ///
 /// # Examples
 ///
 /// ```
 /// use azure_core::{
-///     http::{headers::Headers, ClientOptions, RawResponse, StatusCode, TransportOptions},
+///     http::{headers::Headers, BufResponse, ClientOptions, StatusCode, TransportOptions},
 ///     Bytes,
 /// };
 /// use azure_core_test::http::MockHttpClient;
@@ -28,7 +28,7 @@ use std::fmt;
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// let mock_client = Arc::new(MockHttpClient::new(|req| async {
 ///     assert_eq!(req.url().host_str(), Some("my-vault.vault.azure.net"));
-///     Ok(RawResponse::from_bytes(
+///     Ok(BufResponse::from_bytes(
 ///         StatusCode::Ok,
 ///         Headers::new(),
 ///         Bytes::from_static(br#"{"value":"secret"}"#),
@@ -54,7 +54,7 @@ pub struct MockHttpClient<C>(Mutex<C>);
 
 impl<C> MockHttpClient<C>
 where
-    C: FnMut(&Request) -> BoxFuture<'_, Result<RawResponse>> + Send + Sync,
+    C: FnMut(&Request) -> BoxFuture<'_, Result<BufResponse>> + Send + Sync,
 {
     /// Creates a new `MockHttpClient` using a capture.
     ///
@@ -75,9 +75,9 @@ impl<C> fmt::Debug for MockHttpClient<C> {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl<C> HttpClient for MockHttpClient<C>
 where
-    C: FnMut(&Request) -> BoxFuture<'_, Result<RawResponse>> + Send + Sync,
+    C: FnMut(&Request) -> BoxFuture<'_, Result<BufResponse>> + Send + Sync,
 {
-    async fn execute_request(&self, req: &Request) -> Result<RawResponse> {
+    async fn execute_request(&self, req: &Request) -> Result<BufResponse> {
         let mut client = self.0.lock().await;
         (client)(req).await
     }
@@ -109,7 +109,7 @@ mod tests {
                     *count += 1;
                 }
 
-                Ok(RawResponse::from_bytes(
+                Ok(BufResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     vec![],

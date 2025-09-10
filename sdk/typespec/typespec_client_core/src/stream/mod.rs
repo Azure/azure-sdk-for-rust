@@ -5,12 +5,14 @@
 
 mod bytes_stream;
 
-use bytes::Bytes;
+use crate::{
+    error::{Error, ErrorKind, Result},
+    Bytes,
+};
 pub use bytes_stream::*;
 use dyn_clone::DynClone;
 use futures::{io::AsyncRead, stream::Stream, task::Poll};
 use std::{pin::Pin, task::Context};
-use typespec::error::{Error, ErrorKind, Result};
 
 /// Amount of the stream to buffer in memory during streaming uploads.
 pub const DEFAULT_BUFFER_SIZE: usize = 1024 * 64;

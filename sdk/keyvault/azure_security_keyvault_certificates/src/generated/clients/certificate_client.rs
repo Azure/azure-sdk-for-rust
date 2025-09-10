@@ -35,7 +35,7 @@ use azure_core::{
         headers::ERROR_CODE,
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pager, Pipeline, RawResponse, Request, RequestContent,
+        BufResponse, ClientOptions, Method, NoFormat, Pager, Pipeline, Request, RequestContent,
         Response, Url,
     },
     json, tracing, Error, Result,
@@ -725,7 +725,7 @@ impl CertificateClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
                     let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
@@ -738,7 +738,7 @@ impl CertificateClient {
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -807,7 +807,7 @@ impl CertificateClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
                     let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
@@ -820,7 +820,7 @@ impl CertificateClient {
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -885,7 +885,7 @@ impl CertificateClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
                     let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
@@ -898,7 +898,7 @@ impl CertificateClient {
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListDeletedCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -957,7 +957,7 @@ impl CertificateClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
                 if !rsp.status().is_success() {
                     let status = rsp.status();
                     let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
@@ -970,7 +970,7 @@ impl CertificateClient {
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
                 let res: ListIssuerPropertiesResult = json::from_json(&bytes)?;
-                let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,

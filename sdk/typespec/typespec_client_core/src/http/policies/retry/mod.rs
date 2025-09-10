@@ -48,7 +48,7 @@ pub fn get_retry_after(
         headers.get_str(header).ok().and_then(|v| {
             // The standard behavior for retry headers is to parse as an integer number of seconds,
             // or as an HTTP date if the header is the standard Retry-After header.
-            if header.is_standard {
+            if header.is_standard() {
                 // RETRY_AFTER values are either in seconds or a HTTP date
                 v.parse::<i64>().ok().map(Duration::seconds).or_else(|| {
                     try_parse_retry_after_http_date(v).map(|retry_after_datetime| {
@@ -250,7 +250,7 @@ mod test {
     use super::*;
     use crate::http::{
         headers::{Headers, RETRY_AFTER},
-        Context, FixedRetryOptions, Method, RawResponse, Request, RetryOptions, Url,
+        BufResponse, Context, FixedRetryOptions, Method, Request, RetryOptions, Url,
     };
     use ::time::macros::datetime;
     use std::sync::{Arc, Mutex};
@@ -272,7 +272,7 @@ mod test {
         async fn send(&self, _: &Context, _: &mut Request, _: &[Arc<dyn Policy>]) -> PolicyResult {
             let mut count = self.request_count.lock().unwrap();
             *count += 1;
-            Ok(RawResponse::from_bytes(self.status, Headers::new(), ""))
+            Ok(BufResponse::from_bytes(self.status, Headers::new(), ""))
         }
     }
 

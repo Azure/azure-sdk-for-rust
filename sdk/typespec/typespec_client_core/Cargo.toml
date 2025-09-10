@@ -13,12 +13,10 @@ keywords = ["typespec"]
 [dependencies]
 async-trait.workspace = true
 base64.workspace = true
-bytes.workspace = true
 dyn-clone.workspace = true
 futures.workspace = true
 gloo-timers = { workspace = true, optional = true }
 pin-project.workspace = true
-quick-xml = { workspace = true, optional = true }
 rand.workspace = true
 reqwest = { workspace = true, optional = true }
 rust_decimal = { workspace = true, optional = true }
@@ -75,7 +73,7 @@ reqwest_native_tls = ["reqwest", "reqwest/native-tls"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
 wasm_bindgen = ["dep:wasm-bindgen-futures", "gloo-timers/futures"]
-xml = ["dep:quick-xml"]
+xml = ["typespec/xml"]
 
 [[example]]
 name = "core_binary_data_request"

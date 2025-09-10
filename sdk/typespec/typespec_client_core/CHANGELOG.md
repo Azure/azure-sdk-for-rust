@@ -10,6 +10,7 @@
 
 ### Breaking Changes
 
+- Added pipeline configuration options (`PipelineOptions`) to `typespec_client_core::http::Pipeline::new()` to enable customization of the options for an HTTP pipeline.
 - Changed `FromStr for RequestContent<T, F>` to `RequestContent::from_str()`.
 - Changed `TryFrom<&'static str> for RequestContent<T, F>` to `RequestContent::from_static()`.
 - Changed `TryFrom<Bytes> for RequestContent<T, F>` to `From<Bytes> for RequestContent<T, F>` because it was already infallible.
@@ -18,7 +19,7 @@
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` to copy if needed.
 - Removed the `setters` macro.
 - Removed the cloud service specific retry headers from typespec_client_core. This change means that the `HttpError::new()` function takes an additional optional parameter which is an HTTP header which might contain an error code.
-- Added pipeline configuration options (`PipelineOptions`) to `typespec_client_core::http::Pipeline::new()` to enable customization of the options for an HTTP pipeline.
+- Renamed `RawResponse` to `BufResponse`. New `RawResponse` contains complete body as `Bytes` used in `ErrorKind::HttpResponse`.
 
 ## 0.6.0 (2025-08-01)
 

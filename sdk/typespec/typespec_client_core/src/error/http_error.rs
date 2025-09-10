@@ -5,10 +5,9 @@
 use crate::json::from_json;
 use crate::{
     error::ErrorKind,
-    http::{headers::HeaderName, RawResponse, StatusCode},
-    Error,
+    http::{headers::HeaderName, BufResponse, StatusCode},
+    Bytes, Error,
 };
-use bytes::Bytes;
 use serde::Deserialize;
 use std::{collections::HashMap, fmt, str};
 
@@ -24,7 +23,7 @@ impl HttpError {
     /// Create an error from an HTTP response.
     ///
     /// This does not check whether the response was successful and should only be used with unsuccessful responses.
-    pub async fn new(response: RawResponse, header_name: Option<HeaderName>) -> Self {
+    pub async fn new(response: BufResponse, header_name: Option<HeaderName>) -> Self {
         let status = response.status();
         let headers: HashMap<String, String> = response
             .headers()
@@ -260,7 +259,8 @@ mod tests {
             kind,
             ErrorKind::HttpResponse {
                 status: StatusCode::ImATeapot,
-                error_code: None
+                error_code: None,
+                ..
             }
         ));
 
@@ -271,7 +271,8 @@ mod tests {
             kind,
             ErrorKind::HttpResponse {
                 status: StatusCode::ImATeapot,
-                error_code
+                error_code,
+                ..
             }
             if error_code.as_deref() == Some("teapot")
         ));
@@ -352,7 +353,7 @@ mod tests {
             code: Option<String>,
         }
 
-        let response = RawResponse::from_bytes(
+        let response = BufResponse::from_bytes(
             StatusCode::BadRequest,
             Headers::new(),
             Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey","key":"foo"}}}"#),
