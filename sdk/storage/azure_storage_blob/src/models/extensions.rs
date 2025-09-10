@@ -1,9 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::{
+    http::{RequestContent, XmlFormat},
+    xml::to_xml_with_root,
+};
+use serde::Serialize;
+
 use crate::models::{
     AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions,
-    PageBlobClientCreateOptions,
+    PageBlobClientCreateOptions, SignedIdentifier,
 };
 use azure_core::error::ErrorKind;
 use std::collections::HashMap;
@@ -88,4 +94,19 @@ impl From<HashMap<String, String>> for BlobTags {
             blob_tag_set: Some(blob_tags),
         }
     }
+}
+
+// SignedIdentifiers wrapper for correct XML serialization.
+#[derive(Serialize)]
+struct SignedIdentifiersWrapper {
+    #[serde(rename = "SignedIdentifier")]
+    items: Vec<SignedIdentifier>,
+}
+
+// Converts a `Vec<SignedIdentifier>` into `RequestContent<Vec<SignedIdentifier>, XmlFormat>`.
+pub(crate) fn format_signed_identifiers(
+    value: Vec<SignedIdentifier>,
+) -> Result<RequestContent<Vec<SignedIdentifier>, XmlFormat>, azure_core::Error> {
+    let wrapper = SignedIdentifiersWrapper { items: value };
+    Ok(to_xml_with_root("SignedIdentifiers", &wrapper)?.into())
 }
