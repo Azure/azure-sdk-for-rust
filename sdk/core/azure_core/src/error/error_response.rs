@@ -14,6 +14,19 @@ use std::{collections::HashMap, str};
 ///
 /// Implements a standard "ErrorResponse" as described in the [API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
 ///
+/// Can be converted from an `[Error]` if it is of kind `[ErrorKind::HttpResponse]` and has a raw response.
+///
+/// # Example
+///
+/// Converting an `Error` to an `ErrorResponse`:
+///
+///``` no_run
+/// use azure_core::error::http::ErrorResponse;
+/// # let err = azure_core::Error::from(azure_core::error::ErrorKind::DataConversion);
+/// let error_response = ErrorResponse::try_from(err).expect("expected an ErrorResponse");
+///```
+///
+///
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
@@ -32,7 +45,15 @@ impl TryFrom<Error> for ErrorResponse {
 
     fn try_from(value: Error) -> Result<Self, Self::Error> {
         match value.kind() {
-            ErrorKind::HttpResponse { .. } => todo!(),
+            ErrorKind::HttpResponse { raw_response, .. } => {
+                let error_response: Option<ErrorResponse> = raw_response.as_ref().map(|raw| {
+                    serde_json::from_slice(raw.body()).expect("expected an HttpResponse error")
+                });
+                match error_response {
+                    Some(err) => Ok(err),
+                    None => Err(value),
+                }
+            }
             _ => Err(value),
         }
     }
@@ -292,6 +313,62 @@ mod tests {
             .unwrap()
             .additional_properties()
             .contains_key("key"));
+    }
+
+    #[tokio::test]
+    async fn convert_error_to_error_response() -> crate::Result<()> {
+        {
+            let err: Error = Error::from(ErrorKind::HttpResponse {
+                status: StatusCode::BadRequest,
+                error_code: Some("testError".to_string()),
+                raw_response: None,
+            });
+            let _error_response = ErrorResponse::try_from(err)
+                .expect_err("expected an error because there is no raw_response");
+        }
+        {
+            let buf_response = BufResponse::from_bytes(
+                StatusCode::BadRequest,
+                Headers::new(),
+                Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey"},"key":"foo"}}"#),
+            );
+            let err: Error = Error::from(ErrorKind::HttpResponse {
+                status: StatusCode::BadRequest,
+                error_code: Some("testError".to_string()),
+                raw_response: Some(Box::new(buf_response.try_into_raw_response().await?)),
+            });
+            let error_response = ErrorResponse::try_from(err).expect("expected an ErrorResponse");
+            error_response.error().expect("error should be set");
+            println!("{:?}", &error_response);
+            assert_eq!(
+                error_response.error().unwrap().code(),
+                Some("InvalidRequest")
+            );
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn convert_buf_response_to_error_response() -> crate::Result<()> {
+        {
+            let buf_response = BufResponse::from_bytes(
+                StatusCode::BadRequest,
+                Headers::new(),
+                Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey"},"key":"foo"}}"#),
+            );
+            let error_response: ErrorResponse = buf_response
+                .into_body()
+                .json()
+                .await
+                .expect("expected an ErrorResponse");
+            error_response.error().expect("error should be set");
+            println!("{:?}", &error_response);
+            assert_eq!(
+                error_response.error().unwrap().code(),
+                Some("InvalidRequest")
+            );
+        }
+        Ok(())
     }
 
     #[tokio::test]
