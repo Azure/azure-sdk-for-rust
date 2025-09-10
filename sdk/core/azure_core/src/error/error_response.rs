@@ -13,6 +13,7 @@ use std::{collections::HashMap, str};
 /// An HTTP error response.
 ///
 /// Implements a standard "ErrorResponse" as described in the [API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors).
+///
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
@@ -43,7 +44,7 @@ impl TryFrom<Error> for ErrorResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorDetail {
-    /// The error code.
+    /// The error code. A machine readable error code defined by the service.
     code: Option<String>,
 
     /// A human-readable error message describing the error.
