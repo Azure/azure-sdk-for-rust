@@ -3,7 +3,7 @@
 
 //! HTTP headers.
 
-// cspell:ignore traceparent tracestate
+// cspell:ignore hasher traceparent tracestate
 
 use crate::error::{Error, ErrorKind, ResultExt};
 use std::{
