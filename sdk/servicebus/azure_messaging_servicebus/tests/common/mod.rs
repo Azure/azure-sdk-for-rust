@@ -22,12 +22,6 @@ pub fn setup() {
 }
 
 #[allow(dead_code)]
-pub fn get_connection_string() -> Result<String, Box<dyn Error>> {
-    env::var("SERVICEBUS_CONNECTION_STRING")
-        .map_err(|_| "SERVICEBUS_CONNECTION_STRING environment variable not set".into())
-}
-
-#[allow(dead_code)]
 pub fn get_queue_name() -> Result<String, Box<dyn Error>> {
     env::var("SERVICEBUS_QUEUE_NAME")
         .map_err(|_| "SERVICEBUS_QUEUE_NAME environment variable not set".into())
