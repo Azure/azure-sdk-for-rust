@@ -1293,13 +1293,13 @@ pub struct RetentionPolicy {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "SignedIdentifier")]
 pub struct SignedIdentifier {
-    /// The access policy for the signed identifier.
-    #[serde(rename = "AccessPolicy", skip_serializing_if = "Option::is_none")]
-    pub access_policy: Option<AccessPolicy>,
-
+    // TODO: REORDER USING GENERATED CODE CHANGES, THIS IS TEMPORARY
     /// The unique ID for the signed identifier.
     #[serde(rename = "Id", skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    /// The access policy for the signed identifier.
+    #[serde(rename = "AccessPolicy", skip_serializing_if = "Option::is_none")]
+    pub access_policy: Option<AccessPolicy>,
 }
 
 /// The properties that enable an account to host a static website

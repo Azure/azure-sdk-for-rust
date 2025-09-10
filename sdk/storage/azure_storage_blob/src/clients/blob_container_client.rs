@@ -12,14 +12,14 @@ use crate::{
         },
     },
     models::{
-        BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
-        BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
-        BlobContainerClientDeleteOptions, BlobContainerClientGetAccessPolicyOptions,
-        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetPropertiesOptions,
-        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
-        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetAccessPolicyOptions,
-        BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetMetadataOptions,
-        ListBlobsFlatSegmentResponse,
+        format_signed_identifiers, BlobContainerClientAcquireLeaseOptions,
+        BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseOptions,
+        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+        BlobContainerClientGetAccessPolicyOptions, BlobContainerClientGetAccountInfoOptions,
+        BlobContainerClientGetPropertiesOptions, BlobContainerClientListBlobFlatSegmentOptions,
+        BlobContainerClientReleaseLeaseOptions, BlobContainerClientRenewLeaseOptions,
+        BlobContainerClientSetAccessPolicyOptions, BlobContainerClientSetAccessPolicyResult,
+        BlobContainerClientSetMetadataOptions, ListBlobsFlatSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -263,10 +263,12 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub async fn set_access_policy(
         &self,
-        container_acl: RequestContent<Vec<SignedIdentifier>, XmlFormat>,
+        container_acl: Vec<SignedIdentifier>,
         options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>,
     ) -> Result<Response<BlobContainerClientSetAccessPolicyResult, NoFormat>> {
-        self.client.set_access_policy(container_acl, options).await
+        self.client
+            .set_access_policy(format_signed_identifiers(container_acl)?, options)
+            .await
     }
 
     /// Gets the permissions for the specified container. The permissions indicate whether container data

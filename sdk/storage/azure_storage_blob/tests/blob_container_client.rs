@@ -312,11 +312,11 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
     };
     let signed_identifier = SignedIdentifier {
         access_policy: Some(access_policy),
-        id: None,
+        id: Some("testid".into()),
     };
 
     container_client
-        .set_access_policy(signed_identifier.into()?, None)
+        .set_access_policy(vec![signed_identifier], None)
         .await?;
 
     // Assert
