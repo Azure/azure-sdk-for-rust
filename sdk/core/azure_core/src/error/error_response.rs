@@ -30,14 +30,8 @@ use std::{collections::HashMap, str};
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
-    error: Option<ErrorDetail>,
-}
-
-impl ErrorResponse {
     /// The error details.
-    pub fn error(&self) -> Option<&ErrorDetail> {
-        self.error.as_ref()
-    }
+    pub error: Option<ErrorDetail>,
 }
 
 impl TryFrom<Error> for ErrorResponse {
@@ -66,59 +60,25 @@ impl TryFrom<Error> for ErrorResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ErrorDetail {
     /// The error code. A machine readable error code defined by the service.
-    code: Option<String>,
+    pub code: Option<String>,
 
     /// A human-readable error message describing the error.
-    message: Option<String>,
+    pub message: Option<String>,
 
     /// The target of the error (for example, the name of the property in error).
-    target: Option<String>,
+    pub target: Option<String>,
 
     /// Additional details about the error.
     #[serde(default)]
-    details: Vec<ErrorDetail>,
+    pub details: Vec<ErrorDetail>,
 
     /// An inner error that may have more specific information about the root cause of the error.
     #[serde(rename = "innererror")]
-    inner_error: Option<InnerError>,
+    pub inner_error: Option<InnerError>,
 
     /// Additional properties that may be returned with the error.
     #[serde(flatten)]
-    additional_properties: HashMap<String, serde_json::Value>,
-}
-
-impl ErrorDetail {
-    /// The error code.
-    ///
-    /// This is a machine-readable error code, typically derived from the x-ms-error-code response header.
-    pub fn code(&self) -> Option<&str> {
-        self.code.as_deref()
-    }
-
-    /// The error message.
-    pub fn message(&self) -> Option<&str> {
-        self.message.as_deref()
-    }
-
-    /// The target of the error (for example, the name of the property in error).
-    pub fn target(&self) -> Option<&str> {
-        self.target.as_deref()
-    }
-
-    /// Additional details about the error.
-    pub fn details(&self) -> &[ErrorDetail] {
-        &self.details
-    }
-
-    /// An inner error that may have more specific information about the root cause of the error.
-    pub fn inner_error(&self) -> Option<&InnerError> {
-        self.inner_error.as_ref()
-    }
-
-    /// Additional properties that may be returned with the error.
-    pub fn additional_properties(&self) -> &HashMap<String, serde_json::Value> {
-        &self.additional_properties
-    }
+    pub additional_properties: HashMap<String, serde_json::Value>,
 }
 
 /// Inner error information about an error returned from a service.
@@ -128,25 +88,11 @@ impl ErrorDetail {
 #[serde(rename_all = "camelCase")]
 pub struct InnerError {
     /// A more specific error than was contained in the containing error.
-    code: Option<String>,
+    pub code: Option<String>,
 
     /// An object containing more specific information than the current object about the error.
     #[serde(rename = "innererror")]
-    inner_error: Option<Box<InnerError>>,
-}
-
-impl InnerError {
-    /// The error code.
-    ///
-    /// This is a machine-readable error code, typically derived from the x-ms-error-code response header.
-    pub fn code(&self) -> Option<&str> {
-        self.code.as_deref()
-    }
-
-    /// An inner error that may have more specific information about the root cause of the error.
-    pub fn inner_error(&self) -> Option<&InnerError> {
-        self.inner_error.as_deref()
-    }
+    pub inner_error: Option<Box<InnerError>>,
 }
 
 /// Internal struct to help with deserialization without allocating Strings.
@@ -295,23 +241,33 @@ mod tests {
     fn deserialize_to_error_response() {
         let err : ErrorResponse = serde_json::from_slice (br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey"},"key":"foo"}}"#)
             .expect("Parse success.");
-        err.error().expect("error should be set");
+        err.error.as_ref().expect("error should be set");
 
         println!("{:?}", &err);
-        assert_eq!(err.error().unwrap().code(), Some("InvalidRequest"));
         assert_eq!(
-            err.error().unwrap().message(),
-            Some("The request object is not recognized.")
+            err.error.as_ref().unwrap().code,
+            Some("InvalidRequest".to_string())
         );
-        assert!(err.error().unwrap().inner_error().is_some());
         assert_eq!(
-            err.error().unwrap().inner_error().as_ref().unwrap().code(),
-            Some("InvalidKey")
+            err.error.as_ref().unwrap().message,
+            Some("The request object is not recognized.".to_string())
+        );
+        assert!(err.error.as_ref().unwrap().inner_error.is_some());
+        assert_eq!(
+            err.error
+                .as_ref()
+                .unwrap()
+                .inner_error
+                .as_ref()
+                .unwrap()
+                .code,
+            Some("InvalidKey".to_string())
         );
         assert!(err
-            .error()
+            .error
+            .as_ref()
             .unwrap()
-            .additional_properties()
+            .additional_properties
             .contains_key("key"));
     }
 
@@ -338,11 +294,11 @@ mod tests {
                 raw_response: Some(Box::new(buf_response.try_into_raw_response().await?)),
             });
             let error_response = ErrorResponse::try_from(err).expect("expected an ErrorResponse");
-            error_response.error().expect("error should be set");
+            error_response.error.as_ref().expect("error should be set");
             println!("{:?}", &error_response);
             assert_eq!(
-                error_response.error().unwrap().code(),
-                Some("InvalidRequest")
+                error_response.error.as_ref().unwrap().code,
+                Some("InvalidRequest".to_string())
             );
         }
         Ok(())
@@ -361,11 +317,11 @@ mod tests {
                 .json()
                 .await
                 .expect("expected an ErrorResponse");
-            error_response.error().expect("error should be set");
+            error_response.error.as_ref().expect("error should be set");
             println!("{:?}", &error_response);
             assert_eq!(
-                error_response.error().unwrap().code(),
-                Some("InvalidRequest")
+                error_response.error.as_ref().unwrap().code,
+                Some("InvalidRequest".to_string())
             );
         }
         Ok(())

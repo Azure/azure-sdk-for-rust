@@ -158,9 +158,9 @@ pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
 
     let error_response = ErrorResponse::try_from(err).expect("expected an HttpResponse error");
     let message = error_response
-        .error()
+        .error
         .expect("error should be present")
-        .message()
+        .message
         .expect("message should be present");
     assert!(message.starts_with(
         "The provided cross partition query can not be directly served by the gateway."
