@@ -3,30 +3,47 @@
 
 //! Built-in HTTP clients.
 
-#[cfg(not(feature = "reqwest"))]
 mod noop;
-#[cfg(feature = "reqwest")]
+#[cfg(all(
+    feature = "reqwest",
+    not(all(target_arch = "wasm32", target_os = "wasi"))
+))]
 mod reqwest;
+#[cfg(all(feature = "spin", target_arch = "wasm32", target_os = "wasi"))]
+mod spin;
 
-#[cfg(not(feature = "reqwest"))]
+#[cfg(not(any(
+    all(feature = "spin", target_arch = "wasm32", target_os = "wasi"),
+    all(
+        feature = "reqwest",
+        not(all(target_arch = "wasm32", target_os = "wasi"))
+    )
+)))]
 use self::noop::new_noop_client;
-#[cfg(feature = "reqwest")]
+#[cfg(all(
+    feature = "reqwest",
+    not(all(target_arch = "wasm32", target_os = "wasi"))
+))]
 use self::reqwest::new_reqwest_client;
+#[cfg(all(feature = "spin", target_arch = "wasm32", target_os = "wasi"))]
+use self::spin::new_spin_client;
 
 use crate::http::{RawResponse, Request};
 use async_trait::async_trait;
+use cfg_if::cfg_if;
 use std::sync::Arc;
 use typespec::error::Result;
 
 /// Create a new [`HttpClient`].
 pub fn new_http_client() -> Arc<dyn HttpClient> {
-    #[cfg(feature = "reqwest")]
-    {
-        new_reqwest_client()
-    }
-    #[cfg(not(feature = "reqwest"))]
-    {
-        new_noop_client()
+    cfg_if! {
+        if #[cfg(all(feature = "spin", target_arch = "wasm32", target_os = "wasi"))] {
+            new_spin_client()
+        } else if #[cfg(all(feature = "reqwest", not(all(target_arch = "wasm32", target_os = "wasi"))))] {
+            new_reqwest_client()
+        } else {
+            new_noop_client()
+        }
     }
 }
 

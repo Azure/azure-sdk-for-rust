@@ -12,6 +12,7 @@ keywords = ["typespec"]
 
 [dependencies]
 async-trait.workspace = true
+cfg-if.workspace = true
 base64.workspace = true
 bytes.workspace = true
 dyn-clone.workspace = true
@@ -20,7 +21,6 @@ gloo-timers = { workspace = true, optional = true }
 pin-project.workspace = true
 quick-xml = { workspace = true, optional = true }
 rand.workspace = true
-reqwest = { workspace = true, optional = true }
 rust_decimal = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
@@ -39,6 +39,15 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 [target.'cfg(target_family = "wasm")'.dependencies]
 getrandom.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "time"] }
+
+# Limit spin-* deps to wasm32-wasip2
+[target.wasm32-wasip2.dependencies]
+spin-executor = { workspace = true, optional = true }
+spin-sdk = { workspace = true, optional = true }
+
+# Only include reqwest on targets other than wasm32-wasip2.
+[target.'cfg(not(target = "wasm32-wasip2"))'.dependencies]
+reqwest = { workspace = true, optional = true }
 
 [dev-dependencies]
 tracing.workspace = true
@@ -75,6 +84,7 @@ reqwest_native_tls = ["reqwest", "reqwest/native-tls"]
 test = [] # Enables extra tracing including error bodies that may contain PII.
 tokio = ["tokio/sync", "tokio/time"]
 wasm_bindgen = ["dep:wasm-bindgen-futures", "gloo-timers/futures"]
+spin = ["dep:spin-executor", "dep:spin-sdk"]
 xml = ["dep:quick-xml"]
 
 [[example]]
