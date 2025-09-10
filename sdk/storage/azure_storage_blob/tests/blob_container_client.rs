@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::http::{RequestContent, StatusCode};
-use azure_core_test::{recorded, TestContext, TestMode};
+use azure_core_test::{recorded, Matcher, TestContext, TestMode};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
@@ -330,6 +330,7 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
+    recording.set_matcher(Matcher::BodilessMatcher).await?;
     let container_client = get_container_client(recording, true).await?;
 
     // Create Test Blobs with Tags
