@@ -34,19 +34,6 @@ This will automatically create:
 -   RBAC permissions for TokenCredential testing
 -   All required environment variables
 
-The script will output PowerShell commands to set environment variables.
-
-### Environment Variables
-
-After deployment completes successfully, the script will output commands like:
-
-```powershell
-$env:SERVICEBUS_NAMESPACE = "sb-your-deployment-name.servicebus.windows.net"
-$env:SERVICEBUS_QUEUE_NAME = "testqueue"
-$env:SERVICEBUS_TOPIC_NAME = "testtopic"
-$env:SERVICEBUS_SUBSCRIPTION_NAME = "testsubscription"
-```
-
 ## Run Live Tests
 
 Once the environment variables are set, run the tests:
