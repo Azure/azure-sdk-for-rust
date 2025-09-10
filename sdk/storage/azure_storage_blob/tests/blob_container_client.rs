@@ -330,7 +330,7 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
-    recording.set_matcher(Matcher::BodilessMatcher).await?;
+    recording.set_matcher(Matcher::HeaderlessMatcher).await?;
     let container_client = get_container_client(recording, true).await?;
 
     // Create Test Blobs with Tags
