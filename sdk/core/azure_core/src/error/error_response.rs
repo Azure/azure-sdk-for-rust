@@ -5,9 +5,8 @@
 
 use crate::{
     error::{Error, ErrorKind},
-    http::{headers::ERROR_CODE, RawResponse},
+    http::{headers::ERROR_CODE, BufResponse},
 };
-use bytes::Bytes;
 use serde::Deserialize;
 use std::{collections::HashMap, str};
 
@@ -151,46 +150,42 @@ struct ErrorDetailsInternal<'a> {
 /// * `Err(Error)` if the response is an error, with details extracted from the response
 ///   body if possible.
 ///
-pub async fn check_success(response: RawResponse) -> crate::Result<RawResponse> {
+pub async fn check_success(response: BufResponse) -> crate::Result<BufResponse> {
     let status = response.status();
     if status.is_success() {
         return Ok(response);
     }
 
-    let (status, headers, body) = response.deconstruct();
-    let body = body
-        .collect()
-        .await
-        .unwrap_or_else(|_| Bytes::from_static(b"(error reading body)"));
+    let response = response.try_into_raw_response().await?;
 
     // If there's no body, we can't extract any more information.
-    if body.is_empty() {
-        let code = headers.get_optional_str(&ERROR_CODE);
+    if response.body().is_empty() {
+        let code = response.headers().get_optional_str(&ERROR_CODE);
         let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
         return Err(Error::message(error_kind, status.to_string()));
     }
     let internal_response =
-        serde_json::de::from_slice::<ErrorResponseInternal>(body.as_ref()).map_err(Error::from);
+        serde_json::de::from_slice::<ErrorResponseInternal>(response.body()).map_err(Error::from);
 
     let internal_response = match internal_response {
         Ok(r) => r,
         Err(_) => {
             // If we can't parse the body, return a generic error with the status code and body
-            let code = headers.get_optional_str(&ERROR_CODE);
+            let code = response.headers().get_optional_str(&ERROR_CODE);
             let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
             return Err(Error::message(
                 error_kind,
                 format!(
                     "{}: {}",
                     status,
-                    str::from_utf8(&body).unwrap_or("(invalid utf-8 in body)")
+                    str::from_utf8(response.body()).unwrap_or("(invalid utf-8 in body)")
                 ),
             ));
         }
     };
 
     // We give priority to the error code in the header, and try the body version if it's not present.
-    let code = headers.get_optional_str(&ERROR_CODE);
+    let code = response.headers().get_optional_str(&ERROR_CODE);
     let code = code.or(internal_response.error.code);
 
     let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
@@ -208,12 +203,13 @@ pub async fn check_success(response: RawResponse) -> crate::Result<RawResponse> 
 mod tests {
     use super::*;
     use crate::http::{headers, headers::Headers, StatusCode};
+    use crate::Bytes;
 
     #[tokio::test]
     async fn matching_against_http_error() {
         let mut headers = Headers::new();
         headers.insert(headers::CONTENT_TYPE, "application/json".to_string());
-        let response = RawResponse::from_bytes(
+        let response = BufResponse::from_bytes(
             StatusCode::ImATeapot,
             headers,
             Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
@@ -225,7 +221,8 @@ mod tests {
             kind,
             ErrorKind::HttpResponse {
                 status: StatusCode::ImATeapot,
-                error_code
+                error_code,
+                raw_response: None
             }
             if error_code.as_deref() == Some("teapot")
         ));
@@ -235,7 +232,7 @@ mod tests {
     async fn matching_against_http_error_no_body() {
         let mut headers = Headers::new();
         headers.insert(headers::ERROR_CODE, "testError".to_string());
-        let response = RawResponse::from_bytes(StatusCode::ImATeapot, headers, Bytes::new());
+        let response = BufResponse::from_bytes(StatusCode::ImATeapot, headers, Bytes::new());
 
         let err = check_success(response).await.unwrap_err();
         let kind = err.kind();
@@ -243,7 +240,8 @@ mod tests {
             *kind,
             ErrorKind::HttpResponse {
                 status: StatusCode::ImATeapot,
-                error_code: Some("testError".to_string())
+                error_code: Some("testError".to_string()),
+                raw_response: None
             }
         );
     }
@@ -252,7 +250,7 @@ mod tests {
     async fn matching_against_http_error_invalid_body() {
         let mut headers = Headers::new();
         headers.insert(headers::ERROR_CODE, "testError".to_string());
-        let response = RawResponse::from_bytes(
+        let response = BufResponse::from_bytes(
             StatusCode::ImATeapot,
             headers,
             Bytes::from_static(br#"{"json": "error"}"#),
@@ -264,7 +262,8 @@ mod tests {
             *kind,
             ErrorKind::HttpResponse {
                 status: StatusCode::ImATeapot,
-                error_code: Some("testError".to_string())
+                error_code: Some("testError".to_string()),
+                raw_response: None
             }
         );
         assert!(err.to_string().contains(r#"{"json": "error"}"#));
