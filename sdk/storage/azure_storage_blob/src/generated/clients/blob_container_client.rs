@@ -26,14 +26,13 @@ use crate::generated::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    error::ErrorKind,
+    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
-        check_success,
         headers::ERROR_CODE,
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        BufResponse, ClientOptions, Method, NoFormat, PageIterator, Pipeline, Request,
+        ClientOptions, Method, NoFormat, PageIterator, Pipeline, RawResponse, Request,
         RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
@@ -182,7 +181,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -257,7 +264,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -335,7 +350,15 @@ impl BlobContainerClient {
         request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -383,7 +406,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -423,7 +454,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -478,7 +517,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -546,7 +593,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -609,7 +664,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -699,7 +762,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -796,12 +867,20 @@ impl BlobContainerClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
-                    let rsp = check_success(rsp).await?;
+                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                    if !rsp.status().is_success() {
+                        let status = rsp.status();
+                        let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+                        let error_kind = ErrorKind::http_response(
+                            status,
+                            http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                        );
+                        return Err(Error::new(error_kind, http_error));
+                    }
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListBlobsFlatSegmentResponse = xml::read_xml(&bytes)?;
-                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
@@ -915,12 +994,20 @@ impl BlobContainerClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
-                    let rsp = check_success(rsp).await?;
+                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
+                    if !rsp.status().is_success() {
+                        let status = rsp.status();
+                        let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+                        let error_kind = ErrorKind::http_response(
+                            status,
+                            http_error.error_code().map(std::borrow::ToOwned::to_owned),
+                        );
+                        return Err(Error::new(error_kind, http_error));
+                    }
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListBlobsHierarchySegmentResponse = xml::read_xml(&bytes)?;
-                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
@@ -1001,7 +1088,15 @@ impl BlobContainerClient {
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -1062,7 +1157,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -1137,7 +1240,15 @@ impl BlobContainerClient {
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -1198,7 +1309,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -1277,7 +1396,15 @@ impl BlobContainerClient {
         request.insert_header("x-ms-version", &self.version);
         request.set_body(container_acl);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 
@@ -1320,7 +1447,15 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        if !rsp.status().is_success() {
+            let status = rsp.status();
+            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
+            let error_kind = ErrorKind::http_response(
+                status,
+                http_error.error_code().map(std::borrow::ToOwned::to_owned),
+            );
+            return Err(Error::new(error_kind, http_error));
+        }
         Ok(rsp.into())
     }
 }
