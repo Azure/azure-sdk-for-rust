@@ -42,7 +42,7 @@ version = "0.8.0"
 [workspace.dependencies.typespec_client_core]
 default-features = false
 path = "sdk/typespec/typespec_client_core"
-version = "0.7.0"
+version = "0.8.0"
 
 [workspace.dependencies.typespec_macros]
 version = "0.7.0"
