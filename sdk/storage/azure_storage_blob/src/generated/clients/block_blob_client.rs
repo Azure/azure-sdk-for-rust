@@ -15,17 +15,15 @@ use crate::generated::models::{
 use azure_core::{
     base64::encode,
     credentials::TokenCredential,
-    error::ErrorKind,
     fmt::SafeDebug,
     http::{
         check_success,
-        headers::ERROR_CODE,
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
         XmlFormat,
     },
     time::to_rfc7231,
-    tracing, Bytes, Error, Result,
+    tracing, Bytes, Result,
 };
 use std::sync::Arc;
 
@@ -67,14 +65,13 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
-        let mut endpoint = Url::parse(endpoint)?;
+        let endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
             return Err(azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        endpoint.set_query(None);
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
