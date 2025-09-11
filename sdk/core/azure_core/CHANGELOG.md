@@ -6,7 +6,7 @@
 
 - Added `RawResponse` to `ErrorKind::HttpResponse` that contains the HTTP status code, headers, and complete error response body.
 - Added `RequestContent::from_slice()`.
-- Added `TokenRequestOptions.ClientMethodOptions`.
+- Added `TokenRequestOptions { method_options: ClientMethodOptions }`.
 - Added `TryFrom<T> for RequestContent<T, JsonFormat>` for JSON primitives.
 - Added support for WASM to the `async_runtime` module.
 - Added logging policy to log HTTP requests and responses in the pipeline. As a part of this change, sanitization support was added to places which log HTTP headers and URLs. The `azure_core::http::ClientOptions` has been enhanced with a `LoggingOptions` which allows a user/service client to specify headers or URL query parameters which should be allowed. Note that the sanitization feature is disabled if you build with the `debug` feature enabled.
