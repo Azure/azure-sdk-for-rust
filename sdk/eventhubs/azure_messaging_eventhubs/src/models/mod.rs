@@ -49,7 +49,7 @@ use std::time::SystemTime;
 /// Basic usage:
 ///
 /// ```no_run
-/// # use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+/// # use azure_identity::DeveloperToolsCredential;
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DeveloperToolsCredential::new(None)?;
@@ -95,7 +95,7 @@ pub struct EventHubProperties {
 /// Basic usage:
 ///
 /// ```no_run
-/// # use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+/// # use azure_identity::DeveloperToolsCredential;
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// # let my_credentials = DeveloperToolsCredential::new(None)?;

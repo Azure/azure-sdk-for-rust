@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    ClientAssertion, ClientAssertionCredential, ClientAssertionCredentialOptions,
-    TokenCredentialOptions,
+    env::Env, ClientAssertion, ClientAssertionCredential, ClientAssertionCredentialOptions,
 };
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
@@ -11,7 +10,7 @@ use azure_core::{
     http::{
         headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
         request::Request,
-        HttpClient, Method, StatusCode, Url,
+        ClientMethodOptions, Method, Pipeline, StatusCode, Url,
     },
 };
 use serde::Deserialize;
@@ -33,18 +32,9 @@ pub struct AzurePipelinesCredential(ClientAssertionCredential<Client>);
 pub struct AzurePipelinesCredentialOptions {
     /// Options for the [`ClientAssertionCredential`] used by the [`AzurePipelinesCredential`].
     pub credential_options: ClientAssertionCredentialOptions,
-}
 
-// TODO: Should probably remove this once we consolidate and unify credentials.
-impl From<TokenCredentialOptions> for AzurePipelinesCredentialOptions {
-    fn from(value: TokenCredentialOptions) -> Self {
-        Self {
-            credential_options: ClientAssertionCredentialOptions {
-                credential_options: value,
-                ..Default::default()
-            },
-        }
-    }
+    #[cfg(test)]
+    pub(crate) env: Option<Env>,
 }
 
 impl AzurePipelinesCredential {
@@ -70,7 +60,10 @@ impl AzurePipelinesCredential {
         )?;
 
         let options = options.unwrap_or_default();
-        let env = options.credential_options.credential_options.env();
+        #[cfg(test)]
+        let env = options.env.unwrap_or_default();
+        #[cfg(not(test))]
+        let env = Env::default();
         let endpoint = env
             .var(OIDC_VARIABLE_NAME)
             .map_err(|err| azure_core::Error::full(
@@ -89,9 +82,17 @@ impl AzurePipelinesCredential {
             .query_pairs_mut()
             .append_pair("api-version", OIDC_VERSION)
             .append_pair("serviceConnectionId", service_connection_id);
+        let pipeline = azure_core::http::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.credential_options.client_options.clone(),
+            Vec::default(),
+            Vec::default(),
+            None,
+        );
         let client = Client {
             endpoint,
-            http_client: options.credential_options.credential_options.http_client(),
+            pipeline: Arc::new(pipeline),
             system_access_token,
         };
         let credential = ClientAssertionCredential::new_exclusive(
@@ -111,7 +112,7 @@ impl TokenCredential for AzurePipelinesCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         self.0.get_token(scopes, options).await
     }
@@ -120,14 +121,14 @@ impl TokenCredential for AzurePipelinesCredential {
 #[derive(Debug)]
 struct Client {
     endpoint: Url,
-    http_client: Arc<dyn HttpClient>,
+    pipeline: Arc<Pipeline>,
     system_access_token: Secret,
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl ClientAssertion for Client {
-    async fn secret(&self) -> azure_core::Result<String> {
+    async fn secret(&self, options: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String> {
         let mut req = Request::new(self.endpoint.clone(), Method::Post);
         req.insert_header(
             AUTHORIZATION,
@@ -136,8 +137,9 @@ impl ClientAssertion for Client {
         req.insert_header(TFS_FEDAUTHREDIRECT_HEADER, "Suppress");
         req.insert_header(CONTENT_LENGTH, "0");
 
-        // TODO: Consider defining and using azure_identity-specific pipeline, or even from azure_core.
-        let resp = self.http_client.execute_request(&req).await?;
+        let options = options.unwrap_or_default();
+        let ctx = options.context.to_borrowed();
+        let resp = self.pipeline.send(&ctx, &mut req).await?;
         if resp.status() != StatusCode::Ok {
             let status_code = resp.status();
             let err_headers: ErrorHeaders = resp.headers().get()?;
@@ -202,7 +204,10 @@ impl fmt::Display for ErrorHeaders {
 mod tests {
     use super::*;
     use crate::env::Env;
-    use azure_core::{http::BufResponse, Bytes};
+    use azure_core::{
+        http::{BufResponse, ClientOptions, TransportOptions},
+        Bytes,
+    };
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt as _;
 
@@ -215,13 +220,10 @@ mod tests {
         assert!(AzurePipelinesCredential::new("a".into(), "b".into(), "c", "", None).is_err());
 
         let options = AzurePipelinesCredentialOptions {
-            credential_options: ClientAssertionCredentialOptions {
-                credential_options: TokenCredentialOptions {
-                    env: Env::from(&[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..]),
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
+            env: Some(Env::from(
+                &[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..],
+            )),
+            ..Default::default()
         };
         assert!(
             AzurePipelinesCredential::new("a".into(), "b".into(), "c", "d", Some(options)).is_ok()
@@ -250,13 +252,15 @@ mod tests {
         });
         let options = AzurePipelinesCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
-                credential_options: TokenCredentialOptions {
-                    env: Env::from(&[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..]),
-                    http_client: Arc::new(mock_client),
+                client_options: ClientOptions {
+                    transport: Some(TransportOptions::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
                 ..Default::default()
             },
+            env: Some(Env::from(
+                &[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..],
+            )),
         };
         let credential =
             AzurePipelinesCredential::new("a".into(), "b".into(), "c", "d", Some(options))
@@ -315,13 +319,15 @@ mod tests {
         });
         let options = AzurePipelinesCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
-                credential_options: TokenCredentialOptions {
-                    env: Env::from(&[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..]),
-                    http_client: Arc::new(mock_client),
+                client_options: ClientOptions {
+                    transport: Some(TransportOptions::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
                 ..Default::default()
             },
+            env: Some(Env::from(
+                &[(OIDC_VARIABLE_NAME, "http://localhost/get_token")][..],
+            )),
         };
         let credential =
             AzurePipelinesCredential::new("a".into(), "b".into(), "c", "d", Some(options))

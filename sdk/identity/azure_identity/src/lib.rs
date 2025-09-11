@@ -20,7 +20,6 @@ mod developer_tools_credential;
 mod env;
 mod imds_managed_identity_credential;
 mod managed_identity_credential;
-mod options;
 #[cfg(not(target_arch = "wasm32"))]
 mod process;
 mod virtual_machine_managed_identity_credential;
@@ -38,7 +37,6 @@ pub use client_secret_credential::*;
 #[cfg(not(target_arch = "wasm32"))]
 pub use developer_tools_credential::*;
 pub use managed_identity_credential::*;
-pub use options::TokenCredentialOptions;
 #[cfg(not(target_arch = "wasm32"))]
 pub use process::{new_executor, Executor};
 pub use workload_identity_credential::*;
@@ -48,9 +46,10 @@ pub(crate) use cache::TokenCache;
 pub(crate) use imds_managed_identity_credential::*;
 pub(crate) use virtual_machine_managed_identity_credential::*;
 
+use crate::env::Env;
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    http::BufResponse,
+    http::{BufResponse, Url},
     Error, Result,
 };
 use serde::Deserialize;
@@ -99,6 +98,18 @@ where
     }
 
     Ok(())
+}
+
+const AZURE_AUTHORITY_HOST_ENV_KEY: &str = "AZURE_AUTHORITY_HOST";
+const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
+
+fn get_authority_host(env: Option<Env>, option: Option<String>) -> Result<Url> {
+    let authority_host = env
+        .unwrap_or_default()
+        .var(AZURE_AUTHORITY_HOST_ENV_KEY)
+        .unwrap_or_else(|_| option.unwrap_or_else(|| AZURE_PUBLIC_CLOUD.to_owned()));
+
+    Url::parse(&authority_host).map_err(Into::<Error>::into)
 }
 
 #[test]

@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Removed all `ClientCertificateCredentialOptions` methods
+- Removed `TokenCredentialOptions`. HTTP client options are now set on `ClientOptions`. Credentials which formerly got an authority host from this type now get it from an `authority_host` field in their own options type.
 - Replaced `DefaultAzureCredential` with `DeveloperToolsCredential`. This new type is excluded from WASM32 builds because it can't authenticate in a WASM runtime environment; however, neither could `DefaultAzureCredential`, which wasn't properly excluded.
 
 ### Bugs Fixed

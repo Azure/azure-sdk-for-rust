@@ -66,7 +66,7 @@ impl ConsumerClient {
     /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     ///
     ///     let my_credential = DeveloperToolsCredential::new(None)?;
     /// let consumer = ConsumerClient::builder()
@@ -124,7 +124,7 @@ impl ConsumerClient {
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -199,7 +199,7 @@ impl ConsumerClient {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     /// use futures::stream::StreamExt;
     ///
     /// #[tokio::main]
@@ -301,7 +301,7 @@ impl ConsumerClient {
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     ///
     /// #[tokio::main]
     /// async fn main(){
@@ -347,7 +347,7 @@ impl ConsumerClient {
     ///
     /// ``` no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -548,7 +548,7 @@ pub mod builders {
     ///
     /// ```no_run
     /// use azure_messaging_eventhubs::ConsumerClient;
-    /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+    /// use azure_identity::DeveloperToolsCredential;
     ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -591,7 +591,7 @@ pub mod builders {
         ///
         /// ```no_run
         /// use azure_messaging_eventhubs::ConsumerClient;
-        /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+        /// use azure_identity::DeveloperToolsCredential;
         ///
         /// #[tokio::main]
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -651,7 +651,7 @@ pub mod builders {
         ///
         /// ```
         /// use azure_messaging_eventhubs::ConsumerClient;
-        /// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+        /// use azure_identity::DeveloperToolsCredential;
         ///
         /// #[tokio::main]
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
