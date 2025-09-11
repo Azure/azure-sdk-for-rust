@@ -50,44 +50,6 @@ $resourceGroup = $DeploymentOutputs['RESOURCE_GROUP']
 Write-Host "Service Bus Namespace: $namespaceName"
 Write-Host "Resource Group: $resourceGroup"
 
-# Retrieve connection strings (these contain secrets so aren't in Bicep outputs)
-Write-Host "Retrieving Service Bus connection strings..."
-
-try {
-  $connectionString = az servicebus namespace authorization-rule keys list `
-    --resource-group $resourceGroup `
-    --namespace-name $namespaceName `
-    --name RootManageSharedAccessKey `
-    --query primaryConnectionString `
-    --output tsv
-
-  $listenOnlyConnectionString = az servicebus namespace authorization-rule keys list `
-    --resource-group $resourceGroup `
-    --namespace-name $namespaceName `
-    --name ListenOnly `
-    --query primaryConnectionString `
-    --output tsv
-
-  $sendOnlyConnectionString = az servicebus namespace authorization-rule keys list `
-    --resource-group $resourceGroup `
-    --namespace-name $namespaceName `
-    --name SendOnly `
-    --query primaryConnectionString `
-    --output tsv
-
-  Write-Host "✅ Connection strings retrieved successfully"
-
-  # Set additional outputs for the test pipeline
-  if ($CI) {
-    Write-Host "##vso[task.setvariable variable=SERVICEBUS_CONNECTION_STRING;issecret=true]$connectionString"
-    Write-Host "##vso[task.setvariable variable=SERVICEBUS_LISTEN_ONLY_CONNECTION_STRING;issecret=true]$listenOnlyConnectionString"
-    Write-Host "##vso[task.setvariable variable=SERVICEBUS_SEND_ONLY_CONNECTION_STRING;issecret=true]$sendOnlyConnectionString"
-  }
-}
-catch {
-  Write-Warning "Failed to retrieve connection strings: $($_.Exception.Message)"
-}
-
 Write-Host "##[endgroup]"
 
 Write-Host "Service Bus post-deployment setup completed successfully."

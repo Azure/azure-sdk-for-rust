@@ -192,9 +192,4 @@ output SERVICEBUS_TOPIC_NAME string = serviceBusNamespace::topic.name
 
 output SERVICEBUS_SUBSCRIPTION_NAME string = serviceBusNamespace::topic::subscription.name
 
-// Connection strings contain secrets and should be retrieved via Azure CLI or portal
-// output SERVICEBUS_CONNECTION_STRING string = serviceBusNamespace::rootSharedAccessKey.listKeys().primaryConnectionString
-// output SERVICEBUS_LISTEN_ONLY_CONNECTION_STRING string = serviceBusNamespace::listenOnlyKey.listKeys().primaryConnectionString
-// output SERVICEBUS_SEND_ONLY_CONNECTION_STRING string = serviceBusNamespace::sendOnlyKey.listKeys().primaryConnectionString
-
 output RESOURCE_GROUP string = resourceGroup().name
