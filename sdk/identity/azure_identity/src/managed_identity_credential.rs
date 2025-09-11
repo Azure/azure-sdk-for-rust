@@ -38,6 +38,11 @@ pub struct ManagedIdentityCredentialOptions {
 }
 
 impl ManagedIdentityCredential {
+    /// Creates a new instance of `ManagedIdentityCredential`.
+    ///
+    /// # Arguments
+    /// * `options`: Options for configuring the credential. If `None` is provided, default options will be used.
+    ///
     pub fn new(options: Option<ManagedIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>> {
         let options = options.unwrap_or_default();
         let env = options.credential_options.env();

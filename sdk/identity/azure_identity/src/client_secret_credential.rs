@@ -40,6 +40,14 @@ pub struct ClientSecretCredential {
 }
 
 impl ClientSecretCredential {
+    /// Create a new instance of a Client Secret Credential.
+    ///
+    /// # Arguments
+    /// - `tenant_id`: The Azure Active Directory tenant (directory) ID of the service principal.
+    /// - `client_id`: The client (application) ID of the service principal.
+    /// - `secret`: The client secret that was generated for the service principal.
+    /// - `options`: Options for configuring the credential. If `None` is provided, default options will be used.
+    ///
     pub fn new(
         tenant_id: &str,
         client_id: String,

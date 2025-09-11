@@ -65,10 +65,12 @@ impl ClientCertificateCredentialOptions {
         }
     }
 
+    /// Returns the options for the credential.
     pub fn options(&self) -> &TokenCredentialOptions {
         &self.options
     }
 
+    /// Returns a mutable reference to the options for the credential.
     pub fn options_mut(&mut self) -> &mut TokenCredentialOptions {
         &mut self.options
     }

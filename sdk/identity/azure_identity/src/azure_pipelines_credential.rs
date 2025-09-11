@@ -25,6 +25,7 @@ const TFS_FEDAUTHREDIRECT_HEADER: HeaderName = HeaderName::from_static("x-tfs-fe
 // TODO: https://github.com/Azure/azure-sdk-for-rust/issues/682
 const ALLOWED_HEADERS: &[&str] = &["x-msedge-ref", "x-vss-e2eid"];
 
+/// Enables authentication to Entra ID from Azure Pipelines.
 #[derive(Debug)]
 pub struct AzurePipelinesCredential(ClientAssertionCredential<Client>);
 

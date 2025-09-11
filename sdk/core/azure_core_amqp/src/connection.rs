@@ -38,16 +38,32 @@ pub struct AmqpConnectionOptions {
 
 impl AmqpConnectionOptions {}
 
+/// Trait defining the asynchronous APIs for AMQP connection operations.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpConnectionApis {
+    /// Asynchronously opens an AMQP connection.
+    ///
+    /// # Arguments
+    /// - `name`: The name of the connection.
+    /// - `url`: The URL of the AMQP broker.
+    /// - `options`: Optional connection options.
     async fn open(
         &self,
         name: String,
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> Result<()>;
+
+    /// Asynchronously closes the AMQP connection.
     async fn close(&self) -> Result<()>;
+
+    /// Asynchronously closes the AMQP connection with an error condition.
+    ///
+    /// # Arguments
+    /// - `condition`: The error condition as an `AmqpSymbol`.
+    /// - `description`: An optional description of the error.
+    /// - `info`: Optional additional information as an `AmqpOrderedMap`.
     async fn close_with_error(
         &self,
         condition: AmqpSymbol,
@@ -56,6 +72,7 @@ pub trait AmqpConnectionApis {
     ) -> Result<()>;
 }
 
+/// Struct representing an AMQP connection.
 #[derive(Default)]
 pub struct AmqpConnection {
     pub(crate) implementation: ConnectionImplementation,
@@ -90,6 +107,7 @@ impl AmqpConnectionApis for AmqpConnection {
 }
 
 impl AmqpConnection {
+    /// Creates a new instance of `AmqpConnection`.
     pub fn new() -> Self {
         Self {
             implementation: ConnectionImplementation::new(),

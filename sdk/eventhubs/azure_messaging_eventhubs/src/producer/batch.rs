@@ -224,7 +224,8 @@ impl<'a> EventDataBatch<'a> {
         #[allow(unused_variables)] options: Option<AddEventDataOptions>,
     ) -> Result<bool> {
         let mut message = message.into();
-        if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
+        if message.properties.is_none() || message.properties.as_ref().unwrap().message_id.is_none()
+        {
             message.set_message_id(Uuid::new_v4());
         }
         if let Some(partition_key) = self.partition_key.as_ref() {
@@ -307,23 +308,23 @@ impl<'a> EventDataBatch<'a> {
         // Do NOT transfer the body, that will be handled later.
         let mut batch_builder = AmqpMessage::builder();
 
-        if let Some(message_header) = message.header() {
+        if let Some(message_header) = message.header.as_ref() {
             batch_builder = batch_builder.with_header(message_header.clone());
         }
-        if let Some(message_properties) = message.properties() {
+        if let Some(message_properties) = message.properties.as_ref() {
             batch_builder = batch_builder.with_properties(message_properties.clone());
         }
-        if let Some(application_properties) = message.application_properties() {
+        if let Some(application_properties) = message.application_properties.as_ref() {
             batch_builder =
                 batch_builder.with_application_properties(application_properties.clone());
         }
-        if let Some(delivery_annotations) = message.delivery_annotations() {
+        if let Some(delivery_annotations) = message.delivery_annotations.as_ref() {
             batch_builder = batch_builder.with_delivery_annotations(delivery_annotations.clone());
         }
-        if let Some(message_annotations) = message.message_annotations() {
+        if let Some(message_annotations) = message.message_annotations.as_ref() {
             batch_builder = batch_builder.with_message_annotations(message_annotations.clone());
         }
-        if let Some(footer) = message.footer() {
+        if let Some(footer) = message.footer.as_ref() {
             batch_builder = batch_builder.with_footer(footer.clone());
         }
 

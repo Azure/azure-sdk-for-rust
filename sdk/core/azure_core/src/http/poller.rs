@@ -171,8 +171,11 @@ pub enum PollerResult<M, N> {
     /// * `retry_after` is the optional client-specified [`Duration`] to wait. The default is 30 seconds.
     /// * `next` is the next link / continuation token.
     InProgress {
+        /// The HTTP response with the status monitor.
         response: Response<M>,
+        /// The optional client-specified [`Duration`] to wait before polling again.
         retry_after: Option<Duration>,
+        /// The next link / continuation token.
         next: N,
     },
 
@@ -181,7 +184,10 @@ pub enum PollerResult<M, N> {
     /// # Fields
     ///
     /// * `response` contains the HTTP response with the status monitor in a terminal state.
-    Done { response: Response<M> },
+    Done {
+        /// The HTTP response with the status monitor in a terminal state.
+        response: Response<M>,
+    },
 }
 
 impl<M: StatusMonitor, N: fmt::Debug> fmt::Debug for PollerResult<M, N> {

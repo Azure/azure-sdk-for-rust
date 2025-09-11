@@ -24,7 +24,12 @@ type ReceiverImplementation = super::noop::NoopAmqpReceiver;
 ///   complete control over the flow of messages, allowing it to request messages from the sender as needed.
 #[derive(Debug, PartialEq, Clone)]
 pub enum ReceiverCreditMode {
+    /// Automatically issue the specified number of credits to the sender. This allows the receiver to
+    /// control the flow of messages by specifying how many messages it is ready to receive.
     Auto(u32),
+
+    /// The receiver manually controls when to issue credit to the sender. This mode gives the receiver
+    /// complete control over the flow of messages, allowing it to request messages from the sender as needed.
     Manual,
 }
 
@@ -34,22 +39,40 @@ impl Default for ReceiverCreditMode {
     }
 }
 
+/// Options for configuring an AMQP receiver.
 #[derive(Debug, Default, Clone)]
 pub struct AmqpReceiverOptions {
+    /// The receiver settle mode for the AMQP receiver.
     pub receiver_settle_mode: Option<ReceiverSettleMode>,
+
+    /// The target for the AMQP receiver.
     pub target: Option<AmqpTarget>,
+
+    /// The name of the AMQP receiver.
     pub name: Option<String>,
+
+    /// The credit mode for the AMQP receiver.
     pub credit_mode: Option<ReceiverCreditMode>,
     /// If set, then the receiver will automatically accept messages as they are received.
     pub auto_accept: bool,
+
+    /// Additional properties for the AMQP receiver.
     pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
 }
 
 impl AmqpReceiverOptions {}
 
+/// Trait defining the asynchronous APIs for AMQP receiver operations.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpReceiverApis {
+    /// Attaches the AMQP receiver to the specified session and source.
+    ///
+    /// # Arguments
+    /// * `session` - The AMQP session to attach the receiver to.
+    /// * `source` - The source from which the receiver will receive messages.
+    /// * `options` - Optional configuration options for the receiver.
+    ///
     async fn attach(
         &self,
         session: &AmqpSession,
@@ -57,15 +80,36 @@ pub trait AmqpReceiverApis {
         options: Option<AmqpReceiverOptions>,
     ) -> Result<()>;
 
+    /// Detaches the AMQP receiver from the session.
+    ///
+    /// This method cleans up any resources associated with the receiver and ensures that it is properly
+    /// disconnected from the AMQP session.
+    ///
     async fn detach(self) -> Result<()>;
+
+    /// Sets the credit mode for the AMQP receiver.
+    ///
+    /// # Arguments
+    /// * `credit_mode` - The credit mode to set for the receiver.
     async fn set_credit_mode(&self, credit_mode: ReceiverCreditMode) -> Result<()>;
+
+    /// Gets the current credit mode of the AMQP receiver.
     async fn credit_mode(&self) -> Result<ReceiverCreditMode>;
+
+    /// Receives a delivery from the AMQP receiver.
     async fn receive_delivery(&self) -> Result<AmqpDelivery>;
+
+    /// Accepts a delivery from the AMQP receiver.
     async fn accept_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+
+    /// Rejects a delivery from the AMQP receiver.
     async fn reject_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
+
+    /// Releases a delivery from the AMQP receiver.
     async fn release_delivery(&self, delivery: &AmqpDelivery) -> Result<()>;
 }
 
+/// Struct representing the AMQP receiver functionality.
 #[derive(Default)]
 pub struct AmqpReceiver {
     implementation: ReceiverImplementation,
@@ -119,6 +163,7 @@ impl AmqpReceiverApis for AmqpReceiver {
 }
 
 impl AmqpReceiver {
+    /// Creates a new instance of `AmqpReceiver`.
     pub fn new() -> Self {
         Self {
             implementation: ReceiverImplementation::new(),
@@ -173,7 +218,7 @@ mod tests {
 
         assert!(receiver_options.target.is_some());
         assert_eq!(
-            receiver_options.target.unwrap().address().unwrap(),
+            receiver_options.target.unwrap().address.unwrap(),
             "test_address"
         );
     }
@@ -240,7 +285,7 @@ mod tests {
         );
         assert!(receiver_options.target.is_some());
         assert_eq!(
-            receiver_options.target.unwrap().address().unwrap(),
+            receiver_options.target.unwrap().address.unwrap(),
             "combo_address"
         );
         assert_eq!(receiver_options.name.unwrap(), "combo_name".to_string());

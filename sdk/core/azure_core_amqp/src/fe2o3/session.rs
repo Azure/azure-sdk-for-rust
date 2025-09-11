@@ -81,26 +81,26 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         let mut session_builder = fe2o3_amqp::session::Session::builder();
 
         if let Some(options) = options {
-            if let Some(incoming_window) = options.incoming_window() {
+            if let Some(incoming_window) = options.incoming_window {
                 session_builder = session_builder.incoming_window(incoming_window);
             }
-            if let Some(outgoing_window) = options.outgoing_window() {
+            if let Some(outgoing_window) = options.outgoing_window {
                 session_builder = session_builder.outgoing_window(outgoing_window);
             }
-            if let Some(handle_max) = options.handle_max() {
+            if let Some(handle_max) = options.handle_max {
                 session_builder = session_builder.handle_max(handle_max);
             }
-            if let Some(offered_capabilities) = options.offered_capabilities() {
+            if let Some(offered_capabilities) = options.offered_capabilities {
                 session_builder = session_builder.set_offered_capabilities(
                     offered_capabilities.iter().map(Into::into).collect(),
                 );
             }
-            if let Some(desired_capabilities) = options.desired_capabilities() {
+            if let Some(desired_capabilities) = options.desired_capabilities {
                 session_builder = session_builder.set_desired_capabilities(
                     desired_capabilities.iter().map(Into::into).collect(),
                 );
             }
-            if let Some(properties) = options.properties() {
+            if let Some(properties) = options.properties {
                 session_builder = session_builder.properties(
                     properties
                         .iter()
@@ -108,7 +108,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
                         .collect(),
                 );
             }
-            if let Some(buffer_size) = options.buffer_size() {
+            if let Some(buffer_size) = options.buffer_size {
                 session_builder = session_builder.buffer_size(buffer_size);
             }
         }

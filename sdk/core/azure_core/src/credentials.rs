@@ -17,6 +17,7 @@ pub static DEFAULT_SCOPE_SUFFIX: &str = "/.default";
 pub struct Secret(Cow<'static, str>);
 
 impl Secret {
+    /// Create a new `Secret`.
     pub fn new<T>(access_token: T) -> Self
     where
         T: Into<Cow<'static, str>>,
@@ -24,6 +25,7 @@ impl Secret {
         Self(access_token.into())
     }
 
+    /// Get the secret value.
     pub fn secret(&self) -> &str {
         &self.0
     }
