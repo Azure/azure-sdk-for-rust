@@ -1022,7 +1022,7 @@ impl From<Vec<AmqpList>> for AmqpMessageBody {
 
 /// The key for an AMQP annotation.
 ///
-/// See also: https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-annotations
+/// See also: [AMQP Type Annotations](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-annotations)
 #[derive(Debug, Clone, PartialEq)]
 pub enum AmqpAnnotationKey {
     /// An AMQP symbol.
@@ -1045,7 +1045,7 @@ impl AsRef<AmqpAnnotationKey> for AmqpAnnotationKey {
 
 // Implementing From for AmqpValue to AmqpAnnotationKey
 // Note that this is a lossy conversion as AmqpValue can contain other types.
-// See also: https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-annotations
+/// See also: [AMQP Type Annotations](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-annotations)
 //
 impl From<AmqpValue> for AmqpAnnotationKey {
     fn from(value: AmqpValue) -> Self {
@@ -1101,7 +1101,7 @@ impl PartialEq<&str> for AmqpAnnotationKey {
 
 /// AMQP Annotations
 ///
-/// See also: https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-annotations
+/// See also: [AMQP Type Annotations](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-annotations)
 ///
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct AmqpAnnotations(pub AmqpOrderedMap<AmqpAnnotationKey, AmqpValue>);
@@ -1134,7 +1134,7 @@ where
 
 /// AMQP Application Properties
 ///
-/// See also: https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-application-properties
+/// See also: [AMQP Application Properties](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-application-properties)
 #[derive(SafeDebug, Clone, PartialEq, Default)]
 pub struct AmqpApplicationProperties(pub AmqpOrderedMap<String, AmqpSimpleValue>);
 

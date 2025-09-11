@@ -52,14 +52,14 @@ pub mod message {
 }
 
 // AMQP Settle mode:
-// https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-sender-settle-mode
+// See also: [AMQP Sender Settle Mode](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-sender-settle-mode)
 const AMQP_SENDER_SETTLE_MODE_UNSETTLED: isize = 0;
 const AMQP_SENDER_SETTLE_MODE_SETTLED: isize = 1;
 const AMQP_SENDER_SETTLE_MODE_MIXED: isize = 2;
 
 /// AMQP Sender settle mode.
 ///
-/// https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-sender-settle-mode
+/// See also: [AMQP Sender Settle Mode](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-sender-settle-mode)
 #[derive(Debug, Clone, PartialEq)]
 pub enum SenderSettleMode {
     /// Unsettled mode.
@@ -71,14 +71,14 @@ pub enum SenderSettleMode {
 }
 
 // AMQP Receiver settle mode:
-// https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-receiver-settle-mode
+// See also: [AMQP Receiver Settle Mode](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-receiver-settle-mode)
 
 const AMQP_RECEIVER_SETTLE_MODE_FIRST: isize = 0;
 const AMQP_RECEIVER_SETTLE_MODE_SECOND: isize = 1;
 
 /// AMQP Receiver settle mode.
 ///
-/// https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-receiver-settle-mode
+/// See also: [AMQP Receiver Settle Mode](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-receiver-settle-mode)
 #[derive(Debug, Clone, PartialEq)]
 pub enum ReceiverSettleMode {
     /// First mode.
