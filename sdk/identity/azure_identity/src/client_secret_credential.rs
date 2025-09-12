@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    deserialize, EntraIdErrorResponse, EntraIdTokenResponse, TokenCache, TokenCredentialOptions,
+    deserialize, get_authority_host, EntraIdErrorResponse, EntraIdTokenResponse, TokenCache,
 };
 use azure_core::credentials::TokenRequestOptions;
 use azure_core::http::StatusCode;
@@ -12,7 +12,7 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
-        Method, Request, Url,
+        ClientOptions, Method, Pipeline, Request, Url,
     },
     time::{Duration, OffsetDateTime},
     Error,
@@ -26,7 +26,12 @@ const CLIENT_SECRET_CREDENTIAL: &str = "ClientSecretCredential";
 #[derive(Debug, Default)]
 pub struct ClientSecretCredentialOptions {
     /// Options for constructing credentials.
-    pub credential_options: TokenCredentialOptions,
+    pub client_options: ClientOptions,
+
+    /// The base URL for token requests.
+    ///
+    /// The default is `https://login.microsoftonline.com`.
+    pub authority_host: Option<String>,
 }
 
 /// Authenticates an application with a client secret.
@@ -35,7 +40,7 @@ pub struct ClientSecretCredential {
     cache: TokenCache,
     client_id: String,
     endpoint: Url,
-    options: TokenCredentialOptions,
+    pipeline: Pipeline,
     secret: Secret,
 }
 
@@ -51,19 +56,27 @@ impl ClientSecretCredential {
         crate::validate_not_empty(secret.secret(), "no secret specified")?;
 
         let options = options.unwrap_or_default();
-        let endpoint = options
-            .credential_options
-            .authority_host()?
+        let authority_host = get_authority_host(None, options.authority_host)?;
+        let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
             .with_context(ErrorKind::DataConversion, || {
                 format!("tenant_id '{tenant_id}' could not be URL encoded")
             })?;
 
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options,
+            Vec::default(),
+            Vec::default(),
+            None,
+        );
+
         Ok(Arc::new(Self {
             cache: TokenCache::new(),
             client_id,
             endpoint,
-            options: options.credential_options,
+            pipeline,
             secret,
         }))
     }
@@ -71,7 +84,7 @@ impl ClientSecretCredential {
     async fn get_token_impl(
         &self,
         scopes: &[&str],
-        _: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> Result<AccessToken> {
         let mut req = Request::new(self.endpoint.clone(), Method::Post);
         req.insert_header(
@@ -86,7 +99,9 @@ impl ClientSecretCredential {
             .finish();
         req.set_body(body);
 
-        let res = self.options.http_client().execute_request(&req).await?;
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let res = self.pipeline.send(&ctx, &mut req).await?;
 
         match res.status() {
             StatusCode::Ok => {
@@ -120,7 +135,7 @@ impl TokenCredential for ClientSecretCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::message(ErrorKind::Credential, "no scopes specified"));
@@ -137,7 +152,7 @@ mod tests {
     use crate::tests::*;
     use azure_core::{
         authority_hosts::AZURE_PUBLIC_CLOUD,
-        http::{headers::Headers, BufResponse, StatusCode},
+        http::{headers::Headers, BufResponse, StatusCode, TransportOptions},
         Bytes, Result,
     };
     use std::vec;
@@ -179,10 +194,11 @@ mod tests {
             FAKE_CLIENT_ID.to_string(),
             FAKE_SECRET.into(),
             Some(ClientSecretCredentialOptions {
-                credential_options: TokenCredentialOptions {
-                    http_client: Arc::new(sts),
+                client_options: ClientOptions {
+                    transport: Some(TransportOptions::new(Arc::new(sts))),
                     ..Default::default()
                 },
+                ..Default::default()
             }),
         )
         .expect("valid credential");
@@ -221,10 +237,11 @@ mod tests {
             FAKE_CLIENT_ID.to_string(),
             FAKE_SECRET.into(),
             Some(ClientSecretCredentialOptions {
-                credential_options: TokenCredentialOptions {
-                    http_client: Arc::new(sts),
+                client_options: ClientOptions {
+                    transport: Some(TransportOptions::new(Arc::new(sts))),
                     ..Default::default()
                 },
+                ..Default::default()
             }),
         )
         .expect("valid credential");

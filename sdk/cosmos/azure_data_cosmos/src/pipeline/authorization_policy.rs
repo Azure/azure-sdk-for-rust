@@ -170,7 +170,7 @@ mod tests {
         async fn get_token(
             &self,
             scopes: &[&str],
-            _: Option<TokenRequestOptions>,
+            _: Option<TokenRequestOptions<'_>>,
         ) -> azure_core::Result<AccessToken> {
             let token = format!("{}+{}", self.0, scopes.join(","));
             Ok(AccessToken::new(

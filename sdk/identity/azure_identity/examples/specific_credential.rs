@@ -8,9 +8,7 @@ use azure_core::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 use azure_identity::AzureCliCredential;
-use azure_identity::{
-    ManagedIdentityCredential, TokenCredentialOptions, WorkloadIdentityCredential,
-};
+use azure_identity::{ManagedIdentityCredential, WorkloadIdentityCredential};
 use std::sync::Arc;
 
 #[tokio::main]
@@ -18,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscription_id =
         std::env::var("AZURE_SUBSCRIPTION_ID").expect("AZURE_SUBSCRIPTION_ID required");
 
-    let credential = SpecificAzureCredential::new(TokenCredentialOptions::default())?;
+    let credential = SpecificAzureCredential::new()?;
 
     // Enumerate the Azure storage accounts in the subscription using the REST API directly.
     // This is just an example: you would normally pass in an `Arc::new(credential)` to an Azure SDK client.
@@ -66,7 +64,7 @@ impl TokenCredential for SpecificAzureCredentialKind {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         match self {
             #[cfg(not(target_arch = "wasm32"))]
@@ -91,7 +89,7 @@ struct SpecificAzureCredential {
 }
 
 impl SpecificAzureCredential {
-    pub fn new(options: TokenCredentialOptions) -> azure_core::Result<SpecificAzureCredential> {
+    pub fn new() -> azure_core::Result<SpecificAzureCredential> {
         let credential_type = std::env::var(AZURE_CREDENTIAL_KIND)
             .map_err(|err| Error::new(ErrorKind::Other, err))?;
         let source: SpecificAzureCredentialKind =
@@ -108,7 +106,7 @@ impl SpecificAzureCredential {
                         })?
                 }
                 #[cfg(not(target_arch = "wasm32"))]
-                azure_credential_kinds::AZURE_CLI => AzureCliCredential::new(Some(options.into()))
+                azure_credential_kinds::AZURE_CLI => AzureCliCredential::new(None)
                     .map(SpecificAzureCredentialKind::AzureCli)
                     .with_context(ErrorKind::Credential, || {
                         format!(
@@ -117,7 +115,7 @@ impl SpecificAzureCredential {
                         )
                     })?,
                 azure_credential_kinds::WORKLOAD_IDENTITY => {
-                    WorkloadIdentityCredential::new(Some(options.into()))
+                    WorkloadIdentityCredential::new(None)
                         .map(SpecificAzureCredentialKind::WorkloadIdentity)
                         .with_context(ErrorKind::Credential, || {
                             format!(
@@ -142,7 +140,7 @@ impl TokenCredential for SpecificAzureCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         self.source.get_token(scopes, options).await
     }

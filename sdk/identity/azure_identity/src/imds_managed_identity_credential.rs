@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{env::Env, TokenCache, TokenCredentialOptions, UserAssignedId};
+use crate::{env::Env, TokenCache, UserAssignedId};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
-    http::{headers::HeaderName, request::Request, HttpClient, Method, StatusCode, Url},
+    http::{headers::HeaderName, request::Request, Method, StatusCode, Url},
+    http::{ClientOptions, Pipeline},
     json::from_json,
     time::OffsetDateTime,
 };
@@ -13,7 +14,7 @@ use serde::{
     de::{self, Deserializer},
     Deserialize,
 };
-use std::{str, sync::Arc};
+use std::str;
 
 /// An identifier for the Azure Instance Metadata Service (IMDS).
 ///
@@ -48,7 +49,7 @@ impl From<UserAssignedId> for ImdsId {
 /// Built up from docs at [https://learn.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://learn.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
 #[derive(Debug)]
 pub(crate) struct ImdsManagedIdentityCredential {
-    http_client: Arc<dyn HttpClient>,
+    pipeline: Pipeline,
     endpoint: Url,
     api_version: String,
     secret_header: HeaderName,
@@ -60,30 +61,38 @@ pub(crate) struct ImdsManagedIdentityCredential {
 
 impl ImdsManagedIdentityCredential {
     pub fn new(
-        options: impl Into<TokenCredentialOptions>,
         endpoint: Url,
         api_version: &str,
         secret_header: HeaderName,
         secret_env: &str,
         id: ImdsId,
+        client_options: ClientOptions,
+        env: Env,
     ) -> Self {
-        let options = options.into();
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            client_options,
+            Vec::default(),
+            Vec::default(),
+            None,
+        );
         Self {
-            http_client: options.http_client(),
+            pipeline,
             endpoint,
             api_version: api_version.to_owned(),
             secret_header: secret_header.to_owned(),
             secret_env: secret_env.to_owned(),
             id,
             cache: TokenCache::new(),
-            env: options.env().clone(),
+            env,
         }
     }
 
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         let resource = scopes_to_resource(scopes)?;
 
@@ -111,7 +120,9 @@ impl ImdsManagedIdentityCredential {
             req.insert_header(self.secret_header.clone(), val);
         };
 
-        let rsp = self.http_client.execute_request(&req).await?;
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let rsp = self.pipeline.send(&ctx, &mut req).await?;
 
         if !rsp.status().is_success() {
             match rsp.status() {
@@ -150,7 +161,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token(s, o))

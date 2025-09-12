@@ -30,7 +30,6 @@ struct EventDataBatchState {
 ///
 /// ``` no_run
 /// # use azure_messaging_eventhubs::ProducerClient;
-/// # use azure_identity::TokenCredentialOptions;
 ///
 /// # async fn send_event_batch() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credentials = azure_identity::DeveloperToolsCredential::new(None)?;

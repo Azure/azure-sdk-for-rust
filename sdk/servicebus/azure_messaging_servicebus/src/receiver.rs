@@ -2255,7 +2255,7 @@ mod tests {
         Arc::new(AmqpConnection::new())
     }
 
-    /// Creates a test ClientOptions
+    /// Creates test ServiceBusClientOptions
     fn create_test_options() -> ServiceBusClientOptions {
         Default::default()
     }

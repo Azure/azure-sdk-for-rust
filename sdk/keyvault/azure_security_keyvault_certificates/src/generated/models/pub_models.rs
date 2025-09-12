@@ -65,7 +65,7 @@ pub struct Certificate {
     )]
     pub cer: Option<Vec<u8>>,
 
-    /// The content type of the secret. eg. 'application/x-pem-file' or 'application/x-pkcs12',
+    /// The content type of the secret. eg. 'application/x-pem-file' or 'application/x-pkcs12'.
     #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
 
@@ -90,7 +90,7 @@ pub struct Certificate {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
 
-    /// Application specific metadata in the form of key-value pairs
+    /// Application specific metadata in the form of key-value pairs.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<HashMap<String, String>>,
 
@@ -334,7 +334,7 @@ pub struct DeletedCertificate {
     )]
     pub cer: Option<Vec<u8>>,
 
-    /// The content type of the secret. eg. 'application/x-pem-file' or 'application/x-pkcs12',
+    /// The content type of the secret. eg. 'application/x-pem-file' or 'application/x-pkcs12'.
     #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
 
@@ -381,7 +381,7 @@ pub struct DeletedCertificate {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
 
-    /// Application specific metadata in the form of key-value pairs
+    /// Application specific metadata in the form of key-value pairs.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<HashMap<String, String>>,
 
@@ -754,10 +754,10 @@ pub struct SetIssuerParameters {
     pub provider: Option<String>,
 }
 
-/// The subject alternate names of a X509 object.
+/// The Subject Alternative Names of a X509 object.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct SubjectAlternativeNames {
-    /// Domain names.
+    /// Domain Names.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dns_names: Option<Vec<String>>,
 
@@ -765,7 +765,7 @@ pub struct SubjectAlternativeNames {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub emails: Option<Vec<String>>,
 
-    /// User principal names.
+    /// User Principal Names.
     #[serde(rename = "upns", skip_serializing_if = "Option::is_none")]
     pub user_principal_names: Option<Vec<String>>,
 }

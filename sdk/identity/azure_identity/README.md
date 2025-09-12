@@ -64,7 +64,8 @@ authentication flows. For more details on this scenario see [Configure an applic
 
 ```rust no_run
 use azure_core::credentials::{AccessToken, TokenCredential};
-use azure_identity::{ClientAssertion, ClientAssertionCredential, TokenCredentialOptions, ManagedIdentityCredential};
+use azure_core::http::ClientMethodOptions;
+use azure_identity::{ClientAssertion, ClientAssertionCredential, ManagedIdentityCredential};
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -76,7 +77,7 @@ struct VmClientAssertion {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl ClientAssertion for VmClientAssertion {
-    async fn secret(&self) -> azure_core::Result<String> {
+    async fn secret(&self, _: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String> {
         Ok(self
             .credential
             .get_token(&[&self.scope], None)
