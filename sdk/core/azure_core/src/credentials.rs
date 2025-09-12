@@ -92,6 +92,7 @@ impl AccessToken {
 /// Options for getting a token from a [`TokenCredential`]
 #[derive(Clone, Default, SafeDebug)]
 pub struct TokenRequestOptions<'a> {
+    /// Method options to be used when requesting a token.
     pub method_options: ClientMethodOptions<'a>,
 }
 
