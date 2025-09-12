@@ -4,13 +4,16 @@
 //! Credentials for live and recorded tests.
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
+    http::ClientOptions,
     time::{Duration, OffsetDateTime},
 };
 #[cfg(target_arch = "wasm32")]
 use azure_core::{error::ErrorKind, Error};
 #[cfg(not(target_arch = "wasm32"))]
 use azure_identity::DeveloperToolsCredential;
-use azure_identity::{AzurePipelinesCredential, TokenCredentialOptions};
+use azure_identity::{
+    AzurePipelinesCredential, AzurePipelinesCredentialOptions, ClientAssertionCredentialOptions,
+};
 use std::{env, sync::Arc};
 
 /// A mock [`TokenCredential`] useful for testing.
@@ -30,7 +33,7 @@ impl TokenCredential for MockCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<TokenRequestOptions>,
+        _: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         let token: Secret = format!("TEST TOKEN {}", scopes.join(" ")).into();
         let expires_on = OffsetDateTime::now_utc().saturating_add(Duration::minutes(5));
@@ -43,9 +46,7 @@ impl TokenCredential for MockCredential {
 ///
 /// When running in Azure Pipelines, this will return an [`AzurePipelinesCredential`];
 /// otherwise, it will return a [`DeveloperToolsCredential`].
-pub fn from_env(
-    options: Option<TokenCredentialOptions>,
-) -> azure_core::Result<Arc<dyn TokenCredential>> {
+pub fn from_env(options: Option<ClientOptions>) -> azure_core::Result<Arc<dyn TokenCredential>> {
     // cspell:ignore accesstoken azuresubscription
     let tenant_id = env::var("AZURESUBSCRIPTION_TENANT_ID").ok();
     let client_id = env::var("AZURESUBSCRIPTION_CLIENT_ID").ok();
@@ -65,7 +66,12 @@ pub fn from_env(
                 client_id,
                 &connection_id,
                 access_token,
-                options.map(Into::into),
+                Some(AzurePipelinesCredentialOptions {
+                    credential_options: ClientAssertionCredentialOptions {
+                        client_options: options.unwrap_or_default(),
+                        ..Default::default()
+                    },
+                }),
             )? as Arc<dyn TokenCredential>);
         }
     }

@@ -85,7 +85,7 @@ impl TokenCredential for DeveloperToolsCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         let cached_index = self.cached_source_index.load(Ordering::Relaxed);
         if cached_index != usize::MAX {
@@ -166,7 +166,7 @@ mod tests {
         async fn get_token(
             &self,
             _scopes: &[&str],
-            _options: Option<TokenRequestOptions>,
+            _options: Option<TokenRequestOptions<'_>>,
         ) -> azure_core::Result<AccessToken> {
             self.call_count.fetch_add(1, Ordering::SeqCst);
             if self.succeed {

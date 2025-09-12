@@ -61,14 +61,13 @@ impl SecretClient {
         options: Option<SecretClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
-        let mut endpoint = Url::parse(endpoint)?;
+        let endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
             return Err(azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        endpoint.set_query(None);
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://vault.azure.net/.default"],
@@ -286,7 +285,7 @@ impl SecretClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
+                let rsp = pipeline.send(&ctx, &mut request).await?;
                 let rsp = check_success(rsp).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
@@ -351,7 +350,7 @@ impl SecretClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
+                let rsp = pipeline.send(&ctx, &mut request).await?;
                 let rsp = check_success(rsp).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;
@@ -425,7 +424,7 @@ impl SecretClient {
             let ctx = options.method_options.context.clone();
             let pipeline = pipeline.clone();
             async move {
-                let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
+                let rsp = pipeline.send(&ctx, &mut request).await?;
                 let rsp = check_success(rsp).await?;
                 let (status, headers, body) = rsp.deconstruct();
                 let bytes = body.collect().await?;

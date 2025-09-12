@@ -5,7 +5,7 @@ use crate::{
     common::authorizer::Authorizer, ErrorKind, ReceiveMode, Receiver, Result, Sender,
     ServiceBusError,
 };
-use azure_core::{credentials::TokenCredential, fmt::SafeDebug, http::ClientOptions, http::Url};
+use azure_core::{credentials::TokenCredential, fmt::SafeDebug, http::Url};
 use azure_core_amqp::{
     AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpOrderedMap, AmqpSymbol,
     AmqpValue,
@@ -25,7 +25,7 @@ pub enum SubQueue {
 
 impl SubQueue {
     /// Returns the path suffix for the sub-queue.
-    pub fn as_path_suffix(&self) -> &'static str {
+    pub(crate) fn as_path_suffix(&self) -> &'static str {
         match self {
             SubQueue::DeadLetter => "/$DeadLetterQueue",
             SubQueue::Transfer => "/$Transfer/$DeadLetterQueue",
@@ -39,9 +39,6 @@ pub struct ServiceBusClientOptions {
     /// The API version to use when communicating with the Service Bus service.
     pub api_version: String,
 
-    /// Core client configuration options.
-    pub client_options: ClientOptions,
-
     /// Application ID that will be passed to the namespace.
     ///
     /// This optional identifier is passed to the Service Bus namespace during connection establishment
@@ -52,8 +49,7 @@ pub struct ServiceBusClientOptions {
 impl Default for ServiceBusClientOptions {
     fn default() -> Self {
         Self {
-            api_version: "2017-04".to_string(), // Default Service Bus API version
-            client_options: ClientOptions::default(),
+            api_version: "2021-05".to_string(), // Default Service Bus API version
             application_id: None,
         }
     }

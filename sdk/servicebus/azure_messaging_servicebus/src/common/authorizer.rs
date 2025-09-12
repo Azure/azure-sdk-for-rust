@@ -417,7 +417,7 @@ mod tests {
         async fn get_token(
             &self,
             _scopes: &[&str],
-            _options: Option<TokenRequestOptions>,
+            _options: Option<TokenRequestOptions<'_>>,
         ) -> Result<AccessToken> {
             // Simulate a token refresh by incrementing the token get count
             // and updating the token expiration time

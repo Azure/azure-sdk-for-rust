@@ -19,7 +19,7 @@ use tracing::trace;
 ///
 /// ```no_run
 /// use azure_messaging_eventhubs::ConsumerClient;
-/// use azure_identity::{DeveloperToolsCredential, TokenCredentialOptions};
+/// use azure_identity::DeveloperToolsCredential;
 /// use futures::stream::StreamExt;
 ///
 /// #[tokio::main]
