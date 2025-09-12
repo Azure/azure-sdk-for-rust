@@ -239,7 +239,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
