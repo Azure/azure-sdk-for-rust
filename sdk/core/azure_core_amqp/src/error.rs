@@ -191,21 +191,6 @@ impl AmqpDescribedError {
             info,
         }
     }
-
-    // /// Returns a reference to the error condition.
-    // pub fn condition(&self) -> &AmqpErrorCondition {
-    //     &self.condition
-    // }
-
-    // /// Returns an optional reference to the error description.
-    // pub fn description(&self) -> Option<&str> {
-    //     self.description.as_deref()
-    // }
-
-    // /// Returns a reference to the additional error information.
-    // pub fn info(&self) -> &AmqpOrderedMap<AmqpSymbol, AmqpValue> {
-    //     &self.info
-    // }
 }
 
 /// An AMQP error from the AMQP stack.
