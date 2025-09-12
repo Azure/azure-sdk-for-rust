@@ -126,7 +126,7 @@ impl PartitionClient {
         let mut offset: Option<String> = None;
 
         let amqp_message = event_data.raw_amqp_message();
-        if let Some(message_annotations) = amqp_message.message_annotations() {
+        if let Some(message_annotations) = &amqp_message.message_annotations {
             for (key, value) in message_annotations.0.iter() {
                 if *key == crate::consumer::SEQUENCE_NUMBER_ANNOTATION {
                     match value {

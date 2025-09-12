@@ -3,6 +3,7 @@
 
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![warn(missing_docs)]
 
 mod app_service_managed_identity_credential;
 #[cfg(not(target_arch = "wasm32"))]

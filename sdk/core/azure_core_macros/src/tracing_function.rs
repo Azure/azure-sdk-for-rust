@@ -498,7 +498,7 @@ mod tests {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
+                    let rsp = pipeline.send(&ctx, &mut request).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;
@@ -569,7 +569,7 @@ mod tests {
                     let ctx = options.method_options.context.clone();
                     let pipeline = pipeline.clone();
                     async move {
-                        let rsp: BufResponse = pipeline.send(&ctx, &mut request).await?;
+                        let rsp = pipeline.send(&ctx, &mut request).await?;
                         let (status, headers, body) = rsp.deconstruct();
                         let bytes = body.collect().await?;
                         let res: ListDeletedSecretPropertiesResult = json::from_json(&bytes)?;

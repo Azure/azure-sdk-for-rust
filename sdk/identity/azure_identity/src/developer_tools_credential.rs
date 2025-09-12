@@ -39,6 +39,10 @@ pub struct DeveloperToolsCredential {
 }
 
 impl DeveloperToolsCredential {
+    /// Creates a new instance of `DeveloperToolsCredential`.
+    ///
+    /// # Arguments
+    /// * `options`: Options for configuring the credential. If `None` is provided, default options will be used.
     pub fn new(
         options: Option<DeveloperToolsCredentialOptions>,
     ) -> azure_core::Result<Arc<DeveloperToolsCredential>> {
@@ -60,7 +64,7 @@ impl DeveloperToolsCredential {
     }
 
     #[cfg(test)]
-    pub fn new_with_sources(
+    pub(crate) fn new_with_sources(
         sources: Vec<Arc<dyn TokenCredential>>,
     ) -> azure_core::Result<Arc<DeveloperToolsCredential>> {
         Ok(Arc::new(Self {

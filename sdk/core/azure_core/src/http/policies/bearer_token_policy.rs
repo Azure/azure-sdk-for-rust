@@ -24,6 +24,7 @@ pub struct BearerTokenCredentialPolicy {
 }
 
 impl BearerTokenCredentialPolicy {
+    /// Creates a new `BearerTokenCredentialPolicy`.
     pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self
     where
         A: IntoIterator<Item = B>,

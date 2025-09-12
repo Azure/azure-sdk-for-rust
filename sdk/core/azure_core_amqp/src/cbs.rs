@@ -10,6 +10,7 @@ type CbsImplementation = super::fe2o3::cbs::Fe2o3ClaimsBasedSecurity;
 #[cfg(any(not(any(feature = "fe2o3_amqp")), target_arch = "wasm32"))]
 type CbsImplementation = super::noop::NoopAmqpClaimsBasedSecurity;
 
+/// Trait defining the asynchronous APIs for Claims-Based Security (CBS) operations over AMQP.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpClaimsBasedSecurityApis {
@@ -56,11 +57,13 @@ pub trait AmqpClaimsBasedSecurityApis {
     ) -> Result<()>;
 }
 
+/// Struct representing the Claims-Based Security (CBS) functionality over AMQP.
 pub struct AmqpClaimsBasedSecurity {
     implementation: CbsImplementation,
 }
 
 impl AmqpClaimsBasedSecurity {
+    /// Creates a new instance of `AmqpClaimsBasedSecurity` using the provided AMQP session.
     pub fn new(session: AmqpSession) -> Result<Self> {
         Ok(Self {
             implementation: CbsImplementation::new(session)?,

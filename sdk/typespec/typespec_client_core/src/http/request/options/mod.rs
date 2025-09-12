@@ -12,5 +12,9 @@ request_header!(
     #[doc = "The Content Type indicates the media type of the request body"]
     ContentType,
     CONTENT_TYPE,
-    (APPLICATION_JSON, "application/json")
+    (
+        #[doc = "The content type for JSON payloads"]
+        APPLICATION_JSON,
+        "application/json"
+    )
 );

@@ -14,22 +14,47 @@ type SenderImplementation = super::fe2o3::sender::Fe2o3AmqpSender;
 #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
 type SenderImplementation = super::noop::NoopAmqpSender;
 
+/// AMQP Sender options.
 #[derive(Debug, Default, Clone)]
 pub struct AmqpSenderOptions {
+    /// The sender settle mode.
     pub sender_settle_mode: Option<SenderSettleMode>,
+
+    /// The receiver settle mode.
     pub receiver_settle_mode: Option<ReceiverSettleMode>,
+
+    /// The source of the sender.
     pub source: Option<AmqpSource>,
+
+    /// The offered capabilities of the sender.
     pub offered_capabilities: Option<Vec<AmqpSymbol>>,
+
+    /// The desired capabilities of the sender.
     pub desired_capabilities: Option<Vec<AmqpSymbol>>,
+
+    /// The properties of the sender.
     pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+
+    /// The initial delivery count of the sender.
     pub initial_delivery_count: Option<u32>,
+
+    /// The maximum message size of the sender.
     pub max_message_size: Option<u64>,
 }
 impl AmqpSenderOptions {}
 
+/// A trait for AMQP Sender operations.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpSenderApis {
+    /// Attach the sender to a session.
+    ///
+    /// # Arguments
+    ///
+    /// * `session` - The AMQP session to attach the sender to.
+    /// * `name` - The name of the sender.
+    /// * `target` - The target of the sender.
+    /// * `options` - The options for the sender.
     async fn attach(
         &self,
         session: &AmqpSession,
@@ -37,8 +62,23 @@ pub trait AmqpSenderApis {
         target: impl Into<AmqpTarget> + Send,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()>;
+
+    /// Detach the sender from the session.
     async fn detach(self) -> Result<()>;
+
+    /// Get the maximum message size for the sender.
     async fn max_message_size(&self) -> Result<Option<u64>>;
+
+    /// Send a message.
+    ///
+    /// # Arguments
+    ///
+    /// * `message` - The message to send.
+    /// * `options` - The options for sending the message.
+    ///
+    /// # Returns
+    ///
+    /// The outcome of the send operation.
     async fn send<M>(
         &self,
         message: M,
@@ -47,6 +87,7 @@ pub trait AmqpSenderApis {
     where
         M: Into<AmqpMessage> + std::fmt::Debug + Send;
 
+    /// Send a message by reference.
     async fn send_ref<M>(
         &self,
         message: M,
@@ -133,6 +174,7 @@ pub struct SendModification {
 
 unsafe impl Send for AmqpSendOutcome {}
 
+/// An AMQP message sender.
 pub struct AmqpSender {
     implementation: SenderImplementation,
 }
