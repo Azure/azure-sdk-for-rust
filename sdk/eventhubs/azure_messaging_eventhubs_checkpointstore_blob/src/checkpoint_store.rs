@@ -116,8 +116,10 @@ impl BlobCheckpointStore {
                 "{:?} claiming ownership for {} with etag {:?}",
                 metadata, blob_name, etag
             );
-            let mut options = BlobClientSetMetadataOptions::default();
-            options.if_match = etag.map(|ref e| e.to_string());
+            let options = BlobClientSetMetadataOptions {
+                if_match: etag.map(|e| e.to_string()),
+                ..Default::default()
+            };
             let result = blob_client
                 .set_metadata(metadata.unwrap_or_default(), Some(options))
                 .await?;

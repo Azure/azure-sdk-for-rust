@@ -10,9 +10,8 @@ use azure_storage_blob::models::{
     AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
     BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
     BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
-    BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
-    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-    LeaseState,
+    BlobClientGetPropertiesResultHeaders, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+    BlockBlobClientUploadOptions, LeaseState,
 };
 
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
