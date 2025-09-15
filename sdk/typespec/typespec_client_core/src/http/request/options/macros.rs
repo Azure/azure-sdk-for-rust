@@ -21,7 +21,7 @@ macro_rules! request_header {
     ($(#[$outer:meta])* $name:ident, $header:ident) => {
         $crate::request_header!($name, $header,);
     };
-    ($(#[$outer:meta])* $name:ident, $header:ident,  $(($(#[$inner:meta])*$variant:ident, $value:expr)), *) => {
+    ($(#[$outer:meta])* $name:ident, $header:ident, $(($(#[$inner:meta])*$variant:ident, $value:expr)), *) => {
         $crate::request_option!($(#[$outer])* $name);
         impl $name {
             $(

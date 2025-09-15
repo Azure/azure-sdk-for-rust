@@ -79,9 +79,10 @@ impl From<&AmqpSymbol> for TerminusExpiryPolicy {
 
 /// Distribution mode for the source.
 #[derive(Debug, Clone, PartialEq)]
-#[allow(missing_docs)]
 pub enum DistributionMode {
+    /// Move the message to the target.
     Move,
+    /// Copy the message to the target.
     Copy,
 }
 

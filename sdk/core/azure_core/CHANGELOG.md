@@ -1,5 +1,17 @@
 # Release History
 
+## 0.29.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Removed several unreferenced HTTP headers and accessor structures for those headers.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.28.0 (2025-09-11)
 
 ### Features Added

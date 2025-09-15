@@ -94,63 +94,59 @@ create_extensible_enum!(
     (LinkDetachForced, "amqp:link:detach-forced"),
     /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (ConnectionForced, "amqp:connection:forced"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: server busy.
     (ServerBusyError, "com.microsoft:server-busy"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: argument error.
     (ArgumentError, "com.microsoft:argument-error"),
-    #[allow(missing_docs)]
-    (
-        ArgumentOutOfRangeError,
+    /// Microsoft specific error conditions: argument out of range.
+    (ArgumentOutOfRangeError,
         "com.microsoft:argument-out-of-range"
     ),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: entity disabled.
     (EntityDisabledError, "com.microsoft:entity-disabled"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: partition not owned.
     (PartitionNotOwnedError, "com.microsoft:partition-not-owned"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: store lock lost.
     (StoreLockLostError, "com.microsoft:store-lock-lost"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: publisher revoked.
     (PublisherRevokedError, "com.microsoft:publisher-revoked"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: timeout.
     (TimeoutError, "com.microsoft:timeout"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: tracking id property.
     (TrackingIdProperty, "com.microsoft:tracking-id"),
-    #[allow(missing_docs)]
+    /// Proton specific error conditions: io error.
     (ProtonIo, "proton:io"),
-    #[allow(missing_docs)]
+    /// AMQP specific error conditions: connection framing error.
     (ConnectionFramingError, "amqp:connection:framing-error"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: operation cancelled.
     (OperationCancelled, "com.microsoft:operation-cancelled"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: message lock lost.
     (MessageLockLost, "com.microsoft:message-lock-lost"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: session lock lost.
     (SessionLockLost, "com.microsoft:session-lock-lost"),
-    #[allow(missing_docs)]
-    (
-        SessionCannotBeLocked,
-        "com.microsoft:session-cannot-be-locked"
-    ),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: session cannot be locked.
+    (SessionCannotBeLocked, "com.microsoft:session-cannot-be-locked"),
+    /// Microsoft specific error conditions: entity updated.
     (EntityUpdated, "com.microsoft:entity-updated"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: message not found.
     (MessageNotFound, "com.microsoft:message-not-found"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: session not found.
     (SessionNotFound, "com.microsoft:session-not-found"),
-    #[allow(missing_docs)]
+    /// Microsoft specific error conditions: entity already exists.
     (EntityAlreadyExists, "com.microsoft:entity-already-exists"),
-    #[allow(missing_docs)]
+    /// AMQP specific error conditions: connection redirect.
     (ConnectionRedirect, "amqp:connection:redirect"),
-    #[allow(missing_docs)]
+    /// AMQP specific error conditions: link redirect.
     (LinkRedirect, "amqp:link:redirect"),
-    #[allow(missing_docs)]
+    /// AMQP specific error conditions: transfer limit exceeded.
     (TransferLimitExceeded, "amqp:link:transfer-limit-exceeded"),
-    #[allow(missing_docs)]
+    /// AMQP specific error conditions: session window violation.
     (SessionWindowViolation, "amqp:session:window-violation"),
-    #[allow(missing_docs)]
+    /// AMQP specific error conditions: session errant link.
     (SessionErrantLink, "amqp:session:errant-link"),
-    #[allow(missing_docs)]
+    /// AMQP specific error conditions: session handle in use.
     (SessionHandleInUse, "amqp:session:handle-in-use"),
-    #[allow(missing_docs)]
+    /// AMQP specific error conditions: session unattached handle.
     (SessionUnattachedHandle, "amqp:session:unattached-handle"),
 );
 
