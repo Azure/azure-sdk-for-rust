@@ -30,7 +30,7 @@ pub struct AccessPolicy {
         default,
         rename = "Expiry",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "azure_core::time::rfc3339::option"
     )]
     pub expiry: Option<OffsetDateTime>,
 
@@ -43,7 +43,7 @@ pub struct AccessPolicy {
         default,
         rename = "Start",
         skip_serializing_if = "Option::is_none",
-        with = "azure_core::time::rfc7231::option"
+        with = "azure_core::time::rfc3339::option"
     )]
     pub start: Option<OffsetDateTime>,
 }
