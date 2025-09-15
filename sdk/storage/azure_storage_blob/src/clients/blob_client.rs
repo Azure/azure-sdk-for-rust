@@ -165,7 +165,7 @@ impl BlobClient {
     /// # Arguments
     ///
     /// * `data` - The blob data to upload.
-    /// * `overwrite` - Whether the blob to be uploaded should overwrite the current data. If True, `upload_blob` will overwrite the existing data.
+    /// * `overwrite` - Whether the blob to be uploaded should overwrite the current data. If True, `upload()` will overwrite the existing data.
     ///   If False, the operation will fail with ResourceExistsError.
     /// * `content_length` - Total length of the blob data to be uploaded.
     /// * `options` - Optional configuration for the request.
