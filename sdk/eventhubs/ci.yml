@@ -16,6 +16,6 @@ extends:
     ServiceDirectory: eventhubs
     Artifacts:
     - name: azure_messaging_eventhubs
-      safeName: AzureMessagingEventhubs
+      safeName: AzureMessagingEventHubs
     - name: azure_messaging_eventhubs_checkpointstore_blob
-      safeName: AzureMessagingEventhubsBlobCheckpointStore
+      safeName: AzureMessagingEventHubsBlobCheckpointStore
