@@ -14,7 +14,7 @@
 
 ### Breaking Changes
 
-* Made `metadata` a required parameter for `set_metadata` for `BlobContainerClient` and `BlobClient`
+* Made `metadata` a required parameter for `set_metadata` for `BlobContainerClient` and `BlobClient`.
 
 ## 0.4.0 (2025-08-05)
 

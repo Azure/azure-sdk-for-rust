@@ -194,12 +194,14 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
+    /// * `metadata` - The metadata headers.
     /// * `options` - Optional configuration for the request.
     pub async fn set_metadata(
         &self,
+        metadata: HashMap<String, String>,
         options: Option<BlobClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
-        self.client.set_metadata(options).await
+        self.client.set_metadata(metadata, options).await
     }
 
     /// Deletes the blob.
