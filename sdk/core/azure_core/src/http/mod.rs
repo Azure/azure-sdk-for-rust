@@ -18,7 +18,7 @@ pub use pager::{ItemIterator, PageIterator, Pager};
 pub use pipeline::*;
 pub use poller::Poller;
 pub use request::{Body, Request, RequestContent};
-pub use response::{RawResponse, Response};
+pub use response::{BufResponse, Response};
 
 pub use typespec_client_core::http::response;
 pub use typespec_client_core::http::{
@@ -26,5 +26,6 @@ pub use typespec_client_core::http::{
     Method, NoFormat, StatusCode, Url,
 };
 
+pub use crate::error::check_success;
 #[cfg(feature = "xml")]
 pub use typespec_client_core::http::XmlFormat;

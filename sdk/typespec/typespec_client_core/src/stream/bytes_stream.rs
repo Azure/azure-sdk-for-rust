@@ -20,6 +20,10 @@ pub struct BytesStream {
 }
 
 impl BytesStream {
+    /// Creates a new `BytesStream` from the given bytes.
+    ///
+    /// # Arguments
+    /// * `bytes` - The bytes to be streamed.
     pub fn new(bytes: impl Into<Bytes>) -> Self {
         Self {
             bytes: bytes.into(),

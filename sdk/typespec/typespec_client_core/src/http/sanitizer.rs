@@ -1,52 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore traceparent tracestate
-
 use crate::http::{headers::Headers, Url};
 use std::{borrow::Cow, collections::HashSet, sync::LazyLock};
-
-/// Default set of allowed headers. Headers not in this list will be redacted.
-pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<Cow<'static, str>>> =
-    LazyLock::new(|| {
-        [
-            "accept",
-            "cache-control",
-            "connection",
-            "content-length",
-            "content-type",
-            "date",
-            "etag",
-            "expires",
-            "if-match",
-            "if-modified-since",
-            "if-none-match",
-            "if-unmodified-since",
-            "last-modified",
-            "ms-cv",
-            "pragma",
-            "request-id",
-            "retry-after",
-            "server",
-            "traceparent",
-            "tracestate",
-            "transfer-encoding",
-            "user-agent",
-            "www-authenticate",
-            "x-ms-request-id",
-            "x-ms-client-request-id",
-            "x-ms-return-client-request-id",
-        ]
-        .iter()
-        .map(|s| Cow::Borrowed(*s))
-        .collect()
-    });
+pub use typespec::http::{DEFAULT_ALLOWED_HEADER_NAMES, REDACTED_PATTERN};
 
 /// Default set of allowed query parameters. Query parameters not in this list will be redacted.
 pub static DEFAULT_ALLOWED_QUERY_PARAMETERS: LazyLock<HashSet<Cow<'static, str>>> =
     LazyLock::new(|| ["api-version"].iter().map(|s| Cow::Borrowed(*s)).collect());
-
-pub const REDACTED_PATTERN: &str = "REDACTED";
 
 /// A trait that extends a type with sanitization capabilities
 pub trait Sanitizer {

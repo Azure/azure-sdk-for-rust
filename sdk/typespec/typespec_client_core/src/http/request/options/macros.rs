@@ -25,6 +25,7 @@ macro_rules! request_header {
         $crate::request_option!($(#[$outer])* $name);
         impl $name {
             $(
+                #[allow(missing_docs)]
                 pub const $variant: $name = $name::from_static($value);
             )*
         }
@@ -58,6 +59,11 @@ macro_rules! request_option {
         pub struct $name(std::borrow::Cow<'static, str>);
 
         impl $name {
+
+            /// Creates a new instance of the request option type, which can be used as an HTTP header or query parameter.
+            ///
+            /// This function is typically used to construct a value representing a request option for use in HTTP requests.
+            /// The specific usage (header or query parameter) depends on how the macro is invoked.
             pub fn new<S>(s: S) -> Self
             where
                 S: Into<std::borrow::Cow<'static, str>>,
@@ -65,6 +71,7 @@ macro_rules! request_option {
                 Self(s.into())
             }
 
+            /// Creates a new instance of the request option from a static string slice.
             pub const fn from_static(s: &'static str) -> Self {
                 Self(std::borrow::Cow::Borrowed(s))
             }

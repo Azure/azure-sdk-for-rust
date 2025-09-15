@@ -2,7 +2,7 @@
 
 use std::error::Error;
 
-use azure_core::{error::HttpError, http::StatusCode};
+use azure_core::{error::ErrorResponse, http::StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::Query;
 use framework::{test_data, MockItem, TestAccount};
@@ -156,8 +156,12 @@ pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
     };
     assert_eq!(Some(StatusCode::BadRequest), err.http_status());
 
-    let http_err: HttpError = err.into_downcast().expect("expected an HttpError");
-    let message = http_err.error_message().expect("message should be present");
+    let error_response = ErrorResponse::try_from(err).expect("expected an HttpResponse error");
+    let message = error_response
+        .error
+        .expect("error should be present")
+        .message
+        .expect("message should be present");
     assert!(message.starts_with(
         "The provided cross partition query can not be directly served by the gateway."
     ));

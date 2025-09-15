@@ -1,6 +1,15 @@
 # Release History
 
-## 0.8.0 (2025-09-05)
+## 0.8.0 (2025-09-11)
+
+### Features Added
+
+- Added `Bytes` (moved from `typespec_client_core`).
+- Added `HeaderName::is_standard()`.
+- Added `json` module if the `json` feature is enabled (moved from `typespec_client_core`).
+- Added `RawResponse` to `ErrorKind::HttpResponse` that contains the HTTP status code, headers, and complete error response body.
+- Added `xml` feature.
+- Added `xml` module if the `xml` feature is enabled (moved from `typespec_client_core`).
 
 ### Other Changes
 

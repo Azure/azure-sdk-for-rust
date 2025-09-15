@@ -18,6 +18,10 @@ pub struct TransportPolicy {
 }
 
 impl TransportPolicy {
+    /// Create a new `TransportPolicy` with the given transport options.
+    ///
+    /// # Arguments
+    /// * `transport_options` - The transport options to use for this policy.
     pub fn new(transport_options: TransportOptions) -> Self {
         Self { transport_options }
     }
@@ -67,7 +71,7 @@ impl Header for EmptyContentLength {
 #[cfg(all(test, not(target_family = "wasm")))]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, RawResponse, StatusCode};
+    use crate::http::{headers::Headers, BufResponse, StatusCode};
 
     #[derive(Debug)]
     struct MockTransport;
@@ -80,7 +84,7 @@ mod tests {
             _request: &mut Request,
             _next: &[Arc<dyn Policy>],
         ) -> PolicyResult {
-            PolicyResult::Ok(RawResponse::from_bytes(
+            PolicyResult::Ok(BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
                 Vec::new(),

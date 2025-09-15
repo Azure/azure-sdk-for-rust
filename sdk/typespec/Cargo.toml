@@ -13,6 +13,9 @@ keywords = ["typespec"]
 
 [dependencies]
 base64.workspace = true
+bytes.workspace = true
+futures.workspace = true
+quick-xml = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 url.workspace = true
@@ -25,6 +28,7 @@ default = ["http", "json"]
 amqp = []
 http = []
 json = ["dep:serde", "dep:serde_json"]
+xml = ["dep:quick-xml"]
 
 [lints]
 workspace = true

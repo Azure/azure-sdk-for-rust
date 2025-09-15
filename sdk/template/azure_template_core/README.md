@@ -1,1 +1,1 @@
-Template crate for Azure SDK pipeline testing
+# Template crate for Azure SDK pipeline testing

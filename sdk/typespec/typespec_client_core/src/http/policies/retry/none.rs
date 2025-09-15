@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{
-    error::HttpError,
-    http::{
-        policies::{Policy, PolicyResult, RetryHeaders},
-        Context, Request,
-    },
+use crate::http::{
+    policies::{Policy, PolicyResult, RetryHeaders},
+    Context, Request,
 };
 use std::sync::Arc;
-use typespec::error::{Error, ErrorKind};
 
 /// Retry policy that does not retry.
 ///
@@ -35,26 +31,9 @@ impl Policy for NoRetryPolicy {
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        // just call the following policies and bubble up the error
-        let response = next[0].send(ctx, request, &next[1..]).await?;
-
-        if response.status().is_success() {
-            Ok(response)
-        } else {
-            let status = response.status();
-            let http_error =
-                HttpError::new(response, self.retry_headers.error_header.clone()).await;
-
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            let error = Error::full(
-                error_kind,
-                http_error,
-                format!("server returned error status which will not be retried: {status}"),
-            );
-            return Err(error);
-        }
+        // just call the following policies and bubble up the error.
+        // Note that we do *not* modify the error to add HTTP error information,
+        // that is the responsibility of the service clients.
+        Ok(next[0].send(ctx, request, &next[1..]).await?)
     }
 }

@@ -215,7 +215,7 @@ mod tests {
         http::{
             headers::Headers,
             policies::{create_public_api_span, RequestInstrumentationPolicy, TransportPolicy},
-            Method, RawResponse, StatusCode, TransportOptions,
+            BufResponse, Method, StatusCode, TransportOptions,
         },
         tracing::{SpanStatus, TracerProvider},
         Result,
@@ -240,7 +240,7 @@ mod tests {
         callback: C,
     ) -> Arc<MockTracingProvider>
     where
-        C: FnMut(&Request) -> BoxFuture<'_, Result<RawResponse>> + Send + Sync + 'static,
+        C: FnMut(&Request) -> BoxFuture<'_, Result<BufResponse>> + Send + Sync + 'static,
     {
         // Add the public API information and tracer to the context so that it can be used by the policy.
         let mock_tracer_provider = Arc::new(MockTracingProvider::new());
@@ -292,7 +292,7 @@ mod tests {
         callback: C,
     ) -> Arc<MockTracingProvider>
     where
-        C: FnMut(&Request) -> BoxFuture<'_, Result<RawResponse>> + Send + Sync + 'static,
+        C: FnMut(&Request) -> BoxFuture<'_, Result<BufResponse>> + Send + Sync + 'static,
     {
         let mock_tracer_provider = Arc::new(MockTracingProvider::new());
         let mock_tracer =
@@ -455,7 +455,7 @@ mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
                     assert_eq!(req.method(), Method::Get);
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         vec![],
@@ -493,7 +493,7 @@ mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
                     assert_eq!(req.method(), Method::Get);
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         vec![],
@@ -524,7 +524,7 @@ mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
                     assert_eq!(req.method(), Method::Get);
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         vec![],
@@ -567,7 +567,7 @@ mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
                     assert_eq!(req.method(), Method::Get);
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         vec![],
@@ -610,7 +610,7 @@ mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
                     assert_eq!(req.method(), Method::Get);
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::InternalServerError,
                         Headers::new(),
                         vec![],
@@ -656,7 +656,7 @@ mod tests {
                 Box::pin(async move {
                     assert_eq!(req.url().host_str(), Some("example.com"));
                     assert_eq!(req.method(), Method::Put);
-                    Ok(RawResponse::from_bytes(
+                    Ok(BufResponse::from_bytes(
                         StatusCode::Ok,
                         Headers::new(),
                         vec![],

@@ -5,12 +5,14 @@
 
 mod bytes_stream;
 
-use bytes::Bytes;
+use crate::{
+    error::{Error, ErrorKind, Result},
+    Bytes,
+};
 pub use bytes_stream::*;
 use dyn_clone::DynClone;
 use futures::{io::AsyncRead, stream::Stream, task::Poll};
 use std::{pin::Pin, task::Context};
-use typespec::error::{Error, ErrorKind, Result};
 
 /// Amount of the stream to buffer in memory during streaming uploads.
 pub const DEFAULT_BUFFER_SIZE: usize = 1024 * 64;
@@ -19,13 +21,18 @@ pub const DEFAULT_BUFFER_SIZE: usize = 1024 * 64;
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync + DynClone {
+    /// Resets the stream position to the beginning.
     async fn reset(&mut self) -> Result<()>;
+
+    /// Returns the total length of the stream in bytes.
     fn len(&self) -> usize;
 
+    /// Returns `true` if the stream is empty.
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
+    /// Returns the size of the buffer to use when reading from the stream.
     fn buffer_size(&self) -> usize {
         DEFAULT_BUFFER_SIZE
     }

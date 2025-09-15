@@ -4,7 +4,7 @@
 //! Interfaces for working with errors.
 
 #[cfg(feature = "http")]
-use crate::http::StatusCode;
+use crate::http::{RawResponse, StatusCode};
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 
@@ -22,8 +22,12 @@ pub enum ErrorKind {
     /// An HTTP status code that was not expected.
     #[cfg(feature = "http")]
     HttpResponse {
+        /// An HTTP status code.
         status: StatusCode,
+        /// An error code returned by the service, or a friendly description of the `status`.
         error_code: Option<String>,
+        /// The raw response returned by the service.
+        raw_response: Option<Box<RawResponse>>,
     },
     /// An error performing IO.
     Io,
@@ -48,7 +52,11 @@ impl ErrorKind {
     /// Create an `ErrorKind` from an HTTP response.
     #[cfg(feature = "http")]
     pub fn http_response(status: StatusCode, error_code: Option<String>) -> Self {
-        Self::HttpResponse { status, error_code }
+        Self::HttpResponse {
+            status,
+            error_code,
+            raw_response: None,
+        }
     }
 }
 
@@ -56,7 +64,9 @@ impl Display for ErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             #[cfg(feature = "http")]
-            ErrorKind::HttpResponse { status, error_code } => f
+            ErrorKind::HttpResponse {
+                status, error_code, ..
+            } => f
                 .debug_tuple("HttpResponse")
                 .field(status)
                 .field(&error_code.as_deref().unwrap_or("(unknown error code)"))
@@ -170,6 +180,7 @@ impl Error {
         }
     }
 
+    /// If this error is an HTTP response error, return the associated status code.
     #[cfg(feature = "http")]
     pub fn http_status(&self) -> Option<StatusCode> {
         match &self.kind() {

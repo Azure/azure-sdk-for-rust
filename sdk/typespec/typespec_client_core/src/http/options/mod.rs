@@ -48,6 +48,7 @@ pub struct ClientOptions {
     /// Transport options.
     pub transport: Option<TransportOptions>,
 
+    /// Logging options.
     pub logging: LoggingOptions,
 }
 
@@ -71,7 +72,6 @@ impl Default for PipelineOptions {
         Self {
             retry_headers: RetryHeaders {
                 retry_headers: vec![RETRY_AFTER],
-                error_header: None,
             },
         }
     }

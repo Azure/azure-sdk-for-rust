@@ -4,7 +4,7 @@
 use crate::{
     env::Env,
     process::{new_executor, shell_exec, Executor, OutputProcessor},
-    validate_scope, validate_subscription, validate_tenant_id, TokenCredentialOptions,
+    validate_scope, validate_subscription, validate_tenant_id,
 };
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
@@ -134,7 +134,7 @@ impl TokenCredential for AzureCliCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        _: Option<TokenRequestOptions>,
+        _: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::new(
@@ -159,15 +159,6 @@ impl TokenCredential for AzureCliCredential {
         trace!("running Azure CLI command: {command:?}");
 
         shell_exec::<CliTokenResponse>(self.executor.clone(), &self.env, &command).await
-    }
-}
-
-impl From<TokenCredentialOptions> for AzureCliCredentialOptions {
-    fn from(options: TokenCredentialOptions) -> Self {
-        Self {
-            executor: Some(options.executor.clone()),
-            ..Default::default()
-        }
     }
 }
 

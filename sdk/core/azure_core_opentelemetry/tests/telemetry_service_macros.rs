@@ -8,7 +8,7 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, RawResponse, Request,
+        BufResponse, ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, Request,
         Url,
     },
     tracing, Result,
@@ -95,7 +95,7 @@ impl TestServiceClientWithMacros {
         &self,
         path: &str,
         options: Option<TestServiceClientWithMacrosGetMethodOptions<'_>>,
-    ) -> Result<RawResponse> {
+    ) -> Result<BufResponse> {
         let options = options.unwrap_or_default();
         let mut url = self.endpoint.clone();
         url.set_path(path);
@@ -113,6 +113,7 @@ impl TestServiceClientWithMacros {
                 azure_core::error::ErrorKind::HttpResponse {
                     status: response.status(),
                     error_code: None,
+                    raw_response: None,
                 },
                 format!("Failed to GET {}: {}", request.url(), response.status()),
             ));
@@ -144,7 +145,7 @@ impl TestServiceClientWithMacros {
         &self,
         path: &str,
         options: Option<TestServiceClientWithMacrosGetMethodOptions<'_>>,
-    ) -> Result<RawResponse> {
+    ) -> Result<BufResponse> {
         let options = options.unwrap_or_default();
 
         let mut url = self.endpoint.clone();
@@ -163,6 +164,7 @@ impl TestServiceClientWithMacros {
                 azure_core::error::ErrorKind::HttpResponse {
                     status: response.status(),
                     error_code: None,
+                    raw_response: None,
                 },
                 format!("Failed to GET {}: {}", request.url(), response.status()),
             ));

@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{ImdsId, ImdsManagedIdentityCredential, TokenCredentialOptions};
+use crate::env::Env;
+use crate::{ImdsId, ImdsManagedIdentityCredential};
+use azure_core::http::ClientOptions;
 use azure_core::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     http::{headers::HeaderName, Url},
@@ -21,17 +23,19 @@ pub struct VirtualMachineManagedIdentityCredential {
 impl VirtualMachineManagedIdentityCredential {
     pub fn new(
         id: ImdsId,
-        options: impl Into<TokenCredentialOptions>,
+        client_options: ClientOptions,
+        env: Env,
     ) -> azure_core::Result<Arc<Self>> {
         let endpoint = Url::parse(ENDPOINT).unwrap(); // valid url constant
         Ok(Arc::new(Self {
             credential: ImdsManagedIdentityCredential::new(
-                options,
                 endpoint,
                 API_VERSION,
                 SECRET_HEADER,
                 SECRET_ENV,
                 id,
+                client_options,
+                env,
             ),
         }))
     }
@@ -43,7 +47,7 @@ impl TokenCredential for VirtualMachineManagedIdentityCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         self.credential.get_token(scopes, options).await
     }

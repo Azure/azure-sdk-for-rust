@@ -41,6 +41,7 @@ impl From<Error> for azure_core::Error {
             azure_core::error::ErrorKind::HttpResponse {
                 status: error.status_code,
                 error_code: Some(error.status.clone()),
+                raw_response: None,
             },
             error,
         )

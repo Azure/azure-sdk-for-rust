@@ -29,11 +29,11 @@ impl TokenCache {
     pub(crate) async fn get_token<'a, C, F>(
         &self,
         scopes: &'a [&'a str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'a>>,
         callback: C,
     ) -> azure_core::Result<AccessToken>
     where
-        C: FnOnce(&'a [&'a str], Option<TokenRequestOptions>) -> F + MaybeSend,
+        C: FnOnce(&'a [&'a str], Option<TokenRequestOptions<'a>>) -> F + MaybeSend,
         F: Future<Output = azure_core::Result<AccessToken>> + MaybeSend,
     {
         let token_cache = self.0.read().await;
@@ -101,7 +101,7 @@ mod tests {
         async fn get_token(
             &self,
             scopes: &[&str],
-            _: Option<TokenRequestOptions>,
+            _: Option<TokenRequestOptions<'_>>,
         ) -> azure_core::Result<AccessToken> {
             // Include an incrementing counter in the token to track how many times the token has been refreshed
             let mut call_count = self.get_token_call_count.lock().await;

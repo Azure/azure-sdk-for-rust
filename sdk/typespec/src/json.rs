@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 //! JSON serialization functions.
+use crate::error::Result;
 use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
-use typespec::error::Result;
 
 /// Serialize a type to JSON.
 pub fn to_json<T>(value: &T) -> Result<Bytes>

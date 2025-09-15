@@ -3136,6 +3136,9 @@ name = "typespec"
 version = "0.8.0"
 dependencies = [
  "base64",
+ "bytes",
+ "futures",
+ "quick-xml",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
@@ -3148,13 +3151,11 @@ version = "0.7.0"
 dependencies = [
  "async-trait",
  "base64",
- "bytes",
  "dyn-clone",
  "futures",
  "getrandom 0.3.3",
  "gloo-timers",
  "pin-project",
- "quick-xml",
  "rand 0.9.2",
  "reqwest",
  "rust_decimal",

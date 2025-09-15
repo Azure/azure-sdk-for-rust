@@ -24,15 +24,19 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
-pub use response::{RawResponse, Response};
+pub use response::{BufResponse, Response};
 pub use sanitizer::*;
 
 // Re-export important types.
-pub use typespec::http::StatusCode;
+pub use typespec::http::{RawResponse, StatusCode};
 pub use url::Url;
 
 /// Add a new query pair into the target [`Url`]'s query string.
 pub trait AppendToUrlQuery {
+    /// Append the query pair represented by `self` to the given `url`.
+    ///
+    /// # Arguments
+    /// * `url` - The mutable reference to the `Url` to which the query pair will be appended.
     fn append_to_url_query(&self, url: &mut Url);
 }
 

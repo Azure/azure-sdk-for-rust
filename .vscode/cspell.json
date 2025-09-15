@@ -50,6 +50,7 @@
     "etag",
     "eventhub",
     "eventhubs",
+    "headerless",
     "hmac",
     "iothub",
     "keyvault",

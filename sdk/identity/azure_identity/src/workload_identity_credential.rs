@@ -1,10 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::env::Env;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{ErrorKind, ResultExt},
+    http::ClientMethodOptions,
     Error,
 };
 use futures::channel::oneshot;
@@ -17,10 +19,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::{
-    ClientAssertion, ClientAssertionCredential, ClientAssertionCredentialOptions,
-    TokenCredentialOptions,
-};
+use super::{ClientAssertion, ClientAssertionCredential, ClientAssertionCredentialOptions};
 
 const AZURE_CLIENT_ID: &str = "AZURE_CLIENT_ID";
 const AZURE_FEDERATED_TOKEN_FILE: &str = "AZURE_FEDERATED_TOKEN_FILE";
@@ -48,6 +47,9 @@ pub struct WorkloadIdentityCredentialOptions {
     /// Path of a file containing a Kubernetes service account token. Defaults to the value of the environment
     /// variable `AZURE_FEDERATED_TOKEN_FILE`.
     pub token_file_path: Option<PathBuf>,
+
+    #[cfg(test)]
+    pub(crate) env: Env,
 }
 
 impl WorkloadIdentityCredential {
@@ -56,7 +58,10 @@ impl WorkloadIdentityCredential {
         options: Option<WorkloadIdentityCredentialOptions>,
     ) -> azure_core::Result<Arc<Self>> {
         let options = options.unwrap_or_default();
-        let env = options.credential_options.credential_options.env();
+        #[cfg(test)]
+        let env = options.env;
+        #[cfg(not(test))]
+        let env = Env::default();
         let tenant_id = match options.tenant_id {
             Some(id) => id,
             None => env.var(AZURE_TENANT_ID).with_context(ErrorKind::Credential, || {
@@ -93,25 +98,12 @@ impl TokenCredential for WorkloadIdentityCredential {
     async fn get_token(
         &self,
         scopes: &[&str],
-        options: Option<TokenRequestOptions>,
+        options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
             return Err(Error::message(ErrorKind::Credential, "no scopes specified"));
         }
         self.0.get_token(scopes, options).await
-    }
-}
-
-// TODO: Should probably remove this once we consolidate and unify credentials.
-impl From<TokenCredentialOptions> for WorkloadIdentityCredentialOptions {
-    fn from(value: TokenCredentialOptions) -> Self {
-        Self {
-            credential_options: ClientAssertionCredentialOptions {
-                credential_options: value,
-                ..Default::default()
-            },
-            ..Default::default()
-        }
     }
 }
 
@@ -150,7 +142,7 @@ impl Token {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl ClientAssertion for Token {
-    async fn secret(&self) -> azure_core::Result<String> {
+    async fn secret(&self, _: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String> {
         const TIMEOUT: Duration = Duration::from_secs(600);
 
         let now = Instant::now();
@@ -193,7 +185,10 @@ mod tests {
         tests::*,
     };
     use azure_core::{
-        http::{headers::Headers, Method, RawResponse, Request, StatusCode, Url},
+        http::{
+            headers::Headers, BufResponse, ClientOptions, Method, Request, StatusCode,
+            TransportOptions, Url,
+        },
         Bytes,
     };
     use azure_core_test::recorded;
@@ -234,7 +229,7 @@ mod tests {
     async fn env_vars() {
         let temp_file = TempFile::new(FAKE_ASSERTION);
         let mock = MockSts::new(
-            vec![RawResponse::from_bytes(
+            vec![BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::default(),
                 Bytes::from(format!(
@@ -246,19 +241,19 @@ mod tests {
         );
         let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
-                credential_options: TokenCredentialOptions {
-                    env: Env::from(
-                        &[
-                            (AZURE_CLIENT_ID, FAKE_CLIENT_ID),
-                            (AZURE_TENANT_ID, FAKE_TENANT_ID),
-                            (AZURE_FEDERATED_TOKEN_FILE, temp_file.path.to_str().unwrap()),
-                        ][..],
-                    ),
-                    http_client: Arc::new(mock),
+                client_options: ClientOptions {
+                    transport: Some(TransportOptions::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()
             },
+            env: Env::from(
+                &[
+                    (AZURE_CLIENT_ID, FAKE_CLIENT_ID),
+                    (AZURE_TENANT_ID, FAKE_TENANT_ID),
+                    (AZURE_FEDERATED_TOKEN_FILE, temp_file.path.to_str().unwrap()),
+                ][..],
+            ),
             ..Default::default()
         }))
         .expect("valid credential");
@@ -334,7 +329,7 @@ mod tests {
         let right_file = TempFile::new(FAKE_ASSERTION);
         let wrong_file = TempFile::new("wrong assertion");
         let mock = MockSts::new(
-            vec![RawResponse::from_bytes(
+            vec![BufResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::default(),
                 Bytes::from(format!(
@@ -349,22 +344,22 @@ mod tests {
             tenant_id: Some(FAKE_TENANT_ID.to_string()),
             token_file_path: Some(right_file.path.clone()),
             credential_options: ClientAssertionCredentialOptions {
-                credential_options: TokenCredentialOptions {
-                    env: Env::from(
-                        &[
-                            (AZURE_CLIENT_ID, "wrong-client-id"),
-                            (AZURE_TENANT_ID, "wrong-tenant-id"),
-                            (
-                                AZURE_FEDERATED_TOKEN_FILE,
-                                wrong_file.path.to_str().unwrap(),
-                            ),
-                        ][..],
-                    ),
-                    http_client: Arc::new(mock),
+                client_options: ClientOptions {
+                    transport: Some(TransportOptions::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()
             },
+            env: Env::from(
+                &[
+                    (AZURE_CLIENT_ID, "wrong-client-id"),
+                    (AZURE_TENANT_ID, "wrong-tenant-id"),
+                    (
+                        AZURE_FEDERATED_TOKEN_FILE,
+                        wrong_file.path.to_str().unwrap(),
+                    ),
+                ][..],
+            ),
         }))
         .expect("valid credential");
 

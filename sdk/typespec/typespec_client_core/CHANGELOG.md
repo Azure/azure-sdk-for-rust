@@ -1,6 +1,6 @@
 # Release History
 
-## 0.7.0 (2025-09-05)
+## 0.7.0 (2025-09-11)
 
 ### Features Added
 
@@ -10,6 +10,7 @@
 
 ### Breaking Changes
 
+- Added pipeline configuration options (`PipelineOptions`) to `typespec_client_core::http::Pipeline::new()` to enable customization of the options for an HTTP pipeline.
 - Changed `FromStr for RequestContent<T, F>` to `RequestContent::from_str()`.
 - Changed `TryFrom<&'static str> for RequestContent<T, F>` to `RequestContent::from_static()`.
 - Changed `TryFrom<Bytes> for RequestContent<T, F>` to `From<Bytes> for RequestContent<T, F>` because it was already infallible.
@@ -17,8 +18,9 @@
 - Removed feature `reqwest_rustls_tls`. See [README.md](https://github.com/heaths/azure-sdk-for-rust/blob/main/sdk/typespec/typespec_client_core/README.md) for alternative HTTP client configuration.
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` to copy if needed.
 - Removed the `setters` macro.
-- Removed the cloud service specific retry headers from typespec_client_core. This change means that the `HttpError::new()` function takes an additional optional parameter which is an HTTP header which might contain an error code.
-- Added pipeline configuration options (`PipelineOptions`) to `typespec_client_core::http::Pipeline::new()` to enable customization of the options for an HTTP pipeline.
+- Removed the cloud service specific retry headers from typespec_client_core.
+- Renamed `RawResponse` to `BufResponse`. New `RawResponse` contains complete body as `Bytes` used in `ErrorKind::HttpResponse`.
+- Removed HttpError type from typespec_client_core because it is an azure_core construct.
 
 ## 0.6.0 (2025-08-01)
 

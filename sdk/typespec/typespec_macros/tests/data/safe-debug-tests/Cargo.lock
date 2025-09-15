@@ -1268,6 +1268,8 @@ name = "typespec"
 version = "0.8.0"
 dependencies = [
  "base64",
+ "bytes",
+ "futures",
  "serde",
  "serde_json",
  "url",
@@ -1279,7 +1281,6 @@ version = "0.7.0"
 dependencies = [
  "async-trait",
  "base64",
- "bytes",
  "dyn-clone",
  "futures",
  "getrandom",

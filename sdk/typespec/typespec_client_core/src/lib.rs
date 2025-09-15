@@ -3,6 +3,7 @@
 
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![warn(missing_docs)]
 
 #[macro_use]
 mod macros;
@@ -13,17 +14,17 @@ pub mod fmt;
 #[cfg(feature = "http")]
 pub mod http;
 #[cfg(feature = "json")]
-pub mod json;
+pub use typespec::json;
 pub mod sleep;
 pub mod stream;
 pub mod time;
 #[cfg(feature = "http")]
 pub mod tracing;
 #[cfg(feature = "xml")]
-pub mod xml;
+pub use typespec::xml;
 
 pub use crate::error::{Error, Result};
-pub use bytes::Bytes;
+pub use typespec::Bytes;
 pub use uuid::Uuid;
 
 pub use sleep::sleep;

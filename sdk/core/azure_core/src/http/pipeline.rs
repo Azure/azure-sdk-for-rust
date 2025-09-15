@@ -3,7 +3,7 @@
 
 use super::policies::ClientRequestIdPolicy;
 use crate::http::{
-    headers::{ERROR_CODE, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
+    headers::{RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
     policies::{
         Policy, PublicApiInstrumentationPolicy, RequestInstrumentationPolicy, UserAgentPolicy,
     },
@@ -31,7 +31,7 @@ use typespec_client_core::http::{
 ///    re-executed in case of retries.
 /// 6. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
 /// 7. The transport policy is executed. Transport policy is always the last policy and is the policy that
-///    actually constructs the [`RawResponse`](http::RawResponse) to be passed up the pipeline.
+///    actually constructs the [`BufResponse`](http::BufResponse) to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
 /// policy of fail and return to the calling policy. Arbitrary policy "skip" must be avoided (but
@@ -106,7 +106,6 @@ impl Pipeline {
         let pipeline_options = pipeline_options.unwrap_or_else(|| PipelineOptions {
             retry_headers: RetryHeaders {
                 retry_headers: vec![X_MS_RETRY_AFTER_MS, RETRY_AFTER_MS, RETRY_AFTER],
-                error_header: Some(ERROR_CODE),
             },
         });
 
@@ -142,7 +141,7 @@ mod tests {
             headers::{self, HeaderName, Headers},
             policies::Policy,
             request::options::ClientRequestId,
-            ClientOptions, Context, Method, RawResponse, Request, StatusCode, TransportOptions,
+            BufResponse, ClientOptions, Context, Method, Request, StatusCode, TransportOptions,
             UserAgentOptions,
         },
         Bytes,
@@ -173,7 +172,7 @@ mod tests {
                     "Custom header value should match the client request ID"
                 );
 
-                Ok(RawResponse::from_bytes(
+                Ok(BufResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),
@@ -231,7 +230,7 @@ mod tests {
                     "Default header value should match the client request ID"
                 );
 
-                Ok(RawResponse::from_bytes(
+                Ok(BufResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),
@@ -285,7 +284,7 @@ mod tests {
                     user_agent
                 );
 
-                Ok(RawResponse::from_bytes(
+                Ok(BufResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),
@@ -340,7 +339,7 @@ mod tests {
                     user_agent
                 );
 
-                Ok(RawResponse::from_bytes(
+                Ok(BufResponse::from_bytes(
                     StatusCode::Ok,
                     Headers::new(),
                     Bytes::new(),

@@ -20,7 +20,6 @@ mod developer_tools_credential;
 mod env;
 mod imds_managed_identity_credential;
 mod managed_identity_credential;
-mod options;
 #[cfg(not(target_arch = "wasm32"))]
 mod process;
 mod virtual_machine_managed_identity_credential;
@@ -38,7 +37,6 @@ pub use client_secret_credential::*;
 #[cfg(not(target_arch = "wasm32"))]
 pub use developer_tools_credential::*;
 pub use managed_identity_credential::*;
-pub use options::TokenCredentialOptions;
 #[cfg(not(target_arch = "wasm32"))]
 pub use process::{new_executor, Executor};
 pub use workload_identity_credential::*;
@@ -48,9 +46,10 @@ pub(crate) use cache::TokenCache;
 pub(crate) use imds_managed_identity_credential::*;
 pub(crate) use virtual_machine_managed_identity_credential::*;
 
+use crate::env::Env;
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    http::RawResponse,
+    http::{BufResponse, Url},
     Error, Result,
 };
 use serde::Deserialize;
@@ -73,7 +72,7 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-async fn deserialize<T>(credential_name: &str, res: RawResponse) -> Result<T>
+async fn deserialize<T>(credential_name: &str, res: BufResponse) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
@@ -99,6 +98,18 @@ where
     }
 
     Ok(())
+}
+
+const AZURE_AUTHORITY_HOST_ENV_KEY: &str = "AZURE_AUTHORITY_HOST";
+const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
+
+fn get_authority_host(env: Option<Env>, option: Option<String>) -> Result<Url> {
+    let authority_host = env
+        .unwrap_or_default()
+        .var(AZURE_AUTHORITY_HOST_ENV_KEY)
+        .unwrap_or_else(|_| option.unwrap_or_else(|| AZURE_PUBLIC_CLOUD.to_owned()));
+
+    Url::parse(&authority_host).map_err(Into::<Error>::into)
 }
 
 #[test]
@@ -185,7 +196,7 @@ mod tests {
     use async_trait::async_trait;
     use azure_core::{
         error::ErrorKind,
-        http::{RawResponse, Request},
+        http::{BufResponse, Request},
         Error, Result,
     };
     use std::{
@@ -284,7 +295,7 @@ mod tests {
     pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
 
     pub struct MockSts {
-        responses: Mutex<Vec<RawResponse>>,
+        responses: Mutex<Vec<BufResponse>>,
         on_request: Option<RequestCallback>,
     }
 
@@ -295,7 +306,7 @@ mod tests {
     }
 
     impl MockSts {
-        pub fn new(responses: Vec<RawResponse>, on_request: Option<RequestCallback>) -> Self {
+        pub fn new(responses: Vec<BufResponse>, on_request: Option<RequestCallback>) -> Self {
             Self {
                 responses: Mutex::new(responses),
                 on_request,
@@ -305,7 +316,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl azure_core::http::HttpClient for MockSts {
-        async fn execute_request(&self, request: &Request) -> Result<RawResponse> {
+        async fn execute_request(&self, request: &Request) -> Result<BufResponse> {
             self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {

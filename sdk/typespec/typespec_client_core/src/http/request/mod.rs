@@ -14,8 +14,8 @@ use crate::{
     },
     json::to_json,
     time::OffsetDateTime,
+    Bytes,
 };
-use bytes::Bytes;
 use serde::Serialize;
 use serde_json::Value;
 use std::{collections::HashMap, fmt, marker::PhantomData};
@@ -25,7 +25,7 @@ use time::format_description::well_known::Rfc3339;
 #[derive(Clone)]
 pub enum Body {
     /// A body of a known size.
-    Bytes(bytes::Bytes),
+    Bytes(crate::Bytes),
 
     /// A streaming body.
     ///
@@ -37,6 +37,7 @@ pub enum Body {
 }
 
 impl Body {
+    /// Returns the length of the body in bytes.
     pub fn len(&self) -> usize {
         match self {
             Body::Bytes(bytes) => bytes.len(),
@@ -45,10 +46,14 @@ impl Body {
         }
     }
 
+    /// Returns `true` if the body is empty.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
+    /// Resets the body to the beginning, if it is a seekable stream.
+    ///
+    /// This function is a no-op for byte bodies.
     pub async fn reset(&mut self) -> crate::Result<()> {
         match self {
             Body::Bytes(_) => Ok(()),
@@ -141,7 +146,7 @@ impl Request {
             url,
             method,
             headers: Headers::new(),
-            body: Body::Bytes(bytes::Bytes::new()),
+            body: Body::Bytes(Bytes::new()),
         }
     }
 
