@@ -10,8 +10,9 @@ use azure_storage_blob::models::{
     AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
     BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
     BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
-    BlobClientGetPropertiesResultHeaders, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-    BlockBlobClientUploadOptions, LeaseState,
+    BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
+    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
+    LeaseState,
 };
 
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
@@ -358,8 +359,12 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
         .await?;
 
     let update_metadata = HashMap::from([("updated".to_string(), "values".to_string())]);
+    let set_metadata_options = BlobClientSetMetadataOptions {
+        lease_id: Some(lease_id.clone()),
+        ..Default::default()
+    };
     blob_client
-        .set_metadata(update_metadata.clone(), None)
+        .set_metadata(update_metadata.clone(), Some(set_metadata_options))
         .await?;
 
     let set_tier_options = BlobClientSetTierOptions {
