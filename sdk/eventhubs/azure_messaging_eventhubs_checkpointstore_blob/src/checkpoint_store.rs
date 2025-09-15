@@ -253,18 +253,18 @@ impl CheckpointStore for BlobCheckpointStore {
                             .map(|pos| &name[pos + 1..])
                             .unwrap_or_default()
                             .to_string();
-                        if let Some(metadata) = blob.metadata.as_ref() {
-                            if let Some(additional_properties) =
-                                metadata.additional_properties.as_ref()
+                        if let Some(additional_properties) = blob
+                            .metadata
+                            .as_ref()
+                            .and_then(|m| m.additional_properties.as_ref())
+                        {
+                            if let Some(sequence_number) =
+                                additional_properties.get(SEQUENCE_NUMBER)
                             {
-                                if let Some(sequence_number) =
-                                    additional_properties.get(SEQUENCE_NUMBER)
-                                {
-                                    checkpoint.sequence_number = Some(sequence_number.parse()?);
-                                }
-                                if let Some(offset) = additional_properties.get(OFFSET) {
-                                    checkpoint.offset = Some(offset.clone());
-                                }
+                                checkpoint.sequence_number = Some(sequence_number.parse()?);
+                            }
+                            if let Some(offset) = additional_properties.get(OFFSET) {
+                                checkpoint.offset = Some(offset.clone());
                             }
                         }
                     }
@@ -322,13 +322,13 @@ impl CheckpointStore for BlobCheckpointStore {
                             .map(|pos| &name[pos + 1..])
                             .unwrap_or_default()
                             .to_string();
-                        if let Some(metadata) = blob.metadata.as_ref() {
-                            if let Some(additional_properties) =
-                                metadata.additional_properties.as_ref()
-                            {
-                                if let Some(owner_id) = additional_properties.get(OWNER_ID) {
-                                    ownership.owner_id = Some(owner_id.clone());
-                                }
+                        if let Some(additional_properties) = blob
+                            .metadata
+                            .as_ref()
+                            .and_then(|m| m.additional_properties.as_ref())
+                        {
+                            if let Some(owner_id) = additional_properties.get(OWNER_ID) {
+                                ownership.owner_id = Some(owner_id.clone());
                             }
                         }
                     }
