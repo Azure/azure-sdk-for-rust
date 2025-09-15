@@ -17,3 +17,5 @@ extends:
     Artifacts:
     - name: azure_messaging_eventhubs
       safeName: AzureMessagingEventhubs
+    - name: azure_messaging_eventhubs_checkpointstore_blob
+      safeName: AzureMessagingEventhubsBlobCheckpointStore
