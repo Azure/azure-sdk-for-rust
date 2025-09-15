@@ -24,6 +24,7 @@ testblob2
 testblob3
 testblob4
 testcontainer
+testid
 uncommittedblobs
 westus
 yourtagname
