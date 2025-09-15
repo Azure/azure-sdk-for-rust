@@ -17,9 +17,8 @@ use azure_messaging_eventhubs::{
 };
 use azure_storage_blob::{
     models::{
-        BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
-        BlobContainerClientListBlobFlatSegmentOptions, BlockBlobClientUploadOptions,
-        BlockBlobClientUploadResultHeaders, ListBlobsIncludeItem,
+        BlobClientSetMetadataOptions, BlobContainerClientListBlobFlatSegmentOptions,
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResultHeaders, ListBlobsIncludeItem,
     },
     BlobContainerClient,
 };
@@ -254,18 +253,19 @@ impl CheckpointStore for BlobCheckpointStore {
                             .map(|pos| &name[pos + 1..])
                             .unwrap_or_default()
                             .to_string();
-                        // Since the current blob container client doesn't actually return the metadata, we
-                        // get it from the blob client instead.
-                        let blob = self
-                            .blob_container_client
-                            .blob_client(name.clone())
-                            .get_properties(None)
-                            .await?;
-                        if let Some(offset) = blob.metadata()?.get(OFFSET) {
-                            checkpoint.offset = Some(offset.clone());
-                        }
-                        if let Some(sequence_number) = blob.metadata()?.get(SEQUENCE_NUMBER) {
-                            checkpoint.sequence_number = Some(sequence_number.parse()?);
+                        if let Some(metadata) = blob.metadata.as_ref() {
+                            if let Some(additional_properties) =
+                                metadata.additional_properties.as_ref()
+                            {
+                                if let Some(sequence_number) =
+                                    additional_properties.get(SEQUENCE_NUMBER)
+                                {
+                                    checkpoint.sequence_number = Some(sequence_number.parse()?);
+                                }
+                                if let Some(offset) = additional_properties.get(OFFSET) {
+                                    checkpoint.offset = Some(offset.clone());
+                                }
+                            }
                         }
                     }
                 }
@@ -322,16 +322,14 @@ impl CheckpointStore for BlobCheckpointStore {
                             .map(|pos| &name[pos + 1..])
                             .unwrap_or_default()
                             .to_string();
-                        // Since the current blob container client doesn't actually return the metadata, we
-                        // get it from the blob client instead.
-                        let blob = self
-                            .blob_container_client
-                            .blob_client(name.clone())
-                            .get_properties(None)
-                            .await?;
-                        let metadata = blob.metadata()?;
-                        if let Some(owner_id) = metadata.get(OWNER_ID) {
-                            ownership.owner_id = Some(owner_id.clone());
+                        if let Some(metadata) = blob.metadata.as_ref() {
+                            if let Some(additional_properties) =
+                                metadata.additional_properties.as_ref()
+                            {
+                                if let Some(owner_id) = additional_properties.get(OWNER_ID) {
+                                    ownership.owner_id = Some(owner_id.clone());
+                                }
+                            }
                         }
                     }
                 }
