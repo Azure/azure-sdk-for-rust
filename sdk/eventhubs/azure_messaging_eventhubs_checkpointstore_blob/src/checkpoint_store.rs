@@ -322,15 +322,11 @@ impl CheckpointStore for BlobCheckpointStore {
                             .map(|pos| &name[pos + 1..])
                             .unwrap_or_default()
                             .to_string();
-                        if let Some(additional_properties) = blob
+                        ownership.owner_id = blob
                             .metadata
                             .as_ref()
                             .and_then(|m| m.additional_properties.as_ref())
-                        {
-                            if let Some(owner_id) = additional_properties.get(OWNER_ID) {
-                                ownership.owner_id = Some(owner_id.clone());
-                            }
-                        }
+                            .and_then(|ap| ap.get(OWNER_ID).cloned());
                     }
                 }
                 if let Some(properties) = &blob.properties {
