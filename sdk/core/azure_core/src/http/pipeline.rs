@@ -159,7 +159,7 @@ impl Pipeline {
     /// * `options` - Options for sending the request, including check success options. If none, `[check_success]` will not be called.
     ///
     /// # Returns
-    /// A [`BufResponse`] if the request was successful, or an `Error` if it failed.
+    /// A [`http::BufResponse`] if the request was successful, or an `Error` if it failed.
     /// If the response status code indicates an HTTP error, the function will attempt to parse the error response
     /// body into an `ErrorResponse` and include it in the `Error`.
     pub async fn send(
