@@ -73,12 +73,7 @@ impl BlobCheckpointStore {
             .blob_container_client
             .blob_client(blob_name.to_string());
 
-        let options = BlobClientSetMetadataOptions {
-            metadata: Some(metadata.clone()),
-            ..Default::default()
-        };
-
-        let result = blob_client.set_metadata(Some(options)).await;
+        let result = blob_client.set_metadata(metadata.clone(), None).await;
         match result {
             Ok(r) => Ok(Self::process_storage_response_metadata(
                 r.headers().get_optional_string(&LAST_MODIFIED),
@@ -121,12 +116,13 @@ impl BlobCheckpointStore {
                 "{:?} claiming ownership for {} with etag {:?}",
                 metadata, blob_name, etag
             );
-            let mut options = BlobClientSetMetadataOptions::default();
-            if let Some(metadata) = &metadata {
-                options.metadata = Some(metadata.clone());
-            }
-            options.if_match = etag.map(|ref e| e.to_string());
-            let result = blob_client.set_metadata(Some(options)).await?;
+            let options = BlobClientSetMetadataOptions {
+                if_match: etag.map(|e| e.to_string()),
+                ..Default::default()
+            };
+            let result = blob_client
+                .set_metadata(metadata.unwrap_or_default(), Some(options))
+                .await?;
             return Self::process_storage_response_metadata(
                 result.headers().get_optional_string(&LAST_MODIFIED),
                 result.headers().get_optional_string(&ETAG),
