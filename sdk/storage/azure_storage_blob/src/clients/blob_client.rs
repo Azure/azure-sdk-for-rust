@@ -355,4 +355,13 @@ impl BlobClient {
     ) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>> {
         self.client.get_account_info(options).await
     }
+
+    /// Returns `true` if a blob exists, and returns `false` otherwise.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional configuration for the request.
+    pub async fn exists(&self) -> bool {
+        self.get_properties(None).await.is_ok()
+    }
 }
