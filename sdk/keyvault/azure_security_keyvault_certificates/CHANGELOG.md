@@ -1,5 +1,15 @@
 # Release History
 
+## 0.7.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.6.0 (2025-09-16)
 
 ### Features Added
