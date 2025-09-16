@@ -16,7 +16,10 @@ use azure_core::http::{
 use azure_core::{
     error::HttpError,
     http::{
-        pager::PagerState, request::{options::ContentType, Request}, response::Response, ClientOptions, Context, Method, RawResponse
+        pager::PagerState,
+        request::{options::ContentType, Request},
+        response::Response,
+        ClientOptions, Context, Method, RawResponse,
     },
 };
 use futures::TryStreamExt;
