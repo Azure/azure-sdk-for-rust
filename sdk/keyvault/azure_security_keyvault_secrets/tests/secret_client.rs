@@ -275,7 +275,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
         },
         ExpectedInstrumentation {
             package_name: recording.var("CARGO_PKG_NAME", None),
-            package_version: recording.var("CARGO_PKG_VERSION", None),
+            package_version: env!("CARGO_PKG_VERSION").into(),
             package_namespace: Some("KeyVault"),
             api_calls: vec![
                 ExpectedApiInformation {
