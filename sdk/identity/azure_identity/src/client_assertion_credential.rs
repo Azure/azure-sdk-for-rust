@@ -10,7 +10,8 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
-        ClientMethodOptions, ClientOptions, Method, Pipeline, Request, StatusCode, Url,
+        ClientMethodOptions, ClientOptions, Method, Pipeline, PipelineSendOptions, Request,
+        StatusCode, Url,
     },
     time::{Duration, OffsetDateTime},
     Error,
@@ -136,7 +137,17 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         req.set_body(encoded);
 
         let ctx = options.method_options.context.to_borrowed();
-        let res = self.pipeline.send(&ctx, &mut req).await?;
+        let res = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut req,
+                Some(PipelineSendOptions {
+                    skip_checks: true,
+                    ..Default::default()
+                }),
+            )
+            .await?;
 
         match res.status() {
             StatusCode::Ok => {

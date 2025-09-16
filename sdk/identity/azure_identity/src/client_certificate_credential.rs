@@ -7,10 +7,9 @@ use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind, ResultExt},
     http::{
-        check_success,
         headers::{self, content_type},
         request::Request,
-        ClientOptions, Method, Pipeline, Url,
+        ClientOptions, Method, Pipeline, PipelineSendOptions, Url,
     },
     time::{Duration, OffsetDateTime},
     Uuid,
@@ -242,8 +241,17 @@ impl ClientCertificateCredential {
 
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
-        let rsp = self.pipeline.send(&ctx, &mut req).await?;
-        let rsp = check_success(rsp).await?;
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut req,
+                Some(PipelineSendOptions {
+                    skip_checks: true,
+                    ..Default::default()
+                }),
+            )
+            .await?;
         let response: EntraIdTokenResponse = rsp.into_body().json().await?;
         Ok(AccessToken::new(
             response.access_token,

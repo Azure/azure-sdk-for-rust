@@ -31,6 +31,10 @@ pub struct Pipeline {
     pipeline: Vec<Arc<dyn Policy>>,
 }
 
+/// Options for the [`Pipeline::send`] function.
+#[derive(Debug, Default)]
+pub struct PipelineSendOptions {}
+
 impl Pipeline {
     /// Creates a new pipeline with user-specified and client library-specified policies.
     ///
@@ -86,6 +90,7 @@ impl Pipeline {
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
+        _options: Option<PipelineSendOptions>,
     ) -> crate::Result<BufResponse> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
@@ -148,7 +153,9 @@ mod tests {
             };
             let pipeline = Pipeline::new(options, Vec::new(), Vec::new(), Some(pipeline_options));
             let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
-            let raw_response = pipeline.send(&Context::default(), &mut request).await?;
+            let raw_response = pipeline
+                .send(&Context::default(), &mut request, None)
+                .await?;
             Ok(raw_response.into())
         }
 

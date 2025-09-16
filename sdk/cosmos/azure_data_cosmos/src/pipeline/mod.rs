@@ -66,7 +66,7 @@ impl CosmosPipeline {
         resource_link: ResourceLink,
     ) -> azure_core::Result<BufResponse> {
         let ctx = ctx.with_value(resource_link);
-        self.pipeline.send(&ctx, request).await
+        self.pipeline.send(&ctx, request, None).await
     }
 
     pub async fn send<T>(
@@ -107,7 +107,7 @@ impl CosmosPipeline {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 
-                let resp = pipeline.send(&ctx, &mut req).await?;
+                let resp = pipeline.send(&ctx, &mut req, None).await?;
                 let page = FeedPage::<T>::from_response(resp).await?;
 
                 Ok(page.into())

@@ -10,7 +10,7 @@ use azure_core::{
     http::{
         headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
         request::Request,
-        ClientMethodOptions, Method, Pipeline, StatusCode, Url,
+        ClientMethodOptions, Method, Pipeline, PipelineSendOptions, StatusCode, Url,
     },
 };
 use serde::Deserialize;
@@ -140,7 +140,17 @@ impl ClientAssertion for Client {
 
         let options = options.unwrap_or_default();
         let ctx = options.context.to_borrowed();
-        let resp = self.pipeline.send(&ctx, &mut req).await?;
+        let resp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut req,
+                Some(PipelineSendOptions {
+                    skip_checks: true,
+                    ..Default::default()
+                }),
+            )
+            .await?;
         if resp.status() != StatusCode::Ok {
             let status_code = resp.status();
             let err_headers: ErrorHeaders = resp.headers().get()?;
