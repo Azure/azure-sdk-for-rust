@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
+    error::ErrorKind,
     http::{RequestContent, StatusCode},
     Bytes,
 };
@@ -16,6 +17,7 @@ use azure_storage_blob::models::{
 };
 
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use core::error;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
@@ -475,5 +477,43 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(sku_name.is_some());
     assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    println!("Top of Test");
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+
+    // Act
+    let response = blob_client.get_properties(None).await;
+    let error_response = response.unwrap_err();
+    println!("Error debug print: {:?}", error_response);
+
+    let error_kind = error_response.kind();
+
+    println!("Before Match");
+    // Match out of the error_kind struct
+    if let ErrorKind::HttpResponse {
+        raw_response: Some(inner_raw_response),
+        ..
+    } = error_kind
+    {
+        println!("Inside of Match");
+        let status = inner_raw_response.status();
+        let body = inner_raw_response.body(); // Expected to be empty
+        let headers = inner_raw_response.headers();
+
+        println!("Status Code: {}", status);
+        for (key, value) in headers.iter() {
+            println!("Header: {} = {}", key.as_str(), value.as_str());
+        }
+        println!("Body: {:?}", body);
+    }
+
+    println!("Bottom of Test");
     Ok(())
 }
