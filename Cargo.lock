@@ -483,7 +483,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "async-trait",
  "azure_core",
