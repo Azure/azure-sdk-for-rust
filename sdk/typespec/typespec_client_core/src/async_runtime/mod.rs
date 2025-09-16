@@ -194,6 +194,11 @@ pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
 }
 
 fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
+    #[cfg(all(feature = "wasm_bindgen", feature = "tokio"))]
+    compile_error!(
+        "feature \"wasm_bindgen\" and feature \"tokio\" cannot be enabled at the same time"
+    );
+
     #[cfg(all(target_arch = "wasm32", feature = "wasm_bindgen"))]
     {
         Arc::new(web_runtime::WasmBindgenRuntime) as Arc<dyn AsyncRuntime>
@@ -202,7 +207,10 @@ fn create_async_runtime() -> Arc<dyn AsyncRuntime> {
     {
         Arc::new(tokio_runtime::TokioRuntime) as Arc<dyn AsyncRuntime>
     }
-    #[cfg(not(any(feature = "tokio", feature = "wasm_bindgen")))]
+    #[cfg(not(any(
+        feature = "tokio",
+        all(target_arch = "wasm32", feature = "wasm_bindgen")
+    )))]
     {
         Arc::new(standard_runtime::StdRuntime) as Arc<dyn AsyncRuntime>
     }
