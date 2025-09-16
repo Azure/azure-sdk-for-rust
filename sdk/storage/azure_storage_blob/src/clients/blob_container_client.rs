@@ -277,10 +277,6 @@ impl BlobContainerClient {
     }
 
     /// Returns `true` if the container exists, and returns `false` otherwise.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional configuration for the request.
     pub async fn exists(&self) -> bool {
         self.get_properties(None).await.is_ok()
     }
