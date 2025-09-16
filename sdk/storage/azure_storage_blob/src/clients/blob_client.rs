@@ -356,7 +356,7 @@ impl BlobClient {
         self.client.get_account_info(options).await
     }
 
-    /// Returns `true` if a blob exists, and returns `false` otherwise.
+    /// Returns `true` if the blob exists, and returns `false` otherwise.
     ///
     /// # Arguments
     ///

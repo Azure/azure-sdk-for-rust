@@ -276,7 +276,7 @@ impl BlobContainerClient {
         self.client.get_account_info(options).await
     }
 
-    /// Returns `true` if a container exists, and returns `false` otherwise.
+    /// Returns `true` if the container exists, and returns `false` otherwise.
     ///
     /// # Arguments
     ///
