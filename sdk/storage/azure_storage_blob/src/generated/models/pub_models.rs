@@ -159,6 +159,10 @@ pub struct BlobClientSetImmutabilityPolicyResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetLegalHoldResult;
 
+/// Contains results for `BlobClient::set_tags()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetTagsResult;
+
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
@@ -166,46 +170,6 @@ pub struct BlobClientStartCopyFromUrlResult;
 /// Contains results for `BlobClient::undelete()`
 #[derive(SafeDebug)]
 pub struct BlobClientUndeleteResult;
-
-/// Contains results for `BlobContainerClient::acquire_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientAcquireLeaseResult;
-
-/// Contains results for `BlobContainerClient::break_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientBreakLeaseResult;
-
-/// Contains results for `BlobContainerClient::change_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientChangeLeaseResult;
-
-/// Contains results for `BlobContainerClient::get_account_info()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientGetAccountInfoResult;
-
-/// Contains results for `BlobContainerClient::get_properties()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientGetPropertiesResult;
-
-/// Contains results for `BlobContainerClient::release_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientReleaseLeaseResult;
-
-/// Contains results for `BlobContainerClient::rename()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRenameResult;
-
-/// Contains results for `BlobContainerClient::renew_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRenewLeaseResult;
-
-/// Contains results for `BlobContainerClient::restore()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRestoreResult;
-
-/// Contains results for `BlobContainerClient::set_access_policy()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientSetAccessPolicyResult;
 
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -259,7 +223,10 @@ pub struct BlobItemInternal {
     pub name: Option<BlobName>,
 
     /// The object replication metadata of the blob.
-    #[serde(rename = "OrMetadata", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ObjectReplicationMetadata",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub object_replication_metadata: Option<ObjectReplicationMetadata>,
 
     /// The properties of the blob.
@@ -541,55 +508,6 @@ pub struct BlobPropertiesInternal {
     pub tag_count: Option<i32>,
 }
 
-/// Contains results for `BlobServiceClient::get_account_info()`
-#[derive(SafeDebug)]
-pub struct BlobServiceClientGetAccountInfoResult;
-
-/// The service properties.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[serde(rename = "StorageServiceProperties")]
-pub struct BlobServiceProperties {
-    /// The CORS properties.
-    #[serde(
-        default,
-        deserialize_with = "CorsCorsRule::unwrap",
-        rename = "Cors",
-        serialize_with = "CorsCorsRule::wrap",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub cors: Option<Vec<CorsRule>>,
-
-    /// The default service version.
-    #[serde(
-        rename = "DefaultServiceVersion",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub default_service_version: Option<String>,
-
-    /// The delete retention policy.
-    #[serde(
-        rename = "DeleteRetentionPolicy",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub delete_retention_policy: Option<RetentionPolicy>,
-
-    /// The hour metrics properties.
-    #[serde(rename = "HourMetrics", skip_serializing_if = "Option::is_none")]
-    pub hour_metrics: Option<Metrics>,
-
-    /// The logging properties.
-    #[serde(rename = "Logging", skip_serializing_if = "Option::is_none")]
-    pub logging: Option<Logging>,
-
-    /// The minute metrics properties.
-    #[serde(rename = "MinuteMetrics", skip_serializing_if = "Option::is_none")]
-    pub minute_metrics: Option<Metrics>,
-
-    /// The static website properties.
-    #[serde(rename = "StaticWebsite", skip_serializing_if = "Option::is_none")]
-    pub static_website: Option<StaticWebsite>,
-}
-
 /// The blob tags.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "Tag")]
@@ -641,6 +559,10 @@ pub struct Block {
 #[derive(SafeDebug)]
 pub struct BlockBlobClientCommitBlockListResult;
 
+/// Contains results for `BlockBlobClient::put_blob_from_url()`
+#[derive(SafeDebug)]
+pub struct BlockBlobClientPutBlobFromUrlResult;
+
 /// Contains results for `BlockBlobClient::query()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientQueryResult;
@@ -652,10 +574,6 @@ pub struct BlockBlobClientStageBlockFromUrlResult;
 /// Contains results for `BlockBlobClient::stage_block()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockResult;
-
-/// Contains results for `BlockBlobClient::upload_blob_from_url()`
-#[derive(SafeDebug)]
-pub struct BlockBlobClientUploadBlobFromUrlResult;
 
 /// Contains results for `BlockBlobClient::upload()`
 #[derive(SafeDebug)]
@@ -730,6 +648,46 @@ pub struct ClearRange {
     #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
     pub start: Option<i64>,
 }
+
+/// Contains results for `ContainerClient::acquire_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientAcquireLeaseResult;
+
+/// Contains results for `ContainerClient::break_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientBreakLeaseResult;
+
+/// Contains results for `ContainerClient::change_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientChangeLeaseResult;
+
+/// Contains results for `ContainerClient::get_account_info()`
+#[derive(SafeDebug)]
+pub struct ContainerClientGetAccountInfoResult;
+
+/// Contains results for `ContainerClient::get_properties()`
+#[derive(SafeDebug)]
+pub struct ContainerClientGetPropertiesResult;
+
+/// Contains results for `ContainerClient::release_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientReleaseLeaseResult;
+
+/// Contains results for `ContainerClient::rename()`
+#[derive(SafeDebug)]
+pub struct ContainerClientRenameResult;
+
+/// Contains results for `ContainerClient::renew_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientRenewLeaseResult;
+
+/// Contains results for `ContainerClient::restore()`
+#[derive(SafeDebug)]
+pub struct ContainerClientRestoreResult;
+
+/// Contains results for `ContainerClient::set_access_policy()`
+#[derive(SafeDebug)]
+pub struct ContainerClientSetAccessPolicyResult;
 
 /// An Azure Storage container.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -1289,6 +1247,10 @@ pub struct RetentionPolicy {
     pub enabled: Option<bool>,
 }
 
+/// Contains results for `ServiceClient::get_account_info()`
+#[derive(SafeDebug)]
+pub struct ServiceClientGetAccountInfoResult;
+
 /// The signed identifier.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "SignedIdentifier")]
@@ -1326,6 +1288,50 @@ pub struct StaticWebsite {
     /// The index document.
     #[serde(rename = "IndexDocument", skip_serializing_if = "Option::is_none")]
     pub index_document: Option<String>,
+}
+
+/// The service properties.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+pub struct StorageServiceProperties {
+    /// The CORS properties.
+    #[serde(
+        default,
+        deserialize_with = "CorsCorsRule::unwrap",
+        rename = "Cors",
+        serialize_with = "CorsCorsRule::wrap",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub cors: Option<Vec<CorsRule>>,
+
+    /// The default service version.
+    #[serde(
+        rename = "DefaultServiceVersion",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub default_service_version: Option<String>,
+
+    /// The delete retention policy.
+    #[serde(
+        rename = "DeleteRetentionPolicy",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub delete_retention_policy: Option<RetentionPolicy>,
+
+    /// The hour metrics properties.
+    #[serde(rename = "HourMetrics", skip_serializing_if = "Option::is_none")]
+    pub hour_metrics: Option<Metrics>,
+
+    /// The logging properties.
+    #[serde(rename = "Logging", skip_serializing_if = "Option::is_none")]
+    pub logging: Option<Logging>,
+
+    /// The minute metrics properties.
+    #[serde(rename = "MinuteMetrics", skip_serializing_if = "Option::is_none")]
+    pub minute_metrics: Option<Metrics>,
+
+    /// The static website properties.
+    #[serde(rename = "StaticWebsite", skip_serializing_if = "Option::is_none")]
+    pub static_website: Option<StaticWebsite>,
 }
 
 /// Stats for the storage service.
