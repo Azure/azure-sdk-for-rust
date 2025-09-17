@@ -17,7 +17,7 @@ use crate::{
         BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
         BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
-        BlockListType, BlockLookupList,
+        BlockListType, BlockLookupList, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
@@ -365,8 +365,13 @@ impl BlobClient {
                 ErrorKind::HttpResponse {
                     error_code: Some(error_code),
                     ..
-                } if error_code == "BlobNotFound" || error_code == "ContainerNotFound" => Ok(false),
-                _ => Ok(false),
+                } if error_code == StorageErrorCode::BlobNotFound.as_ref()
+                    || error_code == StorageErrorCode::ContainerNotFound.as_ref() =>
+                {
+                    Ok(false)
+                }
+                // Propagate all other error types.
+                _ => Err(e),
             },
             Err(e) => Err(e),
         }

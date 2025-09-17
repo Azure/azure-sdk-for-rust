@@ -16,7 +16,7 @@ use crate::{
         BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetPropertiesOptions,
         BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
         BlobContainerClientRenewLeaseOptions, BlobContainerClientSetMetadataOptions,
-        FilterBlobSegment, ListBlobsFlatSegmentResponse,
+        FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
@@ -285,8 +285,9 @@ impl BlobContainerClient {
                 ErrorKind::HttpResponse {
                     error_code: Some(error_code),
                     ..
-                } if error_code == "ContainerNotFound" => Ok(false),
-                _ => Ok(false),
+                } if error_code == StorageErrorCode::ContainerNotFound.as_ref() => Ok(false),
+                // Propagate all other error types.
+                _ => Err(e),
             },
             Err(e) => Err(e),
         }
