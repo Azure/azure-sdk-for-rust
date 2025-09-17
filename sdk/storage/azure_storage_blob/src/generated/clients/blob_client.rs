@@ -37,7 +37,7 @@ use azure_core::{
     time::to_rfc7231,
     tracing, Result,
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[tracing::client]
 pub struct BlobClient {
@@ -1695,10 +1695,12 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
+    /// * `metadata` - The metadata headers.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Container.Blob.setMetadata")]
     pub async fn set_metadata(
         &self,
+        metadata: HashMap<String, String>,
         options: Option<BlobClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
@@ -1751,10 +1753,8 @@ impl BlobClient {
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
+        for (k, v) in &metadata {
+            request.insert_header(format!("x-ms-meta-{k}"), v);
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;

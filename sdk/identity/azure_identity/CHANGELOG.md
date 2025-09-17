@@ -1,8 +1,20 @@
 # Release History
 
-## 0.28.0 (Unreleased)
+## 0.29.0 (Unreleased)
 
 ### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.28.0 (2025-09-16)
+
+### Features Added
+
+- Credentials retry HTTP requests by default.
 
 ### Breaking Changes
 

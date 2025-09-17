@@ -1,6 +1,6 @@
 # Release History
 
-## 0.5.0 (Unreleased)
+## 0.6.0 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,22 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.5.0 (2025-09-15)
+
+### Features Added
+
+* Added support for `set_properties` to `BlobServiceClient`.
+* Added support for `filter_blobs` to `BlobContainerClient` and `BlobServiceClient`.
+* Added support for `set_tags` and `get_tags` to `BlobClient`.
+* Added support for `get_account_info` to `BlobClient`, `BlobContainerClient`, and `BlobServiceClient`.
+* Added support for `upload_blob_from_url` to `BlockBlobClient`.
+* Added support for `get_page_ranges`, `update_sequence_number`, and `upload_pages_from_url` to `PageBlobClient`.
+* Added support for `find_blobs_by_tags` to `BlobContainerClient` and `BlobServiceClient`.
+
+### Breaking Changes
+
+* Made `metadata` a required parameter for `set_metadata` for `BlobContainerClient` and `BlobClient`.
 
 ## 0.4.0 (2025-08-05)
 
