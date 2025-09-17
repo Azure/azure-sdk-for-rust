@@ -482,9 +482,14 @@ use tokio::time;
 #[recorded::test]
 async fn test_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // SAS
-    let blob_url = "<ENTER VALID SAS URL>";
+    //let blob_url = <VALID SAS URL>;
 
     let sas_blob_client = BlobClient::from_blob_url(blob_url, None, None)?;
+    println!(
+        "Container Name:{}, Blob Name:{}",
+        sas_blob_client.container_name(),
+        sas_blob_client.blob_name()
+    );
 
     let blob_properties = sas_blob_client.get_properties(None).await?;
     let content_length = blob_properties.content_length()?;
