@@ -64,7 +64,8 @@ impl BlobClient {
     #[tracing::new("Storage.Blob.Blob")]
     pub fn new(
         endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
+        // Need to make this optional in generated code otherwise will have to write our own ctor and not use this one
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -75,22 +76,36 @@ impl BlobClient {
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        endpoint.set_query(None);
-        let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
-            credential,
-            vec!["https://storage.azure.com/.default"],
-        ));
-        Ok(Self {
-            endpoint,
-            version: options.version,
-            pipeline: Pipeline::new(
+        // This will be removed in newer generated code iterations
+        // endpoint.set_query(None);
+        let pipeline = match credential {
+            Some(cred) => {
+                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                    cred,
+                    vec!["https://storage.azure.com/.default"],
+                ));
+                Pipeline::new(
+                    option_env!("CARGO_PKG_NAME"),
+                    option_env!("CARGO_PKG_VERSION"),
+                    options.client_options,
+                    Vec::default(),
+                    vec![auth_policy],
+                    None,
+                )
+            }
+            None => Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
                 options.client_options,
                 Vec::default(),
-                vec![auth_policy],
+                Vec::default(),
                 None,
             ),
+        };
+        Ok(Self {
+            endpoint,
+            version: options.version,
+            pipeline,
         })
     }
 

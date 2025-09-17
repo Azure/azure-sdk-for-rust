@@ -77,6 +77,16 @@ impl BlobClient {
         })
     }
 
+    /// Gets the container name of the Storage account this client is connected to.
+    pub fn container_name(&self) -> &str {
+        // Add logic that would parse out container name from blob_url
+    }
+
+    /// Gets the blob name of the Storage account this client is connected to.
+    pub fn blob_name(&self) -> &str {
+        // Add logic that would parse out blob_name name from blob_url
+    }
+
     /// Returns a new instance of AppendBlobClient.
     ///
     /// # Arguments
