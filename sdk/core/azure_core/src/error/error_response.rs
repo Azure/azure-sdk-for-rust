@@ -5,7 +5,7 @@
 
 use crate::{
     error::{Error, ErrorKind},
-    http::{headers::ERROR_CODE, BufResponse, StatusCode},
+    http::{headers::ERROR_CODE, BufResponse},
 };
 use serde::Deserialize;
 use std::{collections::HashMap, str};
@@ -110,7 +110,7 @@ struct ErrorDetailsInternal<'a> {
 
 #[derive(Debug, Default)]
 pub struct CheckSuccessOptions {
-    success_statuses: &'static [StatusCode],
+    success_statuses: &'static [u16],
 }
 
 /// Checks if the response is a success and if not, creates an appropriate error.
@@ -262,7 +262,7 @@ mod tests {
         let _ = check_success(
             response,
             Some(CheckSuccessOptions {
-                success_statuses: &[StatusCode::ImATeapot],
+                success_statuses: &[418],
             }),
         )
         .await
@@ -282,7 +282,7 @@ mod tests {
         let err = check_success(
             response,
             Some(CheckSuccessOptions {
-                success_statuses: &[StatusCode::ImATeapot],
+                success_statuses: &[418],
             }),
         )
         .await
