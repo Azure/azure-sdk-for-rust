@@ -83,13 +83,13 @@ impl EventData {
 
         // If the AMQP message body is a single binary value, copy it to
         // the event data body.
-        if let AmqpMessageBody::Binary(binary) = message.body() {
+        if let AmqpMessageBody::Binary(binary) = &message.body {
             if binary.len() == 1 {
                 event_data_builder = event_data_builder.with_body(binary[0].clone());
             }
         }
 
-        if let Some(properties) = message.properties() {
+        if let Some(properties) = &message.properties {
             if let Some(content_type) = &properties.content_type {
                 event_data_builder = event_data_builder.with_content_type(content_type.into());
             }
@@ -100,7 +100,7 @@ impl EventData {
                 event_data_builder = event_data_builder.with_message_id(message_id.clone());
             }
         }
-        if let Some(application_properties) = message.application_properties() {
+        if let Some(application_properties) = &message.application_properties {
             for (key, value) in application_properties.0.clone() {
                 event_data_builder = event_data_builder.add_property(key, value);
             }
@@ -198,7 +198,7 @@ impl ReceivedEventData {
     /// The time when the event was sent to the the Event Hub.
     pub fn enqueued_time(&self) -> Option<SystemTime> {
         *self.enqueued_time.get_or_init(|| {
-            let annotations = self.message.message_annotations()?;
+            let annotations = self.message.message_annotations.as_ref()?;
 
             for (key, value) in annotations.0.iter() {
                 if let AmqpAnnotationKey::Symbol(symbol) = key {
@@ -217,7 +217,7 @@ impl ReceivedEventData {
     /// The offset of the event in the Event Hub partition.
     pub fn offset(&self) -> &Option<String> {
         self.offset.get_or_init(|| {
-            let annotations = self.message.message_annotations()?;
+            let annotations = self.message.message_annotations.as_ref()?;
             for (key, value) in annotations.0.iter() {
                 if let AmqpAnnotationKey::Symbol(symbol) = key {
                     if *symbol == OFFSET {
@@ -234,7 +234,7 @@ impl ReceivedEventData {
     /// The sequence number of the event in the Event Hub partition.
     pub fn sequence_number(&self) -> Option<i64> {
         *self.sequence_number.get_or_init(|| {
-            let annotations = self.message.message_annotations()?;
+            let annotations = self.message.message_annotations.as_ref()?;
             for (key, value) in annotations.0.iter() {
                 if let AmqpAnnotationKey::Symbol(symbol) = key {
                     if *symbol == SEQUENCE_NUMBER {
@@ -253,7 +253,7 @@ impl ReceivedEventData {
     /// If no partition key is set, then the method will return `None`.
     pub fn partition_key(&self) -> &Option<String> {
         self.partition_key.get_or_init(|| {
-            let annotations = self.message.message_annotations()?;
+            let annotations = self.message.message_annotations.as_ref()?;
             for (key, value) in annotations.0.iter() {
                 if let AmqpAnnotationKey::Symbol(symbol) = key {
                     if *symbol == PARTITION_KEY {
@@ -274,7 +274,7 @@ impl ReceivedEventData {
     pub fn system_properties(&self) -> &HashMap<String, AmqpValue> {
         self.system_properties.get_or_init(|| {
             let mut system_properties = HashMap::new();
-            if let Some(annotations) = self.message.message_annotations() {
+            if let Some(annotations) = self.message.message_annotations.as_ref() {
                 for (key, value) in annotations.0.iter() {
                     if let AmqpAnnotationKey::Symbol(symbol) = key {
                         if *symbol != ENQUEUED_TIME_UTC

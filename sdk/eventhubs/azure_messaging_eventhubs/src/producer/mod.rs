@@ -154,7 +154,8 @@ impl ProducerClient {
         let event = event.into();
         let mut message = AmqpMessage::from(event);
 
-        if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
+        if message.properties.is_none() || message.properties.as_ref().unwrap().message_id.is_none()
+        {
             message.set_message_id(Uuid::new_v4());
         }
 

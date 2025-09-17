@@ -500,7 +500,7 @@ impl RecoverableConnection {
             AmqpErrorKind::AmqpDescribedError(described_error) => {
                 debug!("AMQP described error: {:?}", described_error);
                 if matches!(
-                    described_error.condition(),
+                    described_error.condition,
                     AmqpErrorCondition::ResourceLimitExceeded
                         | AmqpErrorCondition::ConnectionFramingError
                         | AmqpErrorCondition::LinkStolen
@@ -511,7 +511,7 @@ impl RecoverableConnection {
                     debug!("AMQP described error can be retried: {:?}", described_error);
                     ErrorRecoveryAction::RetryAction
                 } else if matches!(
-                    described_error.condition(),
+                    described_error.condition,
                     AmqpErrorCondition::EntityDisabledError
                 ) {
                     debug!(

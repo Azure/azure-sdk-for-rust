@@ -20,12 +20,16 @@ pub fn parse_client(_attr: TokenStream, item: TokenStream) -> Result<TokenStream
     }
 
     let ItemStruct {
-        vis, ident, fields, ..
+        vis,
+        ident,
+        fields,
+        attrs,
+        ..
     } = syn::parse2(item.clone())?;
 
     let fields = fields.iter();
     Ok(quote! {
-        #vis
+        #(#attrs)* #vis
         struct #ident {
             #(#fields),*,
             pub(crate) tracer: Option<std::sync::Arc<dyn azure_core::tracing::Tracer>>,
@@ -61,6 +65,8 @@ mod tests {
     fn parse_service_client() {
         let attr = TokenStream::new();
         let item = quote! {
+            #[doc=" Service client for MyService. "]
+            #[derive(Clone)]
             pub struct ServiceClient {
                 name: &'static str,
                 endpoint: Url,
@@ -68,6 +74,8 @@ mod tests {
         };
         let actual = parse_client(attr, item).expect("Failed to parse client declaration");
         let expected = quote! {
+            #[doc=" Service client for MyService. "]
+            #[derive(Clone)]
             pub struct ServiceClient {
                 name: &'static str,
                 endpoint: Url,

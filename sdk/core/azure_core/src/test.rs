@@ -78,7 +78,9 @@ pub const RECORDING_MODE: HeaderName = HeaderName::from_static("x-recording-mode
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RecordingMode {
     #[default]
+    /// Playback mode
     Playback,
+    /// Record mode
     Record,
 }
 
