@@ -17,21 +17,22 @@ use crate::generated::models::{
 use azure_core::{
     base64::encode,
     credentials::TokenCredential,
-    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
-        headers::ERROR_CODE,
+        check_success,
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
         XmlFormat,
     },
     time::to_rfc7231,
-    tracing, Bytes, Error, Result,
+    tracing, Bytes, Result,
 };
 use std::sync::Arc;
 
 #[tracing::client]
 pub struct PageBlobClient {
+    pub(crate) blob_name: String,
+    pub(crate) container_name: String,
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
@@ -54,27 +55,32 @@ impl PageBlobClient {
     /// * `endpoint` - Service host
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
+    /// * `container_name` - The name of the container.
+    /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.PageBlob")]
+    #[tracing::new("Storage.Blob.Container.Blob.PageBlob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
+        container_name: String,
+        blob_name: String,
         options: Option<PageBlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
-        let mut endpoint = Url::parse(endpoint)?;
+        let endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
             return Err(azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        endpoint.set_query(None);
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
         ));
         Ok(Self {
+            blob_name,
+            container_name,
             endpoint,
             version: options.version,
             pipeline: Pipeline::new(
@@ -107,7 +113,7 @@ impl PageBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{PageBlobClientClearPagesResult, PageBlobClientClearPagesResultHeaders};
+    /// use azure_storage_blob::models::{PageBlobClientClearPagesResult, PageBlobClientClearPagesResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageBlobClientClearPagesResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -132,7 +138,7 @@ impl PageBlobClient {
     /// * [`content_crc64`()](crate::generated::models::PageBlobClientClearPagesResultHeaders::content_crc64) - x-ms-content-crc64
     ///
     /// [`PageBlobClientClearPagesResultHeaders`]: crate::generated::models::PageBlobClientClearPagesResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.clearPages")]
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.clearPages")]
     pub async fn clear_pages(
         &self,
         range: String,
@@ -141,6 +147,10 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_key_only("clear")
             .append_pair("comp", "page");
@@ -210,15 +220,7 @@ impl PageBlobClient {
         request.insert_header("x-ms-page-write", "clear");
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -241,7 +243,7 @@ impl PageBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{PageBlobClientCopyIncrementalResult, PageBlobClientCopyIncrementalResultHeaders};
+    /// use azure_storage_blob::models::{PageBlobClientCopyIncrementalResult, PageBlobClientCopyIncrementalResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageBlobClientCopyIncrementalResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -266,7 +268,7 @@ impl PageBlobClient {
     /// * [`copy_status`()](crate::generated::models::PageBlobClientCopyIncrementalResultHeaders::copy_status) - x-ms-copy-status
     ///
     /// [`PageBlobClientCopyIncrementalResultHeaders`]: crate::generated::models::PageBlobClientCopyIncrementalResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.copyIncremental")]
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.copyIncremental")]
     pub async fn copy_incremental(
         &self,
         copy_source: String,
@@ -275,6 +277,10 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "incrementalcopy");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
@@ -303,15 +309,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -330,7 +328,7 @@ impl PageBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{PageBlobClientCreateResult, PageBlobClientCreateResultHeaders};
+    /// use azure_storage_blob::models::{PageBlobClientCreateResult, PageBlobClientCreateResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageBlobClientCreateResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -357,7 +355,7 @@ impl PageBlobClient {
     /// * [`version_id`()](crate::generated::models::PageBlobClientCreateResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`PageBlobClientCreateResultHeaders`]: crate::generated::models::PageBlobClientCreateResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.create")]
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.create")]
     pub async fn create(
         &self,
         blob_content_length: u64,
@@ -366,6 +364,10 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
@@ -462,15 +464,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -487,7 +481,7 @@ impl PageBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use blob_storage::models::{PageList, PageListHeaders};
+    /// use azure_storage_blob::models::{PageList, PageListHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageList, XmlFormat> = unimplemented!();
     ///     // Access response headers
@@ -511,7 +505,7 @@ impl PageBlobClient {
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
     ///
     /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
-    #[tracing::function("Storage.Blob.PageBlob.getPageRanges")]
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.getPageRanges")]
     pub async fn get_page_ranges(
         &self,
         options: Option<PageBlobClientGetPageRangesOptions<'_>>,
@@ -519,6 +513,10 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "pagelist");
         if let Some(marker) = options.marker {
             url.query_pairs_mut().append_pair("marker", &marker);
@@ -563,15 +561,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -588,7 +578,7 @@ impl PageBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use blob_storage::models::{PageList, PageListHeaders};
+    /// use azure_storage_blob::models::{PageList, PageListHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageList, XmlFormat> = unimplemented!();
     ///     // Access response headers
@@ -612,7 +602,7 @@ impl PageBlobClient {
     /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
     ///
     /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
-    #[tracing::function("Storage.Blob.PageBlob.getPageRangesDiff")]
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.getPageRangesDiff")]
     pub async fn get_page_ranges_diff(
         &self,
         options: Option<PageBlobClientGetPageRangesDiffOptions<'_>>,
@@ -620,6 +610,10 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("comp", "pagelist")
             .append_key_only("diff");
@@ -673,15 +667,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -700,7 +686,7 @@ impl PageBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{PageBlobClientResizeResult, PageBlobClientResizeResultHeaders};
+    /// use azure_storage_blob::models::{PageBlobClientResizeResult, PageBlobClientResizeResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageBlobClientResizeResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -723,7 +709,7 @@ impl PageBlobClient {
     /// * [`blob_sequence_number`()](crate::generated::models::PageBlobClientResizeResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
     ///
     /// [`PageBlobClientResizeResultHeaders`]: crate::generated::models::PageBlobClientResizeResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.resize")]
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.resize")]
     pub async fn resize(
         &self,
         blob_content_length: u64,
@@ -732,6 +718,10 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_key_only("Resize")
             .append_pair("comp", "properties");
@@ -780,15 +770,7 @@ impl PageBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -808,7 +790,7 @@ impl PageBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{PageBlobClientSetSequenceNumberResult, PageBlobClientSetSequenceNumberResultHeaders};
+    /// use azure_storage_blob::models::{PageBlobClientSetSequenceNumberResult, PageBlobClientSetSequenceNumberResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageBlobClientSetSequenceNumberResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -831,7 +813,7 @@ impl PageBlobClient {
     /// * [`blob_sequence_number`()](crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders::blob_sequence_number) - x-ms-blob-sequence-number
     ///
     /// [`PageBlobClientSetSequenceNumberResultHeaders`]: crate::generated::models::PageBlobClientSetSequenceNumberResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.setSequenceNumber")]
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.setSequenceNumber")]
     pub async fn set_sequence_number(
         &self,
         sequence_number_action: SequenceNumberActionType,
@@ -840,6 +822,10 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_key_only("UpdateSequenceNumber")
             .append_pair("comp", "properties");
@@ -882,15 +868,7 @@ impl PageBlobClient {
         );
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -910,7 +888,7 @@ impl PageBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{PageBlobClientUploadPagesResult, PageBlobClientUploadPagesResultHeaders};
+    /// use azure_storage_blob::models::{PageBlobClientUploadPagesResult, PageBlobClientUploadPagesResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageBlobClientUploadPagesResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -938,7 +916,7 @@ impl PageBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::PageBlobClientUploadPagesResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`PageBlobClientUploadPagesResultHeaders`]: crate::generated::models::PageBlobClientUploadPagesResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.uploadPages")]
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.uploadPages")]
     pub async fn upload_pages(
         &self,
         body: RequestContent<Bytes, NoFormat>,
@@ -949,6 +927,10 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("comp", "page")
             .append_key_only("update");
@@ -1035,15 +1017,7 @@ impl PageBlobClient {
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -1066,7 +1040,7 @@ impl PageBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesFromUrlResultHeaders};
+    /// use azure_storage_blob::models::{PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesFromUrlResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<PageBlobClientUploadPagesFromUrlResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -1094,7 +1068,7 @@ impl PageBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`PageBlobClientUploadPagesFromUrlResultHeaders`]: crate::generated::models::PageBlobClientUploadPagesFromUrlResultHeaders
-    #[tracing::function("Storage.Blob.PageBlob.uploadPagesFromUrl")]
+    #[tracing::function("Storage.Blob.Container.Blob.PageBlob.uploadPagesFromUrl")]
     pub async fn upload_pages_from_url(
         &self,
         source_url: String,
@@ -1106,6 +1080,10 @@ impl PageBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("comp", "page")
             .append_key_only("fromUrl")
@@ -1208,15 +1186,7 @@ impl PageBlobClient {
         request.insert_header("x-ms-source-range", source_range);
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 }

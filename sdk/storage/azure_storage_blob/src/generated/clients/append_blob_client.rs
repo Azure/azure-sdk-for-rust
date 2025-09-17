@@ -12,20 +12,21 @@ use crate::generated::models::{
 use azure_core::{
     base64::encode,
     credentials::TokenCredential,
-    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
-        headers::ERROR_CODE,
+        check_success,
         policies::{BearerTokenCredentialPolicy, Policy},
         ClientOptions, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
     },
     time::to_rfc7231,
-    tracing, Bytes, Error, Result,
+    tracing, Bytes, Result,
 };
 use std::sync::Arc;
 
 #[tracing::client]
 pub struct AppendBlobClient {
+    pub(crate) blob_name: String,
+    pub(crate) container_name: String,
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
@@ -48,27 +49,32 @@ impl AppendBlobClient {
     /// * `endpoint` - Service host
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
+    /// * `container_name` - The name of the container.
+    /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.AppendBlob")]
+    #[tracing::new("Storage.Blob.Container.Blob.AppendBlob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
+        container_name: String,
+        blob_name: String,
         options: Option<AppendBlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
-        let mut endpoint = Url::parse(endpoint)?;
+        let endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
             return Err(azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        endpoint.set_query(None);
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
         ));
         Ok(Self {
+            blob_name,
+            container_name,
             endpoint,
             version: options.version,
             pipeline: Pipeline::new(
@@ -102,7 +108,7 @@ impl AppendBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{AppendBlobClientAppendBlockResult, AppendBlobClientAppendBlockResultHeaders};
+    /// use azure_storage_blob::models::{AppendBlobClientAppendBlockResult, AppendBlobClientAppendBlockResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<AppendBlobClientAppendBlockResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -131,7 +137,7 @@ impl AppendBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::AppendBlobClientAppendBlockResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`AppendBlobClientAppendBlockResultHeaders`]: crate::generated::models::AppendBlobClientAppendBlockResultHeaders
-    #[tracing::function("Storage.Blob.AppendBlob.appendBlock")]
+    #[tracing::function("Storage.Blob.Container.Blob.AppendBlob.appendBlock")]
     pub async fn append_block(
         &self,
         body: RequestContent<Bytes, NoFormat>,
@@ -141,6 +147,10 @@ impl AppendBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "appendblock");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
@@ -209,15 +219,7 @@ impl AppendBlobClient {
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -237,7 +239,7 @@ impl AppendBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockFromUrlResultHeaders};
+    /// use azure_storage_blob::models::{AppendBlobClientAppendBlockFromUrlResult, AppendBlobClientAppendBlockFromUrlResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -266,7 +268,7 @@ impl AppendBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`AppendBlobClientAppendBlockFromUrlResultHeaders`]: crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders
-    #[tracing::function("Storage.Blob.AppendBlob.appendBlockFromUrl")]
+    #[tracing::function("Storage.Blob.Container.Blob.AppendBlob.appendBlockFromUrl")]
     pub async fn append_block_from_url(
         &self,
         source_url: String,
@@ -276,6 +278,10 @@ impl AppendBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("comp", "appendblock")
             .append_key_only("fromUrl");
@@ -367,15 +373,7 @@ impl AppendBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -392,7 +390,7 @@ impl AppendBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{AppendBlobClientCreateResult, AppendBlobClientCreateResultHeaders};
+    /// use azure_storage_blob::models::{AppendBlobClientCreateResult, AppendBlobClientCreateResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<AppendBlobClientCreateResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -419,7 +417,7 @@ impl AppendBlobClient {
     /// * [`version_id`()](crate::generated::models::AppendBlobClientCreateResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`AppendBlobClientCreateResultHeaders`]: crate::generated::models::AppendBlobClientCreateResultHeaders
-    #[tracing::function("Storage.Blob.AppendBlob.create")]
+    #[tracing::function("Storage.Blob.Container.Blob.AppendBlob.create")]
     pub async fn create(
         &self,
         options: Option<AppendBlobClientCreateOptions<'_>>,
@@ -427,6 +425,10 @@ impl AppendBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
@@ -513,15 +515,7 @@ impl AppendBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -539,7 +533,7 @@ impl AppendBlobClient {
     ///
     /// ```no_run
     /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use blob_storage::models::{AppendBlobClientSealResult, AppendBlobClientSealResultHeaders};
+    /// use azure_storage_blob::models::{AppendBlobClientSealResult, AppendBlobClientSealResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: Response<AppendBlobClientSealResult, NoFormat> = unimplemented!();
     ///     // Access response headers
@@ -562,7 +556,7 @@ impl AppendBlobClient {
     /// * [`is_sealed`()](crate::generated::models::AppendBlobClientSealResultHeaders::is_sealed) - x-ms-blob-sealed
     ///
     /// [`AppendBlobClientSealResultHeaders`]: crate::generated::models::AppendBlobClientSealResultHeaders
-    #[tracing::function("Storage.Blob.AppendBlob.seal")]
+    #[tracing::function("Storage.Blob.Container.Blob.AppendBlob.seal")]
     pub async fn seal(
         &self,
         options: Option<AppendBlobClientSealOptions<'_>>,
@@ -570,6 +564,10 @@ impl AppendBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
+        let mut path = String::from("{containerName}/{blobName}");
+        path = path.replace("{blobName}", &self.blob_name);
+        path = path.replace("{containerName}", &self.container_name);
+        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "seal");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
@@ -600,15 +598,7 @@ impl AppendBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp, Some(ERROR_CODE)).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 }

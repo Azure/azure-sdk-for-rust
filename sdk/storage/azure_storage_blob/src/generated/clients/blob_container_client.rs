@@ -615,16 +615,16 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `blob_name` - The name of the blob.
-    #[tracing::subclient]
-    pub fn get_blob_client(&self, blob_name: String) -> BlobClient {
-        BlobClient {
-            blob_name,
-            container_name: self.container_name.clone(),
-            endpoint: self.endpoint.clone(),
-            pipeline: self.pipeline.clone(),
-            version: self.version.clone(),
-        }
-    }
+    // #[tracing::subclient]
+    // pub fn get_blob_client(&self, blob_name: String) -> BlobClient {
+    //     BlobClient {
+    //         blob_name,
+    //         container_name: self.container_name.clone(),
+    //         endpoint: self.endpoint.clone(),
+    //         pipeline: self.pipeline.clone(),
+    //         version: self.version.clone(),
+    //     }
+    // }
 
     /// returns all user-defined metadata and system properties for the specified container. The data returned does not include
     /// the container's list of blobs
