@@ -159,7 +159,7 @@ mod tests {
     use crate::env::Env;
     use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
     use azure_core::http::headers::Headers;
-    use azure_core::http::{BufResponse, Method, Request, StatusCode, TransportOptions, Url};
+    use azure_core::http::{BufResponse, Method, Request, StatusCode, Transport, Url};
     use azure_core::time::OffsetDateTime;
     use azure_core::Bytes;
     use azure_core_test::{http::MockHttpClient, recorded};
@@ -258,7 +258,7 @@ mod tests {
         let mut options = options.unwrap_or_default();
         options.env = env;
         options.client_options = ClientOptions {
-            transport: Some(TransportOptions::new(Arc::new(mock_client))),
+            transport: Some(Transport::new(Arc::new(mock_client))),
             ..Default::default()
         };
         let cred = ManagedIdentityCredential::new(Some(options)).expect("credential");

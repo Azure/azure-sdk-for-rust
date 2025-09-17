@@ -78,7 +78,7 @@ mod tests {
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
     use std::sync::Arc;
-    use typespec_client_core::http::{policies::TransportPolicy, BufResponse, TransportOptions};
+    use typespec_client_core::http::{policies::TransportPolicy, BufResponse, Transport};
 
     #[tokio::test]
     async fn header_already_present() {
@@ -108,7 +108,7 @@ mod tests {
             }
             .boxed()
         }));
-        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(transport)));
+        let transport = Arc::new(TransportPolicy::new(Transport::new(transport)));
         let ctx = Context::new();
 
         // Act
@@ -141,7 +141,7 @@ mod tests {
             }
             .boxed()
         }));
-        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(transport)));
+        let transport = Arc::new(TransportPolicy::new(Transport::new(transport)));
         let ctx = Context::new();
 
         // Act
@@ -182,7 +182,7 @@ mod tests {
             }
             .boxed()
         }));
-        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(transport)));
+        let transport = Arc::new(TransportPolicy::new(Transport::new(transport)));
         let ctx = Context::new();
 
         // Act
@@ -222,7 +222,7 @@ mod tests {
             }
             .boxed()
         }));
-        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(transport)));
+        let transport = Arc::new(TransportPolicy::new(Transport::new(transport)));
 
         // Act
         policy

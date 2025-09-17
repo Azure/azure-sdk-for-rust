@@ -43,10 +43,10 @@ pub struct ClientOptions {
     pub per_try_policies: Vec<Arc<dyn Policy>>,
 
     /// Retry options.
-    pub retry: Option<RetryOptions>,
+    pub retry: RetryOptions,
 
     /// Transport options.
-    pub transport: Option<TransportOptions>,
+    pub transport: Option<Transport>,
 
     /// Logging options.
     pub logging: LoggingOptions,

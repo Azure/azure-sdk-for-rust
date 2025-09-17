@@ -5,48 +5,50 @@ use crate::http::{clients, policies::Policy, BufResponse, Context, HttpClient, R
 use std::sync::Arc;
 use typespec::error::Result;
 
-/// Transport options.
+/// The HTTP transport.
 #[derive(Clone, Debug)]
-pub struct TransportOptions {
-    inner: TransportOptionsImpl,
+pub struct Transport {
+    inner: TransportImpl,
 }
 
 #[derive(Clone, Debug)]
-enum TransportOptionsImpl {
-    Http {
+enum TransportImpl {
+    HttpClient {
         /// The HTTP client implementation to use for requests.
         http_client: Arc<dyn HttpClient>,
     },
-    Custom(Arc<dyn Policy>),
+    Policy(Arc<dyn Policy>),
 }
 
-impl TransportOptions {
-    /// Creates a new `TransportOptions` using the given `HttpClient`.
+impl Transport {
+    /// Creates a new `Transport` using the given [`HttpClient`].
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
-        let inner = TransportOptionsImpl::Http { http_client };
-        Self { inner }
+        Self {
+            inner: TransportImpl::HttpClient { http_client },
+        }
     }
 
-    /// Creates a new `TransportOptions` using the custom policy.
+    /// Creates a new `Transport` using the custom policy.
     ///
     /// This policy is expected to be the last policy in the pipeline.
-    pub fn new_custom_policy(policy: Arc<dyn Policy>) -> Self {
-        let inner = TransportOptionsImpl::Custom(policy);
-        Self { inner }
+    pub fn with_policy(policy: Arc<dyn Policy>) -> Self {
+        Self {
+            inner: TransportImpl::Policy(policy),
+        }
     }
 
     /// Use these options to send a request.
     pub async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> Result<BufResponse> {
-        use TransportOptionsImpl as I;
+        use TransportImpl as I;
         match &self.inner {
-            I::Http { http_client } => http_client.execute_request(request).await,
-            I::Custom(s) => s.send(ctx, request, &[]).await,
+            I::HttpClient { http_client } => http_client.execute_request(request).await,
+            I::Policy(s) => s.send(ctx, request, &[]).await,
         }
     }
 }
 
-impl Default for TransportOptions {
-    /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
+impl Default for Transport {
+    /// Creates an instance of the `Transport` using the default [`HttpClient`].
     fn default() -> Self {
         Self::new(clients::new_http_client())
     }

@@ -63,7 +63,7 @@ and set that as the transport in any `ClientOptions` used to configure your clie
 
 ```rust no_run
 use std::sync::Arc;
-use typespec_client_core::http::{HttpClient, ClientOptions, TransportOptions};
+use typespec_client_core::http::{HttpClient, ClientOptions, Transport};
 
 let client = Arc::new(
     ::reqwest::ClientBuilder::new()
@@ -74,7 +74,7 @@ let client = Arc::new(
 );
 
 let options = ClientOptions {
-    transport: Some(TransportOptions::new(client.clone())),
+    transport: Some(Transport::new(client.clone())),
     ..Default::default()
 };
 ```

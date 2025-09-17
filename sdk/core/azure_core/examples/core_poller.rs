@@ -5,7 +5,7 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         headers::{Headers, RETRY_AFTER},
-        BufResponse, HttpClient, Method, StatusCode, TransportOptions,
+        BufResponse, HttpClient, Method, StatusCode, Transport,
     },
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -26,7 +26,7 @@ async fn test_poller() -> Result<(), Box<dyn std::error::Error>> {
     // You normally would create credentials from `azure_identity` and
     // use the default transport in production.
     let (credential, transport) = setup()?;
-    options.client_options.transport = Some(TransportOptions::new(transport));
+    options.client_options.transport = Some(Transport::new(transport));
 
     let client = CertificateClient::new(
         "https://my-vault.vault.azure.net",

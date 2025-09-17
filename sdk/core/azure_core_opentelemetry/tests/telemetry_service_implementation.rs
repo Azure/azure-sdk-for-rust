@@ -78,20 +78,18 @@ impl TestServiceClient {
         }
         endpoint.set_query(None);
 
-        let tracer = if let Some(tracer_options) = &options.client_options.instrumentation {
-            tracer_options
-                .tracer_provider
-                .as_ref()
-                .map(|tracer_provider| {
-                    tracer_provider.get_tracer(
-                        Some("Az.TestServiceClient"),
-                        option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                        option_env!("CARGO_PKG_VERSION"),
-                    )
-                })
-        } else {
-            None
-        };
+        let tracer = options
+            .client_options
+            .instrumentation
+            .tracer_provider
+            .as_ref()
+            .map(|tracer_provider| {
+                tracer_provider.get_tracer(
+                    Some("Az.TestServiceClient"),
+                    option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
+                    option_env!("CARGO_PKG_VERSION"),
+                )
+            });
 
         Ok(Self {
             endpoint,
@@ -296,9 +294,9 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         client_options: ClientOptions {
-            instrumentation: Some(InstrumentationOptions {
+            instrumentation: InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
-            }),
+            },
             logging: azure_core::http::LoggingOptions {
                 additional_allowed_header_names: vec!["access-control-allow-credentials".into()],
                 ..Default::default()
@@ -355,9 +353,9 @@ async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         client_options: ClientOptions {
-            instrumentation: Some(InstrumentationOptions {
+            instrumentation: InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
-            }),
+            },
             ..Default::default()
         },
         ..Default::default()
@@ -416,9 +414,9 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         client_options: ClientOptions {
-            instrumentation: Some(InstrumentationOptions {
+            instrumentation: InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
-            }),
+            },
             ..Default::default()
         },
         ..Default::default()
@@ -479,9 +477,9 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         client_options: ClientOptions {
-            instrumentation: Some(InstrumentationOptions {
+            instrumentation: InstrumentationOptions {
                 tracer_provider: Some(azure_provider),
-            }),
+            },
             ..Default::default()
         },
         ..Default::default()

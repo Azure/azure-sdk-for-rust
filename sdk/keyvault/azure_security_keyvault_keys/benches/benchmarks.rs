@@ -1,4 +1,4 @@
-use azure_core::http::{ClientOptions, TransportOptions};
+use azure_core::http::{ClientOptions, Transport};
 use azure_core_test::credentials;
 use azure_security_keyvault_keys::{
     models::{
@@ -175,7 +175,7 @@ fn key_2901_benchmark_slow(c: &mut Criterion) {
 
         let options = KeyClientOptions {
             client_options: ClientOptions {
-                transport: Some(TransportOptions::new(reqwest)),
+                transport: Some(Transport::new(reqwest)),
                 ..Default::default()
             },
             ..Default::default()

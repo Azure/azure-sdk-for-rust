@@ -196,8 +196,7 @@ pub(crate) mod tests {
     use super::*;
     use crate::{
         http::{
-            headers::Headers, policies::TransportPolicy, BufResponse, Method, StatusCode,
-            TransportOptions,
+            headers::Headers, policies::TransportPolicy, BufResponse, Method, StatusCode, Transport,
         },
         tracing::{AttributeValue, SpanStatus, TracerProvider},
         Result,
@@ -234,9 +233,8 @@ pub(crate) mod tests {
             &LoggingOptions::default(),
         ));
 
-        let transport = TransportPolicy::new(TransportOptions::new(Arc::new(MockHttpClient::new(
-            callback,
-        ))));
+        let transport =
+            TransportPolicy::new(Transport::new(Arc::new(MockHttpClient::new(callback))));
 
         let ctx = Context::default();
         let next: Vec<Arc<dyn Policy>> = vec![Arc::new(transport)];

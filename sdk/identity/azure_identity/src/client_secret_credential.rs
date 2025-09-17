@@ -152,7 +152,7 @@ mod tests {
     use crate::tests::*;
     use azure_core::{
         authority_hosts::AZURE_PUBLIC_CLOUD,
-        http::{headers::Headers, BufResponse, StatusCode, TransportOptions},
+        http::{headers::Headers, BufResponse, StatusCode, Transport},
         Bytes, Result,
     };
     use std::vec;
@@ -195,7 +195,7 @@ mod tests {
             FAKE_SECRET.into(),
             Some(ClientSecretCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(sts))),
+                    transport: Some(Transport::new(Arc::new(sts))),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -238,7 +238,7 @@ mod tests {
             FAKE_SECRET.into(),
             Some(ClientSecretCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(sts))),
+                    transport: Some(Transport::new(Arc::new(sts))),
                     ..Default::default()
                 },
                 ..Default::default()

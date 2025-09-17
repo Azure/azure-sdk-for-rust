@@ -4,7 +4,7 @@
 use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
-    http::{headers::Headers, BufResponse, ClientOptions, HttpClient, Request, TransportOptions},
+    http::{headers::Headers, BufResponse, ClientOptions, HttpClient, Request, Transport},
 };
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{ResourceExt as _, SecretClient, SecretClientOptions};
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let agent = Arc::new(Agent::default());
     let options = SecretClientOptions {
         client_options: ClientOptions {
-            transport: Some(TransportOptions::new(agent)),
+            transport: Some(Transport::new(agent)),
             ..Default::default()
         },
         ..Default::default()

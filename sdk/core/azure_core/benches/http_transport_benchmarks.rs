@@ -6,7 +6,7 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         BufResponse, ClientMethodOptions, ClientOptions, HttpClient, Method, Pipeline, Request,
-        TransportOptions, Url,
+        Transport, Url,
     },
     Result,
 };
@@ -168,7 +168,7 @@ pub fn disable_pooling_http_transport_test(c: &mut Criterion) {
         let transport = new_reqwest_client_disable_connection_pool();
         let options = TestServiceClientOptions {
             client_options: ClientOptions {
-                transport: Some(TransportOptions::new(transport)),
+                transport: Some(Transport::new(transport)),
                 ..Default::default()
             },
             ..Default::default()

@@ -6,6 +6,10 @@
 
 ### Breaking Changes
 
+- Changed `ClientOptions::retry` from `Option<RetryOptions>` to `RetryOptions`.
+- Renamed `TransportOptions` to `Transport`.
+- Renamed `TransportOptions::new_custom_policy()` to `Transport::with_policy()`.
+
 ### Bugs Fixed
 
 ### Other Changes

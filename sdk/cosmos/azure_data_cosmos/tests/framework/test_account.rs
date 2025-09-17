@@ -4,7 +4,7 @@
 
 use std::{borrow::Cow, str::FromStr, sync::Arc};
 
-use azure_core::{credentials::Secret, http::TransportOptions, test::TestMode};
+use azure_core::{credentials::Secret, http::Transport, test::TestMode};
 use azure_core_test::TestContext;
 use azure_data_cosmos::{ConnectionString, CosmosClientOptions, Query};
 use reqwest::ClientBuilder;
@@ -106,7 +106,7 @@ impl TestAccount {
                 .danger_accept_invalid_certs(true)
                 .pool_max_idle_per_host(0)
                 .build()?;
-            options.client_options.transport = Some(TransportOptions::new(Arc::new(client)));
+            options.client_options.transport = Some(Transport::new(Arc::new(client)));
         }
 
         self.context

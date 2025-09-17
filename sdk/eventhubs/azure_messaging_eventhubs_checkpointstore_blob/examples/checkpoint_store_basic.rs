@@ -50,9 +50,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         credential,
         Some(BlobContainerClientOptions {
             client_options: ClientOptions {
-                instrumentation: Some(InstrumentationOptions {
+                instrumentation: InstrumentationOptions {
                     tracer_provider: Some(OpenTelemetryTracerProvider::from_global_provider()),
-                }),
+                },
                 ..Default::default()
             },
             ..Default::default()

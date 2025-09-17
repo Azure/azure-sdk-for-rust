@@ -205,7 +205,7 @@ mod tests {
     use super::*;
     use crate::env::Env;
     use azure_core::{
-        http::{BufResponse, ClientOptions, TransportOptions},
+        http::{BufResponse, ClientOptions, Transport},
         Bytes,
     };
     use azure_core_test::http::MockHttpClient;
@@ -253,7 +253,7 @@ mod tests {
         let options = AzurePipelinesCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock_client))),
+                    transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -320,7 +320,7 @@ mod tests {
         let options = AzurePipelinesCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock_client))),
+                    transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
                 ..Default::default()
