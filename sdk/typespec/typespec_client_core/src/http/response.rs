@@ -3,16 +3,10 @@
 
 //! HTTP responses.
 
-use crate::http::{headers::Headers, DeserializeWith, Format, JsonFormat, StatusCode};
-use crate::{
-    error::HttpError,
-    http::{headers::Headers, DeserializeWith, Format, JsonFormat, StatusCode},
-};
 use crate::{
     http::{headers::Headers, DeserializeWith, Format, JsonFormat, RawResponse, StatusCode},
     Bytes,
 };
-use bytes::Bytes;
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
 use std::{fmt, marker::PhantomData, pin::Pin};
