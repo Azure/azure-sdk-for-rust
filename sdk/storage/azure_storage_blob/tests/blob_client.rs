@@ -32,10 +32,10 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Assert
     let error = response.unwrap_err().http_status();
     assert_eq!(StatusCode::NotFound, error.unwrap());
-    assert!(!blob_client.exists().await);
+    assert!(!blob_client.exists().await?);
 
     container_client.create_container(None).await?;
-    assert!(!blob_client.exists().await);
+    assert!(!blob_client.exists().await?);
     create_test_blob(&blob_client, None, None).await?;
 
     // No Option Scenario
@@ -51,7 +51,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     assert_eq!(17, content_length.unwrap());
     assert!(etag.is_some());
     assert!(creation_time.is_some());
-    assert!(blob_client.exists().await);
+    assert!(blob_client.exists().await?);
 
     container_client.delete_container(None).await?;
     Ok(())

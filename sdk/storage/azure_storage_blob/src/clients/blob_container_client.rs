@@ -23,9 +23,10 @@ use crate::{
 };
 use azure_core::{
     credentials::TokenCredential,
+    error::ErrorKind,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, PageIterator, Pager, Response, Url, XmlFormat,
+        NoFormat, PageIterator, Pager, Response, StatusCode, Url, XmlFormat,
     },
     Result,
 };
@@ -276,8 +277,18 @@ impl BlobContainerClient {
         self.client.get_account_info(options).await
     }
 
-    /// Returns `true` if the container exists, and returns `false` otherwise.
-    pub async fn exists(&self) -> bool {
-        self.get_properties(None).await.is_ok()
+    /// Returns `true` if the container exists, `false` if the container does not exist, and propagates all other errors.
+    pub async fn exists(&self) -> Result<bool> {
+        match self.client.get_properties(None).await {
+            Ok(_) => Ok(true),
+            Err(e) if e.http_status() == Some(StatusCode::NotFound) => match e.kind() {
+                ErrorKind::HttpResponse {
+                    error_code: Some(error_code),
+                    ..
+                } if error_code == "ContainerNotFound" => Ok(false),
+                _ => Ok(false),
+            },
+            Err(e) => Err(e),
+        }
     }
 }
