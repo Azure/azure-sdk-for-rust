@@ -76,9 +76,17 @@ impl<C: Clone + AsRef<str>> Clone for PagerState<C> {
 /// The result of fetching a single page from a [`Pager`], whether there are more pages or paging is done.
 pub enum PagerResult<P, C: AsRef<str>> {
     /// There are more pages the [`Pager`] may fetch using the `continuation` token.
-    More { response: P, continuation: C },
+    More {
+        /// The response for the current page.
+        response: P,
+        /// The continuation token for the next page.
+        continuation: C,
+    },
     /// The [`Pager`] is done and there are no additional pages to fetch.
-    Done { response: P },
+    Done {
+        /// The response for the current page.
+        response: P,
+    },
 }
 
 impl<P, F> PagerResult<Response<P, F>, String> {

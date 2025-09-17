@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Removed several unreferenced HTTP headers and accessor structures for those headers.
+
 ### Bugs Fixed
 
 ### Other Changes

@@ -2151,7 +2151,7 @@ impl Receiver {
         let message = delivery.message();
 
         // Extract body
-        let body = match message.body() {
+        let body = match &message.body {
             AmqpMessageBody::Binary(binary_data) => {
                 // Combine all binary chunks
                 binary_data
@@ -2173,7 +2173,7 @@ impl Receiver {
 
         // Extract application properties
         let mut properties = HashMap::new();
-        if let Some(app_props) = message.application_properties() {
+        if let Some(app_props) = message.application_properties.as_ref() {
             for (key, value) in app_props.0.iter() {
                 let value_str = match value {
                     AmqpSimpleValue::String(s) => s.clone(),
@@ -2191,7 +2191,7 @@ impl Receiver {
         // Extract system properties from message properties
         let mut system_properties = SystemProperties::default();
 
-        if let Some(msg_props) = message.properties() {
+        if let Some(msg_props) = message.properties.as_ref() {
             if let Some(message_id) = &msg_props.message_id {
                 system_properties.message_id = match message_id {
                     AmqpMessageId::String(s) => Some(s.clone()),
