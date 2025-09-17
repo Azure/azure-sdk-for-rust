@@ -96,33 +96,33 @@ pub async fn get_container_client(
     Ok(container_client)
 }
 
-/// Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17 if no data specified.
-///
-/// # Arguments
-///
-/// * `blob_client` - A reference to a BlobClient instance.
-/// * `data` - Blob content to be uploaded.
-/// * `options` - Optional configuration for the upload request.
-pub async fn create_test_blob(
-    blob_client: &BlobClient,
-    data: Option<RequestContent<Bytes, NoFormat>>,
-    options: Option<BlockBlobClientUploadOptions<'_>>,
-) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
-    match data {
-        Some(content) => {
-            blob_client
-                .upload(content.clone(), true, content.body().len() as u64, options)
-                .await
-        }
-        None => {
-            blob_client
-                .upload(
-                    RequestContent::from(b"hello rusty world".to_vec()),
-                    true,
-                    17,
-                    options,
-                )
-                .await
-        }
-    }
-}
+// / Creates a test blob with no options, containing the data "b'hello rusty world'" with content length 17 if no data specified.
+// /
+// / # Arguments
+// /
+// / * `blob_client` - A reference to a BlobClient instance.
+// / * `data` - Blob content to be uploaded.
+// / * `options` - Optional configuration for the upload request.
+// pub async fn create_test_blob(
+//     blob_client: &BlobClient,
+//     data: Option<RequestContent<Bytes, NoFormat>>,
+//     options: Option<BlockBlobClientUploadOptions<'_>>,
+// ) -> Result<Response<BlockBlobClientUploadResult, NoFormat>> {
+//     match data {
+//         Some(content) => {
+//             blob_client
+//                 .upload(content.clone(), true, content.body().len() as u64, options)
+//                 .await
+//         }
+//         None => {
+//             blob_client
+//                 .upload(
+//                     RequestContent::from(b"hello rusty world".to_vec()),
+//                     true,
+//                     17,
+//                     options,
+//                 )
+//                 .await
+//         }
+//     }
+// }

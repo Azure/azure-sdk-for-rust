@@ -19,6 +19,7 @@ use crate::{
         BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList,
     },
+    parsers::parse_url_name_components,
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
 };
@@ -32,11 +33,14 @@ use azure_core::{
 };
 use std::collections::HashMap;
 use std::sync::Arc;
+use url::form_urlencoded::parse;
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
     pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobClient,
+    container_name: String,
+    blob_name: String,
 }
 
 impl BlobClient {
@@ -81,17 +85,41 @@ impl BlobClient {
         Ok(Self {
             endpoint: client.endpoint().clone(),
             client,
+            container_name,
+            blob_name,
+        })
+    }
+
+    pub fn from_blob_url(
+        blob_url: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let mut options = options.unwrap_or_default();
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+        let url = Url::parse(blob_url)?;
+        let (container_name, blob_name) = parse_url_name_components(&url)?;
+        let client = GeneratedBlobClient::new(url.as_str(), credential, Some(options))?;
+        Ok(Self {
+            endpoint: client.endpoint().clone(),
+            client,
+            container_name,
+            blob_name,
         })
     }
 
     /// Gets the container name of the Storage account this client is connected to.
     pub fn container_name(&self) -> &str {
-        // Add logic that would parse out container name from blob_url
+        &self.container_name
     }
 
     /// Gets the blob name of the Storage account this client is connected to.
     pub fn blob_name(&self) -> &str {
-        // Add logic that would parse out blob_name name from blob_url
+        &self.blob_name
     }
 
     /// Returns a new instance of AppendBlobClient.
