@@ -175,6 +175,8 @@ impl TestServiceClientWithMacros {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use super::*;
     use ::tracing::{info, trace};
     use azure_core::{
@@ -680,7 +682,8 @@ mod tests {
     async fn test_http_tracing_tests(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
         let package_name = recording.var("CARGO_PKG_NAME", None);
-        let package_version = recording.var("CARGO_PKG_VERSION", None);
+        // Compare current version since recorded version may be older.
+        let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
@@ -706,7 +709,8 @@ mod tests {
     async fn test_function_tracing_tests(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
         let package_name = recording.var("CARGO_PKG_NAME", None);
-        let package_version = recording.var("CARGO_PKG_VERSION", None);
+        // Compare current version since recorded version may be older.
+        let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
@@ -736,7 +740,8 @@ mod tests {
     async fn test_function_tracing_tests_error(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
         let package_name = recording.var("CARGO_PKG_NAME", None);
-        let package_version = recording.var("CARGO_PKG_VERSION", None);
+        // Compare current version since recorded version may be older.
+        let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
