@@ -356,3 +356,333 @@ create_enum!(
     #[doc = r#"The standard ZRS SKU."#]
     (StandardZRS, "Standard_ZRS")
 );
+
+create_extensible_enum!(
+    #[doc = r#"Error codes returned by the Azure Blob Storage service."#]
+    StorageErrorCode,
+    #[doc = r#"Account already exists."#]
+    (AccountAlreadyExists, "AccountAlreadyExists"),
+    #[doc = r#"Account is being created."#]
+    (AccountBeingCreated, "AccountBeingCreated"),
+    #[doc = r#"Account is disabled."#]
+    (AccountIsDisabled, "AccountIsDisabled"),
+    #[doc = r#"Append position condition not met."#]
+    (
+        AppendPositionConditionNotMet,
+        "AppendPositionConditionNotMet"
+    ),
+    #[doc = r#"Authentication failed."#]
+    (AuthenticationFailed, "AuthenticationFailed"),
+    #[doc = r#"Authorization failure."#]
+    (AuthorizationFailure, "AuthorizationFailure"),
+    #[doc = r#"Authorization permission mismatch."#]
+    (
+        AuthorizationPermissionMismatch,
+        "AuthorizationPermissionMismatch"
+    ),
+    #[doc = r#"Authorization protocol mismatch."#]
+    (
+        AuthorizationProtocolMismatch,
+        "AuthorizationProtocolMismatch"
+    ),
+    #[doc = r#"Authorization resource type mismatch."#]
+    (
+        AuthorizationResourceTypeMismatch,
+        "AuthorizationResourceTypeMismatch"
+    ),
+    #[doc = r#"Authorization service mismatch."#]
+    (AuthorizationServiceMismatch, "AuthorizationServiceMismatch"),
+    #[doc = r#"Authorization source IP mismatch."#]
+    (
+        AuthorizationSourceIPMismatch,
+        "AuthorizationSourceIPMismatch"
+    ),
+    #[doc = r#"Blob access tier not supported for account type."#]
+    (
+        BlobAccessTierNotSupportedForAccountType,
+        "BlobAccessTierNotSupportedForAccountType"
+    ),
+    #[doc = r#"Blob already exists."#]
+    (BlobAlreadyExists, "BlobAlreadyExists"),
+    #[doc = r#"Blob archived."#]
+    (BlobArchived, "BlobArchived"),
+    #[doc = r#"Blob being rehydrated."#]
+    (BlobBeingRehydrated, "BlobBeingRehydrated"),
+    #[doc = r#"Blob is immutable due to policy."#]
+    (BlobImmutableDueToPolicy, "BlobImmutableDueToPolicy"),
+    #[doc = r#"Blob not archived."#]
+    (BlobNotArchived, "BlobNotArchived"),
+    #[doc = r#"Blob not found."#]
+    (BlobNotFound, "BlobNotFound"),
+    #[doc = r#"Blob overwritten."#]
+    (BlobOverwritten, "BlobOverwritten"),
+    #[doc = r#"Blob tier inadequate for content length."#]
+    (
+        BlobTierInadequateForContentLength,
+        "BlobTierInadequateForContentLength"
+    ),
+    #[doc = r#"Blob uses customer specified encryption."#]
+    (
+        BlobUsesCustomerSpecifiedEncryption,
+        "BlobUsesCustomerSpecifiedEncryption"
+    ),
+    #[doc = r#"Block count exceeds limit."#]
+    (BlockCountExceedsLimit, "BlockCountExceedsLimit"),
+    #[doc = r#"Block list too long."#]
+    (BlockListTooLong, "BlockListTooLong"),
+    #[doc = r#"Cannot change to lower tier."#]
+    (CannotChangeToLowerTier, "CannotChangeToLowerTier"),
+    #[doc = r#"Cannot verify copy source."#]
+    (CannotVerifyCopySource, "CannotVerifyCopySource"),
+    #[doc = r#"Condition headers not supported."#]
+    (ConditionHeadersNotSupported, "ConditionHeadersNotSupported"),
+    #[doc = r#"Condition not met."#]
+    (ConditionNotMet, "ConditionNotMet"),
+    #[doc = r#"Container already exists."#]
+    (ContainerAlreadyExists, "ContainerAlreadyExists"),
+    #[doc = r#"Container being deleted."#]
+    (ContainerBeingDeleted, "ContainerBeingDeleted"),
+    #[doc = r#"Container disabled."#]
+    (ContainerDisabled, "ContainerDisabled"),
+    #[doc = r#"Container not found."#]
+    (ContainerNotFound, "ContainerNotFound"),
+    #[doc = r#"Content length larger than tier limit."#]
+    (
+        ContentLengthLargerThanTierLimit,
+        "ContentLengthLargerThanTierLimit"
+    ),
+    #[doc = r#"Copy across accounts not supported."#]
+    (
+        CopyAcrossAccountsNotSupported,
+        "CopyAcrossAccountsNotSupported"
+    ),
+    #[doc = r#"Copy ID mismatch."#]
+    (CopyIdMismatch, "CopyIdMismatch"),
+    #[doc = r#"Empty metadata key."#]
+    (EmptyMetadataKey, "EmptyMetadataKey"),
+    #[doc = r#"Feature version mismatch."#]
+    (FeatureVersionMismatch, "FeatureVersionMismatch"),
+    #[doc = r#"Incremental copy blob mismatch."#]
+    (IncrementalCopyBlobMismatch, "IncrementalCopyBlobMismatch"),
+    #[doc = r#"Incremental copy of earlier version snapshot not allowed."#]
+    (
+        IncrementalCopyOfEarlierVersionSnapshotNotAllowed,
+        "IncrementalCopyOfEarlierVersionSnapshotNotAllowed"
+    ),
+    #[doc = r#"Incremental copy source must be snapshot."#]
+    (
+        IncrementalCopySourceMustBeSnapshot,
+        "IncrementalCopySourceMustBeSnapshot"
+    ),
+    #[doc = r#"Infinite lease duration required."#]
+    (
+        InfiniteLeaseDurationRequired,
+        "InfiniteLeaseDurationRequired"
+    ),
+    #[doc = r#"Insufficient account permissions."#]
+    (
+        InsufficientAccountPermissions,
+        "InsufficientAccountPermissions"
+    ),
+    #[doc = r#"Internal error."#]
+    (InternalError, "InternalError"),
+    #[doc = r#"Invalid authentication information."#]
+    (InvalidAuthenticationInfo, "InvalidAuthenticationInfo"),
+    #[doc = r#"Invalid blob or block."#]
+    (InvalidBlobOrBlock, "InvalidBlobOrBlock"),
+    #[doc = r#"Invalid blob tier."#]
+    (InvalidBlobTier, "InvalidBlobTier"),
+    #[doc = r#"Invalid blob type."#]
+    (InvalidBlobType, "InvalidBlobType"),
+    #[doc = r#"Invalid block ID."#]
+    (InvalidBlockId, "InvalidBlockId"),
+    #[doc = r#"Invalid block list."#]
+    (InvalidBlockList, "InvalidBlockList"),
+    #[doc = r#"Invalid header value."#]
+    (InvalidHeaderValue, "InvalidHeaderValue"),
+    #[doc = r#"Invalid HTTP verb."#]
+    (InvalidHttpVerb, "InvalidHttpVerb"),
+    #[doc = r#"Invalid input."#]
+    (InvalidInput, "InvalidInput"),
+    #[doc = r#"Invalid MD5."#]
+    (InvalidMd5, "InvalidMd5"),
+    #[doc = r#"Invalid metadata."#]
+    (InvalidMetadata, "InvalidMetadata"),
+    #[doc = r#"Invalid operation."#]
+    (InvalidOperation, "InvalidOperation"),
+    #[doc = r#"Invalid page range."#]
+    (InvalidPageRange, "InvalidPageRange"),
+    #[doc = r#"Invalid query parameter value."#]
+    (InvalidQueryParameterValue, "InvalidQueryParameterValue"),
+    #[doc = r#"Invalid range."#]
+    (InvalidRange, "InvalidRange"),
+    #[doc = r#"Invalid request URL."#]
+    (InvalidRequestUrl, "InvalidRequestUrl"),
+    #[doc = r#"Invalid source blob type."#]
+    (InvalidSourceBlobType, "InvalidSourceBlobType"),
+    #[doc = r#"Invalid source blob URL."#]
+    (InvalidSourceBlobUrl, "InvalidSourceBlobUrl"),
+    #[doc = r#"Invalid URI."#]
+    (InvalidUri, "InvalidUri"),
+    #[doc = r#"Invalid version for page blob operation."#]
+    (
+        InvalidVersionForPageBlobOperation,
+        "InvalidVersionForPageBlobOperation"
+    ),
+    #[doc = r#"Invalid XML document."#]
+    (InvalidXmlDocument, "InvalidXmlDocument"),
+    #[doc = r#"Invalid XML node value."#]
+    (InvalidXmlNodeValue, "InvalidXmlNodeValue"),
+    #[doc = r#"Lease already broken."#]
+    (LeaseAlreadyBroken, "LeaseAlreadyBroken"),
+    #[doc = r#"Lease already present."#]
+    (LeaseAlreadyPresent, "LeaseAlreadyPresent"),
+    #[doc = r#"Lease ID mismatch with blob operation."#]
+    (
+        LeaseIdMismatchWithBlobOperation,
+        "LeaseIdMismatchWithBlobOperation"
+    ),
+    #[doc = r#"Lease ID mismatch with container operation."#]
+    (
+        LeaseIdMismatchWithContainerOperation,
+        "LeaseIdMismatchWithContainerOperation"
+    ),
+    #[doc = r#"Lease ID mismatch with lease operation."#]
+    (
+        LeaseIdMismatchWithLeaseOperation,
+        "LeaseIdMismatchWithLeaseOperation"
+    ),
+    #[doc = r#"Lease ID missing."#]
+    (LeaseIdMissing, "LeaseIdMissing"),
+    #[doc = r#"Lease is breaking and cannot be acquired."#]
+    (
+        LeaseIsBreakingAndCannotBeAcquired,
+        "LeaseIsBreakingAndCannotBeAcquired"
+    ),
+    #[doc = r#"Lease is breaking and cannot be changed."#]
+    (
+        LeaseIsBreakingAndCannotBeChanged,
+        "LeaseIsBreakingAndCannotBeChanged"
+    ),
+    #[doc = r#"Lease is broken and cannot be renewed."#]
+    (
+        LeaseIsBrokenAndCannotBeRenewed,
+        "LeaseIsBrokenAndCannotBeRenewed"
+    ),
+    #[doc = r#"Lease lost."#]
+    (LeaseLost, "LeaseLost"),
+    #[doc = r#"Lease not present with blob operation."#]
+    (
+        LeaseNotPresentWithBlobOperation,
+        "LeaseNotPresentWithBlobOperation"
+    ),
+    #[doc = r#"Lease not present with container operation."#]
+    (
+        LeaseNotPresentWithContainerOperation,
+        "LeaseNotPresentWithContainerOperation"
+    ),
+    #[doc = r#"Lease not present with lease operation."#]
+    (
+        LeaseNotPresentWithLeaseOperation,
+        "LeaseNotPresentWithLeaseOperation"
+    ),
+    #[doc = r#"Maximum blob size condition not met."#]
+    (MaxBlobSizeConditionNotMet, "MaxBlobSizeConditionNotMet"),
+    #[doc = r#"MD5 mismatch."#]
+    (Md5Mismatch, "Md5Mismatch"),
+    #[doc = r#"Metadata too large."#]
+    (MetadataTooLarge, "MetadataTooLarge"),
+    #[doc = r#"Missing content length header."#]
+    (MissingContentLengthHeader, "MissingContentLengthHeader"),
+    #[doc = r#"Missing required header."#]
+    (MissingRequiredHeader, "MissingRequiredHeader"),
+    #[doc = r#"Missing required query parameter."#]
+    (
+        MissingRequiredQueryParameter,
+        "MissingRequiredQueryParameter"
+    ),
+    #[doc = r#"Missing required XML node."#]
+    (MissingRequiredXmlNode, "MissingRequiredXmlNode"),
+    #[doc = r#"Multiple condition headers not supported."#]
+    (
+        MultipleConditionHeadersNotSupported,
+        "MultipleConditionHeadersNotSupported"
+    ),
+    #[doc = r#"No pending copy operation."#]
+    (NoPendingCopyOperation, "NoPendingCopyOperation"),
+    #[doc = r#"Operation not allowed on incremental copy blob."#]
+    (
+        OperationNotAllowedOnIncrementalCopyBlob,
+        "OperationNotAllowedOnIncrementalCopyBlob"
+    ),
+    #[doc = r#"Operation timed out."#]
+    (OperationTimedOut, "OperationTimedOut"),
+    #[doc = r#"Out of range input."#]
+    (OutOfRangeInput, "OutOfRangeInput"),
+    #[doc = r#"Out of range query parameter value."#]
+    (
+        OutOfRangeQueryParameterValue,
+        "OutOfRangeQueryParameterValue"
+    ),
+    #[doc = r#"Pending copy operation."#]
+    (PendingCopyOperation, "PendingCopyOperation"),
+    #[doc = r#"Previous snapshot cannot be newer."#]
+    (
+        PreviousSnapshotCannotBeNewer,
+        "PreviousSnapshotCannotBeNewer"
+    ),
+    #[doc = r#"Previous snapshot not found."#]
+    (PreviousSnapshotNotFound, "PreviousSnapshotNotFound"),
+    #[doc = r#"Previous snapshot operation not supported."#]
+    (
+        PreviousSnapshotOperationNotSupported,
+        "PreviousSnapshotOperationNotSupported"
+    ),
+    #[doc = r#"Request body too large."#]
+    (RequestBodyTooLarge, "RequestBodyTooLarge"),
+    #[doc = r#"Request URL failed to parse."#]
+    (RequestUrlFailedToParse, "RequestUrlFailedToParse"),
+    #[doc = r#"Resource already exists."#]
+    (ResourceAlreadyExists, "ResourceAlreadyExists"),
+    #[doc = r#"Resource not found."#]
+    (ResourceNotFound, "ResourceNotFound"),
+    #[doc = r#"Resource type mismatch."#]
+    (ResourceTypeMismatch, "ResourceTypeMismatch"),
+    #[doc = r#"Sequence number condition not met."#]
+    (
+        SequenceNumberConditionNotMet,
+        "SequenceNumberConditionNotMet"
+    ),
+    #[doc = r#"Sequence number increment too large."#]
+    (
+        SequenceNumberIncrementTooLarge,
+        "SequenceNumberIncrementTooLarge"
+    ),
+    #[doc = r#"Server busy."#]
+    (ServerBusy, "ServerBusy"),
+    #[doc = r#"Snapshot count exceeded."#]
+    (SnapshotCountExceeded, "SnapshotCountExceeded"),
+    #[doc = r#"Snapshot operation rate exceeded."#]
+    (
+        SnapshotOperationRateExceeded,
+        "SnapshotOperationRateExceeded"
+    ),
+    #[doc = r#"Snapshots present."#]
+    (SnapshotsPresent, "SnapshotsPresent"),
+    #[doc = r#"Source condition not met."#]
+    (SourceConditionNotMet, "SourceConditionNotMet"),
+    #[doc = r#"System in use."#]
+    (SystemInUse, "SystemInUse"),
+    #[doc = r#"Target condition not met."#]
+    (TargetConditionNotMet, "TargetConditionNotMet"),
+    #[doc = r#"Unauthorized blob overwrite."#]
+    (UnauthorizedBlobOverwrite, "UnauthorizedBlobOverwrite"),
+    #[doc = r#"Unsupported header."#]
+    (UnsupportedHeader, "UnsupportedHeader"),
+    #[doc = r#"Unsupported HTTP verb."#]
+    (UnsupportedHttpVerb, "UnsupportedHttpVerb"),
+    #[doc = r#"Unsupported query parameter."#]
+    (UnsupportedQueryParameter, "UnsupportedQueryParameter"),
+    #[doc = r#"Unsupported XML node."#]
+    (UnsupportedXmlNode, "UnsupportedXmlNode")
+);
