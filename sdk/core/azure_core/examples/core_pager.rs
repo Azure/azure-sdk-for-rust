@@ -3,7 +3,7 @@
 
 use azure_core::{
     credentials::TokenCredential,
-    http::{headers::Headers, BufResponse, HttpClient, Method, StatusCode, TransportOptions},
+    http::{headers::Headers, BufResponse, HttpClient, Method, StatusCode, Transport},
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
 use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
@@ -21,7 +21,7 @@ async fn test_pager() -> Result<(), Box<dyn std::error::Error>> {
     // You normally would create credentials from `azure_identity` and
     // use the default transport in production.
     let (credential, transport) = setup()?;
-    options.client_options.transport = Some(TransportOptions::new(transport));
+    options.client_options.transport = Some(Transport::new(transport));
 
     let client = SecretClient::new(
         "https://my-vault.vault.azure.net",

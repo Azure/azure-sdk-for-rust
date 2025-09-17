@@ -141,7 +141,7 @@ mod tests {
             headers::{self, HeaderName, Headers},
             policies::Policy,
             request::options::ClientRequestId,
-            BufResponse, ClientOptions, Context, Method, Request, StatusCode, TransportOptions,
+            BufResponse, ClientOptions, Context, Method, Request, StatusCode, Transport,
             UserAgentOptions,
         },
         Bytes,
@@ -160,7 +160,7 @@ mod tests {
         let mut ctx = Context::new();
         ctx.insert(ClientRequestId::new(CLIENT_REQUEST_ID.to_string()));
 
-        let transport = TransportOptions::new(Arc::new(MockHttpClient::new(|req| {
+        let transport = Transport::new(Arc::new(MockHttpClient::new(|req| {
             async {
                 // Assert
                 let header_value = req
@@ -218,7 +218,7 @@ mod tests {
         let mut ctx = Context::new();
         ctx.insert(ClientRequestId::new(CLIENT_REQUEST_ID.to_string()));
 
-        let transport = TransportOptions::new(Arc::new(MockHttpClient::new(|req| {
+        let transport = Transport::new(Arc::new(MockHttpClient::new(|req| {
             async {
                 // Assert
                 let header_value = req
@@ -269,7 +269,7 @@ mod tests {
         // Arrange
         let ctx = Context::new();
 
-        let transport = TransportOptions::new(Arc::new(MockHttpClient::new(|req| {
+        let transport = Transport::new(Arc::new(MockHttpClient::new(|req| {
             async {
                 // Assert
                 let user_agent = req
@@ -324,7 +324,7 @@ mod tests {
         const CUSTOM_APPLICATION_ID: &str = "my-custom-app/2.1.0";
         let ctx = Context::new();
 
-        let transport = TransportOptions::new(Arc::new(MockHttpClient::new(|req| {
+        let transport = Transport::new(Arc::new(MockHttpClient::new(|req| {
             async {
                 // Assert
                 let user_agent = req
@@ -354,7 +354,7 @@ mod tests {
 
         let options = ClientOptions {
             transport: Some(transport),
-            user_agent: Some(user_agent_options),
+            user_agent: user_agent_options,
             ..Default::default()
         };
 

@@ -213,9 +213,9 @@ mod tests {
         let credential = recording.credential().clone();
         let mut options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
-                instrumentation: Some(InstrumentationOptions {
+                instrumentation: InstrumentationOptions {
                     tracer_provider: Some(azure_provider),
-                }),
+                },
                 ..Default::default()
             },
             ..Default::default()
@@ -515,13 +515,13 @@ mod tests {
         let credential = recording.credential().clone();
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
-                instrumentation: Some(InstrumentationOptions {
+                instrumentation: InstrumentationOptions {
                     tracer_provider: Some(azure_provider),
-                }),
-                retry: Some(RetryOptions::exponential(ExponentialRetryOptions {
+                },
+                retry: RetryOptions::exponential(ExponentialRetryOptions {
                     max_retries: 3,
                     ..Default::default()
-                })),
+                }),
                 ..Default::default()
             },
             ..Default::default()

@@ -186,7 +186,7 @@ pub(crate) mod tests {
         authority_hosts::AZURE_PUBLIC_CLOUD,
         http::{
             headers::{self, content_type, Headers},
-            Body, BufResponse, Method, Request, TransportOptions,
+            Body, BufResponse, Method, Request, Transport,
         },
         Bytes,
     };
@@ -266,7 +266,7 @@ pub(crate) mod tests {
             MockAssertion {},
             Some(ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock))),
+                    transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -305,7 +305,7 @@ pub(crate) mod tests {
             MockAssertion {},
             Some(ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock))),
+                    transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()

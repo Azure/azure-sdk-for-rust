@@ -186,8 +186,8 @@ mod tests {
     };
     use azure_core::{
         http::{
-            headers::Headers, BufResponse, ClientOptions, Method, Request, StatusCode,
-            TransportOptions, Url,
+            headers::Headers, BufResponse, ClientOptions, Method, Request, StatusCode, Transport,
+            Url,
         },
         Bytes,
     };
@@ -242,7 +242,7 @@ mod tests {
         let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock))),
+                    transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -345,7 +345,7 @@ mod tests {
             token_file_path: Some(right_file.path.clone()),
             credential_options: ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock))),
+                    transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()

@@ -156,7 +156,7 @@ mod tests {
         Arc,
     };
     use typespec_client_core::{
-        http::{policies::TransportPolicy, BufResponse, Method, TransportOptions},
+        http::{policies::TransportPolicy, BufResponse, Method, Transport},
         time::Duration,
     };
 
@@ -211,9 +211,7 @@ mod tests {
         let credential = MockCredential::new(&[]);
         let policy = BearerTokenCredentialPolicy::new(Arc::new(credential), ["scope"]);
         let client = MockHttpClient::new(|_| panic!("expected an error from get_token"));
-        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(Arc::new(
-            client,
-        ))));
+        let transport = Arc::new(TransportPolicy::new(Transport::new(Arc::new(client))));
         let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
 
         let err = policy
@@ -249,7 +247,7 @@ mod tests {
             }
             .boxed()
         }));
-        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(client)));
+        let transport = Arc::new(TransportPolicy::new(Transport::new(client)));
 
         let mut handles = vec![];
         for _ in 0..4 {

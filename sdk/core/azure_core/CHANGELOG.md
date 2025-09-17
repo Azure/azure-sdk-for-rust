@@ -6,7 +6,10 @@
 
 ### Breaking Changes
 
+- Changed `ClientOptions::retry` from `Option<RetryOptions>` to `RetryOptions`.
 - Removed several unreferenced HTTP headers and accessor structures for those headers.
+- Renamed `TransportOptions` to `Transport`.
+- Renamed `TransportOptions::new_custom_policy()` to `Transport::with_policy()`.
 
 ### Bugs Fixed
 

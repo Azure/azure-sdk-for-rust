@@ -59,10 +59,7 @@ impl Pipeline {
 
         let pipeline_options = pipeline_options.unwrap_or_default();
 
-        let retry_policy = options
-            .retry
-            .unwrap_or_default()
-            .to_policy(pipeline_options.retry_headers);
+        let retry_policy = options.retry.to_policy(pipeline_options.retry_headers);
         pipeline.push(retry_policy);
 
         pipeline.push(Arc::new(CustomHeadersPolicy::default()));
@@ -104,7 +101,7 @@ mod tests {
         http::{
             headers::{Headers, RETRY_AFTER},
             policies::{PolicyResult, RetryHeaders},
-            BufResponse, JsonFormat, Method, Response, StatusCode, TransportOptions,
+            BufResponse, JsonFormat, Method, Response, StatusCode, Transport,
         },
         stream::BytesStream,
         Bytes,
@@ -141,7 +138,7 @@ mod tests {
         // Simulated service method
         async fn service_method() -> crate::Result<Response<Model, JsonFormat>> {
             let options = ClientOptions {
-                transport: Some(TransportOptions::new_custom_policy(Arc::new(Responder {}))),
+                transport: Some(Transport::with_policy(Arc::new(Responder {}))),
                 ..Default::default()
             };
             let pipeline_options = PipelineOptions {
