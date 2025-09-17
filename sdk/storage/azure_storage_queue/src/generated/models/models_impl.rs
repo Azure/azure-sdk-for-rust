@@ -13,20 +13,20 @@ use azure_core::{
 impl TryFrom<ListOfSignedIdentifier> for RequestContent<ListOfSignedIdentifier, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: ListOfSignedIdentifier) -> Result<Self> {
-        RequestContent::try_from(to_xml(&value)?)
+        Ok(to_xml(&value)?.into())
     }
 }
 
 impl TryFrom<QueueMessage> for RequestContent<QueueMessage, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: QueueMessage) -> Result<Self> {
-        RequestContent::try_from(to_xml(&value)?)
+        Ok(to_xml(&value)?.into())
     }
 }
 
 impl TryFrom<QueueServiceProperties> for RequestContent<QueueServiceProperties, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: QueueServiceProperties) -> Result<Self> {
-        RequestContent::try_from(to_xml(&value)?)
+        Ok(to_xml(&value)?.into())
     }
 }

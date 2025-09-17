@@ -5,7 +5,6 @@
 
 #![doc = include_str!("../README.md")]
 
-#[expect(deprecated, reason = "requires emitter update")]
 #[allow(unused_imports)]
 mod generated;
 

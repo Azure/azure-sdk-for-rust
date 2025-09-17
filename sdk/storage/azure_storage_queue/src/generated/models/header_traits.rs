@@ -21,6 +21,21 @@ const DATE: HeaderName = HeaderName::from_static("date");
 const META: &str = "x-ms-meta-";
 
 /// Provides access to typed response headers for `QueueClient::get_access_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_queue::models::{ListOfSignedIdentifier, ListOfSignedIdentifierHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<ListOfSignedIdentifier, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait ListOfSignedIdentifierHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -33,6 +48,20 @@ impl ListOfSignedIdentifierHeaders for Response<ListOfSignedIdentifier, XmlForma
 }
 
 /// Provides access to typed response headers for `QueueClient::get_metadata()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_queue::models::{QueueClientGetMetadataResult, QueueClientGetMetadataResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<QueueClientGetMetadataResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     let metadata = response.metadata()?;
+///     println!("x-ms-meta: {:?}", metadata);
+///     Ok(())
+/// }
+/// ```
 pub trait QueueClientGetMetadataResultHeaders: private::Sealed {
     fn metadata(&self) -> Result<HashMap<String, String>>;
 }
@@ -52,6 +81,21 @@ impl QueueClientGetMetadataResultHeaders for Response<QueueClientGetMetadataResu
 }
 
 /// Provides access to typed response headers for `QueueClient::set_access_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_queue::models::{QueueClientSetAccessPolicyResult, QueueClientSetAccessPolicyResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<QueueClientSetAccessPolicyResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait QueueClientSetAccessPolicyResultHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
@@ -66,6 +110,21 @@ impl QueueClientSetAccessPolicyResultHeaders
 }
 
 /// Provides access to typed response headers for `QueueServiceClient::get_statistics()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_queue::models::{QueueServiceStats, QueueServiceStatsHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<QueueServiceStats, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait QueueServiceStatsHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }

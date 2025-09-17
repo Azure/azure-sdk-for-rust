@@ -13,14 +13,15 @@ use crate::generated::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    error::{ErrorKind, HttpError},
     fmt::SafeDebug,
     http::{
+        check_success,
+        pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Context, Method, NoFormat, PageIterator, PagerResult, PagerState, Pipeline,
-        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
+        BufResponse, ClientOptions, Method, NoFormat, PageIterator, Pipeline, Request,
+        RequestContent, Response, Url, XmlFormat,
     },
-    tracing, xml, Error, Result,
+    tracing, xml, Result,
 };
 use std::sync::Arc;
 
@@ -49,21 +50,20 @@ impl QueueServiceClient {
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("azure_storage_queue")]
+    #[tracing::new("Storage.Queues")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
         options: Option<QueueServiceClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
-        let mut endpoint = Url::parse(endpoint)?;
+        let endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
             return Err(azure_core::Error::message(
                 azure_core::error::ErrorKind::Other,
                 format!("{endpoint} must use http(s)"),
             ));
         }
-        endpoint.set_query(None);
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
             credential,
             vec!["https://storage.azure.com/.default"],
@@ -77,6 +77,7 @@ impl QueueServiceClient {
                 options.client_options,
                 Vec::default(),
                 vec![auth_policy],
+                None,
             ),
         })
     }
@@ -98,7 +99,7 @@ impl QueueServiceClient {
         options: Option<QueueServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<QueueServiceProperties, XmlFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.query_pairs_mut()
             .append_pair("comp", "properties")
@@ -115,15 +116,7 @@ impl QueueServiceClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -148,13 +141,36 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`QueueServiceStatsHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```no_run
+    /// use azure_core::{Result, http::{Response, XmlFormat}};
+    /// use azure_storage_queue::models::{QueueServiceStats, QueueServiceStatsHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<QueueServiceStats, XmlFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`date`()](crate::generated::models::QueueServiceStatsHeaders::date) - Date
+    ///
+    /// [`QueueServiceStatsHeaders`]: crate::generated::models::QueueServiceStatsHeaders
     #[tracing::function("Storage.Queues.getStatistics")]
     pub async fn get_statistics(
         &self,
         options: Option<QueueServiceClientGetStatisticsOptions<'_>>,
     ) -> Result<Response<QueueServiceStats, XmlFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.query_pairs_mut()
             .append_pair("comp", "stats")
@@ -171,15 +187,7 @@ impl QueueServiceClient {
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 
@@ -248,20 +256,12 @@ impl QueueServiceClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: RawResponse = pipeline.send(&ctx, &mut request).await?;
-                    if !rsp.status().is_success() {
-                        let status = rsp.status();
-                        let http_error = HttpError::new(rsp).await;
-                        let error_kind = ErrorKind::http_response(
-                            status,
-                            http_error.error_code().map(std::borrow::ToOwned::to_owned),
-                        );
-                        return Err(Error::new(error_kind, http_error));
-                    }
+                    let rsp = pipeline.send(&ctx, &mut request).await?;
+                    let rsp = check_success(rsp).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListQueuesResponse = xml::read_xml(&bytes)?;
-                    let rsp = RawResponse::from_bytes(status, headers, bytes).into();
+                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,
@@ -288,7 +288,7 @@ impl QueueServiceClient {
         options: Option<QueueServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
-        let ctx = Context::with_context(&options.method_options.context);
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         url.query_pairs_mut()
             .append_pair("comp", "properties")
@@ -298,7 +298,6 @@ impl QueueServiceClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        request.insert_header("accept", "application/xml");
         request.insert_header("content-type", "application/xml");
         if let Some(client_request_id) = options.client_request_id {
             request.insert_header("x-ms-client-request-id", client_request_id);
@@ -306,15 +305,7 @@ impl QueueServiceClient {
         request.insert_header("x-ms-version", &self.version);
         request.set_body(queue_service_properties);
         let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        if !rsp.status().is_success() {
-            let status = rsp.status();
-            let http_error = HttpError::new(rsp).await;
-            let error_kind = ErrorKind::http_response(
-                status,
-                http_error.error_code().map(std::borrow::ToOwned::to_owned),
-            );
-            return Err(Error::new(error_kind, http_error));
-        }
+        let rsp = check_success(rsp).await?;
         Ok(rsp.into())
     }
 }
