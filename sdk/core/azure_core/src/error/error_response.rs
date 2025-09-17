@@ -108,9 +108,13 @@ struct ErrorDetailsInternal<'a> {
     message: Option<&'a str>,
 }
 
+/// Options for customizing the behavior of `check_success`.
 #[derive(Debug, Default)]
 pub struct CheckSuccessOptions {
-    success_statuses: &'static [u16],
+    /// A list of HTTP status codes that should be considered successful.
+    ///
+    /// If this list is empty, any 2xx status code is considered successful.
+    pub success_statuses: &'static [u16],
 }
 
 /// Checks if the response is a success and if not, creates an appropriate error.
