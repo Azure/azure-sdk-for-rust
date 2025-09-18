@@ -15,7 +15,6 @@ use crate::{
 };
 use std::{
     any::{Any, TypeId},
-    ops::Deref,
     sync::Arc,
 };
 use typespec_client_core::http::{
@@ -51,13 +50,13 @@ pub struct PipelineSendOptions {
     pub skip_checks: bool,
 
     /// Options for `[check_success]`. If `skip_checks` is true, this field is ignored.
-    pub check_success_options: CheckSuccessOptions,
+    pub check_success: CheckSuccessOptions,
 }
 
 /// Internal structure used to pass options to the core pipeline.
 #[derive(Debug, Default)]
 struct CorePipelineSendOptions {
-    check_success_options: CheckSuccessOptions,
+    check_success: CheckSuccessOptions,
     skip_checks: bool,
 }
 
@@ -68,7 +67,7 @@ impl PipelineSendOptions {
         (
             CorePipelineSendOptions {
                 skip_checks: self.skip_checks,
-                check_success_options: self.check_success_options,
+                check_success: self.check_success,
             },
             None,
         )
@@ -172,7 +171,7 @@ impl Pipeline {
         let (core_send_options, send_options) = options.unwrap_or_default().deconstruct();
         let result = self.0.send(ctx, request, send_options).await?;
         if !core_send_options.skip_checks {
-            check_success(result, Some(core_send_options.check_success_options)).await
+            check_success(result, Some(core_send_options.check_success)).await
         } else {
             Ok(result)
         }
@@ -186,13 +185,13 @@ fn push_unique<T: Policy + 'static>(policies: &mut Vec<Arc<dyn Policy>>, policy:
     }
 }
 
-// TODO: Should we instead use the newtype pattern?
-impl Deref for Pipeline {
-    type Target = http::Pipeline;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+// // TODO: Should we instead use the newtype pattern?
+// impl Deref for Pipeline {
+//     type Target = http::Pipeline;
+//     fn deref(&self) -> &Self::Target {
+//         &self.0
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
