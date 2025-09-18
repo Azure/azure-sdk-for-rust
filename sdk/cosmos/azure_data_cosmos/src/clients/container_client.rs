@@ -490,7 +490,11 @@ impl ContainerClient {
         item_id: &str,
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<T>> {
-        let options = options.unwrap_or_default();
+        let mut options = options.unwrap_or_default();
+
+        // Read APIs should always return the item, ignoring whatever the user set.
+        options.enable_content_response_on_write = true;
+
         let link = self.items_link.item(item_id);
         let url = self.pipeline.url(&link);
         let mut req = Request::new(url, Method::Get);

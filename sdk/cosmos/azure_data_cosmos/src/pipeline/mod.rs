@@ -66,7 +66,9 @@ impl CosmosPipeline {
         resource_link: ResourceLink,
     ) -> azure_core::Result<BufResponse> {
         let ctx = ctx.with_value(resource_link);
-        self.pipeline.send(&ctx, request).await
+        let r = self.pipeline.send(&ctx, request).await?;
+        let r = azure_core::http::check_success(r).await?;
+        Ok(r)
     }
 
     pub async fn send<T>(
@@ -77,7 +79,7 @@ impl CosmosPipeline {
     ) -> azure_core::Result<Response<T>> {
         self.send_raw(ctx, request, resource_link)
             .await
-            .map(|r| r.into())
+            .map(Into::into)
     }
 
     pub fn send_query_request<T: DeserializeOwned + Send>(
@@ -108,6 +110,7 @@ impl CosmosPipeline {
                 }
 
                 let resp = pipeline.send(&ctx, &mut req).await?;
+                let resp = azure_core::http::check_success(resp).await?;
                 let page = FeedPage::<T>::from_response(resp).await?;
 
                 Ok(page.into())
