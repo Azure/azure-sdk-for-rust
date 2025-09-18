@@ -45,7 +45,7 @@ impl ErrorKind {
     /// Consumes the `ErrorKind` and converts to an [`Error`].
     pub fn into_error(self) -> Error {
         Error {
-            context: ErrorContext::Simple(self),
+            context: Repr::Simple(self),
         }
     }
 
@@ -85,33 +85,32 @@ impl Display for ErrorKind {
 /// An error encountered when communicating with the service.
 #[derive(Debug)]
 pub struct Error {
-    context: ErrorContext,
+    context: Repr,
 }
 
 impl Error {
-    /// Create a new `Error` based on a specific error kind and an underlying error cause.
+    /// Create a new `Error` based on an [`ErrorKind`] and an underlying error cause.
     pub fn new<E>(kind: ErrorKind, error: E) -> Self
     where
         E: Into<Box<dyn std::error::Error + Send + Sync>>,
     {
         Self {
-            context: ErrorContext::Custom(Custom {
+            context: Repr::Custom(Custom {
                 kind,
                 error: error.into(),
             }),
         }
     }
 
-    /// Create a new `Error` based on a specific error kind and an underlying error cause
-    /// along with a message.
+    /// Create a new `Error` based on an [`ErrorKind`], an underlying error cause, and a message.
     #[must_use]
-    pub fn full<E, C>(kind: ErrorKind, error: E, message: C) -> Self
+    pub fn with_error<E, C>(kind: ErrorKind, error: E, message: C) -> Self
     where
         E: Into<Box<dyn std::error::Error + Send + Sync>>,
         C: Into<Cow<'static, str>>,
     {
         Self {
-            context: ErrorContext::Full(
+            context: Repr::CustomMessage(
                 Custom {
                     kind,
                     error: error.into(),
@@ -121,62 +120,64 @@ impl Error {
         }
     }
 
-    /// Create an `Error` based on an error kind and some sort of message.
+    /// Create a new `Error` based on an [`ErrorKind`], an underlying error cause, and a function that returns a message.
     #[must_use]
-    pub fn message<C>(kind: ErrorKind, message: C) -> Self
+    pub fn with_error_fn<E, F, C>(kind: ErrorKind, error: E, f: F) -> Self
+    where
+        E: Into<Box<dyn std::error::Error + Send + Sync>>,
+        F: FnOnce() -> C,
+        C: Into<Cow<'static, str>>,
+    {
+        Self::with_error(kind, error, f())
+    }
+
+    /// Create an `Error` based on an [`ErrorKind`] and a message.
+    #[must_use]
+    pub fn with_message<C>(kind: ErrorKind, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
     {
         Self {
-            context: ErrorContext::Message {
-                kind,
-                message: message.into(),
-            },
+            context: Repr::SimpleMessage(kind, message.into()),
         }
     }
 
-    /// Creates an `Error` based on an error kind and formatted message.
+    /// Creates an `Error` based on an [`ErrorKind`] and a function that returns a message.
     #[must_use]
-    pub fn with_message<F, C>(kind: ErrorKind, message: F) -> Self
-    where
-        Self: Sized,
-        F: FnOnce() -> C,
-        C: Into<Cow<'static, str>>,
-    {
-        Self {
-            context: ErrorContext::Message {
-                kind,
-                message: message().into(),
-            },
-        }
-    }
-
-    /// Wrap this error in an additional `message`.
-    #[must_use]
-    pub fn context<C>(self, message: C) -> Self
-    where
-        C: Into<Cow<'static, str>>,
-    {
-        Self::full(self.kind().clone(), self, message)
-    }
-
-    /// Wrap this error in an additional message.
-    #[must_use]
-    pub fn with_context<F, C>(self, f: F) -> Self
+    pub fn with_message_fn<F, C>(kind: ErrorKind, f: F) -> Self
     where
         F: FnOnce() -> C,
         C: Into<Cow<'static, str>>,
     {
-        self.context(f())
+        Self::with_message(kind, f())
+    }
+
+    /// Wrap this error with an additional message.
+    #[must_use]
+    pub fn with_context<C>(self, message: C) -> Self
+    where
+        C: Into<Cow<'static, str>>,
+    {
+        Self::with_error(self.kind().clone(), self, message)
+    }
+
+    /// Wrap this error with an additional message returned from a function.
+    #[must_use]
+    pub fn with_context_fn<F, C>(self, f: F) -> Self
+    where
+        F: FnOnce() -> C,
+        C: Into<Cow<'static, str>>,
+    {
+        self.with_context(f())
     }
 
     /// Get the [`ErrorKind`] of this `Error`.
     pub fn kind(&self) -> &ErrorKind {
         match &self.context {
-            ErrorContext::Simple(kind)
-            | ErrorContext::Message { kind, .. }
-            | ErrorContext::Custom(Custom { kind, .. })
-            | ErrorContext::Full(Custom { kind, .. }, _) => kind,
+            Repr::Simple(kind)
+            | Repr::SimpleMessage(kind, ..)
+            | Repr::Custom(Custom { kind, .. })
+            | Repr::CustomMessage(Custom { kind, .. }, _) => kind,
         }
     }
 
@@ -192,8 +193,9 @@ impl Error {
     /// Consumes the `Error`, returning its inner error, if any.
     pub fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self> {
         match self.context {
-            ErrorContext::Custom(Custom { error, .. })
-            | ErrorContext::Full(Custom { error, .. }, _) => Ok(error),
+            Repr::Custom(Custom { error, .. }) | Repr::CustomMessage(Custom { error, .. }, _) => {
+                Ok(error)
+            }
             _ => Err(self),
         }
     }
@@ -212,8 +214,9 @@ impl Error {
     /// Returns a reference to the inner error wrapped by this error, if any.
     pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
         match &self.context {
-            ErrorContext::Custom(Custom { error, .. })
-            | ErrorContext::Full(Custom { error, .. }, _) => Some(error.as_ref()),
+            Repr::Custom(Custom { error, .. }) | Repr::CustomMessage(Custom { error, .. }, _) => {
+                Some(error.as_ref())
+            }
             _ => None,
         }
     }
@@ -226,8 +229,9 @@ impl Error {
     /// Returns a mutable reference to the inner error wrapped by this error, if any.
     pub fn get_mut(&mut self) -> Option<&mut (dyn std::error::Error + Send + Sync + 'static)> {
         match &mut self.context {
-            ErrorContext::Custom(Custom { error, .. })
-            | ErrorContext::Full(Custom { error, .. }, _) => Some(error.as_mut()),
+            Repr::Custom(Custom { error, .. }) | Repr::CustomMessage(Custom { error, .. }, _) => {
+                Some(error.as_mut())
+            }
             _ => None,
         }
     }
@@ -241,8 +245,9 @@ impl Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.context {
-            ErrorContext::Custom(Custom { error, .. })
-            | ErrorContext::Full(Custom { error, .. }, _) => Some(&**error),
+            Repr::Custom(Custom { error, .. }) | Repr::CustomMessage(Custom { error, .. }, _) => {
+                Some(&**error)
+            }
             _ => None,
         }
     }
@@ -251,7 +256,7 @@ impl std::error::Error for Error {
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
-            context: ErrorContext::Simple(kind),
+            context: Repr::Simple(kind),
         }
     }
 }
@@ -314,10 +319,10 @@ impl From<core::convert::Infallible> for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {
-            ErrorContext::Simple(kind) => std::fmt::Display::fmt(&kind, f),
-            ErrorContext::Message { message, .. } => f.write_str(message),
-            ErrorContext::Custom(Custom { error, .. }) => std::fmt::Display::fmt(&error, f),
-            ErrorContext::Full(_, message) => f.write_str(message),
+            Repr::Simple(kind) => std::fmt::Display::fmt(&kind, f),
+            Repr::SimpleMessage(_, message) => f.write_str(message),
+            Repr::Custom(Custom { error, .. }) => std::fmt::Display::fmt(&error, f),
+            Repr::CustomMessage(_, message) => f.write_str(message),
         }
     }
 }
@@ -327,18 +332,18 @@ impl Display for Error {
 /// This trait cannot be implemented on custom types and is meant for usage with `Result`.
 pub trait ResultExt<T>: private::Sealed {
     /// Creates a new error with the specified [`ErrorKind`].
-    fn map_kind(self, kind: ErrorKind) -> Result<T>
+    fn with_kind(self, kind: ErrorKind) -> Result<T>
     where
         Self: Sized;
 
-    /// Creates a new error with the specified [`ErrorKind`] and message.
-    fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
+    /// Creates a new error with the specified [`ErrorKind`] and an additional message.
+    fn with_context<C>(self, kind: ErrorKind, message: C) -> Result<T>
     where
         Self: Sized,
         C: Into<Cow<'static, str>>;
 
-    /// Creates a new error with the specified [`ErrorKind`] and formatted message.
-    fn with_context<F, C>(self, kind: ErrorKind, f: F) -> Result<T>
+    /// Creates a new error with the specified [`ErrorKind`] and a function that returns an additional message.
+    fn with_context_fn<F, C>(self, kind: ErrorKind, f: F) -> Result<T>
     where
         Self: Sized,
         F: FnOnce() -> C,
@@ -355,20 +360,20 @@ impl<T, E> ResultExt<T> for std::result::Result<T, E>
 where
     E: std::error::Error + Send + Sync + 'static,
 {
-    fn map_kind(self, kind: ErrorKind) -> Result<T>
+    fn with_kind(self, kind: ErrorKind) -> Result<T>
     where
         Self: Sized,
     {
         self.map_err(|e| Error::new(kind, e))
     }
 
-    fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
+    fn with_context<C>(self, kind: ErrorKind, message: C) -> Result<T>
     where
         Self: Sized,
         C: Into<Cow<'static, str>>,
     {
         self.map_err(|e| Error {
-            context: ErrorContext::Full(
+            context: Repr::CustomMessage(
                 Custom {
                     error: Box::new(e),
                     kind,
@@ -378,25 +383,22 @@ where
         })
     }
 
-    fn with_context<F, C>(self, kind: ErrorKind, f: F) -> Result<T>
+    fn with_context_fn<F, C>(self, kind: ErrorKind, f: F) -> Result<T>
     where
         Self: Sized,
         F: FnOnce() -> C,
         C: Into<Cow<'static, str>>,
     {
-        self.context(kind, f())
+        self.with_context(kind, f())
     }
 }
 
 #[derive(Debug)]
-enum ErrorContext {
+enum Repr {
     Simple(ErrorKind),
-    Message {
-        kind: ErrorKind,
-        message: Cow<'static, str>,
-    },
+    SimpleMessage(ErrorKind, Cow<'static, str>),
     Custom(Custom),
-    Full(Custom, Cow<'static, str>),
+    CustomMessage(Custom, Cow<'static, str>),
 }
 
 #[derive(Debug)]
@@ -453,7 +455,7 @@ mod tests {
 
         let inner = io::Error::new(io::ErrorKind::BrokenPipe, "third error");
         let error: Result<()> = std::result::Result::<(), std::io::Error>::Err(inner)
-            .context(ErrorKind::Io, "oh no broken pipe!");
+            .with_context(ErrorKind::Io, "oh no broken pipe!");
         assert_eq!(format!("{}", error.unwrap_err()), "oh no broken pipe!");
     }
 
@@ -490,7 +492,7 @@ mod tests {
     #[test]
     fn set_result_kind() {
         let result = std::result::Result::<(), _>::Err(create_error());
-        let result = result.map_kind(ErrorKind::Io);
+        let result = result.with_kind(ErrorKind::Io);
         assert_eq!(&ErrorKind::Io, result.unwrap_err().kind());
     }
 }

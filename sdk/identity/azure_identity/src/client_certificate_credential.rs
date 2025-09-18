@@ -96,7 +96,7 @@ impl ClientCertificateCredential {
         let authority_host = get_authority_host(None, options.authority_host)?;
         let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
-            .with_context(ErrorKind::DataConversion, || {
+            .with_context_fn(ErrorKind::DataConversion, || {
                 format!("tenant_id '{tenant_id}' could not be URL encoded")
             })?;
 
@@ -142,21 +142,21 @@ impl ClientCertificateCredential {
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.len() != 1 {
-            return Err(Error::message(
+            return Err(Error::with_message(
                 ErrorKind::Credential,
                 "only one scope is supported for IMDS authentication",
             ));
         }
 
         let Some(scope) = scopes.first() else {
-            return Err(Error::message(
+            return Err(Error::with_message(
                 ErrorKind::Credential,
                 "no scopes were provided",
             ));
         };
 
         let certificate = base64::decode(self.client_certificate.secret())
-            .map_err(|_| Error::message(ErrorKind::Credential, "Base64 decode failed"))?;
+            .map_err(|_| Error::with_message(ErrorKind::Credential, "Base64 decode failed"))?;
 
         let pkcs12_certificate = Pkcs12::from_der(&certificate)
             .map_err(openssl_error)?
@@ -164,14 +164,14 @@ impl ClientCertificateCredential {
             .map_err(openssl_error)?;
 
         let Some(cert) = pkcs12_certificate.cert.as_ref() else {
-            return Err(Error::message(
+            return Err(Error::with_message(
                 ErrorKind::Credential,
                 "Certificate not found",
             ));
         };
 
         let Some(pkey) = pkcs12_certificate.pkey.as_ref() else {
-            return Err(Error::message(
+            return Err(Error::with_message(
                 ErrorKind::Credential,
                 "Private key not found",
             ));

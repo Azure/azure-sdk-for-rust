@@ -120,7 +120,7 @@ impl Policy for BearerTokenCredentialPolicy {
         }
 
         let access_token = self.access_token().await.ok_or_else(|| {
-            Error::message(
+            Error::with_message(
                 ErrorKind::Credential,
                 "The request failed due to an error while fetching the access token.",
             )
@@ -200,7 +200,7 @@ mod tests {
             let i = self.calls.fetch_add(1, Ordering::SeqCst);
             self.tokens
                 .get(i)
-                .ok_or_else(|| Error::message(ErrorKind::Credential, "no more mock tokens"))
+                .ok_or_else(|| Error::with_message(ErrorKind::Credential, "no more mock tokens"))
                 .cloned()
         }
     }

@@ -40,7 +40,7 @@ impl HttpClient for Agent {
         let response = self
             .0
             .run(request)
-            .with_context(ErrorKind::Io, || "failed to send request")?;
+            .with_context_fn(ErrorKind::Io, || "failed to send request")?;
 
         into_response(response)
     }
@@ -81,19 +81,19 @@ fn into_request(request: &Request) -> azure_core::Result<::http::Request<Vec<u8>
         .url()
         .as_str()
         .parse()
-        .with_context(ErrorKind::DataConversion, || "failed to parse url")?;
+        .with_context_fn(ErrorKind::DataConversion, || "failed to parse url")?;
     *req.method_mut() = request
         .method()
         .as_str()
         .parse()
-        .with_context(ErrorKind::DataConversion, || "failed to parse method")?;
+        .with_context_fn(ErrorKind::DataConversion, || "failed to parse method")?;
     let headers = req.headers_mut();
     for (name, value) in request.headers().iter() {
         headers.insert(
             HeaderName::from_bytes(name.as_str().as_bytes())
-                .with_context(ErrorKind::DataConversion, || "failed to parse header name")?,
+                .with_context_fn(ErrorKind::DataConversion, || "failed to parse header name")?,
             HeaderValue::from_bytes(value.as_str().as_bytes())
-                .with_context(ErrorKind::DataConversion, || "failed to parse header value")?,
+                .with_context_fn(ErrorKind::DataConversion, || "failed to parse header value")?,
         );
     }
     let body: Bytes = request.body().into();
@@ -120,13 +120,13 @@ fn into_response(response: ::http::Response<ureq::Body>) -> azure_core::Result<B
             name.as_str().to_ascii_lowercase(),
             value
                 .to_str()
-                .with_context(ErrorKind::DataConversion, || "failed to parse header value")?
+                .with_context_fn(ErrorKind::DataConversion, || "failed to parse header value")?
                 .to_string(),
         );
     }
     let body: Vec<u8> = body
         .read_to_vec()
-        .with_context(ErrorKind::Io, || "failed to read response body")?;
+        .with_context_fn(ErrorKind::Io, || "failed to read response body")?;
 
     Ok(BufResponse::from_bytes(status, response_headers, body))
 }

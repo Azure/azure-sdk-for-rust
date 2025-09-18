@@ -57,14 +57,14 @@ pub(crate) struct ProcessEnv;
 
 impl ProcessEnv {
     fn var(&self, key: &str) -> azure_core::Result<String> {
-        std::env::var(key).with_context(ErrorKind::Io, || {
+        std::env::var(key).with_context_fn(ErrorKind::Io, || {
             format!("environment variable {} not set", key)
         })
     }
 
     fn var_os(&self, key: &str) -> Result<OsString, Error> {
         std::env::var_os(key).ok_or_else(|| {
-            Error::with_message(ErrorKind::Io, || {
+            Error::with_message_fn(ErrorKind::Io, || {
                 format!("environment variable {key} not set")
             })
         })
@@ -80,7 +80,7 @@ pub(crate) struct MemEnv {
 impl MemEnv {
     fn var(&self, key: &str) -> azure_core::Result<String> {
         self.vars.get(key).cloned().ok_or_else(|| {
-            Error::message(
+            Error::with_message(
                 ErrorKind::Io,
                 format!("environment variable {} not set", key),
             )

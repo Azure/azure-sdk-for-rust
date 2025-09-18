@@ -130,7 +130,7 @@ pub async fn check_success(response: BufResponse) -> crate::Result<BufResponse> 
     if response.body().is_empty() {
         let code = response.headers().get_optional_str(&ERROR_CODE);
         let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
-        return Err(Error::message(error_kind, status.to_string()));
+        return Err(Error::with_message(error_kind, status.to_string()));
     }
     let internal_response =
         serde_json::de::from_slice::<ErrorResponseInternal>(response.body()).map_err(Error::from);
@@ -144,7 +144,7 @@ pub async fn check_success(response: BufResponse) -> crate::Result<BufResponse> 
                 status,
                 Some(code.map_or_else(|| response.status().to_string(), str::to_owned)),
             );
-            return Err(Error::message(
+            return Err(Error::with_message(
                 error_kind,
                 format!(
                     "{}: {}",
@@ -161,7 +161,7 @@ pub async fn check_success(response: BufResponse) -> crate::Result<BufResponse> 
 
     let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
 
-    Err(Error::message(
+    Err(Error::with_message(
         error_kind,
         internal_response
             .error

@@ -106,7 +106,7 @@ impl TokenCredential for DeveloperToolsCredential {
                 Err(error) => errors.push(error),
             }
         }
-        Err(Error::with_message(ErrorKind::Credential, || {
+        Err(Error::with_message_fn(ErrorKind::Credential, || {
             format!(
                 "Multiple errors were encountered while attempting to authenticate:\n{}",
                 format_aggregate_error(&errors)
@@ -175,7 +175,7 @@ mod tests {
                     expires_on: (SystemTime::now() + Duration::from_secs(3600)).into(),
                 })
             } else {
-                Err(Error::with_message(ErrorKind::Credential, || {
+                Err(Error::with_message_fn(ErrorKind::Credential, || {
                     format!("{} failed", self.id)
                 }))
             }

@@ -69,7 +69,7 @@ impl KeyClient {
         let options = options.unwrap_or_default();
         let endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 format!("{endpoint} must use http(s)"),
             ));
@@ -119,7 +119,7 @@ impl KeyClient {
         options: Option<KeyClientBackupKeyOptions<'_>>,
     ) -> Result<Response<BackupKeyResult>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -159,7 +159,7 @@ impl KeyClient {
         options: Option<KeyClientCreateKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -204,7 +204,7 @@ impl KeyClient {
         options: Option<KeyClientDecryptOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -247,7 +247,7 @@ impl KeyClient {
         options: Option<KeyClientDeleteKeyOptions<'_>>,
     ) -> Result<Response<DeletedKey>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -289,7 +289,7 @@ impl KeyClient {
         options: Option<KeyClientEncryptOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -331,7 +331,7 @@ impl KeyClient {
         options: Option<KeyClientGetDeletedKeyOptions<'_>>,
     ) -> Result<Response<DeletedKey>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -367,7 +367,7 @@ impl KeyClient {
         options: Option<KeyClientGetKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -407,7 +407,7 @@ impl KeyClient {
         options: Option<KeyClientGetKeyAttestationOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -447,7 +447,7 @@ impl KeyClient {
         options: Option<KeyClientGetKeyRotationPolicyOptions<'_>>,
     ) -> Result<Response<KeyRotationPolicy>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -515,7 +515,7 @@ impl KeyClient {
         options: Option<KeyClientImportKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -683,7 +683,7 @@ impl KeyClient {
         options: Option<KeyClientListKeyPropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListKeyPropertiesResult>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -757,7 +757,7 @@ impl KeyClient {
         options: Option<KeyClientPurgeDeletedKeyOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -793,7 +793,7 @@ impl KeyClient {
         options: Option<KeyClientRecoverDeletedKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -831,7 +831,7 @@ impl KeyClient {
         options: Option<KeyClientReleaseOptions<'_>>,
     ) -> Result<Response<KeyReleaseResult>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -908,7 +908,7 @@ impl KeyClient {
         options: Option<KeyClientRotateKeyOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -946,7 +946,7 @@ impl KeyClient {
         options: Option<KeyClientSignOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -991,7 +991,7 @@ impl KeyClient {
         options: Option<KeyClientUnwrapKeyOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -1036,7 +1036,7 @@ impl KeyClient {
         options: Option<KeyClientUpdateKeyPropertiesOptions<'_>>,
     ) -> Result<Response<Key>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -1079,7 +1079,7 @@ impl KeyClient {
         options: Option<KeyClientUpdateKeyRotationPolicyOptions<'_>>,
     ) -> Result<Response<KeyRotationPolicy>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -1121,7 +1121,7 @@ impl KeyClient {
         options: Option<KeyClientVerifyOptions<'_>>,
     ) -> Result<Response<KeyVerifyResult>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));
@@ -1168,7 +1168,7 @@ impl KeyClient {
         options: Option<KeyClientWrapKeyOptions<'_>>,
     ) -> Result<Response<KeyOperationResult>> {
         if key_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter key_name cannot be empty",
             ));

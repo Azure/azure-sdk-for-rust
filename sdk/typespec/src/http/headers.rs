@@ -141,7 +141,7 @@ impl Headers {
     pub fn get<H: FromHeaders>(&self) -> crate::Result<H> {
         match H::from_headers(self) {
             Ok(Some(x)) => Ok(x),
-            Ok(None) => Err(crate::Error::with_message(
+            Ok(None) => Err(crate::Error::with_message_fn(
                 ErrorKind::DataConversion,
                 || {
                     let required_headers = H::header_names();
@@ -205,7 +205,7 @@ impl Headers {
         E: std::error::Error + Send + Sync + 'static,
     {
         self.get_optional_with(key, parser)?.ok_or_else(|| {
-            Error::with_message(ErrorKind::DataConversion, || {
+            Error::with_message_fn(ErrorKind::DataConversion, || {
                 format!("header not found {}", key.as_str())
             })
         })
@@ -224,7 +224,7 @@ impl Headers {
         self.0
             .get(key)
             .map(|v: &HeaderValue| {
-                parser(v).with_context(ErrorKind::DataConversion, || {
+                parser(v).with_context_fn(ErrorKind::DataConversion, || {
                     let ty = std::any::type_name::<V>();
                     format!("unable to parse header '{key:?}: {v:?}' into {ty}",)
                 })

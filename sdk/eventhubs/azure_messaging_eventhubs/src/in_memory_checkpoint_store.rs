@@ -28,7 +28,7 @@ impl Default for InMemoryCheckpointStore {
 macro_rules! check_non_empty_parameter(
     ($field:expr) => {
         if $field.is_empty() {
-            return Err(Error::message(
+            return Err(Error::with_message(
                 AzureErrorKind::Other,
                 String::from("Required field ") + stringify!($field) + " is empty",
             ));
@@ -65,7 +65,7 @@ impl InMemoryCheckpointStore {
         if store.contains_key(&key) {
             if ownership.etag != store.get(&key).unwrap().etag {
                 warn!("ETag mismatch {}", key);
-                return Err(Error::message(
+                return Err(Error::with_message(
                     AzureErrorKind::Other,
                     format!("ETag mismatch for partition {key}"),
                 ));
@@ -150,7 +150,7 @@ impl CheckpointStore for InMemoryCheckpointStore {
             checkpoint.partition_id
         );
         let mut checkpoints = self.checkpoints.lock().map_err(|e| {
-            Error::message(
+            Error::with_message(
                 AzureErrorKind::Other,
                 format!("Failed to lock checkpoint store: {}", e),
             )

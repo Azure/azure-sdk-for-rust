@@ -70,7 +70,7 @@ impl LoadBalancer {
     fn rng(&self) -> Result<MutexGuard<'_, Box<dyn RngCore + Send + Sync>>> {
         self.rng
             .lock()
-            .map_err(|_| Error::message(AzureErrorKind::Other, "Failed to lock RNG mutex"))
+            .map_err(|_| Error::with_message(AzureErrorKind::Other, "Failed to lock RNG mutex"))
     }
 
     async fn get_available_partitions(&self, partition_ids: &[&str]) -> Result<LoadBalancerInfo> {

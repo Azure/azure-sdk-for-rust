@@ -67,7 +67,7 @@ impl ClientSecretCredential {
         let authority_host = get_authority_host(None, options.authority_host)?;
         let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
-            .with_context(ErrorKind::DataConversion, || {
+            .with_context_fn(ErrorKind::DataConversion, || {
                 format!("tenant_id '{tenant_id}' could not be URL encoded")
             })?;
 
@@ -131,7 +131,7 @@ impl ClientSecretCredential {
                         CLIENT_SECRET_CREDENTIAL, error_response.error_description
                     )
                 };
-                Err(Error::message(ErrorKind::Credential, message))
+                Err(Error::with_message(ErrorKind::Credential, message))
             }
         }
     }
@@ -146,7 +146,10 @@ impl TokenCredential for ClientSecretCredential {
         options: Option<TokenRequestOptions<'_>>,
     ) -> Result<AccessToken> {
         if scopes.is_empty() {
-            return Err(Error::message(ErrorKind::Credential, "no scopes specified"));
+            return Err(Error::with_message(
+                ErrorKind::Credential,
+                "no scopes specified",
+            ));
         }
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))

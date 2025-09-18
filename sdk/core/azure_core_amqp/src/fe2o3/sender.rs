@@ -23,13 +23,13 @@ pub(crate) struct Fe2o3AmqpSender {
 
 impl Fe2o3AmqpSender {
     fn could_not_set_message_sender() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "Could not set message sender",
         )
     }
     fn could_not_get_message_sender() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "Could not get message sender",
         )

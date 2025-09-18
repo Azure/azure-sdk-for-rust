@@ -41,7 +41,7 @@ impl Future for ThreadJoinFuture {
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let mut join_state = self.join_state.lock().map_err(|e| {
             debug!("Failed to lock join state: {}", e);
-            Box::new(crate::Error::message(
+            Box::new(crate::Error::with_message(
                 crate::error::ErrorKind::Other,
                 format!("Thread panicked: {:?}", e),
             )) as Box<dyn std::error::Error + Send>
@@ -66,7 +66,7 @@ impl Future for ThreadJoinFuture {
             // is set before the thread *actually* finishes), but it should be negligible.
             match join_handle.join() {
                 Ok(_) => Poll::Ready(Ok(())),
-                Err(e) => Poll::Ready(Err(Box::new(crate::Error::message(
+                Err(e) => Poll::Ready(Err(Box::new(crate::Error::with_message(
                     crate::error::ErrorKind::Other,
                     format!("Thread panicked: {:?}", e),
                 )) as Box<dyn std::error::Error + Send>)),
@@ -95,7 +95,7 @@ impl AsyncRuntime for StdRuntime {
             let join_state = Arc::new(Mutex::new(ThreadJoinState::default()));
             {
                 let Ok(mut js) = join_state.lock() else {
-                    return Box::pin(future::ready(Err(Box::new(crate::Error::message(
+                    return Box::pin(future::ready(Err(Box::new(crate::Error::with_message(
                         crate::error::ErrorKind::Other,
                         "Thread panicked.",
                     ))
@@ -113,7 +113,7 @@ impl AsyncRuntime for StdRuntime {
 
                     // Spawn the future on the local executor
                     let Ok(future_handle) = spawner.spawn_with_handle(f) else {
-                        return Err(Box::new(crate::Error::message(
+                        return Err(Box::new(crate::Error::with_message(
                             crate::error::ErrorKind::Other,
                             "Failed to spawn future.",
                         ))
@@ -123,7 +123,7 @@ impl AsyncRuntime for StdRuntime {
                     local_pool.run_until(future_handle);
 
                     let Ok(mut join_state) = join_state_clone.lock() else {
-                        return Err(Box::new(crate::Error::message(
+                        return Err(Box::new(crate::Error::with_message(
                             crate::error::ErrorKind::Other,
                             "Failed to lock join state",
                         ))
