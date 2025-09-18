@@ -149,6 +149,7 @@ impl LoadBalancer {
 
         let minimum_required = partition_ids.len() / grouped_by_owner.len();
         let mut maximum_allowed = minimum_required;
+        #[allow(unknown_lints, clippy::manual_is_multiple_of)]
         let allow_extra_partition = partition_ids.len() % grouped_by_owner.len() > 0;
         if allow_extra_partition
             && grouped_by_owner[&self.consumer_client_details.client_id].len() >= minimum_required
@@ -416,6 +417,7 @@ pub(crate) mod tests {
 
         let minimum = partition_count / number_of_consumers;
         let mut maximum = minimum;
+        #[allow(unknown_lints, clippy::manual_is_multiple_of)]
         if partition_count % number_of_consumers > 0 {
             info!("Adding one to maximum because of remainder");
             maximum += 1;
