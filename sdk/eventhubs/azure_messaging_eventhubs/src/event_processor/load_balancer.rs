@@ -417,6 +417,7 @@ pub(crate) mod tests {
 
         let minimum = partition_count / number_of_consumers;
         let mut maximum = minimum;
+        #[allow(unknown_lints, clippy::manual_is_multiple_of)]
         if partition_count % number_of_consumers > 0 {
             info!("Adding one to maximum because of remainder");
             maximum += 1;
