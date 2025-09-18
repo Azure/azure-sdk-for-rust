@@ -114,7 +114,7 @@ pub struct CheckSuccessOptions {
     /// A list of HTTP status codes that should be considered successful.
     ///
     /// If this list is empty, any 2xx status code is considered successful.
-    pub success_statuses: &'static [u16],
+    pub success_codes: &'static [u16],
 }
 
 /// Checks if the response is a success and if not, creates an appropriate error.
@@ -137,10 +137,10 @@ pub async fn check_success(
     if options
         .as_ref()
         .map(|o| {
-            if o.success_statuses.is_empty() {
+            if o.success_codes.is_empty() {
                 status.is_success()
             } else {
-                o.success_statuses.contains(&status)
+                o.success_codes.contains(&status)
             }
         })
         .unwrap_or_else(|| status.is_success())
@@ -233,14 +233,9 @@ mod tests {
             Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
         );
 
-        let err = check_success(
-            response,
-            Some(CheckSuccessOptions {
-                success_statuses: &[],
-            }),
-        )
-        .await
-        .unwrap_err();
+        let err = check_success(response, Some(CheckSuccessOptions { success_codes: &[] }))
+            .await
+            .unwrap_err();
         let kind = err.kind();
         assert!(matches!(
             kind,
@@ -266,7 +261,7 @@ mod tests {
         let _ = check_success(
             response,
             Some(CheckSuccessOptions {
-                success_statuses: &[418],
+                success_codes: &[418],
             }),
         )
         .await
@@ -286,7 +281,7 @@ mod tests {
         let err = check_success(
             response,
             Some(CheckSuccessOptions {
-                success_statuses: &[418],
+                success_codes: &[418],
             }),
         )
         .await
