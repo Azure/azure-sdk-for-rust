@@ -127,19 +127,19 @@ impl ImdsManagedIdentityCredential {
         if !rsp.status().is_success() {
             match rsp.status() {
                 StatusCode::BadRequest => {
-                    return Err(Error::message(
+                    return Err(Error::with_message(
                         ErrorKind::Credential,
                         "the requested identity has not been assigned to this resource",
                     ))
                 }
                 StatusCode::BadGateway | StatusCode::GatewayTimeout => {
-                    return Err(Error::message(
+                    return Err(Error::with_message(
                         ErrorKind::Credential,
                         "the request failed due to a gateway error",
                     ))
                 }
                 _ => {
-                    return Err(Error::message(
+                    return Err(Error::with_message(
                         ErrorKind::Credential,
                         format!("the request failed: {:?}", rsp.into_body().collect().await?),
                     ));
@@ -184,14 +184,14 @@ where
 /// ref: <https://github.com/Azure/azure-sdk-for-python/blob/d6aeefef46c94b056419613f1a5cc9eaa3af0d22/sdk/identity/azure-identity/azure/identity/_internal/__init__.py#L22>
 fn scopes_to_resource<'a>(scopes: &'a [&'a str]) -> azure_core::Result<&'a str> {
     if scopes.len() != 1 {
-        return Err(Error::message(
+        return Err(Error::with_message(
             ErrorKind::Credential,
             "only one scope is supported for IMDS authentication",
         ));
     }
 
     let Some(scope) = scopes.first() else {
-        return Err(Error::message(
+        return Err(Error::with_message(
             ErrorKind::Credential,
             "no scopes were provided",
         ));

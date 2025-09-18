@@ -98,7 +98,10 @@ impl ProcessorConsumersMap {
     ) -> Result<bool> {
         info!("Adding partition client for partition: {}", partition_id);
         let mut consumers = self.consumers.lock().map_err(|_| {
-            azure_core::Error::message(AzureErrorKind::Other, "Could not lock consumers mutex.")
+            azure_core::Error::with_message(
+                AzureErrorKind::Other,
+                "Could not lock consumers mutex.",
+            )
         })?;
         if consumers.contains_key(partition_id) {
             info!(
@@ -115,7 +118,10 @@ impl ProcessorConsumersMap {
     pub fn remove_partition_client(&self, partition_id: &str) -> Result<()> {
         info!("Removing partition client for partition: {}", partition_id);
         let mut consumers = self.consumers.lock().map_err(|_| {
-            azure_core::Error::message(AzureErrorKind::Other, "Could not lock consumers mutex.")
+            azure_core::Error::with_message(
+                AzureErrorKind::Other,
+                "Could not lock consumers mutex.",
+            )
         })?;
         consumers.remove(partition_id);
         info!("Consumers for partition now: {:?}", consumers.keys());
@@ -257,7 +263,7 @@ impl EventProcessor {
         // Implement shutdown logic if needed
 
         let mut is_running = self.is_running.lock().map_err(|_| {
-            Error::message(
+            Error::with_message(
                 AzureErrorKind::Other,
                 "Failed to acquire lock on is_running for shutdown",
             )
@@ -270,7 +276,7 @@ impl EventProcessor {
     fn is_shutdown(&self) -> Result<bool> {
         // Implement shutdown logic if needed
         let is_running = self.is_running.lock().map_err(|_| {
-            Error::message(
+            Error::with_message(
                 AzureErrorKind::Other,
                 "Failed to acquire lock on is_running",
             )
@@ -351,7 +357,7 @@ impl EventProcessor {
             }
         } else {
             error!("Consumers map is no longer valid.");
-            return Err(Error::message(
+            return Err(Error::with_message(
                 AzureErrorKind::Other,
                 "Consumers map is no longer valid.",
             ));
@@ -388,14 +394,14 @@ impl EventProcessor {
         {
             let mut sender = self.next_partition_client_sender.clone();
             let r = sender.send(partition_client).await.map_err(|e| {
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     AzureErrorKind::Other,
                     format!("Failed to send partition client: {:?}", e),
                 )
             });
             if let Err(e) = r {
                 info!("Failed to send partition client: {:?}", e);
-                return Err(Error::message(
+                return Err(Error::with_message(
                     AzureErrorKind::Other,
                     "Failed to send partition client",
                 ));
@@ -420,7 +426,7 @@ impl EventProcessor {
             // Wait for the next partition client to be available
             let mut clients = self.next_partition_clients.lock().await;
             let next_client = clients.next().await.ok_or_else(|| {
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     AzureErrorKind::Other,
                     "No next partition client available: ",
                 )

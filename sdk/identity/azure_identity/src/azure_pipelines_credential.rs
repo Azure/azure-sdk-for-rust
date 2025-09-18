@@ -67,13 +67,13 @@ impl AzurePipelinesCredential {
         let env = Env::default();
         let endpoint = env
             .var(OIDC_VARIABLE_NAME)
-            .map_err(|err| azure_core::Error::full(
+            .map_err(|err| azure_core::Error::with_error(
                 ErrorKind::Credential,
                 err,
                 format!("no value for environment variable {OIDC_VARIABLE_NAME}. This should be set by Azure Pipelines"),
             ))?;
         let mut endpoint: Url = endpoint.parse().map_err(|err| {
-            azure_core::Error::full(
+            azure_core::Error::with_error(
                 ErrorKind::Credential,
                 err,
                 format!("invalid URL for environment variable {OIDC_VARIABLE_NAME}"),
@@ -146,7 +146,7 @@ impl ClientAssertion for Client {
             let err_headers: ErrorHeaders = resp.headers().get()?;
 
             return Err(
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     ErrorKind::http_response(status_code, Some(status_code.canonical_reason().to_string())),
                      format!("{status_code} response from the OIDC endpoint. Check service connection ID and pipeline configuration. {err_headers}"),
                 )

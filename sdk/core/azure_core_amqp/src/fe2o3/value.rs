@@ -817,7 +817,7 @@ impl From<&fe2o3_amqp_types::definitions::ReceiverSettleMode> for crate::Receive
 impl From<Fe2o3SerializationError> for azure_core::Error {
     fn from(err: Fe2o3SerializationError) -> Self {
         match err.0 {
-            serde_amqp::Error::Message(m) => azure_core::Error::message(ErrorKind::Amqp, m),
+            serde_amqp::Error::Message(m) => azure_core::Error::with_message(ErrorKind::Amqp, m),
             serde_amqp::Error::Io(error) => azure_core::Error::new(ErrorKind::Io, error),
             serde_amqp::Error::InvalidFormatCode
             | serde_amqp::Error::InvalidUtf8Encoding

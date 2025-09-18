@@ -76,7 +76,7 @@ impl CertificateClient {
         let options = options.unwrap_or_default();
         let endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 format!("{endpoint} must use http(s)"),
             ));
@@ -120,7 +120,7 @@ impl CertificateClient {
         options: Option<CertificateClientBackupCertificateOptions<'_>>,
     ) -> Result<Response<BackupCertificateResult>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -158,7 +158,7 @@ impl CertificateClient {
         options: Option<CertificateClientCreateCertificateOptions<'_>>,
     ) -> Result<Response<CertificateOperation>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -196,7 +196,7 @@ impl CertificateClient {
         options: Option<CertificateClientDeleteCertificateOptions<'_>>,
     ) -> Result<Response<DeletedCertificate>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -232,7 +232,7 @@ impl CertificateClient {
         options: Option<CertificateClientDeleteCertificateOperationOptions<'_>>,
     ) -> Result<Response<CertificateOperation>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -294,7 +294,7 @@ impl CertificateClient {
         options: Option<CertificateClientDeleteIssuerOptions<'_>>,
     ) -> Result<Response<Issuer>> {
         if issuer_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter issuer_name cannot be empty",
             ));
@@ -329,7 +329,7 @@ impl CertificateClient {
         options: Option<CertificateClientGetCertificateOptions<'_>>,
     ) -> Result<Response<Certificate>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -370,7 +370,7 @@ impl CertificateClient {
         options: Option<CertificateClientGetCertificateOperationOptions<'_>>,
     ) -> Result<Response<CertificateOperation>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -406,7 +406,7 @@ impl CertificateClient {
         options: Option<CertificateClientGetCertificatePolicyOptions<'_>>,
     ) -> Result<Response<CertificatePolicy>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -469,7 +469,7 @@ impl CertificateClient {
         options: Option<CertificateClientGetDeletedCertificateOptions<'_>>,
     ) -> Result<Response<DeletedCertificate>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -505,7 +505,7 @@ impl CertificateClient {
         options: Option<CertificateClientGetIssuerOptions<'_>>,
     ) -> Result<Response<Issuer>> {
         if issuer_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter issuer_name cannot be empty",
             ));
@@ -545,7 +545,7 @@ impl CertificateClient {
         options: Option<CertificateClientImportCertificateOptions<'_>>,
     ) -> Result<Response<Certificate>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -652,7 +652,7 @@ impl CertificateClient {
         options: Option<CertificateClientListCertificatePropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListCertificatePropertiesResult>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -862,7 +862,7 @@ impl CertificateClient {
         options: Option<CertificateClientMergeCertificateOptions<'_>>,
     ) -> Result<Response<Certificate>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -901,7 +901,7 @@ impl CertificateClient {
         options: Option<CertificateClientPurgeDeletedCertificateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -937,7 +937,7 @@ impl CertificateClient {
         options: Option<CertificateClientRecoverDeletedCertificateOptions<'_>>,
     ) -> Result<Response<Certificate>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -1034,7 +1034,7 @@ impl CertificateClient {
         options: Option<CertificateClientSetIssuerOptions<'_>>,
     ) -> Result<Response<Issuer>> {
         if issuer_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter issuer_name cannot be empty",
             ));
@@ -1074,7 +1074,7 @@ impl CertificateClient {
         options: Option<CertificateClientUpdateCertificateOperationOptions<'_>>,
     ) -> Result<Response<CertificateOperation>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -1114,7 +1114,7 @@ impl CertificateClient {
         options: Option<CertificateClientUpdateCertificatePolicyOptions<'_>>,
     ) -> Result<Response<CertificatePolicy>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -1154,7 +1154,7 @@ impl CertificateClient {
         options: Option<CertificateClientUpdateCertificatePropertiesOptions<'_>>,
     ) -> Result<Response<Certificate>> {
         if certificate_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter certificate_name cannot be empty",
             ));
@@ -1200,7 +1200,7 @@ impl CertificateClient {
         options: Option<CertificateClientUpdateIssuerOptions<'_>>,
     ) -> Result<Response<Issuer>> {
         if issuer_name.is_empty() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "parameter issuer_name cannot be empty",
             ));

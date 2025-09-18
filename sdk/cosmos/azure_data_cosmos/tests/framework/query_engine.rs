@@ -233,7 +233,7 @@ impl QueryPipeline for MockQueryPipeline {
     ) -> azure_core::Result<()> {
         let payload: DocumentPayload<MockItem> =
             serde_json::from_slice(data.result).map_err(|_| {
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     "Failed to deserialize payload",
                 )
@@ -247,7 +247,7 @@ impl QueryPipeline for MockQueryPipeline {
             partition_state.provide_data(payload.documents, data.next_continuation);
             Ok(())
         } else {
-            Err(azure_core::Error::message(
+            Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 format!(
                     "Partition key range {} not found",

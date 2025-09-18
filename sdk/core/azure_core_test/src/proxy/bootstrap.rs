@@ -91,7 +91,7 @@ pub async fn start(
         }
         _ = tokio::time::sleep(max_seconds) => {
             proxy.stop().await?;
-            return Err(azure_core::Error::message(ErrorKind::Other, "timed out waiting for test-proxy to start"));
+            return Err(azure_core::Error::with_message(ErrorKind::Other, "timed out waiting for test-proxy to start"));
         },
     };
 
@@ -116,7 +116,7 @@ async fn ensure_assets_file(
             .and_then(Path::file_name)
             .map(|dir| dir.to_ascii_lowercase())
             .ok_or_else(|| {
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     ErrorKind::Io,
                     "failed to get assets.json parent directory name",
                 )
@@ -214,7 +214,7 @@ async fn download_test_proxy(
     output_dir: &Path,
 ) -> Result<()> {
     let download_file_name = download_file_name().ok_or_else(|| {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             ErrorKind::Other,
             "test-proxy not supported on current platform",
         )
@@ -224,7 +224,7 @@ async fn download_test_proxy(
 
     let map_reqwest_err = |err: reqwest::Error| {
         let url = err.url().cloned().unwrap();
-        azure_core::Error::full(ErrorKind::Other, err, format!("failed to download {url}"))
+        azure_core::Error::with_error(ErrorKind::Other, err, format!("failed to download {url}"))
     };
     let archive = reqwest::get(url)
         .await
@@ -273,7 +273,7 @@ fn extract_test_proxy(
         Some(ext) if ext == "gz" => untar(archive_file, output_dir),
         Some(ext) if ext == "zip" => unzip(archive_file, output_dir),
         _ => {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 ErrorKind::Io,
                 format!("unsupported archive {}", archive_file_path.display()),
             ))
@@ -285,7 +285,7 @@ fn extract_test_proxy(
             archive_file_path.display(),
             &err
         );
-        azure_core::Error::full(ErrorKind::Io, err, message)
+        azure_core::Error::with_error(ErrorKind::Io, err, message)
     })
 }
 

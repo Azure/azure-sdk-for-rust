@@ -22,7 +22,7 @@ const SERDE_CONFIG: EncodedConfig = Config::DEFAULT
 /// Parse an ISO 8601 date and time string into an [`OffsetDateTime`].
 pub fn parse_iso8601(s: &str) -> crate::Result<OffsetDateTime> {
     OffsetDateTime::parse(s, &Iso8601::<SERDE_CONFIG>)
-        .with_context(ErrorKind::DataConversion, || {
+        .with_context_fn(ErrorKind::DataConversion, || {
             format!("unable to parse iso8601 date '{s}")
         })
 }
@@ -30,7 +30,7 @@ pub fn parse_iso8601(s: &str) -> crate::Result<OffsetDateTime> {
 /// Convert an [`OffsetDateTime`] to an ISO 8601 string.
 pub fn to_iso8601(date: &OffsetDateTime) -> crate::Result<String> {
     date.format(&Iso8601::<SERDE_CONFIG>)
-        .with_context(ErrorKind::DataConversion, || {
+        .with_context_fn(ErrorKind::DataConversion, || {
             format!("unable to format date '{date:?}")
         })
 }

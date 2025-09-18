@@ -512,7 +512,7 @@ impl HttpClient for Agent {
         let response = self
             .0
             .run(request)
-            .with_context(ErrorKind::Io, || "failed to send request")?;
+            .with_context_fn(ErrorKind::Io, || "failed to send request")?;
 
         Ok(todo!("convert their response into our response"))
     }

@@ -210,7 +210,7 @@ impl ProducerClient {
                         AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)),
                     ));
                 }
-                Err(azure_core::Error::message(
+                Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Amqp,
                     "Send was rejected by the Event Hub.",
                 ))
@@ -327,7 +327,7 @@ impl ProducerClient {
                         AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)),
                     ));
                 }
-                Err(azure_core::Error::message(
+                Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Amqp,
                     "Batch was rejected by the Event Hub.",
                 ))

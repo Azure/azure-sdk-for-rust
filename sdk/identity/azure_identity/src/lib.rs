@@ -81,7 +81,7 @@ where
         .into_body()
         .json()
         .await
-        .with_context(ErrorKind::Credential, || {
+        .with_context_fn(ErrorKind::Credential, || {
             format!(
                 "{} authentication failed: invalid response",
                 credential_name
@@ -95,7 +95,7 @@ where
     C: Into<Cow<'static, str>>,
 {
     if value.is_empty() {
-        return Err(Error::message(ErrorKind::Credential, message));
+        return Err(Error::with_message(ErrorKind::Credential, message));
     }
 
     Ok(())
@@ -127,7 +127,7 @@ fn validate_scope(scope: &str) -> Result<()> {
             c.is_alphanumeric() || c == '.' || c == '-' || c == '_' || c == ':' || c == '/'
         })
     {
-        return Err(Error::message(
+        return Err(Error::with_message(
             ErrorKind::Credential,
             format!("invalid scope {scope}"),
         ));
@@ -151,7 +151,7 @@ fn validate_subscription(subscription: &str) -> Result<()> {
             .chars()
             .all(|c| c.is_alphanumeric() || c == '.' || c == '-' || c == '_' || c == ' ')
     {
-        return Err(Error::message(
+        return Err(Error::with_message(
             ErrorKind::Credential,
             format!("invalid subscription {subscription}. If this is the name of a subscription, use its ID instead"),
         ));
@@ -174,7 +174,7 @@ fn validate_tenant_id(tenant_id: &str) -> Result<()> {
             .chars()
             .all(|c| c.is_alphanumeric() || c == '.' || c == '-')
     {
-        return Err(Error::message(
+        return Err(Error::with_message(
             ErrorKind::Credential,
             format!("invalid tenant ID {tenant_id}. You can locate your tenantID by following the instructions listed here: https://learn.microsoft.com/partner-center/find-ids-and-domain-names"),
         ));
@@ -321,7 +321,10 @@ mod tests {
             self.on_request.as_ref().map_or(Ok(()), |f| f(request))?;
             let mut responses = self.responses.lock().unwrap();
             if responses.is_empty() {
-                Err(Error::message(ErrorKind::Other, "No more mock responses"))
+                Err(Error::with_message(
+                    ErrorKind::Other,
+                    "No more mock responses",
+                ))
             } else {
                 Ok(responses.remove(0)) // Use remove(0) to return responses in the correct order
             }

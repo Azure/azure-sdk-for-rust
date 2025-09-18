@@ -25,7 +25,7 @@ pub async fn create_errors_in_query_engine_appear_in_first_result(
     )
     .await?;
 
-    let query_engine = Arc::new(MockQueryEngine::with_error(Error::message(
+    let query_engine = Arc::new(MockQueryEngine::with_error(Error::with_message(
         ErrorKind::Other,
         "Mock error",
     )));

@@ -60,7 +60,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
         #[cfg(windows)]
         {
             let system_root = env.var_os("SYSTEMROOT").map_err(|_| {
-                Error::message(
+                Error::with_message(
                     ErrorKind::Credential,
                     "SYSTEMROOT environment variable not set",
                 )
@@ -98,7 +98,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
             } else {
                 stderr.to_string()
             };
-            Err(Error::with_message(ErrorKind::Credential, || {
+            Err(Error::with_message_fn(ErrorKind::Credential, || {
                 format!("{} authentication failed: {message}", T::credential_name())
             }))
         }
@@ -107,7 +107,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
                 "{} authentication failed: {program:?} wasn't found on PATH",
                 T::credential_name(),
             );
-            Err(Error::full(ErrorKind::Credential, e, message))
+            Err(Error::with_error(ErrorKind::Credential, e, message))
         }
         Err(e) => {
             let message = format!(
@@ -115,7 +115,7 @@ pub(crate) async fn shell_exec<T: OutputProcessor>(
                 T::credential_name(),
                 e.kind()
             );
-            Err(Error::full(ErrorKind::Credential, e, message))
+            Err(Error::with_error(ErrorKind::Credential, e, message))
         }
     }
 }

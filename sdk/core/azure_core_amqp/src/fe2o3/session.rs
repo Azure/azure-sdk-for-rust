@@ -43,19 +43,19 @@ impl Fe2o3AmqpSession {
     }
 
     fn session_already_attached() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "AMQP Session is already attached",
         )
     }
     fn session_not_set() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "AMQP Session is not set",
         )
     }
     fn could_not_set_session() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "Could not set AMQP Session",
         )

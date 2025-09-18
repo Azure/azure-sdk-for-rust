@@ -453,7 +453,7 @@ impl Recording {
         let mut options = policy
             .options
             .write()
-            .map_err(|err| azure_core::Error::message(ErrorKind::Other, err.to_string()))?;
+            .map_err(|err| azure_core::Error::with_message(ErrorKind::Other, err.to_string()))?;
         options.skip = skip;
 
         Ok(())
@@ -537,11 +537,11 @@ impl Drop for Recording {
 }
 
 fn read_lock_error(_: impl std::error::Error) -> azure_core::Error {
-    azure_core::Error::message(ErrorKind::Other, "failed to lock variables for read")
+    azure_core::Error::with_message(ErrorKind::Other, "failed to lock variables for read")
 }
 
 fn write_lock_error(_: impl std::error::Error) -> azure_core::Error {
-    azure_core::Error::message(ErrorKind::Other, "failed to lock variables for write")
+    azure_core::Error::with_message(ErrorKind::Other, "failed to lock variables for write")
 }
 
 /// What to skip when recording to a file.

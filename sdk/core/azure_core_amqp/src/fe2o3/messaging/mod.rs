@@ -346,7 +346,7 @@ impl
             let data = body
                 .try_as_data()
                 .map_err(|_| {
-                    Error::message(
+                    Error::with_message(
                         ErrorKind::DataConversion,
                         "Could not convert AMQP Message Body to data.",
                     )

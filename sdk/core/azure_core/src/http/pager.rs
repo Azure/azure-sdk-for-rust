@@ -749,7 +749,7 @@ mod tests {
                     .into(),
                     continuation: "1",
                 }),
-                PagerState::More("1") => Err(typespec::Error::message(
+                PagerState::More("1") => Err(typespec::Error::with_message(
                     typespec::error::ErrorKind::Other,
                     "yon request didst fail",
                 )),

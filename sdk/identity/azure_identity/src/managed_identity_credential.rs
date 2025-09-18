@@ -64,7 +64,7 @@ impl ManagedIdentityCredential {
                 // App Service does accept resource IDs, however this crate's current implementation sends
                 // them in the wrong query parameter: https://github.com/Azure/azure-sdk-for-rust/issues/2407
                 if let ImdsId::MsiResId(_) = id {
-                    return Err(azure_core::Error::with_message(
+                    return Err(azure_core::Error::with_message_fn(
                         azure_core::error::ErrorKind::Credential,
                         || {
                             "User-assigned resource IDs aren't supported for App Service. Use a client or object ID instead.".to_string()
@@ -77,7 +77,7 @@ impl ManagedIdentityCredential {
                 VirtualMachineManagedIdentityCredential::new(id, options.client_options, env)?
             }
             _ => {
-                return Err(azure_core::Error::with_message(
+                return Err(azure_core::Error::with_message_fn(
                     azure_core::error::ErrorKind::Credential,
                     || format!("{} managed identity isn't supported", source.as_str()),
                 ));
@@ -99,7 +99,7 @@ impl TokenCredential for ManagedIdentityCredential {
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.len() != 1 {
-            return Err(azure_core::Error::with_message(
+            return Err(azure_core::Error::with_message_fn(
                 azure_core::error::ErrorKind::Credential,
                 || "ManagedIdentityCredential requires exactly one scope".to_string(),
             ));

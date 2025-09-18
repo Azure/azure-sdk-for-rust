@@ -91,7 +91,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         let authority_host = get_authority_host(None, options.authority_host)?;
         let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
-            .with_context(ErrorKind::DataConversion, || {
+            .with_context_fn(ErrorKind::DataConversion, || {
                 format!("tenant_id {tenant_id} could not be URL encoded")
             })?;
         let pipeline = Pipeline::new(
@@ -158,7 +158,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
                         CLIENT_ASSERTION_CREDENTIAL, error_response.error_description
                     )
                 };
-                Err(Error::message(ErrorKind::Credential, message))
+                Err(Error::with_message(ErrorKind::Credential, message))
             }
         }
     }

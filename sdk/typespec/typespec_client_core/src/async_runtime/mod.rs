@@ -184,7 +184,7 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 pub fn set_async_runtime(runtime: Arc<dyn AsyncRuntime>) -> crate::Result<()> {
     let result = ASYNC_RUNTIME_IMPLEMENTATION.set(runtime);
     if result.is_err() {
-        Err(crate::Error::message(
+        Err(crate::Error::with_message(
             crate::error::ErrorKind::Other,
             "Async runtime has already been set.",
         ))
