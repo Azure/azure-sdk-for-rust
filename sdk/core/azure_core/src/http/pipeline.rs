@@ -62,6 +62,7 @@ struct CorePipelineSendOptions {
 }
 
 impl PipelineSendOptions {
+    /// Deconstructs the `PipelineSendOptions` into its core components.
     #[expect(private_interfaces)]
     pub fn deconstruct(self) -> (CorePipelineSendOptions, Option<http::PipelineSendOptions>) {
         (
