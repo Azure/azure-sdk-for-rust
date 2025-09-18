@@ -268,6 +268,5 @@ Review and update any Azure documentation that references the deprecated crate:
 ## Additional Resources
 
 -   [Azure SDK for Rust Guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)
--   [Rust API Guidelines - Deprecation](https://rust-lang.github.io/api-guidelines/evolution.html#c-deprecated)
 -   [Cargo Book - Publishing on crates.io](https://doc.rust-lang.org/cargo/reference/publishing.html)
 -   [RFC 1270 - Deprecation](https://github.com/rust-lang/rfcs/blob/master/text/1270-deprecation.md)
