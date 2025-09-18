@@ -27,3 +27,5 @@ testcontainer
 uncommittedblobs
 westus
 yourtagname
+numofmessages
+peekonly
