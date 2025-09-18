@@ -149,7 +149,8 @@ impl LoadBalancer {
 
         let minimum_required = partition_ids.len() / grouped_by_owner.len();
         let mut maximum_allowed = minimum_required;
-        let allow_extra_partition = !partition_ids.len().is_multiple_of(grouped_by_owner.len());
+        #[expect(manual_is_multiple_of)]
+        let allow_extra_partition = partition_ids.len() % grouped_by_owner.len() > 0;
         if allow_extra_partition
             && grouped_by_owner[&self.consumer_client_details.client_id].len() >= minimum_required
         {
