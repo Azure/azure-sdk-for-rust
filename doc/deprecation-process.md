@@ -1,3 +1,5 @@
+<!-- cspell:ignore codeowner -->
+
 # Rust Crate Deprecation Process
 
 ## Overview
