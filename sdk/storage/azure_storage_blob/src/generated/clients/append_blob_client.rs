@@ -12,10 +12,12 @@ use crate::generated::models::{
 use azure_core::{
     base64::encode,
     credentials::TokenCredential,
+    error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pipeline, Request, RequestContent, Response, Url,
+        ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
+        Response, Url,
     },
     time::to_rfc7231,
     tracing, Bytes, Result,
@@ -217,8 +219,19 @@ impl AppendBlobClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[201],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -371,8 +384,19 @@ impl AppendBlobClient {
             request.insert_header("x-ms-source-range", source_range);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[201],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -513,8 +537,19 @@ impl AppendBlobClient {
             request.insert_header("x-ms-tags", blob_tags_string);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[201],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -596,8 +631,19 @@ impl AppendBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 }

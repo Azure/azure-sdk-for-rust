@@ -47,6 +47,7 @@ pub struct SecretClientListDeletedSecretPropertiesOptions<'a> {
 }
 
 impl SecretClientListDeletedSecretPropertiesOptions<'_> {
+    /// Transforms this [`SecretClientListDeletedSecretPropertiesOptions`] into a new `SecretClientListDeletedSecretPropertiesOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> SecretClientListDeletedSecretPropertiesOptions<'static> {
         SecretClientListDeletedSecretPropertiesOptions {
             maxresults: self.maxresults,
@@ -68,6 +69,7 @@ pub struct SecretClientListSecretPropertiesOptions<'a> {
 }
 
 impl SecretClientListSecretPropertiesOptions<'_> {
+    /// Transforms this [`SecretClientListSecretPropertiesOptions`] into a new `SecretClientListSecretPropertiesOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> SecretClientListSecretPropertiesOptions<'static> {
         SecretClientListSecretPropertiesOptions {
             maxresults: self.maxresults,
@@ -89,6 +91,7 @@ pub struct SecretClientListSecretPropertiesVersionsOptions<'a> {
 }
 
 impl SecretClientListSecretPropertiesVersionsOptions<'_> {
+    /// Transforms this [`SecretClientListSecretPropertiesVersionsOptions`] into a new `SecretClientListSecretPropertiesVersionsOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> SecretClientListSecretPropertiesVersionsOptions<'static> {
         SecretClientListSecretPropertiesVersionsOptions {
             maxresults: self.maxresults,

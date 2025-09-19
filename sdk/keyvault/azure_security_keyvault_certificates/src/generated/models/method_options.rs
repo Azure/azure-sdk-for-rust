@@ -114,6 +114,7 @@ pub struct CertificateClientListCertificatePropertiesOptions<'a> {
 }
 
 impl CertificateClientListCertificatePropertiesOptions<'_> {
+    /// Transforms this [`CertificateClientListCertificatePropertiesOptions`] into a new `CertificateClientListCertificatePropertiesOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> CertificateClientListCertificatePropertiesOptions<'static> {
         CertificateClientListCertificatePropertiesOptions {
             include_pending: self.include_pending,
@@ -136,6 +137,7 @@ pub struct CertificateClientListCertificatePropertiesVersionsOptions<'a> {
 }
 
 impl CertificateClientListCertificatePropertiesVersionsOptions<'_> {
+    /// Transforms this [`CertificateClientListCertificatePropertiesVersionsOptions`] into a new `CertificateClientListCertificatePropertiesVersionsOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> CertificateClientListCertificatePropertiesVersionsOptions<'static> {
         CertificateClientListCertificatePropertiesVersionsOptions {
             maxresults: self.maxresults,
@@ -160,6 +162,7 @@ pub struct CertificateClientListDeletedCertificatePropertiesOptions<'a> {
 }
 
 impl CertificateClientListDeletedCertificatePropertiesOptions<'_> {
+    /// Transforms this [`CertificateClientListDeletedCertificatePropertiesOptions`] into a new `CertificateClientListDeletedCertificatePropertiesOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> CertificateClientListDeletedCertificatePropertiesOptions<'static> {
         CertificateClientListDeletedCertificatePropertiesOptions {
             include_pending: self.include_pending,
@@ -182,6 +185,7 @@ pub struct CertificateClientListIssuerPropertiesOptions<'a> {
 }
 
 impl CertificateClientListIssuerPropertiesOptions<'_> {
+    /// Transforms this [`CertificateClientListIssuerPropertiesOptions`] into a new `CertificateClientListIssuerPropertiesOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> CertificateClientListIssuerPropertiesOptions<'static> {
         CertificateClientListIssuerPropertiesOptions {
             maxresults: self.maxresults,
