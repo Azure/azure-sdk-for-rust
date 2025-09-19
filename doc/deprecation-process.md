@@ -30,22 +30,6 @@ Reach out to the Rust Azure SDK PM if you have any questions about creating a bl
 
 Clone the `azure-sdk-for-rust` repository and update the following files of your crate.
 
-### Cargo.toml
-
-Add deprecation metadata to the crate's `Cargo.toml` file:
-
-```toml
-[package]
-# ... existing fields ...
-
-[package.metadata.deprecation]
-deprecated = true
-deprecation_date = "2024-12-31"  # Format: YYYY-MM-DD
-reason = "This crate has been deprecated. Use azure_new_crate instead."
-replacement = "azure_new_crate"  # Optional: name of replacement crate
-migration_guide = "https://aka.ms/azsdk/rust/migrate/new-crate"  # Optional
-```
-
 ### README.md
 
 A disclaimer should be added indicating the end-of-life date (EOLDate) of the crate and directing to a replacement crate and migration guide as necessary.
@@ -60,7 +44,7 @@ A disclaimer should be added indicating the end-of-life date (EOLDate) of the cr
 
 Replace ALL existing text with a disclaimer in the following format:
 
-**If a replacement crate and migration guide exist:**
+#### If a replacement crate and migration guide exist
 
 ```markdown
 # Microsoft Azure SDK for Rust
@@ -69,7 +53,7 @@ Replace ALL existing text with a disclaimer in the following format:
 > This crate has been deprecated and will no longer be maintained after <EOLDate>. This crate will only receive security fixes until <EOLDate>. To receive updates on new features and non-security bug fixes, upgrade to the replacement crate, [azure_new_crate](https://crates.io/crates/azure_new_crate). Refer to the [migration guide](https://aka.ms/azsdk/rust/migrate/new-crate) for guidance on upgrading.
 ```
 
-**If a migration guide is not provided:**
+#### If a migration guide is not provided
 
 ```markdown
 # Microsoft Azure SDK for Rust
@@ -78,7 +62,7 @@ Replace ALL existing text with a disclaimer in the following format:
 > This crate has been deprecated and will no longer be maintained after <EOLDate>. This crate will only receive security fixes until <EOLDate>. To receive updates on new features and non-security bug fixes, upgrade to the replacement crate, [azure_new_crate](https://crates.io/crates/azure_new_crate).
 ```
 
-**If a replacement crate does not exist:**
+#### If a replacement crate does not exist
 
 ```markdown
 # Microsoft Azure SDK for Rust
@@ -87,7 +71,7 @@ Replace ALL existing text with a disclaimer in the following format:
 > This crate has been deprecated and will no longer be maintained after <EOLDate>. This crate will only receive security fixes until <EOLDate>.
 ```
 
-**If a new service has replaced the service, and existing customers should be directed to the new service's REST API docs/repo:**
+#### If a new service has replaced the service, and existing customers should be directed to the new service's REST API docs/repo
 
 ```markdown
 # Microsoft Azure SDK for Rust
