@@ -14,11 +14,11 @@ The overall approach for Rust crates is:
 -   Add deprecation metadata to `Cargo.toml`
 -   Publish a new release to crates.io
 -   Update the API reference documentation to show the deprecated status
--   Eventually archive the crate on crates.io if the service is fully retired
+-   Eventually yank the crate from crates.io if the service is fully retired
 
 ## Pre-deprecation: Blog Post
 
-If applicable, consider adding a post to the Azure Blog stating that:
+If applicable, consider adding a post to the [Azure Blog](https://devblogs.microsoft.com/azure-sdk/) stating that:
 
 -   A new crate is available which replaces the old crate
 -   The old crate is scheduled to be deprecated on a specific date
