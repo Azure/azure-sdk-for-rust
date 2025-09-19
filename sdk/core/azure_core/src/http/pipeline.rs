@@ -185,14 +185,6 @@ fn push_unique<T: Policy + 'static>(policies: &mut Vec<Arc<dyn Policy>>, policy:
     }
 }
 
-// // TODO: Should we instead use the newtype pattern?
-// impl Deref for Pipeline {
-//     type Target = http::Pipeline;
-//     fn deref(&self) -> &Self::Target {
-//         &self.0
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;
