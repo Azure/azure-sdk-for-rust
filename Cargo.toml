@@ -106,7 +106,6 @@ getrandom = { version = "0.3" }
 gloo-timers = { version = "0.3" }
 hmac = { version = "0.12" }
 litemap = "0.7.4"
-log = "0.4"
 openssl = { version = "0.10.72" }
 opentelemetry = { version = "0.30", features = ["trace"] }
 opentelemetry_sdk = "0.30"
@@ -120,7 +119,7 @@ rand_chacha = "0.9"
 reqwest = { version = "0.12.23", features = [
   "stream",
 ], default-features = false }
-rust_decimal.version = "1.37.2"
+rust_decimal = "1.37.2"
 rustc_version = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_amqp = { version = "0.14", features = ["uuid"] }
