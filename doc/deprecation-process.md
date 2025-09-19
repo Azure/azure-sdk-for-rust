@@ -9,9 +9,9 @@ Note that a deprecated crate is a signal to users that they are strongly encoura
 The overall approach for Rust crates is:
 
 -   Add deprecation attributes to public APIs in the code to provide compile-time warnings
--   Update the README.md file with a deprecation disclaimer
--   Update the CHANGELOG.md file to document the deprecation
--   Add deprecation metadata to Cargo.toml
+-   Update the `README.md` file with a deprecation disclaimer
+-   Update the `CHANGELOG.md` file to document the deprecation
+-   Add deprecation metadata to `Cargo.toml`
 -   Publish a new release to crates.io
 -   Update the API reference documentation to show the deprecated status
 -   Eventually archive the crate on crates.io if the service is fully retired
@@ -52,7 +52,7 @@ A disclaimer should be added indicating the end-of-life date (EOLDate) of the cr
 
 -   The EOLDate should be in the format `MM-DD-YYYY`.
     -   If there is no replacement crate, the crate EOLDate should be the service retirement date.
-    -   If there is a replacement crate, the EOLDate should be the same as the deprecation release date of the old crate in the CHANGELOG.md.
+    -   If there is a replacement crate, the EOLDate should be the same as the deprecation release date of the old crate in the `CHANGELOG.md`.
     -   Service retirement dates MAY be listed in the [Azure Services Retirement Workbook](https://aka.ms/servicesretirementworkbook), where retiring feature says 'Entire service'.
 -   The link to the replacement crate should be a crates.io link: `https://crates.io/crates/azure_new_crate`.
 -   The link to the migration guide should be a link in the format `https://aka.ms/azsdk/rust/migrate/new-crate`. To create this aka.ms link, follow the "How to create aka.ms links" section [here](https://dev.azure.com/azure-sdk/internal/_wiki/wikis/internal.wiki/233/Azure-SDK-AKA.ms-Links?anchor=how-to-create-aka.ms-links).
@@ -118,25 +118,6 @@ For additional support, open a new issue in the [Issues](https://github.com/micr
 
 ### Source Code Deprecation Attributes
 
-Add `#[deprecated]` attributes to all public APIs in the crate to provide compile-time warnings to users:
-
-```rust
-#[deprecated(since = "1.2.4", note = "This crate has been deprecated. Use azure_new_crate instead.")]
-pub struct MyStruct {
-    // ...
-}
-
-#[deprecated(since = "1.2.4", note = "This crate has been deprecated. Use azure_new_crate instead.")]
-pub fn my_function() {
-    // ...
-}
-
-#[deprecated(since = "1.2.4", note = "This crate has been deprecated. Use azure_new_crate instead.")]
-pub mod my_module {
-    // ...
-}
-```
-
 For the main crate-level documentation, add a deprecation notice:
 
 ```rust
@@ -166,7 +147,7 @@ Create a PR targeting the `main` branch.
 
 ### Fix any CI issues
 
-Wait for the CI to run. Fix any issues related to deprecation in the PR, such as CHANGELOG.md or README.md formatting.
+Wait for the CI to run. Fix any issues related to deprecation in the PR, such as `CHANGELOG.md` or `README.md` formatting.
 
 There should not be any major test failures as deprecated crates should still function correctly.
 
@@ -198,7 +179,7 @@ Check to make sure that the new version of the crate has been published on crate
 
 After the deprecated version has been published and sufficient time has passed (typically 12 months), consider removing the crate from the main branch:
 
--   Append a note to the README.md deprecation message stating the crate has been removed from the main branch, with links to the latest release tag and crate on crates.io.
+-   Append a note to the `README.md` deprecation message stating the crate has been removed from the main branch, with links to the latest release tag and crate on crates.io.
 
 ```markdown
 # Microsoft Azure SDK for Rust
@@ -238,23 +219,17 @@ The deprecated crate will automatically show deprecation warnings on docs.rs. No
 -   Note: If you are deprecating multiple crates, please wait until all deprecated crates have been published and update all entries necessary in one PR.
 -   Create a PR to push these changes. Checks will run to notify the repo owners to review your commit.
 
-### Archive the crate on crates.io
+### Yank the crate on crates.io
 
-If the service is retired and users should not expect to receive any future updates, including security fixes or maintenance, your crate can be yanked from crates.io as a last resort. However, this should be done very carefully as it can break existing builds.
+If the service is retired and users should not expect to receive any future updates, including security fixes or maintenance, your crate can be yanked from crates.io.
 
-Instead of yanking, consider:
-
-1. Keeping the deprecated version available but not publishing new versions
-2. Using the deprecation metadata in Cargo.toml to clearly mark the crate as deprecated
-3. Providing clear migration paths in documentation
-
-To yank a version (use with extreme caution):
+To yank a version (use with caution):
 
 ```bash
 cargo yank --vers 1.2.4 azure_my_crate
 ```
 
-Note: Yanking does not remove the crate from the index entirely, but prevents new projects from depending on it.
+Note: Yanking does not remove the crate from the index entirely, but prevents new projects from depending on it. Essentially, a yank means that all projects with a Cargo.lock will not break, and any future Cargo.lock files generated will not use the yanked version.
 
 ### Update overview/conceptual documentation that points to deprecated crates
 
