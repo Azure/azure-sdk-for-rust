@@ -325,24 +325,22 @@ impl Recording {
         let key = key.as_ref();
         if self.test_mode == TestMode::Playback {
             let variables = self.variables.read().map_err(read_lock_error).ok()?;
-            return variables.get(key).map(Into::into);
+            return variables.get(key).and_then(Into::into);
         }
 
         let value = self.env(key);
         if self.test_mode == TestMode::Live {
-            return value;
+            return value.or_else(|| Some(options?.default_value?.into_owned()));
         }
 
-        match value {
-            None => None,
-            Some(v) if v.is_empty() => None,
-            Some(v) => {
-                let v = Some(v);
-                let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
-                variables.insert(key.into(), Value::from(v.as_ref(), options));
-                v
-            }
-        }
+        // Get the value or default.
+        let variable = Value::from(value.as_ref(), options);
+        let value = variable.value.clone();
+
+        let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
+        variables.insert(key.into(), variable);
+
+        value
     }
 }
 
@@ -418,7 +416,7 @@ impl Recording {
                     .unwrap_or_else(|err| panic!("{err}"));
                 let seed: String = variables
                     .get(RANDOM_SEED_NAME)
-                    .map(Into::into)
+                    .and_then(Into::into)
                     .unwrap_or_else(|| panic!("random seed variable not set"));
                 let seed = base64::decode(seed)
                     .unwrap_or_else(|err| panic!("failed to decode random seed: {err}"));
@@ -515,9 +513,13 @@ impl Recording {
                 let payload = {
                     let variables = self.variables.read().map_err(read_lock_error)?;
                     VariablePayload {
-                        variables: HashMap::from_iter(
-                            variables.iter().map(|(k, v)| (k.clone(), v.into())),
-                        ),
+                        variables: HashMap::from_iter(variables.iter().filter_map(|(k, v)| {
+                            // Do not record unset environment variables.
+                            if let Some(v) = v.into() {
+                                return Some((k.clone(), v));
+                            }
+                            None
+                        })),
                     }
                 };
                 client
@@ -586,6 +588,9 @@ impl Drop for SkipGuard<'_> {
 /// Options for getting variables from a [`Recording`].
 #[derive(Clone, Debug)]
 pub struct VarOptions {
+    /// The value to return if not already recorded.
+    pub default_value: Option<Cow<'static, str>>,
+
     /// Whether to sanitize the variable value with [`VarOptions::sanitize_value`].
     pub sanitize: bool,
 
@@ -598,6 +603,7 @@ pub struct VarOptions {
 impl Default for VarOptions {
     fn default() -> Self {
         Self {
+            default_value: None,
             sanitize: false,
             sanitize_value: Cow::Borrowed(crate::DEFAULT_SANITIZED_VALUE),
         }
@@ -606,7 +612,7 @@ impl Default for VarOptions {
 
 #[derive(Debug)]
 struct Value {
-    value: String,
+    value: Option<String>,
     sanitized: Option<Cow<'static, str>>,
 }
 
@@ -615,20 +621,83 @@ impl Value {
     where
         S: Into<String>,
     {
+        let VarOptions {
+            default_value,
+            sanitize,
+            sanitize_value,
+        } = options.unwrap_or_default();
+
         Self {
-            value: value.map_or_else(String::new, Into::into),
-            sanitized: match options {
-                Some(options) if options.sanitize => Some(options.sanitize_value.clone()),
-                _ => None,
-            },
+            value: value.map_or_else(
+                || default_value.as_deref().map(ToString::to_string),
+                |v| Some(v.into()),
+            ),
+            sanitized: sanitize.then_some(sanitize_value),
         }
     }
+}
+
+#[test]
+fn test_value_from() {
+    let v = Value::from(None::<String>, None);
+    assert_eq!(v.value, None);
+
+    let v = Value::from(Some(String::new()), None);
+    assert_eq!(v.value, Some(String::new()));
+
+    let v = Value::from(Some("test".to_string()), None);
+    assert_eq!(v.value, Some("test".to_string()));
+
+    let v = Value::from(
+        None::<String>,
+        Some(VarOptions {
+            default_value: None,
+            ..Default::default()
+        }),
+    );
+    assert_eq!(v.value, None);
+
+    let v = Value::from(
+        None::<String>,
+        Some(VarOptions {
+            default_value: Some("".into()),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(v.value, Some(String::new()));
+
+    let v = Value::from(
+        None::<String>,
+        Some(VarOptions {
+            default_value: Some("test".into()),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(v.value, Some("test".to_string()));
+
+    let v = Value::from(
+        Some(String::new()),
+        Some(VarOptions {
+            default_value: Some("default".into()),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(v.value, Some(String::new()));
+
+    let v = Value::from(
+        Some("test"),
+        Some(VarOptions {
+            default_value: Some("default".into()),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(v.value, Some("test".to_string()));
 }
 
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
         Self {
-            value: value.into(),
+            value: Some(value.into()),
             sanitized: None,
         }
     }
@@ -637,17 +706,18 @@ impl From<&str> for Value {
 impl From<String> for Value {
     fn from(value: String) -> Self {
         Self {
-            value,
+            value: Some(value),
             sanitized: None,
         }
     }
 }
 
-impl From<&Value> for String {
+impl From<&Value> for Option<String> {
     fn from(value: &Value) -> Self {
         value
             .sanitized
-            .as_ref()
-            .map_or_else(|| value.value.clone(), |v| v.to_string())
+            .as_deref()
+            .map(ToString::to_string)
+            .or_else(|| value.value.clone())
     }
 }
