@@ -57,7 +57,7 @@ pub struct Recording {
     recording_file: String,
     recording_assets_file: Option<String>,
     id: Option<RecordingId>,
-    variables: RwLock<HashMap<String, Value>>,
+    variables: RwLock<HashMap<String, String>>,
     rand: OnceLock<Mutex<ChaCha20Rng>>,
 }
 
@@ -325,20 +325,22 @@ impl Recording {
         let key = key.as_ref();
         if self.test_mode == TestMode::Playback {
             let variables = self.variables.read().map_err(read_lock_error).ok()?;
-            return variables.get(key).and_then(Into::into);
+            return variables.get(key).cloned();
         }
 
-        let value = self.env(key);
+        // Get the environment variable or, if unset (None), the optional VarOptions::default_value.
+        let options = options.unwrap_or_default();
+        let (value, sanitized) = options.apply(self.env(key));
+
         if self.test_mode == TestMode::Live {
-            return value.or_else(|| Some(options?.default_value?.into_owned()));
+            return value;
         }
 
-        // Get the value or default.
-        let variable = Value::from(value.as_ref(), options);
-        let value = variable.value.clone();
-
-        let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
-        variables.insert(key.into(), variable);
+        // Do not record unset (None) environment variables.
+        if let Some(sanitized) = sanitized {
+            let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
+            variables.insert(key.into(), sanitized);
+        }
 
         value
     }
@@ -401,7 +403,7 @@ impl Recording {
         env::var_os(self.service_directory.clone() + "_" + key.as_ref())
             .or_else(|| env::var_os(key.as_ref()))
             .or_else(|| env::var_os(String::from(AZURE_PREFIX) + key.as_ref()))
-            .and_then(|v| v.into_string().ok())
+            .and_then(|value| value.into_string().ok())
     }
 
     fn rng(&self) -> &Mutex<ChaCha20Rng> {
@@ -414,9 +416,8 @@ impl Recording {
                     .read()
                     .map_err(read_lock_error)
                     .unwrap_or_else(|err| panic!("{err}"));
-                let seed: String = variables
+                let seed = variables
                     .get(RANDOM_SEED_NAME)
-                    .and_then(Into::into)
                     .unwrap_or_else(|| panic!("random seed variable not set"));
                 let seed = base64::decode(seed)
                     .unwrap_or_else(|err| panic!("failed to decode random seed: {err}"));
@@ -436,7 +437,7 @@ impl Recording {
                     .write()
                     .map_err(write_lock_error)
                     .unwrap_or_else(|err| panic!("{err}"));
-                variables.insert(RANDOM_SEED_NAME.to_string(), Value::from(Some(seed), None));
+                variables.insert(RANDOM_SEED_NAME.to_string(), seed);
 
                 rng.into()
             }
@@ -476,7 +477,7 @@ impl Recording {
             TestMode::Playback => {
                 let result = client.playback_start(payload.try_into()?, None).await?;
                 let mut variables = self.variables.write().map_err(write_lock_error)?;
-                variables.extend(result.variables.into_iter().map(|(k, v)| (k, v.into())));
+                variables.extend(result.variables.into_iter());
 
                 result.recording_id
             }
@@ -513,13 +514,11 @@ impl Recording {
                 let payload = {
                     let variables = self.variables.read().map_err(read_lock_error)?;
                     VariablePayload {
-                        variables: HashMap::from_iter(variables.iter().filter_map(|(k, v)| {
-                            // Do not record unset environment variables.
-                            if let Some(v) = v.into() {
-                                return Some((k.clone(), v));
-                            }
-                            None
-                        })),
+                        variables: HashMap::from_iter(
+                            variables
+                                .iter()
+                                .map(|(k, value)| (k.clone(), value.clone())),
+                        ),
                     }
                 };
                 client
@@ -600,6 +599,26 @@ pub struct VarOptions {
     pub sanitize_value: Cow<'static, str>,
 }
 
+impl VarOptions {
+    /// Returns a tuple of the `value` or [`VarOptions::default_value`], and the sanitized value.
+    ///
+    /// The `value` is only replaced with the `VarOptions::default_value` if `None`. This is returned as the first tuple field.
+    ///
+    /// The [`VarOptions::sanitize_value`] is only `Some` if [`VarOptions::sanitize`] is `true`. This is returned as the second tuple field.
+    fn apply<S: Into<String>>(self, value: Option<S>) -> (Option<String>, Option<String>) {
+        let value = value.map_or_else(
+            || self.default_value.as_deref().map(ToString::to_string),
+            |value| Some(value.into()),
+        );
+        let sanitized = match value.as_deref() {
+            None => None,
+            Some(_) if self.sanitize => Some(self.sanitize_value.to_string()),
+            Some(v) => Some(v.to_string()),
+        };
+        (value, sanitized)
+    }
+}
+
 impl Default for VarOptions {
     fn default() -> Self {
         Self {
@@ -610,114 +629,107 @@ impl Default for VarOptions {
     }
 }
 
-#[derive(Debug)]
-struct Value {
-    value: Option<String>,
-    sanitized: Option<Cow<'static, str>>,
-}
+#[test]
+fn test_var_options_apply() {
+    let (value, ..) = VarOptions::default().apply(None::<String>);
+    assert_eq!(value, None);
 
-impl Value {
-    fn from<S>(value: Option<S>, options: Option<VarOptions>) -> Self
-    where
-        S: Into<String>,
-    {
-        let VarOptions {
-            default_value,
-            sanitize,
-            sanitize_value,
-        } = options.unwrap_or_default();
+    let (value, ..) = VarOptions::default().apply(Some("".to_string()));
+    assert_eq!(value, Some(String::new()));
 
-        Self {
-            value: value.map_or_else(
-                || default_value.as_deref().map(ToString::to_string),
-                |v| Some(v.into()),
-            ),
-            sanitized: sanitize.then_some(sanitize_value),
-        }
+    let (value, ..) = VarOptions::default().apply(Some("test".to_string()));
+    assert_eq!(value, Some("test".into()));
+
+    let (value, ..) = VarOptions {
+        default_value: None,
+        ..Default::default()
     }
+    .apply(None::<String>);
+    assert_eq!(value, None);
+
+    let (value, ..) = VarOptions {
+        default_value: Some("".into()),
+        ..Default::default()
+    }
+    .apply(None::<String>);
+    assert_eq!(value, Some("".into()));
+
+    let (value, ..) = VarOptions {
+        default_value: Some("test".into()),
+        ..Default::default()
+    }
+    .apply(None::<String>);
+    assert_eq!(value, Some("test".into()));
+
+    let (value, ..) = VarOptions {
+        default_value: Some("default".into()),
+        ..Default::default()
+    }
+    .apply(Some("".to_string()));
+    assert_eq!(value, Some("".into()));
+
+    let (value, ..) = VarOptions {
+        default_value: Some("default".into()),
+        ..Default::default()
+    }
+    .apply(Some("test".to_string()));
+    assert_eq!(value, Some("test".into()));
 }
 
 #[test]
-fn test_value_from() {
-    let v = Value::from(None::<String>, None);
-    assert_eq!(v.value, None);
+fn test_var_options_apply_sanitized() {
+    let (value, sanitized) = VarOptions::default().apply(None::<String>);
+    assert_eq!(value, None);
+    assert_eq!(sanitized, None);
 
-    let v = Value::from(Some(String::new()), None);
-    assert_eq!(v.value, Some(String::new()));
-
-    let v = Value::from(Some("test".to_string()), None);
-    assert_eq!(v.value, Some("test".to_string()));
-
-    let v = Value::from(
-        None::<String>,
-        Some(VarOptions {
-            default_value: None,
-            ..Default::default()
-        }),
-    );
-    assert_eq!(v.value, None);
-
-    let v = Value::from(
-        None::<String>,
-        Some(VarOptions {
-            default_value: Some("".into()),
-            ..Default::default()
-        }),
-    );
-    assert_eq!(v.value, Some(String::new()));
-
-    let v = Value::from(
-        None::<String>,
-        Some(VarOptions {
-            default_value: Some("test".into()),
-            ..Default::default()
-        }),
-    );
-    assert_eq!(v.value, Some("test".to_string()));
-
-    let v = Value::from(
-        Some(String::new()),
-        Some(VarOptions {
-            default_value: Some("default".into()),
-            ..Default::default()
-        }),
-    );
-    assert_eq!(v.value, Some(String::new()));
-
-    let v = Value::from(
-        Some("test"),
-        Some(VarOptions {
-            default_value: Some("default".into()),
-            ..Default::default()
-        }),
-    );
-    assert_eq!(v.value, Some("test".to_string()));
-}
-
-impl From<&str> for Value {
-    fn from(value: &str) -> Self {
-        Self {
-            value: Some(value.into()),
-            sanitized: None,
-        }
+    let (value, sanitized) = VarOptions {
+        sanitize: true,
+        ..Default::default()
     }
-}
+    .apply(None::<String>);
+    assert_eq!(value, None);
+    assert_eq!(sanitized, None);
 
-impl From<String> for Value {
-    fn from(value: String) -> Self {
-        Self {
-            value: Some(value),
-            sanitized: None,
-        }
+    let (value, sanitized) = VarOptions {
+        sanitize: true,
+        ..Default::default()
     }
-}
+    .apply(Some("".to_string()));
+    assert_eq!(value, Some("".to_string()));
+    assert_eq!(sanitized, Some("Sanitized".into()));
 
-impl From<&Value> for Option<String> {
-    fn from(value: &Value) -> Self {
-        value
-            .sanitized
-            .as_deref()
-            .map(ToString::to_string)
-            .or_else(|| value.value.clone())
+    let (value, sanitized) = VarOptions {
+        sanitize: true,
+        ..Default::default()
     }
+    .apply(Some("test".to_string()));
+    assert_eq!(value, Some("test".to_string()));
+    assert_eq!(sanitized, Some("Sanitized".into()));
+
+    let (value, sanitized) = VarOptions {
+        sanitize: true,
+        sanitize_value: "*****".into(),
+        ..Default::default()
+    }
+    .apply(None::<String>);
+    assert_eq!(value, None);
+    assert_eq!(sanitized, None);
+
+    let (value, sanitized) = VarOptions {
+        sanitize: true,
+        sanitize_value: "*****".into(),
+        ..Default::default()
+    }
+    .apply(Some("".to_string()));
+    assert_eq!(value, Some("".to_string()));
+    assert_eq!(sanitized, Some("*****".into()));
+
+    let (value, sanitized) = VarOptions {
+        sanitize: true,
+        sanitize_value: "*****".into(),
+        ..Default::default()
+    }
+    .apply(Some("test".to_string()));
+    assert_eq!(value, Some("test".to_string()));
+    assert_eq!(sanitized, Some("*****".into()));
 }
