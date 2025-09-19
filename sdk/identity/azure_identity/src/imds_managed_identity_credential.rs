@@ -5,8 +5,10 @@ use crate::{env::Env, TokenCache, UserAssignedId};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
-    http::{headers::HeaderName, request::Request, Method, StatusCode, Url},
-    http::{ClientOptions, Pipeline},
+    http::{
+        headers::HeaderName, request::Request, ClientOptions, Method, Pipeline,
+        PipelineSendOptions, StatusCode, Url,
+    },
     json::from_json,
     time::OffsetDateTime,
 };
@@ -122,7 +124,17 @@ impl ImdsManagedIdentityCredential {
 
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
-        let rsp = self.pipeline.send(&ctx, &mut req).await?;
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut req,
+                Some(PipelineSendOptions {
+                    skip_checks: true,
+                    ..Default::default()
+                }),
+            )
+            .await?;
 
         if !rsp.status().is_success() {
             match rsp.status() {

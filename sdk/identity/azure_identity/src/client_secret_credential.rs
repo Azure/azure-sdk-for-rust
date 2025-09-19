@@ -5,7 +5,7 @@ use crate::{
     deserialize, get_authority_host, EntraIdErrorResponse, EntraIdTokenResponse, TokenCache,
 };
 use azure_core::credentials::TokenRequestOptions;
-use azure_core::http::StatusCode;
+use azure_core::http::{PipelineSendOptions, StatusCode};
 use azure_core::Result;
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
@@ -109,7 +109,17 @@ impl ClientSecretCredential {
 
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
-        let res = self.pipeline.send(&ctx, &mut req).await?;
+        let res = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut req,
+                Some(PipelineSendOptions {
+                    skip_checks: true,
+                    ..Default::default()
+                }),
+            )
+            .await?;
 
         match res.status() {
             StatusCode::Ok => {

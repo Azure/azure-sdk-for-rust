@@ -66,8 +66,7 @@ impl CosmosPipeline {
         resource_link: ResourceLink,
     ) -> azure_core::Result<BufResponse> {
         let ctx = ctx.with_value(resource_link);
-        let r = self.pipeline.send(&ctx, request).await?;
-        let r = azure_core::http::check_success(r).await?;
+        let r = self.pipeline.send(&ctx, request, None).await?;
         Ok(r)
     }
 
@@ -109,8 +108,7 @@ impl CosmosPipeline {
                     req.insert_header(constants::CONTINUATION, continuation);
                 }
 
-                let resp = pipeline.send(&ctx, &mut req).await?;
-                let resp = azure_core::http::check_success(resp).await?;
+                let resp = pipeline.send(&ctx, &mut req, None).await?;
                 let page = FeedPage::<T>::from_response(resp).await?;
 
                 Ok(page.into())

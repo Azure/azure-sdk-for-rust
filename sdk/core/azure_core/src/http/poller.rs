@@ -292,7 +292,7 @@ where
     ///             .append_pair("api-version", &api_version);
     ///
     ///         let resp = pipeline
-    ///             .send(&Context::new(), &mut req)
+    ///             .send(&Context::new(), &mut req, None)
     ///             .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let bytes = body.collect().await?;

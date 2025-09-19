@@ -223,7 +223,7 @@ impl<P: Page> ItemIterator<P> {
     ///                 .append_pair("api-version", &api_version);
     ///         }
     ///         let resp = pipeline
-    ///           .send(&Context::new(), &mut req)
+    ///           .send(&Context::new(), &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let bytes = body.collect().await?;
@@ -269,7 +269,7 @@ impl<P: Page> ItemIterator<P> {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
-    ///           .send(&Context::new(), &mut req)
+    ///           .send(&Context::new(), &mut req, None)
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-next-continuation")))
@@ -416,7 +416,7 @@ impl<P> PageIterator<P> {
     ///                 .append_pair("api-version", &api_version);
     ///         }
     ///         let resp = pipeline
-    ///           .send(&Context::new(), &mut req)
+    ///           .send(&Context::new(), &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
     ///         let bytes = body.collect().await?;
@@ -453,7 +453,7 @@ impl<P> PageIterator<P> {
     ///             req.insert_header("x-ms-continuation", continuation);
     ///         }
     ///         let resp: Response<ListItemsResult> = pipeline
-    ///           .send(&Context::new(), &mut req)
+    ///           .send(&Context::new(), &mut req, None)
     ///           .await?
     ///           .into();
     ///         Ok(PagerResult::from_response_header(resp, &HeaderName::from_static("x-ms-continuation")))

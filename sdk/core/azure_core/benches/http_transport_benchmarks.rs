@@ -96,7 +96,7 @@ impl TestServiceClient {
 
         let response = self
             .pipeline
-            .send(&options.method_options.context, &mut request)
+            .send(&options.method_options.context, &mut request, None)
             .await?;
         if !response.status().is_success() {
             return Err(azure_core::Error::with_message(

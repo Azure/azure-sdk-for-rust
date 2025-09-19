@@ -18,7 +18,6 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        check_success,
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
         BufResponse, ClientOptions, Method, NoFormat, PageIterator, Pipeline, Request,
@@ -136,8 +135,8 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
+
         Ok(rsp.into())
     }
 
@@ -198,8 +197,8 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
+
         Ok(rsp.into())
     }
 
@@ -246,8 +245,8 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
+
         Ok(rsp.into())
     }
 
@@ -302,8 +301,8 @@ impl BlobServiceClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
+
         Ok(rsp.into())
     }
 
@@ -360,8 +359,8 @@ impl BlobServiceClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(key_info);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
+
         Ok(rsp.into())
     }
 
@@ -430,8 +429,8 @@ impl BlobServiceClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp = pipeline.send(&ctx, &mut request).await?;
-                    let rsp = check_success(rsp).await?;
+                    let rsp = pipeline.send(&ctx, &mut request, None).await?;
+
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListContainersSegmentResponse = xml::read_xml(&bytes)?;
@@ -478,8 +477,8 @@ impl BlobServiceClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(blob_service_properties);
-        let rsp = self.pipeline.send(&ctx, &mut request).await?;
-        let rsp = check_success(rsp).await?;
+        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
+
         Ok(rsp.into())
     }
 }
