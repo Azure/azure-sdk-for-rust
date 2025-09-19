@@ -330,17 +330,47 @@ impl Recording {
 
         let value = self.env(key);
         if self.test_mode == TestMode::Live {
-            return value;
+            return value.or_else(|| Some(options?.default_value?.into_owned()));
         }
 
         match value {
-            None => None,
-            Some(v) if v.is_empty() => None,
+            None => {
+                if let Some(opts) = &options {
+                    if let Some(default) = &opts.default_value {
+                        let default_value = default.to_string();
+                        let final_value = Some(default_value);
+                        let mut variables =
+                            self.variables.write().map_err(write_lock_error).ok()?;
+                        variables.insert(key.into(), Value::from(final_value.as_ref(), options));
+                        return final_value;
+                    }
+                }
+                None
+            }
+            Some(v) if v.is_empty() => {
+                if let Some(opts) = &options {
+                    if let Some(default) = &opts.default_value {
+                        let default_value = default.to_string();
+                        let final_value = Some(default_value);
+                        let mut variables =
+                            self.variables.write().map_err(write_lock_error).ok()?;
+                        variables.insert(key.into(), Value::from(final_value.as_ref(), options));
+                        return final_value;
+                    }
+                }
+                None
+            }
             Some(v) => {
-                let v = Some(v);
+                let final_value = options
+                    .as_ref()
+                    .and_then(|opts| opts.default_value.as_ref())
+                    .map(|default| default.to_string())
+                    .unwrap_or(v);
+
+                let final_value_some = Some(final_value);
                 let mut variables = self.variables.write().map_err(write_lock_error).ok()?;
-                variables.insert(key.into(), Value::from(v.as_ref(), options));
-                v
+                variables.insert(key.into(), Value::from(final_value_some.as_ref(), options));
+                final_value_some
             }
         }
     }
@@ -586,6 +616,9 @@ impl Drop for SkipGuard<'_> {
 /// Options for getting variables from a [`Recording`].
 #[derive(Clone, Debug)]
 pub struct VarOptions {
+    /// The value to return if not already recorded.
+    pub default_value: Option<Cow<'static, str>>,
+
     /// Whether to sanitize the variable value with [`VarOptions::sanitize_value`].
     pub sanitize: bool,
 
@@ -598,6 +631,7 @@ pub struct VarOptions {
 impl Default for VarOptions {
     fn default() -> Self {
         Self {
+            default_value: None,
             sanitize: false,
             sanitize_value: Cow::Borrowed(crate::DEFAULT_SANITIZED_VALUE),
         }
@@ -615,14 +649,71 @@ impl Value {
     where
         S: Into<String>,
     {
+        let VarOptions {
+            default_value,
+            sanitize,
+            sanitize_value,
+        } = options.unwrap_or_default();
+
         Self {
-            value: value.map_or_else(String::new, Into::into),
-            sanitized: match options {
-                Some(options) if options.sanitize => Some(options.sanitize_value.clone()),
-                _ => None,
+            value: value.map_or_else(
+                || default_value.map(|v| v.into_owned()).unwrap_or_default(),
+                Into::into,
+            ),
+            sanitized: match sanitize {
+                true => Some(sanitize_value),
+                false => None,
             },
         }
     }
+}
+
+#[test]
+fn test_value_from() {
+    let v = Value::from(None::<String>, None);
+    assert_eq!(v.value, String::new());
+
+    let v = Value::from(Some(String::new()), None);
+    assert_eq!(v.value, String::new());
+
+    let v = Value::from(Some("test".to_string()), None);
+    assert_eq!(v.value, "test".to_string());
+
+    let v = Value::from(
+        None::<String>,
+        Some(VarOptions {
+            default_value: None,
+            ..Default::default()
+        }),
+    );
+    assert_eq!(v.value, String::new());
+
+    let v = Value::from(
+        None::<String>,
+        Some(VarOptions {
+            default_value: Some("".into()),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(v.value, String::new());
+
+    let v = Value::from(
+        None::<String>,
+        Some(VarOptions {
+            default_value: Some("test".into()),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(v.value, "test".to_string());
+
+    let v = Value::from(
+        Some("foo"),
+        Some(VarOptions {
+            default_value: Some("bar".into()),
+            ..Default::default()
+        }),
+    );
+    assert_eq!(v.value, "foo".to_string());
 }
 
 impl From<&str> for Value {

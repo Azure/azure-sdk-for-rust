@@ -17,7 +17,6 @@ use azure_storage_blob_test::{
 };
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error};
-use tokio::time;
 
 #[recorded::test]
 async fn test_create_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -276,7 +275,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     assert_eq!(proposed_lease_id.clone().to_string(), lease_id);
 
     // Sleep until lease expires
-    time::sleep(std::time::Duration::from_secs(15)).await;
+    tokio::time::sleep(std::time::Duration::from_secs(15)).await;
 
     // Renew Lease
     container_client
@@ -330,15 +329,41 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 #[recorded::test]
 async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
+
+    use azure_core_test::VarOptions;
+    use time::format_description::well_known::Rfc3339;
     let recording = ctx.recording();
     let container_client = get_container_client(recording, false).await?;
     container_client.create_container(None).await?;
 
-    // Set Access Policy w/ Policy Defined
+    let expiry_time_str = (OffsetDateTime::now_utc() + Duration::seconds(10)).format(&Rfc3339)?;
+    let start_time_str = OffsetDateTime::now_utc().format(&Rfc3339)?;
+
+    let expiry_time = recording.var_opt(
+        "expiry_time",
+        Some(VarOptions {
+            default_value: Some(expiry_time_str.clone().into()),
+            ..Default::default()
+        }),
+    );
+
+    let start_time = recording.var_opt(
+        "start_time",
+        Some(VarOptions {
+            default_value: Some(start_time_str.clone().into()),
+            ..Default::default()
+        }),
+    );
+
+    let expiry_time_datetime = OffsetDateTime::parse(&expiry_time.unwrap(), &Rfc3339)?;
+    let start_time_datetime = OffsetDateTime::parse(&start_time.unwrap(), &Rfc3339)?;
+    // let expiry_time_datetime = OffsetDateTime::parse(&expiry_time_str, &Rfc3339)?;
+    // let start_time_datetime = OffsetDateTime::parse(&start_time_str, &Rfc3339)?;
+
     let access_policy = AccessPolicy {
-        expiry: Some(OffsetDateTime::now_utc() + Duration::seconds(10)),
+        expiry: Some(expiry_time_datetime),
         permission: Some("rw".to_string()),
-        start: Some(OffsetDateTime::now_utc()),
+        start: Some(start_time_datetime),
     };
     let signed_identifier = SignedIdentifier {
         access_policy: Some(access_policy),
