@@ -215,7 +215,7 @@ To yank a version (use with caution):
 cargo yank --vers 1.2.4 azure_my_crate
 ```
 
-Note: Yanking does not remove the crate from the index entirely, but prevents new projects from depending on it. Essentially, a yank means that all projects with a Cargo.lock will not break, and any future Cargo.lock files generated will not use the yanked version.
+Note: Yanking does not remove the crate from the index entirely, but prevents new projects from depending on it. Essentially, a yank means that all projects with a `Cargo.lock` will not break, and any future `Cargo.lock` files generated will not use the yanked version.
 
 ### Update overview/conceptual documentation that points to deprecated crates
 
