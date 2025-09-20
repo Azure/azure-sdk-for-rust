@@ -6,6 +6,12 @@
 
 ### Breaking Changes
 
+- Renamed `KeyType::EC` to `KeyType::Ec` to align with guidelines.
+- Renamed `KeyType::RSA` to `KeyType::Rsa` to align with guidelines.
+- Renamed `EncryptionAlgorithm::RSA1_5` to `EncryptionAlgorithm::Rsa1_5` to align with guidelines.
+- Renamed `EncryptionAlgorithm::RsaOAEP256` to `EncryptionAlgorithm::RsaOaep256` to align with guidelines.
+- Renamed several variants in `SignatureAlgorithm` to align with guidelines e.g., `ES256K` to `Es256K`.
+
 ### Bugs Fixed
 
 ### Other Changes
