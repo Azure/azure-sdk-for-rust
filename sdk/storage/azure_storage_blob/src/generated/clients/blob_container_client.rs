@@ -26,12 +26,13 @@ use crate::generated::{
 };
 use azure_core::{
     credentials::TokenCredential,
+    error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        BufResponse, ClientOptions, Method, NoFormat, PageIterator, Pipeline, Request,
-        RequestContent, Response, Url, XmlFormat,
+        BufResponse, ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions,
+        Request, RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -177,7 +178,19 @@ impl BlobContainerClient {
             request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[201],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -251,8 +264,19 @@ impl BlobContainerClient {
             request.insert_header("x-ms-lease-break-period", break_period.to_string());
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[202],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -329,8 +353,19 @@ impl BlobContainerClient {
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-proposed-lease-id", proposed_lease_id);
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -377,8 +412,19 @@ impl BlobContainerClient {
             }
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[201],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -417,8 +463,19 @@ impl BlobContainerClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[202],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -472,8 +529,19 @@ impl BlobContainerClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -540,8 +608,19 @@ impl BlobContainerClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -603,8 +682,19 @@ impl BlobContainerClient {
             request.insert_header("x-ms-client-request-id", client_request_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -693,8 +783,19 @@ impl BlobContainerClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -791,8 +892,18 @@ impl BlobContainerClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp = pipeline.send(&ctx, &mut request, None).await?;
-
+                    let rsp = pipeline
+                        .send(
+                            &ctx,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListBlobsFlatSegmentResponse = xml::read_xml(&bytes)?;
@@ -910,8 +1021,18 @@ impl BlobContainerClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp = pipeline.send(&ctx, &mut request, None).await?;
-
+                    let rsp = pipeline
+                        .send(
+                            &ctx,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let bytes = body.collect().await?;
                     let res: ListBlobsHierarchySegmentResponse = xml::read_xml(&bytes)?;
@@ -995,8 +1116,19 @@ impl BlobContainerClient {
         request.insert_header("x-ms-lease-action", "release");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -1056,8 +1188,19 @@ impl BlobContainerClient {
             request.insert_header("x-ms-source-lease-id", source_lease_id);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -1131,8 +1274,19 @@ impl BlobContainerClient {
         request.insert_header("x-ms-lease-action", "renew");
         request.insert_header("x-ms-lease-id", lease_id);
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -1192,8 +1346,19 @@ impl BlobContainerClient {
             request.insert_header("x-ms-deleted-container-version", deleted_container_version);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[201],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -1271,8 +1436,19 @@ impl BlobContainerClient {
         }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(container_acl);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 
@@ -1314,8 +1490,19 @@ impl BlobContainerClient {
             request.insert_header(format!("x-ms-meta-{k}"), v);
         }
         request.insert_header("x-ms-version", &self.version);
-        let rsp = self.pipeline.send(&ctx, &mut request, None).await?;
-
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
         Ok(rsp.into())
     }
 }

@@ -124,7 +124,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create an EC key.
     let body = CreateKeyParameters {
-        kty: Some(KeyType::EC),
+        kty: Some(KeyType::Ec),
         curve: Some(CurveName::P256),
         ..Default::default()
     };
@@ -296,7 +296,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a key encryption key (KEK) using RSA.
     let body = CreateKeyParameters {
-        kty: Some(KeyType::RSA),
+        kty: Some(KeyType::Rsa),
         key_size: Some(2048),
         ..Default::default()
     };
@@ -313,7 +313,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Wrap the DEK. You'd store the wrapped DEK along with your encrypted data.
     let mut parameters = KeyOperationParameters {
-        algorithm: Some(EncryptionAlgorithm::RsaOAEP256),
+        algorithm: Some(EncryptionAlgorithm::RsaOaep256),
         value: Some(dek.clone()),
         ..Default::default()
     };

@@ -6,6 +6,9 @@
 
 ### Breaking Changes
 
+- Renamed `KeyType::EC` to `KeyType::Ec` to align with guidelines.
+- Renamed `KeyType::RSA` to `KeyType::Rsa` to align with guidelines.
+
 ### Bugs Fixed
 
 ### Other Changes

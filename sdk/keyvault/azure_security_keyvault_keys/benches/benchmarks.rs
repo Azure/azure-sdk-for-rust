@@ -29,7 +29,7 @@ fn key_operations_benchmark(c: &mut Criterion) {
         let credential = credentials::from_env(None).unwrap();
         let client: KeyClient = KeyClient::new(&keyvault_url, credential.clone(), None).unwrap();
         let body = CreateKeyParameters {
-            kty: Some(KeyType::EC),
+            kty: Some(KeyType::Ec),
             curve: Some(CurveName::P256),
             ..Default::default()
         };
@@ -103,7 +103,7 @@ fn key_2901_benchmark_default(c: &mut Criterion) {
         let credential = credentials::from_env(None).unwrap();
         let client: KeyClient = KeyClient::new(&keyvault_url, credential.clone(), None).unwrap();
         let body = CreateKeyParameters {
-            kty: Some(KeyType::RSA),
+            kty: Some(KeyType::Rsa),
             key_size: Some(2048),
             ..Default::default()
         };
@@ -134,7 +134,7 @@ fn key_2901_benchmark_default(c: &mut Criterion) {
     c.bench_function("key_2901_benchmark_default", |b| {
         b.to_async(&rt).iter(|| async {
             let parameters = KeyOperationParameters {
-                algorithm: Some(EncryptionAlgorithm::RsaOAEP256),
+                algorithm: Some(EncryptionAlgorithm::RsaOaep256),
                 value: Some(dek.to_vec()),
                 ..Default::default()
             };
@@ -187,7 +187,7 @@ fn key_2901_benchmark_slow(c: &mut Criterion) {
         let client: KeyClient =
             KeyClient::new(&keyvault_url, credential.clone(), Some(options)).unwrap();
         let body = CreateKeyParameters {
-            kty: Some(KeyType::RSA),
+            kty: Some(KeyType::Rsa),
             key_size: Some(2048),
             ..Default::default()
         };
@@ -218,7 +218,7 @@ fn key_2901_benchmark_slow(c: &mut Criterion) {
     c.bench_function("key_2901_benchmark_slow", |b| {
         b.to_async(&rt).iter(|| async {
             let parameters = KeyOperationParameters {
-                algorithm: Some(EncryptionAlgorithm::RsaOAEP256),
+                algorithm: Some(EncryptionAlgorithm::RsaOaep256),
                 value: Some(dek.to_vec()),
                 ..Default::default()
             };

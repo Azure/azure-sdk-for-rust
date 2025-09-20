@@ -157,7 +157,7 @@ create_enum!(
 if the x-ms-encryption-key header is provided."#]
     EncryptionAlgorithmType,
     #[doc = r#"The AES256 encryption algorithm."#]
-    (AES256, "AES256")
+    (Aes256, "AES256")
 );
 
 create_extensible_enum!(
@@ -305,7 +305,7 @@ create_enum!(
     #[doc = r#"The query request, note only SQL supported"#]
     QueryRequestType,
     #[doc = r#"The SQL request query type."#]
-    (SQL, "SQL")
+    (Sql, "SQL")
 );
 
 create_enum!(
@@ -316,7 +316,7 @@ create_enum!(
     #[doc = r#"The query format type is delimited."#]
     (Delimited, "delimited"),
     #[doc = r#"The query format type is JSON."#]
-    (JSON, "json"),
+    (Json, "json"),
     #[doc = r#"The query format type is Parquet."#]
     (Parquet, "parquet")
 );
@@ -346,15 +346,15 @@ create_enum!(
     #[doc = r#"The SKU types"#]
     SkuName,
     #[doc = r#"The premium LRS SKU."#]
-    (PremiumLRS, "Premium_LRS"),
+    (PremiumLrs, "Premium_LRS"),
     #[doc = r#"The standard GRS SKU."#]
-    (StandardGRS, "Standard_GRS"),
+    (StandardGrs, "Standard_GRS"),
     #[doc = r#"The standard LRS SKU."#]
-    (StandardLRS, "Standard_LRS"),
+    (StandardLrs, "Standard_LRS"),
     #[doc = r#"The standard RAGRS SKU."#]
-    (StandardRAGRS, "Standard_RAGRS"),
+    (StandardRagrs, "Standard_RAGRS"),
     #[doc = r#"The standard ZRS SKU."#]
-    (StandardZRS, "Standard_ZRS")
+    (StandardZrs, "Standard_ZRS")
 );
 
 create_extensible_enum!(

@@ -77,7 +77,7 @@ create_extensible_enum!(
     #[doc = r#"The type of key pair to be used for the certificate."#]
     KeyType,
     #[doc = r#"Elliptic Curve."#]
-    (EC, "EC"),
+    (Ec, "EC"),
     #[doc = r#"Elliptic Curve with a private key which is not exportable from the HSM."#]
     (EcHsm, "EC-HSM"),
     #[doc = r#"Octet sequence (used to represent symmetric keys)."#]
@@ -85,7 +85,7 @@ create_extensible_enum!(
     #[doc = r#"Octet sequence with a private key which is not exportable from the HSM."#]
     (OctHsm, "oct-HSM"),
     #[doc = r#"RSA (https://tools.ietf.org/html/rfc3447)."#]
-    (RSA, "RSA"),
+    (Rsa, "RSA"),
     #[doc = r#"RSA with a private key which is not exportable from the HSM."#]
     (RsaHsm, "RSA-HSM")
 );
@@ -94,7 +94,7 @@ create_extensible_enum!(
     #[doc = r#"Supported usages of a certificate key."#]
     KeyUsageType,
     #[doc = r#"Indicates that the certificate key can be used to sign a certificate revocation list."#]
-    (CRLSign, "cRLSign"),
+    (CRlSign, "cRLSign"),
     #[doc = r#"Indicates that the certificate key can be used for data encryption."#]
     (DataEncipherment, "dataEncipherment"),
     #[doc = r#"Indicates that the certificate key can be used for decryption only."#]

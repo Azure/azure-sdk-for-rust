@@ -34,7 +34,7 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
 
     // Create an RSA key.
     let body = CreateKeyParameters {
-        kty: Some(KeyType::RSA),
+        kty: Some(KeyType::Rsa),
         key_size: Some(2048),
         ..Default::default()
     };
@@ -78,7 +78,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
 
     // Create an EC key.
     let body = CreateKeyParameters {
-        kty: Some(KeyType::EC),
+        kty: Some(KeyType::Ec),
         curve: Some(CurveName::P256),
         ..Default::default()
     };
@@ -179,7 +179,7 @@ async fn purge_key(ctx: TestContext) -> Result<()> {
 
     // Create an RSA key.
     let body = CreateKeyParameters {
-        kty: Some(KeyType::RSA),
+        kty: Some(KeyType::Rsa),
         key_size: Some(2048),
         ..Default::default()
     };
@@ -237,7 +237,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
 
     // Create an RSA key.
     let body = CreateKeyParameters {
-        kty: Some(KeyType::RSA),
+        kty: Some(KeyType::Rsa),
         key_size: Some(2048),
         ..Default::default()
     };
@@ -254,7 +254,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     // Encrypt plaintext.
     let plaintext = b"plaintext".to_vec();
     let mut parameters = KeyOperationParameters {
-        algorithm: Some(EncryptionAlgorithm::RsaOAEP256),
+        algorithm: Some(EncryptionAlgorithm::RsaOaep256),
         value: Some(plaintext.clone()),
         ..Default::default()
     };
@@ -308,13 +308,13 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
 
     // Create an EC key.
     let body = CreateKeyParameters {
-        kty: Some(KeyType::EC),
+        kty: Some(KeyType::Ec),
         curve: Some(CurveName::P256),
         ..Default::default()
     };
 
     const NAME: &str = "sign-verify";
-    const ALG: Option<SignatureAlgorithm> = Some(SignatureAlgorithm::ES256);
+    const ALG: Option<SignatureAlgorithm> = Some(SignatureAlgorithm::Es256);
 
     let key = client
         .create_key(NAME, body.try_into()?, None)
@@ -383,13 +383,13 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
 
     // Create a KEK using RSA.
     let body = CreateKeyParameters {
-        kty: Some(KeyType::RSA),
+        kty: Some(KeyType::Rsa),
         key_size: Some(2048),
         ..Default::default()
     };
 
     const NAME: &str = "wrap-key-unwrap-key";
-    const ALG: Option<EncryptionAlgorithm> = Some(EncryptionAlgorithm::RsaOAEP256);
+    const ALG: Option<EncryptionAlgorithm> = Some(EncryptionAlgorithm::RsaOaep256);
 
     let key = client
         .create_key(NAME, body.try_into()?, None)

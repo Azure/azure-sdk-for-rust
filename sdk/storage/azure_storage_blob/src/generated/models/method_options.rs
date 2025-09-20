@@ -1343,6 +1343,7 @@ pub struct BlobContainerClientListBlobFlatSegmentOptions<'a> {
 }
 
 impl BlobContainerClientListBlobFlatSegmentOptions<'_> {
+    /// Transforms this [`BlobContainerClientListBlobFlatSegmentOptions`] into a new `BlobContainerClientListBlobFlatSegmentOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> BlobContainerClientListBlobFlatSegmentOptions<'static> {
         BlobContainerClientListBlobFlatSegmentOptions {
             client_request_id: self.client_request_id,
@@ -1388,6 +1389,7 @@ pub struct BlobContainerClientListBlobHierarchySegmentOptions<'a> {
 }
 
 impl BlobContainerClientListBlobHierarchySegmentOptions<'_> {
+    /// Transforms this [`BlobContainerClientListBlobHierarchySegmentOptions`] into a new `BlobContainerClientListBlobHierarchySegmentOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> BlobContainerClientListBlobHierarchySegmentOptions<'static> {
         BlobContainerClientListBlobHierarchySegmentOptions {
             client_request_id: self.client_request_id,
@@ -1628,6 +1630,7 @@ pub struct BlobServiceClientListContainersSegmentOptions<'a> {
 }
 
 impl BlobServiceClientListContainersSegmentOptions<'_> {
+    /// Transforms this [`BlobServiceClientListContainersSegmentOptions`] into a new `BlobServiceClientListContainersSegmentOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> BlobServiceClientListContainersSegmentOptions<'static> {
         BlobServiceClientListContainersSegmentOptions {
             client_request_id: self.client_request_id,
