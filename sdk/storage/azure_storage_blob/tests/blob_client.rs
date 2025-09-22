@@ -486,37 +486,29 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 #[recorded::test]
 async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
-    println!("Top of Test");
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
 
     // Act
-    let response = blob_client.get_properties(None).await;
+    let response = blob_client.download(None).await;
     let error_response = response.unwrap_err();
-    println!("Error debug print: {:?}", error_response);
-
     let error_kind = error_response.kind();
+    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
 
-    println!("Before Match");
+    println!("**[BEFORE Matching ErrorKind Type]**");
     // Match out of the error_kind struct
     if let ErrorKind::HttpResponse {
-        raw_response: Some(inner_raw_response),
+        status,
+        error_code,
+        raw_response,
         ..
     } = error_kind
     {
-        println!("Inside of Match");
-        let status = inner_raw_response.status();
-        let body = inner_raw_response.body(); // Expected to be empty
-        let headers = inner_raw_response.headers();
-
-        println!("Status Code: {}", status);
-        for (key, value) in headers.iter() {
-            println!("Header: {} = {}", key.as_str(), value.as_str());
-        }
-        println!("Body: {:?}", body);
+        println!("Status code:{}", status);
+        println!("Error code:{}", error_code.clone().unwrap());
+        println!("Raw response:{:?}", raw_response.clone().unwrap());
     }
-
-    println!("Bottom of Test");
+    println!("**[AFTER Matching ErrorKind Type]**");
     Ok(())
 }
