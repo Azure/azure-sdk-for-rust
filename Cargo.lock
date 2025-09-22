@@ -172,6 +172,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
+name = "azure_canary"
+version = "0.2.0"
+dependencies = [
+ "azure_canary_core",
+ "serde",
+]
+
+[[package]]
+name = "azure_canary_core"
+version = "0.2.0"
+dependencies = [
+ "azure_canary",
+]
+
+[[package]]
 name = "azure_core"
 version = "0.29.0"
 dependencies = [
@@ -513,21 +528,6 @@ dependencies = [
 [[package]]
 name = "azure_storage_common"
 version = "0.1.0"
-
-[[package]]
-name = "azure_template"
-version = "0.2.0"
-dependencies = [
- "azure_template_core",
- "serde",
-]
-
-[[package]]
-name = "azure_template_core"
-version = "0.2.0"
-dependencies = [
- "azure_template",
-]
 
 [[package]]
 name = "backtrace"

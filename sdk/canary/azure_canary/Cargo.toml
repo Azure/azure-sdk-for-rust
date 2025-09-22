@@ -1,5 +1,5 @@
 [package]
-name = "azure_template"
+name = "azure_canary"
 version = "0.2.0"
 description = "Template crate for Azure SDK pipeline testing"
 authors.workspace = true
@@ -9,7 +9,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-azure_template_core = { path = "../azure_template_core", version = "0.2.0" }
+azure_canary_core = { path = "../azure_canary_core", version = "0.2.0" }
 serde = { version = "1", features = ["derive"] }
 
 [lints]

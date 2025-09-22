@@ -15,7 +15,7 @@ extends:
   parameters:
     ServiceDirectory: template
     Artifacts:
-    - name: azure_template_core
+    - name: azure_canary_core
       safeName: AzureTemplateCore
-    - name: azure_template
+    - name: azure_canary
       safeName: AzureTemplate

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use azure_template_core::NumericCore;
+pub use azure_canary_core::NumericCore;
 
 // Example modules organized by Rust concepts
 pub mod constant_example;
