@@ -259,7 +259,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
             ..Default::default()
         }),
         key_properties: Some(KeyProperties {
-            key_type: Some(KeyType::EC),
+            key_type: Some(KeyType::Ec),
             curve: Some(CurveName::P256),
             ..Default::default()
         }),
@@ -293,7 +293,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     let digest = sha256(JWT).to_vec();
 
     let body = SignParameters {
-        algorithm: Some(SignatureAlgorithm::ES256),
+        algorithm: Some(SignatureAlgorithm::Es256),
         value: Some(digest),
     };
     let signature = key_client
