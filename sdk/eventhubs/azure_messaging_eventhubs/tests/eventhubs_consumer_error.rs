@@ -33,6 +33,8 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
                 )
                 .await?;
         }
+        producer.close().await?;
+        println!("Producer closed");
     }
 
     let consumer = ConsumerClient::builder()
@@ -67,22 +69,28 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
     println!("Created receiver");
 
     // Create a stream of events from the receiver
-    let mut receive_stream = receiver.stream_events();
+    {
+        let mut receive_stream = receiver.stream_events();
 
-    println!("Created receive stream");
+        println!("Created receive stream");
 
-    // Read 10 events
-    let mut count = 0;
-    while let Some(event) = receive_stream.next().await {
-        count += 1;
-        if count > 10 {
-            break;
+        // Read 10 events
+        let mut count = 0;
+        while let Some(event) = receive_stream.next().await {
+            count += 1;
+            if count > 10 {
+                break;
+            }
+
+            let event = event?;
+            println!("Partition ID: {:?}", event.partition_key());
+            println!("Event offset: {:?}", event.offset());
         }
-
-        let event = event?;
-        println!("Partition ID: {:?}", event.partition_key());
-        println!("Event offset: {:?}", event.offset());
+        println!("Read {} events", count);
     }
+
+    receiver.close().await?;
+    println!("Receiver closed");
 
     // Error
     match consumer.close().await {
@@ -90,7 +98,7 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
             println!("Consumer closed successfully");
         }
         Err(e) => {
-            eprintln!("Error closing consumer: {}", e);
+            panic!("Error closing consumer: {}", e);
         }
     }
 

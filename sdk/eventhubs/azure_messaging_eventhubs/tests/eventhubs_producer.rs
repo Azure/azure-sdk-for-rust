@@ -138,6 +138,8 @@ async fn get_partition_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
         info!("AMQP error: {:?}", amqp_error);
     }
 
+    client.close().await?;
+
     Ok(())
 }
 

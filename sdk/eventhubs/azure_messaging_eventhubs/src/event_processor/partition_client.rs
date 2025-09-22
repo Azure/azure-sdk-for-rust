@@ -11,7 +11,7 @@ use azure_core::Result;
 use futures::Stream;
 use std::pin::Pin;
 use std::sync::{Arc, OnceLock, Weak};
-use tracing::warn;
+use tracing::{debug, warn};
 
 /// Represents a client for interacting with a specific partition in Event Hubs.
 ///
@@ -99,14 +99,19 @@ impl PartitionClient {
     pub async fn close(mut self) -> Result<()> {
         // Detach the event receiver
         if let Some(event_receiver) = self.event_receiver.take() {
+            debug!("Closing event receiver for partition {}", self.partition_id);
             event_receiver.close().await?;
+        } else {
+            debug!("Event receiver not set for partition {}", self.partition_id);
         }
         // Remove the partition client from the processor.
         let consumers = self.consumers.upgrade();
         if let Some(consumers) = consumers {
+            debug!(
+                "Removing client for partition {} from the consumers map.",
+                self.partition_id
+            );
             consumers.remove_partition_client(&self.partition_id)?;
-        } else {
-            warn!("Consumers have been dropped, unable to remove partition client.");
         }
         Ok(())
     }
@@ -193,5 +198,14 @@ impl PartitionClient {
             )
         })?;
         Ok(())
+    }
+}
+
+impl Drop for PartitionClient {
+    fn drop(&mut self) {
+        debug!(
+            "Dropping PartitionClient for partition {}",
+            self.partition_id
+        );
     }
 }
