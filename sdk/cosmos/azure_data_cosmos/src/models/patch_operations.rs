@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 ///     .with_add("/color", "silver")?
 ///     .with_move("/from", "/to")?;
 /// # assert_eq!(patch, PatchDocument {
+/// #     condition: None,
 /// #     operations: vec![
 /// #         PatchOperation::Add {
 /// #             path: "/color".into(),
@@ -39,10 +40,20 @@ use serde::{Deserialize, Serialize};
 /// ```
 #[derive(Default, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PatchDocument {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub condition: Option<String>,
     pub operations: Vec<PatchOperation>,
 }
 
 impl PatchDocument {
+    /// Adds a condition, which determines whether or not the patch should be applied.
+    ///
+    /// The value is an SQL-like filter predicate as a string. For example, `from c where c.taskNum = 3`.
+    pub fn with_condition(mut self, condition: impl Into<String>) -> Self {
+        self.condition = Some(condition.into());
+        self
+    }
+
     /// Adds a new "add" operation to the patch document.
     ///
     /// See the [type documentation](PatchDocument) for more information on patch operations.
