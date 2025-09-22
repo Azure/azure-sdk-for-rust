@@ -1,5 +1,27 @@
 # Release History
 
+## 0.8.0 (Unreleased)
+
+### Features Added
+
+- Added `Error::with_error_fn()`.
+
+### Breaking Changes
+
+- Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)"
+  - Renamed `Error::full()` to `Error::with_error()`.
+  - Renamed `Error::with_message()` to `Error::with_message_fn()`.
+  - Renamed `Error::message()` to `Error::with_message()`.
+  - Renamed `Error::with_context()` to `Error::with_context_fn()`.
+  - Renamed `Error::context()` to `Error::with_context()`.
+  - Renamed `ResultExt::map_kind()` to `ResultExt::with_kind()`.
+  - Renamed `ResultExt::with_context()` to `ResultExt::with_context_fn()`.
+  - Renamed `ResultExt::context()` to `ResultExt::with_context()`.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.7.0 (2025-09-11)
 
 ### Other Changes

@@ -134,7 +134,7 @@ impl RecoverableConnection {
     #[cfg(test)]
     pub(crate) fn force_error(&self, error: azure_core::Error) -> Result<()> {
         let mut err = self.forced_error.lock().map_err(|e| {
-            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
         *err = Some(error);
         Ok(())
@@ -451,7 +451,7 @@ impl RecoverableConnection {
             }
             _ => {
                 warn!("Recover action {reason:?} should already have been handled.");
-                return Err(azure_core::Error::message(
+                return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     "Unknown error recovery action",
                 ));
@@ -500,7 +500,7 @@ impl RecoverableConnection {
             AmqpErrorKind::AmqpDescribedError(described_error) => {
                 debug!("AMQP described error: {:?}", described_error);
                 if matches!(
-                    described_error.condition(),
+                    described_error.condition,
                     AmqpErrorCondition::ResourceLimitExceeded
                         | AmqpErrorCondition::ConnectionFramingError
                         | AmqpErrorCondition::LinkStolen
@@ -511,7 +511,7 @@ impl RecoverableConnection {
                     debug!("AMQP described error can be retried: {:?}", described_error);
                     ErrorRecoveryAction::RetryAction
                 } else if matches!(
-                    described_error.condition(),
+                    described_error.condition,
                     AmqpErrorCondition::EntityDisabledError
                 ) {
                     debug!(

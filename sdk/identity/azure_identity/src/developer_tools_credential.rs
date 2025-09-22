@@ -39,6 +39,10 @@ pub struct DeveloperToolsCredential {
 }
 
 impl DeveloperToolsCredential {
+    /// Creates a new instance of `DeveloperToolsCredential`.
+    ///
+    /// # Arguments
+    /// * `options`: Options for configuring the credential. If `None` is provided, default options will be used.
     pub fn new(
         options: Option<DeveloperToolsCredentialOptions>,
     ) -> azure_core::Result<Arc<DeveloperToolsCredential>> {
@@ -60,7 +64,7 @@ impl DeveloperToolsCredential {
     }
 
     #[cfg(test)]
-    pub fn new_with_sources(
+    pub(crate) fn new_with_sources(
         sources: Vec<Arc<dyn TokenCredential>>,
     ) -> azure_core::Result<Arc<DeveloperToolsCredential>> {
         Ok(Arc::new(Self {
@@ -102,7 +106,7 @@ impl TokenCredential for DeveloperToolsCredential {
                 Err(error) => errors.push(error),
             }
         }
-        Err(Error::with_message(ErrorKind::Credential, || {
+        Err(Error::with_message_fn(ErrorKind::Credential, || {
             format!(
                 "Multiple errors were encountered while attempting to authenticate:\n{}",
                 format_aggregate_error(&errors)
@@ -171,7 +175,7 @@ mod tests {
                     expires_on: (SystemTime::now() + Duration::from_secs(3600)).into(),
                 })
             } else {
-                Err(Error::with_message(ErrorKind::Credential, || {
+                Err(Error::with_message_fn(ErrorKind::Credential, || {
                     format!("{} failed", self.id)
                 }))
             }

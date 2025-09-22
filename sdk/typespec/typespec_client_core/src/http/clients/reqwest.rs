@@ -52,7 +52,7 @@ impl HttpClient for ::reqwest::Client {
                 .body(::reqwest::Body::wrap_stream(seekable_stream))
                 .build(),
         }
-        .context(ErrorKind::Other, "failed to build `reqwest` request")?;
+        .with_context(ErrorKind::Other, "failed to build `reqwest` request")?;
 
         debug!(
             "performing request {method} '{}' with `reqwest`",
@@ -61,13 +61,13 @@ impl HttpClient for ::reqwest::Client {
         let rsp = self
             .execute(reqwest_request)
             .await
-            .context(ErrorKind::Io, "failed to execute `reqwest` request")?;
+            .with_context(ErrorKind::Io, "failed to execute `reqwest` request")?;
 
         let status = rsp.status();
         let headers = to_headers(rsp.headers());
 
         let body: PinnedStream = Box::pin(rsp.bytes_stream().map_err(|error| {
-            Error::full(
+            Error::with_error(
                 ErrorKind::Io,
                 error,
                 "error converting `reqwest` request into a byte stream",

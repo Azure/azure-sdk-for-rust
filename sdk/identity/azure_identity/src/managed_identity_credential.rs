@@ -41,6 +41,11 @@ pub struct ManagedIdentityCredentialOptions {
 }
 
 impl ManagedIdentityCredential {
+    /// Creates a new instance of `ManagedIdentityCredential`.
+    ///
+    /// # Arguments
+    /// * `options`: Options for configuring the credential. If `None` is provided, default options will be used.
+    ///
     pub fn new(options: Option<ManagedIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>> {
         let options = options.unwrap_or_default();
         #[cfg(test)]
@@ -59,7 +64,7 @@ impl ManagedIdentityCredential {
                 // App Service does accept resource IDs, however this crate's current implementation sends
                 // them in the wrong query parameter: https://github.com/Azure/azure-sdk-for-rust/issues/2407
                 if let ImdsId::MsiResId(_) = id {
-                    return Err(azure_core::Error::with_message(
+                    return Err(azure_core::Error::with_message_fn(
                         azure_core::error::ErrorKind::Credential,
                         || {
                             "User-assigned resource IDs aren't supported for App Service. Use a client or object ID instead.".to_string()
@@ -72,7 +77,7 @@ impl ManagedIdentityCredential {
                 VirtualMachineManagedIdentityCredential::new(id, options.client_options, env)?
             }
             _ => {
-                return Err(azure_core::Error::with_message(
+                return Err(azure_core::Error::with_message_fn(
                     azure_core::error::ErrorKind::Credential,
                     || format!("{} managed identity isn't supported", source.as_str()),
                 ));
@@ -94,7 +99,7 @@ impl TokenCredential for ManagedIdentityCredential {
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.len() != 1 {
-            return Err(azure_core::Error::with_message(
+            return Err(azure_core::Error::with_message_fn(
                 azure_core::error::ErrorKind::Credential,
                 || "ManagedIdentityCredential requires exactly one scope".to_string(),
             ));
@@ -159,7 +164,7 @@ mod tests {
     use crate::env::Env;
     use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
     use azure_core::http::headers::Headers;
-    use azure_core::http::{BufResponse, Method, Request, StatusCode, TransportOptions, Url};
+    use azure_core::http::{BufResponse, Method, Request, StatusCode, Transport, Url};
     use azure_core::time::OffsetDateTime;
     use azure_core::Bytes;
     use azure_core_test::{http::MockHttpClient, recorded};
@@ -258,7 +263,7 @@ mod tests {
         let mut options = options.unwrap_or_default();
         options.env = env;
         options.client_options = ClientOptions {
-            transport: Some(TransportOptions::new(Arc::new(mock_client))),
+            transport: Some(Transport::new(Arc::new(mock_client))),
             ..Default::default()
         };
         let cred = ManagedIdentityCredential::new(Some(options)).expect("credential");

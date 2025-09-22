@@ -64,20 +64,20 @@ impl WorkloadIdentityCredential {
         let env = Env::default();
         let tenant_id = match options.tenant_id {
             Some(id) => id,
-            None => env.var(AZURE_TENANT_ID).with_context(ErrorKind::Credential, || {
+            None => env.var(AZURE_TENANT_ID).with_context_fn(ErrorKind::Credential, || {
                 "no tenant ID specified. Check pod configuration or set tenant_id in the options"
             })?
         };
         crate::validate_tenant_id(&tenant_id)?;
         let path = match options.token_file_path {
             Some(path) => path,
-            None => env.var(AZURE_FEDERATED_TOKEN_FILE).map(PathBuf::from).with_context(ErrorKind::Credential, || {
+            None => env.var(AZURE_FEDERATED_TOKEN_FILE).map(PathBuf::from).with_context_fn(ErrorKind::Credential, || {
                 "no token file specified. Check pod configuration or set token_file_path in the options"
             })?
         };
         let client_id = match options.client_id {
             Some(id) => id,
-            None => env.var(AZURE_CLIENT_ID).with_context(ErrorKind::Credential, || {
+            None => env.var(AZURE_CLIENT_ID).with_context_fn(ErrorKind::Credential, || {
                 "no client id specified. Check pod configuration or set client_id in the options"
             })?
         };
@@ -101,7 +101,10 @@ impl TokenCredential for WorkloadIdentityCredential {
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
         if scopes.is_empty() {
-            return Err(Error::message(ErrorKind::Credential, "no scopes specified"));
+            return Err(Error::with_message(
+                ErrorKind::Credential,
+                "no scopes specified",
+            ));
         }
         self.0.get_token(scopes, options).await
     }
@@ -122,12 +125,13 @@ struct FileCache {
 impl Token {
     fn new(path: PathBuf) -> azure_core::Result<Self> {
         let last_read = Instant::now();
-        let token = std::fs::read_to_string(&path).with_context(ErrorKind::Credential, || {
-            format!(
-                "failed to read federated token from file {}",
-                path.display()
-            )
-        })?;
+        let token =
+            std::fs::read_to_string(&path).with_context_fn(ErrorKind::Credential, || {
+                format!(
+                    "failed to read federated token from file {}",
+                    path.display()
+                )
+            })?;
 
         Ok(Self {
             path,
@@ -152,18 +156,19 @@ impl ClientAssertion for Token {
             let path = self.path.clone();
             let (tx, rx) = oneshot::channel();
             thread::spawn(move || {
-                let token = fs::read_to_string(&path).with_context(ErrorKind::Credential, || {
-                    format!(
-                        "failed to read federated token from file {}",
-                        path.display()
-                    )
-                });
+                let token =
+                    fs::read_to_string(&path).with_context_fn(ErrorKind::Credential, || {
+                        format!(
+                            "failed to read federated token from file {}",
+                            path.display()
+                        )
+                    });
                 tx.send(token)
             });
 
             let mut write_cache = RwLockUpgradableReadGuard::upgrade(cache).await;
             let token = rx.await.map_err(|err| {
-                azure_core::Error::full(ErrorKind::Io, err, "canceled reading certificate")
+                azure_core::Error::with_error(ErrorKind::Io, err, "canceled reading certificate")
             })??;
 
             write_cache.token = Secret::new(token);
@@ -186,8 +191,8 @@ mod tests {
     };
     use azure_core::{
         http::{
-            headers::Headers, BufResponse, ClientOptions, Method, Request, StatusCode,
-            TransportOptions, Url,
+            headers::Headers, BufResponse, ClientOptions, Method, Request, StatusCode, Transport,
+            Url,
         },
         Bytes,
     };
@@ -242,7 +247,7 @@ mod tests {
         let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock))),
+                    transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -345,7 +350,7 @@ mod tests {
             token_file_path: Some(right_file.path.clone()),
             credential_options: ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock))),
+                    transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()

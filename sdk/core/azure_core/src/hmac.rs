@@ -27,7 +27,7 @@ pub fn hmac_sha256(data: &str, key: &Secret) -> crate::Result<String> {
     use sha2::Sha256;
     let key = base64::decode(key.secret())?;
     let mut hmac = Hmac::<Sha256>::new_from_slice(&key)
-        .with_context(ErrorKind::DataConversion, || {
+        .with_context_fn(ErrorKind::DataConversion, || {
             "failed to create hmac from key"
         })?;
     hmac.update(data.as_bytes());
@@ -58,7 +58,7 @@ pub fn hmac_sha256(data: &str, key: &Secret) -> crate::Result<String> {
         signer.update(data.as_bytes())?;
         signer.sign_to_vec()
     }()
-    .with_context(ErrorKind::DataConversion, || {
+    .with_context_fn(ErrorKind::DataConversion, || {
         "failed to create hmac from key"
     })?;
     Ok(base64::encode(signature))

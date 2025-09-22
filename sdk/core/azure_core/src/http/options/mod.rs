@@ -9,7 +9,7 @@ use std::sync::Arc;
 use typespec_client_core::http::policies::Policy;
 pub use typespec_client_core::http::{
     ClientMethodOptions, ExponentialRetryOptions, FixedRetryOptions, LoggingOptions,
-    PipelineOptions, RetryOptions, TransportOptions,
+    PipelineOptions, RetryOptions, Transport,
 };
 pub use user_agent::*;
 
@@ -23,19 +23,19 @@ pub struct ClientOptions {
     pub per_try_policies: Vec<Arc<dyn Policy>>,
 
     /// Retry options.
-    pub retry: Option<RetryOptions>,
+    pub retry: RetryOptions,
 
     /// Transport options.
-    pub transport: Option<TransportOptions>,
+    pub transport: Option<Transport>,
 
     /// User-Agent telemetry options.
-    pub user_agent: Option<UserAgentOptions>,
+    pub user_agent: UserAgentOptions,
 
     /// Options for request instrumentation, such as distributed tracing.
     ///
     /// If not specified, defaults to no instrumentation.
     ///
-    pub instrumentation: Option<InstrumentationOptions>,
+    pub instrumentation: InstrumentationOptions,
 
     /// Logging options
     ///
@@ -65,8 +65,8 @@ impl ClientOptions {
 
         (
             CoreClientOptions {
-                user_agent: self.user_agent.unwrap_or_default(),
-                instrumentation: self.instrumentation.unwrap_or_default(),
+                user_agent: self.user_agent,
+                instrumentation: self.instrumentation,
             },
             options,
         )

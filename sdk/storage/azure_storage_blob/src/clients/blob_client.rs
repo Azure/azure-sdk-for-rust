@@ -17,16 +17,17 @@ use crate::{
         BlobClientReleaseLeaseOptions, BlobClientRenewLeaseOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
         BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
-        BlockListType, BlockLookupList,
+        BlockListType, BlockLookupList, StorageErrorCode,
     },
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
 };
 use azure_core::{
     credentials::TokenCredential,
+    error::ErrorKind,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        JsonFormat, NoFormat, RequestContent, Response, Url, XmlFormat,
+        JsonFormat, NoFormat, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
     Bytes, Result,
 };
@@ -354,5 +355,25 @@ impl BlobClient {
         options: Option<BlobClientGetAccountInfoOptions<'_>>,
     ) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>> {
         self.client.get_account_info(options).await
+    }
+
+    /// Returns `true` if the blob exists, `false` if the blob does not exist, and propagates all other errors.
+    pub async fn exists(&self) -> Result<bool> {
+        match self.client.get_properties(None).await {
+            Ok(_) => Ok(true),
+            Err(e) if e.http_status() == Some(StatusCode::NotFound) => match e.kind() {
+                ErrorKind::HttpResponse {
+                    error_code: Some(error_code),
+                    ..
+                } if error_code == StorageErrorCode::BlobNotFound.as_ref()
+                    || error_code == StorageErrorCode::ContainerNotFound.as_ref() =>
+                {
+                    Ok(false)
+                }
+                // Propagate all other error types.
+                _ => Err(e),
+            },
+            Err(e) => Err(e),
+        }
     }
 }

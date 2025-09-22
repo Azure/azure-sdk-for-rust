@@ -1,5 +1,18 @@
 # Release History
 
+## 0.7.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Renamed `KeyType::EC` to `KeyType::Ec` to align with guidelines.
+- Renamed `KeyType::RSA` to `KeyType::Rsa` to align with guidelines.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.6.0 (2025-09-16)
 
 ### Features Added

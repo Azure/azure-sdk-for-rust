@@ -181,7 +181,7 @@ mod tests {
             _request: &mut Request,
             _next: &[Arc<dyn Policy>],
         ) -> PolicyResult {
-            Err(crate::Error::message(
+            Err(crate::Error::with_message(
                 crate::error::ErrorKind::Other,
                 "Test error",
             ))

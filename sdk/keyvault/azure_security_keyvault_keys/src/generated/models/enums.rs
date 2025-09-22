@@ -99,16 +99,16 @@ create_extensible_enum!(
 using RSA_OAEP_256 or stronger algorithms for enhanced security. Microsoft does *not* recommend RSA_1_5, which is included
 solely for backwards compatibility. Cryptographic standards no longer consider RSA with the PKCS#1 v1.5 padding scheme
 secure for encryption."#]
-    (RSA1_5, "RSA1_5"),
-    #[doc = r#"RSAES using Optimal Asymmetric Encryption Padding with a hash function of SHA-256 and a mask generation function of MGF1
-with SHA-256."#]
-    (RsaOAEP256, "RSA-OAEP-256"),
+    (Rsa1_5, "RSA1_5"),
     #[doc = r#"[Not recommended] RSAES using Optimal Asymmetric Encryption Padding (OAEP), as described in <https://tools.ietf.org/html/rfc3447>,
 with the default parameters specified by RFC 3447 in Section A.2.1. Those default parameters are using a hash function
 of SHA-1 and a mask generation function of MGF1 with SHA-1. Microsoft recommends using RSA_OAEP_256 or stronger algorithms
 for enhanced security. Microsoft does *not* recommend RSA_OAEP, which is included solely for backwards compatibility.
 RSA_OAEP utilizes SHA1, which has known collision problems."#]
-    (RsaOaep, "RSA-OAEP")
+    (RsaOaep, "RSA-OAEP"),
+    #[doc = r#"RSAES using Optimal Asymmetric Encryption Padding with a hash function of SHA-256 and a mask generation function of MGF1
+with SHA-256."#]
+    (RsaOaep256, "RSA-OAEP-256")
 );
 
 create_extensible_enum!(
@@ -156,7 +156,7 @@ create_extensible_enum!(
     #[doc = r#"JsonWebKey Key Type (kty), as defined in <https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40>."#]
     KeyType,
     #[doc = r#"Elliptic Curve."#]
-    (EC, "EC"),
+    (Ec, "EC"),
     #[doc = r#"Elliptic Curve with a private key which is stored in the HSM."#]
     (EcHsm, "EC-HSM"),
     #[doc = r#"Octet sequence (used to represent symmetric keys)"#]
@@ -164,7 +164,7 @@ create_extensible_enum!(
     #[doc = r#"Octet sequence (used to represent symmetric keys) which is stored the HSM."#]
     (OctHsm, "oct-HSM"),
     #[doc = r#"RSA (https://tools.ietf.org/html/rfc3447)"#]
-    (RSA, "RSA"),
+    (Rsa, "RSA"),
     #[doc = r#"RSA with a private key which is stored in the HSM."#]
     (RsaHsm, "RSA-HSM")
 );
@@ -173,31 +173,31 @@ create_extensible_enum!(
     #[doc = r#"The signing/verification algorithm identifier. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm."#]
     SignatureAlgorithm,
     #[doc = r#"ECDSA using P-256 and SHA-256, as described in <https://tools.ietf.org/html/rfc7518>."#]
-    (ES256, "ES256"),
+    (Es256, "ES256"),
     #[doc = r#"ECDSA using P-256K and SHA-256, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (ES256K, "ES256K"),
+    (Es256K, "ES256K"),
     #[doc = r#"ECDSA using P-384 and SHA-384, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (ES384, "ES384"),
+    (Es384, "ES384"),
     #[doc = r#"ECDSA using P-521 and SHA-512, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (ES512, "ES512"),
+    (Es512, "ES512"),
     #[doc = r#"HMAC using SHA-256, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (HS256, "HS256"),
+    (Hs256, "HS256"),
     #[doc = r#"HMAC using SHA-384, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (HS384, "HS384"),
+    (Hs384, "HS384"),
     #[doc = r#"HMAC using SHA-512, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (HS512, "HS512"),
+    (Hs512, "HS512"),
     #[doc = r#"RSASSA-PSS using SHA-256 and MGF1 with SHA-256, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (PS256, "PS256"),
+    (Ps256, "PS256"),
     #[doc = r#"RSASSA-PSS using SHA-384 and MGF1 with SHA-384, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (PS384, "PS384"),
+    (Ps384, "PS384"),
     #[doc = r#"RSASSA-PSS using SHA-512 and MGF1 with SHA-512, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (PS512, "PS512"),
+    (Ps512, "PS512"),
     #[doc = r#"RSASSA-PKCS1-v1_5 using SHA-256, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (RS256, "RS256"),
+    (Rs256, "RS256"),
     #[doc = r#"RSASSA-PKCS1-v1_5 using SHA-384, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (RS384, "RS384"),
+    (Rs384, "RS384"),
     #[doc = r#"RSASSA-PKCS1-v1_5 using SHA-512, as described in <https://tools.ietf.org/html/rfc7518>"#]
-    (RS512, "RS512"),
+    (Rs512, "RS512"),
     #[doc = r#"Reserved"#]
-    (RSNULL, "RSNULL")
+    (Rsnull, "RSNULL")
 );

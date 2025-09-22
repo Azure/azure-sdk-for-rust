@@ -65,7 +65,7 @@ impl TestServiceClientWithMacros {
         let options = options.unwrap_or_default();
         let mut endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 format!("{endpoint} must use http(s)"),
             ));
@@ -106,10 +106,10 @@ impl TestServiceClientWithMacros {
 
         let response = self
             .pipeline
-            .send(&options.method_options.context, &mut request)
+            .send(&options.method_options.context, &mut request, None)
             .await?;
         if !response.status().is_success() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::HttpResponse {
                     status: response.status(),
                     error_code: None,
@@ -157,10 +157,10 @@ impl TestServiceClientWithMacros {
 
         let response = self
             .pipeline
-            .send(&options.method_options.context, &mut request)
+            .send(&options.method_options.context, &mut request, None)
             .await?;
         if !response.status().is_success() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::HttpResponse {
                     status: response.status(),
                     error_code: None,
@@ -175,6 +175,8 @@ impl TestServiceClientWithMacros {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use super::*;
     use ::tracing::{info, trace};
     use azure_core::{
@@ -211,9 +213,9 @@ mod tests {
         let credential = recording.credential().clone();
         let mut options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
-                instrumentation: Some(InstrumentationOptions {
+                instrumentation: InstrumentationOptions {
                     tracer_provider: Some(azure_provider),
-                }),
+                },
                 ..Default::default()
             },
             ..Default::default()
@@ -513,13 +515,13 @@ mod tests {
         let credential = recording.credential().clone();
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
-                instrumentation: Some(InstrumentationOptions {
+                instrumentation: InstrumentationOptions {
                     tracer_provider: Some(azure_provider),
-                }),
-                retry: Some(RetryOptions::exponential(ExponentialRetryOptions {
+                },
+                retry: RetryOptions::exponential(ExponentialRetryOptions {
                     max_retries: 3,
                     ..Default::default()
-                })),
+                }),
                 ..Default::default()
             },
             ..Default::default()
@@ -680,7 +682,8 @@ mod tests {
     async fn test_http_tracing_tests(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
         let package_name = recording.var("CARGO_PKG_NAME", None);
-        let package_version = recording.var("CARGO_PKG_VERSION", None);
+        // Compare current version since recorded version may be older.
+        let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
@@ -704,9 +707,8 @@ mod tests {
 
     #[recorded::test()]
     async fn test_function_tracing_tests(ctx: TestContext) -> Result<()> {
-        let recording = ctx.recording();
-        let package_name = recording.var("CARGO_PKG_NAME", None);
-        let package_version = recording.var("CARGO_PKG_VERSION", None);
+        let package_name = env!("CARGO_PKG_NAME").to_string();
+        let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {
@@ -734,9 +736,8 @@ mod tests {
     }
     #[recorded::test()]
     async fn test_function_tracing_tests_error(ctx: TestContext) -> Result<()> {
-        let recording = ctx.recording();
-        let package_name = recording.var("CARGO_PKG_NAME", None);
-        let package_version = recording.var("CARGO_PKG_VERSION", None);
+        let package_name = env!("CARGO_PKG_NAME").to_string();
+        let package_version = env!("CARGO_PKG_VERSION").to_string();
         azure_core_test::tracing::assert_instrumentation_information(
             |tracer_provider| Ok(create_service_client(&ctx, tracer_provider)),
             |client| {

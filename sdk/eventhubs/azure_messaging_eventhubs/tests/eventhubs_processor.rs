@@ -237,7 +237,7 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
         }
         _ = tokio::time::sleep(std::time::Duration::from_secs(15)) => {
             info!("Timeout reached - event processor has no more partitions.");
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "Timeout waiting for next partition client"
             ));

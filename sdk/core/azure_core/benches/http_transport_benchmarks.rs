@@ -6,7 +6,7 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         BufResponse, ClientMethodOptions, ClientOptions, HttpClient, Method, Pipeline, Request,
-        TransportOptions, Url,
+        Transport, Url,
     },
     Result,
 };
@@ -50,7 +50,7 @@ impl TestServiceClient {
         let options = options.unwrap_or_default();
         let mut endpoint = Url::parse(endpoint)?;
         if !endpoint.scheme().starts_with("http") {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 format!("{endpoint} must use http(s)"),
             ));
@@ -96,10 +96,10 @@ impl TestServiceClient {
 
         let response = self
             .pipeline
-            .send(&options.method_options.context, &mut request)
+            .send(&options.method_options.context, &mut request, None)
             .await?;
         if !response.status().is_success() {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::HttpResponse {
                     status: response.status(),
                     error_code: None,
@@ -168,7 +168,7 @@ pub fn disable_pooling_http_transport_test(c: &mut Criterion) {
         let transport = new_reqwest_client_disable_connection_pool();
         let options = TestServiceClientOptions {
             client_options: ClientOptions {
-                transport: Some(TransportOptions::new(transport)),
+                transport: Some(Transport::new(transport)),
                 ..Default::default()
             },
             ..Default::default()

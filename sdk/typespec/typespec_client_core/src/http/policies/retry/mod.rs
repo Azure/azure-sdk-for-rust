@@ -156,7 +156,7 @@ where
 
         loop {
             if retry_count > 0 {
-                request.body.reset().await.context(
+                request.body.reset().await.with_context(
                     ErrorKind::Other,
                     "failed to reset body stream before retrying request",
                 )?;
@@ -214,7 +214,7 @@ where
                         (Err(error), retry_after)
                     } else {
                         return Err(
-                            error.context("non-io error occurred which will not be retried")
+                            error.with_context("non-io error occurred which will not be retried")
                         );
                     }
                 }
@@ -224,8 +224,9 @@ where
             if self.is_expired(time_since_start, retry_count) {
                 return match last_result {
                     Ok(result) => Ok(result),
-                    Err(last_error) => Err(last_error
-                        .context("retry policy expired and the request will no longer be retried")),
+                    Err(last_error) => Err(last_error.with_context(
+                        "retry policy expired and the request will no longer be retried",
+                    )),
                 };
             }
             retry_count += 1;

@@ -31,6 +31,10 @@ pub struct Pipeline {
     pipeline: Vec<Arc<dyn Policy>>,
 }
 
+/// Options for the [`Pipeline::send`] function.
+#[derive(Debug, Default)]
+pub struct PipelineSendOptions {}
+
 impl Pipeline {
     /// Creates a new pipeline with user-specified and client library-specified policies.
     ///
@@ -59,10 +63,7 @@ impl Pipeline {
 
         let pipeline_options = pipeline_options.unwrap_or_default();
 
-        let retry_policy = options
-            .retry
-            .unwrap_or_default()
-            .to_policy(pipeline_options.retry_headers);
+        let retry_policy = options.retry.to_policy(pipeline_options.retry_headers);
         pipeline.push(retry_policy);
 
         pipeline.push(Arc::new(CustomHeadersPolicy::default()));
@@ -89,6 +90,7 @@ impl Pipeline {
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
+        _options: Option<PipelineSendOptions>,
     ) -> crate::Result<BufResponse> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
@@ -104,7 +106,7 @@ mod tests {
         http::{
             headers::{Headers, RETRY_AFTER},
             policies::{PolicyResult, RetryHeaders},
-            BufResponse, JsonFormat, Method, Response, StatusCode, TransportOptions,
+            BufResponse, JsonFormat, Method, Response, StatusCode, Transport,
         },
         stream::BytesStream,
         Bytes,
@@ -141,7 +143,7 @@ mod tests {
         // Simulated service method
         async fn service_method() -> crate::Result<Response<Model, JsonFormat>> {
             let options = ClientOptions {
-                transport: Some(TransportOptions::new_custom_policy(Arc::new(Responder {}))),
+                transport: Some(Transport::with_policy(Arc::new(Responder {}))),
                 ..Default::default()
             };
             let pipeline_options = PipelineOptions {
@@ -151,7 +153,9 @@ mod tests {
             };
             let pipeline = Pipeline::new(options, Vec::new(), Vec::new(), Some(pipeline_options));
             let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
-            let raw_response = pipeline.send(&Context::default(), &mut request).await?;
+            let raw_response = pipeline
+                .send(&Context::default(), &mut request, None)
+                .await?;
             Ok(raw_response.into())
         }
 

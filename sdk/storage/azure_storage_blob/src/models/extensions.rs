@@ -81,7 +81,7 @@ impl TryFrom<BlobTags> for HashMap<String, String> {
                         map.insert(k, v);
                     }
                     _ => {
-                        return Err(azure_core::Error::message(
+                        return Err(azure_core::Error::with_message(
                             azure_core::error::ErrorKind::DataConversion,
                             "BlobTag missing key or value",
                         ));

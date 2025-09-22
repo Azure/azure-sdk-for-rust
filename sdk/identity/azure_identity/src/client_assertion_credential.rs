@@ -10,7 +10,8 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     http::{
         headers::{self, content_type},
-        ClientMethodOptions, ClientOptions, Method, Pipeline, Request, StatusCode, Url,
+        ClientMethodOptions, ClientOptions, Method, Pipeline, PipelineSendOptions, Request,
+        StatusCode, Url,
     },
     time::{Duration, OffsetDateTime},
     Error,
@@ -91,7 +92,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         let authority_host = get_authority_host(None, options.authority_host)?;
         let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
-            .with_context(ErrorKind::DataConversion, || {
+            .with_context_fn(ErrorKind::DataConversion, || {
                 format!("tenant_id {tenant_id} could not be URL encoded")
             })?;
         let pipeline = Pipeline::new(
@@ -136,7 +137,17 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         req.set_body(encoded);
 
         let ctx = options.method_options.context.to_borrowed();
-        let res = self.pipeline.send(&ctx, &mut req).await?;
+        let res = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut req,
+                Some(PipelineSendOptions {
+                    skip_checks: true,
+                    ..Default::default()
+                }),
+            )
+            .await?;
 
         match res.status() {
             StatusCode::Ok => {
@@ -158,7 +169,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
                         CLIENT_ASSERTION_CREDENTIAL, error_response.error_description
                     )
                 };
-                Err(Error::message(ErrorKind::Credential, message))
+                Err(Error::with_message(ErrorKind::Credential, message))
             }
         }
     }
@@ -186,7 +197,7 @@ pub(crate) mod tests {
         authority_hosts::AZURE_PUBLIC_CLOUD,
         http::{
             headers::{self, content_type, Headers},
-            Body, BufResponse, Method, Request, TransportOptions,
+            Body, BufResponse, Method, Request, Transport,
         },
         Bytes,
     };
@@ -266,7 +277,7 @@ pub(crate) mod tests {
             MockAssertion {},
             Some(ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock))),
+                    transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -305,7 +316,7 @@ pub(crate) mod tests {
             MockAssertion {},
             Some(ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock))),
+                    transport: Some(Transport::new(Arc::new(mock))),
                     ..Default::default()
                 },
                 ..Default::default()

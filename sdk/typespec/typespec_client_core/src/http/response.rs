@@ -211,7 +211,7 @@ impl ResponseBody {
     /// Collect the stream into a [`String`].
     pub async fn collect_string(self) -> crate::Result<String> {
         std::str::from_utf8(&self.collect().await?)
-            .context(
+            .with_context(
                 ErrorKind::DataConversion,
                 "response body was not utf-8 like expected",
             )

@@ -1,5 +1,19 @@
 # Release History
 
+## 0.8.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Changed `ClientOptions::retry` from `Option<RetryOptions>` to `RetryOptions`.
+- Renamed `TransportOptions` to `Transport`.
+- Renamed `TransportOptions::new_custom_policy()` to `Transport::with_policy()`.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.7.0 (2025-09-11)
 
 ### Features Added

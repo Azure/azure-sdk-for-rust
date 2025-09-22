@@ -108,19 +108,43 @@ struct ErrorDetailsInternal<'a> {
     message: Option<&'a str>,
 }
 
+/// Options for customizing the behavior of `check_success`.
+#[derive(Debug, Default)]
+pub struct CheckSuccessOptions {
+    /// A list of HTTP status codes that should be considered successful.
+    ///
+    /// If this list is empty, any 2xx status code is considered successful.
+    pub success_codes: &'static [u16],
+}
+
 /// Checks if the response is a success and if not, creates an appropriate error.
 ///
 /// # Arguments
 /// * `response` - The HTTP response to check.
+/// * `options` - Optional parameters to customize the success criteria.
 ///
 /// # Returns
 /// * `Ok(RawResponse)` if the response is a success.
 /// * `Err(Error)` if the response is an error, with details extracted from the response
 ///   body if possible.
 ///
-pub async fn check_success(response: BufResponse) -> crate::Result<BufResponse> {
+pub async fn check_success(
+    response: BufResponse,
+    options: Option<CheckSuccessOptions>,
+) -> crate::Result<BufResponse> {
     let status = response.status();
-    if status.is_success() {
+
+    if options
+        .as_ref()
+        .map(|o| {
+            if o.success_codes.is_empty() {
+                status.is_success()
+            } else {
+                o.success_codes.contains(&status)
+            }
+        })
+        .unwrap_or_else(|| status.is_success())
+    {
         return Ok(response);
     }
 
@@ -130,7 +154,7 @@ pub async fn check_success(response: BufResponse) -> crate::Result<BufResponse> 
     if response.body().is_empty() {
         let code = response.headers().get_optional_str(&ERROR_CODE);
         let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
-        return Err(Error::message(error_kind, status.to_string()));
+        return Err(Error::with_message(error_kind, status.to_string()));
     }
     let internal_response =
         serde_json::de::from_slice::<ErrorResponseInternal>(response.body()).map_err(Error::from);
@@ -144,7 +168,7 @@ pub async fn check_success(response: BufResponse) -> crate::Result<BufResponse> 
                 status,
                 Some(code.map_or_else(|| response.status().to_string(), str::to_owned)),
             );
-            return Err(Error::message(
+            return Err(Error::with_message(
                 error_kind,
                 format!(
                     "{}: {}",
@@ -161,7 +185,7 @@ pub async fn check_success(response: BufResponse) -> crate::Result<BufResponse> 
 
     let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
 
-    Err(Error::message(
+    Err(Error::with_message(
         error_kind,
         internal_response
             .error
@@ -186,7 +210,7 @@ mod tests {
             Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
         );
 
-        let err = check_success(response).await.unwrap_err();
+        let err = check_success(response, None).await.unwrap_err();
         let kind = err.kind();
         assert!(matches!(
             kind,
@@ -200,12 +224,87 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn matching_against_custom_http_error_empty_set() {
+        let mut headers = Headers::new();
+        headers.insert(headers::CONTENT_TYPE, "application/json".to_string());
+        let response = BufResponse::from_bytes(
+            StatusCode::ImATeapot,
+            headers,
+            Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
+        );
+
+        let err = check_success(response, Some(CheckSuccessOptions { success_codes: &[] }))
+            .await
+            .unwrap_err();
+        let kind = err.kind();
+        assert!(matches!(
+            kind,
+            ErrorKind::HttpResponse {
+                status: StatusCode::ImATeapot,
+                error_code,
+                raw_response: None
+            }
+            if error_code.as_deref() == Some("teapot")
+        ));
+    }
+
+    #[tokio::test]
+    async fn matching_against_custom_http_error_in_set() {
+        let mut headers = Headers::new();
+        headers.insert(headers::CONTENT_TYPE, "application/json".to_string());
+        let response = BufResponse::from_bytes(
+            StatusCode::ImATeapot,
+            headers,
+            Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
+        );
+
+        let _ = check_success(
+            response,
+            Some(CheckSuccessOptions {
+                success_codes: &[418],
+            }),
+        )
+        .await
+        .expect("Should be a success return");
+    }
+
+    #[tokio::test]
+    async fn matching_against_custom_http_error_in_set_success_should_fail() {
+        let mut headers = Headers::new();
+        headers.insert(headers::CONTENT_TYPE, "application/json".to_string());
+        let response = BufResponse::from_bytes(
+            StatusCode::Ok,
+            headers,
+            Bytes::from_static(br#"{"error": {"code":"teapot","message":"I'm a teapot"}}"#),
+        );
+
+        let err = check_success(
+            response,
+            Some(CheckSuccessOptions {
+                success_codes: &[418],
+            }),
+        )
+        .await
+        .expect_err("Should be a failure return");
+        let kind = err.kind();
+        assert!(matches!(
+            kind,
+            ErrorKind::HttpResponse {
+                status: StatusCode::Ok,
+                error_code,
+                raw_response: None
+            }
+            if error_code.as_deref() == Some("teapot")
+        ));
+    }
+
+    #[tokio::test]
     async fn matching_against_http_error_no_body() {
         let mut headers = Headers::new();
         headers.insert(headers::ERROR_CODE, "testError".to_string());
         let response = BufResponse::from_bytes(StatusCode::ImATeapot, headers, Bytes::new());
 
-        let err = check_success(response).await.unwrap_err();
+        let err = check_success(response, None).await.unwrap_err();
         let kind = err.kind();
         assert_eq!(
             *kind,
@@ -227,7 +326,7 @@ mod tests {
             Bytes::from_static(br#"{"json": "error"}"#),
         );
 
-        let err = check_success(response).await.unwrap_err();
+        let err = check_success(response, None).await.unwrap_err();
         let kind = err.kind();
         assert_eq!(
             *kind,

@@ -15,7 +15,7 @@ use std::fmt;
 ///
 /// ```
 /// use azure_core::{
-///     http::{headers::Headers, BufResponse, ClientOptions, StatusCode, TransportOptions},
+///     http::{headers::Headers, BufResponse, ClientOptions, StatusCode, Transport},
 ///     Bytes,
 /// };
 /// use azure_core_test::http::MockHttpClient;
@@ -37,7 +37,7 @@ use std::fmt;
 /// let credential = DeveloperToolsCredential::new(None)?;
 /// let options = SecretClientOptions {
 ///     client_options: ClientOptions {
-///         transport: Some(TransportOptions::new(mock_client.clone())),
+///         transport: Some(Transport::new(mock_client.clone())),
 ///         ..Default::default()
 ///     },
 ///     ..Default::default()

@@ -215,7 +215,7 @@ mod tests {
         http::{
             headers::Headers,
             policies::{create_public_api_span, RequestInstrumentationPolicy, TransportPolicy},
-            BufResponse, Method, StatusCode, TransportOptions,
+            BufResponse, Method, StatusCode, Transport,
         },
         tracing::{SpanStatus, TracerProvider},
         Result,
@@ -260,9 +260,8 @@ mod tests {
             Arc::new(PublicApiInstrumentationPolicy::new(policy_tracer))
         };
 
-        let transport = TransportPolicy::new(TransportOptions::new(Arc::new(MockHttpClient::new(
-            callback,
-        ))));
+        let transport =
+            TransportPolicy::new(Transport::new(Arc::new(MockHttpClient::new(callback))));
 
         let next: Vec<Arc<dyn Policy>> = vec![Arc::new(transport)];
 
@@ -302,9 +301,8 @@ mod tests {
             mock_tracer.clone(),
         )));
 
-        let transport = TransportPolicy::new(TransportOptions::new(Arc::new(MockHttpClient::new(
-            callback,
-        ))));
+        let transport =
+            TransportPolicy::new(Transport::new(Arc::new(MockHttpClient::new(callback))));
 
         let request_instrumentation_policy = RequestInstrumentationPolicy::new(
             Some(mock_tracer.clone()),

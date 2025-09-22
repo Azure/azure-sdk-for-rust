@@ -25,19 +25,19 @@ impl Fe2o3ClaimsBasedSecurity {
     }
 
     fn cbs_already_attached() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "Claims Based Security is already attached",
         )
     }
     fn cbs_not_set() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "Claims Based Security is not set",
         )
     }
     fn cbs_not_attached() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "Claims Based Security is not attached",
         )
@@ -97,7 +97,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
                     .unix_timestamp()
                     .checked_mul(1_000)
                     .ok_or_else(|| {
-                        azure_core::Error::message(
+                        azure_core::Error::with_message(
                             azure_core::error::ErrorKind::Amqp,
                             "Unable to convert time to unix timestamp.",
                         )
@@ -116,7 +116,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
                 Ok(amqp_error) => amqp_error.into(),
                 Err(e) => {
                     debug!("Failed to convert management error to azure error: {:?}", e);
-                    azure_core::Error::full(
+                    azure_core::Error::with_error(
                         azure_core::error::ErrorKind::Amqp,
                         e,
                         "Failed to convert management error to azure error.",

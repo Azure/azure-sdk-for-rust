@@ -28,10 +28,10 @@ impl Fe2o3AmqpConnection {
     }
 
     fn connection_not_set() -> azure_core::Error {
-        azure_core::Error::message(azure_core::error::ErrorKind::Amqp, "Connection is not set")
+        azure_core::Error::with_message(azure_core::error::ErrorKind::Amqp, "Connection is not set")
     }
     fn connection_already_set() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "Connection is already set",
         )

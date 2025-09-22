@@ -154,7 +154,8 @@ impl ProducerClient {
         let event = event.into();
         let mut message = AmqpMessage::from(event);
 
-        if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
+        if message.properties.is_none() || message.properties.as_ref().unwrap().message_id.is_none()
+        {
             message.set_message_id(Uuid::new_v4());
         }
 
@@ -209,7 +210,7 @@ impl ProducerClient {
                         AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)),
                     ));
                 }
-                Err(azure_core::Error::message(
+                Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Amqp,
                     "Send was rejected by the Event Hub.",
                 ))
@@ -326,7 +327,7 @@ impl ProducerClient {
                         AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)),
                     ));
                 }
-                Err(azure_core::Error::message(
+                Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Amqp,
                     "Batch was rejected by the Event Hub.",
                 ))

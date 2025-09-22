@@ -14,63 +14,52 @@ type SessionImplementation = super::fe2o3::session::Fe2o3AmqpSession;
 #[cfg(any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"))]
 type SessionImplementation = super::noop::NoopAmqpSession;
 
+/// Options for an AMQP Session.
 #[derive(Debug, Default, Clone)]
 pub struct AmqpSessionOptions {
+    /// The next outgoing ID for the session.
     pub next_outgoing_id: Option<u32>,
+
+    /// The incoming window for the session.
     pub incoming_window: Option<u32>,
+
+    /// The outgoing window for the session.
     pub outgoing_window: Option<u32>,
+
+    /// The maximum handle for the session.
     pub handle_max: Option<u32>,
+
+    /// The offered capabilities for the session.
     pub offered_capabilities: Option<Vec<AmqpSymbol>>,
+
+    /// The desired capabilities for the session.
     pub desired_capabilities: Option<Vec<AmqpSymbol>>,
+
+    /// The properties for the session.
     pub properties: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
+
+    /// The buffer size for the session.
     pub buffer_size: Option<usize>,
 }
 
-impl AmqpSessionOptions {
-    pub fn next_outgoing_id(&self) -> Option<u32> {
-        self.next_outgoing_id
-    }
+impl AmqpSessionOptions {}
 
-    pub fn incoming_window(&self) -> Option<u32> {
-        self.incoming_window
-    }
-
-    pub fn outgoing_window(&self) -> Option<u32> {
-        self.outgoing_window
-    }
-
-    pub fn handle_max(&self) -> Option<u32> {
-        self.handle_max
-    }
-
-    pub fn offered_capabilities(&self) -> Option<&[AmqpSymbol]> {
-        self.offered_capabilities.as_deref()
-    }
-
-    pub fn desired_capabilities(&self) -> Option<&[AmqpSymbol]> {
-        self.desired_capabilities.as_deref()
-    }
-
-    pub fn properties(&self) -> Option<&AmqpOrderedMap<AmqpSymbol, AmqpValue>> {
-        self.properties.as_ref()
-    }
-
-    pub fn buffer_size(&self) -> Option<usize> {
-        self.buffer_size
-    }
-}
-
+/// A trait for AMQP Session operations.
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait AmqpSessionApis {
+    /// Begin the session.
     async fn begin(
         &self,
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
     ) -> Result<()>;
+
+    /// End the session.
     async fn end(&self) -> Result<()>;
 }
 
+/// An AMQP Session.
 #[derive(Clone, Default)]
 pub struct AmqpSession {
     pub(crate) implementation: SessionImplementation,
@@ -93,6 +82,7 @@ impl AmqpSessionApis for AmqpSession {
 }
 
 impl AmqpSession {
+    /// Create a new AMQP Session.
     pub fn new() -> Self {
         Self {
             implementation: SessionImplementation::new(),

@@ -34,10 +34,10 @@ impl CliTokenResponse {
     pub fn expires_on(&self) -> azure_core::Result<OffsetDateTime> {
         match self.expires_on {
             Some(timestamp) => Ok(OffsetDateTime::from_unix_timestamp(timestamp)
-                .with_context(ErrorKind::DataConversion, || {
+                .with_context_fn(ErrorKind::DataConversion, || {
                     format!("unable to parse expires_on '{timestamp}'")
                 })?),
-            None => Err(Error::message(
+            None => Err(Error::with_message(
                 ErrorKind::DataConversion,
                 "expires_on field not found. Please use Azure CLI 2.54.0 or newer.",
             )),

@@ -76,7 +76,7 @@ where
 {
     fn resource_id(&self) -> Result<ResourceId> {
         let Some(id) = self.as_id() else {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 ErrorKind::DataConversion,
                 "missing resource id",
             ));
@@ -90,7 +90,7 @@ where
 impl ResourceExt for CertificateOperation {
     fn resource_id(&self) -> Result<ResourceId> {
         let Some(id) = self.id.as_ref() else {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 ErrorKind::DataConversion,
                 "missing resource id",
             ));
@@ -105,14 +105,16 @@ fn deconstruct(url: &Url, version: bool) -> Result<ResourceId> {
     let vault_url = format!("{}://{}", url.scheme(), url.authority(),);
     let mut segments = url
         .path_segments()
-        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "invalid url"))?
+        .ok_or_else(|| azure_core::Error::with_message(ErrorKind::DataConversion, "invalid url"))?
         .filter(|s| !s.is_empty());
     segments
         .next()
-        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing collection"))
+        .ok_or_else(|| {
+            azure_core::Error::with_message(ErrorKind::DataConversion, "missing collection")
+        })
         .and_then(|col| {
             if col != "certificates" {
-                return Err(azure_core::Error::message(
+                return Err(azure_core::Error::with_message(
                     ErrorKind::DataConversion,
                     "not in certificates collection",
                 ));
@@ -121,7 +123,7 @@ fn deconstruct(url: &Url, version: bool) -> Result<ResourceId> {
         })?;
     let name = segments
         .next()
-        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing name"))
+        .ok_or_else(|| azure_core::Error::with_message(ErrorKind::DataConversion, "missing name"))
         .map(String::from)?;
 
     let mut resource_id = ResourceId {

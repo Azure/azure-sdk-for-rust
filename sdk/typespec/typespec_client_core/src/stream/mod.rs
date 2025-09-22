@@ -53,7 +53,7 @@ impl Stream for dyn SeekableStream {
                 let bytes = bytes.slice(0..bytes_read);
                 Poll::Ready(Some(Ok(bytes)))
             }
-            Poll::Ready(Err(err)) => Poll::Ready(Some(Err(Error::full(
+            Poll::Ready(Err(err)) => Poll::Ready(Some(Err(Error::with_error(
                 ErrorKind::Io,
                 err,
                 "an error was encountered when trying to read from a stream",

@@ -9,6 +9,7 @@ use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 
 /// Type of AMQP error.
 pub enum AmqpErrorKind {
+    /// Described error - An error described by the remote peer.
     AmqpDescribedError(AmqpDescribedError),
 
     /// Remote peer closed the link
@@ -38,7 +39,10 @@ pub enum AmqpErrorKind {
     /// Link State error.
     LinkStateError(Box<dyn std::error::Error + Send + Sync>),
 
+    /// Framing Error
     FramingError(Box<dyn std::error::Error + Send + Sync>),
+
+    /// Idle Timeout Elapsed
     IdleTimeoutElapsed(Box<dyn std::error::Error + Send + Sync>),
 
     /// Transfer Limit Exceeded
@@ -47,62 +51,102 @@ pub enum AmqpErrorKind {
     /// Management Status code
     ManagementStatusCode(azure_core::http::StatusCode, Option<String>),
 
+    /// Detach Error
     DetachError(Box<dyn std::error::Error + Send + Sync>),
-    //    SenderError(AmqpSenderError),
+    /// Transport Implementation Error
     TransportImplementationError(Box<dyn std::error::Error + Send + Sync>),
 }
 
 create_extensible_enum!(
     #[doc = "AMQP protocol defined error conditions"]
     AmqpErrorCondition,
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (DecodeError, "amqp:decode-error"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (FrameSizeTooSmall, "amqp:frame-size-too-small"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (IllegalState, "amqp:illegal-state"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (InternalError, "amqp:internal-error"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (InvalidField, "amqp:invalid-field"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (NotAllowed, "amqp:not-allowed"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (NotFound, "amqp:not-found"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (NotImplemented, "amqp:not-implemented"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (PreconditionFailed, "amqp:precondition-failed"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (ResourceDeleted, "amqp:resource-deleted"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (ResourceLimitExceeded, "amqp:resource-limit-exceeded"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (ResourceLocked, "amqp:resource-locked"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (UnauthorizedAccess, "amqp:unauthorized-access"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (LinkStolen, "amqp:link:stolen"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (LinkPayloadSizeExceeded, "amqp:link:message-size-exceeded"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (LinkDetachForced, "amqp:link:detach-forced"),
+    /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     (ConnectionForced, "amqp:connection:forced"),
+    /// Microsoft specific error conditions: server busy.
     (ServerBusyError, "com.microsoft:server-busy"),
+    /// Microsoft specific error conditions: argument error.
     (ArgumentError, "com.microsoft:argument-error"),
-    (
-        ArgumentOutOfRangeError,
+    /// Microsoft specific error conditions: argument out of range.
+    (ArgumentOutOfRangeError,
         "com.microsoft:argument-out-of-range"
     ),
+    /// Microsoft specific error conditions: entity disabled.
     (EntityDisabledError, "com.microsoft:entity-disabled"),
+    /// Microsoft specific error conditions: partition not owned.
     (PartitionNotOwnedError, "com.microsoft:partition-not-owned"),
+    /// Microsoft specific error conditions: store lock lost.
     (StoreLockLostError, "com.microsoft:store-lock-lost"),
+    /// Microsoft specific error conditions: publisher revoked.
     (PublisherRevokedError, "com.microsoft:publisher-revoked"),
+    /// Microsoft specific error conditions: timeout.
     (TimeoutError, "com.microsoft:timeout"),
+    /// Microsoft specific error conditions: tracking id property.
     (TrackingIdProperty, "com.microsoft:tracking-id"),
+    /// Proton specific error conditions: io error.
     (ProtonIo, "proton:io"),
+    /// AMQP specific error conditions: connection framing error.
     (ConnectionFramingError, "amqp:connection:framing-error"),
+    /// Microsoft specific error conditions: operation cancelled.
     (OperationCancelled, "com.microsoft:operation-cancelled"),
+    /// Microsoft specific error conditions: message lock lost.
     (MessageLockLost, "com.microsoft:message-lock-lost"),
+    /// Microsoft specific error conditions: session lock lost.
     (SessionLockLost, "com.microsoft:session-lock-lost"),
-    (
-        SessionCannotBeLocked,
-        "com.microsoft:session-cannot-be-locked"
-    ),
+    /// Microsoft specific error conditions: session cannot be locked.
+    (SessionCannotBeLocked, "com.microsoft:session-cannot-be-locked"),
+    /// Microsoft specific error conditions: entity updated.
     (EntityUpdated, "com.microsoft:entity-updated"),
+    /// Microsoft specific error conditions: message not found.
     (MessageNotFound, "com.microsoft:message-not-found"),
+    /// Microsoft specific error conditions: session not found.
     (SessionNotFound, "com.microsoft:session-not-found"),
+    /// Microsoft specific error conditions: entity already exists.
     (EntityAlreadyExists, "com.microsoft:entity-already-exists"),
+    /// AMQP specific error conditions: connection redirect.
     (ConnectionRedirect, "amqp:connection:redirect"),
+    /// AMQP specific error conditions: link redirect.
     (LinkRedirect, "amqp:link:redirect"),
+    /// AMQP specific error conditions: transfer limit exceeded.
     (TransferLimitExceeded, "amqp:link:transfer-limit-exceeded"),
+    /// AMQP specific error conditions: session window violation.
     (SessionWindowViolation, "amqp:session:window-violation"),
+    /// AMQP specific error conditions: session errant link.
     (SessionErrantLink, "amqp:session:errant-link"),
+    /// AMQP specific error conditions: session handle in use.
     (SessionHandleInUse, "amqp:session:handle-in-use"),
+    /// AMQP specific error conditions: session unattached handle.
     (SessionUnattachedHandle, "amqp:session:unattached-handle"),
 );
 
@@ -114,14 +158,24 @@ impl From<AmqpSymbol> for AmqpErrorCondition {
     }
 }
 
+/// An AMQP described error.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AmqpDescribedError {
-    condition: AmqpErrorCondition,
-    description: Option<String>,
-    info: AmqpOrderedMap<AmqpSymbol, AmqpValue>,
+    /// The error condition.
+    pub condition: AmqpErrorCondition,
+    /// An optional description of the error.
+    pub description: Option<String>,
+    /// Optional additional information about the error.
+    pub info: AmqpOrderedMap<AmqpSymbol, AmqpValue>,
 }
 
 impl AmqpDescribedError {
+    /// Creates a new instance of `AmqpDescribedError`.
+    ///
+    /// # Arguments
+    /// - `condition`: The error condition as an `AmqpErrorCondition`.
+    /// - `description`: An optional description of the error.
+    /// - `info`: Optional additional information as an `AmqpOrderedMap`.
     pub fn new(
         condition: AmqpErrorCondition,
         description: Option<String>,
@@ -133,16 +187,6 @@ impl AmqpDescribedError {
             info,
         }
     }
-
-    pub fn condition(&self) -> &AmqpErrorCondition {
-        &self.condition
-    }
-    pub fn description(&self) -> Option<&str> {
-        self.description.as_deref()
-    }
-    pub fn info(&self) -> &AmqpOrderedMap<AmqpSymbol, AmqpValue> {
-        &self.info
-    }
 }
 
 /// An AMQP error from the AMQP stack.
@@ -152,10 +196,12 @@ pub struct AmqpError {
 }
 
 impl AmqpError {
+    /// Returns a reference to the kind of AMQP error.
     pub fn kind(&self) -> &AmqpErrorKind {
         &self.kind
     }
 
+    /// Creates a new management error. For test purposes only.
     #[cfg(feature = "test")]
     pub fn new_management_error(
         status_code: azure_core::http::StatusCode,
@@ -166,6 +212,7 @@ impl AmqpError {
         }
     }
 
+    /// Creates a new described error. For test purposes only.
     #[cfg(feature = "test")]
     pub fn new_described_error(
         condition: AmqpErrorCondition,

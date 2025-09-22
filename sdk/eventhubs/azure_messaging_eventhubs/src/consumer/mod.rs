@@ -168,7 +168,7 @@ impl ConsumerClient {
                 .endpoint
                 .host()
                 .ok_or_else(|| {
-                    Error::message(
+                    Error::with_message(
                         AzureErrorKind::Other,
                         "Could not find host in consumer client",
                     )

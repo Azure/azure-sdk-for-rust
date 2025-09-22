@@ -3,7 +3,7 @@
 
 use crate::http::{
     headers::{Header, HeaderValue, CONTENT_LENGTH},
-    options::TransportOptions,
+    options::Transport,
     policies::{Policy, PolicyResult},
     Context, Method, Request, Sanitizer, DEFAULT_ALLOWED_QUERY_PARAMETERS,
 };
@@ -14,7 +14,7 @@ use tracing::debug;
 /// The final pipeline policy that defines the HTTP transport.
 #[derive(Debug, Clone)]
 pub struct TransportPolicy {
-    pub(crate) transport_options: TransportOptions,
+    pub(crate) transport_options: Transport,
 }
 
 impl TransportPolicy {
@@ -22,7 +22,7 @@ impl TransportPolicy {
     ///
     /// # Arguments
     /// * `transport_options` - The transport options to use for this policy.
-    pub fn new(transport_options: TransportOptions) -> Self {
+    pub fn new(transport_options: Transport) -> Self {
         Self { transport_options }
     }
 }
@@ -94,8 +94,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_content_length() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let transport =
-            TransportPolicy::new(TransportOptions::new_custom_policy(Arc::new(MockTransport)));
+        let transport = TransportPolicy::new(Transport::with_policy(Arc::new(MockTransport)));
 
         let mut request = Request::new("http://localhost".parse()?, Method::Get);
         transport.send(&Context::new(), &mut request, &[]).await?;

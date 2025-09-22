@@ -10,7 +10,7 @@ use azure_core::{
     http::{
         headers::{FromHeaders, HeaderName, Headers, AUTHORIZATION, CONTENT_LENGTH},
         request::Request,
-        ClientMethodOptions, Method, Pipeline, StatusCode, Url,
+        ClientMethodOptions, Method, Pipeline, PipelineSendOptions, StatusCode, Url,
     },
 };
 use serde::Deserialize;
@@ -24,6 +24,7 @@ const TFS_FEDAUTHREDIRECT_HEADER: HeaderName = HeaderName::from_static("x-tfs-fe
 // TODO: https://github.com/Azure/azure-sdk-for-rust/issues/682
 const ALLOWED_HEADERS: &[&str] = &["x-msedge-ref", "x-vss-e2eid"];
 
+/// Enables authentication to Entra ID from Azure Pipelines.
 #[derive(Debug)]
 pub struct AzurePipelinesCredential(ClientAssertionCredential<Client>);
 
@@ -66,13 +67,13 @@ impl AzurePipelinesCredential {
         let env = Env::default();
         let endpoint = env
             .var(OIDC_VARIABLE_NAME)
-            .map_err(|err| azure_core::Error::full(
+            .map_err(|err| azure_core::Error::with_error(
                 ErrorKind::Credential,
                 err,
                 format!("no value for environment variable {OIDC_VARIABLE_NAME}. This should be set by Azure Pipelines"),
             ))?;
         let mut endpoint: Url = endpoint.parse().map_err(|err| {
-            azure_core::Error::full(
+            azure_core::Error::with_error(
                 ErrorKind::Credential,
                 err,
                 format!("invalid URL for environment variable {OIDC_VARIABLE_NAME}"),
@@ -139,13 +140,23 @@ impl ClientAssertion for Client {
 
         let options = options.unwrap_or_default();
         let ctx = options.context.to_borrowed();
-        let resp = self.pipeline.send(&ctx, &mut req).await?;
+        let resp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut req,
+                Some(PipelineSendOptions {
+                    skip_checks: true,
+                    ..Default::default()
+                }),
+            )
+            .await?;
         if resp.status() != StatusCode::Ok {
             let status_code = resp.status();
             let err_headers: ErrorHeaders = resp.headers().get()?;
 
             return Err(
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     ErrorKind::http_response(status_code, Some(status_code.canonical_reason().to_string())),
                      format!("{status_code} response from the OIDC endpoint. Check service connection ID and pipeline configuration. {err_headers}"),
                 )
@@ -205,7 +216,7 @@ mod tests {
     use super::*;
     use crate::env::Env;
     use azure_core::{
-        http::{BufResponse, ClientOptions, TransportOptions},
+        http::{BufResponse, ClientOptions, Transport},
         Bytes,
     };
     use azure_core_test::http::MockHttpClient;
@@ -253,7 +264,7 @@ mod tests {
         let options = AzurePipelinesCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock_client))),
+                    transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -320,7 +331,7 @@ mod tests {
         let options = AzurePipelinesCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(mock_client))),
+                    transport: Some(Transport::new(Arc::new(mock_client))),
                     ..Default::default()
                 },
                 ..Default::default()

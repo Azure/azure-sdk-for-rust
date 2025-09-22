@@ -31,7 +31,7 @@ pub use unix_time::parse_unix_time;
 ///
 /// Example string: `1985-04-12T23:20:50.52Z`.
 pub fn parse_rfc3339(s: &str) -> crate::Result<OffsetDateTime> {
-    OffsetDateTime::parse(s, &Rfc3339).with_context(ErrorKind::DataConversion, || {
+    OffsetDateTime::parse(s, &Rfc3339).with_context_fn(ErrorKind::DataConversion, || {
         format!("unable to parse rfc3339 date '{s}")
     })
 }
@@ -63,7 +63,7 @@ pub fn to_rfc3339(date: &OffsetDateTime) -> String {
 /// Example string: `Sun, 06 Nov 1994 08:49:37 GMT`.
 pub fn parse_rfc7231(s: &str) -> crate::Result<OffsetDateTime> {
     Ok(PrimitiveDateTime::parse(s, RFC7231_FORMAT)
-        .with_context(ErrorKind::DataConversion, || {
+        .with_context_fn(ErrorKind::DataConversion, || {
             format!("unable to parse rfc7231 date '{s}")
         })?
         .assume_utc())
@@ -97,7 +97,7 @@ pub fn to_rfc7231(date: &OffsetDateTime) -> String {
 /// x-ms-last-state-change-utc: Fri, 25 Mar 2016 21:27:20.035 GMT
 pub fn parse_last_state_change(s: &str) -> crate::Result<OffsetDateTime> {
     Ok(PrimitiveDateTime::parse(s, LAST_STATE_CHANGE_FORMAT)
-        .with_context(ErrorKind::DataConversion, || {
+        .with_context_fn(ErrorKind::DataConversion, || {
             format!("unable to parse last state change date '{s}")
         })?
         .assume_utc())

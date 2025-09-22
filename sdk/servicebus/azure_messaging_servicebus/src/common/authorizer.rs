@@ -74,7 +74,7 @@ impl Authorizer {
     #[cfg(test)]
     fn disable_authorization(&self) -> AzureResult<()> {
         let mut disable_authorization = self.disable_authorization.lock().map_err(|e| {
-            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
         *disable_authorization = true;
         Ok(())
@@ -104,7 +104,7 @@ impl Authorizer {
             // insert returns some if it *fails* to insert, None if it succeeded.
             let present = scopes.insert(path.clone(), token);
             if present.is_some() {
-                return Err(azure_core::Error::message(
+                return Err(azure_core::Error::with_message(
                     AzureErrorKind::Other,
                     "Unable to add authentication token",
                 ));
@@ -123,7 +123,7 @@ impl Authorizer {
         Ok(scopes
             .get(path)
             .ok_or_else(|| {
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     AzureErrorKind::Other,
                     "Unable to add authentication token",
                 )
@@ -152,7 +152,7 @@ impl Authorizer {
         #[cfg(test)]
         {
             let disable_authorization = self.disable_authorization.lock().map_err(|e| {
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     format!("Unable to grab disable mutex: {}", e),
                 )
@@ -241,7 +241,7 @@ impl Authorizer {
             let mut now = OffsetDateTime::now_utc();
             trace!("refresh_tokens: Start pass for: {now}");
             let most_recent_refresh = expiration_times.first().ok_or_else(|| {
-                azure_core::Error::message(AzureErrorKind::Other, "No tokens to refresh?")
+                azure_core::Error::with_message(AzureErrorKind::Other, "No tokens to refresh?")
             })?;
 
             debug!(
@@ -253,7 +253,7 @@ impl Authorizer {
             let token_refresh_bias: Duration;
             {
                 let token_refresh_times = self.token_refresh_bias.lock().map_err(|e| {
-                    azure_core::Error::message(
+                    azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
                         format!("Unable to grab token refresh bias mutex: {}", e),
                     )
@@ -271,7 +271,7 @@ impl Authorizer {
                     .before_expiration_refresh_time
                     .checked_add(expiration_jitter)
                     .ok_or_else(|| {
-                        azure_core::Error::message(
+                        azure_core::Error::with_message(
                             AzureErrorKind::Other,
                             "Unable to calculate token refresh bias - overflow",
                         )
@@ -281,7 +281,7 @@ impl Authorizer {
                 refresh_time = most_recent_refresh
                     .checked_sub(token_refresh_bias)
                     .ok_or_else(|| {
-                        azure_core::Error::message(
+                        azure_core::Error::with_message(
                             AzureErrorKind::Other,
                             "Unable to calculate token refresh bias - underflow",
                         )
@@ -336,7 +336,10 @@ impl Authorizer {
 
                 // Create an ephemeral connection to host the authentication.
                 let connection = self.connection.upgrade().ok_or_else(|| {
-                    azure_core::Error::message(AzureErrorKind::Other, "Connection has been dropped")
+                    azure_core::Error::with_message(
+                        AzureErrorKind::Other,
+                        "Connection has been dropped",
+                    )
                 })?;
                 self.perform_authorization(&connection, &url, &new_token)
                     .await?;
@@ -362,7 +365,7 @@ impl Authorizer {
     #[cfg(test)]
     fn set_token_refresh_times(&self, refresh_times: TokenRefreshTimes) -> AzureResult<()> {
         let mut token_refresh_bias = self.token_refresh_bias.lock().map_err(|e| {
-            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
         *token_refresh_bias = refresh_times;
         Ok(())

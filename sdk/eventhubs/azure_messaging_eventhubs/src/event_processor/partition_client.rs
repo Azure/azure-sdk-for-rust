@@ -68,7 +68,7 @@ impl PartitionClient {
         } else {
             // Return a stream with a single error indicating that the event receiver is not available.
             Box::pin(futures::stream::once(async {
-                Err(azure_core::error::Error::message(
+                Err(azure_core::error::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     "Event receiver is not set for this partition.",
                 ))
@@ -126,7 +126,7 @@ impl PartitionClient {
         let mut offset: Option<String> = None;
 
         let amqp_message = event_data.raw_amqp_message();
-        if let Some(message_annotations) = amqp_message.message_annotations() {
+        if let Some(message_annotations) = &amqp_message.message_annotations {
             for (key, value) in message_annotations.0.iter() {
                 if *key == crate::consumer::SEQUENCE_NUMBER_ANNOTATION {
                     match value {
@@ -143,7 +143,7 @@ impl PartitionClient {
                             sequence_number = Some(*value as i64);
                         }
                         _ => {
-                            return Err(azure_core::error::Error::message(
+                            return Err(azure_core::error::Error::with_message(
                                 azure_core::error::ErrorKind::Other,
                                 "Invalid sequence number",
                             ));
@@ -155,7 +155,7 @@ impl PartitionClient {
                             offset = Some(value.to_string());
                         }
                         _ => {
-                            return Err(azure_core::error::Error::message(
+                            return Err(azure_core::error::Error::with_message(
                                 azure_core::error::ErrorKind::Other,
                                 "Invalid offset",
                             ));
@@ -184,7 +184,7 @@ impl PartitionClient {
                 self.partition_id
             );
             // If the event receiver is already set, return an error
-            azure_core::error::Error::message(
+            azure_core::error::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 format!(
                     "Event receiver already set for partition {}",

@@ -29,13 +29,13 @@ let azure_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
 
 let options = ServiceClientOptions {
     client_options: ClientOptions {
-        instrumentation: Some(InstrumentationOptions {
+        instrumentation: InstrumentationOptions {
             tracer_provider: Some(azure_provider),
-        }),
+        },
         ..Default::default()
     },
     ..Default::default()
-    };
+};
 
 #   Ok(())
 # }
@@ -61,9 +61,9 @@ let azure_provider = OpenTelemetryTracerProvider::from_global_provider();
 
 let options = ServiceClientOptions {
     client_options: ClientOptions {
-        instrumentation: Some(InstrumentationOptions {
+        instrumentation: InstrumentationOptions {
             tracer_provider: Some(azure_provider),
-        }),
+        },
         ..Default::default()
     },
 };
