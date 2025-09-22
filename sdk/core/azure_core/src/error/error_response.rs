@@ -148,50 +148,65 @@ pub async fn check_success(
         return Ok(response);
     }
 
-    let response = response.try_into_raw_response().await?;
+    let raw_response = response.try_into_raw_response().await?;
 
     // If there's no body, we can't extract any more information.
-    if response.body().is_empty() {
-        let code = response.headers().get_optional_str(&ERROR_CODE);
-        let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
+    if raw_response.body().is_empty() {
+        let error_code = raw_response
+            .headers()
+            .get_optional_str(&ERROR_CODE)
+            .map(str::to_owned);
+        let error_kind = ErrorKind::HttpResponse {
+            status,
+            error_code,
+            raw_response: None,
+        };
         return Err(Error::with_message(error_kind, status.to_string()));
     }
     let internal_response =
-        serde_json::de::from_slice::<ErrorResponseInternal>(response.body()).map_err(Error::from);
+        serde_json::de::from_slice::<ErrorResponseInternal>(raw_response.body())
+            .map_err(Error::from);
 
     let internal_response = match internal_response {
         Ok(r) => r,
         Err(_) => {
             // If we can't parse the body, return a generic error with the status code and body
-            let code = response.headers().get_optional_str(&ERROR_CODE);
-            let error_kind = ErrorKind::http_response(
+            let error_code = raw_response
+                .headers()
+                .get_optional_str(&ERROR_CODE)
+                .map_or_else(|| raw_response.status().to_string(), str::to_owned);
+            let message = str::from_utf8(raw_response.body())
+                .unwrap_or("(invalid utf-8 in body)")
+                .to_string();
+            let error_kind = ErrorKind::HttpResponse {
                 status,
-                Some(code.map_or_else(|| response.status().to_string(), str::to_owned)),
-            );
+                error_code: Some(error_code),
+                raw_response: Some(Box::new(raw_response)),
+            };
             return Err(Error::with_message(
                 error_kind,
-                format!(
-                    "{}: {}",
-                    status,
-                    str::from_utf8(response.body()).unwrap_or("(invalid utf-8 in body)")
-                ),
+                format!("{}: {}", status, message),
             ));
         }
     };
 
     // We give priority to the error code in the header, and try the body version if it's not present.
-    let code = response.headers().get_optional_str(&ERROR_CODE);
-    let code = code.or(internal_response.error.code);
+    let error_code = raw_response
+        .headers()
+        .get_optional_str(&ERROR_CODE)
+        .or(internal_response.error.code)
+        .map(str::to_owned);
+    let message = internal_response
+        .error
+        .message
+        .map_or_else(|| status.to_string(), str::to_owned);
+    let error_kind = ErrorKind::HttpResponse {
+        status,
+        error_code,
+        raw_response: Some(Box::new(raw_response)),
+    };
 
-    let error_kind = ErrorKind::http_response(status, code.map(str::to_owned));
-
-    Err(Error::with_message(
-        error_kind,
-        internal_response
-            .error
-            .message
-            .map_or_else(|| status.to_string(), |m| m.to_owned()),
-    ))
+    Err(Error::with_message(error_kind, message))
 }
 
 #[cfg(test)]
@@ -217,7 +232,7 @@ mod tests {
             ErrorKind::HttpResponse {
                 status: StatusCode::ImATeapot,
                 error_code,
-                raw_response: None
+                raw_response: Some(_),
             }
             if error_code.as_deref() == Some("teapot")
         ));
@@ -242,7 +257,7 @@ mod tests {
             ErrorKind::HttpResponse {
                 status: StatusCode::ImATeapot,
                 error_code,
-                raw_response: None
+                raw_response: Some(_),
             }
             if error_code.as_deref() == Some("teapot")
         ));
@@ -292,7 +307,7 @@ mod tests {
             ErrorKind::HttpResponse {
                 status: StatusCode::Ok,
                 error_code,
-                raw_response: None
+                raw_response: Some(_),
             }
             if error_code.as_deref() == Some("teapot")
         ));
@@ -327,16 +342,23 @@ mod tests {
         );
 
         let err = check_success(response, None).await.unwrap_err();
-        let kind = err.kind();
-        assert_eq!(
-            *kind,
-            ErrorKind::HttpResponse {
-                status: StatusCode::ImATeapot,
-                error_code: Some("testError".to_string()),
-                raw_response: None
-            }
-        );
+        let ErrorKind::HttpResponse {
+            status,
+            error_code: Some(error_code),
+            raw_response: Some(raw_response),
+        } = err.kind()
+        else {
+            panic!("expected ErrorKind::HttpResponse");
+        };
+
         assert!(err.to_string().contains(r#"{"json": "error"}"#));
+        assert_eq!(status, &StatusCode::ImATeapot);
+        assert_eq!(error_code, "testError");
+        assert_eq!(raw_response.status(), StatusCode::ImATeapot);
+        assert_eq!(raw_response.headers().iter().count(), 1);
+        assert!(
+            matches!(str::from_utf8(raw_response.body()), Ok(body) if body == r#"{"json": "error"}"#)
+        );
     }
 
     #[test]
