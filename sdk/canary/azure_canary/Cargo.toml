@@ -1,6 +1,6 @@
 [package]
 name = "azure_canary"
-version = "0.2.0"
+version = "0.1.0"
 description = "Canary crate for Azure SDK pipeline testing"
 authors.workspace = true
 edition.workspace = true
