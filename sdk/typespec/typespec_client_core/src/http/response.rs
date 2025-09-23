@@ -411,7 +411,7 @@ mod tests {
                 .iter()
                 .any(|(k, v)| k.as_str() == "x-ms-error" && v.as_str() == "BadParameter"));
 
-            let err: ErrorResponse = err.json().await.expect("convert to ErrorResponse");
+            let err: ErrorResponse = err.json().expect("convert to ErrorResponse");
             assert_eq!(err.code, Some("BadParameter".into()));
             assert_eq!(err.message, Some("Bad parameter".into()));
         }

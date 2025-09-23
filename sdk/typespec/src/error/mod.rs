@@ -48,16 +48,6 @@ impl ErrorKind {
             context: Repr::Simple(self),
         }
     }
-
-    /// Create an `ErrorKind` from an HTTP response.
-    #[cfg(feature = "http")]
-    pub fn http_response(status: StatusCode, error_code: Option<String>) -> Self {
-        Self::HttpResponse {
-            status,
-            error_code,
-            raw_response: None,
-        }
-    }
 }
 
 impl Display for ErrorKind {

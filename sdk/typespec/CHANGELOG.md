@@ -8,6 +8,9 @@
 
 ### Breaking Changes
 
+- Changed `RawResponse::json()` from `async` to synchronous function. The body was already buffered.
+- Changed `RawResponse::xml()` from `async` to synchronous function. The body was already buffered.
+- Removed `ErrorKind::http_response()`. Construct an `ErrorResponse::HttpResponse` variant instead.
 - Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)"
   - Renamed `Error::full()` to `Error::with_error()`.
   - Renamed `Error::with_message()` to `Error::with_message_fn()`.

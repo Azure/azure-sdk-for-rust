@@ -157,7 +157,7 @@ impl ClientAssertion for Client {
 
             return Err(
                 azure_core::Error::with_message(
-                    ErrorKind::http_response(status_code, Some(status_code.canonical_reason().to_string())),
+                    ErrorKind::HttpResponse { status: status_code, error_code: Some(status_code.canonical_reason().to_string()), raw_response: None },
                      format!("{status_code} response from the OIDC endpoint. Check service connection ID and pipeline configuration. {err_headers}"),
                 )
             );
