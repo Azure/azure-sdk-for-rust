@@ -11,7 +11,7 @@ use azure_core::Result;
 use futures::Stream;
 use std::pin::Pin;
 use std::sync::{Arc, OnceLock, Weak};
-use tracing::{debug, warn};
+use tracing::{debug, trace, warn};
 
 /// Represents a client for interacting with a specific partition in Event Hubs.
 ///
@@ -203,7 +203,7 @@ impl PartitionClient {
 
 impl Drop for PartitionClient {
     fn drop(&mut self) {
-        debug!(
+        trace!(
             "Dropping PartitionClient for partition {}",
             self.partition_id
         );

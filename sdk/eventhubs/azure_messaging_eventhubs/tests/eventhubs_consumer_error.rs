@@ -3,6 +3,7 @@ use azure_messaging_eventhubs::{
     ConsumerClient, OpenReceiverOptions, ProducerClient, StartLocation, StartPosition,
 };
 use futures::StreamExt;
+use tracing::trace;
 
 #[recorded::test(live)]
 async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
@@ -34,7 +35,7 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
                 .await?;
         }
         producer.close().await?;
-        println!("Producer closed");
+        trace!("Producer closed");
     }
 
     let consumer = ConsumerClient::builder()
@@ -45,11 +46,11 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
         )
         .await?;
 
-    println!("Opened consumer client");
+    trace!("Opened consumer client");
 
     // Get the partition IDs
     let properties = consumer.get_eventhub_properties().await?;
-    println!("EventHub Properties: {:?}", properties);
+    trace!("EventHub Properties: {:?}", properties);
 
     // The default is to receive messages from the end of the partition, so specify a start position at the start of the partition.
     let receiver = consumer
@@ -66,13 +67,13 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
         )
         .await?;
 
-    println!("Created receiver");
+    trace!("Created receiver");
 
     // Create a stream of events from the receiver
     {
         let mut receive_stream = receiver.stream_events();
 
-        println!("Created receive stream");
+        trace!("Created receive stream");
 
         // Read 10 events
         let mut count = 0;
@@ -83,22 +84,22 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
             }
 
             let event = event?;
-            println!("Partition ID: {:?}", event.partition_key());
-            println!("Event offset: {:?}", event.offset());
+            trace!("Partition ID: {:?}", event.partition_key());
+            trace!("Event offset: {:?}", event.offset());
         }
-        println!("Read {} events", count);
+        trace!("Read {} events", count);
     }
 
     receiver.close().await?;
-    println!("Receiver closed");
+    trace!("Receiver closed");
 
     // Error
     match consumer.close().await {
         Ok(_) => {
-            println!("Consumer closed successfully");
+            trace!("Consumer closed successfully");
         }
         Err(e) => {
-            return Err(e.into());
+            return Err(e);
         }
     }
 

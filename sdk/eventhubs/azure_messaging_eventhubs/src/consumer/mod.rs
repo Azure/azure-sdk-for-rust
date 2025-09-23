@@ -905,7 +905,7 @@ pub(crate) mod tests {
         if let Ok(consumer) = Arc::try_unwrap(consumer) {
             consumer.close().await?;
         } else {
-            panic!("Could not unwrap consumer");
+            panic!("Consumer client has unresolved references.");
         }
 
         Ok(())
@@ -956,7 +956,7 @@ pub(crate) mod tests {
         if let Ok(consumer) = Arc::try_unwrap(consumer) {
             consumer.close().await?;
         } else {
-            panic!("Could not unwrap consumer");
+            panic!("Consumer client has unresolved references.");
         }
 
         Ok(())

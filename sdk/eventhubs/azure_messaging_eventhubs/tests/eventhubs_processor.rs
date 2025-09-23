@@ -56,17 +56,6 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
         }
     }
 
-    // info!("Shutdown signal sent to event processor");
-    // let r = event_processor.shutdown().await;
-    // if let Err(e) = r {
-    //     info!("Failed to shutdown event processor: {:?}", e);
-    // } else {
-    //     info!("Event processor shutdown sent successfully");
-    // }
-
-    // info!("Sleeping to let the processor task finish.");
-    // tokio::time::sleep(std::time::Duration::from_secs(6)).await;
-
     info!("Dereferencing the processor.");
     let processor = Arc::into_inner(event_processor);
     if let Some(processor) = processor {
