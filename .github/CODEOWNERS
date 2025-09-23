@@ -85,7 +85,7 @@
 /.github/workflows/      @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @RickWinter @ronniegeraghty @Azure/azure-sdk-eng
 /.config/1espt/          @benbp @weshaggard
-/sdk/template/			 @hallipr
+/sdk/canary/             @hallipr
 
 # Add owners for notifications for specific pipelines
 /eng/common/pipelines/codeowners-linter.yml       @rickwinter
