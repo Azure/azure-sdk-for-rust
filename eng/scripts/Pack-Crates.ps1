@@ -183,7 +183,6 @@ try {
 
     Invoke-LoggedCommand -Command $command -GroupOutput
 
-
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
       -LocalRegistryPath $localRegistryPath `
@@ -191,17 +190,11 @@ try {
 
     if ($OutputPath -and $package.OutputPackage) {
       $sourcePath = "$RepoRoot/target/package/$packageName-$packageVersion"
-      $targetPath = "$OutputPath/$packageName"
-      $targetContentsPath = "$targetPath/contents"
-      $targetApiReviewFile = "$targetPath/$packageName.rust.json"
+      $targetApiReviewFile = "$OutputPath/$packageName.rust.json"
 
-      if (Test-Path -Path $targetContentsPath) {
-        Remove-Item -Path $targetContentsPath -Recurse -Force
-      }
-
-      Write-Host "Copying package '$packageName' to '$targetContentsPath'"
-      New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
-      Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse -Exclude "Cargo.toml.orig"
+      Write-Host "Copying package '$packageName' to '$OutputPath'"
+      New-Item -ItemType Directory -Path $OutputPath -Force | Out-Null
+      Copy-Item -Path "$sourcePath.crate" -Destination $OutputPath
 
       Write-Host "Creating API review file"
       $apiReviewFile = Create-ApiViewFile $package
