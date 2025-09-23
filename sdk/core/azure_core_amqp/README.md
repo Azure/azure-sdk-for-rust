@@ -6,6 +6,39 @@ Azure AMQP crate for consumption of AMQP based packages in the Azure SDK for Rus
 
 This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 
+## SOCKS5 Proxy Support
+
+This crate supports SOCKS5 proxy connections for corporate environments. SOCKS5 support is enabled by configuring the `custom_endpoint` option with a SOCKS5 URL:
+
+```rust,no_run
+use azure_core::http::Url;
+use azure_core_amqp::AmqpConnectionOptions;
+
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
+let mut options = AmqpConnectionOptions::default();
+options.custom_endpoint = Some(Url::parse("socks5h://proxy.corp.com:8080")?);
+# Ok(())
+# }
+```
+
+### Supported Protocols
+
+- **socks5://** - Standard SOCKS5 with local DNS resolution
+- **socks5h://** - SOCKS5 with proxy-side DNS resolution (recommended for corporate environments)
+
+### Authentication
+
+Username/password authentication is supported via the proxy URL:
+```text
+socks5://username:password@proxy.example.com:1080
+```
+
+All proxy credentials are automatically masked in log output for security.
+
+### Dependencies
+
+SOCKS5 support adds the `tokio-socks` dependency to the crate.
+
 ## Testing the AMQP Client
 
 The AMQP package is tested using the standard `cargo test` command line:

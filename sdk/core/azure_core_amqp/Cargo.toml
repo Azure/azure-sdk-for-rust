@@ -29,6 +29,9 @@ serde.workspace = true
 serde_amqp = { workspace = true, optional = true }
 serde_bytes = { workspace = true, optional = true }
 tokio.workspace = true
+tokio-socks = "0.5"
+tokio-native-tls = "0.3"
+native-tls = "0.2"
 tracing.workspace = true
 typespec = { workspace = true, features = ["amqp"] }
 typespec_macros.workspace = true

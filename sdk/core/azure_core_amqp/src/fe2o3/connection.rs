@@ -4,12 +4,13 @@
 use super::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError};
 use crate::connection::{AmqpConnectionApis, AmqpConnectionOptions};
 use crate::error::AmqpErrorKind;
+use crate::socks5::SocksConnection;
 use crate::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use azure_core::{http::Url, Result};
 use fe2o3_amqp::connection::ConnectionHandle;
 use std::{borrow::BorrowMut, sync::OnceLock};
 use tokio::sync::Mutex;
-use tracing::{debug, warn};
+use tracing::{debug, error, warn};
 
 #[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpConnection {
@@ -61,7 +62,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             let mut builder = fe2o3_amqp::Connection::builder()
                 .sasl_profile(fe2o3_amqp::sasl_profile::SaslProfile::Anonymous)
                 .alt_tls_establishment(true)
-                .container_id(id)
+                .container_id(id.clone())
                 .max_frame_size(65536);
 
             if let Some(frame_size) = options.max_frame_size {
@@ -117,10 +118,68 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 builder = builder.hostname(url.host_str());
             }
 
-            self.connection
-                .set(Mutex::new(builder.open(endpoint).await.map_err(|e| {
+            let connection_type = if endpoint.scheme().starts_with("socks5") { "socks5" } else { "direct" };
+            let connection = if endpoint.scheme() == "socks5" || endpoint.scheme() == "socks5h" {
+                debug!(
+                    connection_id = %id,
+                    proxy_scheme = %endpoint.scheme(),
+                    target_host = %url.host_str().unwrap_or("unknown"),
+                    "Opening AMQP connection through SOCKS5 proxy"
+                );
+
+                // Use fe2o3's open_with_stream() to inject SOCKS5 connection
+                let stream = SocksConnection::connect(&endpoint, &url).await
+                    .map_err(|e| {
+                        error!(
+                            connection_id = %id,
+                            proxy_url = %SocksConnection::mask_credentials(&endpoint),
+                            error = %e,
+                            "Failed to establish SOCKS5 connection"
+                        );
+                        e
+                    })?;
+
+                debug!(
+                    connection_id = %id,
+                    "Opening AMQP connection with SOCKS5 stream"
+                );
+
+                builder.open_with_stream(stream).await.map_err(|e| {
+                    error!(
+                        connection_id = %id,
+                        error = %e,
+                        "Failed to open AMQP connection over SOCKS5 stream"
+                    );
                     azure_core::Error::from(Fe2o3ConnectionOpenError(e))
-                })?))
+                })?
+            } else {
+                debug!(
+                    connection_id = %id,
+                    endpoint = %endpoint,
+                    "Opening direct AMQP connection"
+                );
+
+                // Maintain existing behavior for non-SOCKS5 URLs
+                let endpoint_str = endpoint.to_string();
+                builder.open(endpoint).await.map_err(|e| {
+                    error!(
+                        connection_id = %id,
+                        endpoint = %endpoint_str,
+                        error = %e,
+                        "Failed to open direct AMQP connection"
+                    );
+                    azure_core::Error::from(Fe2o3ConnectionOpenError(e))
+                })?
+            };
+
+            debug!(
+                connection_id = %id,
+                connection_type = %connection_type,
+                "AMQP connection opened successfully"
+            );
+
+            self.connection
+                .set(Mutex::new(connection))
                 .map_err(|_| Self::connection_already_set())?;
             Ok(())
         }

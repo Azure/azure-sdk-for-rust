@@ -21,6 +21,7 @@ mod receiver;
 mod sender;
 mod session;
 mod simple_value;
+mod socks5;
 mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
