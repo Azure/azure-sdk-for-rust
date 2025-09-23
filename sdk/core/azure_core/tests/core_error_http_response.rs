@@ -9,7 +9,10 @@ use azure_core::{
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
 use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 use futures::FutureExt as _;
-use std::sync::{Arc, LazyLock};
+use std::{
+    str,
+    sync::{Arc, LazyLock},
+};
 
 #[tokio::test]
 async fn deconstruct_raw_response() -> Result<(), Box<dyn std::error::Error>> {

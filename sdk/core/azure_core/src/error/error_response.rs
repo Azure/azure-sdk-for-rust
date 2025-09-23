@@ -159,7 +159,7 @@ pub async fn check_success(
         let error_kind = ErrorKind::HttpResponse {
             status,
             error_code,
-            raw_response: None,
+            raw_response: Some(Box::new(raw_response)),
         };
         return Err(Error::with_message(error_kind, status.to_string()));
     }
@@ -321,14 +321,15 @@ mod tests {
 
         let err = check_success(response, None).await.unwrap_err();
         let kind = err.kind();
-        assert_eq!(
-            *kind,
+        assert!(matches!(
+            kind,
             ErrorKind::HttpResponse {
                 status: StatusCode::ImATeapot,
-                error_code: Some("testError".to_string()),
-                raw_response: None
+                error_code,
+                raw_response: Some(_),
             }
-        );
+            if error_code.as_deref() == Some("testError")
+        ));
     }
 
     #[tokio::test]
