@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::http::{ClientOptions, Response};
 use azure_core::time::OffsetDateTime;
 use azure_core::Result;

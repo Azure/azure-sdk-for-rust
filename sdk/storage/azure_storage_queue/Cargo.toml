@@ -19,7 +19,6 @@ default = ["azure_core/default"]
 [dependencies]
 azure_core = { workspace = true, features = ["xml"] }
 serde = { workspace = true }
-typespec_client_core = { workspace = true, features = ["derive"] }
 
 [lints]
 workspace = true
