@@ -9,7 +9,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-azure_canary_core = { path = "../azure_canary_core", version = "0.2.0" }
+azure_canary_core = { path = "../azure_canary_core", version = "0.1.0" }
 serde = { version = "1", features = ["derive"] }
 
 [lints]
