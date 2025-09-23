@@ -26,3 +26,5 @@ extends:
       safeName: AzureStorageCommon
     - name: azure_storage_blob
       safeName: AzureStorageBlob
+    - name: azure_storage_queue
+      safeName: AzureStorageQueue
