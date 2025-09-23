@@ -22,7 +22,7 @@ pub fn read_xml_str<T>(body: &str) -> Result<T>
 where
     T: DeserializeOwned,
 {
-    from_str(body).with_context(ErrorKind::DataConversion, || {
+    from_str(body).with_context_fn(ErrorKind::DataConversion, || {
         let t = core::any::type_name::<T>();
         format!("failed to deserialize the following xml into a {t}\n{body}")
     })
@@ -33,7 +33,7 @@ pub fn read_xml<T>(body: &[u8]) -> Result<T>
 where
     T: DeserializeOwned,
 {
-    from_reader(slice_bom(body)).with_context(ErrorKind::DataConversion, || {
+    from_reader(slice_bom(body)).with_context_fn(ErrorKind::DataConversion, || {
         let t = core::any::type_name::<T>();
         let xml = std::str::from_utf8(body).unwrap_or("(XML is not UTF8-encoded)");
         format!("failed to deserialize the following xml into a {t}\n{xml}")
@@ -47,7 +47,7 @@ pub fn to_xml<T>(value: &T) -> Result<Bytes>
 where
     T: serde::Serialize,
 {
-    let value = to_string(value).with_context(ErrorKind::DataConversion, || {
+    let value = to_string(value).with_context_fn(ErrorKind::DataConversion, || {
         let t = core::any::type_name::<T>();
         format!("failed to serialize {t} into xml")
     })?;
@@ -65,7 +65,7 @@ where
     T: serde::Serialize,
 {
     let value =
-        to_string_with_root(root_tag, value).with_context(ErrorKind::DataConversion, || {
+        to_string_with_root(root_tag, value).with_context_fn(ErrorKind::DataConversion, || {
             let t = core::any::type_name::<T>();
             format!("failed to serialize {t} into xml")
         })?;

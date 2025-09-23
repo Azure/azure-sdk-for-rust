@@ -22,8 +22,9 @@ use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Result
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
-    AmqpManagement, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSender,
-    AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource, AmqpSymbol,
+    AmqpManagement, AmqpManagementApis, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions,
+    AmqpSender, AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource,
+    AmqpSymbol,
 };
 #[cfg(test)]
 use std::sync::Mutex;
@@ -73,12 +74,12 @@ pub(crate) struct RecoverableConnection {
     pub(super) url: Url,
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
-    connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
     mgmt_client: AsyncMutex<Option<Arc<AmqpManagement>>>,
-    session_instances: AsyncMutex<HashMap<Url, Arc<AmqpSession>>>,
     receiver_instances: AsyncMutex<HashMap<Url, Arc<AmqpReceiver>>>,
     sender_instances: AsyncMutex<HashMap<Url, Arc<AmqpSender>>>,
+    session_instances: AsyncMutex<HashMap<Url, Arc<AmqpSession>>>,
     pub(super) authorizer: Arc<Authorizer>,
+    connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
     connection_name: String,
     pub(super) retry_options: RetryOptions,
 
@@ -134,7 +135,7 @@ impl RecoverableConnection {
     #[cfg(test)]
     pub(crate) fn force_error(&self, error: azure_core::Error) -> Result<()> {
         let mut err = self.forced_error.lock().map_err(|e| {
-            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
         *err = Some(error);
         Ok(())
@@ -161,10 +162,80 @@ impl RecoverableConnection {
     /// This method will close the underlying AMQP connection, if it exists. It will also cause all outstanding sends and receives
     /// to complete with an error.
     ///
-    pub(crate) async fn close_connection(&self) -> Result<()> {
-        let connection = self.ensure_connection().await?;
+    pub(crate) async fn close_connection(self) -> Result<()> {
+        trace!("Closing recoverable connection for {}.", self.url);
 
-        connection.close().await
+        let mut management_client = self.mgmt_client.lock().await;
+        if let Some(management_client) = management_client.take() {
+            trace!("Closing management client for {}.", self.url);
+            if let Ok(management_client) = Arc::try_unwrap(management_client) {
+                trace!("Detaching management client for {}.", self.url);
+                management_client.detach().await?;
+            } else {
+                trace!(
+                    "Failed to detach management client for {}, references exist.",
+                    self.url
+                );
+            }
+        }
+
+        let mut sender_instances = self.sender_instances.lock().await;
+        for (path, sender) in sender_instances.drain() {
+            trace!("Detaching sender for path {}.", path);
+            if let Ok(sender) = Arc::try_unwrap(sender) {
+                trace!("Detaching sender for path {}.", path);
+                sender.detach().await?;
+            } else {
+                trace!(
+                    "Failed to detach sender for path {}, references exist.",
+                    path
+                );
+            }
+        }
+
+        let mut receiver_instances = self.receiver_instances.lock().await;
+        for (source_url, receiver) in receiver_instances.drain() {
+            trace!("Detaching receiver for source URL {}.", source_url);
+            if let Ok(receiver) = Arc::try_unwrap(receiver) {
+                trace!("Detaching receiver for source URL {}.", source_url);
+                receiver.detach().await?;
+            } else {
+                trace!(
+                    "Failed to detach receiver for source URL {}, references exist.",
+                    source_url
+                );
+            }
+        }
+
+        let mut session_instances = self.session_instances.lock().await;
+        for (session_id, session) in session_instances.drain() {
+            trace!("Detaching session for ID {}.", session_id);
+            if let Ok(session) = Arc::try_unwrap(session) {
+                session.end().await?;
+            } else {
+                trace!(
+                    "Failed to detach session for ID {}, references exist.",
+                    session_id
+                );
+            }
+        }
+
+        if let Some(connection) = self.connections.lock().await.take() {
+            trace!("Closing connection for {}.", self.url);
+            if let Ok(connection) = Arc::try_unwrap(connection) {
+                trace!(
+                    "No references, actually closing connection for {}.",
+                    self.url
+                );
+                connection.close().await?;
+            } else {
+                trace!(
+                    "Failed to close connection for {}, references exist.",
+                    self.url
+                );
+            }
+        }
+        Ok(())
     }
 
     /// Ensures that the connection to the Event Hubs service is established.
@@ -451,7 +522,7 @@ impl RecoverableConnection {
             }
             _ => {
                 warn!("Recover action {reason:?} should already have been handled.");
-                return Err(azure_core::Error::message(
+                return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     "Unknown error recovery action",
                 ));
@@ -482,8 +553,7 @@ impl RecoverableConnection {
                 }
             }
             AmqpErrorKind::ConnectionClosedByRemote(_)
-            | AmqpErrorKind::ConnectionDetachedByRemote(_)
-            | AmqpErrorKind::ConnectionDropped(_) => {
+            | AmqpErrorKind::ConnectionDetachedByRemote(_) => {
                 debug!("Connection dropped error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectConnection
             }
@@ -500,7 +570,7 @@ impl RecoverableConnection {
             AmqpErrorKind::AmqpDescribedError(described_error) => {
                 debug!("AMQP described error: {:?}", described_error);
                 if matches!(
-                    described_error.condition(),
+                    described_error.condition,
                     AmqpErrorCondition::ResourceLimitExceeded
                         | AmqpErrorCondition::ConnectionFramingError
                         | AmqpErrorCondition::LinkStolen
@@ -511,7 +581,7 @@ impl RecoverableConnection {
                     debug!("AMQP described error can be retried: {:?}", described_error);
                     ErrorRecoveryAction::RetryAction
                 } else if matches!(
-                    described_error.condition(),
+                    described_error.condition,
                     AmqpErrorCondition::EntityDisabledError
                 ) {
                     debug!(
@@ -532,6 +602,12 @@ impl RecoverableConnection {
                 ErrorRecoveryAction::ReturnError
             }
         }
+    }
+}
+
+impl Drop for RecoverableConnection {
+    fn drop(&mut self) {
+        trace!("Dropping RecoverableConnection for {}", self.url);
     }
 }
 

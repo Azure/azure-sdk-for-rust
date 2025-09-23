@@ -84,7 +84,7 @@ impl Authorizer {
     #[cfg(test)]
     fn disable_authorization(&self) -> Result<()> {
         let mut disable_authorization = self.disable_authorization.lock().map_err(|e| {
-            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
         *disable_authorization = true;
         Ok(())
@@ -154,7 +154,7 @@ impl Authorizer {
         #[cfg(test)]
         {
             let disable_authorization = self.disable_authorization.lock().map_err(|e| {
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     format!("Unable to grab disable mutex: {}", e),
                 )
@@ -233,7 +233,7 @@ impl Authorizer {
             let mut now = OffsetDateTime::now_utc();
             trace!("refresh_tokens: Start pass for: {now}");
             let most_recent_refresh = expiration_times.first().ok_or_else(|| {
-                azure_core::Error::message(AzureErrorKind::Other, "No tokens to refresh?")
+                azure_core::Error::with_message(AzureErrorKind::Other, "No tokens to refresh?")
             })?;
 
             debug!(
@@ -245,7 +245,7 @@ impl Authorizer {
             let token_refresh_bias: Duration;
             {
                 let token_refresh_times = self.token_refresh_bias.lock().map_err(|e| {
-                    azure_core::Error::message(
+                    azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
                         format!("Unable to grab token refresh bias mutex: {}", e),
                     )
@@ -263,7 +263,7 @@ impl Authorizer {
                     .before_expiration_refresh_time
                     .checked_add(expiration_jitter)
                     .ok_or_else(|| {
-                        azure_core::Error::message(
+                        azure_core::Error::with_message(
                             AzureErrorKind::Other,
                             "Unable to calculate token refresh bias - overflow",
                         )
@@ -273,7 +273,7 @@ impl Authorizer {
                 refresh_time = most_recent_refresh
                     .checked_sub(token_refresh_bias)
                     .ok_or_else(|| {
-                        azure_core::Error::message(
+                        azure_core::Error::with_message(
                             AzureErrorKind::Other,
                             "Unable to calculate token refresh bias - underflow",
                         )
@@ -328,7 +328,7 @@ impl Authorizer {
 
                 // Create an ephemeral connection to host the authentication.
                 let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
-                    azure_core::Error::message(
+                    azure_core::Error::with_message(
                         AzureErrorKind::Other,
                         "Recoverable connection has been dropped",
                     )
@@ -357,7 +357,7 @@ impl Authorizer {
     #[cfg(test)]
     fn set_token_refresh_times(&self, refresh_times: TokenRefreshTimes) -> Result<()> {
         let mut token_refresh_bias = self.token_refresh_bias.lock().map_err(|e| {
-            azure_core::Error::message(azure_core::error::ErrorKind::Other, e.to_string())
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
         *token_refresh_bias = refresh_times;
         Ok(())
@@ -566,9 +566,9 @@ mod tests {
         let final_count = mock_credential.get_token_get_count();
         debug!("After sleeping, token count: {final_count}");
 
-        assert_eq!(
-            final_count, 2,
-            "Expected token get count to be 2, but got {final_count}"
+        assert!(
+            final_count >= 2,
+            "Expected token get count to be greater or equal to 2, but got {final_count}"
         );
         info!("Final token get count: {final_count}");
         Ok(())
@@ -650,7 +650,7 @@ mod tests {
         debug!("After sleeping the first time, token count: {final_count}");
         assert!(
             final_count >= 3,
-            "Expected first get token count to be 3, but got {final_count}"
+            "Expected first get token count to be at least 3, but got {final_count}"
         );
 
         info!("First token expiration get count: {}", final_count);

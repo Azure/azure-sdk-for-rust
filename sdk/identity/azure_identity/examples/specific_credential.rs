@@ -98,7 +98,7 @@ impl SpecificAzureCredential {
                 azure_credential_kinds::MANAGED_IDENTITY => {
                     ManagedIdentityCredential::new(None)
                         .map(SpecificAzureCredentialKind::ManagedIdentity)
-                        .with_context(ErrorKind::Credential, || {
+                        .with_context_fn(ErrorKind::Credential, || {
                             format!(
                                 "unable to create AZURE_CREDENTIAL_KIND of {}",
                                 azure_credential_kinds::MANAGED_IDENTITY
@@ -108,7 +108,7 @@ impl SpecificAzureCredential {
                 #[cfg(not(target_arch = "wasm32"))]
                 azure_credential_kinds::AZURE_CLI => AzureCliCredential::new(None)
                     .map(SpecificAzureCredentialKind::AzureCli)
-                    .with_context(ErrorKind::Credential, || {
+                    .with_context_fn(ErrorKind::Credential, || {
                         format!(
                             "unable to create AZURE_CREDENTIAL_KIND of {}",
                             azure_credential_kinds::AZURE_CLI
@@ -117,7 +117,7 @@ impl SpecificAzureCredential {
                 azure_credential_kinds::WORKLOAD_IDENTITY => {
                     WorkloadIdentityCredential::new(None)
                         .map(SpecificAzureCredentialKind::WorkloadIdentity)
-                        .with_context(ErrorKind::Credential, || {
+                        .with_context_fn(ErrorKind::Credential, || {
                             format!(
                                 "unable to create AZURE_CREDENTIAL_KIND of {}",
                                 azure_credential_kinds::WORKLOAD_IDENTITY
@@ -125,7 +125,7 @@ impl SpecificAzureCredential {
                         })?
                 }
                 _ => {
-                    return Err(Error::with_message(ErrorKind::Credential, || {
+                    return Err(Error::with_message_fn(ErrorKind::Credential, || {
                         format!("unknown AZURE_CREDENTIAL_KIND of {}", credential_type)
                     }))
                 }

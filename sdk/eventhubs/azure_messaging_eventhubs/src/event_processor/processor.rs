@@ -45,7 +45,7 @@ use tracing::{debug, error, info};
 pub struct EventProcessor {
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     load_balancer: Arc<AsyncMutex<LoadBalancer>>,
-    consumer_client: Arc<ConsumerClient>,
+    consumer_client: ConsumerClient,
     next_partition_clients: AsyncMutex<Receiver<Arc<PartitionClient>>>,
     next_partition_client_sender: Sender<Arc<PartitionClient>>,
     client_details: ConsumerClientDetails,
@@ -98,7 +98,10 @@ impl ProcessorConsumersMap {
     ) -> Result<bool> {
         info!("Adding partition client for partition: {}", partition_id);
         let mut consumers = self.consumers.lock().map_err(|_| {
-            azure_core::Error::message(AzureErrorKind::Other, "Could not lock consumers mutex.")
+            azure_core::Error::with_message(
+                AzureErrorKind::Other,
+                "Could not lock consumers mutex.",
+            )
         })?;
         if consumers.contains_key(partition_id) {
             info!(
@@ -115,7 +118,10 @@ impl ProcessorConsumersMap {
     pub fn remove_partition_client(&self, partition_id: &str) -> Result<()> {
         info!("Removing partition client for partition: {}", partition_id);
         let mut consumers = self.consumers.lock().map_err(|_| {
-            azure_core::Error::message(AzureErrorKind::Other, "Could not lock consumers mutex.")
+            azure_core::Error::with_message(
+                AzureErrorKind::Other,
+                "Could not lock consumers mutex.",
+            )
         })?;
         consumers.remove(partition_id);
         info!("Consumers for partition now: {:?}", consumers.keys());
@@ -139,7 +145,7 @@ impl EventProcessor {
     }
 
     fn new(
-        consumer_client: Arc<ConsumerClient>,
+        consumer_client: ConsumerClient,
         checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
         options: EventProcessorOptions,
     ) -> Result<Arc<Self>> {
@@ -149,7 +155,7 @@ impl EventProcessor {
 
         Ok(Arc::new(EventProcessor {
             checkpoint_store: checkpoint_store.clone(),
-            consumer_client: consumer_client.clone(),
+            consumer_client,
 
             // Default to Balanced strategy if not provided
             load_balancer: Arc::new(AsyncMutex::new(LoadBalancer::new(
@@ -197,7 +203,7 @@ impl EventProcessor {
     ///       .with_partition_expiration_duration(Duration::seconds(10))
     ///       .with_prefetch(300)
     ///       .build(
-    ///          Arc::new(consumer_client),
+    ///          consumer_client,
     ///          Arc::new(checkpoint_store)).await?;
     ///
     ///   // Start the event processor
@@ -245,6 +251,7 @@ impl EventProcessor {
             }
             debug!("Event processor sleeping for {:?}", self.update_interval);
             azure_core::sleep::sleep(self.update_interval).await;
+            debug!("Event processor woke up from sleep.");
             if self.is_shutdown()? {
                 info!("Event processor shutting down.");
                 break Ok(());
@@ -257,7 +264,7 @@ impl EventProcessor {
         // Implement shutdown logic if needed
 
         let mut is_running = self.is_running.lock().map_err(|_| {
-            Error::message(
+            Error::with_message(
                 AzureErrorKind::Other,
                 "Failed to acquire lock on is_running for shutdown",
             )
@@ -270,7 +277,7 @@ impl EventProcessor {
     fn is_shutdown(&self) -> Result<bool> {
         // Implement shutdown logic if needed
         let is_running = self.is_running.lock().map_err(|_| {
-            Error::message(
+            Error::with_message(
                 AzureErrorKind::Other,
                 "Failed to acquire lock on is_running",
             )
@@ -351,7 +358,7 @@ impl EventProcessor {
             }
         } else {
             error!("Consumers map is no longer valid.");
-            return Err(Error::message(
+            return Err(Error::with_message(
                 AzureErrorKind::Other,
                 "Consumers map is no longer valid.",
             ));
@@ -388,14 +395,14 @@ impl EventProcessor {
         {
             let mut sender = self.next_partition_client_sender.clone();
             let r = sender.send(partition_client).await.map_err(|e| {
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     AzureErrorKind::Other,
                     format!("Failed to send partition client: {:?}", e),
                 )
             });
             if let Err(e) = r {
                 info!("Failed to send partition client: {:?}", e);
-                return Err(Error::message(
+                return Err(Error::with_message(
                     AzureErrorKind::Other,
                     "Failed to send partition client",
                 ));
@@ -420,7 +427,7 @@ impl EventProcessor {
             // Wait for the next partition client to be available
             let mut clients = self.next_partition_clients.lock().await;
             let next_client = clients.next().await.ok_or_else(|| {
-                azure_core::Error::message(
+                azure_core::Error::with_message(
                     AzureErrorKind::Other,
                     "No next partition client available: ",
                 )
@@ -436,15 +443,36 @@ impl EventProcessor {
 
     /// Closes the event processor.
     pub async fn close(self) -> Result<()> {
-        // Close the event processor and release resources.
-        let consumer = Arc::into_inner(self.consumer_client);
-        if let Some(consumer) = consumer {
-            info!("Closing consumer client.");
-            consumer.close().await?;
-        } else {
-            info!("Consumer client externally referenced.");
+        // Close all partition clients.
+        info!("Closing all partition clients.");
+        let mut clients = self.next_partition_clients.lock().await;
+        while let Some(client) = clients.try_next().ok().flatten() {
+            info!(
+                "Closing partition client for partition: {}",
+                client.get_partition_id()
+            );
+            let client = Arc::try_unwrap(client).map_err(|_| {
+                azure_core::Error::with_message(
+                    AzureErrorKind::Other,
+                    "Partition client still has multiple references.",
+                )
+            })?;
+            let res = client.close().await;
+            if let Err(e) = res {
+                error!("Failed to close partition client: {:?}", e);
+            } else {
+                info!("Partition client closed successfully");
+            }
         }
 
+        // Close the event processor and release resources.
+        info!("Closing consumer client.");
+        let res = self.consumer_client.close().await;
+        if let Err(e) = res {
+            error!("Failed to close consumer client: {:?}", e);
+        } else {
+            info!("Consumer client closed successfully");
+        }
         Ok(())
     }
 
@@ -541,18 +569,16 @@ pub mod builders {
     ///
     /// let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
     /// let eventhub_name = std::env::var("EVENTHUB_NAME")?;
-    /// let consumer = Arc::new(
-    ///     ConsumerClient::builder()
+    /// let consumer = ConsumerClient::builder()
     ///         .open(
     ///             &eventhub_namespace,
     ///             eventhub_name,
     ///             DeveloperToolsCredential::new(None)?.clone(),
     ///         )
-    ///         .await?,
-    /// );
+    ///         .await?;
     /// println!("Opened consumer client");
     /// let processor = EventProcessor::builder()
-    ///     .build(consumer.clone(), checkpoint_store.clone())
+    ///     .build(consumer, checkpoint_store.clone())
     ///     .await?;
     /// Ok(())
     /// }
@@ -623,7 +649,7 @@ pub mod builders {
         /// Returns a `Result` containing the constructed `EventProcessor`.
         pub async fn build(
             self,
-            consumer_client: Arc<ConsumerClient>,
+            consumer_client: ConsumerClient,
             checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
         ) -> Result<Arc<EventProcessor>> {
             // Retrieve the set of partitions from the consumer client

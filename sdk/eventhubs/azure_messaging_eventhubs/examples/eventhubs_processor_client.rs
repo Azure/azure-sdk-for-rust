@@ -30,7 +30,7 @@ impl BackgroundProcessor {
         // Start the background task to process events
         let mut task = self.background_task.lock().await;
         //        let mut task = task.as_mut();
-        let processor = Arc::clone(&self.processor);
+        let processor = self.processor.clone();
         task.replace(tokio::spawn(async move { processor.run().await }));
         Ok(())
     }
@@ -58,21 +58,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
     let eventhub_name = std::env::var("EVENTHUB_NAME")?;
 
-    let consumer = Arc::new(
-        ConsumerClient::builder()
-            .open(
-                eventhub_namespace.as_str(),
-                eventhub_name,
-                DeveloperToolsCredential::new(None)?.clone(),
-            )
-            .await?,
-    );
+    let consumer = ConsumerClient::builder()
+        .open(
+            eventhub_namespace.as_str(),
+            eventhub_name,
+            DeveloperToolsCredential::new(None)?.clone(),
+        )
+        .await?;
 
     println!("Opened consumer client");
 
     let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
     let processor = EventProcessor::builder()
-        .build(consumer.clone(), checkpoint_store)
+        .build(consumer, checkpoint_store)
         .await?;
     let background_processor = BackgroundProcessor::new(processor.clone()).await?;
 
@@ -115,6 +113,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Stopping background processor");
     background_processor.stop().await?;
     println!("Stopped background processor");
+
+    // Close the processor
+    if let Ok(processor) = Arc::try_unwrap(processor) {
+        processor.close().await?;
+        println!("Closed processor");
+    } else {
+        println!("Processor still has references, not closing.");
+    }
 
     Ok(())
 }

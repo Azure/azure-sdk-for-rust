@@ -369,7 +369,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ..Default::default()
         }),
         key_properties: Some(KeyProperties {
-            key_type: Some(KeyType::EC),
+            key_type: Some(KeyType::Ec),
             curve: Some(CurveName::P256),
             ..Default::default()
         }),
@@ -398,7 +398,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None,
     )?;
     let body = SignParameters {
-        algorithm: Some(SignatureAlgorithm::ES256),
+        algorithm: Some(SignatureAlgorithm::Es256),
         value: Some(digest),
     };
 

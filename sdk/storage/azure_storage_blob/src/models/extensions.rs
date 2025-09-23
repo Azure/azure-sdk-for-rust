@@ -12,7 +12,7 @@ use std::collections::HashMap;
 /// # Arguments
 ///
 /// * `self` - The options bag to be modified.
-impl<'a> PageBlobClientCreateOptions<'a> {
+impl PageBlobClientCreateOptions<'_> {
     pub fn with_if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
@@ -25,7 +25,7 @@ impl<'a> PageBlobClientCreateOptions<'a> {
 /// # Arguments
 ///
 /// * `self` - The options bag to be modified.
-impl<'a> AppendBlobClientCreateOptions<'a> {
+impl AppendBlobClientCreateOptions<'_> {
     pub fn with_if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
@@ -38,7 +38,7 @@ impl<'a> AppendBlobClientCreateOptions<'a> {
 /// # Arguments
 ///
 /// * `self` - The options bag to be modified.
-impl<'a> BlockBlobClientUploadBlobFromUrlOptions<'a> {
+impl BlockBlobClientUploadBlobFromUrlOptions<'_> {
     pub fn with_if_not_exists(self) -> Self {
         Self {
             if_none_match: Some("*".into()),
@@ -52,7 +52,7 @@ impl<'a> BlockBlobClientUploadBlobFromUrlOptions<'a> {
 ///
 /// * `self` - The options bag to be modified.
 /// * `tags` - A HashMap of key-value pairs representing the blob tags.
-impl<'a> BlockBlobClientUploadOptions<'a> {
+impl BlockBlobClientUploadOptions<'_> {
     pub fn with_tags(self, tags: HashMap<String, String>) -> Self {
         let tags_string = tags
             .iter()
@@ -81,7 +81,7 @@ impl TryFrom<BlobTags> for HashMap<String, String> {
                         map.insert(k, v);
                     }
                     _ => {
-                        return Err(azure_core::Error::message(
+                        return Err(azure_core::Error::with_message(
                             azure_core::error::ErrorKind::DataConversion,
                             "BlobTag missing key or value",
                         ));

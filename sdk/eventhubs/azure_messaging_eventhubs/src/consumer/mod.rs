@@ -148,7 +148,19 @@ impl ConsumerClient {
     /// ```
     pub async fn close(self) -> Result<()> {
         trace!("Closing consumer client for {}.", self.endpoint);
-        self.recoverable_connection.close_connection().await
+        let recoverable_connection =
+            Arc::try_unwrap(self.recoverable_connection).map_err(|_| {
+                Error::with_message(
+                    AzureErrorKind::Other,
+                    "Could not close consumer recoverable connection, multiple references exist",
+                )
+            })?;
+        trace!(
+            "No references to connection, closing connection for {}.",
+            self.endpoint
+        );
+        recoverable_connection.close_connection().await?;
+        Ok(())
     }
 
     /// Forces an error on the connection.
@@ -168,7 +180,7 @@ impl ConsumerClient {
                 .endpoint
                 .host()
                 .ok_or_else(|| {
-                    Error::message(
+                    Error::with_message(
                         AzureErrorKind::Other,
                         "Could not find host in consumer client",
                     )
@@ -890,6 +902,12 @@ pub(crate) mod tests {
         )
         .await?;
 
+        if let Ok(consumer) = Arc::try_unwrap(consumer) {
+            consumer.close().await?;
+        } else {
+            panic!("Consumer client has unresolved references.");
+        }
+
         Ok(())
     }
 
@@ -934,6 +952,12 @@ pub(crate) mod tests {
             Duration::seconds(20), // Seconds until test timeout.
         )
         .await?;
+
+        if let Ok(consumer) = Arc::try_unwrap(consumer) {
+            consumer.close().await?;
+        } else {
+            panic!("Consumer client has unresolved references.");
+        }
 
         Ok(())
     }

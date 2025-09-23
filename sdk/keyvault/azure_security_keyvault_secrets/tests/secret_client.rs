@@ -233,9 +233,9 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
         |tracer_provider| {
             let mut options = SecretClientOptions::default();
             recording.instrument(&mut options.client_options);
-            options.client_options.instrumentation = Some(InstrumentationOptions {
+            options.client_options.instrumentation = InstrumentationOptions {
                 tracer_provider: Some(tracer_provider),
-            });
+            };
             SecretClient::new(
                 recording.var("AZURE_KEYVAULT_URL", None).as_str(),
                 recording.credential(),

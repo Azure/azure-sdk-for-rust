@@ -57,8 +57,9 @@ impl ListOfSignedIdentifierHeaders for Response<ListOfSignedIdentifier, XmlForma
 /// async fn example() -> Result<()> {
 ///     let response: Response<QueueClientGetMetadataResult, NoFormat> = unimplemented!();
 ///     // Access response headers
-///     let metadata = response.metadata()?;
-///     println!("x-ms-meta: {:?}", metadata);
+///     if let Some(metadata) = response.metadata()? {
+///         println!("x-ms-meta: {:?}", metadata);
+///     }
 ///     Ok(())
 /// }
 /// ```

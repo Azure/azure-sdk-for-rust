@@ -49,13 +49,22 @@ impl Policy for RecordingPolicy {
             origin = Some(url.origin());
 
             url.set_scheme(host.scheme()).map_err(|_| {
-                azure_core::Error::message(ErrorKind::Other, "failed to set recording url scheme")
+                azure_core::Error::with_message(
+                    ErrorKind::Other,
+                    "failed to set recording url scheme",
+                )
             })?;
             url.set_host(host.host_str()).map_err(|_| {
-                azure_core::Error::message(ErrorKind::Other, "failed to set recording url host")
+                azure_core::Error::with_message(
+                    ErrorKind::Other,
+                    "failed to set recording url host",
+                )
             })?;
             url.set_port(host.port()).map_err(|_| {
-                azure_core::Error::message(ErrorKind::Other, "failed to set recording url port")
+                azure_core::Error::with_message(
+                    ErrorKind::Other,
+                    "failed to set recording url port",
+                )
             })?;
         }
 
@@ -80,16 +89,22 @@ impl Policy for RecordingPolicy {
                 let url = request.url_mut();
 
                 url.set_scheme(scheme.as_ref()).map_err(|_| {
-                    azure_core::Error::message(
+                    azure_core::Error::with_message(
                         ErrorKind::Other,
                         "failed to set recording url scheme",
                     )
                 })?;
                 url.set_host(Some(host.to_string().as_ref())).map_err(|_| {
-                    azure_core::Error::message(ErrorKind::Other, "failed to set recording url host")
+                    azure_core::Error::with_message(
+                        ErrorKind::Other,
+                        "failed to set recording url host",
+                    )
                 })?;
                 url.set_port(Some(port)).map_err(|_| {
-                    azure_core::Error::message(ErrorKind::Other, "failed to set recording url port")
+                    azure_core::Error::with_message(
+                        ErrorKind::Other,
+                        "failed to set recording url port",
+                    )
                 })?;
             }
 

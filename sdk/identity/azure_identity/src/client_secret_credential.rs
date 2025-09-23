@@ -5,7 +5,7 @@ use crate::{
     deserialize, get_authority_host, EntraIdErrorResponse, EntraIdTokenResponse, TokenCache,
 };
 use azure_core::credentials::TokenRequestOptions;
-use azure_core::http::StatusCode;
+use azure_core::http::{PipelineSendOptions, StatusCode};
 use azure_core::Result;
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential},
@@ -45,6 +45,14 @@ pub struct ClientSecretCredential {
 }
 
 impl ClientSecretCredential {
+    /// Create a new instance of a Client Secret Credential.
+    ///
+    /// # Arguments
+    /// - `tenant_id`: The Azure Active Directory tenant (directory) ID of the service principal.
+    /// - `client_id`: The client (application) ID of the service principal.
+    /// - `secret`: The client secret that was generated for the service principal.
+    /// - `options`: Options for configuring the credential. If `None` is provided, default options will be used.
+    ///
     pub fn new(
         tenant_id: &str,
         client_id: String,
@@ -59,7 +67,7 @@ impl ClientSecretCredential {
         let authority_host = get_authority_host(None, options.authority_host)?;
         let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
-            .with_context(ErrorKind::DataConversion, || {
+            .with_context_fn(ErrorKind::DataConversion, || {
                 format!("tenant_id '{tenant_id}' could not be URL encoded")
             })?;
 
@@ -101,7 +109,17 @@ impl ClientSecretCredential {
 
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
-        let res = self.pipeline.send(&ctx, &mut req).await?;
+        let res = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut req,
+                Some(PipelineSendOptions {
+                    skip_checks: true,
+                    ..Default::default()
+                }),
+            )
+            .await?;
 
         match res.status() {
             StatusCode::Ok => {
@@ -123,7 +141,7 @@ impl ClientSecretCredential {
                         CLIENT_SECRET_CREDENTIAL, error_response.error_description
                     )
                 };
-                Err(Error::message(ErrorKind::Credential, message))
+                Err(Error::with_message(ErrorKind::Credential, message))
             }
         }
     }
@@ -138,7 +156,10 @@ impl TokenCredential for ClientSecretCredential {
         options: Option<TokenRequestOptions<'_>>,
     ) -> Result<AccessToken> {
         if scopes.is_empty() {
-            return Err(Error::message(ErrorKind::Credential, "no scopes specified"));
+            return Err(Error::with_message(
+                ErrorKind::Credential,
+                "no scopes specified",
+            ));
         }
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
@@ -152,7 +173,7 @@ mod tests {
     use crate::tests::*;
     use azure_core::{
         authority_hosts::AZURE_PUBLIC_CLOUD,
-        http::{headers::Headers, BufResponse, StatusCode, TransportOptions},
+        http::{headers::Headers, BufResponse, StatusCode, Transport},
         Bytes, Result,
     };
     use std::vec;
@@ -195,7 +216,7 @@ mod tests {
             FAKE_SECRET.into(),
             Some(ClientSecretCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(sts))),
+                    transport: Some(Transport::new(Arc::new(sts))),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -238,7 +259,7 @@ mod tests {
             FAKE_SECRET.into(),
             Some(ClientSecretCredentialOptions {
                 client_options: ClientOptions {
-                    transport: Some(TransportOptions::new(Arc::new(sts))),
+                    transport: Some(Transport::new(Arc::new(sts))),
                     ..Default::default()
                 },
                 ..Default::default()

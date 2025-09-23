@@ -498,11 +498,11 @@ fn assert_message_text(actual: Option<String>, expected: &str, message_index: us
     );
 }
 
-async fn peek_and_assert<'a>(
+async fn peek_and_assert(
     queue_client: &QueueClient,
     expected_messages: &[&str],
     count: usize,
-    options: Option<QueueClientPeekMessagesOptions<'a>>,
+    options: Option<QueueClientPeekMessagesOptions<'_>>,
 ) -> Result<()> {
     // Peek the messages in the queue
     let response = queue_client.peek_messages(options).await?;

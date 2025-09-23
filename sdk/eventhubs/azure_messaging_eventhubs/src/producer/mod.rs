@@ -9,7 +9,11 @@ use crate::{
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
     RetryOptions,
 };
-use azure_core::{error::Result, http::Url, Uuid};
+use azure_core::{
+    error::{Error, ErrorKind as AzureErrorKind, Result},
+    http::Url,
+    Uuid,
+};
 use azure_core_amqp::{
     error::AmqpErrorKind, AmqpError, AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis,
 };
@@ -130,7 +134,17 @@ impl ProducerClient {
     ///
     /// Note that dropping the ProducerClient will also close the connection.
     pub async fn close(self) -> Result<()> {
-        self.connection.close_connection().await
+        trace!("Closing producer client for {}.", self.endpoint);
+        Arc::try_unwrap(self.connection)
+            .map_err(|_| {
+                Error::with_message(
+                    AzureErrorKind::Other,
+                    "Could not close producer recoverable connection, multiple references exist",
+                )
+            })?
+            .close_connection()
+            .await?;
+        Ok(())
     }
 
     /// Sends an event to the Event Hub.
@@ -154,7 +168,8 @@ impl ProducerClient {
         let event = event.into();
         let mut message = AmqpMessage::from(event);
 
-        if message.properties().is_none() || message.properties().unwrap().message_id.is_none() {
+        if message.properties.is_none() || message.properties.as_ref().unwrap().message_id.is_none()
+        {
             message.set_message_id(Uuid::new_v4());
         }
 
@@ -209,7 +224,7 @@ impl ProducerClient {
                         AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)),
                     ));
                 }
-                Err(azure_core::Error::message(
+                Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Amqp,
                     "Send was rejected by the Event Hub.",
                 ))
@@ -326,7 +341,7 @@ impl ProducerClient {
                         AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)),
                     ));
                 }
-                Err(azure_core::Error::message(
+                Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Amqp,
                     "Batch was rejected by the Event Hub.",
                 ))

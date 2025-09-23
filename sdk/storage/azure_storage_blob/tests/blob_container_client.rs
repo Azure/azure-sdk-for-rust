@@ -43,6 +43,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
     assert!(response.is_err());
     let error = response.unwrap_err().http_status();
     assert_eq!(StatusCode::NotFound, error.unwrap());
+    assert!(!container_client.exists().await?);
 
     // Container Exists Scenario
     container_client.create_container(None).await?;
@@ -53,6 +54,7 @@ async fn test_get_container_properties(ctx: TestContext) -> Result<(), Box<dyn E
     // Assert
     assert_eq!(LeaseState::Available, lease_state.unwrap());
     assert!(!has_immutability_policy.unwrap());
+    assert!(container_client.exists().await?);
 
     container_client.delete_container(None).await?;
     Ok(())

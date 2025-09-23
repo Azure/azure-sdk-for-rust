@@ -107,6 +107,7 @@ pub struct KeyClientListDeletedKeyPropertiesOptions<'a> {
 }
 
 impl KeyClientListDeletedKeyPropertiesOptions<'_> {
+    /// Transforms this [`KeyClientListDeletedKeyPropertiesOptions`] into a new `KeyClientListDeletedKeyPropertiesOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> KeyClientListDeletedKeyPropertiesOptions<'static> {
         KeyClientListDeletedKeyPropertiesOptions {
             maxresults: self.maxresults,
@@ -128,6 +129,7 @@ pub struct KeyClientListKeyPropertiesOptions<'a> {
 }
 
 impl KeyClientListKeyPropertiesOptions<'_> {
+    /// Transforms this [`KeyClientListKeyPropertiesOptions`] into a new `KeyClientListKeyPropertiesOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> KeyClientListKeyPropertiesOptions<'static> {
         KeyClientListKeyPropertiesOptions {
             maxresults: self.maxresults,
@@ -149,6 +151,7 @@ pub struct KeyClientListKeyPropertiesVersionsOptions<'a> {
 }
 
 impl KeyClientListKeyPropertiesVersionsOptions<'_> {
+    /// Transforms this [`KeyClientListKeyPropertiesVersionsOptions`] into a new `KeyClientListKeyPropertiesVersionsOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> KeyClientListKeyPropertiesVersionsOptions<'static> {
         KeyClientListKeyPropertiesVersionsOptions {
             maxresults: self.maxresults,

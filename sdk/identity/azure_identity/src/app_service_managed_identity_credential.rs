@@ -28,13 +28,13 @@ impl AppServiceManagedIdentityCredential {
     ) -> azure_core::Result<Arc<Self>> {
         let endpoint = &env
             .var(ENDPOINT_ENV)
-            .with_context(ErrorKind::Credential, || {
+            .with_context_fn(ErrorKind::Credential, || {
                 format!(
                     "app service credential requires {} environment variable",
                     ENDPOINT_ENV
                 )
             })?;
-        let endpoint = Url::parse(endpoint).with_context(ErrorKind::Credential, || {
+        let endpoint = Url::parse(endpoint).with_context_fn(ErrorKind::Credential, || {
             format!(
                 "app service credential {} environment variable must be a valid URL, but is '{endpoint}'",
                 ENDPOINT_ENV

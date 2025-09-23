@@ -7,7 +7,7 @@ use azure_core::{
     http::{
         headers::Headers,
         policies::{Policy, PolicyResult},
-        BufResponse, Context, HttpClient, Method, Request, StatusCode, TransportOptions,
+        BufResponse, Context, HttpClient, Method, Request, StatusCode, Transport,
     },
 };
 use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -52,7 +52,7 @@ async fn test_remove_user_agent() -> Result<(), Box<dyn std::error::Error>> {
     // You normally would create credentials from `azure_identity` and
     // use the default transport in production.
     let (credential, transport) = setup()?;
-    options.client_options.transport = Some(TransportOptions::new(transport));
+    options.client_options.transport = Some(Transport::new(transport));
 
     // Construct the client with these options and a shared credential.
     let client = SecretClient::new(

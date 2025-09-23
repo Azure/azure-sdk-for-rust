@@ -63,7 +63,7 @@ impl FromStr for TestMode {
             "playback" => Ok(Self::Playback),
             "record" => Ok(Self::Record),
             "live" => Ok(Self::Live),
-            _ => Err(Error::message(
+            _ => Err(Error::with_message(
                 ErrorKind::DataConversion,
                 "expected 'playback', 'record', or 'live'",
             )),
@@ -78,7 +78,9 @@ pub const RECORDING_MODE: HeaderName = HeaderName::from_static("x-recording-mode
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RecordingMode {
     #[default]
+    /// Playback mode
     Playback,
+    /// Record mode
     Record,
 }
 
@@ -104,7 +106,7 @@ impl FromStr for RecordingMode {
         match s.to_ascii_lowercase().as_str() {
             "playback" => Ok(Self::Playback),
             "record" => Ok(Self::Record),
-            _ => Err(Error::message(
+            _ => Err(Error::with_message(
                 ErrorKind::DataConversion,
                 "expected 'playback' or 'record'",
             )),

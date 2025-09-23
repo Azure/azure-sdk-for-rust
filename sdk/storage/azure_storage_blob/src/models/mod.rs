@@ -78,7 +78,7 @@ pub use crate::generated::models::{
     PageBlobClientUploadPagesFromUrlResultHeaders, PageBlobClientUploadPagesOptions,
     PageBlobClientUploadPagesResult, PageBlobClientUploadPagesResultHeaders, PageList,
     PageListHeaders, PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority,
-    RetentionPolicy, SequenceNumberActionType, SignedIdentifier, StaticWebsite,
+    RetentionPolicy, SequenceNumberActionType, SignedIdentifier, StaticWebsite, StorageErrorCode,
     StorageServiceStats, StorageServiceStatsHeaders, UserDelegationKey, UserDelegationKeyHeaders,
     VecSignedIdentifierHeaders,
 };

@@ -6,9 +6,13 @@
 
 ### Breaking Changes
 
+- `EventProcessor` now consumes its `ConsumerClient` parameter rather than accepting a clone of an `Arc`.
+
 ### Bugs Fixed
 
 ### Other Changes
+
+- Internal refactoring to ensure that the `close()` method on various clients works as expected.
 
 ## 0.7.0 (2025-09-16)
 

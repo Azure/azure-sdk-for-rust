@@ -32,7 +32,7 @@ pub struct Checkpoint {
 macro_rules! check_non_empty_parameter(
     ($field:expr) => {
         if $field.is_empty() {
-            return Err(Error::message(
+            return Err(Error::with_message(
                 AzureErrorKind::Other,
                 String::from("Required field ") + stringify!($field) + " is empty",
             ));
@@ -66,7 +66,7 @@ impl Checkpoint {
         partition_id: &str,
     ) -> Result<String> {
         if partition_id.is_empty() {
-            return Err(Error::message(
+            return Err(Error::with_message(
                 AzureErrorKind::Other,
                 "Partition ID is empty",
             ));

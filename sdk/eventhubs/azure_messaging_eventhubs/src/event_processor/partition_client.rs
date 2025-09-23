@@ -11,7 +11,7 @@ use azure_core::Result;
 use futures::Stream;
 use std::pin::Pin;
 use std::sync::{Arc, OnceLock, Weak};
-use tracing::warn;
+use tracing::{debug, trace, warn};
 
 /// Represents a client for interacting with a specific partition in Event Hubs.
 ///
@@ -68,7 +68,7 @@ impl PartitionClient {
         } else {
             // Return a stream with a single error indicating that the event receiver is not available.
             Box::pin(futures::stream::once(async {
-                Err(azure_core::error::Error::message(
+                Err(azure_core::error::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     "Event receiver is not set for this partition.",
                 ))
@@ -99,14 +99,19 @@ impl PartitionClient {
     pub async fn close(mut self) -> Result<()> {
         // Detach the event receiver
         if let Some(event_receiver) = self.event_receiver.take() {
+            debug!("Closing event receiver for partition {}", self.partition_id);
             event_receiver.close().await?;
+        } else {
+            debug!("Event receiver not set for partition {}", self.partition_id);
         }
         // Remove the partition client from the processor.
         let consumers = self.consumers.upgrade();
         if let Some(consumers) = consumers {
+            debug!(
+                "Removing client for partition {} from the consumers map.",
+                self.partition_id
+            );
             consumers.remove_partition_client(&self.partition_id)?;
-        } else {
-            warn!("Consumers have been dropped, unable to remove partition client.");
         }
         Ok(())
     }
@@ -126,7 +131,7 @@ impl PartitionClient {
         let mut offset: Option<String> = None;
 
         let amqp_message = event_data.raw_amqp_message();
-        if let Some(message_annotations) = amqp_message.message_annotations() {
+        if let Some(message_annotations) = &amqp_message.message_annotations {
             for (key, value) in message_annotations.0.iter() {
                 if *key == crate::consumer::SEQUENCE_NUMBER_ANNOTATION {
                     match value {
@@ -143,7 +148,7 @@ impl PartitionClient {
                             sequence_number = Some(*value as i64);
                         }
                         _ => {
-                            return Err(azure_core::error::Error::message(
+                            return Err(azure_core::error::Error::with_message(
                                 azure_core::error::ErrorKind::Other,
                                 "Invalid sequence number",
                             ));
@@ -155,7 +160,7 @@ impl PartitionClient {
                             offset = Some(value.to_string());
                         }
                         _ => {
-                            return Err(azure_core::error::Error::message(
+                            return Err(azure_core::error::Error::with_message(
                                 azure_core::error::ErrorKind::Other,
                                 "Invalid offset",
                             ));
@@ -184,7 +189,7 @@ impl PartitionClient {
                 self.partition_id
             );
             // If the event receiver is already set, return an error
-            azure_core::error::Error::message(
+            azure_core::error::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 format!(
                     "Event receiver already set for partition {}",
@@ -193,5 +198,14 @@ impl PartitionClient {
             )
         })?;
         Ok(())
+    }
+}
+
+impl Drop for PartitionClient {
+    fn drop(&mut self) {
+        trace!(
+            "Dropping PartitionClient for partition {}",
+            self.partition_id
+        );
     }
 }

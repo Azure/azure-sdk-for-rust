@@ -336,7 +336,7 @@ impl QueueClient {
 
         let messages = extract_fn(&message_list);
         let first_message = messages.into_iter().next().ok_or_else(|| {
-            azure_core::Error::message(
+            azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 "No messages found in the response",
             )

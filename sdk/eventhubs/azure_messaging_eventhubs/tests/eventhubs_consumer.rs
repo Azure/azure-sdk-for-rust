@@ -173,6 +173,115 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
             "Creating event receive stream on receiver for: {:?}",
             receiver.partition_id()
         );
+        {
+            let mut event_stream = receiver.stream_events();
+
+            let mut count = 0;
+
+            const TEST_DURATION: Duration = Duration::seconds(10);
+            info!("Receiving events for {:?}.", TEST_DURATION);
+
+            // Read events from the stream for a bit of time.
+
+            let result = timeout(TEST_DURATION.try_into().unwrap(), async {
+                while let Some(event) = event_stream.next().await {
+                    match event {
+                        Ok(_event) => {
+                            //                    info!("Received the following message:: {:?}", event);
+                            count += 1;
+                        }
+                        Err(err) => {
+                            info!("Error while receiving message: {:?}", err);
+                        }
+                    }
+                }
+            })
+            .await;
+
+            info!("Received {count} messages in {TEST_DURATION:?}. Timeout: {result:?}");
+        }
+        receiver.close().await?;
+    }
+
+    client.close().await?;
+
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn multiple_receivers_on_one_partition(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let host = env::var("EVENTHUBS_HOST")?;
+    let eventhub = env::var("EVENTHUB_NAME")?;
+
+    info!("Establishing credentials.");
+
+    let recording = ctx.recording();
+    let credential = recording.credential();
+
+    info!("Creating client.");
+    let client = ConsumerClient::builder()
+        .with_application_id("test_open".to_string())
+        .open(host.as_str(), eventhub, credential.clone())
+        .await?;
+
+    let eh_properties = client.get_eventhub_properties().await?;
+    info!("EventHub properties: {:?}", eh_properties);
+
+    let mut receivers = Vec::new();
+
+    info!(
+        "Creating receiver for partition {}",
+        eh_properties.partition_ids[0]
+    );
+
+    {
+        let receiver = client
+            .open_receiver_on_partition(
+                eh_properties.partition_ids[0].clone(),
+                Some(OpenReceiverOptions {
+                    start_position: Some(StartPosition {
+                        location: azure_messaging_eventhubs::StartLocation::Earliest,
+                        ..Default::default()
+                    }),
+                    // Timeout for individual receive operations.
+                    receive_timeout: Some(Duration::seconds(5)),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+
+        receivers.push(receiver);
+    }
+
+    info!(
+        "Creating receiver 2 for partition {}",
+        eh_properties.partition_ids[0]
+    );
+    {
+        let receiver = client
+            .open_receiver_on_partition(
+                eh_properties.partition_ids[0].clone(),
+                Some(OpenReceiverOptions {
+                    start_position: Some(StartPosition {
+                        location: azure_messaging_eventhubs::StartLocation::Earliest,
+                        ..Default::default()
+                    }),
+                    // Timeout for individual receive operations.
+                    receive_timeout: Some(Duration::seconds(5)),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+
+        receivers.push(receiver);
+    }
+    info!("Created {} receivers.", receivers.len());
+
+    for receiver in receivers.iter() {
+        info!(
+            "Creating event receive stream on receiver for: {:?}",
+            receiver.partition_id()
+        );
         let mut event_stream = receiver.stream_events();
 
         let mut count = 0;

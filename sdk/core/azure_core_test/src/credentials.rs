@@ -77,7 +77,7 @@ pub fn from_env(options: Option<ClientOptions>) -> azure_core::Result<Arc<dyn To
     }
     #[cfg(target_arch = "wasm32")]
     {
-        Err(Error::message(
+        Err(Error::with_message(
             ErrorKind::Other,
             "No local development credential for WASM.",
         ))

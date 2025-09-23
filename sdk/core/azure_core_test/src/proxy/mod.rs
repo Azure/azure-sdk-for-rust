@@ -69,7 +69,7 @@ impl Proxy {
             .stderr(Stdio::piped())
             .spawn()
             .map_err(|err| {
-                azure_core::Error::full(
+                azure_core::Error::with_error(
                     ErrorKind::Io,
                     err,
                     format!("{} failed to start", executable_file_path.display()),
@@ -80,7 +80,7 @@ impl Proxy {
             command
                 .stdout
                 .take()
-                .ok_or_else(|| azure_core::Error::message(ErrorKind::Io, "no stdout pipe"))?,
+                .ok_or_else(|| azure_core::Error::with_message(ErrorKind::Io, "no stdout pipe"))?,
         )
         .lines();
         self.command = Some(command);
@@ -162,7 +162,7 @@ impl Proxy {
 
                 // Need to check version since `test-proxy start` does not fail with unknown parameters.
                 if version < MIN_VERSION {
-                    return Err(azure_core::Error::message(
+                    return Err(azure_core::Error::with_message(
                         ErrorKind::Io,
                         format!("test-proxy older than required version {MIN_VERSION}"),
                     ));
@@ -334,7 +334,7 @@ impl FromStr for Version {
         if let Some(major) = cur.next() {
             v.major = major.parse()?;
         } else {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 ErrorKind::DataConversion,
                 "major version required",
             ));

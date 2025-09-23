@@ -77,7 +77,7 @@ where
 {
     fn resource_id(&self) -> Result<ResourceId> {
         let Some(id) = self.as_id() else {
-            return Err(azure_core::Error::message(
+            return Err(azure_core::Error::with_message(
                 ErrorKind::DataConversion,
                 "missing resource id",
             ));
@@ -92,14 +92,16 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
     let vault_url = format!("{}://{}", url.scheme(), url.authority(),);
     let mut segments = url
         .path_segments()
-        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "invalid url"))?
+        .ok_or_else(|| azure_core::Error::with_message(ErrorKind::DataConversion, "invalid url"))?
         .filter(|s| !s.is_empty());
     segments
         .next()
-        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing collection"))
+        .ok_or_else(|| {
+            azure_core::Error::with_message(ErrorKind::DataConversion, "missing collection")
+        })
         .and_then(|col| {
             if col != "keys" {
-                return Err(azure_core::Error::message(
+                return Err(azure_core::Error::with_message(
                     ErrorKind::DataConversion,
                     "not in keys collection",
                 ));
@@ -108,7 +110,7 @@ fn deconstruct(url: &Url) -> Result<ResourceId> {
         })?;
     let name = segments
         .next()
-        .ok_or_else(|| azure_core::Error::message(ErrorKind::DataConversion, "missing name"))
+        .ok_or_else(|| azure_core::Error::with_message(ErrorKind::DataConversion, "missing name"))
         .map(String::from)?;
     let version = segments.next().map(String::from);
 

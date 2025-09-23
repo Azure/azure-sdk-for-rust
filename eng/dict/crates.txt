@@ -16,8 +16,8 @@ azure_messaging_eventhubs
 azure_security_keyvault_keys
 azure_security_keyvault_secrets
 azure_storage_blob
-azure_template
-azure_template_core
+azure_canary
+azure_canary_core
 base64
 bytes
 cargo_metadata

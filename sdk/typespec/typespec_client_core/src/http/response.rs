@@ -211,7 +211,7 @@ impl ResponseBody {
     /// Collect the stream into a [`String`].
     pub async fn collect_string(self) -> crate::Result<String> {
         std::str::from_utf8(&self.collect().await?)
-            .context(
+            .with_context(
                 ErrorKind::DataConversion,
                 "response body was not utf-8 like expected",
             )
@@ -411,7 +411,7 @@ mod tests {
                 .iter()
                 .any(|(k, v)| k.as_str() == "x-ms-error" && v.as_str() == "BadParameter"));
 
-            let err: ErrorResponse = err.json().await.expect("convert to ErrorResponse");
+            let err: ErrorResponse = err.json().expect("convert to ErrorResponse");
             assert_eq!(err.code, Some("BadParameter".into()));
             assert_eq!(err.message, Some("Bad parameter".into()));
         }

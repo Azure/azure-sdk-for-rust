@@ -26,7 +26,7 @@ pub use numeric::NumericCore;
 ///
 /// # Examples
 /// ```
-/// # use azure_template_core::add;
+/// # use azure_canary_core::add;
 /// let sum = add(5, 10);
 /// assert_eq!(sum, 15);
 /// ```

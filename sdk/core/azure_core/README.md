@@ -436,7 +436,7 @@ In many cases with `reqwest`, importing features may be enough. See their [docum
 If you do need to write code to customize the `reqwest::Client`, you can pass it in `ClientOptions` to our client libraries:
 
 ```rust no_run
-use azure_core::http::{ClientOptions, TransportOptions};
+use azure_core::http::{ClientOptions, Transport};
 use azure_identity::DeveloperToolsCredential;
 use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
 use std::sync::Arc;
@@ -445,7 +445,7 @@ let http_client = Arc::new(reqwest::ClientBuilder::new().gzip(true).build().unwr
 
 let options = SecretClientOptions {
     client_options: ClientOptions {
-        transport: Some(TransportOptions::new(http_client)),
+        transport: Some(Transport::new(http_client)),
         ..Default::default()
     },
     ..Default::default()
@@ -512,7 +512,7 @@ impl HttpClient for Agent {
         let response = self
             .0
             .run(request)
-            .with_context(ErrorKind::Io, || "failed to send request")?;
+            .with_context_fn(ErrorKind::Io, || "failed to send request")?;
 
         Ok(todo!("convert their response into our response"))
     }
@@ -611,7 +611,7 @@ and set that as the transport in any `ClientOptions` used to configure your Azur
 
 ```rust no_run
 use std::sync::Arc;
-use azure_core::http::{HttpClient, ClientOptions, TransportOptions};
+use azure_core::http::{HttpClient, ClientOptions, Transport};
 use azure_security_keyvault_secrets::SecretClientOptions;
 
 let client = Arc::new(
@@ -624,7 +624,7 @@ let client = Arc::new(
 
 let options = SecretClientOptions {
     client_options: ClientOptions {
-        transport: Some(TransportOptions::new(client.clone())),
+        transport: Some(Transport::new(client.clone())),
         ..Default::default()
     },
     ..Default::default()

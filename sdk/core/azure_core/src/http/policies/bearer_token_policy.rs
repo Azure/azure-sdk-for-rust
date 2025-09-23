@@ -24,6 +24,7 @@ pub struct BearerTokenCredentialPolicy {
 }
 
 impl BearerTokenCredentialPolicy {
+    /// Creates a new `BearerTokenCredentialPolicy`.
     pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self
     where
         A: IntoIterator<Item = B>,
@@ -119,7 +120,7 @@ impl Policy for BearerTokenCredentialPolicy {
         }
 
         let access_token = self.access_token().await.ok_or_else(|| {
-            Error::message(
+            Error::with_message(
                 ErrorKind::Credential,
                 "The request failed due to an error while fetching the access token.",
             )
@@ -155,7 +156,7 @@ mod tests {
         Arc,
     };
     use typespec_client_core::{
-        http::{policies::TransportPolicy, BufResponse, Method, TransportOptions},
+        http::{policies::TransportPolicy, BufResponse, Method, Transport},
         time::Duration,
     };
 
@@ -199,7 +200,7 @@ mod tests {
             let i = self.calls.fetch_add(1, Ordering::SeqCst);
             self.tokens
                 .get(i)
-                .ok_or_else(|| Error::message(ErrorKind::Credential, "no more mock tokens"))
+                .ok_or_else(|| Error::with_message(ErrorKind::Credential, "no more mock tokens"))
                 .cloned()
         }
     }
@@ -210,9 +211,7 @@ mod tests {
         let credential = MockCredential::new(&[]);
         let policy = BearerTokenCredentialPolicy::new(Arc::new(credential), ["scope"]);
         let client = MockHttpClient::new(|_| panic!("expected an error from get_token"));
-        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(Arc::new(
-            client,
-        ))));
+        let transport = Arc::new(TransportPolicy::new(Transport::new(Arc::new(client))));
         let mut req = Request::new("https://localhost".parse().unwrap(), Method::Get);
 
         let err = policy
@@ -248,7 +247,7 @@ mod tests {
             }
             .boxed()
         }));
-        let transport = Arc::new(TransportPolicy::new(TransportOptions::new(client)));
+        let transport = Arc::new(TransportPolicy::new(Transport::new(client)));
 
         let mut handles = vec![];
         for _ in 0..4 {

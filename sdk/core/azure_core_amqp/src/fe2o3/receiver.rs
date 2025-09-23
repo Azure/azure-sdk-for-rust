@@ -194,21 +194,21 @@ impl Fe2o3AmqpReceiver {
     }
 
     fn receiver_already_attached() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "AMQP Receiver is already attached",
         )
     }
 
     fn could_not_set_message_receiver() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "Could not set message receiver",
         )
     }
 
     fn receiver_not_set() -> azure_core::Error {
-        azure_core::Error::message(
+        azure_core::Error::with_message(
             azure_core::error::ErrorKind::Amqp,
             "AMQP Receiver is not set",
         )

@@ -247,6 +247,7 @@ pub struct QueueServiceClientListQueuesOptions<'a> {
 }
 
 impl QueueServiceClientListQueuesOptions<'_> {
+    /// Transforms this [`QueueServiceClientListQueuesOptions`] into a new `QueueServiceClientListQueuesOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> QueueServiceClientListQueuesOptions<'static> {
         QueueServiceClientListQueuesOptions {
             client_request_id: self.client_request_id,

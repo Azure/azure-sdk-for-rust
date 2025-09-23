@@ -346,7 +346,7 @@ impl
             let data = body
                 .try_as_data()
                 .map_err(|_| {
-                    Error::message(
+                    Error::with_message(
                         ErrorKind::DataConversion,
                         "Could not convert AMQP Message Body to data.",
                     )
@@ -658,12 +658,12 @@ mod tests {
             .build();
 
         let amqp_message: AmqpMessage = (&fe2o3_message).into();
-        assert_eq!(*amqp_message.body(), AmqpMessageBody::Empty);
-        assert!(amqp_message.application_properties().is_none());
-        assert!(amqp_message.header().is_none());
-        assert!(amqp_message.delivery_annotations().is_none());
-        assert!(amqp_message.message_annotations().is_none());
-        assert!(amqp_message.footer().is_none());
+        assert_eq!(amqp_message.body, AmqpMessageBody::Empty);
+        assert!(amqp_message.application_properties.is_none());
+        assert!(amqp_message.header.is_none());
+        assert!(amqp_message.delivery_annotations.is_none());
+        assert!(amqp_message.message_annotations.is_none());
+        assert!(amqp_message.footer.is_none());
 
         let round_trip: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
@@ -690,15 +690,15 @@ mod tests {
 
             let amqp_message: AmqpMessage = (&fe2o3_message).into();
             assert_eq!(
-                *(amqp_message.body()),
+                amqp_message.body,
                 AmqpMessageBody::Binary(vec![vec![1, 2, 3]])
             );
 
-            assert!(amqp_message.application_properties().is_none());
-            assert!(amqp_message.header().is_none());
-            assert!(amqp_message.delivery_annotations().is_none());
-            assert!(amqp_message.message_annotations().is_none());
-            assert!(amqp_message.footer().is_none());
+            assert!(amqp_message.application_properties.is_none());
+            assert!(amqp_message.header.is_none());
+            assert!(amqp_message.delivery_annotations.is_none());
+            assert!(amqp_message.message_annotations.is_none());
+            assert!(amqp_message.footer.is_none());
 
             let round_trip: fe2o3_amqp_types::messaging::Message<
                 fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
@@ -728,14 +728,14 @@ mod tests {
 
             let amqp_message = Into::<AmqpMessage>::into(&fe2o3_message);
             assert_eq!(
-                *(amqp_message.body()),
+                amqp_message.body,
                 AmqpMessageBody::Binary(vec![vec![1, 2, 3]])
             );
-            assert!(amqp_message.application_properties().is_none());
-            assert!(amqp_message.header().is_none());
-            assert!(amqp_message.delivery_annotations().is_none());
-            assert!(amqp_message.message_annotations().is_some());
-            assert!(amqp_message.footer().is_none());
+            assert!(amqp_message.application_properties.is_none());
+            assert!(amqp_message.header.is_none());
+            assert!(amqp_message.delivery_annotations.is_none());
+            assert!(amqp_message.message_annotations.is_some());
+            assert!(amqp_message.footer.is_none());
 
             let round_trip: fe2o3_amqp_types::messaging::Message<
                 fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
@@ -758,14 +758,14 @@ mod tests {
 
         let amqp_message: AmqpMessage = (&fe2o3_message).into();
         assert_eq!(
-            *(amqp_message.body()),
+            amqp_message.body,
             AmqpMessageBody::Value(AmqpValue::String("hello".to_string()))
         );
-        assert!(amqp_message.application_properties().is_none());
-        assert!(amqp_message.header().is_none());
-        assert!(amqp_message.delivery_annotations().is_none());
-        assert!(amqp_message.message_annotations().is_none());
-        assert!(amqp_message.footer().is_none());
+        assert!(amqp_message.application_properties.is_none());
+        assert!(amqp_message.header.is_none());
+        assert!(amqp_message.delivery_annotations.is_none());
+        assert!(amqp_message.message_annotations.is_none());
+        assert!(amqp_message.footer.is_none());
 
         let round_trip: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
@@ -819,11 +819,11 @@ mod tests {
         //             .collect()
         //     )
         // );
-        assert!(amqp_message.application_properties().is_none());
-        assert!(amqp_message.header().is_none());
-        assert!(amqp_message.delivery_annotations().is_none());
-        assert!(amqp_message.message_annotations().is_none());
-        assert!(amqp_message.footer().is_none());
+        assert!(amqp_message.application_properties.is_none());
+        assert!(amqp_message.header.is_none());
+        assert!(amqp_message.delivery_annotations.is_none());
+        assert!(amqp_message.message_annotations.is_none());
+        assert!(amqp_message.footer.is_none());
         let round_trip: fe2o3_amqp_types::messaging::Message<
             fe2o3_amqp_types::messaging::Body<fe2o3_amqp_types::primitives::Value>,
         > = amqp_message.into();

@@ -1,5 +1,19 @@
 # Release History
 
+## 0.8.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Removed non-idiomatic accessor functions from `AmqpDescribed`, `AmqpSessionOptions`, `AmqpDescribedError`, `AmqpMessage`, and `AmqpTarget`
+
+### Bugs Fixed
+
+### Other Changes
+
+`AmqpMessage` now implements the `SafeDebug` trait, redacting the `body` and `application_properties` fields because they are likely to contain PII. To view the full contents of the message, enable the `debug` feature in the `azure_core` package.
+
 ## 0.7.0 (2025-09-11)
 
 ### Breaking Changes

@@ -87,8 +87,7 @@ impl Default for CustomDefaultMatcher {
     fn default() -> Self {
         CustomDefaultMatcher {
             compare_bodies: None,
-            // TODO: Remove once all recordings are updated (https://github.com/Azure/azure-sdk-for-rust/issues/2411).
-            excluded_headers: vec!["x-ms-client-request-id"],
+            excluded_headers: Vec::new(),
             ignored_headers: DEFAULT_IGNORED_HEADERS.to_vec(),
             ignore_query_ordering: None,
             ignored_query_parameters: Vec::new(),
@@ -112,6 +111,6 @@ fn serialize_custom_default_matcher() {
     .into();
     assert_eq!(
         serde_json::to_string(&v).unwrap(),
-        r#"{"compareBodies":false,"excludedHeaders":"x-ms-client-request-id","ignoredHeaders":"foo,bar"}"#
+        r#"{"compareBodies":false,"ignoredHeaders":"foo,bar"}"#
     )
 }

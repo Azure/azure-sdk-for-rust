@@ -87,26 +87,32 @@ impl Borrow<str> for AmqpSymbol {
 pub struct AmqpList(pub Vec<AmqpValue>);
 
 impl AmqpList {
+    /// Creates a new AMQP List.
     pub fn new() -> Self {
         Self(Vec::new())
     }
 
+    /// Creates a new AMQP List with the specified capacity.
     pub fn with_capacity(size: usize) -> Self {
         Self(Vec::with_capacity(size))
     }
 
+    /// Returns the number of elements in the list.
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
+    /// Returns true if the list contains no elements.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
+    /// Appends an element to the back of the list.
     pub fn push(&mut self, value: AmqpValue) {
         self.0.push(value);
     }
 
+    /// Returns an iterator over the elements of the list.
     pub fn iter(&self) -> impl Iterator<Item = &AmqpValue> {
         self.0.iter()
     }
@@ -151,9 +157,15 @@ where
     inner: Vec<(K, V)>,
 }
 
+/// The descriptor of a described AMQP type.
+///
+/// The descriptor for an AMQP composite type. See the [AMQP specification](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-types-v1.0-os.html#doc-idp108672) for more information.
 #[derive(Debug, PartialEq, Clone)]
 pub enum AmqpDescriptor {
+    /// A numeric code that identifies the type.
     Code(u64),
+
+    /// A symbolic name that identifies the type.
     Name(AmqpSymbol),
 }
 
@@ -172,26 +184,26 @@ where
     }
 }
 
+/// An AMQP Composite type.
+///
+/// This is a complex type that is composed of a descriptor and a value.
+/// See the [AMQP specification](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-types-v1.0-os.html#doc-idp108672) for more information.
 #[derive(Debug, PartialEq, Clone)]
 pub struct AmqpDescribed {
-    descriptor: AmqpDescriptor,
-    value: AmqpValue,
+    /// The descriptor of the described type.
+    pub descriptor: AmqpDescriptor,
+
+    /// The value of the described type.
+    pub value: AmqpValue,
 }
 
 impl AmqpDescribed {
+    /// Creates a new AMQP Described type from descriptor and value.
     pub fn new(descriptor: impl Into<AmqpDescriptor>, value: impl Into<AmqpValue>) -> Self {
         Self {
             descriptor: descriptor.into(),
             value: value.into(),
         }
-    }
-
-    pub fn descriptor(&self) -> &AmqpDescriptor {
-        &self.descriptor
-    }
-
-    pub fn value(&self) -> &AmqpValue {
-        &self.value
     }
 }
 
@@ -238,8 +250,10 @@ impl AmqpComposite {
     }
 }
 
+/// An AMQP value.
 #[derive(Debug, PartialEq, Clone, Default)]
 pub enum AmqpValue {
+    /// A null value.
     #[default]
     Null,
     /// A boolean (true/false) value.
@@ -292,6 +306,8 @@ pub enum AmqpValue {
     Array(Vec<AmqpValue>),
     /// A described value.
     Described(Box<AmqpDescribed>),
+
+    /// An AMQP composite value.
     #[cfg(feature = "cplusplus")]
     Composite(Box<AmqpComposite>),
 }
@@ -354,14 +370,17 @@ where
     K: PartialEq + Clone,
     V: Clone,
 {
+    /// Creates a new, empty `AmqpOrderedMap`.
     pub fn new() -> Self {
         Self { inner: Vec::new() }
     }
 
+    /// Inserts a key-value pair into the map.
     pub fn insert(&mut self, key: K, value: V) {
         self.inner.push((key, value));
     }
 
+    /// Gets a reference to the value corresponding to the key.
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
@@ -372,14 +391,17 @@ where
             .find_map(|(k, v)| if key.eq(k) { Some(v) } else { None })
     }
 
+    /// Returns the number of elements in the map.
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
+    /// Returns true if the map contains no elements.
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
+    /// Removes a key from the map, returning the value at the key if the key was previously in the map.
     pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q>,
@@ -389,6 +411,7 @@ where
         Some(self.inner.remove(index).1)
     }
 
+    /// Returns true if the map contains a value for the specified key.
     pub fn contains_key<Q>(&self, key: &Q) -> bool
     where
         K: Borrow<Q>,

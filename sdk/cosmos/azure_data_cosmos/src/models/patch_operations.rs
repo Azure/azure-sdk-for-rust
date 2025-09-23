@@ -200,7 +200,7 @@ pub trait ToJsonNumber {
 impl ToJsonNumber for f64 {
     fn to_json_number(self) -> azure_core::Result<serde_json::Number> {
         serde_json::Number::from_f64(self).ok_or_else(|| {
-            Error::with_message(ErrorKind::DataConversion, || {
+            Error::with_message_fn(ErrorKind::DataConversion, || {
                 format!("{} is not a valid JSON number", self)
             })
         })

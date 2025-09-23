@@ -6,7 +6,7 @@ Azure Queue Storage is a service for storing large numbers of messages.
 
 ## Getting started
 
-**⚠️ Note: The `azure_storage_queue` crate is currently under active development and not all features may be implemented or work as intended. This crate is in beta and not suitable for Production environments. For any general feedback or usage issues, please open a GitHub issue [here](https://github.com/Azure/azure-sdk-for-rust/issues).**
+**⚠️ Note: The `azure_storage_queue` crate is currently under active development and not all features may be implemented or work as intended. This crate is in beta and not suitable for Production environments. For any general feedback or usage issues, please open a GitHub issue at <https://github.com/Azure/azure-sdk-for-rust/issues>.**
 
 ### Install the package
 
@@ -64,8 +64,9 @@ You may need to specify RBAC roles to access Queues via Microsoft Entra ID. Plea
 
 <!-- TODO: Uncomment the links below when the PR is merged -->
 You can find executable examples for all major SDK functions in:
-- [queue_client.rs]<!--(https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/samples/queue_client.rs)-->
-- [queue_service_client.rs]<!--(https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/samples/queue_service_client.rs)-->
+
+* [queue_client.rs]<!--(https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/samples/queue_client.rs)-->
+* [queue_service_client.rs]<!--(https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/samples/queue_service_client.rs)-->
 
 ## Next steps
 

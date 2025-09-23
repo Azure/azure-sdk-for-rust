@@ -172,8 +172,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
+name = "azure_canary"
+version = "0.1.0"
+dependencies = [
+ "azure_canary_core",
+ "serde",
+]
+
+[[package]]
+name = "azure_canary_core"
+version = "0.1.0"
+dependencies = [
+ "azure_canary",
+]
+
+[[package]]
 name = "azure_core"
-version = "0.28.0"
+version = "0.29.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -205,7 +220,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -226,7 +241,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_macros"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -239,7 +254,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -298,7 +313,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.27.0"
+version = "0.28.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -526,21 +541,6 @@ dependencies = [
  "serde",
  "tokio",
  "typespec_client_core",
-]
-
-[[package]]
-name = "azure_template"
-version = "0.2.0"
-dependencies = [
- "azure_template_core",
- "serde",
-]
-
-[[package]]
-name = "azure_template_core"
-version = "0.2.0"
-dependencies = [
- "azure_template",
 ]
 
 [[package]]
@@ -3147,7 +3147,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "typespec"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "base64",
  "bytes",
@@ -3161,7 +3161,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -3189,7 +3189,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",
