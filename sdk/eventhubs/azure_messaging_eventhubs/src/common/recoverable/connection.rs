@@ -553,10 +553,7 @@ impl RecoverableConnection {
                 }
             }
             AmqpErrorKind::ConnectionClosedByRemote(_)
-            | AmqpErrorKind::ConnectionDetachedByRemote(_)
-            //| AmqpErrorKind::ConnectionDropped(_)
-            =>
-             {
+            | AmqpErrorKind::ConnectionDetachedByRemote(_) => {
                 debug!("Connection dropped error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectConnection
             }

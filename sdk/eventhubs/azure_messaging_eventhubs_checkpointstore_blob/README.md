@@ -107,7 +107,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let event_processor = EventProcessor::builder()
         .with_load_balancing_strategy(ProcessorStrategy::Greedy)
         .build(
-            Arc::new(consumer_client),
+            consumer_client,
             checkpoint_store,
         )
         .await?;

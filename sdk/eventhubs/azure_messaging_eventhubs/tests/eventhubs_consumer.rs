@@ -173,32 +173,37 @@ async fn receive_events_on_all_partitions(ctx: TestContext) -> Result<(), Box<dy
             "Creating event receive stream on receiver for: {:?}",
             receiver.partition_id()
         );
-        let mut event_stream = receiver.stream_events();
+        {
+            let mut event_stream = receiver.stream_events();
 
-        let mut count = 0;
+            let mut count = 0;
 
-        const TEST_DURATION: Duration = Duration::seconds(10);
-        info!("Receiving events for {:?}.", TEST_DURATION);
+            const TEST_DURATION: Duration = Duration::seconds(10);
+            info!("Receiving events for {:?}.", TEST_DURATION);
 
-        // Read events from the stream for a bit of time.
+            // Read events from the stream for a bit of time.
 
-        let result = timeout(TEST_DURATION.try_into().unwrap(), async {
-            while let Some(event) = event_stream.next().await {
-                match event {
-                    Ok(_event) => {
-                        //                    info!("Received the following message:: {:?}", event);
-                        count += 1;
-                    }
-                    Err(err) => {
-                        info!("Error while receiving message: {:?}", err);
+            let result = timeout(TEST_DURATION.try_into().unwrap(), async {
+                while let Some(event) = event_stream.next().await {
+                    match event {
+                        Ok(_event) => {
+                            //                    info!("Received the following message:: {:?}", event);
+                            count += 1;
+                        }
+                        Err(err) => {
+                            info!("Error while receiving message: {:?}", err);
+                        }
                     }
                 }
-            }
-        })
-        .await;
+            })
+            .await;
 
-        info!("Received {count} messages in {TEST_DURATION:?}. Timeout: {result:?}");
+            info!("Received {count} messages in {TEST_DURATION:?}. Timeout: {result:?}");
+        }
+        receiver.close().await?;
     }
+
+    client.close().await?;
 
     Ok(())
 }

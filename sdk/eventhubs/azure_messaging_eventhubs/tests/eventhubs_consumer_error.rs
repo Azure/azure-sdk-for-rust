@@ -98,7 +98,7 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
             println!("Consumer closed successfully");
         }
         Err(e) => {
-            panic!("Error closing consumer: {}", e);
+            return Err(e.into());
         }
     }
 
