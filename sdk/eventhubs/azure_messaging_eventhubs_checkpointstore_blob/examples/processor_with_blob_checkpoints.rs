@@ -7,7 +7,7 @@ use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::{ConsumerClient, EventProcessor};
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
 use azure_storage_blob::BlobContainerClient;
-use std::{env, sync::Arc};
+use std::env;
 use tracing::{info, Level};
 
 #[tokio::main]
@@ -37,13 +37,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         credential.clone(),
         None,
     )?;
-    let consumer = Arc::new(
-        ConsumerClient::builder()
-            .with_application_id("ProcessorExample".to_string())
-            .with_consumer_group(consumer_group)
-            .open(&eventhub_namespace, eventhub_name, credential.clone())
-            .await?,
-    );
+    let consumer = ConsumerClient::builder()
+        .with_application_id("ProcessorExample".to_string())
+        .with_consumer_group(consumer_group)
+        .open(&eventhub_namespace, eventhub_name, credential.clone())
+        .await?;
 
     // Create the checkpoint store
     let checkpoint_store = BlobCheckpointStore::new(blob_container_client);

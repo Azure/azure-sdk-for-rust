@@ -65,6 +65,12 @@ impl RecoverableReceiver {
     }
 }
 
+impl Drop for RecoverableReceiver {
+    fn drop(&mut self) {
+        debug!("Dropping RecoverableReceiver for {}", self.source_url);
+    }
+}
+
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl AmqpReceiverApis for RecoverableReceiver {
@@ -93,24 +99,34 @@ impl AmqpReceiverApis for RecoverableReceiver {
     }
 
     async fn receive_delivery(&self) -> azure_core::Result<azure_core_amqp::AmqpDelivery> {
+        let retry_options = {
+            self.recoverable_connection
+                .upgrade()
+                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
+                .retry_options
+                .clone()
+        };
         let delivery = recover_azure_operation(
             || async move {
-                let connection = self
-                    .recoverable_connection
-                    .upgrade()
-                    .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
+                debug!("Starting receive_delivery operation");
+                let receiver = {
+                    let connection = self
+                        .recoverable_connection
+                        .upgrade()
+                        .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?;
 
-                // Check for forced error.
-                #[cfg(test)]
-                connection.get_forced_error()?;
+                    // Check for forced error.
+                    #[cfg(test)]
+                    connection.get_forced_error()?;
 
-                let receiver = connection
-                    .ensure_receiver(
-                        &self.source_url,
-                        &self.message_source,
-                        &self.receiver_options,
-                    )
-                    .await?;
+                    connection
+                        .ensure_receiver(
+                            &self.source_url,
+                            &self.message_source,
+                            &self.receiver_options,
+                        )
+                        .await?
+                };
                 if let Some(delivery_timeout) = self.timeout {
                     select! {
                         delivery = receiver.receive_delivery().fuse() => Ok(delivery),
@@ -124,11 +140,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
                     receiver.receive_delivery().await
                 }
             },
-            &self
-                .recoverable_connection
-                .upgrade()
-                .ok_or_else(|| EventHubsError::from(ErrorKind::MissingConnection))?
-                .retry_options,
+            &retry_options,
             Self::should_retry_receive_operation,
             Some(move |connection: Weak<RecoverableConnection>, reason| {
                 let connection = connection.clone();
