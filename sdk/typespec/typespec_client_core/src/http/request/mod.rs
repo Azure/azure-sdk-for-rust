@@ -340,6 +340,7 @@ mod decimal {
     use std::convert::Infallible;
 
     #[allow(
+        unknown_lints,
         clippy::infallible_try_from,
         reason = "maintain a consistent pattern of `try_into()`"
     )]
@@ -354,6 +355,7 @@ mod decimal {
     }
 
     #[allow(
+        unknown_lints,
         clippy::infallible_try_from,
         reason = "maintain a consistent pattern of `try_into()`"
     )]

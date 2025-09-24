@@ -4,7 +4,7 @@
 //! HTTP responses.
 
 use crate::{
-    http::{Headers, StatusCode},
+    http::{headers::Headers, StatusCode},
     Bytes,
 };
 #[cfg(any(feature = "json", feature = "xml"))]

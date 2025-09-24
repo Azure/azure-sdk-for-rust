@@ -4,13 +4,14 @@
 //! HTTP responses.
 
 use crate::{
-    http::{headers::Headers, DeserializeWith, Format, JsonFormat, RawResponse, StatusCode},
+    http::{headers::Headers, DeserializeWith, Format, JsonFormat, StatusCode},
     Bytes,
 };
 use futures::{Stream, StreamExt};
 use serde::de::DeserializeOwned;
 use std::{fmt, marker::PhantomData, pin::Pin};
 use typespec::error::{ErrorKind, ResultExt};
+pub use typespec::http::response::*;
 
 /// A pinned stream of bytes that can be sent as a response body.
 #[cfg(not(target_arch = "wasm32"))]

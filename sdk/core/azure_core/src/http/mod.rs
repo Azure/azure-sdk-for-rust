@@ -18,7 +18,7 @@ pub use pager::{ItemIterator, PageIterator, Pager};
 pub use pipeline::*;
 pub use poller::Poller;
 pub use request::{Body, Request, RequestContent};
-pub use response::{BufResponse, Response};
+pub use response::{BufResponse, RawResponse, Response};
 
 pub use typespec_client_core::http::response;
 pub use typespec_client_core::http::{
