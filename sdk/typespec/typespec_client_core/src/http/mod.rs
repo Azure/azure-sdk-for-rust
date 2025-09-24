@@ -24,11 +24,11 @@ pub use models::*;
 pub use options::*;
 pub use pipeline::*;
 pub use request::{Body, Request, RequestContent};
-pub use response::{BufResponse, Response};
+pub use response::{BufResponse, RawResponse, Response};
 pub use sanitizer::*;
 
 // Re-export important types.
-pub use typespec::http::{RawResponse, StatusCode};
+pub use typespec::http::StatusCode;
 pub use url::Url;
 
 /// Add a new query pair into the target [`Url`]'s query string.

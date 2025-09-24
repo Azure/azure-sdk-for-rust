@@ -11,6 +11,7 @@
 - Changed `RawResponse::json()` from `async` to synchronous function. The body was already buffered.
 - Changed `RawResponse::xml()` from `async` to synchronous function. The body was already buffered.
 - Removed `ErrorKind::http_response()`. Construct an `ErrorResponse::HttpResponse` variant instead.
+- Moved `AsHeaders`, `FromHeaders`, `Header`, `Headers`, `HeaderName`, and `HeaderValue` to `http::headers` module to align with `typespec_client_core`.
 - Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)"
   - Renamed `Error::full()` to `Error::with_error()`.
   - Renamed `Error::with_message()` to `Error::with_message_fn()`.
@@ -24,6 +25,9 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+- Made `http::headers` a public module to align with `typespec_client_core`.
+- Made `http::response` a public module to align with `typespec_client_core`.
 
 ## 0.8.0 (2025-09-11)
 
