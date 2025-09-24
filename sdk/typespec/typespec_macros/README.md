@@ -12,32 +12,13 @@ The TypeSpec Macros crate provides procedural macros for [TypeSpec](https://type
 
 This crate provides the following derive macros:
 
--   `Model`: A derive macro that implements the `Model` trait, allowing a type to be deserialized from an HTTP response body.
 -   `SafeDebug`: A derive macro that implements debug formatting in a way that avoids leaking personally identifiable information (PII).
-
-### The Model derive macro
-
-The `Model` derive macro is used to implement the `Model` trait for structs that represent data returned from an API. It handles the deserialization of HTTP response bodies into your model types.
 
 ### The SafeDebug derive macro
 
-The `SafeDebug` derive macro creates a `Debug` implementation that respects the `#[sensitive]` attribute on struct fields. Fields marked with this attribute will not have their values printed in debug output, protecting potentially sensitive information.
+The `SafeDebug` derive macro creates a `Debug` implementation that respects the `#[safe(true)]` and `#[safe(false)]` attribute on struct fields. By default fields are considered sensitive and will not have their values printed in debug output, protecting potentially sensitive information.
 
 ## Examples
-
-### Using the Model derive macro
-
-```rust
-use typespec_macros::Model;
-use serde::Deserialize;
-
-#[derive(Model, Deserialize)]
-pub struct User {
-    pub id: String,
-    pub name: String,
-    pub email: String,
-}
-```
 
 ### Using the SafeDebug derive macro
 
