@@ -107,10 +107,12 @@ stages:
                       Write-Host "Package version: $packageVersion"
 
                       New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
-                      Compress-Archive `
+                      # Compress-Archive `
+                      #   -Path "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate" `
+                      #   -DestinationPath "$OutDir/release.zip"
+                      Copy-Item `
                         -Path "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate" `
-                        -DestinationPath "$OutDir/release.zip"
-
+                        -Destination $OutDir
                       Write-Host "Contents of $OutDir"
                       Get-ChildItem -Path $OutDir | ForEach-Object { Write-Host $_.FullName }
 
