@@ -92,7 +92,7 @@ stages:
                     displayName: Compress Crate for ESRP
                     inputs:
                       targetType: filePath
-                      filePath: $(Build.SourcesDirectory)/eng/scripts/Compress-ReleaseCrate.ps1
+                      filePath: eng/scripts/Compress-ReleaseCrate.ps1
                       arguments: >
                         -ArtifactName '${{artifact.name}}'
                         -ArtifactRootPath '$(Pipeline.Workspace)/drop'
