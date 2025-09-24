@@ -144,18 +144,11 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
   #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
 
   # Create a temporary folder for extraction
-  $extractionPath = Join-Path [System.IO.Path]::GetTempPath(), ([System.IO.Path]::GetRandomFileName())
+  $extractionPath = Join-Path ([System.IO.Path]::GetTempPath()), ([System.IO.Path]::GetRandomFileName())
   New-Item -ItemType Directory -Path $extractionPath | Out-Null
 
-  $originalLocation = Get-Location
-  try { 
-    Set-Location $extractionPath
-    tar -xvf $pkg.FullName
-  }
-  finally {
-    Set-Location $originalLocation
-  }
-
+  # Extract the .crate file (which is a tarball) to the temporary folder
+  tar -xvf $pkg.FullName -C $extractionPath
   $cargoTomlPath = Join-Path $extractionPath, $pkg.BaseName, 'Cargo.toml'
 
   Write-Host "Reading package info from $cargoTomlPath"
