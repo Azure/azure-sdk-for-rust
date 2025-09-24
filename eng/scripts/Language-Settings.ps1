@@ -142,7 +142,29 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 # $GetPackageInfoFromPackageFileFn = "Get-${Language}-PackageInfoFromPackageFile"
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
   #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
-  $package = cargo read-manifest --manifest-path $pkg.FullName | ConvertFrom-Json
+
+  # Create a temporary folder for extraction
+  $extractionPath = Join-Path [System.IO.Path]::GetTempPath(), ([System.IO.Path]::GetRandomFileName())
+  New-Item -ItemType Directory -Path $extractionPath | Out-Null
+
+  $originalLocation = Get-Location
+  try { 
+    Set-Location $extractionPath
+    tar -xvf $pkg.FullName
+  }
+  finally {
+    Set-Location $originalLocation
+  }
+
+  $cargoTomlPath = Join-Path $extractionPath, $pkg.BaseName, 'Cargo.toml'
+
+  Write-Host "Reading package info from $cargoTomlPath"
+  if (!(Test-Path $cargoTomlPath)) {
+    LogError "The Cargo.toml file was not found in the package artifact at $cargoTomlPath"
+    throw "error"
+  }
+
+  $package = cargo read-manifest --manifest-path $cargoTomlPath | ConvertFrom-Json
 
   $packageName = $package.name
   $packageVersion = $package.version
