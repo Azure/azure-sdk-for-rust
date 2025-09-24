@@ -31,11 +31,11 @@ struct Credentials {
   pub username: String,
   pub password: String,
 };
-let credentials = Credentials {
-  username: "admin".to_string(),
-  password: "hunter2".to_string(),
+let credentials: Credentials = Credentials {
+  username: "admin".into(),
+  password: "hunter2".into(),
 };
-assert_eq!(format!("{credentials:?}"), "Credentials { username: "admin", .. }");
+println!("{credentials:?}");
 ```
 
 ## Contributing
