@@ -207,7 +207,7 @@ impl QueueClient {
                 &mut request,
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
-                        success_codes: &[202],
+                        success_codes: &[204],
                     },
                     ..Default::default()
                 }),
@@ -350,7 +350,9 @@ impl QueueClient {
     /// async fn example() -> Result<()> {
     ///     let response: Response<QueueClientGetMetadataResult, NoFormat> = unimplemented!();
     ///     // Access response headers
-    ///     println!("x-ms-meta: {:?}", response.metadata()?);
+    ///     if let Some(metadata) = response.metadata()? {
+    ///         println!("x-ms-meta: {:?}", metadata);
+    ///     }
     ///     Ok(())
     /// }
     /// ```
@@ -539,7 +541,7 @@ impl QueueClient {
                 &mut request,
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
-                        success_codes: &[200],
+                        success_codes: &[201],
                     },
                     ..Default::default()
                 }),
@@ -720,7 +722,7 @@ impl QueueClient {
                 &mut request,
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
-                        success_codes: &[200],
+                        success_codes: &[204],
                     },
                     ..Default::default()
                 }),
