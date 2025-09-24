@@ -120,8 +120,6 @@ stages:
                     displayName: 'ESRP Release'
                     inputs:
                       connectedservicename: 'Azure SDK PME Managed Identity'
-                      KeyVaultName: 'kv-azuresdk-codesign'
-                      SignCertName: 'azure-sdk-esrp-release-certificate'
                       ClientId: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
                       DomainTenantId: '975f013f-7f24-47e8-a7d3-abc4752bf346'
                       Usemanagedidentity: true
