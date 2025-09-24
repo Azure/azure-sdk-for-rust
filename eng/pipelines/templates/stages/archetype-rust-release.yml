@@ -92,7 +92,7 @@ stages:
                   - pwsh: |
                       $ArtifactName = '${{artifact.name}}'
                       $ArtifactRootPath = '$(Pipeline.Workspace)/drop'
-                      $OutFile = '$(Pipeline.Workspace)/esrp-release/release.zip'
+                      $OutDir = '$(Pipeline.Workspace)/esrp-release'
 
                       Write-Host "Artifact name: $ArtifactName"
 
@@ -106,11 +106,14 @@ stages:
                       $packageVersion = $packageMetadata.version
                       Write-Host "Package version: $packageVersion"
 
+                      New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
                       Compress-Archive `
                         -Path "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate" `
-                        -DestinationPath $OutFile
+                        -DestinationPath "$OutDir/release.zip"
 
-                      Write-Host "Created archive: $OutFile"
+                      Write-Host "Contents of $OutDir:"
+                      Get-ChildItem -Path $OutDir | ForEach-Object { Write-Host $_.FullName }
+
                     displayName: Compress Crate for ESRP
 
                   - task: EsrpRelease@10
