@@ -26,14 +26,16 @@ The `SafeDebug` derive macro creates a `Debug` implementation that respects the 
 use typespec_macros::SafeDebug;
 
 #[derive(SafeDebug)]
-pub struct Credentials {
-    #[safe(true)]
-    pub username: String,
-    pub password: String,
-}
-
-// When debug printed, the password will be hidden:
-// Credentials { username: "user123", password: "***" }
+struct Credentials {
+  #[safe(true)]
+  pub username: String,
+  pub password: String,
+};
+let credentials = Credentials {
+  username: "admin".to_string(),
+  password: "hunter2".to_string(),
+};
+assert_eq!(format!("{credentials:?}"), "Credentials { username: "admin", .. }");
 ```
 
 ## Contributing
