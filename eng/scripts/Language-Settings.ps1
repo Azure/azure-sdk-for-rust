@@ -1,7 +1,7 @@
 $Language = "rust"
 $LanguageDisplayName = "Rust"
 $PackageRepository = "crates.io"
-$packagePattern = "Cargo.toml"
+$packagePattern = "*.crate"
 #$MetadataUri = "https://raw.githubusercontent.com/Azure/azure-sdk/main/_data/releases/latest/rust-packages.csv"
 $GithubUri = "https://github.com/Azure/azure-sdk-for-rust"
 $PackageRepositoryUri = "https://crates.io/crates"
@@ -139,6 +139,7 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
   return $additionalPackages ?? @()
 }
 
+# $GetPackageInfoFromPackageFileFn = "Get-${Language}-PackageInfoFromPackageFile"
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
   #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
   $package = cargo read-manifest --manifest-path $pkg.FullName | ConvertFrom-Json
