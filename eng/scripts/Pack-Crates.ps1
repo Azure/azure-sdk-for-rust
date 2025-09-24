@@ -190,11 +190,12 @@ try {
 
     if ($OutputPath -and $package.OutputPackage) {
       $sourcePath = "$RepoRoot/target/package/$packageName-$packageVersion"
-      $targetApiReviewFile = "$OutputPath/$packageName.rust.json"
+      $targetPath = "$OutputPath/$packageName"
+      $targetApiReviewFile = "$targetPath/$packageName.rust.json"
 
-      Write-Host "Copying package '$packageName' to '$OutputPath'"
-      New-Item -ItemType Directory -Path $OutputPath -Force | Out-Null
-      Copy-Item -Path "$sourcePath.crate" -Destination $OutputPath
+      Write-Host "Copying package '$packageName' to '$targetPath'"
+      New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
+      Copy-Item -Path "$sourcePath.crate" -Destination $targetPath
 
       Write-Host "Creating API review file"
       $apiReviewFile = Create-ApiViewFile $package
