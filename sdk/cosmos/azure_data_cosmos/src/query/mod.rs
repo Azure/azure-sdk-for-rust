@@ -199,8 +199,7 @@ mod tests {
 
     #[test]
     pub fn with_text_replaces_query_text() {
-        let query = Query::from("SELECT * FROM c")
-            .with_text("SELECT c.id FROM c".to_string());
+        let query = Query::from("SELECT * FROM c").with_text("SELECT c.id FROM c".to_string());
         assert_eq!(query.text, "SELECT c.id FROM c");
     }
 
@@ -209,7 +208,7 @@ mod tests {
         let query = Query::from("SELECT * FROM c")
             .with_parameter("@id", 42)?
             .with_text("SELECT c.name FROM c WHERE c.id = @id".to_string());
-        
+
         assert_eq!(query.text, "SELECT c.name FROM c WHERE c.id = @id");
         assert_eq!(query.parameters.len(), 1);
         assert_eq!(query.parameters[0].name, "@id");
@@ -218,8 +217,7 @@ mod tests {
 
     #[test]
     pub fn append_text_adds_to_existing_text() {
-        let query = Query::from("SELECT * FROM c")
-            .append_text(" WHERE c.id = @id");
+        let query = Query::from("SELECT * FROM c").append_text(" WHERE c.id = @id");
         assert_eq!(query.text, "SELECT * FROM c WHERE c.id = @id");
     }
 
@@ -228,7 +226,7 @@ mod tests {
         let query = Query::from("SELECT * FROM c")
             .with_parameter("@id", 42)?
             .append_text(" WHERE c.id = @id");
-        
+
         assert_eq!(query.text, "SELECT * FROM c WHERE c.id = @id");
         assert_eq!(query.parameters.len(), 1);
         assert_eq!(query.parameters[0].name, "@id");
@@ -242,11 +240,12 @@ mod tests {
             .with_parameter("@low_time", "2023-01-01")?
             .append_text(" AND c.time <= @high_time")
             .with_parameter("@high_time", "2023-12-31")?;
-        
-        assert_eq!(query.text, "SELECT * FROM c WHERE c.time >= @low_time AND c.time <= @high_time");
+
+        assert_eq!(
+            query.text,
+            "SELECT * FROM c WHERE c.time >= @low_time AND c.time <= @high_time"
+        );
         assert_eq!(query.parameters.len(), 2);
         Ok(())
     }
-
-
 }
