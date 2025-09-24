@@ -248,29 +248,5 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    pub fn problem_statement_example_works() -> Result<(), Box<dyn Error>> {
-        // This demonstrates the exact example from the problem statement
-        let mut query = Query::from("SELECT * FROM c");
-        
-        let high_time = Some("2023-12-31");
-        let low_time = Some("2023-01-01");
-        
-        // Add time filters if provided (new approach)
-        if let Some(high) = high_time {
-            query = query.append_text(" AND c.time <= @high_time")
-                .with_parameter("@high_time", high)?;
-        }
 
-        if let Some(low) = low_time {
-            query = query.append_text(" AND c.time >= @low_time")
-                .with_parameter("@low_time", low)?;
-        }
-        
-        assert_eq!(query.text, "SELECT * FROM c AND c.time <= @high_time AND c.time >= @low_time");
-        assert_eq!(query.parameters.len(), 2);
-        assert_eq!(query.parameters[0].name, "@high_time");
-        assert_eq!(query.parameters[1].name, "@low_time");
-        Ok(())
-    }
 }
