@@ -147,7 +147,7 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
 
   # Extract the .crate file (which is a tarball) to the temporary folder
   tar -xvf $pkg.FullName -C $extractionPath
-  $cargoTomlPath = Join-Path $extractionPath, $pkg.BaseName, 'Cargo.toml'
+  $cargoTomlPath = Join-Path $extractionPath $pkg.BaseName 'Cargo.toml'
 
   Write-Host "Reading package info from $cargoTomlPath"
   if (!(Test-Path $cargoTomlPath)) {
