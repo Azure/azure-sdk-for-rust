@@ -4,6 +4,9 @@
 
 ### Features Added
 
+* Added `Query::with_text()` method to replace query text
+* Added `Query::append_text()` method to append text to existing query
+
 ### Breaking Changes
 
 ### Bugs Fixed
