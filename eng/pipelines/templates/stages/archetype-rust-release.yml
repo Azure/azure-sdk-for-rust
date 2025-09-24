@@ -85,10 +85,6 @@ stages:
             runOnce:
               deploy:
                 steps:
-                  - template: /eng/pipelines/templates/steps/use-rust.yml@self
-                    parameters:
-                      Toolchain: stable
-
                   - pwsh: |
                       $ArtifactName = '${{artifact.name}}'
                       $ArtifactRootPath = '$(Pipeline.Workspace)/drop'
