@@ -101,7 +101,6 @@ stages:
                   - task: EsrpRelease@10
                     displayName: 'ESRP Release'
                     inputs:
-                      usemanagedidentity: false
                       connectedservicename: 'Azure SDK PME Managed Identity'
                       KeyVaultName: $(kv-azuresdk-codesign)
                       SignCertName: $(azure-sdk-esrp-release-certificate)
