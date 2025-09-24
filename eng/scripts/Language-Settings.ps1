@@ -141,8 +141,6 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 
 # $GetPackageInfoFromPackageFileFn = "Get-${Language}-PackageInfoFromPackageFile"
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
-  #$pkg will be a FileInfo object for the Cargo.toml file in a package artifact directory
-
   # Create a temporary folder for extraction
   $extractionPath = Join-Path ([System.IO.Path]::GetTempPath()), ([System.IO.Path]::GetRandomFileName())
   New-Item -ItemType Directory -Path $extractionPath | Out-Null
