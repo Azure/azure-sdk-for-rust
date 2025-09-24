@@ -8,14 +8,6 @@ The TypeSpec Macros crate provides procedural macros for [TypeSpec](https://type
 
 > **Note:** This crate should not be used directly. Users should depend on the `typespec_client_core` crate instead.
 
-### Install the package
-
-If you need to use this crate directly, install the TypeSpec Macros crate for Rust with cargo:
-
-```bash
-cargo add typespec_macros
-```
-
 ## Key concepts
 
 This crate provides the following derive macros:
@@ -54,8 +46,8 @@ use typespec_macros::SafeDebug;
 
 #[derive(SafeDebug)]
 pub struct Credentials {
+    #[safe(true)]
     pub username: String,
-    #[sensitive]
     pub password: String,
 }
 
