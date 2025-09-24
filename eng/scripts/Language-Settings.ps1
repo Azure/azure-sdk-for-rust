@@ -142,7 +142,7 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 # $GetPackageInfoFromPackageFileFn = "Get-${Language}-PackageInfoFromPackageFile"
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
   # Create a temporary folder for extraction
-  $extractionPath = Join-Path ([System.IO.Path]::GetTempPath()), ([System.IO.Path]::GetRandomFileName())
+  $extractionPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
   New-Item -ItemType Directory -Path $extractionPath | Out-Null
 
   # Extract the .crate file (which is a tarball) to the temporary folder
