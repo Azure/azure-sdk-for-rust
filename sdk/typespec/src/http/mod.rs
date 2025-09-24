@@ -3,10 +3,13 @@
 
 //! This module contains types and utilities for working with HTTP status codes.
 
-mod headers;
-mod response;
+pub mod headers;
+pub mod response;
 mod status_code;
 
-pub use headers::*;
-pub use response::*;
+pub use headers::DEFAULT_ALLOWED_HEADER_NAMES;
+pub use response::RawResponse;
 pub use status_code::StatusCode;
+
+/// Default pattern for redacted headers or query parameters.
+pub const REDACTED_PATTERN: &str = "REDACTED";

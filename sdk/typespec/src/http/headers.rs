@@ -46,9 +46,6 @@ pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<Cow<'static, str>>> =
         .collect()
     });
 
-/// Default pattern for redacted headers or query parameters.
-pub const REDACTED_PATTERN: &str = "REDACTED";
-
 /// A trait for converting a type into request headers.
 pub trait AsHeaders {
     /// The error type which can occur when converting the type into headers.
@@ -282,7 +279,7 @@ impl fmt::Debug for Headers {
                     if DEFAULT_ALLOWED_HEADER_NAMES.contains(k.as_str()) {
                         v.as_str()
                     } else {
-                        REDACTED_PATTERN
+                        super::REDACTED_PATTERN
                     },
                 )
             }))
