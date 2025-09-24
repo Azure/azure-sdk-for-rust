@@ -111,7 +111,7 @@ stages:
                         -Path "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate" `
                         -DestinationPath "$OutDir/release.zip"
 
-                      Write-Host "Contents of $OutDir:"
+                      Write-Host "Contents of $OutDir"
                       Get-ChildItem -Path $OutDir | ForEach-Object { Write-Host $_.FullName }
 
                     displayName: Compress Crate for ESRP
