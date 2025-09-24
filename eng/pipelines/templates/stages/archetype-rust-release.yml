@@ -84,33 +84,78 @@ stages:
             runOnce:
               deploy:
                 steps:
-                - template: /eng/pipelines/templates/steps/use-rust.yml@self
-                  parameters:
-                    Toolchain: stable
+                  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+                    parameters:
+                      Toolchain: stable
 
-                - pwsh: |
-                    $additionalOwners = @('heaths', 'hallipr')
-                    $token = $env:CARGO_REGISTRY_TOKEN
-                    $crateName = '${{artifact.name}}'
+                  - pwsh: |
+                      $artifactName = '${{artifact.name}}'
+                      Write-Host "Artifact name: $artifactName"
 
-                    $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/contents/Cargo.toml"
-                    Write-Host "> cargo publish --manifest-path `"$manifestPath`""
-                    cargo publish --manifest-path $manifestPath
-                    if (!$?) {
-                      Write-Error "Failed to publish package: '$crateName'"
-                      exit 1
-                    }
+                      $packageMetadataPath = "$(Pipeline.Workspace)/drop/PackageInfo/$artifactName.json"
+                      if (!(Test-Path $packageMetadataPath)) {
+                        Write-Error "Package metadata file not found: $packageMetadataPath"
+                        exit 1
+                      }
 
-                    $existingOwners = (cargo owner --list $crateName) -replace " \(.*", ""
-                    $missingOwners = $additionalOwners | Where-Object { $existingOwners -notcontains $_ }
+                      $packageMetadata = Get-Content -Raw $packageMetadataPath | ConvertFrom-Json -AsHashTable
+                      $packageVersion = $packageMetadata.version
+                      Write-Host "Package version: $packageVersion"
 
-                    foreach ($owner in $missingOwners) {
-                      Write-Host "> cargo owner --add $owner $crateName"
-                      cargo owner --add $owner $crateName
-                    }
-                  displayName: Publish Crate
-                  env:
-                    CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
+                      New-Item -ItemType Directory -Path '$(Pipeline.Workspace)/release' -Force | Out-Null
+                      Compress-Archive `
+                        -Path "$(Pipeline.Workspace)/drop/$artifactName-$packageVersion.crate" `
+                        -DestinationPath "$(Pipeline.Workspace)/release/release.zip"
+
+                      Get-ChildItem -Path "$(Pipeline.Workspace)/release" | ForEach-Object { Write-Host "Release artifact: $($_.FullName)" }
+
+                    displayName: Zip Crate for ESRP
+
+                  - task: EsrpRelease@10
+                    displayName: 'ESRP Release'
+                    inputs:
+                      usemanagedidentity: false
+                      connectedservicename: 'Azure SDK PME Managed Identity'
+                      KeyVaultName: $(kv-azuresdk-codesign)
+                      SignCertName: $(azure-sdk-esrp-release-certificate)
+                      # keyvaultname: $(2460c5ef-KeyVaultName)
+                      # authcertname: $(2460c5ef-Cert-Auth)
+                      # signcertname: $(2460c5ef-Cert-Signing)
+                      clientid: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
+                      intent: 'packagedistribution'
+                      contenttype: 'Rust'
+                      contentsource: 'Folder'
+                      folderlocation: '$(Pipeline.Workspace)/release/release.zip'
+                      waitforreleasecompletion: true
+                      owners: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
+                      approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
+                      serviceendpointurl: 'https://api.esrp.microsoft.com/'
+                      mainpublisher: 'ESRPRELPACMAN'
+                      domaintenantid: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+
+                # - pwsh: |
+                #     $additionalOwners = @('heaths', 'hallipr')
+                #     $token = $env:CARGO_REGISTRY_TOKEN
+                #     $crateName = '${{artifact.name}}'
+
+                #     $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/contents/Cargo.toml"
+                #     Write-Host "> cargo publish --manifest-path `"$manifestPath`""
+                #     cargo publish --manifest-path $manifestPath
+                #     if (!$?) {
+                #       Write-Error "Failed to publish package: '$crateName'"
+                #       exit 1
+                #     }
+
+                #     $existingOwners = (cargo owner --list $crateName) -replace " \(.*", ""
+                #     $missingOwners = $additionalOwners | Where-Object { $existingOwners -notcontains $_ }
+
+                #     foreach ($owner in $missingOwners) {
+                #       Write-Host "> cargo owner --add $owner $crateName"
+                #       cargo owner --add $owner $crateName
+                #     }
+                #   displayName: Publish Crate
+                #   env:
+                #     CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
 
         - job: UpdatePackageVersion
           displayName: "API Review and Package Version Update"
