@@ -37,29 +37,30 @@ stages:
           os: linux
 
         jobs:
-        - job: TagRepository
-          displayName: "Create release tag"
-          condition: and(succeeded(), ne(variables['Skip.TagRepository'], 'true'))
+        # TODO: Ensure that CHANGELOG is properly processed
+        # - job: TagRepository
+        #   displayName: "Create release tag"
+        #   condition: and(succeeded(), ne(variables['Skip.TagRepository'], 'true'))
 
-          steps:
-          - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+        #   steps:
+        #   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
 
-          - download: current
-            displayName: Download ${{parameters.PipelineArtifactName}} artifact
-            artifact: ${{parameters.PipelineArtifactName}}
+        #   - download: current
+        #     displayName: Download ${{parameters.PipelineArtifactName}} artifact
+        #     artifact: ${{parameters.PipelineArtifactName}}
 
-          - template: /eng/common/pipelines/templates/steps/retain-run.yml
+        #   - template: /eng/common/pipelines/templates/steps/retain-run.yml
 
-          - script: |
-              echo "##vso[build.addbuildtag]${{artifact.name}}"
-            displayName: Add build tag '${{artifact.name}}'
+        #   - script: |
+        #       echo "##vso[build.addbuildtag]${{artifact.name}}"
+        #     displayName: Add build tag '${{artifact.name}}'
 
-          - template: /eng/common/pipelines/templates/steps/create-tags-and-git-release.yml
-            parameters:
-              ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/${{artifact.name}}
-              PackageRepository: Crates.io
-              ReleaseSha: $(Build.SourceVersion)
-              WorkingDirectory: $(Pipeline.Workspace)/_work
+        #   - template: /eng/common/pipelines/templates/steps/create-tags-and-git-release.yml
+        #     parameters:
+        #       ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/${{artifact.name}}
+        #       PackageRepository: Crates.io
+        #       ReleaseSha: $(Build.SourceVersion)
+        #       WorkingDirectory: $(Pipeline.Workspace)/_work
 
         - deployment: PublishPackage
           displayName: "Publish to Crates.io"
@@ -75,7 +76,7 @@ stages:
           # This timeout shouldn't be necessary once we're able to parallelize better. Right now,
           # this is here to ensure larger areas (30+) libraries don't time out.
           timeoutInMinutes: 120
-          dependsOn: TagRepository
+          # dependsOn: TagRepository
           pool:
             name: azsdk-pool
             image: ubuntu-24.04
@@ -88,15 +89,29 @@ stages:
                     parameters:
                       Toolchain: stable
 
-                  - task: PowerShell@2
+                  - pwsh: |
+                      $ArtifactName = '${{artifact.name}}'
+                      $ArtifactRootPath = '$(Pipeline.Workspace)/drop'
+                      $OutFile = '$(Pipeline.Workspace)/esrp-release/release.zip'
+
+                      Write-Host "Artifact name: $ArtifactName"
+
+                      $packageMetadataPath = "$ArtifactRootPath/PackageInfo/$ArtifactName.json"
+                      if (!(Test-Path $packageMetadataPath)) {
+                        Write-Error "Package metadata file not found: $packageMetadataPath"
+                        exit 1
+                      }
+
+                      $packageMetadata = Get-Content -Raw $packageMetadataPath | ConvertFrom-Json
+                      $packageVersion = $packageMetadata.version
+                      Write-Host "Package version: $packageVersion"
+
+                      Compress-Archive `
+                        -Path "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate" `
+                        -DestinationPath $OutFile
+
+                      Write-Host "Created archive: $OutFile"
                     displayName: Compress Crate for ESRP
-                    inputs:
-                      targetType: filePath
-                      filePath: eng/scripts/Compress-ReleaseCrate.ps1
-                      arguments: >
-                        -ArtifactName '${{artifact.name}}'
-                        -ArtifactRootPath '$(Pipeline.Workspace)/drop'
-                        -OutFile '$(Pipeline.Workspace)/esrp-release/release.zip'
 
                   - task: EsrpRelease@10
                     displayName: 'ESRP Release'
