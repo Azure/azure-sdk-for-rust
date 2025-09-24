@@ -88,28 +88,15 @@ stages:
                     parameters:
                       Toolchain: stable
 
-                  - pwsh: |
-                      $artifactName = '${{artifact.name}}'
-                      Write-Host "Artifact name: $artifactName"
-
-                      $packageMetadataPath = "$(Pipeline.Workspace)/drop/PackageInfo/$artifactName.json"
-                      if (!(Test-Path $packageMetadataPath)) {
-                        Write-Error "Package metadata file not found: $packageMetadataPath"
-                        exit 1
-                      }
-
-                      $packageMetadata = Get-Content -Raw $packageMetadataPath | ConvertFrom-Json -AsHashTable
-                      $packageVersion = $packageMetadata.version
-                      Write-Host "Package version: $packageVersion"
-
-                      New-Item -ItemType Directory -Path '$(Pipeline.Workspace)/release' -Force | Out-Null
-                      Compress-Archive `
-                        -Path "$(Pipeline.Workspace)/drop/$artifactName-$packageVersion.crate" `
-                        -DestinationPath "$(Pipeline.Workspace)/release/release.zip"
-
-                      Get-ChildItem -Path "$(Pipeline.Workspace)/release" | ForEach-Object { Write-Host "Release artifact: $($_.FullName)" }
-
-                    displayName: Zip Crate for ESRP
+                  - task: PowerShell@2
+                    displayName: Compress Crate for ESRP
+                    inputs:
+                      targetType: filePath
+                      filePath: $(Build.SourcesDirectory)/eng/scripts/Compress-ReleaseCrate.ps1
+                      arguments: >
+                        -ArtifactName '${{artifact.name}}'
+                        -ArtifactRootPath '$(Pipeline.Workspace)/drop'
+                        -OutFile '$(Pipeline.Workspace)/esrp-release/release.zip'
 
                   - task: EsrpRelease@10
                     displayName: 'ESRP Release'
@@ -122,10 +109,11 @@ stages:
                       # authcertname: $(2460c5ef-Cert-Auth)
                       # signcertname: $(2460c5ef-Cert-Signing)
                       clientid: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
+                      Usemanagedidentity: true
                       intent: 'packagedistribution'
                       contenttype: 'Rust'
                       contentsource: 'Folder'
-                      folderlocation: '$(Pipeline.Workspace)/release/release.zip'
+                      folderlocation: '$(Pipeline.Workspace)/esrp-release'
                       waitforreleasecompletion: true
                       owners: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
                       approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
