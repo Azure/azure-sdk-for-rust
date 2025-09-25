@@ -1,0 +1,31 @@
+[package]
+name = "azure_storage_queue"
+version = "0.1.0"
+description = "Microsoft Azure Queue client library for Rust"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_storage_queue"
+keywords = ["sdk", "azure", "storage", "queue", "queues"]
+categories = ["api-bindings"]
+
+[features]
+default = ["azure_core/default"]
+
+[dependencies]
+azure_core = { workspace = true, features = ["xml"] }
+serde = { workspace = true }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+azure_core_test.workspace = true
+azure_identity.workspace = true
+futures.workspace = true
+rand.workspace = true
+tokio = { workspace = true, features = ["macros"] }

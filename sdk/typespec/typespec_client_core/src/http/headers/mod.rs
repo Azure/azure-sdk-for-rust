@@ -6,4 +6,4 @@
 mod common;
 
 pub use common::*;
-pub use typespec::http::{AsHeaders, FromHeaders, Header, HeaderName, HeaderValue, Headers};
+pub use typespec::http::headers::*;

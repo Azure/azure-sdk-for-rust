@@ -14,14 +14,13 @@ use azure_core::{
     },
 };
 use serde::Deserialize;
-use std::{convert::Infallible, fmt, sync::Arc};
+use std::{borrow::Cow, convert::Infallible, fmt, sync::Arc};
 
 // cspell:ignore fedauthredirect msedge oidcrequesturi
 const OIDC_VARIABLE_NAME: &str = "SYSTEM_OIDCREQUESTURI";
 const OIDC_VERSION: &str = "7.1";
 const TFS_FEDAUTHREDIRECT_HEADER: HeaderName = HeaderName::from_static("x-tfs-fedauthredirect");
 
-// TODO: https://github.com/Azure/azure-sdk-for-rust/issues/682
 const ALLOWED_HEADERS: &[&str] = &["x-msedge-ref", "x-vss-e2eid"];
 
 /// Enables authentication to Entra ID from Azure Pipelines.
@@ -60,11 +59,20 @@ impl AzurePipelinesCredential {
             "no system access token specified",
         )?;
 
-        let options = options.unwrap_or_default();
+        let mut options = options.unwrap_or_default();
+        options
+            .credential_options
+            .client_options
+            .logging
+            .additional_allowed_header_names
+            // the logging policy constructor will remove any duplicates
+            .extend(ALLOWED_HEADERS.iter().map(|&s| Cow::Borrowed(s)));
+
         #[cfg(test)]
         let env = options.env.unwrap_or_default();
         #[cfg(not(test))]
         let env = Env::default();
+
         let endpoint = env
             .var(OIDC_VARIABLE_NAME)
             .map_err(|err| azure_core::Error::with_error(
@@ -157,7 +165,7 @@ impl ClientAssertion for Client {
 
             return Err(
                 azure_core::Error::with_message(
-                    ErrorKind::http_response(status_code, Some(status_code.canonical_reason().to_string())),
+                    ErrorKind::HttpResponse { status: status_code, error_code: Some(status_code.canonical_reason().to_string()), raw_response: None },
                      format!("{status_code} response from the OIDC endpoint. Check service connection ID and pipeline configuration. {err_headers}"),
                 )
             );

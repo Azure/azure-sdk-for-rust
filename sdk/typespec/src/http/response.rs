@@ -4,7 +4,7 @@
 //! HTTP responses.
 
 use crate::{
-    http::{Headers, StatusCode},
+    http::{headers::Headers, StatusCode},
     Bytes,
 };
 #[cfg(any(feature = "json", feature = "xml"))]
@@ -50,7 +50,7 @@ impl RawResponse {
 
     /// Deserialize the JSON stream into type `T`.
     #[cfg(feature = "json")]
-    pub async fn json<T>(self) -> crate::Result<T>
+    pub fn json<T>(self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {
@@ -59,7 +59,7 @@ impl RawResponse {
 
     /// Deserialize the XML stream into type `T`.
     #[cfg(feature = "xml")]
-    pub async fn xml<T>(self) -> crate::Result<T>
+    pub fn xml<T>(self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {

@@ -102,6 +102,7 @@ async fn get_lots_of_properties_multiple_connections1(
     let credential = recording.credential();
 
     let mut property_futures = Vec::new();
+    let mut property_clients = Vec::new();
     for _ in 0..CONNECTION_COUNT {
         let client = Arc::new(
             ProducerClient::builder()
@@ -109,6 +110,7 @@ async fn get_lots_of_properties_multiple_connections1(
                 .open(host.as_str(), eventhub.as_str(), credential.clone())
                 .await?,
         );
+        property_clients.push(client.clone());
         property_futures.push(tokio::task::spawn(async move {
             client.get_eventhub_properties().await
         }));
@@ -117,6 +119,13 @@ async fn get_lots_of_properties_multiple_connections1(
     assert_eq!(property_futures.len(), CONNECTION_COUNT);
 
     let properties = futures::future::join_all(property_futures).await;
+    for client in property_clients {
+        if let Ok(client) = Arc::try_unwrap(client) {
+            client.close().await?;
+        } else {
+            panic!("Could not unwrap client");
+        }
+    }
 
     assert_eq!(properties.len(), CONNECTION_COUNT);
     for result in properties {
@@ -133,6 +142,8 @@ async fn get_lots_of_properties_multiple_connections1(
     Ok(())
 }
 
+#[allow(unused_attributes)]
+#[ignore = "This test creates a lot of threads and connections, so it is ignored by default."]
 #[recorded::test(live)]
 async fn get_lots_of_properties_multiple_connections2(
     ctx: TestContext,
@@ -145,7 +156,11 @@ async fn get_lots_of_properties_multiple_connections2(
 
     let credential = recording.credential();
 
-    let mut property_futures = Vec::new();
+    let mut property_futures: Vec<
+        tokio::task::JoinHandle<
+            Result<azure_messaging_eventhubs::models::EventHubProperties, azure_core::Error>,
+        >,
+    > = Vec::new();
     for _ in 0..CONNECTION_COUNT {
         let credential = credential.clone();
         let host = host.clone();
@@ -155,7 +170,9 @@ async fn get_lots_of_properties_multiple_connections2(
                 .with_application_id("test_get_properties".to_string())
                 .open(host.as_str(), eventhub.as_str(), credential)
                 .await?;
-            client.get_eventhub_properties().await
+            let property = client.get_eventhub_properties().await?;
+            client.close().await?;
+            Ok(property)
         }));
     }
 
@@ -178,6 +195,8 @@ async fn get_lots_of_properties_multiple_connections2(
     Ok(())
 }
 
+#[allow(unused_attributes)]
+#[ignore = "This test creates a lot of threads and connections, so it is ignored by default."]
 #[recorded::test(live)]
 async fn get_lots_of_properties_multiple_blocking_threads(
     ctx: TestContext,
@@ -210,6 +229,7 @@ async fn get_lots_of_properties_multiple_blocking_threads(
             for _ in 0..50 {
                 runtime.block_on(client.get_eventhub_properties())?;
             }
+            runtime.block_on(client.close())?;
             Ok(())
         }));
     }

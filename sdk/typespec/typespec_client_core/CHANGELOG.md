@@ -7,6 +7,9 @@
 ### Breaking Changes
 
 - Changed `ClientOptions::retry` from `Option<RetryOptions>` to `RetryOptions`.
+- Changed `RawResponse::json()` from `async` to synchronous function. The body was already buffered.
+- Changed `RawResponse::xml()` from `async` to synchronous function. The body was already buffered.
+- Removed `ErrorKind::http_response()`. Construct an `ErrorResponse::HttpResponse` variant instead.
 - Renamed `TransportOptions` to `Transport`.
 - Renamed `TransportOptions::new_custom_policy()` to `Transport::with_policy()`.
 

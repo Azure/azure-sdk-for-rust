@@ -86,6 +86,9 @@ impl AmqpManagementApis for Fe2o3AmqpManagement {
             .ok_or_else(Self::amqp_management_not_attached)?;
         let management = management.into_inner();
         management.close().await.map_err(AmqpError::from)?;
+
+        let mut session = self.session.lock().await;
+        session.end().await.map_err(AmqpError::from)?;
         Ok(())
     }
 

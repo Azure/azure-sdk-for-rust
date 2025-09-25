@@ -144,3 +144,9 @@ impl EventReceiver {
         self.connection.close_receiver(&self.source_url).await
     }
 }
+
+impl Drop for EventReceiver {
+    fn drop(&mut self) {
+        trace!("Dropping EventReceiver for partition {}", self.partition_id);
+    }
+}

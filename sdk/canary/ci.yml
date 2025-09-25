@@ -8,14 +8,14 @@ trigger:
     - release/*
   paths:
     include:
-    - sdk/template/
+    - sdk/canary/
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
-    ServiceDirectory: template
+    ServiceDirectory: canary
     Artifacts:
-    - name: azure_template_core
+    - name: azure_canary_core
       safeName: AzureTemplateCore
-    - name: azure_template
+    - name: azure_canary
       safeName: AzureTemplate

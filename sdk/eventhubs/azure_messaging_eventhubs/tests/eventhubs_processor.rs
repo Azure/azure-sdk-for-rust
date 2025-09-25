@@ -12,7 +12,7 @@ use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
-use tracing::info;
+use tracing::{error, info, warn};
 
 #[recorded::test(live)]
 async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
@@ -31,14 +31,11 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
         .with_update_interval(Duration::seconds(5))
         .with_partition_expiration_duration(Duration::seconds(10))
         .with_prefetch(300)
-        .build(
-            Arc::new(consumer_client),
-            Arc::new(InMemoryCheckpointStore::new()),
-        )
+        .build(consumer_client, Arc::new(InMemoryCheckpointStore::new()))
         .await?;
 
     {
-        const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+        const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 
         info!("Started event processor");
         info!("Waiting for event processor to finish");
@@ -59,22 +56,16 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
         }
     }
 
-    info!("Shutdown signal sent to event processor");
-    let r = event_processor.shutdown().await;
-    if let Err(e) = r {
-        info!("Failed to shutdown event processor: {:?}", e);
-    } else {
-        info!("Event processor shutdown sent successfully");
-    }
-
-    info!("Sleeping to let the processor task finish.");
-    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-
-    info!("Closing the processor.");
+    info!("Dereferencing the processor.");
     let processor = Arc::into_inner(event_processor);
     if let Some(processor) = processor {
-        info!("Stopping event processor");
-        processor.close().await?;
+        info!("Closing event processor");
+        let result = processor.close().await;
+        if let Err(e) = result {
+            error!("Failed to close event processor: {:?}", e);
+        } else {
+            info!("Event processor closed successfully");
+        }
     } else {
         info!("Event processor still running..");
     }
@@ -82,36 +73,32 @@ async fn start_processor(ctx: TestContext) -> azure_core::Result<()> {
     Ok(())
 }
 
-async fn create_consumer_client(ctx: &TestContext) -> azure_core::Result<Arc<ConsumerClient>> {
+async fn create_consumer_client(ctx: &TestContext) -> azure_core::Result<ConsumerClient> {
     let recording = ctx.recording();
 
-    Ok(Arc::new(
-        ConsumerClient::builder()
-            .open(
-                recording.var("EVENTHUBS_HOST", None).as_str(),
-                recording.var("EVENTHUB_NAME", None),
-                recording.credential().clone(),
-            )
-            .await?,
-    ))
+    ConsumerClient::builder()
+        .open(
+            recording.var("EVENTHUBS_HOST", None).as_str(),
+            recording.var("EVENTHUB_NAME", None),
+            recording.credential().clone(),
+        )
+        .await
 }
 
-async fn create_producer_client(ctx: &TestContext) -> azure_core::Result<Arc<ProducerClient>> {
+async fn create_producer_client(ctx: &TestContext) -> azure_core::Result<ProducerClient> {
     let recording = ctx.recording();
 
-    Ok(Arc::new(
-        ProducerClient::builder()
-            .open(
-                recording.var("EVENTHUBS_HOST", None).as_str(),
-                recording.var("EVENTHUB_NAME", None).as_str(),
-                recording.credential().clone(),
-            )
-            .await?,
-    ))
+    ProducerClient::builder()
+        .open(
+            recording.var("EVENTHUBS_HOST", None).as_str(),
+            recording.var("EVENTHUB_NAME", None).as_str(),
+            recording.credential().clone(),
+        )
+        .await
 }
 
 async fn create_processor(
-    consumer_client: Arc<ConsumerClient>,
+    consumer_client: ConsumerClient,
     update_interval: Duration,
     start_positions: Option<StartPositions>,
 ) -> azure_core::Result<Arc<EventProcessor>> {
@@ -165,13 +152,14 @@ async fn get_all_partition_clients(ctx: TestContext) -> azure_core::Result<()> {
     use std::collections::HashSet;
 
     let consumer_client = create_consumer_client(&ctx).await?;
-    // The processor only adds one client as needed up to the max, so we block waiting
-    // on all the clients to become available.
-    let processor = create_processor(consumer_client.clone(), Duration::seconds(3), None).await?;
-
-    let running_processor = start_processor_running(&processor).await;
 
     let eh_properties = consumer_client.get_eventhub_properties().await?;
+
+    // The processor only adds one client as needed up to the max, so we block waiting
+    // on all the clients to become available.
+    let processor = create_processor(consumer_client, Duration::seconds(3), None).await?;
+
+    let running_processor = start_processor_running(&processor).await;
 
     let mut found_clients = HashSet::new();
     let mut partition_clients = Vec::new();
@@ -332,6 +320,7 @@ async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<(
                 .expect("Failed to send event data");
         }
 
+        producer_client.close().await?;
         info!("Producer client closed");
     }
 
@@ -371,10 +360,27 @@ async fn receive_events_from_processor(ctx: TestContext) -> azure_core::Result<(
         }
     }
 
+    if let Ok(partition_client) = Arc::try_unwrap(partition_client) {
+        info!("All references to partition client dropped");
+        partition_client.close().await?;
+        info!("Partition client closed");
+    } else {
+        warn!("Partition client not dropped: Arc has multiple strong references (this should not happen).");
+    }
+
     running_processor.abort();
     info!("Processor task aborted");
     let _ = running_processor.await;
     info!("Processor task joined");
+
+    // Close the processor.
+    info!("Closing processor");
+    if let Ok(processor) = Arc::try_unwrap(processor) {
+        processor.close().await?;
+        info!("Processor closed");
+    } else {
+        info!("Processor still has references, not closing.");
+    }
 
     Ok(())
 }

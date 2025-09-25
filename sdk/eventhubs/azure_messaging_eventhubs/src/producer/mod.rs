@@ -9,7 +9,11 @@ use crate::{
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
     RetryOptions,
 };
-use azure_core::{error::Result, http::Url, Uuid};
+use azure_core::{
+    error::{Error, ErrorKind as AzureErrorKind, Result},
+    http::Url,
+    Uuid,
+};
 use azure_core_amqp::{
     error::AmqpErrorKind, AmqpError, AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis,
 };
@@ -130,7 +134,17 @@ impl ProducerClient {
     ///
     /// Note that dropping the ProducerClient will also close the connection.
     pub async fn close(self) -> Result<()> {
-        self.connection.close_connection().await
+        trace!("Closing producer client for {}.", self.endpoint);
+        Arc::try_unwrap(self.connection)
+            .map_err(|_| {
+                Error::with_message(
+                    AzureErrorKind::Other,
+                    "Could not close producer recoverable connection, multiple references exist",
+                )
+            })?
+            .close_connection()
+            .await?;
+        Ok(())
     }
 
     /// Sends an event to the Event Hub.
