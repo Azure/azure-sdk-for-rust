@@ -213,7 +213,7 @@ pub enum KeyType {
     /// Octet sequence (used to represent symmetric keys) which is stored the HSM.
     OctHsm,
 
-    /// RSA (<https://tools.ietf.org/html/rfc3447>)
+    /// RSA (https://tools.ietf.org/html/rfc3447)
     Rsa,
 
     /// RSA with a private key which is stored in the HSM.
