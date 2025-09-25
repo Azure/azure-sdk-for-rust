@@ -26,17 +26,16 @@ param(
   [string]$Path = "."
 )
 
-Write-Host "Searching for tsp-location.yml files in: $Path" -ForegroundColor Green
+Write-Host "Searching for tsp-location.yaml files in: $Path" -ForegroundColor Green
 
-$tspFiles = Get-ChildItem -Path $Path -Recurse -Name "tsp-location.yml"
+$tspFiles = Get-ChildItem -Path $Path -Recurse -Name "tsp-location.yaml"
 
 if ($tspFiles.Count -eq 0) {
-  Write-Host "No tsp-location.yml files found." -ForegroundColor Yellow
+  Write-Host "No tsp-location.yaml files found." -ForegroundColor Yellow
   exit 0
 }
 
-Write-Host "Found $($tspFiles.Count) tsp-location.yml file(s)" -ForegroundColor Green
-
+Write-Host "Found $($tspFiles.Count) tsp-location.yaml file(s)" -ForegroundColor Green
 foreach ($file in $tspFiles) {
   $dir = Split-Path $file -Parent
   if ([string]::IsNullOrEmpty($dir)) {
