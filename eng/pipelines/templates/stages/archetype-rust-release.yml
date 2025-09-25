@@ -38,29 +38,29 @@ stages:
 
         jobs:
         # TODO: Ensure that CHANGELOG is properly processed
-        # - job: TagRepository
-        #   displayName: "Create release tag"
-        #   condition: and(succeeded(), ne(variables['Skip.TagRepository'], 'true'))
+        - job: TagRepository
+          displayName: "Create release tag"
+          condition: and(succeeded(), ne(variables['Skip.TagRepository'], 'true'))
 
-        #   steps:
-        #   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+          steps:
+          - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
 
-        #   - download: current
-        #     displayName: Download ${{parameters.PipelineArtifactName}} artifact
-        #     artifact: ${{parameters.PipelineArtifactName}}
+          - download: current
+            displayName: Download ${{parameters.PipelineArtifactName}} artifact
+            artifact: ${{parameters.PipelineArtifactName}}
 
-        #   - template: /eng/common/pipelines/templates/steps/retain-run.yml
+          - template: /eng/common/pipelines/templates/steps/retain-run.yml
 
-        #   - script: |
-        #       echo "##vso[build.addbuildtag]${{artifact.name}}"
-        #     displayName: Add build tag '${{artifact.name}}'
+          - script: |
+              echo "##vso[build.addbuildtag]${{artifact.name}}"
+            displayName: Add build tag '${{artifact.name}}'
 
-        #   - template: /eng/common/pipelines/templates/steps/create-tags-and-git-release.yml
-        #     parameters:
-        #       ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/${{artifact.name}}
-        #       PackageRepository: Crates.io
-        #       ReleaseSha: $(Build.SourceVersion)
-        #       WorkingDirectory: $(Pipeline.Workspace)/_work
+          - template: /eng/common/pipelines/templates/steps/create-tags-and-git-release.yml
+            parameters:
+              ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/${{artifact.name}}
+              PackageRepository: Crates.io
+              ReleaseSha: $(Build.SourceVersion)
+              WorkingDirectory: $(Pipeline.Workspace)/_work
 
         - deployment: PublishPackage
           displayName: "Publish to Crates.io"
@@ -76,7 +76,7 @@ stages:
           # This timeout shouldn't be necessary once we're able to parallelize better. Right now,
           # this is here to ensure larger areas (30+) libraries don't time out.
           timeoutInMinutes: 120
-          # dependsOn: TagRepository
+          dependsOn: TagRepository
           pool:
             name: azsdk-pool
             image: ubuntu-24.04
@@ -102,17 +102,53 @@ stages:
                       $packageVersion = $packageMetadata.version
                       Write-Host "Package version: $packageVersion"
 
+                      $cratePath = "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate"
+                      Write-Host "##vso[task.setvariable variable=CratePath]$cratePath"
+
                       New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
-                      # Compress-Archive `
-                      #   -Path "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate" `
-                      #   -DestinationPath "$OutDir/release.zip"
                       Copy-Item `
-                        -Path "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate" `
+                        -Path $cratePath`
                         -Destination $OutDir
                       Write-Host "Contents of $OutDir"
                       Get-ChildItem -Path $OutDir | ForEach-Object { Write-Host $_.FullName }
+                    displayName: Copy crate for ESRP
 
-                    displayName: Compress Crate for ESRP
+                  - pwsh: |
+                      $CratePath = '$(CratePath)'
+                      if (!(Test-Path $CratePath)) {
+                        Write-Error "Crate file not found: $CratePath"
+                        exit 1
+                      }
+
+                      $evaluationDir = (Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName()))
+
+                      New-Item -ItemType Directory -Path $evaluationDir -Force | Out-Null
+                      Invoke-Expression "tar --exclude `"Cargo.toml.orig`" -xzvf $CratePath -C $evaluationDir"
+
+                      if ($LASTEXITCODE) { 
+                        Write-Host "Failed to extract crate $CratePath"
+                        exit 1
+                      }
+
+                      Set-Location $evaluationDir
+                      Set-Location (Join-Path $evaluationDir $crateName)
+                      
+                      $command = @(
+                        "cargo publish", 
+                        "--locked",
+                        "--dry-run",
+                        "--package $packageName",
+                        "--allow-dirty"
+                      ) -join ' '
+                      Invoke-Expression $command
+
+                      if ($LASTEXITCODE) { 
+                        Write-Host "Crate $crateName is NOT publishable"
+                        exit 1
+                      } else { 
+                        Write-Host "Crate $crateName is publishable"
+                      }
+                    displayName: Verify crate is publishable
 
                   - task: EsrpRelease@10
                     displayName: 'ESRP Release'
@@ -132,30 +168,6 @@ stages:
                       approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
                       serviceendpointurl: 'https://api.esrp.microsoft.com/'
                       mainpublisher: 'ESRPRELPACMANTEST'
-
-                # - pwsh: |
-                #     $additionalOwners = @('heaths', 'hallipr')
-                #     $token = $env:CARGO_REGISTRY_TOKEN
-                #     $crateName = '${{artifact.name}}'
-
-                #     $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/contents/Cargo.toml"
-                #     Write-Host "> cargo publish --manifest-path `"$manifestPath`""
-                #     cargo publish --manifest-path $manifestPath
-                #     if (!$?) {
-                #       Write-Error "Failed to publish package: '$crateName'"
-                #       exit 1
-                #     }
-
-                #     $existingOwners = (cargo owner --list $crateName) -replace " \(.*", ""
-                #     $missingOwners = $additionalOwners | Where-Object { $existingOwners -notcontains $_ }
-
-                #     foreach ($owner in $missingOwners) {
-                #       Write-Host "> cargo owner --add $owner $crateName"
-                #       cargo owner --add $owner $crateName
-                #     }
-                #   displayName: Publish Crate
-                #   env:
-                #     CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
 
         - job: UpdatePackageVersion
           displayName: "API Review and Package Version Update"
