@@ -393,7 +393,7 @@ impl serde::Serialize for AmqpErrorCondition {
 
 impl From<AmqpSymbol> for AmqpErrorCondition {
     fn from(condition: AmqpSymbol) -> Self {
-        // Note that the `from_str` implementation from `create_extensible_enum` will
+        // Note that the `from_str` implementation for `AmqpErrorCondition` will
         // never return an error. So the `unwrap` is there to silence the compiler.
         AmqpErrorCondition::from_str(condition.0.as_str()).unwrap()
     }
