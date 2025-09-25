@@ -8,7 +8,16 @@ This crate is part of a collection of crates: for more information please refer 
 
 ## SOCKS5 Proxy Support
 
-This crate supports SOCKS5 proxy connections for corporate environments. SOCKS5 support is enabled by configuring the `custom_endpoint` option with a SOCKS5 URL:
+This crate supports SOCKS5 proxy connections for corporate environments.
+
+**Note**: SOCKS5 support requires enabling the `socks5` feature:
+
+```toml
+[dependencies]
+azure_core_amqp = { version = "0.8", features = ["socks5"] }
+```
+
+SOCKS5 support is enabled by configuring the `custom_endpoint` option with a SOCKS5 URL:
 
 ```rust,no_run
 use azure_core::http::Url;

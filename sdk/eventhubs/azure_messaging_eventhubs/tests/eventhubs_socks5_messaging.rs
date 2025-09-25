@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+#![cfg(feature = "socks5")]
+
 //! SOCKS5 Proxy Messaging Tests for EventHubs
 //!
 //! These tests verify EventHub message operations (send/receive) work through SOCKS5 proxies.
@@ -21,7 +23,7 @@
 //!
 //! 3. **Run messaging tests**:
 //!    ```bash
-//!    AZURE_TEST_MODE=live cargo test --test eventhubs_socks5_messaging
+//!    AZURE_TEST_MODE=live cargo test --features socks5 --test eventhubs_socks5_messaging
 //!    ```
 //!
 //! # Test Coverage
