@@ -125,14 +125,14 @@
 //!
 //! See [`SocksConnection`] for detailed usage examples and API documentation.
 
-use tokio_socks::{tcp::Socks5Stream, TargetAddr};
-use tokio::io::{AsyncRead, AsyncWrite};
-use azure_core::{http::Url, error::Result};
-use tracing::{debug, error, trace};
-use tokio_native_tls::TlsConnector;
+use azure_core::{error::Result, http::Url};
 use native_tls::TlsConnector as NativeTlsConnector;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use tokio::io::{AsyncRead, AsyncWrite};
+use tokio_native_tls::TlsConnector;
+use tokio_socks::{tcp::Socks5Stream, TargetAddr};
+use tracing::{debug, error, trace};
 
 /// A trait that combines AsyncRead, AsyncWrite, Unpin, Send and Debug for SOCKS5 streams
 pub trait SocksStream: AsyncRead + AsyncWrite + Unpin + Send + std::fmt::Debug + 'static {}
@@ -311,14 +311,14 @@ impl SocksConnection {
             );
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("Invalid SOCKS5 scheme: {}", url.scheme())
+                format!("Invalid SOCKS5 scheme: {}", url.scheme()),
             ));
         }
         if url.host_str().is_none() {
             error!("Missing host in SOCKS5 proxy URL");
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                "Missing host in SOCKS5 URL"
+                "Missing host in SOCKS5 URL",
             ));
         }
         Ok(())
@@ -406,10 +406,7 @@ impl SocksConnection {
     ///
     /// Returns a boxed stream implementing [`SocksStream`] trait, ready for use
     /// with fe2o3-amqp's `Connection::open_with_stream()` method.
-    pub async fn connect(
-        proxy_url: &Url,
-        target_url: &Url,
-    ) -> Result<Box<dyn SocksStream>> {
+    pub async fn connect(proxy_url: &Url, target_url: &Url) -> Result<Box<dyn SocksStream>> {
         debug!(
             proxy_url = %Self::mask_credentials(proxy_url),
             target_host = %target_url.host_str().unwrap_or("unknown"),
@@ -421,14 +418,13 @@ impl SocksConnection {
         Self::validate_proxy_url(proxy_url)?;
 
         // DNS resolution happens at proxy server for socks5h:// scheme
-        let proxy_host = proxy_url.host_str()
-            .ok_or_else(|| {
-                error!("Missing proxy host in SOCKS5 URL");
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Missing proxy host in SOCKS5 URL"
-                )
-            })?;
+        let proxy_host = proxy_url.host_str().ok_or_else(|| {
+            error!("Missing proxy host in SOCKS5 URL");
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Missing proxy host in SOCKS5 URL",
+            )
+        })?;
         let proxy_port = proxy_url.port().unwrap_or(1080);
 
         debug!(
@@ -441,7 +437,7 @@ impl SocksConnection {
         // Always use domain name - let SOCKS5 proxy handle resolution
         let target_addr = TargetAddr::Domain(
             target_url.host_str().unwrap_or("").into(),
-            target_url.port().unwrap_or(5671)
+            target_url.port().unwrap_or(5671),
         );
 
         // Handle authentication if provided in URL
@@ -452,7 +448,7 @@ impl SocksConnection {
                 error!("Empty username in SOCKS5 proxy URL");
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    "Empty username in SOCKS5 URL"
+                    "Empty username in SOCKS5 URL",
                 ));
             }
 
@@ -465,8 +461,9 @@ impl SocksConnection {
                 (proxy_host, proxy_port),
                 target_addr,
                 username,
-                password
-            ).await
+                password,
+            )
+            .await
         } else {
             debug!("Connecting to SOCKS5 proxy without authentication");
             Socks5Stream::connect((proxy_host, proxy_port), target_addr).await
@@ -479,11 +476,13 @@ impl SocksConnection {
                 "SOCKS5 connection establishment failed"
             );
 
-            azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                Box::new(e)
-            ).with_context(format!("SOCKS5 connection failed: proxy={}, target={}",
-                Self::mask_credentials(proxy_url), target_url))
+            azure_core::Error::new(azure_core::error::ErrorKind::Other, Box::new(e)).with_context(
+                format!(
+                    "SOCKS5 connection failed: proxy={}, target={}",
+                    Self::mask_credentials(proxy_url),
+                    target_url
+                ),
+            )
         })?;
 
         debug!(
@@ -493,7 +492,8 @@ impl SocksConnection {
         );
 
         // Check if target URL requires TLS (amqps://)
-        let requires_tls = target_url.scheme() == "amqps" || target_url.port().unwrap_or(5671) == 5671;
+        let requires_tls =
+            target_url.scheme() == "amqps" || target_url.port().unwrap_or(5671) == 5671;
 
         if requires_tls {
             debug!(
@@ -502,30 +502,30 @@ impl SocksConnection {
             );
 
             // Create TLS connector with default settings
-            let native_connector = NativeTlsConnector::new()
-                .map_err(|e| {
-                    error!(
-                        error = %e,
-                        "Failed to create TLS connector"
-                    );
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        format!("Failed to create TLS connector: {}", e)
-                    )
-                })?;
+            let native_connector = NativeTlsConnector::new().map_err(|e| {
+                error!(
+                    error = %e,
+                    "Failed to create TLS connector"
+                );
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("Failed to create TLS connector: {}", e),
+                )
+            })?;
 
             let connector = TlsConnector::from(native_connector);
-            let target_host = target_url.host_str()
-                .ok_or_else(|| {
-                    error!("Missing target host for TLS connection");
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        "Missing target host for TLS connection"
-                    )
-                })?;
+            let target_host = target_url.host_str().ok_or_else(|| {
+                error!("Missing target host for TLS connection");
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Missing target host for TLS connection",
+                )
+            })?;
 
             // Establish TLS connection over SOCKS5 stream
-            let tls_stream = connector.connect(target_host, stream.into_inner()).await
+            let tls_stream = connector
+                .connect(target_host, stream.into_inner())
+                .await
                 .map_err(|e| {
                     error!(
                         target_host = %target_host,
@@ -534,7 +534,7 @@ impl SocksConnection {
                     );
                     azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
-                        format!("TLS handshake failed: {}", e)
+                        format!("TLS handshake failed: {}", e),
                     )
                 })?;
 
@@ -703,7 +703,8 @@ mod tests {
     #[test]
     fn test_mask_credentials_with_auth() {
         // Username and password should be masked
-        let url_with_auth = Url::parse("socks5://username:password@proxy.example.com:1080").unwrap();
+        let url_with_auth =
+            Url::parse("socks5://username:password@proxy.example.com:1080").unwrap();
         let masked = SocksConnection::mask_credentials(&url_with_auth);
         assert_eq!(masked, "socks5://***:***@proxy.example.com:1080");
 
@@ -724,20 +725,26 @@ mod tests {
     #[test]
     fn test_mask_credentials_special_characters() {
         // Test credentials with special characters (URL encoded)
-        let url_special = Url::parse("socks5://user%40domain:p%40ssw0rd@proxy.example.com:1080").unwrap();
+        let url_special =
+            Url::parse("socks5://user%40domain:p%40ssw0rd@proxy.example.com:1080").unwrap();
         let masked = SocksConnection::mask_credentials(&url_special);
         assert_eq!(masked, "socks5://***:***@proxy.example.com:1080");
 
         // Test with complex credentials
-        let url_complex = Url::parse("socks5://admin:secretP%40ss123@proxy-server.corp.com:8080").unwrap();
+        let url_complex =
+            Url::parse("socks5://admin:secretP%40ss123@proxy-server.corp.com:8080").unwrap();
         let masked_complex = SocksConnection::mask_credentials(&url_complex);
-        assert_eq!(masked_complex, "socks5://***:***@proxy-server.corp.com:8080");
+        assert_eq!(
+            masked_complex,
+            "socks5://***:***@proxy-server.corp.com:8080"
+        );
     }
 
     #[test]
     fn test_mask_credentials_preserves_structure() {
         // Verify that masking preserves host, port, and scheme
-        let original = Url::parse("socks5h://testuser:testpass@corporate-proxy.internal:12345").unwrap();
+        let original =
+            Url::parse("socks5h://testuser:testpass@corporate-proxy.internal:12345").unwrap();
         let masked = SocksConnection::mask_credentials(&original);
 
         assert!(masked.starts_with("socks5h://"));
@@ -777,7 +784,9 @@ mod tests {
             // Verify credentials are not exposed
             assert!(!masked.contains("pass"));
             assert!(!masked.contains("secret"));
-            assert!(!masked.contains("admin") || url_str.contains("admin") == masked.contains("admin"));
+            assert!(
+                !masked.contains("admin") || url_str.contains("admin") == masked.contains("admin")
+            );
         }
     }
 }
