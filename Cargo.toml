@@ -1,3 +1,5 @@
+# cspell:ignore rustdoc
+
 [workspace]
 resolver = "2"
 members = [
