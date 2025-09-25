@@ -46,17 +46,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
     // Get EventHub connection details
-    let eventhub_namespace = env::var("EVENTHUBS_HOST")
-        .expect("EVENTHUBS_HOST environment variable must be set");
-    let eventhub_name = env::var("EVENTHUB_NAME")
-        .expect("EVENTHUB_NAME environment variable must be set");
+    let eventhub_namespace =
+        env::var("EVENTHUBS_HOST").expect("EVENTHUBS_HOST environment variable must be set");
+    let eventhub_name =
+        env::var("EVENTHUB_NAME").expect("EVENTHUB_NAME environment variable must be set");
 
     // Get SOCKS5 proxy URL (with fallback default)
-    let proxy_url = env::var("SOCKS5_PROXY_URL")
-        .unwrap_or_else(|_| {
-            warn!("SOCKS5_PROXY_URL not set, using default: socks5h://my-proxy-domain:12345");
-            "socks5h://my-proxy-domain:12345".to_string()
-        });
+    let proxy_url = env::var("SOCKS5_PROXY_URL").unwrap_or_else(|_| {
+        warn!("SOCKS5_PROXY_URL not set, using default: socks5h://my-proxy-domain:12345");
+        "socks5h://my-proxy-domain:12345".to_string()
+    });
 
     info!(
         eventhub_host = %eventhub_namespace,
@@ -82,7 +81,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Successfully created producer client through SOCKS5 proxy");
 
     // Send a test message through the proxy
-    let test_message = format!("Hello from SOCKS5 proxy at {:?}", std::time::SystemTime::now());
+    let test_message = format!(
+        "Hello from SOCKS5 proxy at {:?}",
+        std::time::SystemTime::now()
+    );
     client.send_event(test_message.as_str(), None).await?;
 
     info!(
@@ -96,7 +98,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_content_type("application/json".to_string())
         .with_body(r#"{"event_type": "socks5_test", "timestamp": "2024-01-01T00:00:00Z"}"#)
         .add_property("proxy_type".to_string(), "socks5")
-        .add_property("test_run".to_string(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs())
+        .add_property(
+            "test_run".to_string(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        )
         .build();
 
     client.send_event(event, None).await?;

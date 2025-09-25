@@ -37,7 +37,9 @@
 
 use azure_core::{http::Url, time::Duration};
 use azure_core_test::{recorded, TestContext};
-use azure_messaging_eventhubs::{ConsumerClient, OpenReceiverOptions, ProducerClient, StartPosition};
+use azure_messaging_eventhubs::{
+    ConsumerClient, OpenReceiverOptions, ProducerClient, StartPosition,
+};
 use futures::StreamExt;
 use std::{env, error::Error};
 use tokio::time::timeout;
@@ -52,7 +54,8 @@ async fn socks5_proxy_send_receive_messages(ctx: TestContext) -> Result<(), Box<
     let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let proxy_url = env::var("SOCKS5_PROXY_URL").unwrap_or("socks5h://my-proxy-domain:12345".to_string());
+    let proxy_url =
+        env::var("SOCKS5_PROXY_URL").unwrap_or("socks5h://my-proxy-domain:12345".to_string());
 
     info!(
         host = %host,
@@ -72,9 +75,7 @@ async fn socks5_proxy_send_receive_messages(ctx: TestContext) -> Result<(), Box<
 
     // Send a test message
     let test_message = format!("SOCKS5 test message at {:?}", std::time::SystemTime::now());
-    producer
-        .send_event(test_message.clone(), None)
-        .await?;
+    producer.send_event(test_message.clone(), None).await?;
 
     info!(
         message = %test_message,
@@ -133,7 +134,8 @@ async fn socks5_proxy_send_receive_messages(ctx: TestContext) -> Result<(), Box<
             }
         }
         Ok(())
-    }).await;
+    })
+    .await;
 
     match receive_result {
         Ok(_) => {
@@ -155,7 +157,8 @@ async fn socks5_proxy_partition_properties(ctx: TestContext) -> Result<(), Box<d
     let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let proxy_url = env::var("SOCKS5_PROXY_URL").unwrap_or("socks5h://my-proxy-domain:12345".to_string());
+    let proxy_url =
+        env::var("SOCKS5_PROXY_URL").unwrap_or("socks5h://my-proxy-domain:12345".to_string());
 
     info!(
         host = %host,

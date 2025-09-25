@@ -45,7 +45,7 @@
 //! - **socks5_proxy_with_auth**: Authenticated SOCKS5 connection test
 //! - **direct_connection_still_works**: Verify backward compatibility
 
-use azure_core::{http::Url};
+use azure_core::http::Url;
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::ConsumerClient;
 use std::{env, error::Error};
@@ -60,7 +60,8 @@ async fn socks5_proxy_connection(ctx: TestContext) -> Result<(), Box<dyn Error>>
     let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let proxy_url = env::var("SOCKS5_PROXY_URL").unwrap_or("socks5h://my-proxy-domain:12345".to_string());
+    let proxy_url =
+        env::var("SOCKS5_PROXY_URL").unwrap_or("socks5h://my-proxy-domain:12345".to_string());
 
     info!(
         host = %host,
@@ -86,7 +87,8 @@ async fn socks5h_proxy_connection(ctx: TestContext) -> Result<(), Box<dyn Error>
     let recording = ctx.recording();
     let host = env::var("EVENTHUBS_HOST")?;
     let eventhub = env::var("EVENTHUB_NAME")?;
-    let proxy_url = env::var("SOCKS5H_PROXY_URL").unwrap_or("socks5h://my-proxy-domain:12345".to_string());
+    let proxy_url =
+        env::var("SOCKS5H_PROXY_URL").unwrap_or("socks5h://my-proxy-domain:12345".to_string());
 
     info!(
         host = %host,
