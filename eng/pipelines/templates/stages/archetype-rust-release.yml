@@ -131,7 +131,7 @@ stages:
                       owners: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
                       approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
                       serviceendpointurl: 'https://api.esrp.microsoft.com/'
-                      mainpublisher: 'ESRPRELPACMAN'
+                      mainpublisher: 'ESRPRELPACMANTEST'
 
                 # - pwsh: |
                 #     $additionalOwners = @('heaths', 'hallipr')
