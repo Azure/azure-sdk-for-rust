@@ -12,7 +12,7 @@ The TypeSpec Macros crate provides procedural macros for [TypeSpec](https://type
 
 This crate provides the following derive macros:
 
--   `SafeDebug`: A derive macro that implements debug formatting in a way that avoids leaking personally identifiable information (PII).
+- `SafeDebug`: A derive macro that implements debug formatting in a way that avoids leaking personally identifiable information (PII).
 
 ### The SafeDebug derive macro
 
@@ -31,11 +31,23 @@ struct Credentials {
   pub username: String,
   pub password: String,
 };
-let credentials: Credentials = Credentials {
+
+let credentials = Credentials {
   username: "admin".into(),
   password: "hunter2".into(),
 };
-println!("{credentials:?}");
+
+#[cfg(not(feature = "debug"))]
+assert_eq!(
+    format!("{credentials:?}"),
+    r#"Credentials { username: "admin", .. }"#,
+);
+
+#[cfg(feature = "debug")]
+assert_eq!(
+    format!("{credentials:?}"),
+    r#"Credentials { username: "admin", password: "hunter2" }"#,
+);
 ```
 
 ## Contributing
