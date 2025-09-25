@@ -118,7 +118,11 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 builder = builder.hostname(url.host_str());
             }
 
-            let connection_type = if endpoint.scheme().starts_with("socks5") { "socks5" } else { "direct" };
+            let connection_type = if endpoint.scheme().starts_with("socks5") {
+                "socks5"
+            } else {
+                "direct"
+            };
             let connection = if endpoint.scheme() == "socks5" || endpoint.scheme() == "socks5h" {
                 debug!(
                     connection_id = %id,
@@ -128,7 +132,8 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 );
 
                 // Use fe2o3's open_with_stream() to inject SOCKS5 connection
-                let stream = SocksConnection::connect(&endpoint, &url).await
+                let stream = SocksConnection::connect(&endpoint, &url)
+                    .await
                     .map_err(|e| {
                         error!(
                             connection_id = %id,
