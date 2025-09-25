@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#![cfg(feature = "socks5")]
+
 //! This sample demonstrates how to connect to an Event Hub through a SOCKS5 proxy using the `ProducerClient`.
 //!
 //! # SOCKS5 Proxy Setup
@@ -31,8 +33,10 @@
 //!
 //! # Usage
 //!
+//! **Note**: This example requires the `socks5` feature to be enabled.
+//!
 //! ```bash
-//! cargo run --example eventhubs_socks5_proxy
+//! cargo run --features socks5 --example eventhubs_socks5_proxy
 //! ```
 
 use azure_identity::DeveloperToolsCredential;

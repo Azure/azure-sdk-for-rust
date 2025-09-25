@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+#![cfg(feature = "socks5")]
+
 //! SOCKS5 Proxy Integration Tests for EventHubs
 //!
 //! These tests verify EventHub connections work through SOCKS5 proxies.
@@ -26,9 +28,9 @@
 //!    export SOCKS5_PROXY_URL_WITH_AUTH="socks5://user:pass@my-proxy-domain:12345"
 //!    ```
 //!
-//! 3. **Run live tests**:
+//! 3. **Run live tests** (requires the `socks5` feature):
 //!    ```bash
-//!    AZURE_TEST_MODE=live cargo test --test eventhubs_socks5_proxy
+//!    AZURE_TEST_MODE=live cargo test --features socks5 --test eventhubs_socks5_proxy
 //!    ```
 //!
 //! # Default Configuration

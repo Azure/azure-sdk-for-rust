@@ -21,6 +21,7 @@ mod receiver;
 mod sender;
 mod session;
 mod simple_value;
+#[cfg(feature = "socks5")]
 mod socks5;
 mod value;
 
