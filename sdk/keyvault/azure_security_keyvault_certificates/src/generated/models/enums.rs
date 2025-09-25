@@ -97,7 +97,7 @@ pub enum KeyType {
     /// Octet sequence with a private key which is not exportable from the HSM.
     OctHsm,
 
-    /// RSA (https://tools.ietf.org/html/rfc3447).
+    /// RSA (<https://tools.ietf.org/html/rfc3447>).
     Rsa,
 
     /// RSA with a private key which is not exportable from the HSM.
