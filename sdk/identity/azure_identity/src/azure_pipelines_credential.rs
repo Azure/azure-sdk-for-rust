@@ -66,7 +66,7 @@ impl AzurePipelinesCredential {
             .logging
             .additional_allowed_header_names
             // the logging policy constructor will remove any duplicates
-            .extend(ALLOWED_HEADERS.iter().copied().map(Cow::Borrowed));
+            .extend(ALLOWED_HEADERS.iter().map(|&s| Cow::Borrowed(s)));
 
         #[cfg(test)]
         let env = options.env.unwrap_or_default();
