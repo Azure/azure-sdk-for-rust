@@ -3,6 +3,8 @@ parameters:
   type: string
 - name: Artifacts
   type: object
+- name: RequireDependencies
+  type: boolean
 - name: PipelineArtifactName
   type: string
 - name: TestPipeline
@@ -18,11 +20,13 @@ parameters:
 - name: MatrixReplace
   type: object
 
+
 jobs:
 - template: /eng/pipelines/templates/jobs/pack.yml
   parameters:
     ServiceDirectory: ${{ parameters.ServiceDirectory }}
     Artifacts: ${{ parameters.Artifacts }}
+    RequireDependencies: ${{ parameters.RequireDependencies }}
     TestPipeline: ${{ parameters.TestPipeline }}
     PipelineArtifactName: ${{ parameters.PipelineArtifactName }}
 
