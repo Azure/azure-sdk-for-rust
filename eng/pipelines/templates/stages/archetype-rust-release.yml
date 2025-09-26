@@ -110,6 +110,7 @@ stages:
                       Write-Host "Package version: $packageVersion"
 
                       $cratePath = "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate"
+                      Get-ChildItem "$ArtifactRootPath" -Recurse | ForEach-Object { Write-Host $_.FullName }
                       Copy-Item `
                         -Path $cratePath`
                         -Destination $OutDir
