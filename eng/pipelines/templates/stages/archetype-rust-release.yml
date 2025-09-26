@@ -115,10 +115,10 @@ stages:
                         -Destination $OutDir
                       Write-Host "Contents of $OutDir"
                       Get-ChildItem -Path $OutDir | ForEach-Object { Write-Host $_.FullName }
-                    displayName: Copy crate for ESRP
+                    displayName: 'Copy crate for ESRP: ${{artifact.name}}'
                   
                   - task: EsrpRelease@10
-                    displayName: 'ESRP Release'
+                    displayName: 'ESRP Release: ${{artifact.name}}'
                     inputs:
                       connectedservicename: 'Azure SDK PME Managed Identity'
                       ClientId: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
