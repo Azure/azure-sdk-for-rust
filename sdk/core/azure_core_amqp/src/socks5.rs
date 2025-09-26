@@ -492,7 +492,7 @@ impl SocksConnection {
         if masked.password().is_some() {
             let _ = masked.set_password(Some("***"));
         }
-        masked.to_string()
+        masked.sanitize(&[])
     }
 }
 
