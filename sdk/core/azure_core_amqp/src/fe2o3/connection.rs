@@ -46,6 +46,119 @@ impl Drop for Fe2o3AmqpConnection {
     }
 }
 
+macro_rules! configure_builder {
+    ($id:expr, $url:expr, $options:expr) => {{
+        let mut builder = fe2o3_amqp::Connection::builder()
+            .sasl_profile(fe2o3_amqp::sasl_profile::SaslProfile::Anonymous)
+            .alt_tls_establishment(true)
+            .container_id($id)
+            .max_frame_size(65536);
+
+        if let Some(frame_size) = $options.max_frame_size {
+            builder = builder.max_frame_size(frame_size);
+        }
+
+        if let Some(channel_max) = $options.channel_max {
+            builder = builder.channel_max(channel_max);
+        }
+
+        if let Some(idle_timeout) = $options.idle_timeout {
+            builder = builder.idle_time_out(idle_timeout.whole_milliseconds() as u32);
+        }
+
+        if let Some(outgoing_locales) = &$options.outgoing_locales {
+            builder = builder.set_outgoing_locales(
+                outgoing_locales
+                    .iter()
+                    .map(|s| fe2o3_amqp_types::primitives::Symbol::from(s.as_str()))
+                    .collect(),
+            );
+        }
+
+        if let Some(incoming_locales) = &$options.incoming_locales {
+            builder = builder.set_incoming_locales(
+                incoming_locales
+                    .iter()
+                    .map(|s| fe2o3_amqp_types::primitives::Symbol::from(s.as_str()))
+                    .collect(),
+            );
+        }
+
+        if let Some(offered_capabilities) = &$options.offered_capabilities {
+            builder = builder.set_offered_capabilities(
+                offered_capabilities.iter().map(Into::into).collect(),
+            );
+        }
+
+        if let Some(desired_capabilities) = &$options.desired_capabilities {
+            builder = builder.set_desired_capabilities(
+                desired_capabilities.iter().map(Into::into).collect(),
+            );
+        }
+
+        if let Some(properties) = &$options.properties {
+            builder = builder.properties(
+                properties
+                    .iter()
+                    .map(|(k, v)| (k.into(), v.into()))
+                    .collect(),
+            );
+        }
+
+        if let Some(buffer_size) = $options.buffer_size {
+            builder = builder.buffer_size(buffer_size);
+        }
+
+        // Set hostname if using custom endpoint
+        if $options.custom_endpoint.is_some() {
+            builder = builder.hostname($url.host_str());
+        }
+
+        builder
+    }};
+}
+
+#[cfg(feature = "socks5")]
+async fn prepare_socks5_connection(
+    id: &str,
+    url: &Url,
+    endpoint: &Url,
+) -> Result<Option<tokio::net::TcpStream>> {
+    if endpoint.scheme() == "socks5" || endpoint.scheme() == "socks5h" {
+        debug!(
+            connection_id = %id,
+            proxy_scheme = %endpoint.scheme(),
+            target_host = %url.host_str().unwrap_or("unknown"),
+            "Opening AMQP connection through SOCKS5 proxy"
+        );
+
+        let stream = SocksConnection::connect(endpoint, url)
+            .await
+            .map_err(|e| {
+                error!(
+                    connection_id = %id,
+                    proxy_url = %SocksConnection::mask_credentials(endpoint),
+                    error = %e,
+                    "Failed to establish SOCKS5 connection"
+                );
+                e
+            })?;
+
+        Ok(Some(stream))
+    } else {
+        Ok(None)
+    }
+}
+
+async fn validate_no_socks5(endpoint: &Url) -> Result<()> {
+    if endpoint.scheme() == "socks5" || endpoint.scheme() == "socks5h" {
+        return Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Amqp,
+            "SOCKS5 proxy support is not enabled. Enable the 'socks5' feature to use SOCKS5 proxies."
+        ));
+    }
+    Ok(())
+}
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
@@ -60,64 +173,8 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             let options = options.unwrap_or_default();
             let mut endpoint = url.clone();
 
-            // All AMQP clients have a similar set of options.
-            let mut builder = fe2o3_amqp::Connection::builder()
-                .sasl_profile(fe2o3_amqp::sasl_profile::SaslProfile::Anonymous)
-                .alt_tls_establishment(true)
-                .container_id(id.clone())
-                .max_frame_size(65536);
-
-            if let Some(frame_size) = options.max_frame_size {
-                builder = builder.max_frame_size(frame_size);
-            }
-
-            if let Some(channel_max) = options.channel_max {
-                builder = builder.channel_max(channel_max);
-            }
-            if let Some(idle_timeout) = options.idle_timeout {
-                builder = builder.idle_time_out(idle_timeout.whole_milliseconds() as u32);
-            }
-            if let Some(outgoing_locales) = options.outgoing_locales {
-                builder = builder.set_outgoing_locales(
-                    outgoing_locales
-                        .into_iter()
-                        .map(fe2o3_amqp_types::primitives::Symbol::from)
-                        .collect(),
-                );
-            }
-            if let Some(incoming_locales) = options.incoming_locales {
-                builder = builder.set_incoming_locales(
-                    incoming_locales
-                        .into_iter()
-                        .map(fe2o3_amqp_types::primitives::Symbol::from)
-                        .collect(),
-                );
-            }
-            if let Some(offered_capabilities) = options.offered_capabilities {
-                builder = builder.set_offered_capabilities(
-                    offered_capabilities.into_iter().map(Into::into).collect(),
-                );
-            }
-            if let Some(desired_capabilities) = options.desired_capabilities {
-                builder = builder.set_desired_capabilities(
-                    desired_capabilities.into_iter().map(Into::into).collect(),
-                );
-            }
-            if let Some(properties) = options.properties {
-                builder = builder.properties(
-                    properties
-                        .iter()
-                        .map(|(k, v)| (k.into(), v.into()))
-                        .collect(),
-                );
-            }
-            if let Some(buffer_size) = options.buffer_size {
-                builder = builder.buffer_size(buffer_size);
-            }
-
-            if let Some(custom_endpoint) = options.custom_endpoint {
+            if let Some(custom_endpoint) = options.custom_endpoint.clone() {
                 endpoint = custom_endpoint;
-                builder = builder.hostname(url.host_str());
             }
 
             let connection_type = if endpoint.scheme().starts_with("socks5") {
@@ -125,30 +182,14 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
             } else {
                 "direct"
             };
+
             let connection = {
                 #[cfg(feature = "socks5")]
                 {
-                    if endpoint.scheme() == "socks5" || endpoint.scheme() == "socks5h" {
-                        debug!(
-                            connection_id = %id,
-                            proxy_scheme = %endpoint.scheme(),
-                            target_host = %url.host_str().unwrap_or("unknown"),
-                            "Opening AMQP connection through SOCKS5 proxy"
-                        );
+                    let stream = prepare_socks5_connection(&id, &url, &endpoint).await?;
+                    let builder = configure_builder!(&id, &url, &options);
 
-                        let stream =
-                            SocksConnection::connect(&endpoint, &url)
-                                .await
-                                .map_err(|e| {
-                                    error!(
-                                        connection_id = %id,
-                                        proxy_url = %SocksConnection::mask_credentials(&endpoint),
-                                        error = %e,
-                                        "Failed to establish SOCKS5 connection"
-                                    );
-                                    e
-                                })?;
-
+                    if let Some(stream) = stream {
                         debug!(connection_id = %id, "Opening AMQP connection with SOCKS5 stream");
                         builder.open_with_stream(stream).await.map_err(|e| {
                             error!(connection_id = %id, error = %e, "Failed to open AMQP connection over SOCKS5 stream");
@@ -165,12 +206,9 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 }
                 #[cfg(not(feature = "socks5"))]
                 {
-                    if endpoint.scheme() == "socks5" || endpoint.scheme() == "socks5h" {
-                        return Err(azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::Amqp,
-                            "SOCKS5 proxy support is not enabled. Enable the 'socks5' feature to use SOCKS5 proxies."
-                        ));
-                    }
+                    validate_no_socks5(&endpoint).await?;
+                    let builder = configure_builder!(&id, &url, &options);
+
                     debug!(connection_id = %id, endpoint = %endpoint, "Opening direct AMQP connection");
                     let endpoint_str = endpoint.to_string();
                     builder.open(endpoint).await.map_err(|e| {
