@@ -12,6 +12,7 @@
 - Removed `ErrorKind::http_response()`. Construct an `ErrorResponse::HttpResponse` variant instead.
 - Renamed `TransportOptions` to `Transport`.
 - Renamed `TransportOptions::new_custom_policy()` to `Transport::with_policy()`.
+- Removed `create_extensible_enum` and `create_enum` macros.
 
 ### Bugs Fixed
 
