@@ -92,7 +92,9 @@ stages:
                       $OutDir = '$(Pipeline.Workspace)/esrp-release'
 
                       Write-Host "Cleaning output directory: $OutDir"
-                      Remove-Item -Path $OutDir -Recurse -Force
+                      if (Test-Path $OutDir) {
+                        Remove-Item -Path $OutDir -Recurse -Force
+                      }
                       New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
 
                       Write-Host "Artifact name: $ArtifactName"
