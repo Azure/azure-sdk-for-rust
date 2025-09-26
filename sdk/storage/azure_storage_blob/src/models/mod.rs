@@ -83,3 +83,39 @@ pub use crate::generated::models::{
     VecSignedIdentifierHeaders,
 };
 pub use extensions::*;
+
+use azure_core::error::ErrorKind;
+use azure_core::http::{headers::Headers, StatusCode};
+use azure_core::Error;
+
+/// A Storage-specific error that provides access to HTTP response details.
+///
+#[derive(Debug, Clone)]
+pub struct StorageError {
+    /// The HTTP status code.
+    pub status_code: StatusCode,
+    /// The Storage error code.
+    pub error_code: StorageErrorCode,
+    /// The error message.
+    pub message: String,
+    /// The headers from the response.
+    pub headers: Headers,
+}
+
+impl StorageError {
+    pub fn status_code(&self) -> StatusCode {
+        self.status_code
+    }
+
+    pub fn error_code(&self) -> StorageErrorCode {
+        self.error_code.clone()
+    }
+
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    pub fn headers(&self) -> &Headers {
+        &self.headers
+    }
+}

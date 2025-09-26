@@ -3,9 +3,9 @@
 
 use crate::models::{
     AppendBlobClientCreateOptions, BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions,
-    BlockBlobClientUploadOptions, PageBlobClientCreateOptions,
+    BlockBlobClientUploadOptions, PageBlobClientCreateOptions, StorageError, StorageErrorCode,
 };
-use azure_core::error::ErrorKind;
+use azure_core::{error::ErrorKind, http::headers::Headers};
 use std::collections::HashMap;
 
 /// Augments the current options bag to only create if the Page blob does not already exist.
@@ -107,5 +107,63 @@ impl From<HashMap<String, String>> for BlobTags {
         BlobTags {
             blob_tag_set: Some(blob_tags),
         }
+    }
+}
+
+impl TryFrom<azure_core::Error> for StorageError {
+    type Error = azure_core::Error;
+
+    fn try_from(error: azure_core::Error) -> Result<Self, Self::Error> {
+        let message = error.to_string();
+
+        match error.kind() {
+            ErrorKind::HttpResponse {
+                status,
+                error_code,
+                raw_response,
+            } => {
+                let error_code = error_code.as_ref().ok_or_else(|| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        "error_code field missing from HttpResponse.",
+                    )
+                })?;
+
+                let headers = raw_response
+                    .as_ref()
+                    .map(|raw_resp| raw_resp.headers().clone())
+                    .unwrap_or_default();
+
+                let error_code_enum = error_code
+                    .parse()
+                    .unwrap_or(StorageErrorCode::UnknownValue(error_code.clone()));
+
+                Ok(StorageError {
+                    status_code: *status,
+                    error_code: error_code_enum,
+                    message,
+                    headers,
+                })
+            }
+            _ => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "ErrorKind was not HttpResponse and could not be parsed.",
+            )),
+        }
+    }
+}
+
+impl std::fmt::Display for StorageError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Standard Error Message: {}\n", self.message)?;
+        writeln!(f, "Http Status Code: {}", self.status_code)?;
+        writeln!(f, "Storage Error Code: {}", self.error_code)?;
+        writeln!(f, "Response Headers:")?;
+
+        for (name, value) in self.headers.iter() {
+            writeln!(f, "  \"{}\": \"{}\"", name.as_str(), value.as_str())?;
+        }
+
+        Ok(())
     }
 }

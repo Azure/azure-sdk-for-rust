@@ -13,11 +13,10 @@ use azure_storage_blob::models::{
     BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
     BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
     BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-    LeaseState,
+    LeaseState, StorageError,
 };
 
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
-use core::error;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 
@@ -496,19 +495,8 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
     let error_kind = error_response.kind();
     assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
 
-    println!("**[BEFORE Matching ErrorKind Type]**");
-    // Match out of the error_kind struct
-    if let ErrorKind::HttpResponse {
-        status,
-        error_code,
-        raw_response,
-        ..
-    } = error_kind
-    {
-        println!("Status code:{}", status);
-        println!("Error code:{}", error_code.clone().unwrap());
-        println!("Raw response:{:?}", raw_response.clone().unwrap());
-    }
-    println!("**[AFTER Matching ErrorKind Type]**");
+    let storage_error: StorageError = error_response.try_into()?;
+    println!("{}", storage_error);
+
     Ok(())
 }
