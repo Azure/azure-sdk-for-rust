@@ -173,7 +173,7 @@ fn mask_proxy_credentials(url: &str) -> String {
         if masked.password().is_some() {
             let _ = masked.set_password(Some("***"));
         }
-        masked.to_string()
+        masked.sanitize(&[])
     } else {
         "invalid_url".to_string()
     }

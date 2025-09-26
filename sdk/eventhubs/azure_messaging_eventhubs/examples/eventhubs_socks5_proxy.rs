@@ -135,7 +135,7 @@ fn mask_proxy_credentials(url: &str) -> String {
         if parsed_url.password().is_some() {
             let _ = masked.set_password(Some("***"));
         }
-        masked.to_string()
+        masked.sanitize(&[])
     } else {
         // If URL parsing fails, return a safe placeholder
         "invalid_proxy_url".to_string()
