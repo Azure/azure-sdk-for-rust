@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
@@ -23,7 +25,7 @@
 
 param(
   [Parameter(Mandatory = $false)]
-  [string]$Path = "."
+  [string]$Path = (Join-Path $PSScriptRoot "../../sdk" | Resolve-Path)
 )
 
 Write-Host "Searching for tsp-location.yaml files in: $Path" -ForegroundColor Green
