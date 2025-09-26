@@ -354,7 +354,9 @@ impl SocksConnection {
                 "SOCKS5 connection establishment failed"
             );
 
-            azure_core::Error::new(azure_core::error::ErrorKind::Other, Box::new(e)).with_context(
+            azure_core::Error::with_error(
+                azure_core::error::ErrorKind::Other,
+                e,
                 format!(
                     "SOCKS5 connection failed: proxy={}, target={}",
                     Self::mask_credentials(proxy_url),
