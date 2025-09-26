@@ -72,8 +72,10 @@ stages:
           - input: pipelineArtifact  # Required, type of the input artifact
             artifactName: ${{parameters.PipelineArtifactName}}  # Required, name of the pipeline artifact
             targetPath: $(Pipeline.Workspace)/drop  # Optional, specifies where the artifact is downloaded to
-        ${{ if not(parameters.TestPipeline) }}:
-            environment: ${{parameters.Environment}}
+        ${{if parameters.TestPipeline}}:
+          environment: none
+        ${{else}}:
+          environment: ${{parameters.Environment}}
         # This timeout shouldn't be necessary once we're able to parallelize better. Right now,
         # this is here to ensure larger areas (30+) libraries don't time out.
         timeoutInMinutes: 120
