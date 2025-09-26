@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#![cfg(feature = "socks5")]
-
 //! This sample demonstrates how to connect to an Event Hub through a SOCKS5 proxy using the `ProducerClient`.
 //!
 //! # SOCKS5 Proxy Setup
