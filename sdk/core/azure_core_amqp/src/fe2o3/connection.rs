@@ -85,15 +85,13 @@ macro_rules! configure_builder {
         }
 
         if let Some(offered_capabilities) = &$options.offered_capabilities {
-            builder = builder.set_offered_capabilities(
-                offered_capabilities.iter().map(Into::into).collect(),
-            );
+            builder = builder
+                .set_offered_capabilities(offered_capabilities.iter().map(Into::into).collect());
         }
 
         if let Some(desired_capabilities) = &$options.desired_capabilities {
-            builder = builder.set_desired_capabilities(
-                desired_capabilities.iter().map(Into::into).collect(),
-            );
+            builder = builder
+                .set_desired_capabilities(desired_capabilities.iter().map(Into::into).collect());
         }
 
         if let Some(properties) = &$options.properties {
@@ -123,7 +121,7 @@ async fn prepare_socks5_connection(
     id: &str,
     url: &Url,
     endpoint: &Url,
-) -> Result<Option<tokio::net::TcpStream>> {
+) -> Result<Option<Box<dyn crate::socks5::SocksStream>>> {
     if endpoint.scheme() == "socks5" || endpoint.scheme() == "socks5h" {
         debug!(
             connection_id = %id,
@@ -132,17 +130,15 @@ async fn prepare_socks5_connection(
             "Opening AMQP connection through SOCKS5 proxy"
         );
 
-        let stream = SocksConnection::connect(endpoint, url)
-            .await
-            .map_err(|e| {
-                error!(
-                    connection_id = %id,
-                    proxy_url = %SocksConnection::mask_credentials(endpoint),
-                    error = %e,
-                    "Failed to establish SOCKS5 connection"
-                );
-                e
-            })?;
+        let stream = SocksConnection::connect(endpoint, url).await.map_err(|e| {
+            error!(
+                connection_id = %id,
+                proxy_url = %SocksConnection::mask_credentials(endpoint),
+                error = %e,
+                "Failed to establish SOCKS5 connection"
+            );
+            e
+        })?;
 
         Ok(Some(stream))
     } else {
@@ -150,6 +146,7 @@ async fn prepare_socks5_connection(
     }
 }
 
+#[cfg(not(feature = "socks5"))]
 async fn validate_no_socks5(endpoint: &Url) -> Result<()> {
     if endpoint.scheme() == "socks5" || endpoint.scheme() == "socks5h" {
         return Err(azure_core::Error::with_message(
