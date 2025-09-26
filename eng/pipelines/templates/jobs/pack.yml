@@ -63,8 +63,10 @@ jobs:
       filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
       arguments: >
         -OutputPath '$(Build.ArtifactStagingDirectory)'
-        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+        -PackageNames ${{ join(',', parameters.Artifacts.*.name) }}
+        -RequireDependencies:$${{ parameters.RequireDependencies }}
 
+  # TODO: Ensure APIView works given a change to the crates output folder structure
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
     parameters:
       ArtifactPath: $(Build.ArtifactStagingDirectory)
