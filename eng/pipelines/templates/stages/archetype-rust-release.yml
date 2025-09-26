@@ -135,15 +135,6 @@ stages:
                       approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
                       serviceendpointurl: 'https://api.esrp.microsoft.com/'
                       mainpublisher: 'ESRPRELPACMANTEST'
-                  
-                  - pwsh: |
-                      Write-Host "Fail if it's the first attempt..."
-                      if ('$(System.JobAttempt)' -eq '1') { 
-                        Write-Host "Failing job on the first attempt"
-                        exit 1
-                      } 
-                      Write-Host "Not the first attempt, continuing..."
-                    displayName: 'Fail first attempt to test retry behavior'
 
       - job: UpdatePackageVersion
         displayName: "API Review and Package Version Update"
