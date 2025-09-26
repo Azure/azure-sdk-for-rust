@@ -3,6 +3,8 @@ parameters:
   type: string
 - name: Artifacts
   type: object
+- name: RequireDependencies
+  type: boolean
 - name: TestPipeline
   type: boolean
 - name: PipelineArtifactName
