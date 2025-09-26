@@ -4,10 +4,8 @@
 [CmdletBinding(DefaultParameterSetName = "none")]
 param(
   [string]$OutputPath,
-  [Parameter(ParameterSetName = 'Named')]
   [string[]]$PackageNames,
-  [Parameter(ParameterSetName = 'PackageInfo')]
-  [string]$PackageInfoDirectory,
+  [switch]$RequireDependencies,
   [switch]$NoVerify
 )
 
@@ -22,39 +20,6 @@ Packing crates with
 
 if ($OutputPath) {
   $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
-}
-
-function Get-OutputPackageNames($workspacePackages) {
-  $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
-  $packablePackageNames = $packablePackages.name
-
-  $names = @()
-  switch ($PsCmdlet.ParameterSetName) {
-    'Named' {
-      $names = $PackageNames
-    }
-
-    'PackageInfo' {
-      $packageInfoFiles = Get-ChildItem -Path $PackageInfoDirectory -Filter '*.json' -File
-      foreach ($packageInfoFile in $packageInfoFiles) {
-        $packageInfo = Get-Content -Path $packageInfoFile.FullName | ConvertFrom-Json
-        $names += $packageInfo.name
-      }
-    }
-
-    default {
-      return $packablePackageNames
-    }
-  }
-
-  foreach ($name in $names) {
-    if (-not $packablePackageNames.Contains($name)) {
-      Write-Error "Package '$name' is not in the workspace or does not publish"
-      exit 1
-    }
-  }
-
-  return $names
 }
 
 function Get-CargoMetadata() {
@@ -81,10 +46,9 @@ function Get-CargoPackages() {
 
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
-  $outputPackageNames = Get-OutputPackageNames $packages
 
   # We start with output packages, then recursively add unreleased dependencies to the list of packages that need to be built
-  [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
+  [array]$packagesToBuild = $packages | Where-Object { $PackageNames.Contains($_.name) }
 
   $toProcess = $packagesToBuild
   while ($toProcess.Length -gt 0) {
@@ -93,6 +57,10 @@ function Get-PackagesToBuild() {
 
     foreach ($dependency in $package.UnreleasedDependencies) {
       if (!$packagesToBuild.Contains($dependency) -and !$toProcess.Contains($dependency)) {
+        if ($RequireDependencies -and $dependency.name -notin $PackageNames) { 
+          Write-Warning "Package $($package.name) depends on unreleased or unspecified dependency: $($dependency.name)"
+        }
+        
         $packagesToBuild += $dependency
         $toProcess += $dependency
       }
@@ -114,7 +82,7 @@ function Get-PackagesToBuild() {
       exit 1
     }
 
-    $package.OutputPackage = $outputPackageNames.Contains($package.name)
+    $package.OutputPackage = $PackageNames.Contains($package.name)
     $buildOrder += $package
     $packagesToBuild = @($packagesToBuild -ne $package)
 
@@ -161,6 +129,14 @@ try {
   $localRegistryPath = Initialize-VendorDirectory
 
   [array]$packages = Get-PackagesToBuild
+
+  if ($RequireDependencies) { 
+    $unspecifiedPackages = $packages.name | Where-Object { $_ -notin $PackageNames }
+    if ($unspecifiedPackages.Count -gt 0) { 
+      Write-Error "Packages in -PackageNames require dependencies that are either not released or not listed for packing: $($unspecifiedPackages -join ', ')"
+      exit 1
+    }
+  }
 
   Write-Host "Building packages in the following order:"
   foreach ($package in $packages) {
