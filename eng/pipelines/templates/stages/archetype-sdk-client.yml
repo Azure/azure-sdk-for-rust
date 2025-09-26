@@ -83,7 +83,11 @@ extends:
         parameters:
           ServiceDirectory: ${{ parameters.ServiceDirectory }}
           PipelineArtifactName: packages
-          Artifacts: ${{ parameters.Artifacts }}
+          Artifacts:
+          - ${{ each artifact in parameters.Artifacts }}: 
+            - ${{ if ne('false', artifact.releaseInBatch) }}: 
+              - ${{ artifact }}
+          RequireDependencies: ${{ in(variables['Build.Reason'], 'Manual', '') }}
           TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }}
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           TestProxy: ${{ parameters.TestProxy }}
@@ -148,6 +152,9 @@ extends:
             parameters:
               DependsOn: "Build"
               ServiceDirectory: ${{ parameters.ServiceDirectory }}
-              Artifacts: ${{ parameters.Artifacts }}
+              Artifacts: 
+                - ${{ each artifact in parameters.Artifacts }}: 
+                  - ${{ if ne(artifact.releaseInBatch, 'false')}}: 
+                    - ${{ artifact }}
               TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }}
               PipelineArtifactName: packages
