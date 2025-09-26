@@ -91,8 +91,8 @@ stages:
                       $ArtifactRootPath = '$(Pipeline.Workspace)/drop'
                       $OutDir = '$(Pipeline.Workspace)/esrp-release'
 
-                      Write-Host "Cleaning output directory: $OutDir"
                       if (Test-Path $OutDir) {
+                        Write-Host "Cleaning output directory: $OutDir"
                         Remove-Item -Path $OutDir -Recurse -Force
                       }
                       New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
@@ -116,7 +116,7 @@ stages:
                       Write-Host "Contents of $OutDir"
                       Get-ChildItem -Path $OutDir | ForEach-Object { Write-Host $_.FullName }
                     displayName: 'Copy crate for ESRP: ${{artifact.name}}'
-                  
+
                   - task: EsrpRelease@10
                     displayName: 'ESRP Release: ${{artifact.name}}'
                     inputs:
@@ -135,6 +135,15 @@ stages:
                       approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
                       serviceendpointurl: 'https://api.esrp.microsoft.com/'
                       mainpublisher: 'ESRPRELPACMANTEST'
+                  
+                  - pwsh: |
+                      Write-Host "Fail if it's the first attempt..."
+                      if ('$(System.JobAttempt)' -eq '1') { 
+                        Write-Host "Failing job on the first attempt"
+                        exit 1
+                      } 
+                      Write-Host "Not the first attempt, continuing..."
+                    displayName: 'Fail first attempt to test retry behavior'
 
       - job: UpdatePackageVersion
         displayName: "API Review and Package Version Update"
