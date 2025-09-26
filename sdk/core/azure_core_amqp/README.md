@@ -20,12 +20,13 @@ azure_core_amqp = { version = "0.8", features = ["socks5"] }
 SOCKS5 support is enabled by configuring the `custom_endpoint` option with a SOCKS5 URL:
 
 ```rust,no_run
-use azure_core::http::Url;
 use azure_core_amqp::AmqpConnectionOptions;
 
 # fn main() -> Result<(), Box<dyn std::error::Error>> {
-let mut options = AmqpConnectionOptions::default();
-options.custom_endpoint = Some(Url::parse("socks5h://proxy.corp.com:8080")?);
+let options = AmqpConnectionOptions {
+    custom_endpoint: Some("socks5h://proxy.contoso.com:8080".parse()?),
+    ..Default::default()
+};
 # Ok(())
 # }
 ```
