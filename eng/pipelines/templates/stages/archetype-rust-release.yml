@@ -14,9 +14,6 @@ parameters:
 - name: DevFeedName
   type: string
   default: 'public/azure-sdk-for-rust'
-- name: Environment
-  type: string
-  default: 'cratesio'
 
 stages:
 - ${{ if eq(variables['System.TeamProject'], 'internal') }}:
@@ -75,7 +72,7 @@ stages:
         ${{if parameters.TestPipeline}}:
           environment: none
         ${{else}}:
-          environment: ${{parameters.Environment}}
+          environment: cratesio
         # This timeout shouldn't be necessary once we're able to parallelize better. Right now,
         # this is here to ensure larger areas (30+) libraries don't time out.
         timeoutInMinutes: 120
