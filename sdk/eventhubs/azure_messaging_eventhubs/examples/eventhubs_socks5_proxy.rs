@@ -126,6 +126,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// to prevent credential exposure in log files.
 fn mask_proxy_credentials(url: &str) -> String {
     use azure_core::http::Url;
+    use std::collections::HashSet;
+    use typespec_client_core::http::Sanitizer;
 
     if let Ok(parsed_url) = Url::parse(url) {
         let mut masked = parsed_url.clone();
@@ -135,7 +137,7 @@ fn mask_proxy_credentials(url: &str) -> String {
         if parsed_url.password().is_some() {
             let _ = masked.set_password(Some("***"));
         }
-        masked.sanitize(&[])
+        masked.sanitize(&HashSet::new())
     } else {
         // If URL parsing fails, return a safe placeholder
         "invalid_proxy_url".to_string()
