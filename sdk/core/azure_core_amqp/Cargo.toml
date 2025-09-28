@@ -34,6 +34,7 @@ native-tls = { version = "0.2", optional = true }
 tokio-native-tls = { version = "0.3", optional = true }
 tracing.workspace = true
 typespec = { workspace = true, features = ["amqp"] }
+typespec_client_core = { workspace = true }
 typespec_macros.workspace = true
 
 [dev-dependencies]
