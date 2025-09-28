@@ -5,3 +5,4 @@ mgmt
 rustc
 myapp
 yourcontainername
+sockd
