@@ -87,7 +87,6 @@ extends:
           - ${{ each artifact in parameters.Artifacts }}: 
             - ${{ if ne('false', artifact.releaseInBatch) }}: 
               - ${{ artifact }}
-          RequireDependencies: ${{ in(variables['Build.Reason'], 'Manual', '') }}
           TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }} 
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           TestProxy: ${{ parameters.TestProxy }}
