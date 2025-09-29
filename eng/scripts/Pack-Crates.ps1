@@ -130,10 +130,25 @@ try {
 
   [array]$packages = Get-PackagesToBuild
 
-  if ($RequireDependencies) { 
+  if ($RequireDependencies) {
     $unspecifiedPackages = $packages.name | Where-Object { $_ -notin $PackageNames }
     if ($unspecifiedPackages.Count -gt 0) { 
       Write-Error "Packages in -PackageNames require dependencies that are either not released or not listed for packing: $($unspecifiedPackages -join ', ')"
+      exit 1
+    }
+
+    $orderMatches = $true
+    for ($i = 0; $i -lt $PackageNames.Count; $i++) {
+      if ($packages[$i].name -ne $PackageNames[$i]) {
+        $orderMatches = $false
+        break
+      }
+    }
+    
+    if (!$orderMatches) {
+      Write-Host "Expected order: $($packages.name -join ', ')"
+      Write-Host "Provided order: $($PackageNames -join ', ')"
+      Write-Error "The order of packages in -PackageNames does not match the required build order."
       exit 1
     }
   }
