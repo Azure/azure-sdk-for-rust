@@ -2,6 +2,7 @@
   "version": "0.2",
   "language": "en",
   "useGitignore": true,
+  "allowCompoundWords": true,
   "ignorePaths": [
     "**/test-resources.bicep",
     "**/test-resources.json",
@@ -141,91 +142,48 @@
   "overrides": [
     {
       "filename": "**/Cargo.toml",
-      "dictionaries": [
-        "crates",
-        "rust-custom"
-      ]
+      "dictionaries": ["crates", "rust-custom"]
     },
     {
       "filename": "**/*.md",
-      "dictionaries": [
-        "crates",
-        "rust",
-        "rust-custom"
-      ],
-      "ignoreRegExpList": [
-        "@\\w+"
-      ]
+      "dictionaries": ["crates", "rust", "rust-custom"],
+      "ignoreRegExpList": ["@\\w+"]
     },
     {
       "filename": "**/*.rs",
-      "dictionaries": [
-        "crates",
-        "rust-custom"
-      ]
+      "dictionaries": ["crates", "rust-custom"]
     },
     {
       "filename": "sdk/core/azure_core_amqp/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "azure_core_amqp"
-      ]
+      "dictionaries": ["crates", "rust-custom", "azure_core_amqp"]
     },
     {
       "filename": "sdk/eventhubs/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "eventhubs"
-      ]
+      "dictionaries": ["crates", "rust-custom", "eventhubs"]
     },
     {
       "filename": "sdk/identity/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "identity"
-      ]
+      "dictionaries": ["crates", "rust-custom", "identity"]
     },
     {
       "filename": "sdk/keyvault/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "keyvault"
-      ]
+      "dictionaries": ["crates", "rust-custom", "keyvault"]
     },
     {
       "filename": "sdk/typespec/**",
-      "flagWords": [
-        "azure",
-        "azurite"
-      ]
+      "flagWords": ["azure", "azurite"]
     },
     {
       "filename": "sdk/cosmos/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "cosmos"
-      ]
+      "dictionaries": ["crates", "rust-custom", "cosmos"]
     },
     {
       "filename": "sdk/servicebus/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "servicebus"
-      ]
+      "dictionaries": ["crates", "rust-custom", "servicebus"]
     },
     {
       "filename": "sdk/storage/**",
-      "dictionaries": [
-        "crates",
-        "rust-custom",
-        "storage"
-      ]
+      "dictionaries": ["crates", "rust-custom", "storage"]
     }
   ]
 }
