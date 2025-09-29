@@ -160,8 +160,10 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
   $packageName = $package.name
   $packageVersion = $package.version
 
-  $changeLogLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "CHANGELOG.md" | Select-Object -First 1
-  $readmeContentLoc = Get-ChildItem -Path $pkg.DirectoryName -Filter "README.md" | Select-Object -First 1
+  $packageAssetPath = Join-Path $extractionPath "$packageName-$packageVersion"
+
+  $changeLogLoc = Get-ChildItem -Path $packageAssetPath -Filter "CHANGELOG.md" | Select-Object -First 1
+  $readmeContentLoc = Get-ChildItem -Path $packageAssetPath -Filter "README.md" | Select-Object -First 1
 
   if ($changeLogLoc) {
     $releaseNotes = Get-ChangeLogEntryAsString -ChangeLogLocation $changeLogLoc -VersionString $packageVersion
