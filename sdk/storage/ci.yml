@@ -1,10 +1,4 @@
 # NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
-parameters:
-- name: RunLiveTests
-  displayName: 'Run live tests'
-  type: boolean
-  default: false
-
 trigger:
   branches:
     include:
@@ -15,6 +9,20 @@ trigger:
     include:
     - sdk/storage/
 
+parameters:
+- name: RunLiveTests
+  displayName: 'Run live tests'
+  type: boolean
+  default: false
+- name: release_azurestoragecommon
+  displayName: 'azure_storage_common'
+  type: boolean
+  default: true
+- name: release_azurestorageblob
+  displayName: 'azure_storage_blob'
+  type: boolean
+  default: true
+
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
@@ -24,5 +32,7 @@ extends:
     Artifacts:
     - name: azure_storage_common
       safeName: AzureStorageCommon
+      releaseInBatch: ${{ parameters.release_azurestoragecommon }}
     - name: azure_storage_blob
       safeName: AzureStorageBlob
+      releaseInBatch: ${{ parameters.release_azurestorageblob }}
