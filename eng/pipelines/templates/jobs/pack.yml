@@ -20,6 +20,10 @@ jobs:
     image: $(LINUXVMIMAGE)
     os: linux
 
+  variables:
+    # Only require dependency correctness in manual builds
+    - RequireDependencies: ${{ in(variables['Build.Reason'], 'Manual', '') }}
+
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
@@ -57,16 +61,28 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
-  - task: Powershell@2
-    displayName: "Pack Crates"
-    condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
-    inputs:
-      pwsh: true
-      filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
-      arguments: >
-        -OutputPath '$(Build.ArtifactStagingDirectory)'
-        -PackageNames ${{ join(',', parameters.Artifacts.*.name) }}
-        -RequireDependencies:$${{ parameters.RequireDependencies }}
+  - ${{ if eq('auto', parameters.ServiceDirectory) }}:
+    - task: Powershell@2
+      displayName: "Pack Crates (PR build)"
+      condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
+        arguments: >
+          -OutputPath '$(Build.ArtifactStagingDirectory)'
+          -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+
+  - ${{ else }}:
+    - task: Powershell@2
+      displayName: "Pack Crates"
+      condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
+        arguments: >
+          -OutputPath '$(Build.ArtifactStagingDirectory)'
+          -PackageNames ${{ join(',', parameters.Artifacts.*.name) }}
+          -RequireDependencies:$$(RequireDependencies)
 
   # TODO: Ensure APIView works given a change to the crates output folder structure
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
