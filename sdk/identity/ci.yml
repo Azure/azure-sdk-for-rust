@@ -3,12 +3,18 @@
 trigger:
   branches:
     include:
-      - main
-      - hotfix/*
-      - release/*
+    - main
+    - hotfix/*
+    - release/*
   paths:
     include:
-      - sdk/identity/
+    - sdk/identity/
+
+parameters:
+- name: release_azureidentity
+  displayName: 'azure_identity'
+  type: boolean
+  default: true
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
@@ -17,6 +23,7 @@ extends:
     Artifacts:
       - name: azure_identity
         safeName: AzureIdentity
+        releaseInBatch: ${{ parameters.release_azureidentity }}
 
     ${{ if endsWith(variables['Build.DefinitionName'], 'weekly') }}:
       Location: uksouth

@@ -10,6 +10,12 @@ trigger:
     include:
     - sdk/cosmos/
 
+parameters:
+- name: release_azuredatacosmos
+  displayName: 'azure_data_cosmos'
+  type: boolean
+  default: true
+
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
@@ -17,3 +23,4 @@ extends:
     Artifacts:
     - name: azure_data_cosmos
       safeName: AzureDataCosmos
+      releaseInBatch: ${{ parameters.release_azuredatacosmos }}
