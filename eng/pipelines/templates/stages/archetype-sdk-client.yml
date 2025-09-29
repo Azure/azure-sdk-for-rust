@@ -88,7 +88,8 @@ extends:
             - ${{ if ne('false', artifact.releaseInBatch) }}: 
               - ${{ artifact }}
           RequireDependencies: ${{ in(variables['Build.Reason'], 'Manual', '') }}
-          TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }}
+          # TODO: replace before merging: ${{ eq(parameters.ServiceDirectory, 'canary') }}
+          TestPipeline: false 
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           TestProxy: ${{ parameters.TestProxy }}
           MatrixConfigs:
@@ -156,5 +157,6 @@ extends:
                 - ${{ each artifact in parameters.Artifacts }}: 
                   - ${{ if ne(artifact.releaseInBatch, 'false')}}: 
                     - ${{ artifact }}
-              TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }}
+              # TODO: replace before merging: ${{ eq(parameters.ServiceDirectory, 'canary') }}
+              TestPipeline: false
               PipelineArtifactName: packages
