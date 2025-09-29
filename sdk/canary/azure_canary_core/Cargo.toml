@@ -8,6 +8,8 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 
+[dependencies]
+
 [dev-dependencies]
 azure_canary.path = "../azure_canary"
 
