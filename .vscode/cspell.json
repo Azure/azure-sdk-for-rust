@@ -189,6 +189,10 @@
     {
       "filename": "sdk/storage/**",
       "dictionaries": ["crates", "rust-custom", "storage"]
+    },
+    {
+      "filename": "sdk/*/ci.yml",
+      "ignoreWords": ["azurecoreamqp"]
     }
   ]
 }
