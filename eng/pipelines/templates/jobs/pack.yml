@@ -20,7 +20,7 @@ jobs:
 
   variables:
     # Only require dependency correctness in manual builds
-    - RequireDependencies: ${{ in(variables['Build.Reason'], 'Manual', '') }}
+    RequireDependencies: ${{ in(variables['Build.Reason'], 'Manual', '') }}
 
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
