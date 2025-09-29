@@ -4,8 +4,12 @@
 [CmdletBinding(DefaultParameterSetName = "none")]
 param(
   [string]$OutputPath,
+  [Parameter(ParameterSetName = 'Named')]
   [string[]]$PackageNames,
+  [Parameter(ParameterSetName = 'Named')]
   [switch]$RequireDependencies,
+  [Parameter(ParameterSetName = 'PackageInfo')]
+  [string]$PackageInfoDirectory,
   [switch]$NoVerify
 )
 
@@ -20,6 +24,39 @@ Packing crates with
 
 if ($OutputPath) {
   $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
+}
+
+function Get-OutputPackageNames($workspacePackages) {
+  $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
+  $packablePackageNames = $packablePackages.name
+
+  $names = @()
+  switch ($PsCmdlet.ParameterSetName) {
+    'Named' {
+      $names = $PackageNames
+    }
+
+    'PackageInfo' {
+      $packageInfoFiles = Get-ChildItem -Path $PackageInfoDirectory -Filter '*.json' -File
+      foreach ($packageInfoFile in $packageInfoFiles) {
+        $packageInfo = Get-Content -Path $packageInfoFile.FullName | ConvertFrom-Json
+        $names += $packageInfo.name
+      }
+    }
+
+    default {
+      return $packablePackageNames
+    }
+  }
+
+  foreach ($name in $names) {
+    if (-not $packablePackageNames.Contains($name)) {
+      Write-Error "Package '$name' is not in the workspace or does not publish"
+      exit 1
+    }
+  }
+
+  return $names
 }
 
 function Get-CargoMetadata() {
@@ -46,9 +83,10 @@ function Get-CargoPackages() {
 
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
+  $outputPackageNames = Get-OutputPackageNames $packages
 
   # We start with output packages, then recursively add unreleased dependencies to the list of packages that need to be built
-  [array]$packagesToBuild = $packages | Where-Object { $PackageNames.Contains($_.name) }
+  [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
 
   $toProcess = $packagesToBuild
   while ($toProcess.Length -gt 0) {
@@ -82,7 +120,7 @@ function Get-PackagesToBuild() {
       exit 1
     }
 
-    $package.OutputPackage = $PackageNames.Contains($package.name)
+    $package.OutputPackage = $outputPackageNames.Contains($package.name)
     $buildOrder += $package
     $packagesToBuild = @($packagesToBuild -ne $package)
 
