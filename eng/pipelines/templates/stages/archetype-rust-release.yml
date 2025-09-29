@@ -33,7 +33,6 @@ stages:
         os: linux
 
       jobs:
-      # TODO: Ensure that CHANGELOG is properly processed
       - job: TagRepository
         displayName: "Create release tag"
         condition: and(succeeded(), ne(variables['Skip.TagRepository'], 'true'))

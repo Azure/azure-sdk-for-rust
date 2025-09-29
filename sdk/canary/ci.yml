@@ -11,14 +11,14 @@ trigger:
     - sdk/canary/
 
 parameters:
-  - name: release_azurecanarycore
-    displayName: 'azure_canary_core'
-    type: boolean
-    default: true
-  - name: release_azurecanary
-    displayName: 'azure_canary'
-    type: boolean
-    default: true
+- name: release_azurecanarycore
+  displayName: 'azure_canary_core'
+  type: boolean
+  default: true
+- name: release_azurecanary
+  displayName: 'azure_canary'
+  type: boolean
+  default: true
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml

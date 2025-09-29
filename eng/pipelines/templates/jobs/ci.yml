@@ -18,7 +18,6 @@ parameters:
 - name: MatrixReplace
   type: object
 
-
 jobs:
 - template: /eng/pipelines/templates/jobs/pack.yml
   parameters:
