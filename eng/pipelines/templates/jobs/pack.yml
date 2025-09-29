@@ -41,14 +41,14 @@ jobs:
     parameters:
       Toolchain: stable
 
-  - ${{ if eq(parameters.TestPipeline, 'true') }}:
-    - template: /eng/common/pipelines/templates/steps/set-test-pipeline-version.yml
-      parameters:
-        PackageNames: ${{ join(',', parameters.Artifacts.*.name) }}
-        ServiceDirectory: ${{parameters.ServiceDirectory}}
-        # Crate names contain '_' and prerelease versions contain '-' e.g., `azure_core@1.0.1-beta.1`.
-        TagSeparator: '@'
-        TestPipeline: true
+  # - ${{ if eq(parameters.TestPipeline, 'true') }}:
+  #   - template: /eng/common/pipelines/templates/steps/set-test-pipeline-version.yml
+  #     parameters:
+  #       PackageNames: ${{ join(',', parameters.Artifacts.*.name) }}
+  #       ServiceDirectory: ${{parameters.ServiceDirectory}}
+  #       # Crate names contain '_' and prerelease versions contain '-' e.g., `azure_core@1.0.1-beta.1`.
+  #       TagSeparator: '@'
+  #       TestPipeline: true
 
   - template: /eng/common/pipelines/templates/steps/set-default-branch.yml@self
 
