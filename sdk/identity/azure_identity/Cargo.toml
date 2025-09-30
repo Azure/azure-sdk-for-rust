@@ -44,4 +44,4 @@ client_certificate = ["openssl"]
 workspace = true
 
 [package.metadata.docs.rs]
-features = ["client_certificate"]
+all-features = true
