@@ -920,9 +920,6 @@ pub struct BlobClientSetMetadataOptions<'a> {
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
 
-    /// The metadata headers.
-    pub metadata: Option<HashMap<String, String>>,
-
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 

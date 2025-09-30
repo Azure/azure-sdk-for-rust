@@ -16,9 +16,9 @@ use crate::generated::models::{
     BlobClientRenewLeaseResult, BlobClientSetExpiryOptions, BlobClientSetExpiryResult,
     BlobClientSetImmutabilityPolicyOptions, BlobClientSetImmutabilityPolicyResult,
     BlobClientSetLegalHoldOptions, BlobClientSetLegalHoldResult, BlobClientSetMetadataOptions,
-    BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTagsResult,
-    BlobClientSetTierOptions, BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult,
-    BlobClientUndeleteOptions, BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
+    BlobClientSetPropertiesOptions, BlobClientSetTagsOptions, BlobClientSetTierOptions,
+    BlobClientStartCopyFromUrlOptions, BlobClientStartCopyFromUrlResult, BlobClientUndeleteOptions,
+    BlobClientUndeleteResult, BlobExpiryOptions, BlobTags,
 };
 use azure_core::{
     base64::encode,
@@ -33,7 +33,7 @@ use azure_core::{
     time::to_rfc7231,
     tracing, Result,
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[tracing::client]
 pub struct BlobClient {
@@ -1767,10 +1767,12 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
+    /// * `metadata` - The metadata headers.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Blob.setMetadata")]
     pub async fn set_metadata(
         &self,
+        metadata: HashMap<String, String>,
         options: Option<BlobClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
@@ -1819,10 +1821,8 @@ impl BlobClient {
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
+        for (k, v) in &metadata {
+            request.insert_header(format!("x-ms-meta-{k}"), v);
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
@@ -1925,35 +1925,12 @@ impl BlobClient {
     ///
     /// * `tags` - The blob tags.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientSetTagsResultHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
-    /// use azure_storage_blob::models::{BlobClientSetTagsResult, BlobClientSetTagsResultHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobClientSetTagsResult, NoFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::BlobClientSetTagsResultHeaders::date) - Date
-    ///
-    /// [`BlobClientSetTagsResultHeaders`]: crate::generated::models::BlobClientSetTagsResultHeaders
     #[tracing::function("Storage.Blob.Blob.setTags")]
     pub async fn set_tags(
         &self,
         tags: RequestContent<BlobTags, XmlFormat>,
         options: Option<BlobClientSetTagsOptions<'_>>,
-    ) -> Result<Response<BlobClientSetTagsResult, NoFormat>> {
+    ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();

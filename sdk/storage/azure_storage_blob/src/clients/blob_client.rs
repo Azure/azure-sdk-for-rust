@@ -42,8 +42,8 @@ use std::sync::Arc;
 pub struct BlobClient {
     pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobClient,
-    container_name: String,
-    blob_name: String,
+    pub(super) container_name: String,
+    pub(super) blob_name: String,
 }
 
 impl GeneratedBlobClient {
@@ -80,7 +80,7 @@ impl GeneratedBlobClient {
         };
 
         Ok(Self {
-            endpoint: Url::parse(blob_url)?,
+            endpoint: blob_url,
             version: options.version,
             pipeline,
             tracer: todo!(),
@@ -166,6 +166,8 @@ impl BlobClient {
                 version: self.client.version.clone(),
                 tracer: todo!(),
             },
+            container_name: self.container_name().to_string(),
+            blob_name: self.blob_name().to_string(),
         }
     }
 
@@ -274,6 +276,7 @@ impl BlobClient {
         }
 
         self.block_blob_client()
+            .client
             .upload(data, content_length, Some(options))
             .await
     }
