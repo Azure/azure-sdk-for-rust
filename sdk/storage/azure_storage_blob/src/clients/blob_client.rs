@@ -184,6 +184,8 @@ impl BlobClient {
                 version: self.client.version.clone(),
                 tracer: todo!(),
             },
+            container_name: self.container_name().to_string(),
+            blob_name: self.blob_name().to_string(),
         }
     }
 
@@ -200,6 +202,8 @@ impl BlobClient {
                 version: self.client.version.clone(),
                 tracer: todo!(),
             },
+            container_name: self.container_name().to_string(),
+            blob_name: self.blob_name().to_string(),
         }
     }
 

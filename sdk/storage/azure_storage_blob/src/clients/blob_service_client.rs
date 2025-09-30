@@ -3,12 +3,12 @@
 
 use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
-    generated::models::BlobServiceClientGetAccountInfoResult,
+    generated::models::ServiceClientGetAccountInfoResult,
     models::{
-        BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
-        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-        BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
-        ListContainersSegmentResponse,
+        BlobServiceProperties, FilterBlobSegment, ListContainersSegmentResponse,
+        ServiceClientFindBlobsByTagsOptions, ServiceClientGetAccountInfoOptions,
+        ServiceClientGetPropertiesOptions, ServiceClientListContainersSegmentOptions,
+        ServiceClientSetPropertiesOptions,
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,
@@ -82,7 +82,7 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_properties(
         &self,
-        options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
+        options: Option<ServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobServiceProperties, XmlFormat>> {
         self.client.get_properties(options).await
     }
@@ -94,7 +94,7 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub fn list_containers(
         &self,
-        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
+        options: Option<ServiceClientListContainersSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
         self.client.list_containers_segment(options)
     }
@@ -117,7 +117,7 @@ impl BlobServiceClient {
     pub async fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
-        options: Option<BlobServiceClientFindBlobsByTagsOptions<'_>>,
+        options: Option<ServiceClientFindBlobsByTagsOptions<'_>>,
     ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         self.client
             .find_blobs_by_tags(filter_expression, options)
@@ -133,7 +133,7 @@ impl BlobServiceClient {
     pub async fn set_properties(
         &self,
         storage_service_properties: RequestContent<BlobServiceProperties, XmlFormat>,
-        options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
+        options: Option<ServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
             .set_properties(storage_service_properties, options)
@@ -148,8 +148,8 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_account_info(
         &self,
-        options: Option<BlobServiceClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<BlobServiceClientGetAccountInfoResult, NoFormat>> {
+        options: Option<ServiceClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<ServiceClientGetAccountInfoResult, NoFormat>> {
         self.client.get_account_info(options).await
     }
 }

@@ -7,14 +7,14 @@ use crate::generated::models::{
     ContainerClientAcquireLeaseOptions, ContainerClientAcquireLeaseResult,
     ContainerClientBreakLeaseOptions, ContainerClientBreakLeaseResult,
     ContainerClientChangeLeaseOptions, ContainerClientChangeLeaseResult,
-    ContainerClientCreateOptions, ContainerClientDeleteOptions, ContainerClientFilterBlobsOptions,
-    ContainerClientGetAccessPolicyOptions, ContainerClientGetAccountInfoOptions,
-    ContainerClientGetAccountInfoResult, ContainerClientGetPropertiesOptions,
-    ContainerClientGetPropertiesResult, ContainerClientListBlobFlatSegmentOptions,
-    ContainerClientListBlobHierarchySegmentOptions, ContainerClientReleaseLeaseOptions,
-    ContainerClientReleaseLeaseResult, ContainerClientRenameOptions, ContainerClientRenameResult,
-    ContainerClientRenewLeaseOptions, ContainerClientRenewLeaseResult,
-    ContainerClientRestoreOptions, ContainerClientRestoreResult,
+    ContainerClientCreateOptions, ContainerClientDeleteOptions,
+    ContainerClientFindBlobsByTagsOptions, ContainerClientGetAccessPolicyOptions,
+    ContainerClientGetAccountInfoOptions, ContainerClientGetAccountInfoResult,
+    ContainerClientGetPropertiesOptions, ContainerClientGetPropertiesResult,
+    ContainerClientListBlobFlatSegmentOptions, ContainerClientListBlobHierarchySegmentOptions,
+    ContainerClientReleaseLeaseOptions, ContainerClientReleaseLeaseResult,
+    ContainerClientRenameOptions, ContainerClientRenameResult, ContainerClientRenewLeaseOptions,
+    ContainerClientRenewLeaseResult, ContainerClientRestoreOptions, ContainerClientRestoreResult,
     ContainerClientSetAccessPolicyOptions, ContainerClientSetAccessPolicyResult,
     ContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsFlatSegmentResponse,
     ListBlobsHierarchySegmentResponse, SignedIdentifier,
@@ -32,7 +32,7 @@ use azure_core::{
     time::to_rfc7231,
     tracing, xml, Result,
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[tracing::client]
 pub struct ContainerClient {
@@ -472,34 +472,11 @@ impl ContainerClient {
     ///
     /// * `filter_expression` - Filters the results to return only to return only blobs whose tags match the specified expression.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`FilterBlobSegmentHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{FilterBlobSegment, FilterBlobSegmentHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<FilterBlobSegment, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::FilterBlobSegmentHeaders::date) - Date
-    ///
-    /// [`FilterBlobSegmentHeaders`]: crate::generated::models::FilterBlobSegmentHeaders
-    #[tracing::function("Storage.Blob.Container.filterBlobs")]
-    pub async fn filter_blobs(
+    #[tracing::function("Storage.Blob.Container.findBlobsByTags")]
+    pub async fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
-        options: Option<ContainerClientFilterBlobsOptions<'_>>,
+        options: Option<ContainerClientFindBlobsByTagsOptions<'_>>,
     ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
@@ -1439,10 +1416,12 @@ impl ContainerClient {
     ///
     /// # Arguments
     ///
+    /// * `metadata` - The metadata headers.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.Container.setMetadata")]
     pub async fn set_metadata(
         &self,
+        metadata: HashMap<String, String>,
         options: Option<ContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         let options = options.unwrap_or_default();
@@ -1466,10 +1445,8 @@ impl ContainerClient {
         if let Some(lease_id) = options.lease_id {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(metadata) = options.metadata {
-            for (k, v) in &metadata {
-                request.insert_header(format!("x-ms-meta-{k}"), v);
-            }
+        for (k, v) in &metadata {
+            request.insert_header(format!("x-ms-meta-{k}"), v);
         }
         request.insert_header("x-ms-version", &self.version);
         let rsp = self

@@ -1733,9 +1733,9 @@ pub struct ContainerClientDeleteOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `ContainerClient::filter_blobs()`
+/// Options to be passed to `ContainerClient::find_blobs_by_tags()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct ContainerClientFilterBlobsOptions<'a> {
+pub struct ContainerClientFindBlobsByTagsOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -2005,9 +2005,6 @@ pub struct ContainerClientSetMetadataOptions<'a> {
 
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
     pub lease_id: Option<String>,
-
-    /// The metadata headers.
-    pub metadata: Option<HashMap<String, String>>,
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,

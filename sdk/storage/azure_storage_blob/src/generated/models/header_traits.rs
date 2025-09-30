@@ -2973,9 +2973,22 @@ impl ContainerClientSetAccessPolicyResultHeaders
     }
 }
 
-/// Provides access to typed response headers for the following methods:
-/// * `ContainerClient::filter_blobs()`
-/// * `ServiceClient::filter_blobs()`
+/// Provides access to typed response headers for `ServiceClient::filter_blobs()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, XmlFormat}};
+/// use azure_storage_blob::models::{FilterBlobSegment, FilterBlobSegmentHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<FilterBlobSegment, XmlFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
 pub trait FilterBlobSegmentHeaders: private::Sealed {
     fn date(&self) -> Result<Option<OffsetDateTime>>;
 }
