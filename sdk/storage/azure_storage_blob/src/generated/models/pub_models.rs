@@ -597,10 +597,6 @@ pub struct Block {
 #[derive(SafeDebug)]
 pub struct BlockBlobClientCommitBlockListResult;
 
-/// Contains results for `BlockBlobClient::put_blob_from_url()`
-#[derive(SafeDebug)]
-pub struct BlockBlobClientPutBlobFromUrlResult;
-
 /// Contains results for `BlockBlobClient::query()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientQueryResult;
@@ -612,6 +608,10 @@ pub struct BlockBlobClientStageBlockFromUrlResult;
 /// Contains results for `BlockBlobClient::stage_block()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockResult;
+
+/// Contains results for `BlockBlobClient::upload_blob_from_url()`
+#[derive(SafeDebug)]
+pub struct BlockBlobClientUploadBlobFromUrlResult;
 
 /// Contains results for `BlockBlobClient::upload()`
 #[derive(SafeDebug)]
