@@ -159,6 +159,10 @@ pub struct BlobClientSetImmutabilityPolicyResult;
 #[derive(SafeDebug)]
 pub struct BlobClientSetLegalHoldResult;
 
+/// Contains results for `BlobClient::set_tags()`
+#[derive(SafeDebug)]
+pub struct BlobClientSetTagsResult;
+
 /// Contains results for `BlobClient::start_copy_from_url()`
 #[derive(SafeDebug)]
 pub struct BlobClientStartCopyFromUrlResult;
@@ -166,46 +170,6 @@ pub struct BlobClientStartCopyFromUrlResult;
 /// Contains results for `BlobClient::undelete()`
 #[derive(SafeDebug)]
 pub struct BlobClientUndeleteResult;
-
-/// Contains results for `BlobContainerClient::acquire_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientAcquireLeaseResult;
-
-/// Contains results for `BlobContainerClient::break_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientBreakLeaseResult;
-
-/// Contains results for `BlobContainerClient::change_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientChangeLeaseResult;
-
-/// Contains results for `BlobContainerClient::get_account_info()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientGetAccountInfoResult;
-
-/// Contains results for `BlobContainerClient::get_properties()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientGetPropertiesResult;
-
-/// Contains results for `BlobContainerClient::release_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientReleaseLeaseResult;
-
-/// Contains results for `BlobContainerClient::rename()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRenameResult;
-
-/// Contains results for `BlobContainerClient::renew_lease()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRenewLeaseResult;
-
-/// Contains results for `BlobContainerClient::restore()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientRestoreResult;
-
-/// Contains results for `BlobContainerClient::set_access_policy()`
-#[derive(SafeDebug)]
-pub struct BlobContainerClientSetAccessPolicyResult;
 
 /// The blob flat list segment.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -541,10 +505,6 @@ pub struct BlobPropertiesInternal {
     pub tag_count: Option<i32>,
 }
 
-/// Contains results for `BlobServiceClient::get_account_info()`
-#[derive(SafeDebug)]
-pub struct BlobServiceClientGetAccountInfoResult;
-
 /// The service properties.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "StorageServiceProperties")]
@@ -641,6 +601,10 @@ pub struct Block {
 #[derive(SafeDebug)]
 pub struct BlockBlobClientCommitBlockListResult;
 
+/// Contains results for `BlockBlobClient::put_blob_from_url()`
+#[derive(SafeDebug)]
+pub struct BlockBlobClientPutBlobFromUrlResult;
+
 /// Contains results for `BlockBlobClient::query()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientQueryResult;
@@ -652,10 +616,6 @@ pub struct BlockBlobClientStageBlockFromUrlResult;
 /// Contains results for `BlockBlobClient::stage_block()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockResult;
-
-/// Contains results for `BlockBlobClient::upload_blob_from_url()`
-#[derive(SafeDebug)]
-pub struct BlockBlobClientUploadBlobFromUrlResult;
 
 /// Contains results for `BlockBlobClient::upload()`
 #[derive(SafeDebug)]
@@ -730,6 +690,46 @@ pub struct ClearRange {
     #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
     pub start: Option<i64>,
 }
+
+/// Contains results for `ContainerClient::acquire_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientAcquireLeaseResult;
+
+/// Contains results for `ContainerClient::break_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientBreakLeaseResult;
+
+/// Contains results for `ContainerClient::change_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientChangeLeaseResult;
+
+/// Contains results for `ContainerClient::get_account_info()`
+#[derive(SafeDebug)]
+pub struct ContainerClientGetAccountInfoResult;
+
+/// Contains results for `ContainerClient::get_properties()`
+#[derive(SafeDebug)]
+pub struct ContainerClientGetPropertiesResult;
+
+/// Contains results for `ContainerClient::release_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientReleaseLeaseResult;
+
+/// Contains results for `ContainerClient::rename()`
+#[derive(SafeDebug)]
+pub struct ContainerClientRenameResult;
+
+/// Contains results for `ContainerClient::renew_lease()`
+#[derive(SafeDebug)]
+pub struct ContainerClientRenewLeaseResult;
+
+/// Contains results for `ContainerClient::restore()`
+#[derive(SafeDebug)]
+pub struct ContainerClientRestoreResult;
+
+/// Contains results for `ContainerClient::set_access_policy()`
+#[derive(SafeDebug)]
+pub struct ContainerClientSetAccessPolicyResult;
 
 /// An Azure Storage container.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -1288,6 +1288,10 @@ pub struct RetentionPolicy {
     #[serde(rename = "Enabled", skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
+
+/// Contains results for `ServiceClient::get_account_info()`
+#[derive(SafeDebug)]
+pub struct ServiceClientGetAccountInfoResult;
 
 /// The signed identifier.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]

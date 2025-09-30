@@ -5,13 +5,13 @@
 
 mod append_blob_client;
 mod blob_client;
-mod blob_container_client;
-mod blob_service_client;
 mod block_blob_client;
+mod container_client;
 mod page_blob_client;
+mod service_client;
 pub use append_blob_client::*;
 pub use blob_client::*;
-pub use blob_container_client::*;
-pub use blob_service_client::*;
 pub use block_blob_client::*;
+pub use container_client::*;
 pub use page_blob_client::*;
+pub use service_client::*;
