@@ -5,6 +5,7 @@
 ### Features Added
 
 * Added `Query::with_text()` and `Query::append_text()` methods to modify query text after creation ([#3044](https://github.com/Azure/azure-sdk-for-rust/pull/3044))
+* Added `PartitionKey::UNDEFINED` constant to represent partition keys for items with no partition key property
 
 ### Breaking Changes
 
