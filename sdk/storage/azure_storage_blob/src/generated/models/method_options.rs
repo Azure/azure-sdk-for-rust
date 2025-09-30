@@ -2532,9 +2532,9 @@ pub struct PageBlobClientUploadPagesFromUrlOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `ServiceClient::filter_blobs()`
+/// Options to be passed to `ServiceClient::find_blobs_by_tags()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct ServiceClientFilterBlobsOptions<'a> {
+pub struct ServiceClientFindBlobsByTagsOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 

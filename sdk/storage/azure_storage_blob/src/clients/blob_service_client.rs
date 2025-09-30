@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
+    generated::clients::ContainerClient as GeneratedBlobContainerClient,
+    generated::clients::ServiceClient as GeneratedBlobServiceClient,
     generated::models::ServiceClientGetAccountInfoResult,
     models::{
         BlobServiceProperties, FilterBlobSegment, ListContainersSegmentResponse,
@@ -11,7 +12,7 @@ use crate::{
         ServiceClientSetPropertiesOptions,
     },
     pipeline::StorageHeadersPolicy,
-    BlobContainerClient, BlobServiceClientOptions,
+    BlobContainerClient, ServiceClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -40,7 +41,7 @@ impl BlobServiceClient {
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        options: Option<BlobServiceClientOptions>,
+        options: Option<ServiceClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
 
@@ -50,10 +51,12 @@ impl BlobServiceClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let client = GeneratedBlobServiceClient::new(endpoint, credential.clone(), Some(options))?;
+        let url = Url::parse(endpoint)?;
+        let client =
+            GeneratedBlobServiceClient::new(url.as_str(), credential.clone(), Some(options))?;
 
         Ok(Self {
-            endpoint: endpoint.parse()?,
+            endpoint: client.endpoint().clone(),
             client,
         })
     }
@@ -64,9 +67,23 @@ impl BlobServiceClient {
     ///
     /// * `container_name` - The name of the container.
     pub fn blob_container_client(&self, container_name: String) -> BlobContainerClient {
+        let mut container_url = self.endpoint.clone();
+        container_url
+            .path_segments_mut()
+            .expect("Cannot be base")
+            .push(&container_name);
+
+        let client = GeneratedBlobContainerClient {
+            endpoint: container_url.clone(),
+            pipeline: self.client.pipeline.clone(),
+            version: self.client.version.clone(),
+            tracer: todo!(),
+        };
+
         BlobContainerClient {
-            endpoint: self.client.endpoint.clone(),
-            client: self.client.get_blob_container_client(container_name),
+            endpoint: container_url,
+            client,
+            container_name,
         }
     }
 

@@ -5,7 +5,7 @@
 
 use crate::generated::models::{
     BlobServiceProperties, FilterBlobSegment, KeyInfo, ListContainersSegmentResponse,
-    ServiceClientFilterBlobsOptions, ServiceClientGetAccountInfoOptions,
+    ServiceClientFindBlobsByTagsOptions, ServiceClientGetAccountInfoOptions,
     ServiceClientGetAccountInfoResult, ServiceClientGetPropertiesOptions,
     ServiceClientGetStatisticsOptions, ServiceClientGetUserDelegationKeyOptions,
     ServiceClientListContainersSegmentOptions, ServiceClientSetPropertiesOptions,
@@ -93,34 +93,11 @@ impl ServiceClient {
     ///
     /// * `filter_expression` - Filters the results to return only to return only blobs whose tags match the specified expression.
     /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`FilterBlobSegmentHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{FilterBlobSegment, FilterBlobSegmentHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<FilterBlobSegment, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(date) = response.date()? {
-    ///         println!("Date: {:?}", date);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`date`()](crate::generated::models::FilterBlobSegmentHeaders::date) - Date
-    ///
-    /// [`FilterBlobSegmentHeaders`]: crate::generated::models::FilterBlobSegmentHeaders
-    #[tracing::function("Storage.Blob.Service.filterBlobs")]
-    pub async fn filter_blobs(
+    #[tracing::function("Storage.Blob.Service.findBlobsByTags")]
+    pub async fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
-        options: Option<ServiceClientFilterBlobsOptions<'_>>,
+        options: Option<ServiceClientFindBlobsByTagsOptions<'_>>,
     ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
