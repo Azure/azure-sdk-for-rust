@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `Error::with_error_fn()`.
+- Added the `cloud` module with types for configuring clients to use different Azure clouds.
 
 ### Breaking Changes
 
