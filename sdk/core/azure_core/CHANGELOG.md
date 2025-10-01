@@ -24,7 +24,6 @@
   - Renamed `ResultExt::map_kind()` to `ResultExt::with_kind()`.
   - Renamed `ResultExt::with_context()` to `ResultExt::with_context_fn()`.
   - Renamed `ResultExt::context()` to `ResultExt::with_context()`.
-  - Removed `create_extensible_enum` and `create_enum` macros.
 
 ### Bugs Fixed
 

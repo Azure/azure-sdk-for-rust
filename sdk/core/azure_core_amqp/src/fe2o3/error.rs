@@ -72,7 +72,7 @@ impl From<&fe2o3_amqp_types::definitions::ErrorCondition> for AmqpErrorCondition
 // Implement specific From traits for the error types we need instead of using a generic implementation
 impl From<&fe2o3_amqp_types::definitions::AmqpError> for AmqpErrorCondition {
     fn from(e: &fe2o3_amqp_types::definitions::AmqpError) -> Self {
-        // Note that the `from_str` implementation for `AmqpErrorCondition` will
+        // Note that the `from_str` implementation from `create_extensible_enum` will
         // never return an error. So the `unwrap` is there to silence the compiler.
         AmqpErrorCondition::from_str(fe2o3_amqp_types::primitives::Symbol::from(e).as_str())
             .unwrap()

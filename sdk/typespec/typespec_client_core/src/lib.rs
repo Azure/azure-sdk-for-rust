@@ -5,6 +5,8 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![warn(missing_docs)]
 
+#[macro_use]
+mod macros;
 pub mod async_runtime;
 pub mod base64;
 pub mod error;
