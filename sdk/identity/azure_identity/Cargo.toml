@@ -42,3 +42,6 @@ client_certificate = ["openssl"]
 
 [lints]
 workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
