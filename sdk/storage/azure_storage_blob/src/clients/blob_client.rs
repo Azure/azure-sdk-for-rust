@@ -33,7 +33,7 @@ use azure_core::{
         policies::{BearerTokenCredentialPolicy, Policy},
         JsonFormat, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
-    Bytes, Result,
+    tracing, Bytes, Result,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -63,7 +63,7 @@ impl GeneratedBlobClient {
                 Pipeline::new(
                     option_env!("CARGO_PKG_NAME"),
                     option_env!("CARGO_PKG_VERSION"),
-                    options.client_options,
+                    options.client_options.clone(),
                     Vec::default(),
                     vec![auth_policy],
                     None,
@@ -72,7 +72,7 @@ impl GeneratedBlobClient {
             None => Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
-                options.client_options,
+                options.client_options.clone(),
                 Vec::default(),
                 Vec::default(),
                 None,
@@ -83,7 +83,18 @@ impl GeneratedBlobClient {
             endpoint: blob_url,
             version: options.version,
             pipeline,
-            tracer: todo!(),
+            tracer: options
+                .client_options
+                .instrumentation
+                .tracer_provider
+                .as_ref()
+                .map(|tracer_provider| {
+                    tracer_provider.get_tracer(
+                        Some("Storage.Blob.Blob"),
+                        option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
+                        option_env!("CARGO_PKG_VERSION"),
+                    )
+                }),
         })
     }
 }
@@ -164,7 +175,7 @@ impl BlobClient {
                 endpoint: self.client.endpoint.clone(),
                 pipeline: self.client.pipeline.clone(),
                 version: self.client.version.clone(),
-                tracer: todo!(),
+                tracer: self.client.tracer.clone(),
             },
             container_name: self.container_name().to_string(),
             blob_name: self.blob_name().to_string(),
@@ -182,7 +193,7 @@ impl BlobClient {
                 endpoint: self.client.endpoint.clone(),
                 pipeline: self.client.pipeline.clone(),
                 version: self.client.version.clone(),
-                tracer: todo!(),
+                tracer: self.client.tracer.clone(),
             },
             container_name: self.container_name().to_string(),
             blob_name: self.blob_name().to_string(),
@@ -200,7 +211,7 @@ impl BlobClient {
                 endpoint: self.client.endpoint.clone(),
                 pipeline: self.client.pipeline.clone(),
                 version: self.client.version.clone(),
-                tracer: todo!(),
+                tracer: self.client.tracer.clone(),
             },
             container_name: self.container_name().to_string(),
             blob_name: self.blob_name().to_string(),

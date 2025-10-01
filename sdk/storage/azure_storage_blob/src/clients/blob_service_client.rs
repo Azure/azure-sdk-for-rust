@@ -77,7 +77,7 @@ impl BlobServiceClient {
             endpoint: container_url.clone(),
             pipeline: self.client.pipeline.clone(),
             version: self.client.version.clone(),
-            tracer: todo!(),
+            tracer: self.client.tracer.clone(),
         };
 
         BlobContainerClient {
