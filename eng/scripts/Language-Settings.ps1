@@ -151,8 +151,9 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
 
   Write-Host "Reading package info from $cargoTomlPath"
   if (!(Test-Path $cargoTomlPath)) {
-    LogError "The Cargo.toml file was not found in the package artifact at $cargoTomlPath"
-    throw "error"
+    $message = "The Cargo.toml file was not found in the package artifact at $cargoTomlPath"
+    LogError $message
+    throw $message
   }
 
   $package = cargo read-manifest --manifest-path $cargoTomlPath | ConvertFrom-Json
