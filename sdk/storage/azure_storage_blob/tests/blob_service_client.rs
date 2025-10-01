@@ -3,12 +3,12 @@
 
 use azure_core::http::{RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
-use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccountKind, BlobServiceProperties, BlockBlobClientUploadOptions,
     ServiceClientGetAccountInfoResultHeaders, ServiceClientGetPropertiesOptions,
     ServiceClientListContainersSegmentOptions,
 };
+use azure_storage_blob::{format_filter_expression, BlobClient, BlobContainerClient};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
     get_container_name,
@@ -257,5 +257,199 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
 
     container_client_1.delete_container(None).await?;
     container_client_2.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording)?;
+    let blob_url = format!(
+        "https://{}.blob.core.windows.net/",
+        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
+    );
+
+    // [Simple Case - Baseline]
+    let test_names_simple = ("test-container-simple", "test_blob_encoding");
+    let container_client_1 = service_client.blob_container_client(test_names_simple.0.into());
+    let blob_client_1 = container_client_1.blob_client(test_names_simple.1.into());
+    container_client_1.create_container(None).await?;
+    create_test_blob(&blob_client_1, None, None).await?;
+    blob_client_1.get_properties(None).await?;
+    assert_eq!(test_names_simple.0, container_client_1.container_name());
+    assert_eq!(test_names_simple.0, blob_client_1.container_name());
+    assert_eq!(test_names_simple.1, blob_client_1.blob_name());
+
+    let blob_client_1_manual = BlobClient::new(
+        blob_url.as_str(),
+        test_names_simple.0.into(),
+        test_names_simple.1.into(),
+        Some(recording.credential()),
+        None,
+    )?;
+    blob_client_1_manual.get_properties(None).await?;
+    assert_eq!(test_names_simple.0, blob_client_1_manual.container_name());
+    assert_eq!(test_names_simple.1, blob_client_1_manual.blob_name());
+
+    // [Comprehensive Space Handling - leading, trailing, consecutive, and embedded]
+    let test_names_spaces = (
+        "test-container-spaces",
+        " leading  with   multiple   spaces trailing ",
+    );
+    let container_client_2 = service_client.blob_container_client(test_names_spaces.0.into());
+    let blob_client_2 = container_client_2.blob_client(test_names_spaces.1.into());
+    container_client_2.create_container(None).await?;
+    create_test_blob(&blob_client_2, None, None).await?;
+    blob_client_2.get_properties(None).await?;
+    assert_eq!(test_names_spaces.0, container_client_2.container_name());
+    assert_eq!(test_names_spaces.0, blob_client_2.container_name());
+    assert_eq!(test_names_spaces.1, blob_client_2.blob_name());
+
+    let blob_client_2_manual = BlobClient::new(
+        blob_url.as_str(),
+        test_names_spaces.0.into(),
+        test_names_spaces.1.into(),
+        Some(recording.credential()),
+        None,
+    )?;
+    blob_client_2_manual.get_properties(None).await?;
+    assert_eq!(test_names_spaces.0, blob_client_2_manual.container_name());
+    assert_eq!(test_names_spaces.1, blob_client_2_manual.blob_name());
+
+    // [URL-Unsafe and Delimiter Characters - &, ?, =, #, ;, comma, @, |]
+    let test_names_unsafe = (
+        "test-container-unsafe",
+        "file&param?query=val#frag;ver,data@email|pipe.txt",
+    );
+    let container_client_3 = service_client.blob_container_client(test_names_unsafe.0.into());
+    let blob_client_3 = container_client_3.blob_client(test_names_unsafe.1.into());
+    container_client_3.create_container(None).await?;
+    create_test_blob(&blob_client_3, None, None).await?;
+    blob_client_3.get_properties(None).await?;
+    assert_eq!(test_names_unsafe.0, container_client_3.container_name());
+    assert_eq!(test_names_unsafe.0, blob_client_3.container_name());
+    assert_eq!(test_names_unsafe.1, blob_client_3.blob_name());
+
+    let blob_client_3_manual = BlobClient::new(
+        blob_url.as_str(),
+        test_names_unsafe.0.into(),
+        test_names_unsafe.1.into(),
+        Some(recording.credential()),
+        None,
+    )?;
+    blob_client_3_manual.get_properties(None).await?;
+    assert_eq!(test_names_unsafe.0, blob_client_3_manual.container_name());
+    assert_eq!(test_names_unsafe.1, blob_client_3_manual.blob_name());
+
+    // [Path Separators - forward slashes, backslashes mixed, and encoded forward slash]
+    let test_names_paths = (
+        "test-container-paths",
+        "folder/subfolder\\file/mixed\\paths%2Fencoded.txt",
+    );
+    let container_client_4 = service_client.blob_container_client(test_names_paths.0.into());
+    let blob_client_4 = container_client_4.blob_client(test_names_paths.1.into());
+    container_client_4.create_container(None).await?;
+    create_test_blob(&blob_client_4, None, None).await?;
+    blob_client_4.get_properties(None).await?;
+    assert_eq!(test_names_paths.0, container_client_4.container_name());
+    assert_eq!(test_names_paths.0, blob_client_4.container_name());
+    assert_eq!(test_names_paths.1, blob_client_4.blob_name());
+
+    let blob_client_4_manual = BlobClient::new(
+        blob_url.as_str(),
+        test_names_paths.0.into(),
+        test_names_paths.1.into(),
+        Some(recording.credential()),
+        None,
+    )?;
+    blob_client_4_manual.get_properties(None).await?;
+    assert_eq!(test_names_paths.0, blob_client_4_manual.container_name());
+    assert_eq!(test_names_paths.1, blob_client_4_manual.blob_name());
+
+    // [Percent Encoding - literal %, already-encoded, and mixed encoding]
+    let test_names_percent = (
+        "test-container-percent",
+        "50%off-%20encoded-my%20file (2).txt",
+    );
+    let container_client_5 = service_client.blob_container_client(test_names_percent.0.into());
+    let blob_client_5 = container_client_5.blob_client(test_names_percent.1.into());
+    container_client_5.create_container(None).await?;
+    create_test_blob(&blob_client_5, None, None).await?;
+    blob_client_5.get_properties(None).await?;
+    assert_eq!(test_names_percent.0, container_client_5.container_name());
+    assert_eq!(test_names_percent.0, blob_client_5.container_name());
+    assert_eq!(test_names_percent.1, blob_client_5.blob_name());
+
+    let blob_client_5_manual = BlobClient::new(
+        blob_url.as_str(),
+        test_names_percent.0.into(),
+        test_names_percent.1.into(),
+        Some(recording.credential()),
+        None,
+    )?;
+    blob_client_5_manual.get_properties(None).await?;
+    assert_eq!(test_names_percent.0, blob_client_5_manual.container_name());
+    assert_eq!(test_names_percent.1, blob_client_5_manual.blob_name());
+
+    // [Special Characters - brackets, braces, quotes, apostrophes, angle brackets, asterisks, starting/ending with special chars, consecutive special chars]
+    let test_names_special = (
+        "test-container-special",
+        "***file[1]''test''_with...special~~~chars<<v2>>{{{copy}}}***.txt!!!",
+    );
+    let container_client_6 = service_client.blob_container_client(test_names_special.0.into());
+    let blob_client_6 = container_client_6.blob_client(test_names_special.1.into());
+    container_client_6.create_container(None).await?;
+    create_test_blob(&blob_client_6, None, None).await?;
+    blob_client_6.get_properties(None).await?;
+    assert_eq!(test_names_special.0, container_client_6.container_name());
+    assert_eq!(test_names_special.0, blob_client_6.container_name());
+    assert_eq!(test_names_special.1, blob_client_6.blob_name());
+
+    let blob_client_6_manual = BlobClient::new(
+        blob_url.as_str(),
+        test_names_special.0.into(),
+        test_names_special.1.into(),
+        Some(recording.credential()),
+        None,
+    )?;
+    blob_client_6_manual.get_properties(None).await?;
+    assert_eq!(test_names_special.0, blob_client_6_manual.container_name());
+    assert_eq!(test_names_special.1, blob_client_6_manual.blob_name());
+
+    // [Advanced Encoding - unicode, emojis, accents, multi-byte chars, plus signs, form encoding]
+    let test_names_advanced = (
+        "test-container-advanced",
+        "café+🦀+カニのフェリス~émoji+plus~tilde.txt",
+    );
+    let container_client_7 = service_client.blob_container_client(test_names_advanced.0.into());
+    let blob_client_7 = container_client_7.blob_client(test_names_advanced.1.into());
+    container_client_7.create_container(None).await?;
+    create_test_blob(&blob_client_7, None, None).await?;
+    blob_client_7.get_properties(None).await?;
+    assert_eq!(test_names_advanced.0, container_client_7.container_name());
+    assert_eq!(test_names_advanced.0, blob_client_7.container_name());
+    assert_eq!(test_names_advanced.1, blob_client_7.blob_name());
+
+    let blob_client_7_manual = BlobClient::new(
+        blob_url.as_str(),
+        test_names_advanced.0.into(),
+        test_names_advanced.1.into(),
+        Some(recording.credential()),
+        None,
+    )?;
+    blob_client_7_manual.get_properties(None).await?;
+    assert_eq!(test_names_advanced.0, blob_client_7_manual.container_name());
+    assert_eq!(test_names_advanced.1, blob_client_7_manual.blob_name());
+
+    // Cleanup all containers
+    container_client_1.delete_container(None).await?;
+    container_client_2.delete_container(None).await?;
+    container_client_3.delete_container(None).await?;
+    container_client_4.delete_container(None).await?;
+    container_client_5.delete_container(None).await?;
+    container_client_6.delete_container(None).await?;
+    container_client_7.delete_container(None).await?;
+
     Ok(())
 }

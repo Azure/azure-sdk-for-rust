@@ -100,20 +100,20 @@ impl GeneratedBlobClient {
 }
 
 impl BlobClient {
-    /// Creates a new BlobClient, using Entra ID authentication.
+    /// Creates a new BlobClient.
     ///
     /// # Arguments
     ///
     /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
     /// * `container_name` - The name of the container containing this blob.
     /// * `blob_name` - The name of the blob to interact with.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
         container_name: String,
         blob_name: String,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
@@ -137,7 +137,7 @@ impl BlobClient {
             .expect("Cannot be base")
             .extend([&container_name, &blob_name]);
 
-        let client = GeneratedBlobClient::new(url.as_str(), credential, Some(options))?;
+        let client = GeneratedBlobClient::from_url(url.clone(), credential, Some(options))?;
         Ok(Self {
             endpoint: client.endpoint().clone(),
             client,

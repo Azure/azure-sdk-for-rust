@@ -7,12 +7,16 @@ blocklisttype
 copyid
 deletedwithversions
 deletetype
+émoji
+Fencoded
 firsttag
 immutabilitypolicy
 incrementalcopy
 legalhold
 missingcontainer
+numofmessages
 pagelist
+peekonly
 policyid
 prevsnapshot
 RAGRS
@@ -24,8 +28,7 @@ testblob2
 testblob3
 testblob4
 testcontainer
+testcontainerencoding
 uncommittedblobs
 westus
 yourtagname
-numofmessages
-peekonly

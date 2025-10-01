@@ -331,12 +331,13 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 #[recorded::test]
 async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
-    let recording = ctx.recording();
-    recording.set_matcher(Matcher::HeaderlessMatcher).await?;
-    let container_client = get_container_client(recording, true).await?;
+    ctx.recording()
+        .set_matcher(Matcher::HeaderlessMatcher)
+        .await?;
+    let container_client = get_container_client(ctx.recording(), true).await?;
 
     // Create Test Blobs with Tags
-    let blob1_name = get_blob_name(recording);
+    let blob1_name = get_blob_name(ctx.recording());
     create_test_blob(
         &container_client.blob_client(blob1_name.clone()),
         Some(RequestContent::from("hello world".as_bytes().into())),
@@ -348,7 +349,7 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
         ),
     )
     .await?;
-    let blob2_name = get_blob_name(recording);
+    let blob2_name = get_blob_name(ctx.recording());
     let blob2_tags = HashMap::from([("fizz".to_string(), "buzz".to_string())]);
     create_test_blob(
         &container_client.blob_client(blob2_name.clone()),
@@ -358,7 +359,9 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
     .await?;
 
     // Sleep in live mode to allow tags to be indexed on the service
-    if recording.test_mode() == TestMode::Live {
+    if ctx.recording().test_mode() == TestMode::Live
+        || ctx.recording().test_mode() == TestMode::Record
+    {
         time::sleep(Duration::from_secs(5)).await;
     }
 
