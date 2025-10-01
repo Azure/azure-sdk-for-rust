@@ -68,7 +68,7 @@ jobs:
 
   - ${{ else }}:
     - pwsh: |
-        $artifacts = '${{ toJson(parameters.Artifacts) }}' | ConvertFrom-Json
+        $artifacts = '${{ convertToJson(parameters.Artifacts) }}' | ConvertFrom-Json
         $requireDependencies = $true
         $artifactsToBuild = $artifacts | Where-Object { $_.releaseInBatch }
         
