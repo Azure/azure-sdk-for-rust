@@ -18,10 +18,6 @@ jobs:
     image: $(LINUXVMIMAGE)
     os: linux
 
-  variables:
-    # Only require dependency correctness in manual builds
-    RequireDependencies: ${{ in(variables['Build.Reason'], 'Manual', '') }}
-
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
@@ -71,6 +67,24 @@ jobs:
           -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
 
   - ${{ else }}:
+    - pwsh: |
+        $artifacts = '${{ toJson(parameters.Artifacts) }}' | ConvertFrom-Json
+        $requireDependencies = $true
+        $artifactsToBuild = $artifacts | Where-Object { $_.releaseInBatch }
+        
+        if (!$artifactsToBuild) {
+          Write-Host "No packages to release. Building all packages in the service directory with no dependency validation."
+          $artifactsToBuild = $artifacts
+          $requireDependencies = $false
+        }
+
+        $packageNames = $artifactsToBuild.name -join ','
+
+        Write-Host "##vso[task.setvariable variable=PackageNames]$packageNames"
+        Write-Host "##vso[task.setvariable variable=RequireDependencies]$requireDependencies"
+        
+      displayName: Create package list
+
     - task: Powershell@2
       displayName: "Pack Crates"
       condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
@@ -79,7 +93,7 @@ jobs:
         filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
         arguments: >
           -OutputPath '$(Build.ArtifactStagingDirectory)'
-          -PackageNames ${{ join(',', parameters.Artifacts.*.name) }}
+          -PackageNames $(PackageNames)
           -RequireDependencies:$$(RequireDependencies)
 
   # TODO: Ensure APIView works given a change to the crates output folder structure

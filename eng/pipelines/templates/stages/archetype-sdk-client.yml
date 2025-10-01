@@ -83,10 +83,7 @@ extends:
         parameters:
           ServiceDirectory: ${{ parameters.ServiceDirectory }}
           PipelineArtifactName: packages
-          Artifacts:
-          - ${{ each artifact in parameters.Artifacts }}: 
-            - ${{ if ne('false', artifact.releaseInBatch) }}: 
-              - ${{ artifact }}
+          Artifacts: ${{ parameters.Artifacts }}
           TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }} 
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           TestProxy: ${{ parameters.TestProxy }}
