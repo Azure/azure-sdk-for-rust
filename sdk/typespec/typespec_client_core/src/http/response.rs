@@ -195,7 +195,7 @@ impl<T, F> From<Response<T, F>> for RawResponse {
 /// otherwise, it is the unit type `()` if no headers are defined.
 ///
 /// Given an `AsyncResponse<T>`, a user can access the raw [`BufResponseBody`] using [`AsyncResponse::into_raw_body`].
-pub struct AsyncResponse<T> {
+pub struct AsyncResponse<T = ()> {
     raw: BufResponse,
     phantom: PhantomData<T>,
 }
@@ -224,7 +224,7 @@ impl<T> AsyncResponse<T> {
     /// use typespec_client_core::http::response::AsyncResponse;
     ///
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let response: AsyncResponse<()> = unimplemented!();
+    /// let response: AsyncResponse = unimplemented!();
     /// let body: Vec<u8> = response
     ///     .into_raw_body()
     ///     .collect()
@@ -244,7 +244,7 @@ impl<T> AsyncResponse<T> {
     /// use typespec_client_core::http::response::AsyncResponse;
     ///
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let response: AsyncResponse<()> = unimplemented!();
+    /// let response: AsyncResponse = unimplemented!();
     /// let body: Vec<u8> = response
     ///     .into_stream()
     ///     .collect()

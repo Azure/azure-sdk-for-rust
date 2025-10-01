@@ -1,4 +1,4 @@
-use azure_core::http::{headers::Headers, BufResponse, Context, Method, Request};
+use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -84,18 +84,14 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                     self.query_engine.supported_features()?,
                 )
                 .await?
-                .into_body()
-                .collect()
-                .await?;
+                .into_body();
                 let pkranges = get_pkranges(
                     &self.http_pipeline,
                     &self.container_link,
                     self.context.to_borrowed(),
                 )
                 .await?
-                .into_body()
-                .collect()
-                .await?;
+                .into_body();
 
                 let pipeline =
                     self.query_engine
@@ -153,7 +149,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
 
                 let next_continuation =
                     resp.headers().get_optional_string(&constants::CONTINUATION);
-                let body = resp.into_body().collect().await?;
+                let body = resp.into_body();
 
                 let result = QueryResult {
                     partition_key_range_id: &request.partition_key_range_id,
@@ -181,7 +177,7 @@ async fn get_query_plan(
     context: Context<'_>,
     query: &Query,
     supported_features: &str,
-) -> azure_core::Result<BufResponse> {
+) -> azure_core::Result<RawResponse> {
     let url = http_pipeline.url(items_link);
     let mut request = pipeline::create_base_query_request(url, query)?;
     request.insert_header(constants::QUERY_ENABLE_CROSS_PARTITION, "True");
@@ -202,7 +198,7 @@ async fn get_pkranges(
     http_pipeline: &CosmosPipeline,
     container_link: &ResourceLink,
     context: Context<'_>,
-) -> azure_core::Result<BufResponse> {
+) -> azure_core::Result<RawResponse> {
     let pkranges_link = container_link.feed(ResourceType::PartitionKeyRanges);
     let url = http_pipeline.url(&pkranges_link);
     let mut base_request = Request::new(url, Method::Get);

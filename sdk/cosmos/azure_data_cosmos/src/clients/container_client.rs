@@ -59,8 +59,7 @@ impl ContainerClient {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// let response = container_client.read(None)
     ///     .await?
-    ///     .into_body()
-    ///     .await?;
+    ///     .into_body()?;
     /// # }
     /// ```
     pub async fn read(
@@ -101,8 +100,7 @@ impl ContainerClient {
     /// };
     /// let response = container_client.replace(new_properties, None)
     ///     .await?
-    ///     .into_body()
-    ///     .await?;
+    ///     .into_body()?;
     /// # Ok(())
     /// # }
     /// ```
@@ -134,7 +132,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_body().await?;
+        let db = self.read(None).await?.into_body()?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -158,7 +156,7 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_body().await?;
+        let db = self.read(None).await?.into_body()?;
         let resource_id = db
             .system_properties
             .resource_id
@@ -248,8 +246,7 @@ impl ContainerClient {
     /// let created_item = container_client
     ///     .create_item("category1", p, Some(options))
     ///     .await?
-    ///     .into_raw_body().json::<Product>()
-    ///     .await?;
+    ///     .into_raw_body().json::<Product>();
     /// # Ok(())
     /// # }
     /// ```
@@ -337,8 +334,7 @@ impl ContainerClient {
     /// let updated_product: Product = container_client
     ///     .replace_item("category1", "product1", p, Some(options))
     ///     .await?
-    ///     .into_raw_body().json::<Product>()
-    ///     .await?;
+    ///     .into_raw_body().json::<Product>()?;
     /// # }
     /// ```
     pub async fn replace_item<T: Serialize>(
@@ -426,8 +422,7 @@ impl ContainerClient {
     /// let updated_product = container_client
     ///     .upsert_item("category1", p, Some(options))
     ///     .await?
-    ///     .into_raw_body().json::<Product>()
-    ///     .await?;
+    ///     .into_raw_body().json::<Product>()?;
     /// Ok(())
     /// # }
     pub async fn upsert_item<T: Serialize>(
@@ -478,8 +473,7 @@ impl ContainerClient {
     /// let item: Product = container_client
     ///     .read_item("partition1", "item1", None)
     ///     .await?
-    ///     .into_body()
-    ///     .await?;
+    ///     .into_body()?;
     /// println!("Read Item: {:#?}", item);
     /// # Ok(())
     /// # }
@@ -593,8 +587,7 @@ impl ContainerClient {
     /// let patched_item = client
     ///     .patch_item("partition1", "item1", patch, Some(options))
     ///     .await?
-    ///     .into_raw_body().json::<Product>()
-    ///     .await?;
+    ///     .into_raw_body().json::<Product>()?;
     /// # Ok(())
     /// # }
     /// ```

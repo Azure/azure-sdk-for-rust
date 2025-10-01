@@ -58,7 +58,7 @@ mod client {
     }
 
     #[tracing::instrument]
-    pub fn get_binary_data() -> typespec_client_core::Result<AsyncResponse<()>> {
+    pub fn get_binary_data() -> typespec_client_core::Result<AsyncResponse> {
         let bytes = Bytes::from_static(b"Hello, world!");
         let response = SlowResponse {
             bytes: bytes.repeat(5).into(),

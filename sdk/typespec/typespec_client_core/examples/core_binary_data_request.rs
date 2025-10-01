@@ -51,7 +51,7 @@ mod client {
     #[tracing::instrument(skip(body))]
     pub async fn put_binary_data(
         body: RequestContent<Bytes>,
-    ) -> typespec_client_core::Result<AsyncResponse<()>> {
+    ) -> typespec_client_core::Result<AsyncResponse> {
         let body: Body = body.into();
 
         let content = match body {

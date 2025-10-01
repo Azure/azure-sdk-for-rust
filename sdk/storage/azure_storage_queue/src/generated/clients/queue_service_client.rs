@@ -18,8 +18,8 @@ use azure_core::{
     http::{
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        BufResponse, ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions,
-        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
+        ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
+        Request, RequestContent, Response, Url, XmlFormat,
     },
     tracing, xml, Result,
 };
