@@ -52,13 +52,12 @@ fn key_operations_benchmark(c: &mut Criterion) {
             .create_key(name, body.try_into()?, None)
             .await?
             .into_body()
-            .await
     }
 
     // Get a key by name
     async fn get_key(key_name: &str, client: &KeyClient) -> Result<Key, azure_core::Error> {
         // Get the key
-        client.get_key(key_name, None).await?.into_body().await
+        client.get_key(key_name, None).await?.into_body()
     }
 
     // Benchmark create key
@@ -123,7 +122,6 @@ fn key_2901_benchmark_default(c: &mut Criterion) {
             .create_key(name, body.try_into()?, None)
             .await?
             .into_body()
-            .await
     }
 
     // prep key in order to run the benchmark in a clean state
@@ -143,7 +141,6 @@ fn key_2901_benchmark_default(c: &mut Criterion) {
                 .await
                 .unwrap()
                 .into_body()
-                .await
                 .unwrap();
 
             black_box(());
@@ -207,7 +204,6 @@ fn key_2901_benchmark_slow(c: &mut Criterion) {
             .create_key(name, body.try_into()?, None)
             .await?
             .into_body()
-            .await
     }
 
     // prep key in order to run the benchmark in a clean state
@@ -227,7 +223,6 @@ fn key_2901_benchmark_slow(c: &mut Criterion) {
                 .await
                 .unwrap()
                 .into_body()
-                .await
                 .unwrap();
 
             black_box(());

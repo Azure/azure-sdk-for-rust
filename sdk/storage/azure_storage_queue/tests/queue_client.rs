@@ -193,7 +193,7 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        let send_message = sent_message_response.into_body().await?;
+        let send_message = sent_message_response.into_body()?;
 
         let delete_response = queue_client
             .delete_message(
@@ -236,7 +236,7 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        let sent_message = send_message_response.into_body().await?;
+        let sent_message = send_message_response.into_body()?;
 
         // Update the message in the queue
         let option = Some(QueueClientUpdateOptions {
@@ -287,7 +287,7 @@ async fn test_peek_messages_empty(ctx: TestContext) -> Result<()> {
         let response = queue_client.peek_messages(None).await?;
         assert_successful_response(&response);
 
-        let messages = response.into_body().await?;
+        let messages = response.into_body()?;
 
         assert!(
             messages.items.is_none(),
@@ -361,7 +361,7 @@ async fn test_receive_messages_empty(ctx: TestContext) -> Result<()> {
         let response = queue_client.receive_messages(None).await?;
         assert_successful_response(&response);
 
-        let messages = response.into_body().await?;
+        let messages = response.into_body()?;
 
         assert!(
             messages.items.is_none(),
@@ -398,7 +398,7 @@ async fn test_receive_messages(ctx: TestContext) -> Result<()> {
         let response = queue_client.receive_messages(options).await?;
         assert_successful_response(&response);
 
-        let messages = response.into_body().await?;
+        let messages = response.into_body()?;
         let messages = messages.items.unwrap();
 
         assert_eq!(
@@ -511,7 +511,7 @@ async fn peek_and_assert(
     let response = queue_client.peek_messages(options).await?;
     assert_successful_response(&response);
 
-    let messages = response.into_body().await?;
+    let messages = response.into_body()?;
     let messages = messages.items.unwrap();
 
     assert_eq!(

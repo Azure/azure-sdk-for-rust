@@ -5,10 +5,10 @@
 
 use crate::{
     error::{Error, ErrorKind},
-    http::{headers::ERROR_CODE, BufResponse},
+    http::{headers::ERROR_CODE, BufResponse, RawResponse, StatusCode},
 };
 use serde::Deserialize;
-use std::{collections::HashMap, str};
+use std::{collections::HashMap, future::Future, str};
 
 /// An HTTP error response.
 ///
@@ -42,7 +42,7 @@ impl TryFrom<Error> for ErrorResponse {
             ErrorKind::HttpResponse { raw_response, .. } => {
                 let error_response: Option<crate::Result<ErrorResponse>> = raw_response
                     .as_ref()
-                    .map(|raw| serde_json::from_slice(raw.body()).map_err(Error::from));
+                    .map(|raw| serde_json::from_slice(raw.body().as_ref()).map_err(Error::from));
                 match error_response {
                     Some(result) => Ok(result?),
                     None => Err(value),
@@ -108,6 +108,41 @@ struct ErrorDetailsInternal<'a> {
     message: Option<&'a str>,
 }
 
+/// Represents a response from which we can get a [`StatusCode`] and collect into a [`RawResponse`].
+///
+/// This is intended for internal use only and implemented only by [`BufResponse`] and [`RawResponse`].
+pub trait Response: crate::private::Sealed {
+    /// Get the [`StatusCode`] from the response.
+    fn status(&self) -> StatusCode;
+
+    /// Collect into a [`RawResponse`].
+    fn try_into_raw_response(self) -> impl Future<Output = crate::Result<RawResponse>>;
+}
+
+impl crate::private::Sealed for BufResponse {}
+impl crate::private::Sealed for RawResponse {}
+
+impl Response for BufResponse {
+    fn status(&self) -> StatusCode {
+        self.status()
+    }
+
+    fn try_into_raw_response(self) -> impl Future<Output = crate::Result<RawResponse>> {
+        self.try_into_raw_response()
+    }
+}
+
+impl Response for RawResponse {
+    fn status(&self) -> StatusCode {
+        self.status()
+    }
+
+    #[inline]
+    fn try_into_raw_response(self) -> impl Future<Output = crate::Result<RawResponse>> {
+        std::future::ready(Ok(self))
+    }
+}
+
 /// Options for customizing the behavior of `check_success`.
 #[derive(Debug, Default)]
 pub struct CheckSuccessOptions {
@@ -128,10 +163,10 @@ pub struct CheckSuccessOptions {
 /// * `Err(Error)` if the response is an error, with details extracted from the response
 ///   body if possible.
 ///
-pub async fn check_success(
-    response: BufResponse,
+pub async fn check_success<T: Response>(
+    response: T,
     options: Option<CheckSuccessOptions>,
-) -> crate::Result<BufResponse> {
+) -> crate::Result<T> {
     let status = response.status();
 
     if options
@@ -438,9 +473,10 @@ mod tests {
                 Bytes::from_static(br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey"},"key":"foo"}}"#),
             );
             let error_response: ErrorResponse = buf_response
+                .try_into_raw_response()
+                .await?
                 .into_body()
                 .json()
-                .await
                 .expect("expected an ErrorResponse");
             error_response.error.as_ref().expect("error should be set");
             println!("{:?}", &error_response);

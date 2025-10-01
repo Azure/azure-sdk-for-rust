@@ -5,7 +5,7 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        BufResponse, ClientMethodOptions, ClientOptions, HttpClient, Method, Pipeline, Request,
+        ClientMethodOptions, ClientOptions, HttpClient, Method, Pipeline, RawResponse, Request,
         Transport, Url,
     },
     Result,
@@ -85,7 +85,7 @@ impl TestServiceClient {
         &self,
         path: &str,
         options: Option<TestServiceClientGetMethodOptions<'_>>,
-    ) -> Result<BufResponse> {
+    ) -> Result<RawResponse> {
         let options = options.unwrap_or_default();
         let mut url = self.endpoint.clone();
         url.set_path(path);

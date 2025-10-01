@@ -40,7 +40,10 @@ mod client {
     use futures::StreamExt;
     use tracing::debug;
     use typespec_client_core::{
-        http::{headers::Headers, Body, BufResponse, RequestContent, Response, StatusCode},
+        http::{
+            headers::Headers, response::AsyncResponse, Body, BufResponse, RequestContent,
+            StatusCode,
+        },
         stream::BytesStream,
         Bytes,
     };
@@ -48,7 +51,7 @@ mod client {
     #[tracing::instrument(skip(body))]
     pub async fn put_binary_data(
         body: RequestContent<Bytes>,
-    ) -> typespec_client_core::Result<Response<()>> {
+    ) -> typespec_client_core::Result<AsyncResponse<()>> {
         let body: Body = body.into();
 
         let content = match body {

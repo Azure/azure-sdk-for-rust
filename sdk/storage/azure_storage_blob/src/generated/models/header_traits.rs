@@ -32,7 +32,7 @@ use azure_core::{
     base64::decode,
     http::{
         headers::{HeaderName, Headers},
-        NoFormat, Response, XmlFormat,
+        AsyncResponse, NoFormat, Response, XmlFormat,
     },
     time::{parse_rfc7231, OffsetDateTime},
     Result,
@@ -771,10 +771,10 @@ impl BlobClientDeleteImmutabilityPolicyResultHeaders
 /// # Examples
 ///
 /// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_core::{Result, http::{AsyncResponse, NoFormat}};
 /// use azure_storage_blob::models::{BlobClientDownloadResult, BlobClientDownloadResultHeaders};
 /// async fn example() -> Result<()> {
-///     let response: Response<BlobClientDownloadResult, NoFormat> = unimplemented!();
+///     let response: AsyncResponse<BlobClientDownloadResult> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(cache_control) = response.cache_control()? {
 ///         println!("Cache-Control: {:?}", cache_control);
@@ -829,7 +829,7 @@ pub trait BlobClientDownloadResultHeaders: private::Sealed {
     fn version_id(&self) -> Result<Option<String>>;
 }
 
-impl BlobClientDownloadResultHeaders for Response<BlobClientDownloadResult, NoFormat> {
+impl BlobClientDownloadResultHeaders for AsyncResponse<BlobClientDownloadResult> {
     /// This header is returned if it was previously specified for the blob.
     fn cache_control(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CACHE_CONTROL)
@@ -3692,7 +3692,7 @@ mod private {
         PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
         SignedIdentifier, StorageServiceStats, UserDelegationKey,
     };
-    use azure_core::http::{NoFormat, Response, XmlFormat};
+    use azure_core::http::{AsyncResponse, NoFormat, Response, XmlFormat};
 
     pub trait Sealed {}
 
@@ -3707,7 +3707,7 @@ mod private {
     impl Sealed for Response<BlobClientCopyFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlobClientCreateSnapshotResult, NoFormat> {}
     impl Sealed for Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat> {}
-    impl Sealed for Response<BlobClientDownloadResult, NoFormat> {}
+    impl Sealed for AsyncResponse<BlobClientDownloadResult> {}
     impl Sealed for Response<BlobClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlobClientGetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobClientReleaseLeaseResult, NoFormat> {}

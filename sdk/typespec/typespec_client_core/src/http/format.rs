@@ -22,8 +22,6 @@ pub trait Format: std::fmt::Debug {}
 /// The `F` type parameter allows for different implementations of the `deserialize_with` method based on the specific [`Format`] marker type used.
 ///
 /// Defining our own trait allows us to implement it on foreign types and better customize deserialization for different scenarios.
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait DeserializeWith<F: Format>: Sized {
     /// Deserialize the response body using the specified format.
     ///
@@ -32,16 +30,14 @@ pub trait DeserializeWith<F: Format>: Sized {
     ///
     /// # Returns
     /// A `Result` containing the deserialized value of type `Self`, or an error if deserialization fails.
-    async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self>;
+    fn deserialize_with(body: ResponseBody) -> typespec::Result<Self>;
 }
 
 /// Implements [`DeserializeWith<JsonFormat>`] for an arbitrary type `D`
 /// that implements [`serde::de::DeserializeOwned`] by deserializing the response body to the specified type using [`serde_json`].
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl<D: DeserializeOwned> DeserializeWith<JsonFormat> for D {
-    async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
-        body.json().await
+    fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
+        body.json()
     }
 }
 
@@ -69,11 +65,9 @@ pub struct XmlFormat;
 impl Format for XmlFormat {}
 
 #[cfg(feature = "xml")]
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl<D: DeserializeOwned> DeserializeWith<XmlFormat> for D {
-    async fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
-        body.xml().await
+    fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
+        body.xml()
     }
 }
 

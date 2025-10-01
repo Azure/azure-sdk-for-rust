@@ -27,7 +27,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        JsonFormat, NoFormat, RequestContent, Response, StatusCode, Url, XmlFormat,
+        AsyncResponse, JsonFormat, NoFormat, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
     Bytes, Result,
 };
@@ -157,7 +157,7 @@ impl BlobClient {
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<Response<BlobClientDownloadResult, NoFormat>> {
+    ) -> Result<AsyncResponse<BlobClientDownloadResult>> {
         self.client.download(options).await
     }
 

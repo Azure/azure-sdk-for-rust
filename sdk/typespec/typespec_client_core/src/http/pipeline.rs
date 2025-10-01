@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use typespec::http::RawResponse;
+
 use crate::http::{
-    policies::{CustomHeadersPolicy, LoggingPolicy, Policy, TransportPolicy},
+    policies::{Buffer, CustomHeadersPolicy, LoggingPolicy, Policy, TransportPolicy},
     BufResponse, ClientOptions, Context, PipelineOptions, Request,
 };
 use std::sync::Arc;
@@ -33,7 +35,11 @@ pub struct Pipeline {
 
 /// Options for the [`Pipeline::send`] function.
 #[derive(Debug, Default)]
-pub struct PipelineSendOptions {}
+pub struct PipelineSendOptions;
+
+/// Options for the [`Pipeline::stream`] function.
+#[derive(Debug, Default)]
+pub struct PipelineStreamOptions;
 
 impl Pipeline {
     /// Creates a new pipeline with user-specified and client library-specified policies.
@@ -55,7 +61,7 @@ impl Pipeline {
                 + per_call_policies.len()
                 + options.per_try_policies.len()
                 + per_try_policies.len()
-                + 2,
+                + 3,
         );
 
         pipeline.extend_from_slice(&per_call_policies);
@@ -67,7 +73,6 @@ impl Pipeline {
         pipeline.push(retry_policy);
 
         pipeline.push(Arc::new(CustomHeadersPolicy::default()));
-
         pipeline.push(Arc::new(LoggingPolicy::new(options.logging)));
 
         pipeline.extend_from_slice(&per_try_policies);
@@ -85,12 +90,30 @@ impl Pipeline {
         &self.pipeline
     }
 
-    /// Sends a [`Request`] through each configured [`Policy`] and gets a [`BufResponse`] that is processed by each policy in reverse.
+    /// Sends a [`Request`] through each configured [`Policy`] and gets a [`RawResponse`] that is processed by each policy in reverse.
     pub async fn send(
         &self,
         ctx: &Context<'_>,
         request: &mut Request,
         _options: Option<PipelineSendOptions>,
+    ) -> crate::Result<RawResponse> {
+        // Signal the TransportPolicy to buffer the entire response.
+        let mut ctx = ctx.to_borrowed();
+        ctx.insert(Buffer);
+
+        self.pipeline[0]
+            .send(&ctx, request, &self.pipeline[1..])
+            .await?
+            .try_into_raw_response()
+            .await
+    }
+
+    /// Sends a [`Request`] through each configured [`Policy`] to get a [`BufResponse`] that is processed by each policy in reverse.
+    pub async fn stream(
+        &self,
+        ctx: &Context<'_>,
+        request: &mut Request,
+        _options: Option<PipelineStreamOptions>,
     ) -> crate::Result<BufResponse> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
@@ -100,18 +123,28 @@ impl Pipeline {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use crate::{
+        error::{Error, ErrorKind},
         http::{
             headers::{Headers, RETRY_AFTER},
             policies::{PolicyResult, RetryHeaders},
-            BufResponse, JsonFormat, Method, Response, StatusCode, Transport,
+            BufResponse, FixedRetryOptions, JsonFormat, Method, Response, RetryOptions, StatusCode,
+            Transport,
         },
         stream::BytesStream,
         Bytes,
     };
+    use futures::{lock::Mutex, StreamExt, TryStreamExt};
     use serde::Deserialize;
+    use std::collections::VecDeque;
+    use time::Duration;
+
+    #[derive(Debug, Deserialize)]
+    struct Model {
+        foo: i32,
+        bar: String,
+    }
 
     #[tokio::test]
     async fn deserializes_response() {
@@ -134,12 +167,6 @@ mod tests {
             }
         }
 
-        #[derive(Debug, Deserialize)]
-        struct Model {
-            foo: i32,
-            bar: String,
-        }
-
         // Simulated service method
         async fn service_method() -> crate::Result<Response<Model, JsonFormat>> {
             let options = ClientOptions {
@@ -159,9 +186,238 @@ mod tests {
             Ok(raw_response.into())
         }
 
-        let model = service_method().await.unwrap().into_body().await.unwrap();
+        let model = service_method().await.unwrap().into_body().unwrap();
 
         assert_eq!(1, model.foo);
         assert_eq!("baz", &model.bar);
+    }
+
+    #[derive(Debug, Default)]
+    struct Counter {
+        count: Mutex<usize>,
+    }
+
+    impl Counter {
+        async fn count(&self) -> usize {
+            let count = self.count.lock().await;
+            *count
+        }
+    }
+
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    impl Policy for Counter {
+        async fn send(
+            &self,
+            ctx: &Context,
+            request: &mut Request,
+            next: &[Arc<dyn Policy>],
+        ) -> PolicyResult {
+            let result = next[0].send(ctx, request, &next[1..]).await;
+
+            // Increment the counter after the response.
+            let mut count = self.count.lock().await;
+            *count += 1;
+
+            result
+        }
+    }
+
+    #[tokio::test]
+    async fn send_retries_in_pipeline() {
+        #[derive(Debug)]
+        struct Responder {
+            responses: Mutex<VecDeque<BufResponse>>,
+        }
+
+        impl Default for Responder {
+            fn default() -> Self {
+                let mut headers = Headers::new();
+                headers.insert("content-type", "application/json");
+                headers.insert("transfer-encoding", "chunked");
+
+                Self {
+                    responses: Mutex::new(VecDeque::from_iter([
+                        BufResponse::from_bytes(
+                            StatusCode::TooManyRequests,
+                            Headers::new(),
+                            Vec::new(),
+                        ),
+                        BufResponse::new(
+                            StatusCode::Ok,
+                            headers.clone(),
+                            futures::stream::iter([
+                                Ok(Bytes::from_static(br#"{"foo":1,"#)),
+                                // Simulate an I/O error from default reqwest::Client.
+                                Err(Error::new(ErrorKind::Io, "connection reset")),
+                            ])
+                            .boxed(),
+                        ),
+                        BufResponse::new(
+                            StatusCode::Ok,
+                            headers,
+                            futures::stream::iter([
+                                Ok(Bytes::from_static(br#"{"foo":1,"#)),
+                                Ok(Bytes::from_static(br#""bar":"baz"}"#)),
+                            ])
+                            .boxed(),
+                        ),
+                    ])),
+                }
+            }
+        }
+
+        #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+        #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+        impl Policy for Responder {
+            async fn send(
+                &self,
+                _ctx: &Context,
+                _request: &mut Request,
+                _next: &[Arc<dyn Policy>],
+            ) -> PolicyResult {
+                let mut responses = self.responses.lock().await;
+                let response = responses.pop_front().expect("expected BufResponse");
+                Ok(response)
+            }
+        }
+
+        let per_call_count = Arc::new(Counter::default());
+        let per_try_count = Arc::new(Counter::default());
+
+        // Simulated service method
+        async fn service_method(
+            per_call_count: Arc<Counter>,
+            per_try_count: Arc<Counter>,
+        ) -> crate::Result<Response<Model, JsonFormat>> {
+            let options = ClientOptions {
+                retry: RetryOptions::fixed(FixedRetryOptions {
+                    delay: Duration::milliseconds(1),
+                    ..Default::default()
+                }),
+                transport: Some(Transport::with_policy(Arc::new(Responder::default()))),
+                ..Default::default()
+            };
+            let pipeline = Pipeline::new(options, vec![per_call_count], vec![per_try_count], None);
+            let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
+            let raw_response = pipeline
+                .send(&Context::default(), &mut request, None)
+                .await?;
+            Ok(raw_response.into())
+        }
+
+        let resp = service_method(per_call_count.clone(), per_try_count.clone())
+            .await
+            .expect("expected Response");
+        assert_eq!(per_try_count.count().await, 3);
+        assert_eq!(per_call_count.count().await, 1);
+
+        let model = resp.into_body().expect("expected Model");
+        assert_eq!(per_try_count.count().await, 3);
+        assert_eq!(per_call_count.count().await, 1);
+
+        assert_eq!(1, model.foo);
+        assert_eq!("baz", &model.bar);
+    }
+
+    #[tokio::test]
+    async fn stream_out_of_pipeline() {
+        #[derive(Debug)]
+        struct Responder {
+            responses: Mutex<VecDeque<BufResponse>>,
+        }
+
+        impl Default for Responder {
+            fn default() -> Self {
+                let mut headers = Headers::new();
+                headers.insert("content-type", "application/x-octet-stream");
+                headers.insert("transfer-encoding", "chunked");
+
+                Self {
+                    responses: Mutex::new(VecDeque::from_iter([
+                        BufResponse::from_bytes(
+                            StatusCode::TooManyRequests,
+                            Headers::new(),
+                            Vec::new(),
+                        ),
+                        BufResponse::new(
+                            StatusCode::Ok,
+                            headers.clone(),
+                            futures::stream::iter([
+                                Ok(vec![0xde, 0xad].into()),
+                                Ok(vec![0xbe, 0xef].into()),
+                                // Simulate an I/O error from default reqwest::Client.
+                                Err(Error::new(ErrorKind::Io, "connection reset")),
+                            ])
+                            .boxed(),
+                        ),
+                        BufResponse::from_bytes(
+                            StatusCode::ImATeapot,
+                            Headers::new(),
+                            r#"unexpected"#,
+                        ),
+                    ])),
+                }
+            }
+        }
+
+        #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+        #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+        impl Policy for Responder {
+            async fn send(
+                &self,
+                _ctx: &Context,
+                _request: &mut Request,
+                _next: &[Arc<dyn Policy>],
+            ) -> PolicyResult {
+                let mut responses = self.responses.lock().await;
+                let response = responses.pop_front().expect("expected BufResponse");
+                Ok(response)
+            }
+        }
+
+        let per_call_count = Arc::new(Counter::default());
+        let per_try_count = Arc::new(Counter::default());
+
+        // Simulated service method
+        async fn service_method(
+            per_call_count: Arc<Counter>,
+            per_try_count: Arc<Counter>,
+        ) -> crate::Result<BufResponse> {
+            let options = ClientOptions {
+                retry: RetryOptions::fixed(FixedRetryOptions {
+                    delay: Duration::milliseconds(1),
+                    ..Default::default()
+                }),
+                transport: Some(Transport::with_policy(Arc::new(Responder::default()))),
+                ..Default::default()
+            };
+            let pipeline = Pipeline::new(options, vec![per_call_count], vec![per_try_count], None);
+            let mut request = Request::new("http://localhost".parse().unwrap(), Method::Get);
+            pipeline
+                .stream(&Context::default(), &mut request, None)
+                .await
+        }
+
+        let resp = service_method(per_call_count.clone(), per_try_count.clone())
+            .await
+            .expect("expected BufResponse");
+        assert_eq!(per_try_count.count().await, 2);
+        assert_eq!(per_call_count.count().await, 1);
+
+        let mut stream = resp.into_body().into_stream();
+        assert_eq!(
+            stream.try_next().await.expect("first chunk"),
+            Some(vec![0xde, 0xad].into())
+        );
+        assert_eq!(
+            stream.try_next().await.expect("second chunk"),
+            Some(vec![0xbe, 0xef].into())
+        );
+        assert!(matches!(stream.try_next().await, Err(e) if *e.kind() == ErrorKind::Io));
+
+        // Make sure we never went back through the pipeline policies.
+        assert_eq!(per_try_count.count().await, 2);
+        assert_eq!(per_call_count.count().await, 1);
     }
 }

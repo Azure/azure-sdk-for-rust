@@ -59,8 +59,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_list = block_blob_client
         .get_block_list(BlockListType::All, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     // Assert
     assert!(block_list.committed_blocks.is_none());
@@ -88,8 +87,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let block_list = block_blob_client
         .get_block_list(BlockListType::All, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     let response = blob_client.download(None).await?;
 
     // Assert
@@ -99,7 +97,7 @@ async fn test_block_list(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(9, content_length.unwrap());
     assert_eq!(
         Bytes::from_static(b"AAABBBCCC"),
-        response_body.collect().await?
+        response_body.collect().await?.as_ref(),
     );
     assert_eq!(
         3,

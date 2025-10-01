@@ -171,7 +171,7 @@ impl ClientAssertion for Client {
             );
         }
 
-        let assertion: Assertion = resp.into_body().json().await?;
+        let assertion: Assertion = resp.into_body().json()?;
         Ok(assertion.oidc_token.secret().to_string())
     }
 }

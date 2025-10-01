@@ -19,7 +19,7 @@ use azure_core::{
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
         BufResponse, ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions,
-        Request, RequestContent, Response, Url, XmlFormat,
+        RawResponse, Request, RequestContent, Response, Url, XmlFormat,
     },
     tracing, xml, Result,
 };
@@ -291,9 +291,8 @@ impl QueueServiceClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let bytes = body.collect().await?;
-                    let res: ListQueuesResponse = xml::read_xml(&bytes)?;
-                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                    let res: ListQueuesResponse = xml::read_xml(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
                             response: rsp,

@@ -50,7 +50,7 @@ pub(crate) use virtual_machine_managed_identity_credential::*;
 use crate::env::Env;
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    http::{BufResponse, Url},
+    http::{RawResponse, Url},
     Error, Result,
 };
 use serde::Deserialize;
@@ -73,14 +73,13 @@ struct EntraIdTokenResponse {
     access_token: String,
 }
 
-async fn deserialize<T>(credential_name: &str, res: BufResponse) -> Result<T>
+fn deserialize<T>(credential_name: &str, res: RawResponse) -> Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
     let t: T = res
         .into_body()
         .json()
-        .await
         .with_context_fn(ErrorKind::Credential, || {
             format!(
                 "{} authentication failed: invalid response",

@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Normally you'd deserialize into a type or `collect()` the body,
     // but this better simulates fetching multiple chunks from a slow response.
-    let mut body = response.into_body();
+    let mut body = response.into_stream();
     while let Some(data) = body.next().await {
         // Assume bytes are a string in this example.
         let page = String::from_utf8(data?.into())?;
@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // You can also deserialize into a model from a slow response.
-    let team = client::get_model()?.into_body().await?;
+    let team = client::get_model().await?.into_body()?;
     println!("{team:#?}");
 
     Ok(())
@@ -40,7 +40,7 @@ mod client {
     use std::{cmp::min, task::Poll, time::Duration};
     use tracing::debug;
     use typespec_client_core::{
-        http::{headers::Headers, BufResponse, Response, StatusCode},
+        http::{headers::Headers, response::AsyncResponse, BufResponse, Response, StatusCode},
         Bytes,
     };
 
@@ -58,7 +58,7 @@ mod client {
     }
 
     #[tracing::instrument]
-    pub fn get_binary_data() -> typespec_client_core::Result<BufResponse> {
+    pub fn get_binary_data() -> typespec_client_core::Result<AsyncResponse<()>> {
         let bytes = Bytes::from_static(b"Hello, world!");
         let response = SlowResponse {
             bytes: bytes.repeat(5).into(),
@@ -66,15 +66,11 @@ mod client {
             bytes_read: 0,
         };
 
-        Ok(BufResponse::new(
-            StatusCode::Ok,
-            Headers::new(),
-            Box::pin(response),
-        ))
+        Ok(BufResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response)).into())
     }
 
     #[tracing::instrument]
-    pub fn get_model() -> typespec_client_core::Result<Response<Team>> {
+    pub async fn get_model() -> typespec_client_core::Result<Response<Team>> {
         let bytes = br#"{
             "name": "Contoso Dev Team",
             "members": [
@@ -93,8 +89,10 @@ mod client {
             bytes_per_read: 64,
             bytes_read: 0,
         };
+        let stream = BufResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response));
+        let buffered = stream.try_into_raw_response().await?;
 
-        Ok(BufResponse::new(StatusCode::Ok, Headers::new(), Box::pin(response)).into())
+        Ok(buffered.into())
     }
 
     struct SlowResponse {
