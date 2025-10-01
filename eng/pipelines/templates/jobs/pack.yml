@@ -70,7 +70,9 @@ jobs:
     - pwsh: |
         $artifacts = '${{ convertToJson(parameters.Artifacts) }}' | ConvertFrom-Json
         $requireDependencies = $true
-        $artifactsToBuild = $artifacts | Where-Object { $_.releaseInBatch }
+        $artifactsToBuild = $artifacts | Where-Object { $_.releaseInBatch -ne 'False' }
+
+
         
         if (!$artifactsToBuild) {
           Write-Host "No packages to release. Building all packages in the service directory with no dependency validation."
