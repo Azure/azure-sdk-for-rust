@@ -15,7 +15,6 @@ mod recording;
 mod root_readme;
 pub mod stream;
 pub mod tracing;
-use crate::perf::PerfRunner;
 use azure_core::Error;
 pub use azure_core::{error::ErrorKind, test::TestMode};
 pub use proxy::{matchers::*, sanitizers::*};
@@ -37,7 +36,6 @@ pub struct TestContext {
     module_name: &'static str,
     name: &'static str,
     recording: Option<Recording>,
-    _performance: Option<PerfRunner>,
 }
 
 impl TestContext {
@@ -61,7 +59,6 @@ impl TestContext {
             module_name: test_module,
             name,
             recording: None,
-            _performance: None,
         })
     }
 

@@ -3,22 +3,48 @@
 
 #![doc = include_str!("README.md")]
 
-use clap::{parser::MatchesError, ArgMatches};
-use std::any::Any;
+use azure_core::{time::Duration, Error, Result};
+use clap::ArgMatches;
+use std::{
+    any::Any,
+    future::Future,
+    pin::Pin,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+};
+use tokio::select;
+
+use crate::TestContext;
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+pub trait PerfTest: Send + Sync {
+    async fn setup(&self, context: &TestContext) -> azure_core::Result<()>;
+    async fn run(&self /*context: &TestContext*/) -> azure_core::Result<()>;
+    async fn cleanup(&self, context: &TestContext) -> azure_core::Result<()>;
+}
+
+pub type CreatePerfTestReturn =
+    Pin<Box<dyn Future<Output = azure_core::Result<Box<dyn PerfTest>>>>>;
 
 /// Metadata about a performance test.
 #[derive(Debug, Clone)]
 pub struct TestMetadata {
-    /// The name of the test.
+    /// The name of the test suite.
     pub name: &'static str,
-    /// A brief description of the test.
+    /// A brief description of the test suite.
     pub description: &'static str,
     /// The set of test options supported by this test.
-    pub options: &'static [&'static TestOption],
+    pub options: Vec<TestOption>,
+
+    /// A function used to create the performance test.
+    pub create_test: fn(&PerfRunner) -> CreatePerfTestReturn,
 }
 
 /// #A `TestOptions` defines a set of options for the test which will be merged with the common test inputs to define the command line for the performance test.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct TestOption {
     /// The name of the test option. This is used as the key in the `TestArguments` map.
     pub name: &'static str,
@@ -47,10 +73,9 @@ pub struct TestOption {
 struct PerfRunnerOptions {
     no_cleanup: bool,
     iterations: u32,
-    parallel: u32,
-    test: Option<String>,
-    duration: u32,
-    warmup: u32,
+    parallel: usize,
+    duration: Duration,
+    warmup: Duration,
     test_results_filename: String,
 }
 
@@ -64,13 +89,16 @@ impl From<&ArgMatches> for PerfRunnerOptions {
                 .get_one::<u32>("iterations")
                 .expect("defaulted by clap"),
             parallel: *matches
-                .get_one::<u32>("parallel")
+                .get_one::<usize>("parallel")
                 .expect("defaulted by clap"),
-            test: matches.get_one::<String>("test").cloned(),
-            duration: *matches
-                .get_one::<u32>("duration")
-                .expect("defaulted by clap"),
-            warmup: *matches.get_one::<u32>("warmup").expect("defaulted by clap"),
+            duration: Duration::seconds(
+                *matches
+                    .get_one::<i64>("duration")
+                    .expect("defaulted by clap"),
+            ),
+            warmup: Duration::seconds(
+                *matches.get_one::<i64>("warmup").expect("defaulted by clap"),
+            ),
             test_results_filename: matches
                 .get_one::<String>("test-results")
                 .expect("defaulted by clap")
@@ -83,25 +111,38 @@ impl From<&ArgMatches> for PerfRunnerOptions {
 #[derive(Debug)]
 pub struct PerfRunner {
     options: PerfRunnerOptions,
+    #[allow(dead_code)]
+    tests: Vec<TestMetadata>,
     arguments: ArgMatches,
+    package_dir: &'static str,
+    module_name: &'static str,
 }
 
 impl PerfRunner {
-    pub fn new(tests: Vec<TestMetadata>) -> azure_core::Result<Self> {
-        let command = Self::get_command_from_metadata(tests);
+    pub fn new(
+        package_dir: &'static str,
+        module_name: &'static str,
+        tests: Vec<TestMetadata>,
+    ) -> azure_core::Result<Self> {
+        let command = Self::get_command_from_metadata(&tests);
         let arguments = command.get_matches();
         Ok(Self {
             options: PerfRunnerOptions::from(&arguments),
+            tests,
             arguments,
+            package_dir,
+            module_name,
         })
     }
 
     #[cfg(test)]
     pub fn with_command_line(
+        package_dir: &'static str,
+        module_name: &'static str,
         tests: Vec<TestMetadata>,
         args: Vec<&str>,
     ) -> azure_core::Result<Self> {
-        let command = Self::get_command_from_metadata(tests);
+        let command = Self::get_command_from_metadata(&tests);
         let arguments = command.try_get_matches_from(args).map_err(|e| {
             azure_core::error::Error::with_error(
                 azure_core::error::ErrorKind::Other,
@@ -111,41 +152,155 @@ impl PerfRunner {
         })?;
         Ok(Self {
             options: PerfRunnerOptions::from(&arguments),
+            tests,
             arguments,
+            package_dir,
+            module_name,
         })
     }
 
     /// Gets a reference to a typed argument by its id.
-    pub fn try_get_one<T>(&self, id: &str) -> Result<Option<&T>, MatchesError>
+    pub fn try_get_global_arg<T>(&self, id: &str) -> Result<Option<&T>>
     where
         T: Any + Clone + Send + Sync + 'static,
     {
-        self.arguments.try_get_one::<T>(id)
+        self.arguments.try_get_one::<T>(id).map_err(|e| {
+            Error::with_error(
+                azure_core::error::ErrorKind::Other,
+                e,
+                format!("Failed to get argument '{}'.", id),
+            )
+        })
     }
 
-    pub fn try_get_one_subcommand<T>(
-        &self,
-        subcommand: &str,
-        id: &str,
-    ) -> Result<Option<&T>, MatchesError>
+    pub fn try_get_test_arg<T>(&self, id: &str) -> Result<Option<&T>>
     where
         T: Any + Clone + Send + Sync + 'static,
     {
-        let subcommand = self.arguments.subcommand_matches(subcommand);
-        if let Some(subcommand) = subcommand {
-            subcommand.try_get_one::<T>(id)
+        if let Some((_, args)) = self.arguments.subcommand() {
+            args.try_get_one::<T>(id).map_err(|e| {
+                Error::with_error(
+                    azure_core::error::ErrorKind::Other,
+                    e,
+                    format!("Failed to get argument '{}' for test.", id),
+                )
+            })
         } else {
             Ok(None)
         }
     }
 
-    #[allow(dead_code)]
-    async fn run_test<F, Fut>(&self, test: F) -> azure_core::Result<()>
-    where
-        F: Fn(u32, u32) -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<()>>,
-    {
-        test(self.options.iterations, self.options.parallel).await
+    pub fn get_selected_test_name(&self) -> Result<&str> {
+        match self.arguments.subcommand_name() {
+            Some(name) => Ok(name),
+            None => Err(Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "No test was selected.",
+            )),
+        }
+    }
+
+    pub async fn run(&self) -> azure_core::Result<()> {
+        // We can only run tests if there was a test selected.
+        let test_name = self.get_selected_test_name()?;
+
+        let test = self
+            .tests
+            .iter()
+            .find(|t| t.name == test_name)
+            .ok_or_else(|| {
+                Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("Test '{}' not found.", test_name),
+                )
+            })?;
+        let test_instance = (test.create_test)(self).await?;
+        let test_instance: Arc<dyn PerfTest> = Arc::from(test_instance);
+
+        let context = TestContext::new(self.package_dir, self.module_name, test.name)?;
+
+        for iteration in 0..self.options.iterations {
+            println!(
+                "Running test iteration {}/{}",
+                iteration + 1,
+                self.options.iterations
+            );
+
+            println!("========== Starting test setup ==========");
+            test_instance.setup(&context).await?;
+
+            println!("========== Starting test warmup ==========");
+
+            self.run_test_for(Arc::clone(&test_instance), &context, self.options.warmup)
+                .await?;
+
+            println!("========== Starting test run ==========");
+            println!("Running test for {} seconds", self.options.duration);
+            println!("Parallelism: {}", self.options.parallel);
+            let iteration_count = self
+                .run_test_for(Arc::clone(&test_instance), &context, self.options.duration)
+                .await?;
+            if !self.options.no_cleanup {
+                println!("========== Starting test cleanup ==========");
+                test_instance.cleanup(&context).await?;
+            }
+            println!("========== Starting test cleanup ==========");
+            test_instance.cleanup(&context).await?;
+
+            println!(
+                "Completed test iteration {}/{} - {} iterations run in {} seconds - {} iterations/second",
+                iteration + 1,
+                self.options.iterations,
+                iteration_count,
+                self.options.duration.as_seconds_f64(),
+                iteration_count as f64 / self.options.duration.as_seconds_f64()
+            );
+            println!(
+                "Completed test iteration {}/{} - {} iterations run in {} seconds - {} seconds/iteration",
+                iteration + 1,
+                self.options.iterations,
+                iteration_count,
+                self.options.duration.as_seconds_f64(),
+                self.options.duration.as_seconds_f64() / iteration_count as f64
+            );
+        }
+        Ok(())
+    }
+    pub async fn run_test_for(
+        &self,
+        test_instance: Arc<dyn PerfTest>,
+        _context: &TestContext,
+        duration: Duration,
+    ) -> azure_core::Result<u64> {
+        let iteration_count = Arc::new(AtomicU64::new(0));
+        let mut tasks = Vec::with_capacity(self.options.parallel);
+        for _ in 0..self.options.parallel {
+            let test_instance_clone = Arc::clone(&test_instance);
+            let ic = Arc::clone(&iteration_count);
+            let task: tokio::task::JoinHandle<Result<()>> = tokio::spawn(async move {
+                loop {
+                    if ic.load(Ordering::SeqCst) % 1000 == 0 {
+                        println!("Iteration {}", ic.load(Ordering::SeqCst));
+                    }
+                    test_instance_clone.run().await?;
+                    ic.fetch_add(1, Ordering::SeqCst);
+                }
+                #[allow(unreachable_code)]
+                Ok(())
+            });
+            tasks.push(task);
+        }
+        let timeout = std::time::Duration::from_secs_f64(duration.as_seconds_f64());
+        select!(
+            _ = futures::future::join_all(tasks) => {
+                println!("All tasks completed unexpectedly.");
+                // All tasks completed (should not happen in normal operation).
+            }
+            _ = tokio::time::sleep(timeout) => {
+                println!("Duration elapsed, stopping tasks.");
+            }
+        );
+        Ok(iteration_count.load(Ordering::SeqCst))
     }
 
     // * Disable test cleanup
@@ -163,7 +318,7 @@ impl PerfRunner {
     //   * Sync - run a synchronous version of the test
 
     /// Constructs a `clap::Command` from the provided test metadata.
-    fn get_command_from_metadata(tests: Vec<TestMetadata>) -> clap::Command {
+    fn get_command_from_metadata(tests: &[TestMetadata]) -> clap::Command {
         let mut command = clap::Command::new("perf-tests")
             .about("Run performance tests for the Azure SDK for Rust")
             .arg(
@@ -171,45 +326,41 @@ impl PerfRunner {
                     .required(false)
                     .default_value("1")
                     .value_parser(clap::value_parser!(u32))
-                    .global(true),
+                    .global(false),
             )
             .arg(
                 clap::arg!(--parallel <COUNT> "The number of concurrent tasks to use when running each test")
                     .required(false)
                     .default_value("1")
-                    .value_parser(clap::value_parser!(u32))
-                    .global(true),
-            )
-            .arg(
-                clap::arg!(--test <TEST_NAME> "The name of the test to run. If not specified, all tests will be run.")
-                    .required(false)
-                    .global(true),
+                    .value_parser(clap::value_parser!(usize))
+                    .global(false),
             )
             .arg(
                 clap::arg!(--duration <SECONDS> "The duration of each test in seconds")
                     .required(false)
                     .default_value("30")
-                    .value_parser(clap::value_parser!(u32))
-                    .global(true),
+                    .value_parser(clap::value_parser!(i64))
+                    .global(false),
             )
             .arg(
                 clap::arg!(--warmup <SECONDS> "The duration of the warmup period in seconds")
                     .required(false)
                     .default_value("5")
-                    .value_parser(clap::value_parser!(u32))
-                    .global(true),
-            ).arg(
+                    .value_parser(clap::value_parser!(i64))
+                    .global(false),
+            )
+            .arg(
                 clap::arg!(--"test-results" <FILE> "The file to write test results to")
                     .required(false)
                     .default_value("./tests/results.json")
-                    .global(true),
+                    .global(false),
             )
             .arg(clap::arg!(--"no-cleanup" "Disable test cleanup")
             .required(false).global(true))
         ;
-        for test in &tests {
+        for test in tests {
             let mut subcommand = clap::Command::new(test.name).about(test.description);
-            for option in test.options {
+            for option in test.options.iter() {
                 let mut arg = clap::Arg::new(option.name)
                     .help(option.display_message)
                     .long(option.long_activator)
@@ -232,4 +383,7 @@ impl PerfRunner {
 }
 
 #[cfg(test)]
-mod tests;
+mod config_tests;
+
+#[cfg(test)]
+mod framework_tests;
