@@ -52,7 +52,20 @@ impl GeneratedBlobClient {
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        let options = options.unwrap_or_default();
+        let mut options = options.unwrap_or_default();
+
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+
+        if !blob_url.scheme().starts_with("http") {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{blob_url} must use http(s)"),
+            ));
+        }
 
         let pipeline = match credential {
             Some(cred) => {
@@ -116,14 +129,6 @@ impl BlobClient {
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        let mut options = options.unwrap_or_default();
-
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
-
         let mut url = Url::parse(endpoint)?;
         if !url.scheme().starts_with("http") {
             return Err(azure_core::Error::with_message(
@@ -137,7 +142,7 @@ impl BlobClient {
             .expect("Cannot be base")
             .extend([&container_name, &blob_name]);
 
-        let client = GeneratedBlobClient::from_url(url.clone(), credential, Some(options))?;
+        let client = GeneratedBlobClient::from_url(url.clone(), credential, options)?;
         Ok(Self {
             endpoint: client.endpoint().clone(),
             client,
