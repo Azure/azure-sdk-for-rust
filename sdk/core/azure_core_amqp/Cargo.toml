@@ -29,9 +29,9 @@ serde.workspace = true
 serde_amqp = { workspace = true, optional = true }
 serde_bytes = { workspace = true, optional = true }
 tokio.workspace = true
-tokio-socks = { version = "0.5", optional = true }
-native-tls = { version = "0.2", optional = true }
-tokio-native-tls = { version = "0.3", optional = true }
+tokio-native-tls = { workspace = true, optional = true }
+tokio-socks = { workspace = true, optional = true }
+native-tls = { workspace = true, optional = true }
 tracing.workspace = true
 typespec = { workspace = true, features = ["amqp"] }
 typespec_client_core = { workspace = true }
