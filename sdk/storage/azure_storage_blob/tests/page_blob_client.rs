@@ -232,12 +232,6 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
             None,
         )
         .await?;
-    let source_url = format!(
-        "{}{}/{}",
-        blob_client_1.endpoint(),
-        blob_client_1.container_name(),
-        blob_client_1.blob_name()
-    );
 
     page_blob_client_2.create(1024, None).await?;
     let mut data_a = vec![b'A'; 512];
@@ -251,7 +245,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .await?;
     page_blob_client_2
         .upload_pages_from_url(
-            source_url,
+            blob_client_1.endpoint().as_str().into(),
             format_page_range(0, data_b.len() as u64)?,
             data_b.len() as u64,
             format_page_range(512, data_b.len() as u64)?,

@@ -27,8 +27,10 @@ use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage Page blob, although that blob may not yet exist.
 pub struct PageBlobClient {
-    pub(crate) endpoint: Url,
-    pub(crate) client: GeneratedPageBlobClient,
+    pub(super) endpoint: Url,
+    pub(super) client: GeneratedPageBlobClient,
+    pub(super) container_name: String,
+    pub(super) blob_name: String,
 }
 
 impl PageBlobClient {
@@ -56,16 +58,25 @@ impl PageBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let client = GeneratedPageBlobClient::new(
-            endpoint,
-            credential,
+        let mut url = Url::parse(endpoint)?;
+        if !url.scheme().starts_with("http") {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{url} must use http(s)"),
+            ));
+        }
+
+        // Build Blob URL, Url crate handles encoding only path params
+        url.path_segments_mut()
+            .expect("Cannot be base")
+            .extend([&container_name, &blob_name]);
+
+        let client = GeneratedPageBlobClient::new(url.as_str(), credential, Some(options))?;
+        Ok(Self {
+            endpoint: client.endpoint().clone(),
+            client,
             container_name,
             blob_name,
-            Some(options),
-        )?;
-        Ok(Self {
-            endpoint: endpoint.parse()?,
-            client,
         })
     }
 
@@ -76,12 +87,12 @@ impl PageBlobClient {
 
     /// Gets the container name of the Storage account this client is connected to.
     pub fn container_name(&self) -> &str {
-        &self.client.container_name
+        &self.container_name
     }
 
     /// Gets the blob name of the Storage account this client is connected to.
     pub fn blob_name(&self) -> &str {
-        &self.client.blob_name
+        &self.blob_name
     }
 
     /// Creates a new Page blob.

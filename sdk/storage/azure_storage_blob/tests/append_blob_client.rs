@@ -79,18 +79,12 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
     let blob_client = container_client.blob_client(get_blob_name(recording));
     let blob_client_2 = container_client.blob_client(get_blob_name(recording));
     create_test_blob(&blob_client_2, None, None).await?;
-    let source_url = format!(
-        "{}{}/{}",
-        blob_client_2.endpoint(),
-        blob_client_2.container_name(),
-        blob_client_2.blob_name()
-    );
     let append_blob_client = blob_client.append_blob_client();
     append_blob_client.create(None).await?;
 
     // Act
     append_blob_client
-        .append_block_from_url(source_url, 17, None)
+        .append_block_from_url(blob_client_2.endpoint().as_str().into(), 17, None)
         .await?;
 
     // Assert

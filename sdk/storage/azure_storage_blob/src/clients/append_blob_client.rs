@@ -9,6 +9,7 @@ use crate::{
         AppendBlobClientCreateOptions, AppendBlobClientCreateResult, AppendBlobClientSealOptions,
         AppendBlobClientSealResult,
     },
+    parsers::parse_url_name_components,
     pipeline::StorageHeadersPolicy,
     AppendBlobClientOptions, BlobClientOptions,
 };
@@ -24,8 +25,10 @@ use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage Append blob, although that blob may not yet exist.
 pub struct AppendBlobClient {
-    pub(crate) endpoint: Url,
-    pub(crate) client: GeneratedAppendBlobClient,
+    pub(super) endpoint: Url,
+    pub(super) client: GeneratedAppendBlobClient,
+    pub(super) container_name: String,
+    pub(super) blob_name: String,
 }
 
 impl AppendBlobClient {
@@ -53,16 +56,25 @@ impl AppendBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let client = GeneratedAppendBlobClient::new(
-            endpoint,
-            credential,
+        let mut url = Url::parse(endpoint)?;
+        if !url.scheme().starts_with("http") {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{url} must use http(s)"),
+            ));
+        }
+
+        // Build Blob URL, Url crate handles encoding only path params
+        url.path_segments_mut()
+            .expect("Cannot be base")
+            .extend([&container_name, &blob_name]);
+
+        let client = GeneratedAppendBlobClient::new(url.as_str(), credential, Some(options))?;
+        Ok(Self {
+            endpoint: client.endpoint().clone(),
+            client,
             container_name,
             blob_name,
-            Some(options),
-        )?;
-        Ok(Self {
-            endpoint: endpoint.parse()?,
-            client,
         })
     }
 
@@ -73,12 +85,12 @@ impl AppendBlobClient {
 
     /// Gets the container name of the Storage account this client is connected to.
     pub fn container_name(&self) -> &str {
-        &self.client.container_name
+        &self.container_name
     }
 
     /// Gets the blob name of the Storage account this client is connected to.
     pub fn blob_name(&self) -> &str {
-        &self.client.blob_name
+        &self.blob_name
     }
 
     /// Creates a new Append blob.

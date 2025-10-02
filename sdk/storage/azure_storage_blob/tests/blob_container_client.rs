@@ -5,10 +5,10 @@ use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, Matcher, TestContext, TestMode};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
-    AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
-    BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
-    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
-    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
+    AccountKind, BlobType, BlockBlobClientUploadOptions, ContainerClientAcquireLeaseResultHeaders,
+    ContainerClientChangeLeaseResultHeaders, ContainerClientGetAccountInfoResultHeaders,
+    ContainerClientGetPropertiesResultHeaders, ContainerClientListBlobFlatSegmentOptions,
+    ContainerClientSetMetadataOptions, LeaseState,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
@@ -168,7 +168,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     .await?;
 
     // Continuation Token with Token Provided
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = ContainerClientListBlobFlatSegmentOptions {
         maxresults: Some(2),
         ..Default::default()
     };
@@ -184,7 +184,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
     }
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = ContainerClientListBlobFlatSegmentOptions {
         marker: continuation_token,
         ..Default::default()
     };
@@ -259,7 +259,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     assert_eq!(StatusCode::Conflict, error.unwrap());
 
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
-    let set_metadata_options = BlobContainerClientSetMetadataOptions {
+    let set_metadata_options = ContainerClientSetMetadataOptions {
         lease_id: Some(lease_id.clone()),
         ..Default::default()
     };
@@ -331,12 +331,13 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 #[recorded::test]
 async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
-    let recording = ctx.recording();
-    recording.set_matcher(Matcher::HeaderlessMatcher).await?;
-    let container_client = get_container_client(recording, true).await?;
+    ctx.recording()
+        .set_matcher(Matcher::HeaderlessMatcher)
+        .await?;
+    let container_client = get_container_client(ctx.recording(), true).await?;
 
     // Create Test Blobs with Tags
-    let blob1_name = get_blob_name(recording);
+    let blob1_name = get_blob_name(ctx.recording());
     create_test_blob(
         &container_client.blob_client(blob1_name.clone()),
         Some(RequestContent::from("hello world".as_bytes().into())),
@@ -348,7 +349,7 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
         ),
     )
     .await?;
-    let blob2_name = get_blob_name(recording);
+    let blob2_name = get_blob_name(ctx.recording());
     let blob2_tags = HashMap::from([("fizz".to_string(), "buzz".to_string())]);
     create_test_blob(
         &container_client.blob_client(blob2_name.clone()),
@@ -358,7 +359,9 @@ async fn test_find_blobs_by_tags_container(ctx: TestContext) -> Result<(), Box<d
     .await?;
 
     // Sleep in live mode to allow tags to be indexed on the service
-    if recording.test_mode() == TestMode::Live {
+    if ctx.recording().test_mode() == TestMode::Live
+        || ctx.recording().test_mode() == TestMode::Record
+    {
         time::sleep(Duration::from_secs(5)).await;
     }
 

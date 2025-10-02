@@ -18,6 +18,6 @@ pub use block_blob_client::BlockBlobClient;
 pub use page_blob_client::PageBlobClient;
 
 pub use crate::generated::clients::{
-    AppendBlobClientOptions, BlobClientOptions, BlobContainerClientOptions,
-    BlobServiceClientOptions, BlockBlobClientOptions, PageBlobClientOptions,
+    AppendBlobClientOptions, BlobClientOptions, BlockBlobClientOptions, ContainerClientOptions,
+    PageBlobClientOptions, ServiceClientOptions,
 };

@@ -2,16 +2,17 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
-    generated::models::BlobServiceClientGetAccountInfoResult,
+    generated::clients::ContainerClient as GeneratedBlobContainerClient,
+    generated::clients::ServiceClient as GeneratedBlobServiceClient,
+    generated::models::ServiceClientGetAccountInfoResult,
     models::{
-        BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
-        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-        BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
-        ListContainersSegmentResponse,
+        BlobServiceProperties, FilterBlobSegment, ListContainersSegmentResponse,
+        ServiceClientFindBlobsByTagsOptions, ServiceClientGetAccountInfoOptions,
+        ServiceClientGetPropertiesOptions, ServiceClientListContainersSegmentOptions,
+        ServiceClientSetPropertiesOptions,
     },
     pipeline::StorageHeadersPolicy,
-    BlobContainerClient, BlobServiceClientOptions,
+    BlobContainerClient, ServiceClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -40,7 +41,7 @@ impl BlobServiceClient {
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        options: Option<BlobServiceClientOptions>,
+        options: Option<ServiceClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
 
@@ -50,10 +51,12 @@ impl BlobServiceClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let client = GeneratedBlobServiceClient::new(endpoint, credential.clone(), Some(options))?;
+        let url = Url::parse(endpoint)?;
+        let client =
+            GeneratedBlobServiceClient::new(url.as_str(), credential.clone(), Some(options))?;
 
         Ok(Self {
-            endpoint: endpoint.parse()?,
+            endpoint: client.endpoint().clone(),
             client,
         })
     }
@@ -64,9 +67,23 @@ impl BlobServiceClient {
     ///
     /// * `container_name` - The name of the container.
     pub fn blob_container_client(&self, container_name: String) -> BlobContainerClient {
+        let mut container_url = self.endpoint.clone();
+        container_url
+            .path_segments_mut()
+            .expect("Cannot be base")
+            .push(&container_name);
+
+        let client = GeneratedBlobContainerClient {
+            endpoint: container_url.clone(),
+            pipeline: self.client.pipeline.clone(),
+            version: self.client.version.clone(),
+            tracer: self.client.tracer.clone(),
+        };
+
         BlobContainerClient {
-            endpoint: self.client.endpoint.clone(),
-            client: self.client.get_blob_container_client(container_name),
+            endpoint: container_url,
+            client,
+            container_name,
         }
     }
 
@@ -82,7 +99,7 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_properties(
         &self,
-        options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
+        options: Option<ServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobServiceProperties, XmlFormat>> {
         self.client.get_properties(options).await
     }
@@ -94,7 +111,7 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub fn list_containers(
         &self,
-        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
+        options: Option<ServiceClientListContainersSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
         self.client.list_containers_segment(options)
     }
@@ -117,7 +134,7 @@ impl BlobServiceClient {
     pub async fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
-        options: Option<BlobServiceClientFindBlobsByTagsOptions<'_>>,
+        options: Option<ServiceClientFindBlobsByTagsOptions<'_>>,
     ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         self.client
             .find_blobs_by_tags(filter_expression, options)
@@ -133,7 +150,7 @@ impl BlobServiceClient {
     pub async fn set_properties(
         &self,
         storage_service_properties: RequestContent<BlobServiceProperties, XmlFormat>,
-        options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
+        options: Option<ServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
             .set_properties(storage_service_properties, options)
@@ -148,8 +165,8 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_account_info(
         &self,
-        options: Option<BlobServiceClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<BlobServiceClientGetAccountInfoResult, NoFormat>> {
+        options: Option<ServiceClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<ServiceClientGetAccountInfoResult, NoFormat>> {
         self.client.get_account_info(options).await
     }
 }

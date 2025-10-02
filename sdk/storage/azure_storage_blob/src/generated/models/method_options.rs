@@ -1126,539 +1126,6 @@ pub struct BlobClientUndeleteOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobContainerClient::acquire_lease()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientAcquireLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
-    pub if_unmodified_since: Option<OffsetDateTime>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// Optional. The proposed lease ID for the container.
-    pub proposed_lease_id: Option<String>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::break_lease()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientBreakLeaseOptions<'a> {
-    /// For a break operation, proposed duration the lease should continue before it is broken, in seconds, between 0 and 60.
-    /// This break period is only used if it is shorter than the time remaining on the lease. If longer, the time remaining on
-    /// the lease is used. A new lease will not be available before the break period has expired, but the lease may be held for
-    /// longer than the break period. If this header does not appear with a break operation, a fixed-duration lease breaks after
-    /// the remaining lease period elapses, and an infinite lease breaks immediately.
-    pub break_period: Option<i32>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
-    pub if_unmodified_since: Option<OffsetDateTime>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::change_lease()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientChangeLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
-    pub if_unmodified_since: Option<OffsetDateTime>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::create()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientCreateOptions<'a> {
-    /// The public access setting for the container.
-    pub access: Option<PublicAccessType>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Optional. Version 2019-07-07 and later. Specifies the default encryption scope to set on the container and use for all
-    /// future writes.
-    pub default_encryption_scope: Option<String>,
-
-    /// The metadata headers.
-    pub metadata: Option<HashMap<String, String>>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// If a blob has a lease and the lease is of infinite duration then the value of this header is set to true, otherwise it
-    /// is set to false.
-    pub prevent_encryption_scope_override: Option<bool>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::delete()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientDeleteOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
-    pub if_unmodified_since: Option<OffsetDateTime>,
-
-    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
-    pub lease_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::find_blobs_by_tags()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientFindBlobsByTagsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Include this parameter to specify one or more datasets to include in the response.
-    pub include: Option<Vec<FilterBlobsIncludeItem>>,
-
-    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
-    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
-    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
-    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
-    pub marker: Option<String>,
-
-    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
-    /// greater than 5000, the server will return up to 5000 items.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::get_access_policy()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientGetAccessPolicyOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
-    pub lease_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::get_account_info()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientGetAccountInfoOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::get_properties()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientGetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
-    pub lease_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::list_blob_flat_segment()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientListBlobFlatSegmentOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Include this parameter to specify one or more datasets to include in the response.
-    pub include: Option<Vec<ListBlobsIncludeItem>>,
-
-    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
-    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
-    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
-    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
-    pub marker: Option<String>,
-
-    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
-    /// greater than 5000, the server will return up to 5000 items.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// Filters the results to return only containers whose name begins with the specified prefix.
-    pub prefix: Option<String>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-impl BlobContainerClientListBlobFlatSegmentOptions<'_> {
-    /// Transforms this [`BlobContainerClientListBlobFlatSegmentOptions`] into a new `BlobContainerClientListBlobFlatSegmentOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobContainerClientListBlobFlatSegmentOptions<'static> {
-        BlobContainerClientListBlobFlatSegmentOptions {
-            client_request_id: self.client_request_id,
-            include: self.include,
-            marker: self.marker,
-            maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
-                context: self.method_options.context.into_owned(),
-            },
-            prefix: self.prefix,
-            timeout: self.timeout,
-        }
-    }
-}
-
-/// Options to be passed to `BlobContainerClient::list_blob_hierarchy_segment()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientListBlobHierarchySegmentOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Include this parameter to specify one or more datasets to include in the response.
-    pub include: Option<Vec<ListBlobsIncludeItem>>,
-
-    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
-    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
-    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
-    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
-    pub marker: Option<String>,
-
-    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
-    /// greater than 5000, the server will return up to 5000 items.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// Filters the results to return only containers whose name begins with the specified prefix.
-    pub prefix: Option<String>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-impl BlobContainerClientListBlobHierarchySegmentOptions<'_> {
-    /// Transforms this [`BlobContainerClientListBlobHierarchySegmentOptions`] into a new `BlobContainerClientListBlobHierarchySegmentOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobContainerClientListBlobHierarchySegmentOptions<'static> {
-        BlobContainerClientListBlobHierarchySegmentOptions {
-            client_request_id: self.client_request_id,
-            include: self.include,
-            marker: self.marker,
-            maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
-                context: self.method_options.context.into_owned(),
-            },
-            prefix: self.prefix,
-            timeout: self.timeout,
-        }
-    }
-}
-
-/// Options to be passed to `BlobContainerClient::release_lease()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientReleaseLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
-    pub if_unmodified_since: Option<OffsetDateTime>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::rename()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientRenameOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// A lease ID for the source path. If specified, the source path must have an active lease and the lease ID must match.
-    pub source_lease_id: Option<String>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::renew_lease()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientRenewLeaseOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
-    pub if_unmodified_since: Option<OffsetDateTime>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::restore()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientRestoreOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Optional. Version 2019-12-12 and later. Specifies the name of the deleted container to restore.
-    pub deleted_container_name: Option<String>,
-
-    /// Optional. Version 2019-12-12 and later. Specifies the version of the deleted container to restore.
-    pub deleted_container_version: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::set_access_policy()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientSetAccessPolicyOptions<'a> {
-    /// The public access setting for the container.
-    pub access: Option<PublicAccessType>,
-
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
-    pub if_unmodified_since: Option<OffsetDateTime>,
-
-    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
-    pub lease_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobContainerClient::set_metadata()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientSetMetadataOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
-    pub if_modified_since: Option<OffsetDateTime>,
-
-    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
-    pub lease_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobServiceClient::find_blobs_by_tags()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientFindBlobsByTagsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Include this parameter to specify one or more datasets to include in the response.
-    pub include: Option<Vec<FilterBlobsIncludeItem>>,
-
-    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
-    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
-    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
-    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
-    pub marker: Option<String>,
-
-    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
-    /// greater than 5000, the server will return up to 5000 items.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobServiceClient::get_account_info()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientGetAccountInfoOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobServiceClient::get_properties()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientGetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobServiceClient::get_statistics()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientGetStatisticsOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobServiceClient::get_user_delegation_key()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-/// Options to be passed to `BlobServiceClient::list_containers_segment()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientListContainersSegmentOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Include this parameter to specify that the container's metadata be returned as part of the response body.
-    pub include: Option<Vec<ListContainersIncludeType>>,
-
-    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
-    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
-    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
-    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
-    pub marker: Option<String>,
-
-    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
-    /// greater than 5000, the server will return up to 5000 items.
-    pub maxresults: Option<i32>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// Filters the results to return only containers whose name begins with the specified prefix.
-    pub prefix: Option<String>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
-impl BlobServiceClientListContainersSegmentOptions<'_> {
-    /// Transforms this [`BlobServiceClientListContainersSegmentOptions`] into a new `BlobServiceClientListContainersSegmentOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> BlobServiceClientListContainersSegmentOptions<'static> {
-        BlobServiceClientListContainersSegmentOptions {
-            client_request_id: self.client_request_id,
-            include: self.include,
-            marker: self.marker,
-            maxresults: self.maxresults,
-            method_options: ClientMethodOptions {
-                context: self.method_options.context.into_owned(),
-            },
-            prefix: self.prefix,
-            timeout: self.timeout,
-        }
-    }
-}
-
-/// Options to be passed to `BlobServiceClient::set_properties()`
-#[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientSetPropertiesOptions<'a> {
-    /// An opaque, globally-unique, client-generated string identifier for the request.
-    pub client_request_id: Option<String>,
-
-    /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
-
-    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
-    pub timeout: Option<i32>,
-}
-
 /// Options to be passed to `BlockBlobClient::commit_block_list()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientCommitBlockListOptions<'a> {
@@ -2148,6 +1615,402 @@ pub struct BlockBlobClientUploadBlobFromUrlOptions<'a> {
     /// Optional. An MD5 hash of the blob content. Note that this hash is not validated, as the hashes for the individual blocks
     /// were validated when each was uploaded.
     pub transactional_content_md5: Option<Vec<u8>>,
+}
+
+/// Options to be passed to `ContainerClient::acquire_lease()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientAcquireLeaseOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// Optional. The proposed lease ID for the container.
+    pub proposed_lease_id: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::break_lease()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientBreakLeaseOptions<'a> {
+    /// For a break operation, proposed duration the lease should continue before it is broken, in seconds, between 0 and 60.
+    /// This break period is only used if it is shorter than the time remaining on the lease. If longer, the time remaining on
+    /// the lease is used. A new lease will not be available before the break period has expired, but the lease may be held for
+    /// longer than the break period. If this header does not appear with a break operation, a fixed-duration lease breaks after
+    /// the remaining lease period elapses, and an infinite lease breaks immediately.
+    pub break_period: Option<i32>,
+
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::change_lease()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientChangeLeaseOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::create()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientCreateOptions<'a> {
+    /// The public access setting for the container.
+    pub access: Option<PublicAccessType>,
+
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Optional. Version 2019-07-07 and later. Specifies the default encryption scope to set on the container and use for all
+    /// future writes.
+    pub default_encryption_scope: Option<String>,
+
+    /// The metadata headers.
+    pub metadata: Option<HashMap<String, String>>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// If a blob has a lease and the lease is of infinite duration then the value of this header is set to true, otherwise it
+    /// is set to false.
+    pub prevent_encryption_scope_override: Option<bool>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::delete()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientDeleteOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::find_blobs_by_tags()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientFindBlobsByTagsOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Include this parameter to specify one or more datasets to include in the response.
+    pub include: Option<Vec<FilterBlobsIncludeItem>>,
+
+    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
+    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
+    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
+    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::get_access_policy()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientGetAccessPolicyOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::get_account_info()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientGetAccountInfoOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::get_properties()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientGetPropertiesOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::list_blob_flat_segment()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientListBlobFlatSegmentOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Include this parameter to specify one or more datasets to include in the response.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
+    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
+    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
+    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// Filters the results to return only containers whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+impl ContainerClientListBlobFlatSegmentOptions<'_> {
+    /// Transforms this [`ContainerClientListBlobFlatSegmentOptions`] into a new `ContainerClientListBlobFlatSegmentOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> ContainerClientListBlobFlatSegmentOptions<'static> {
+        ContainerClientListBlobFlatSegmentOptions {
+            client_request_id: self.client_request_id,
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: ClientMethodOptions {
+                context: self.method_options.context.into_owned(),
+            },
+            prefix: self.prefix,
+            timeout: self.timeout,
+        }
+    }
+}
+
+/// Options to be passed to `ContainerClient::list_blob_hierarchy_segment()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientListBlobHierarchySegmentOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Include this parameter to specify one or more datasets to include in the response.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
+    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
+    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
+    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// Filters the results to return only containers whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+impl ContainerClientListBlobHierarchySegmentOptions<'_> {
+    /// Transforms this [`ContainerClientListBlobHierarchySegmentOptions`] into a new `ContainerClientListBlobHierarchySegmentOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> ContainerClientListBlobHierarchySegmentOptions<'static> {
+        ContainerClientListBlobHierarchySegmentOptions {
+            client_request_id: self.client_request_id,
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: ClientMethodOptions {
+                context: self.method_options.context.into_owned(),
+            },
+            prefix: self.prefix,
+            timeout: self.timeout,
+        }
+    }
+}
+
+/// Options to be passed to `ContainerClient::release_lease()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientReleaseLeaseOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::rename()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientRenameOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// A lease ID for the source path. If specified, the source path must have an active lease and the lease ID must match.
+    pub source_lease_id: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::renew_lease()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientRenewLeaseOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::restore()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientRestoreOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Optional. Version 2019-12-12 and later. Specifies the name of the deleted container to restore.
+    pub deleted_container_name: Option<String>,
+
+    /// Optional. Version 2019-12-12 and later. Specifies the version of the deleted container to restore.
+    pub deleted_container_version: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::set_access_policy()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientSetAccessPolicyOptions<'a> {
+    /// The public access setting for the container.
+    pub access: Option<PublicAccessType>,
+
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// A date-time value. A request is made under the condition that the resource has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ContainerClient::set_metadata()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ContainerClientSetMetadataOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// A date-time value. A request is made under the condition that the resource has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
 }
 
 /// Options to be passed to `PageBlobClient::clear_pages()`
@@ -2664,6 +2527,143 @@ pub struct PageBlobClientUploadPagesFromUrlOptions<'a> {
 
     /// Specify this header value to operate only on a blob if it has not been modified since the specified date/time.
     pub source_if_unmodified_since: Option<OffsetDateTime>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ServiceClient::find_blobs_by_tags()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ServiceClientFindBlobsByTagsOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Include this parameter to specify one or more datasets to include in the response.
+    pub include: Option<Vec<FilterBlobsIncludeItem>>,
+
+    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
+    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
+    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
+    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ServiceClient::get_account_info()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ServiceClientGetAccountInfoOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ServiceClient::get_properties()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ServiceClientGetPropertiesOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ServiceClient::get_statistics()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ServiceClientGetStatisticsOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ServiceClient::get_user_delegation_key()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ServiceClientGetUserDelegationKeyOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `ServiceClient::list_containers_segment()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ServiceClientListContainersSegmentOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Include this parameter to specify that the container's metadata be returned as part of the response body.
+    pub include: Option<Vec<ListContainersIncludeType>>,
+
+    /// A string value that identifies the portion of the list of containers to be returned with the next listing operation. The
+    /// operation returns the NextMarker value within the response body if the listing operation did not return all containers
+    /// remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in
+    /// a subsequent call to request the next page of list items. The marker value is opaque to the client.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// Filters the results to return only containers whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
+    pub timeout: Option<i32>,
+}
+
+impl ServiceClientListContainersSegmentOptions<'_> {
+    /// Transforms this [`ServiceClientListContainersSegmentOptions`] into a new `ServiceClientListContainersSegmentOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> ServiceClientListContainersSegmentOptions<'static> {
+        ServiceClientListContainersSegmentOptions {
+            client_request_id: self.client_request_id,
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: ClientMethodOptions {
+                context: self.method_options.context.into_owned(),
+            },
+            prefix: self.prefix,
+            timeout: self.timeout,
+        }
+    }
+}
+
+/// Options to be passed to `ServiceClient::set_properties()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct ServiceClientSetPropertiesOptions<'a> {
+    /// An opaque, globally-unique, client-generated string identifier for the request.
+    pub client_request_id: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
