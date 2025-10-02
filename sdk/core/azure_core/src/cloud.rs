@@ -69,7 +69,7 @@ impl Audiences {
     }
 
     /// Get a module's audience.
-    pub fn audience<T: 'static>(&self) -> Option<&str> {
+    pub fn get<T: 'static>(&self) -> Option<&str> {
         self.0.get(&TypeId::of::<T>()).map(|s| s.as_str())
     }
 
@@ -103,9 +103,9 @@ mod tests {
         };
 
         assert_eq!(custom.authority_host, "https://login.mycloud.local");
-        assert_eq!(custom.audiences.audience::<A>(), Some("A"));
-        assert_eq!(custom.audiences.audience::<B>(), Some("B"));
-        assert_eq!(custom.audiences.audience::<C>(), None);
+        assert_eq!(custom.audiences.get::<A>(), Some("A"));
+        assert_eq!(custom.audiences.get::<B>(), Some("B"));
+        assert_eq!(custom.audiences.get::<C>(), None);
     }
 
     #[test]
