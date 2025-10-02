@@ -34,7 +34,8 @@ pub enum CloudConfiguration {
     /// };
     ///
     /// let mut custom = CustomConfiguration::default();
-    /// custom.audiences = Audiences::new().with::<azure_service_module::Audience>("https://service.mycloud.local".to_string());
+    /// custom.audiences = Audiences::new()
+    ///     .with::<azure_service_module::Audience>("https://service.mycloud.local".to_string());
     /// custom.authority_host = "https://login.mycloud.local".to_string();
     /// let cloud: CloudConfiguration = custom.into();
     /// ```
