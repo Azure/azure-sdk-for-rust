@@ -59,4 +59,4 @@ socks5 = ["dep:tokio-socks", "dep:native-tls", "dep:tokio-native-tls"]
 workspace = true
 
 [package.metadata.docs.rs]
-features = ["fe2o3_amqp"]
+features = ["fe2o3_amqp", "socks5"]
