@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("README.md")]
+#![cfg(not(target_arch = "wasm32"))]
 
 use crate::TestContext;
 use azure_core::{time::Duration, Error, Result};
@@ -17,8 +18,7 @@ use std::{
 };
 use tokio::{select, task::JoinSet};
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 pub trait PerfTest: Send + Sync {
     async fn setup(&self, context: &TestContext) -> azure_core::Result<()>;
     async fn run(&self /*, context: &TestContext*/) -> azure_core::Result<()>;
@@ -67,8 +67,7 @@ pub struct TestOption {
     pub sensitive: bool,
 }
 
-#[derive(Debug)]
-#[allow(dead_code)]
+#[derive(Debug, Clone)]
 struct PerfRunnerOptions {
     no_cleanup: bool,
     iterations: u32,
@@ -76,6 +75,7 @@ struct PerfRunnerOptions {
     duration: Duration,
     warmup: Duration,
     disable_progress: bool,
+    #[allow(dead_code)]
     test_results_filename: String,
 }
 
@@ -109,10 +109,9 @@ impl From<&ArgMatches> for PerfRunnerOptions {
 }
 
 /// Context information required by performance tests.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PerfRunner {
     options: PerfRunnerOptions,
-    #[allow(dead_code)]
     tests: Vec<TestMetadata>,
     arguments: ArgMatches,
     package_dir: &'static str,
@@ -264,7 +263,7 @@ impl PerfRunner {
             let operations_per_second =
                 self.options.duration.as_seconds_f64() / iteration_count as f64;
             let duration_per_operation = Duration::seconds_f64(operations_per_second);
-            println!("{} seconds/operation", duration_per_operation);
+            println!("{:4} seconds/operation", duration_per_operation);
         }
         Ok(())
     }
@@ -298,7 +297,7 @@ impl PerfRunner {
                 _ = async {
                         loop {
                             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                            println!("{:?} elapsed: {} op/sec,  {} sec/ operation.",
+                            println!("{:<10?} elapsed: {:.5} op/sec, {:4} sec/operation.",
                                 start.elapsed(),
                                 self.progress.load(Ordering::SeqCst) as f64 / start.elapsed().as_secs_f64(),
                                 Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));

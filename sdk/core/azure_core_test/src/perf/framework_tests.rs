@@ -51,27 +51,25 @@ fn create_fibonacci1_test(runner: &PerfRunner) -> CreatePerfTestReturn {
             Ok(())
         }
     }
-    // Manually handle the Result instead of using ? because this function does not return a Result.
-    let count: Option<&String> = match runner.try_get_test_arg("count") {
-        Ok(v) => v,
-        Err(e) => {
-            // Return a future that immediately yields the error.
-            return Box::pin(async move { Err(e) });
-        }
-    };
-    println!("Fibonacci1Test with count: {:?}", count);
-    let count = count.expect("count argument is mandatory");
-    let count = match count.parse::<u32>() {
-        Ok(v) => v,
-        Err(e) => {
-            let err = azure_core::Error::with_message(
+
+    // Helper function to handle the async creation of the test.
+    async fn create_test(runner: PerfRunner) -> Result<Box<dyn PerfTest>> {
+        let count: Option<&String> = runner.try_get_test_arg("count")?;
+
+        println!("Fibonacci1Test with count: {:?}", count);
+        let count = count.expect("count argument is mandatory");
+        let count = count.parse::<u32>().map_err(|e| {
+            azure_core::Error::with_error(
                 azure_core::error::ErrorKind::Other,
-                format!("invalid count argument: {}", e),
-            );
-            return Box::pin(async move { Err(err) });
-        }
-    };
-    Box::pin(async move { Ok(Box::new(Fibonacci1Test { count }) as Box<dyn PerfTest>) })
+                e,
+                "Invalid count argument",
+            )
+        })?;
+        Ok(Box::new(Fibonacci1Test { count }) as Box<dyn PerfTest>)
+    }
+
+    // Return a pinned future that creates the test.
+    Box::pin(create_test(runner.clone()))
 }
 
 #[tokio::test]

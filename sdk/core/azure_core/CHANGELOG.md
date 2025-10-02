@@ -16,7 +16,6 @@
 
 ### Breaking Changes
 
-
 - Changed `ClientOptions::retry` from `Option<RetryOptions>` to `RetryOptions`.
 - Changed `DeserializeWith::deserialize_with()` to be sync.
 - Changed `Pipeline::send()` to return a `Result<RawResponse>`.

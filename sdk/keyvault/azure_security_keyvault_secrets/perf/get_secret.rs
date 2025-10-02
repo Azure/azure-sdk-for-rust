@@ -35,24 +35,19 @@ impl GetSecrets {
     }
 
     fn create_new_test(runner: &PerfRunner) -> CreatePerfTestReturn {
-        let vault_url_ref: Option<&String> = match runner.try_get_test_arg("vault_url") {
-            Ok(v) => v,
-            Err(e) => {
-                // Return a future that immediately yields the error.
-                return Box::pin(async move { Err(e) });
-            }
-        };
-        // Own the String so the future can be 'static.
-        let vault_url = vault_url_ref
-            .expect("vault_url argument is mandatory")
-            .clone();
-        Box::pin(async move {
+        async fn create_secret_client(runner: PerfRunner) -> Result<Box<dyn PerfTest>> {
+            let vault_url_ref: Option<&String> = runner.try_get_test_arg("vault_url")?;
+            let vault_url = vault_url_ref
+                .expect("vault_url argument is mandatory")
+                .clone();
             Ok(Box::new(GetSecrets {
                 vault_url,
                 random_key_name: OnceLock::new(),
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
-        })
+        }
+
+        Box::pin(create_secret_client(runner.clone()))
     }
 
     fn create_random_key_name() -> String {
@@ -103,8 +98,7 @@ impl PerfTest for GetSecrets {
             .unwrap()
             .get_secret(self.get_random_key_name(), None)
             .await?
-            .into_body()
-            .await?;
+            .into_body()?;
         Ok(())
     }
 }
