@@ -6,6 +6,9 @@
 
 ### Breaking Changes
 
+- Changed `BlobClient::download()` to return an `AsyncResponse` instead of a `Response`. This allows for streaming large payloads outside the internal HTTP pipeline.
+- Client methods that return a `Response<T>>` asynchronously buffer the entire model within the internal pipeline, so `into_body()` and other methods on the response are no longer async.
+
 ### Bugs Fixed
 
 ### Other Changes

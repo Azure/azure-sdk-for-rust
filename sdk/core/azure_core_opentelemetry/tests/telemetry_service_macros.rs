@@ -8,7 +8,7 @@ use azure_core::{
     credentials::TokenCredential,
     fmt::SafeDebug,
     http::{
-        BufResponse, ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, Request,
+        ClientMethodOptions, ClientOptions, InstrumentationOptions, Pipeline, RawResponse, Request,
         Url,
     },
     tracing, Result,
@@ -95,7 +95,7 @@ impl TestServiceClientWithMacros {
         &self,
         path: &str,
         options: Option<TestServiceClientWithMacrosGetMethodOptions<'_>>,
-    ) -> Result<BufResponse> {
+    ) -> Result<RawResponse> {
         let options = options.unwrap_or_default();
         let mut url = self.endpoint.clone();
         url.set_path(path);
@@ -145,7 +145,7 @@ impl TestServiceClientWithMacros {
         &self,
         path: &str,
         options: Option<TestServiceClientWithMacrosGetMethodOptions<'_>>,
-    ) -> Result<BufResponse> {
+    ) -> Result<RawResponse> {
         let options = options.unwrap_or_default();
 
         let mut url = self.endpoint.clone();

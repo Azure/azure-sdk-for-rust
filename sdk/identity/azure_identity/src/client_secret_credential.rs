@@ -124,7 +124,7 @@ impl ClientSecretCredential {
         match res.status() {
             StatusCode::Ok => {
                 let token_response: EntraIdTokenResponse =
-                    deserialize(CLIENT_SECRET_CREDENTIAL, res).await?;
+                    deserialize(CLIENT_SECRET_CREDENTIAL, res)?;
                 Ok(AccessToken::new(
                     token_response.access_token,
                     OffsetDateTime::now_utc() + Duration::seconds(token_response.expires_in),
@@ -132,7 +132,7 @@ impl ClientSecretCredential {
             }
             _ => {
                 let error_response: EntraIdErrorResponse =
-                    deserialize(CLIENT_SECRET_CREDENTIAL, res).await?;
+                    deserialize(CLIENT_SECRET_CREDENTIAL, res)?;
                 let message = if error_response.error_description.is_empty() {
                     format!("{} authentication failed.", CLIENT_SECRET_CREDENTIAL)
                 } else {

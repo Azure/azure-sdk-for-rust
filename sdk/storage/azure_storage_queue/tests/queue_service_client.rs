@@ -85,8 +85,7 @@ async fn test_set_queue_properties(ctx: TestContext) -> Result<()> {
     let properties = queue_service_client
         .get_properties(None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     let response = queue_service_client
         .set_properties(properties.try_into()?, None)
@@ -123,7 +122,7 @@ pub async fn test_list_queues(ctx: TestContext) -> Result<()> {
     // Iterate through all pages
     while let Some(page) = page_iterator.next().await {
         let response = page?;
-        let queue_list = response.into_body().await?;
+        let queue_list = response.into_body()?;
 
         //Collect queue names from this page
         for queue_item in &queue_list.queue_items {
@@ -159,7 +158,7 @@ pub async fn test_get_queue_statistics(ctx: TestContext) -> Result<()> {
         "Expected status code 200, got {}",
         response.status(),
     );
-    let stats = response.into_body().await?;
+    let stats = response.into_body()?;
     let geo_replication = stats.geo_replication.as_ref().unwrap();
     assert!(
         geo_replication.status.as_ref().unwrap() == &GeoReplicationStatusType::Live,

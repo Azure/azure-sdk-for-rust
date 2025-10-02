@@ -42,8 +42,7 @@ async fn test_poller() -> Result<(), Box<dyn std::error::Error>> {
         .begin_create_certificate("my-cert", params.try_into()?, None)?
         .wait()
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(operation.status.as_deref(), Some("completed"));
     assert!(operation.target.is_some());
 

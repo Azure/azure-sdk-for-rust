@@ -38,3 +38,7 @@ pub mod tracing {
 
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
+
+mod private {
+    pub trait Sealed {}
+}

@@ -12,7 +12,7 @@ use tracing::info;
 
 /// [`Policy`] to log a request and response.
 #[derive(Clone, Debug, Default)]
-pub struct LoggingPolicy {
+pub(crate) struct LoggingPolicy {
     allowed_headers: HashSet<Cow<'static, str>>,
     allowed_query_params: HashSet<Cow<'static, str>>,
 }

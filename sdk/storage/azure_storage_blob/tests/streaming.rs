@@ -46,7 +46,7 @@ async fn upload<const CONTENT_LENGTH: usize>(client: &BlobClient) -> azure_core:
 #[tracing::instrument(skip_all, fields(content_length), err)]
 async fn download(client: &BlobClient) -> azure_core::Result<u64> {
     let mut len = 0;
-    let mut response = client.download(None).await?.into_raw_body();
+    let mut response = client.download(None).await?.into_stream();
     while let Some(data) = response.try_next().await? {
         tracing::debug!("received {} bytes", data.len());
 

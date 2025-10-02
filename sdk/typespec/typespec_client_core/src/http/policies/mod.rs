@@ -13,7 +13,7 @@ mod retry;
 mod transport;
 
 pub use custom_headers::*;
-pub use logging::*;
+pub(crate) use logging::*;
 pub use retry::*;
 pub use transport::*;
 

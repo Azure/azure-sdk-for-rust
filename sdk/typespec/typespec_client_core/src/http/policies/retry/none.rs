@@ -11,7 +11,7 @@ use std::sync::Arc;
 ///
 /// Use this policy as a stub to disable retry policies altogether.
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct NoRetryPolicy {
+pub(crate) struct NoRetryPolicy {
     retry_headers: RetryHeaders,
 }
 

@@ -112,7 +112,10 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(17, content_length.unwrap());
-    assert_eq!(Bytes::from_static(data), response_body.collect().await?);
+    assert_eq!(
+        Bytes::from_static(data),
+        response_body.collect().await?.as_ref()
+    );
 
     // Overwrite Scenarios
     let new_data = b"hello overwritten rusty world";
@@ -149,7 +152,10 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(29, content_length.unwrap());
-    assert_eq!(Bytes::from_static(new_data), response_body.collect().await?);
+    assert_eq!(
+        Bytes::from_static(new_data),
+        response_body.collect().await?.as_ref()
+    );
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -203,7 +209,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(17, content_length.unwrap());
     assert_eq!(
         b"hello rusty world".to_vec(),
-        response_body.collect().await?
+        response_body.collect().await?.to_vec(),
     );
 
     container_client.delete_container(None).await?;
@@ -421,7 +427,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(10, content_length.unwrap());
-    assert_eq!(data.to_vec(), response_body.collect().await?);
+    assert_eq!(data.to_vec(), response_body.collect().await?.to_vec());
 
     blob_client.break_lease(None).await?;
     container_client.delete_container(None).await?;
@@ -445,7 +451,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     blob_client.set_tags(blob_tags.clone(), None).await?;
 
     // Assert
-    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    let response_tags = blob_client.get_tags(None).await?.into_body()?;
     let map: HashMap<String, String> = response_tags.try_into()?;
     assert_eq!(blob_tags, map);
 
@@ -453,7 +459,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     blob_client.set_tags(HashMap::new(), None).await?;
 
     // Assert
-    let response_tags = blob_client.get_tags(None).await?.into_body().await?;
+    let response_tags = blob_client.get_tags(None).await?.into_body()?;
     let map: HashMap<String, String> = response_tags.try_into()?;
     assert_eq!(HashMap::new(), map);
 

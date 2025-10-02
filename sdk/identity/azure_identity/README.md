@@ -165,7 +165,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure CLI]: https://learn.microsoft.com/cli/azure
 [azure_security_keyvault_secrets]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/keyvault/azure_security_keyvault_secrets
 [Azure subscription]: https://azure.microsoft.com/free/
-[cert_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ClientCertificateCredential.html
+[cert_cred_ref]: https://aka.ms/azsdk/rust/identity/cert-docs
 [cli_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.AzureCliCredential.html
 [devtool_cred_ref]: https://aka.ms/azsdk/rust/identity/docs#structs
 [managed_id_cred_ref]: https://docs.rs/azure_identity/latest/azure_identity/struct.ManagedIdentityCredential.html

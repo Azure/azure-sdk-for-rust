@@ -152,7 +152,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         match res.status() {
             StatusCode::Ok => {
                 let token_response: EntraIdTokenResponse =
-                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res).await?;
+                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res)?;
                 Ok(AccessToken::new(
                     token_response.access_token,
                     OffsetDateTime::now_utc() + Duration::seconds(token_response.expires_in),
@@ -160,7 +160,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
             }
             _ => {
                 let error_response: EntraIdErrorResponse =
-                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res).await?;
+                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res)?;
                 let message = if error_response.error_description.is_empty() {
                     format!("{} authentication failed.", CLIENT_ASSERTION_CREDENTIAL)
                 } else {

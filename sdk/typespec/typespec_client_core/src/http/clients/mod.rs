@@ -38,5 +38,11 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     ///
     /// It does not consume the request. Implementors are expected to clone the necessary parts
     /// of the request and pass them to the underlying transport.
+    ///
+    /// # Errors
+    ///
+    /// The built-in [`RetryPolicy`](crate::http::policies::RetryPolicy) will resend the [`Request`]
+    /// for some [`ErrorKind::HttpResponse`](crate::error::ErrorKind::HttpResponse) status codes e.g., [`StatusCode::TooManyRequests`](crate::http::StatusCode::TooManyRequests) and
+    /// for [`ErrorKind::Io`](crate::error::ErrorKind::Io) returned by your `HttpClient` for situations like connection resets.
     async fn execute_request(&self, request: &Request) -> Result<BufResponse>;
 }

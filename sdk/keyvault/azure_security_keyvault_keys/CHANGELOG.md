@@ -6,6 +6,7 @@
 
 ### Breaking Changes
 
+- Client methods that return a `Response<T>>` asynchronously buffer the entire model within the internal pipeline, so `into_body()` and other methods on the response are no longer async.
 - Renamed `KeyType::EC` to `KeyType::Ec` to align with guidelines.
 - Renamed `KeyType::RSA` to `KeyType::Rsa` to align with guidelines.
 - Renamed `EncryptionAlgorithm::RSA1_5` to `EncryptionAlgorithm::Rsa1_5` to align with guidelines.

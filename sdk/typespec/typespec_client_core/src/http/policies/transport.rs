@@ -14,7 +14,7 @@ use tracing::debug;
 /// The final pipeline policy that defines the HTTP transport.
 #[derive(Debug, Clone)]
 pub struct TransportPolicy {
-    pub(crate) transport_options: Transport,
+    transport: Transport,
 }
 
 impl TransportPolicy {
@@ -22,10 +22,13 @@ impl TransportPolicy {
     ///
     /// # Arguments
     /// * `transport_options` - The transport options to use for this policy.
-    pub fn new(transport_options: Transport) -> Self {
-        Self { transport_options }
+    pub fn new(transport: Transport) -> Self {
+        Self { transport }
     }
 }
+
+/// When present in [`Context`], signals to the `TransportPolicy` to buffer the entire [`BufResponse`](crate::http::BufResponse).
+pub(crate) struct Buffer;
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
@@ -49,7 +52,11 @@ impl Policy for TransportPolicy {
             "sending request '{}'",
             request.url.sanitize(&DEFAULT_ALLOWED_QUERY_PARAMETERS)
         );
-        let response = { self.transport_options.send(ctx, request) };
+        let response = { self.transport.send(ctx, request) };
+
+        if ctx.value::<Buffer>().is_some() {
+            return response.await?.buffer().await;
+        }
 
         response.await
     }

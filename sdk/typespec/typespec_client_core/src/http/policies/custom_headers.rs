@@ -10,6 +10,36 @@ use std::sync::Arc;
 use tracing::trace;
 
 /// Custom headers to add to a request.
+///
+/// # Examples
+///
+/// ```no_run
+/// use typespec_client_core::http::{
+///     headers::Headers, policies::CustomHeaders, ClientMethodOptions, Context,
+/// };
+///
+/// # #[tokio::main] async fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let mut headers = Headers::new();
+/// headers.insert("x-contoso-custom", "custom-value");
+///
+/// let mut context = Context::new();
+/// context.insert::<CustomHeaders>(headers.into());
+///
+/// let options = ClientSendOptions {
+///     method_options: ClientMethodOptions {
+///         context,
+///         ..Default::default()
+///     },
+///     ..Default::default()
+/// };
+/// # let client: Client = unimplemented!();
+/// client.send(Some(options)).await?;
+///
+/// # Ok(()) }
+/// # struct Client;
+/// # impl Client { async fn send(&self, options: Option<ClientSendOptions<'_>>) -> typespec::Result<()> { todo!() } }
+/// # #[derive(Default)] struct ClientSendOptions<'a> { method_options: typespec_client_core::http::ClientMethodOptions<'a> }
+/// ```
 #[derive(Debug, Clone)]
 pub struct CustomHeaders(Headers);
 
@@ -21,7 +51,7 @@ impl From<Headers> for CustomHeaders {
 
 /// [`Policy`] to add [`CustomHeaders`] to a request.
 #[derive(Clone, Debug, Default)]
-pub struct CustomHeadersPolicy {}
+pub(crate) struct CustomHeadersPolicy {}
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
