@@ -26,18 +26,18 @@ use crate::{
 
 /// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
 #[derive(Debug, Clone)]
-pub struct CosmosPipeline {
+pub struct CosmosConnection {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
 }
 
-impl CosmosPipeline {
+impl CosmosConnection {
     pub fn new(
         endpoint: Url,
         auth_policy: AuthorizationPolicy,
         client_options: ClientOptions,
     ) -> Self {
-        CosmosPipeline {
+        CosmosConnection {
             endpoint,
             pipeline: azure_core::http::Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
