@@ -35,7 +35,7 @@ extends:
     Artifacts:
     - name: azure_security_keyvault_secrets
       releaseInBatch: ${{ parameters.release_azure_security_keyvault_secrets }}
-    - name: azure_security_keyvault_keys
-      releaseInBatch: ${{ parameters.release_azure_security_keyvault_keys }}
     - name: azure_security_keyvault_certificates
       releaseInBatch: ${{ parameters.release_azure_security_keyvault_certificates }}
+    - name: azure_security_keyvault_keys
+      releaseInBatch: ${{ parameters.release_azure_security_keyvault_keys }}
