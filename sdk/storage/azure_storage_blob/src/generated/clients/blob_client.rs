@@ -934,7 +934,7 @@ impl BlobClient {
     /// access to response headers. For example:
     ///
     /// ```no_run
-    /// use azure_core::{Result, http::{AsyncResponse, NoFormat}};
+    /// use azure_core::{Result, http::AsyncResponse};
     /// use azure_storage_blob::models::{BlobClientDownloadResult, BlobClientDownloadResultHeaders};
     /// async fn example() -> Result<()> {
     ///     let response: AsyncResponse<BlobClientDownloadResult> = unimplemented!();

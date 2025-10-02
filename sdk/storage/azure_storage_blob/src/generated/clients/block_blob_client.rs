@@ -19,8 +19,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
-        Response, Url, XmlFormat,
+        AsyncResponse, ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions,
+        PipelineStreamOptions, Request, RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
     tracing, Bytes, Result,
@@ -371,10 +371,10 @@ impl BlockBlobClient {
     /// access to response headers. For example:
     ///
     /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_core::{Result, http::AsyncResponse};
     /// use azure_storage_blob::models::{BlockBlobClientQueryResult, BlockBlobClientQueryResultHeaders};
     /// async fn example() -> Result<()> {
-    ///     let response: Response<BlockBlobClientQueryResult, NoFormat> = unimplemented!();
+    ///     let response: AsyncResponse<BlockBlobClientQueryResult> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(accept_ranges) = response.accept_ranges()? {
     ///         println!("Accept-Ranges: {:?}", accept_ranges);
@@ -426,7 +426,7 @@ impl BlockBlobClient {
         &self,
         query_request: RequestContent<QueryRequest, XmlFormat>,
         options: Option<BlockBlobClientQueryOptions<'_>>,
-    ) -> Result<Response<BlockBlobClientQueryResult, NoFormat>> {
+    ) -> Result<AsyncResponse<BlockBlobClientQueryResult>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -482,10 +482,10 @@ impl BlockBlobClient {
         request.set_body(query_request);
         let rsp = self
             .pipeline
-            .send(
+            .stream(
                 &ctx,
                 &mut request,
-                Some(PipelineSendOptions {
+                Some(PipelineStreamOptions {
                     check_success: CheckSuccessOptions {
                         success_codes: &[200, 206],
                     },
