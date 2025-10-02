@@ -674,7 +674,10 @@ async fn test_perf_runner_with_test_functions() {
         .setup(&test_context)
         .await
         .expect("Setup failed");
-    perf_tests_impl.run(/*&context */).await.expect("Run failed");
+    perf_tests_impl
+        .run(/*&test_context*/)
+        .await
+        .expect("Run failed");
     perf_tests_impl
         .cleanup(&test_context)
         .await

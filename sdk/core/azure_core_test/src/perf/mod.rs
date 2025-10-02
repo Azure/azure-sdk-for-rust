@@ -3,6 +3,7 @@
 
 #![doc = include_str!("README.md")]
 
+use crate::TestContext;
 use azure_core::{time::Duration, Error, Result};
 use clap::ArgMatches;
 use std::{
@@ -14,15 +15,13 @@ use std::{
         Arc,
     },
 };
-use tokio::select;
-
-use crate::TestContext;
+use tokio::{select, task::JoinSet};
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait PerfTest: Send + Sync {
     async fn setup(&self, context: &TestContext) -> azure_core::Result<()>;
-    async fn run(&self /*context: &TestContext*/) -> azure_core::Result<()>;
+    async fn run(&self /*, context: &TestContext*/) -> azure_core::Result<()>;
     async fn cleanup(&self, context: &TestContext) -> azure_core::Result<()>;
 }
 
@@ -76,6 +75,7 @@ struct PerfRunnerOptions {
     parallel: usize,
     duration: Duration,
     warmup: Duration,
+    disable_progress: bool,
     test_results_filename: String,
 }
 
@@ -91,6 +91,7 @@ impl From<&ArgMatches> for PerfRunnerOptions {
             parallel: *matches
                 .get_one::<usize>("parallel")
                 .expect("defaulted by clap"),
+            disable_progress: matches.get_flag("no-progress"),
             duration: Duration::seconds(
                 *matches
                     .get_one::<i64>("duration")
@@ -116,6 +117,7 @@ pub struct PerfRunner {
     arguments: ArgMatches,
     package_dir: &'static str,
     module_name: &'static str,
+    progress: Arc<AtomicU64>,
 }
 
 impl PerfRunner {
@@ -132,6 +134,7 @@ impl PerfRunner {
             arguments,
             package_dir,
             module_name,
+            progress: Arc::new(AtomicU64::new(0)),
         })
     }
 
@@ -156,6 +159,7 @@ impl PerfRunner {
             arguments,
             package_dir,
             module_name,
+            progress: Arc::new(AtomicU64::new(0)),
         })
     }
 
@@ -229,32 +233,26 @@ impl PerfRunner {
             println!("========== Starting test setup ==========");
             test_instance.setup(&context).await?;
 
-            println!("========== Starting test warmup ==========");
+            println!(
+                "========== Starting test warmup for {} ==========",
+                self.options.warmup
+            );
 
-            self.run_test_for(Arc::clone(&test_instance), &context, self.options.warmup)
+            self.run_test_for(Arc::clone(&test_instance), test.name, self.options.warmup)
                 .await?;
 
-            println!("========== Starting test run ==========");
-            println!("Running test for {} seconds", self.options.duration);
-            println!("Parallelism: {}", self.options.parallel);
-            let iteration_count = self
-                .run_test_for(Arc::clone(&test_instance), &context, self.options.duration)
+            println!(
+                "========== Starting test run for {} ==========",
+                self.options.duration
+            );
+            self.run_test_for(Arc::clone(&test_instance), test.name, self.options.duration)
                 .await?;
             if !self.options.no_cleanup {
                 println!("========== Starting test cleanup ==========");
                 test_instance.cleanup(&context).await?;
             }
-            println!("========== Starting test cleanup ==========");
-            test_instance.cleanup(&context).await?;
 
-            println!(
-                "Completed test iteration {}/{} - {} iterations run in {} seconds - {} iterations/second",
-                iteration + 1,
-                self.options.iterations,
-                iteration_count,
-                self.options.duration.as_seconds_f64(),
-                iteration_count as f64 / self.options.duration.as_seconds_f64()
-            );
+            let iteration_count = self.progress.load(Ordering::SeqCst);
             println!(
                 "Completed test iteration {}/{} - {} iterations run in {} seconds - {} seconds/iteration",
                 iteration + 1,
@@ -263,44 +261,49 @@ impl PerfRunner {
                 self.options.duration.as_seconds_f64(),
                 self.options.duration.as_seconds_f64() / iteration_count as f64
             );
+            let operations_per_second =
+                self.options.duration.as_seconds_f64() / iteration_count as f64;
+            let duration_per_operation = Duration::seconds_f64(operations_per_second);
+            println!("{} seconds/operation", duration_per_operation);
         }
         Ok(())
     }
     pub async fn run_test_for(
         &self,
         test_instance: Arc<dyn PerfTest>,
-        _context: &TestContext,
+        _test_name: &str,
         duration: Duration,
-    ) -> azure_core::Result<u64> {
-        let iteration_count = Arc::new(AtomicU64::new(0));
-        let mut tasks = Vec::with_capacity(self.options.parallel);
+    ) -> azure_core::Result<()> {
+        let mut tasks: JoinSet<Result<()>> = JoinSet::new();
         for _ in 0..self.options.parallel {
             let test_instance_clone = Arc::clone(&test_instance);
-            let ic = Arc::clone(&iteration_count);
-            let task: tokio::task::JoinHandle<Result<()>> = tokio::spawn(async move {
+            let progress = self.progress.clone();
+            // let package_dir = self.package_dir;
+            // let module_name = self.module_name;
+            tasks.spawn(async move {
+                //                let context =
+                //                    TestContext::new(package_dir, module_name, " test_name_copy.as_str()")?;
+
                 loop {
-                    if ic.load(Ordering::SeqCst) % 1000 == 0 {
-                        println!("Iteration {}", ic.load(Ordering::SeqCst));
-                    }
-                    test_instance_clone.run().await?;
-                    ic.fetch_add(1, Ordering::SeqCst);
+                    test_instance_clone.run(/*&context*/).await?;
+                    progress.fetch_add(1, Ordering::SeqCst);
                 }
-                #[allow(unreachable_code)]
-                Ok(())
             });
-            tasks.push(task);
         }
-        let timeout = std::time::Duration::from_secs_f64(duration.as_seconds_f64());
+        let start = tokio::time::Instant::now();
+        let timeout = tokio::time::Duration::from_secs_f64(duration.as_seconds_f64());
         select!(
-            _ = futures::future::join_all(tasks) => {
-                println!("All tasks completed unexpectedly.");
-                // All tasks completed (should not happen in normal operation).
-            }
-            _ = tokio::time::sleep(timeout) => {
-                println!("Duration elapsed, stopping tasks.");
-            }
+                _ = tokio::time::sleep(timeout) => {println!("Timeout reached, stopping test tasks: {:?}", start.elapsed());},
+                _ = tasks.join_all() =>  {println!("All test tasks completed: {:?}", start.elapsed());},
+                _ = async {
+                        loop {
+                            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                            println!("{:?} elapsed: {} per operation.", start.elapsed(), Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));
+                        }
+                    }, if !self.options.disable_progress => {},
         );
-        Ok(iteration_count.load(Ordering::SeqCst))
+        println!("Task time elapsed: {:?}", start.elapsed());
+        Ok(())
     }
 
     // * Disable test cleanup
@@ -335,6 +338,7 @@ impl PerfRunner {
                     .value_parser(clap::value_parser!(usize))
                     .global(false),
             )
+            .arg(clap::arg!(--"no-progress" "Disable progress reporting").required(false).global(false))
             .arg(
                 clap::arg!(--duration <SECONDS> "The duration of each test in seconds")
                     .required(false)
