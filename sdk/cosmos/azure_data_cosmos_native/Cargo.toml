@@ -10,11 +10,11 @@ repository.workspace = true
 rust-version.workspace = true
 
 [lib]
-name = "cosmosclient"
+name = "azurecosmos"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-azure_data_cosmos = { path = "../azure_data_cosmos", features = ["c"] }
+azure_data_cosmos = { path = "../azure_data_cosmos", features = ["ffi"] }
 
 [build-dependencies]
 cbindgen = "0.29.0"
