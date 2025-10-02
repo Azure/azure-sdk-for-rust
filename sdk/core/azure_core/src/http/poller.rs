@@ -253,7 +253,7 @@ where
     /// To poll a long-running operation:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{BufResponse, Context, Pipeline, Request, Response, Method, Url, poller::{Poller, PollerResult, PollerState, PollerStatus, StatusMonitor}}, json};
+    /// # use azure_core::{Result, json, http::{Context, Pipeline, RawResponse, Request, Response, Method, Url, poller::{Poller, PollerResult, PollerState, PollerStatus, StatusMonitor}}};
     /// # use serde::Deserialize;
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
@@ -295,9 +295,8 @@ where
     ///             .send(&Context::new(), &mut req, None)
     ///             .await?;
     ///         let (status, headers, body) = resp.deconstruct();
-    ///         let bytes = body.collect().await?;
-    ///         let result: OperationResult = json::from_json(&bytes)?;
-    ///         let resp: Response<OperationResult> = BufResponse::from_bytes(status, headers, bytes).into();
+    ///         let result: OperationResult = json::from_json(&body)?;
+    ///         let resp: Response<OperationResult> = RawResponse::from_bytes(status, headers, body).into();
     ///
     ///         match result.status() {
     ///             PollerStatus::InProgress => {
@@ -541,7 +540,7 @@ fn check_status_code<T, F: Format>(response: &Response<T, F>) -> crate::Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, BufResponse, HttpClient, Method, Request};
+    use crate::http::{headers::Headers, BufResponse, HttpClient, Method, RawResponse, Request};
     use azure_core_test::http::MockHttpClient;
     use futures::FutureExt as _;
     use std::sync::{Arc, Mutex};
@@ -602,7 +601,7 @@ mod tests {
 
                     let test_status: TestStatus = crate::json::from_json(&bytes)?;
                     let response: Response<TestStatus> =
-                        BufResponse::from_bytes(status, headers, bytes).into();
+                        RawResponse::from_bytes(status, headers, bytes).into();
 
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
@@ -622,7 +621,7 @@ mod tests {
         assert!(first_result.is_some());
         let first_response = first_result.unwrap().unwrap();
         assert_eq!(first_response.status(), StatusCode::Created);
-        let first_body = first_response.into_body().await.unwrap();
+        let first_body = first_response.into_body().unwrap();
         assert_eq!(first_body.status(), PollerStatus::InProgress);
 
         // Second poll should succeed (200 OK with Succeeded)
@@ -630,7 +629,7 @@ mod tests {
         assert!(second_result.is_some());
         let second_response = second_result.unwrap().unwrap();
         assert_eq!(second_response.status(), StatusCode::Ok);
-        let second_body = second_response.into_body().await.unwrap();
+        let second_body = second_response.into_body().unwrap();
         assert_eq!(second_body.status(), PollerStatus::Succeeded);
 
         // Third poll should return None (end of stream)
@@ -678,13 +677,16 @@ mod tests {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
-                    let raw_response = client.execute_request(&req).await?;
+                    let raw_response = client
+                        .execute_request(&req)
+                        .await?
+                        .try_into_raw_response()
+                        .await?;
                     let (status, headers, body) = raw_response.deconstruct();
-                    let bytes = body.collect().await?;
 
-                    let test_status: TestStatus = crate::json::from_json(&bytes)?;
+                    let test_status: TestStatus = crate::json::from_json(&body)?;
                     let response: Response<TestStatus> =
-                        BufResponse::from_bytes(status, headers, bytes).into();
+                        RawResponse::from_bytes(status, headers, body).into();
 
                     match test_status.status() {
                         PollerStatus::InProgress => Ok(PollerResult::InProgress {
@@ -704,7 +706,7 @@ mod tests {
         assert!(first_result.is_some());
         let first_response = first_result.unwrap().unwrap();
         assert_eq!(first_response.status(), StatusCode::Created);
-        let first_body = first_response.into_body().await.unwrap();
+        let first_body = first_response.into_body().unwrap();
         assert_eq!(first_body.status(), PollerStatus::InProgress);
 
         // Second poll should succeed (200 OK with Succeeded)
@@ -712,7 +714,7 @@ mod tests {
         assert!(second_result.is_some());
         let second_response = second_result.unwrap().unwrap();
         assert_eq!(second_response.status(), StatusCode::Ok);
-        let second_body = second_response.into_body().await.unwrap();
+        let second_body = second_response.into_body().unwrap();
         assert_eq!(second_body.status(), PollerStatus::Failed);
 
         // Third poll should return None (end of stream)
@@ -760,14 +762,17 @@ mod tests {
                 let client = mock_client.clone();
                 async move {
                     let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
-                    let raw_response = client.execute_request(&req).await?;
+                    let raw_response = client
+                        .execute_request(&req)
+                        .await?
+                        .try_into_raw_response()
+                        .await?;
                     let (status, headers, body) = raw_response.deconstruct();
-                    let bytes = body.collect().await?;
 
                     if status == StatusCode::Ok {
-                        let test_status: TestStatus = crate::json::from_json(&bytes)?;
+                        let test_status: TestStatus = crate::json::from_json(&body)?;
                         let response: Response<TestStatus> =
-                            BufResponse::from_bytes(status, headers, bytes).into();
+                            RawResponse::from_bytes(status, headers, body).into();
 
                         match test_status.status() {
                             PollerStatus::InProgress => Ok(PollerResult::InProgress {
@@ -780,7 +785,7 @@ mod tests {
                     } else {
                         // Return the error response which should trigger check_status_code
                         let response: Response<TestStatus> =
-                            BufResponse::from_bytes(status, headers, bytes).into();
+                            RawResponse::from_bytes(status, headers, body).into();
                         Ok(PollerResult::Done { response })
                     }
                 }

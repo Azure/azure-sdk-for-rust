@@ -5,13 +5,18 @@
 ### Features Added
 
 - Added `Error::with_error_fn()`.
+- Added `http::response::ResponseBody`.
+- Added `RawResponse::deconstruct()`.
+- Added `ResponseBody::from_bytes()`.
 
 ### Breaking Changes
 
-- Changed `RawResponse::json()` from `async` to synchronous function. The body was already buffered.
-- Changed `RawResponse::xml()` from `async` to synchronous function. The body was already buffered.
-- Removed `ErrorKind::http_response()`. Construct an `ErrorResponse::HttpResponse` variant instead.
+- Changed `RawResponse::body()` to return a `&ResponseBody` instead of `&Bytes`. `ResponseBody` wraps `&Bytes`, and implements `AsRef<[u8]>` and `Deref<Target = [u8]>`.
+- Changed `RawResponse::into_body()` to return a `ResponseBody` instead of `Bytes`. `ResponseBody` wraps `&Bytes`, and implements `AsRef<[u8]>` and `Deref<Target = [u8]>`.
+- Changed `RawResponse::json()` from `async` to a sync function. The body was already buffered.
+- Changed `RawResponse::xml()` from `async` to a sync function. The body was already buffered.
 - Moved `AsHeaders`, `FromHeaders`, `Header`, `Headers`, `HeaderName`, and `HeaderValue` to `http::headers` module to align with `typespec_client_core`.
+- Removed `ErrorKind::http_response()`. Construct an `ErrorResponse::HttpResponse` variant instead.
 - Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)"
   - Renamed `Error::full()` to `Error::with_error()`.
   - Renamed `Error::with_message()` to `Error::with_message_fn()`.

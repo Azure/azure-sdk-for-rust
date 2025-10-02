@@ -11,7 +11,7 @@ use azure_core::http::{
     pager::PagerState,
     request::{options::ContentType, Request},
     response::Response,
-    BufResponse, ClientOptions, Context, Method,
+    ClientOptions, Context, Method, RawResponse,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
@@ -64,7 +64,7 @@ impl CosmosPipeline {
         ctx: Context<'_>,
         request: &mut Request,
         resource_link: ResourceLink,
-    ) -> azure_core::Result<BufResponse> {
+    ) -> azure_core::Result<RawResponse> {
         let ctx = ctx.with_value(resource_link);
         let r = self.pipeline.send(&ctx, request, None).await?;
         Ok(r)
@@ -171,7 +171,7 @@ impl CosmosPipeline {
             .read_throughput_offer(context.clone(), resource_id)
             .await?;
         let mut current_throughput = match response {
-            Some(r) => r.into_body().await?,
+            Some(r) => r.into_body()?,
             None => Default::default(),
         };
         current_throughput.offer = throughput.offer;

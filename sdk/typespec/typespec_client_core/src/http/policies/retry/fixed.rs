@@ -10,7 +10,7 @@ use crate::{http::policies::RetryHeaders, time::Duration};
 /// retries have been reached or the maximum allowed delay has passed (whichever comes first). The
 /// wait time is not precise.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FixedRetryPolicy {
+pub(crate) struct FixedRetryPolicy {
     delay: Duration,
     max_retries: u32,
     max_elapsed: Duration,

@@ -151,15 +151,16 @@ impl ImdsManagedIdentityCredential {
                     ))
                 }
                 _ => {
+                    let body = String::from_utf8_lossy(rsp.body());
                     return Err(Error::with_message(
                         ErrorKind::Credential,
-                        format!("the request failed: {:?}", rsp.into_body().collect().await?),
+                        format!("the request failed: {body}"),
                     ));
                 }
             }
         }
 
-        let token_response: MsiTokenResponse = from_json(rsp.into_body().collect().await?)?;
+        let token_response: MsiTokenResponse = from_json(rsp.into_body())?;
         Ok(AccessToken::new(
             token_response.access_token,
             token_response.expires_on,

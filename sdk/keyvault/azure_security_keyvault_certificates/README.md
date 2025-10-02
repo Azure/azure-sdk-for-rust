@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The Poller implements futures::Stream and automatically waits between polls.
     let mut poller = client.begin_create_certificate("certificate-name", body.try_into()?, None)?;
     while let Some(operation) = poller.try_next().await? {
-        let operation = operation.into_body().await?;
+        let operation = operation.into_body()?;
         match operation.status.as_deref().unwrap_or("unknown") {
             "inProgress" => continue,
             "completed" => {
@@ -175,8 +175,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .wait()
         .await?
         // Deserialize the CertificateOperation:
-        .into_body()
-        .await?;
+        .into_body()?;
 
     if matches!(operation.status, Some(status) if status == "completed") {
         let target = operation.target.ok_or("expected target")?;
@@ -215,8 +214,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let certificate = client
         .get_certificate("certificate-name", Some(get_options))
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     println!(
         "Certificate thumbprint: {:?}",
@@ -261,8 +259,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None,
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     Ok(())
 }
@@ -405,8 +402,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let signature = key_client
         .sign("ec-signing-certificate", body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     if let Some(signature) = signature.result.map(base64::encode_url_safe) {
         println!("Signature: {}", signature);
@@ -438,7 +434,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     match client.get_certificate("certificate-name".into(), None).await {
-        Ok(response) => println!("Certificate: {:#?}", response.into_body().await?.x509_thumbprint),
+        Ok(response) => println!("Certificate: {:#?}", response.into_body()?.x509_thumbprint),
         Err(err) => println!("Error: {:#?}", err.into_inner()?),
     }
 

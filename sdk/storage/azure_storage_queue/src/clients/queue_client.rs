@@ -7,7 +7,7 @@ use crate::generated::{
 };
 use azure_core::{
     credentials::TokenCredential,
-    http::{BufResponse, NoFormat, RequestContent, Response, StatusCode, Url, XmlFormat},
+    http::{NoFormat, RawResponse, RequestContent, Response, StatusCode, Url, XmlFormat},
     xml, Result,
 };
 use std::{collections::HashMap, sync::Arc};
@@ -332,7 +332,7 @@ impl QueueClient {
     {
         let status = response.status();
         let headers = response.headers().clone();
-        let message_list = response.into_body().await?;
+        let message_list = response.into_body()?;
 
         let messages = extract_fn(&message_list);
         let first_message = messages.into_iter().next().ok_or_else(|| {
@@ -343,7 +343,7 @@ impl QueueClient {
         })?;
 
         let xml_body = xml::to_xml(&first_message)?;
-        let raw_response = BufResponse::from_bytes(status, headers, xml_body);
+        let raw_response = RawResponse::from_bytes(status, headers, xml_body);
         Ok(raw_response.into())
     }
 }

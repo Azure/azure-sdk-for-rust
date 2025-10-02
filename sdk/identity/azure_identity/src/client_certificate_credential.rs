@@ -252,7 +252,7 @@ impl ClientCertificateCredential {
                 }),
             )
             .await?;
-        let response: EntraIdTokenResponse = rsp.into_body().json().await?;
+        let response: EntraIdTokenResponse = rsp.into_body().json()?;
         Ok(AccessToken::new(
             response.access_token,
             OffsetDateTime::now_utc() + Duration::seconds(response.expires_in),

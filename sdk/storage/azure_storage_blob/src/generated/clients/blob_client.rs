@@ -31,8 +31,8 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
-        Response, Url, XmlFormat,
+        AsyncResponse, ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions,
+        PipelineStreamOptions, Request, RequestContent, Response, Url, XmlFormat,
     },
     time::to_rfc7231,
     tracing, Result,
@@ -930,14 +930,14 @@ impl BlobClient {
     ///
     /// ## Response Headers
     ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`BlobClientDownloadResultHeaders`] trait, which provides
+    /// The returned [`AsyncResponse`](azure_core::http::AsyncResponse) implements the [`BlobClientDownloadResultHeaders`] trait, which provides
     /// access to response headers. For example:
     ///
     /// ```no_run
-    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_core::{Result, http::{AsyncResponse, NoFormat}};
     /// use azure_storage_blob::models::{BlobClientDownloadResult, BlobClientDownloadResultHeaders};
     /// async fn example() -> Result<()> {
-    ///     let response: Response<BlobClientDownloadResult, NoFormat> = unimplemented!();
+    ///     let response: AsyncResponse<BlobClientDownloadResult> = unimplemented!();
     ///     // Access response headers
     ///     if let Some(cache_control) = response.cache_control()? {
     ///         println!("Cache-Control: {:?}", cache_control);
@@ -997,7 +997,7 @@ impl BlobClient {
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<Response<BlobClientDownloadResult, NoFormat>> {
+    ) -> Result<AsyncResponse<BlobClientDownloadResult>> {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
@@ -1071,10 +1071,10 @@ impl BlobClient {
         request.insert_header("x-ms-version", &self.version);
         let rsp = self
             .pipeline
-            .send(
+            .stream(
                 &ctx,
                 &mut request,
-                Some(PipelineSendOptions {
+                Some(PipelineStreamOptions {
                     check_success: CheckSuccessOptions {
                         success_codes: &[200, 206],
                     },

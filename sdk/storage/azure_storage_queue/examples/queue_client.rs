@@ -36,7 +36,7 @@ async fn send_and_delete_message(
     let result = send_message(queue_client, message).await;
 
     if let Ok(response) = result {
-        let message = response.into_body().await?;
+        let message = response.into_body()?;
 
         if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt) {
             println!(
@@ -60,7 +60,7 @@ async fn send_and_update_message(
     let result = send_message(queue_client, message).await;
 
     if let Ok(response) = result {
-        let message = response.into_body().await?;
+        let message = response.into_body()?;
 
         if let (Some(message_id), Some(pop_receipt)) = (message.message_id, message.pop_receipt) {
             println!(
@@ -136,7 +136,7 @@ async fn peek_and_receive_messages(
     log_operation_result(&result, "peek_messages");
 
     if let Ok(response) = result {
-        let messages = response.into_body().await?;
+        let messages = response.into_body()?;
         if let Some(messages) = messages.items {
             for msg in messages {
                 println!(
@@ -157,7 +157,7 @@ async fn peek_and_receive_messages(
     log_operation_result(&result, "receive_messages");
 
     if let Ok(response) = result {
-        let messages = response.into_body().await?;
+        let messages = response.into_body()?;
         if let Some(messages) = messages.items {
             for msg in messages {
                 println!(
