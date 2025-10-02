@@ -11,11 +11,11 @@ trigger:
     - sdk/canary/
 
 parameters:
-- name: release_azurecanarycore
+- name: release_azure_canary_core
   displayName: 'azure_canary_core'
   type: boolean
   default: true
-- name: release_azurecanary
+- name: release_azure_canary
   displayName: 'azure_canary'
   type: boolean
   default: true
@@ -26,8 +26,6 @@ extends:
     ServiceDirectory: canary
     Artifacts:
     - name: azure_canary_core
-      safeName: AzureCanaryCore
-      releaseInBatch: ${{ parameters.release_azurecanarycore }}
+      releaseInBatch: ${{ parameters.release_azure_canary_core }}
     - name: azure_canary
-      safeName: AzureCanary
-      releaseInBatch: ${{ parameters.release_azurecanary }}
+      releaseInBatch: ${{ parameters.release_azure_canary }}

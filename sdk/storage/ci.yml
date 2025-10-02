@@ -14,15 +14,15 @@ parameters:
   displayName: 'Run live tests'
   type: boolean
   default: false
-- name: release_azurestoragecommon
+- name: release_azure_storage_common
   displayName: 'azure_storage_common'
   type: boolean
   default: true
-- name: release_azurestorageblob
+- name: release_azure_storage_blob
   displayName: 'azure_storage_blob'
   type: boolean
   default: true
-- name: release_azurestoragequeue
+- name: release_azure_storage_queue
   displayName: 'azure_storage_queue'
   type: boolean
   default: true
@@ -35,11 +35,8 @@ extends:
     TestTimeoutInMinutes: 120
     Artifacts:
     - name: azure_storage_common
-      safeName: AzureStorageCommon
-      releaseInBatch: ${{ parameters.release_azurestoragecommon }}
+      releaseInBatch: ${{ parameters.release_azure_storage_common }}
     - name: azure_storage_blob
-      safeName: AzureStorageBlob
-      releaseInBatch: ${{ parameters.release_azurestorageblob }}
+      releaseInBatch: ${{ parameters.release_azure_storage_blob }}
     - name: azure_storage_queue
-      safeName: AzureStorageQueue
-      releaseInBatch: ${{ parameters.release_azurestoragequeue }}
+      releaseInBatch: ${{ parameters.release_azure_storage_queue }}

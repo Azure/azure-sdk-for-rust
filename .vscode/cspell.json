@@ -2,7 +2,6 @@
   "version": "0.2",
   "language": "en",
   "useGitignore": true,
-  "allowCompoundWords": true,
   "ignorePaths": [
     "**/test-resources.bicep",
     "**/test-resources.json",
@@ -189,10 +188,6 @@
     {
       "filename": "sdk/storage/**",
       "dictionaries": ["crates", "rust-custom", "storage"]
-    },
-    {
-      "filename": "sdk/*/ci.yml",
-      "ignoreWords": ["azurecoreamqp"]
     }
   ]
 }
