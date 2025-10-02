@@ -5,14 +5,17 @@ use azure_core::{
     http::{RequestContent, StatusCode},
     Bytes,
 };
-use azure_core_test::{recorded, Matcher, TestContext};
-use azure_storage_blob::models::{
-    AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
-    BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions, BlobClientDownloadResultHeaders,
-    BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
-    BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
-    BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-    LeaseState,
+use azure_core_test::{recorded, Matcher, TestContext, TestMode};
+use azure_storage_blob::{
+    models::{
+        AccessTier, AccountKind, BlobClientAcquireLeaseResultHeaders,
+        BlobClientChangeLeaseResultHeaders, BlobClientDownloadOptions,
+        BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
+        BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
+        BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+        BlockBlobClientUploadOptions, ContainerClientCreateOptions, LeaseState, PublicAccessType,
+    },
+    BlobClient,
 };
 
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
@@ -480,3 +483,76 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+#[recorded::test]
+async fn test_public_access(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Mark as playback-only
+    if ctx.recording().test_mode() != TestMode::Playback {
+        return Ok(());
+    }
+
+    // Arrange
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+
+    let public_access_create_options = ContainerClientCreateOptions {
+        access: Some(PublicAccessType::Blob),
+        ..Default::default()
+    };
+    container_client
+        .create_container(Some(public_access_create_options))
+        .await?;
+
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Unauthenticated Blob Client
+    let endpoint = format!(
+        "https://{}.blob.core.windows.net/",
+        recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
+    );
+    let unauthenticated_blob_client = BlobClient::new(
+        &endpoint,
+        blob_client.container_name().to_string(),
+        blob_client.blob_name().to_string(),
+        None,
+        None,
+    )?;
+
+    // Act
+    let response = unauthenticated_blob_client.get_properties(None).await?;
+
+    // Assert
+    let lease_state = response.lease_state()?;
+    let content_length = response.content_length()?;
+    let etag = response.etag()?;
+    let creation_time = response.creation_time()?;
+
+    assert_eq!(LeaseState::Available, lease_state.unwrap());
+    assert_eq!(17, content_length.unwrap());
+    assert!(etag.is_some());
+    assert!(creation_time.is_some());
+    assert!(unauthenticated_blob_client.exists().await?);
+
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+// #[recorded::test]
+// async fn test_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+//     // SAS
+//     let blob_url = "<VALID_SAS_URL>";
+
+//     let sas_blob_client = BlobClient::from_blob_url(blob_url, None, None)?;
+//     println!(
+//         "Container Name:{}, Blob Name:{}",
+//         sas_blob_client.container_name(),
+//         sas_blob_client.blob_name()
+//     );
+
+//     let blob_properties = sas_blob_client.get_properties(None).await?;
+//     let content_length = blob_properties.content_length()?;
+//     assert_eq!(11, content_length.unwrap());
+
+//     Ok(())
+// }

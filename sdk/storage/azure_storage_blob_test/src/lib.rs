@@ -8,8 +8,8 @@ use azure_core::{
 use azure_core_test::Recording;
 use azure_storage_blob::{
     models::{BlockBlobClientUploadOptions, BlockBlobClientUploadResult},
-    BlobClient, BlobContainerClient, BlobContainerClientOptions, BlobServiceClient,
-    BlobServiceClientOptions,
+    BlobClient, BlobContainerClient, BlobServiceClient, ContainerClientOptions,
+    ServiceClientOptions,
 };
 
 /// Takes in a Recording instance and returns an instrumented options bag and endpoint.
@@ -57,7 +57,7 @@ pub fn get_container_name(recording: &Recording) -> String {
 /// * `recording` - A reference to a Recording instance.
 pub fn get_blob_service_client(recording: &Recording) -> Result<BlobServiceClient> {
     let (options, endpoint) = recorded_test_setup(recording);
-    let service_client_options = BlobServiceClientOptions {
+    let service_client_options = ServiceClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };
@@ -80,7 +80,7 @@ pub async fn get_container_client(
 ) -> Result<BlobContainerClient> {
     let container_name = get_container_name(recording);
     let (options, endpoint) = recorded_test_setup(recording);
-    let container_client_options = BlobContainerClientOptions {
+    let container_client_options = ContainerClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };

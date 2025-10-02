@@ -26,8 +26,6 @@ use std::sync::Arc;
 
 #[tracing::client]
 pub struct AppendBlobClient {
-    pub(crate) blob_name: String,
-    pub(crate) container_name: String,
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
@@ -50,15 +48,11 @@ impl AppendBlobClient {
     /// * `endpoint` - Service host
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
-    /// * `container_name` - The name of the container.
-    /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.Container.Blob.AppendBlob")]
+    #[tracing::new("Storage.Blob.AppendBlob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        container_name: String,
-        blob_name: String,
         options: Option<AppendBlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -74,8 +68,6 @@ impl AppendBlobClient {
             vec!["https://storage.azure.com/.default"],
         ));
         Ok(Self {
-            blob_name,
-            container_name,
             endpoint,
             version: options.version,
             pipeline: Pipeline::new(
@@ -138,7 +130,7 @@ impl AppendBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::AppendBlobClientAppendBlockResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`AppendBlobClientAppendBlockResultHeaders`]: crate::generated::models::AppendBlobClientAppendBlockResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.AppendBlob.appendBlock")]
+    #[tracing::function("Storage.Blob.AppendBlob.appendBlock")]
     pub async fn append_block(
         &self,
         body: RequestContent<Bytes, NoFormat>,
@@ -148,10 +140,6 @@ impl AppendBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "appendblock");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
@@ -280,7 +268,7 @@ impl AppendBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`AppendBlobClientAppendBlockFromUrlResultHeaders`]: crate::generated::models::AppendBlobClientAppendBlockFromUrlResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.AppendBlob.appendBlockFromUrl")]
+    #[tracing::function("Storage.Blob.AppendBlob.appendBlockFromUrl")]
     pub async fn append_block_from_url(
         &self,
         source_url: String,
@@ -290,10 +278,6 @@ impl AppendBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("comp", "appendblock")
             .append_key_only("fromUrl");
@@ -440,7 +424,7 @@ impl AppendBlobClient {
     /// * [`version_id`()](crate::generated::models::AppendBlobClientCreateResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`AppendBlobClientCreateResultHeaders`]: crate::generated::models::AppendBlobClientCreateResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.AppendBlob.create")]
+    #[tracing::function("Storage.Blob.AppendBlob.create")]
     pub async fn create(
         &self,
         options: Option<AppendBlobClientCreateOptions<'_>>,
@@ -448,10 +432,6 @@ impl AppendBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
@@ -590,7 +570,7 @@ impl AppendBlobClient {
     /// * [`is_sealed`()](crate::generated::models::AppendBlobClientSealResultHeaders::is_sealed) - x-ms-blob-sealed
     ///
     /// [`AppendBlobClientSealResultHeaders`]: crate::generated::models::AppendBlobClientSealResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.AppendBlob.seal")]
+    #[tracing::function("Storage.Blob.AppendBlob.seal")]
     pub async fn seal(
         &self,
         options: Option<AppendBlobClientSealOptions<'_>>,
@@ -598,10 +578,6 @@ impl AppendBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "seal");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
