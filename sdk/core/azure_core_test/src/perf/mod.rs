@@ -298,7 +298,10 @@ impl PerfRunner {
                 _ = async {
                         loop {
                             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                            println!("{:?} elapsed: {} per operation.", start.elapsed(), Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));
+                            println!("{:?} elapsed: {} op/sec,  {} sec/ operation.",
+                                start.elapsed(),
+                                self.progress.load(Ordering::SeqCst) as f64 / start.elapsed().as_secs_f64(),
+                                Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));
                         }
                     }, if !self.options.disable_progress => {},
         );
