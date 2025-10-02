@@ -11,6 +11,7 @@
 - Added `RawResponse::deconstruct()`.
 - Added `ResponseBody::collect_string()`.
 - Added `ResponseBody::from_bytes()`.
+- Added the `cloud` module with types for configuring clients to use different Azure clouds.
 - Implemented `AsRef<[u8]>` and `Deref<Target = [u8]>` for `ResponseBody`.
 
 ### Breaking Changes
