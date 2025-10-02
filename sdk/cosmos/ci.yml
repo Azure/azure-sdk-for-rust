@@ -11,7 +11,7 @@ trigger:
     - sdk/cosmos/
 
 parameters:
-- name: release_azuredatacosmos
+- name: release_azure_data_cosmos
   displayName: 'azure_data_cosmos'
   type: boolean
   default: true
@@ -22,5 +22,4 @@ extends:
     ServiceDirectory: cosmos
     Artifacts:
     - name: azure_data_cosmos
-      safeName: AzureDataCosmos
-      releaseInBatch: ${{ parameters.release_azuredatacosmos }}
+      releaseInBatch: ${{ parameters.release_azure_data_cosmos }}

@@ -11,7 +11,7 @@ trigger:
     - sdk/identity/
 
 parameters:
-- name: release_azureidentity
+- name: release_azure_identity
   displayName: 'azure_identity'
   type: boolean
   default: true
@@ -22,8 +22,7 @@ extends:
     ServiceDirectory: identity
     Artifacts:
       - name: azure_identity
-        safeName: AzureIdentity
-        releaseInBatch: ${{ parameters.release_azureidentity }}
+        releaseInBatch: ${{ parameters.release_azure_identity }}
 
     ${{ if endsWith(variables['Build.DefinitionName'], 'weekly') }}:
       Location: uksouth

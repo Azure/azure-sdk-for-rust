@@ -15,11 +15,11 @@ parameters:
   displayName: 'typespec'
   type: boolean
   default: true
-- name: release_typespecmacros
+- name: release_release_typespecmacros
   displayName: 'typespec_macros'
   type: boolean
   default: true
-- name: release_typespecclientcore
+- name: release_typespec_client_core
   displayName: 'typespec_client_core'
   type: boolean
   default: true
@@ -30,11 +30,8 @@ extends:
     ServiceDirectory: typespec
     Artifacts:
     - name: typespec
-      safeName: Typespec
       releaseInBatch: ${{ parameters.release_typespec }}
     - name: typespec_macros
-      safeName: TypespecMacros
-      releaseInBatch: ${{ parameters.release_typespecmacros }}
+      releaseInBatch: ${{ parameters.release_release_typespecmacros }}
     - name: typespec_client_core
-      safeName: TypespecClientCore
-      releaseInBatch: ${{ parameters.release_typespecclientcore }}
+      releaseInBatch: ${{ parameters.release_typespec_client_core }}

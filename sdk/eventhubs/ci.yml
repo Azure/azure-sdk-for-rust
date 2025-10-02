@@ -11,11 +11,11 @@ trigger:
     - sdk/eventhubs/
 
 parameters:
-- name: release_azuremessagingeventhubs
+- name: release_azure_messaging_eventhubs
   displayName: 'azure_messaging_eventhubs'
   type: boolean
   default: true
-- name: release_azuremessagingeventhubscheckpointstoreblob
+- name: release_azure_messaging_eventhubs_checkpointstore_blob
   displayName: 'azure_messaging_eventhubs_checkpointstore_blob'
   type: boolean
   default: true
@@ -26,8 +26,6 @@ extends:
     ServiceDirectory: eventhubs
     Artifacts:
     - name: azure_messaging_eventhubs
-      safeName: AzureMessagingEventHubs
-      releaseInBatch: ${{ parameters.release_azuremessagingeventhubs }}
+      releaseInBatch: ${{ parameters.release_azure_messaging_eventhubs }}
     - name: azure_messaging_eventhubs_checkpointstore_blob
-      safeName: AzureMessagingEventHubsBlobCheckpointStore
-      releaseInBatch: ${{ parameters.release_azuremessagingeventhubscheckpointstoreblob }}
+      releaseInBatch: ${{ parameters.release_azure_messaging_eventhubs_checkpointstore_blob }}

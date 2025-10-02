@@ -12,7 +12,7 @@ trigger:
     - sdk/servicebus/
 
 parameters:
-- name: release_azuremessagingservicebus
+- name: release_azure_messaging_servicebus
   displayName: 'azure_messaging_servicebus'
   type: boolean
   default: true
@@ -23,5 +23,4 @@ extends:
     ServiceDirectory: servicebus
     Artifacts:
     - name: azure_messaging_servicebus
-      safeName: AzureMessagingServiceBus
-      releaseInBatch: ${{ parameters.release_azuremessagingservicebus }}
+      releaseInBatch: ${{ parameters.release_azure_messaging_servicebus }}
