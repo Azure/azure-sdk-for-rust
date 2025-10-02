@@ -73,6 +73,11 @@ impl Audiences {
         self.0.get(&TypeId::of::<T>()).map(|s| s.as_str())
     }
 
+    /// Insert or replace an audience.
+    pub fn insert<T: 'static>(&mut self, audience: String) {
+        self.0.insert(TypeId::of::<T>(), audience);
+    }
+
     /// Insert or replace an audience and return `Self` to allow chaining.
     pub fn with<T: 'static>(mut self, audience: String) -> Self {
         self.0.insert(TypeId::of::<T>(), audience);
@@ -98,7 +103,7 @@ mod tests {
         }
         .into();
 
-        let CloudConfiguration::Custom(custom) = cloud else {
+        let CloudConfiguration::Custom(mut custom) = cloud else {
             unreachable!();
         };
 
@@ -106,6 +111,9 @@ mod tests {
         assert_eq!(custom.audiences.get::<A>(), Some("A"));
         assert_eq!(custom.audiences.get::<B>(), Some("B"));
         assert_eq!(custom.audiences.get::<C>(), None);
+
+        custom.audiences.insert::<C>("C".to_string());
+        assert_eq!(custom.audiences.get::<C>(), Some("C"));
     }
 
     #[test]
