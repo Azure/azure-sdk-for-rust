@@ -15,7 +15,7 @@ parameters:
   displayName: 'typespec'
   type: boolean
   default: true
-- name: release_release_typespecmacros
+- name: release_release_typespec_macros
   displayName: 'typespec_macros'
   type: boolean
   default: true
@@ -32,6 +32,6 @@ extends:
     - name: typespec
       releaseInBatch: ${{ parameters.release_typespec }}
     - name: typespec_macros
-      releaseInBatch: ${{ parameters.release_release_typespecmacros }}
+      releaseInBatch: ${{ parameters.release_release_typespec_macros }}
     - name: typespec_client_core
       releaseInBatch: ${{ parameters.release_typespec_client_core }}
