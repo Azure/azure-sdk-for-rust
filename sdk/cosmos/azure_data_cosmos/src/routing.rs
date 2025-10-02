@@ -28,6 +28,17 @@ impl PartitionKeyRange {
         self.min_inclusive <= *epk && *epk < self.max_exclusive
     }
 
+    /// Compares the given effective partition key to this partition key range, returning an [`Ordering`](std::cmp::Ordering) that can be used for searching a sorted list of ranges for the range containing the key.
+    pub fn compare_to(&self, epk: &EffectivePartitionKey) -> std::cmp::Ordering {
+        if self.contains(epk) {
+            std::cmp::Ordering::Equal
+        } else if self.min_inclusive > *epk {
+            std::cmp::Ordering::Greater
+        } else {
+            std::cmp::Ordering::Less
+        }
+    }
+
     pub fn overlaps(&self, range: &Range<EffectivePartitionKey>) -> bool {
         // Empty ranges don't overlap with anything
         if range.start >= range.end {
@@ -62,12 +73,19 @@ impl ContainerRoutingMap {
         &self.pk_ranges
     }
 
+    /// Finds the partition key range that contains the given effective partition key, if any.
     pub fn range_containing(&self, epk: &EffectivePartitionKey) -> Option<&PartitionKeyRange> {
-        // TODO: Could be optimized with binary search if needed
-        self.pk_ranges.iter().find(|pkr| pkr.contains(epk))
+        // It's critical that pk_ranges is sorted by min_inclusive for this to work correctly, so assert that in debug builds
+        debug_assert!(self.pk_ranges.is_sorted_by_key(|pkr| &pkr.min_inclusive));
+        self.pk_ranges
+            .binary_search_by(|pkr| pkr.compare_to(epk))
+            .ok()
+            .map(|idx| &self.pk_ranges[idx])
     }
 
+    /// Finds the partition key range with the given ID, if any.
     pub fn range(&self, id: &PartitionKeyRangeId) -> Option<&PartitionKeyRange> {
+        // We don't know that IDs are sorted, so just do a linear search
         self.pk_ranges.iter().find(|pkr| &pkr.id == id)
     }
 
@@ -84,6 +102,7 @@ impl ContainerRoutingMap {
 }
 
 /// Discards any [`PartitionKeyRange`] that is the parent of another range, leaving only the leaf ranges.
+/// Also sorts the ranges by their minimum inclusive value.
 fn normalize_ranges(pk_ranges: &mut Vec<PartitionKeyRange>) {
     let parent_ids: std::collections::HashSet<_> = pk_ranges
         .iter()
