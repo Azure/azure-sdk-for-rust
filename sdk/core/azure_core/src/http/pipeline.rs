@@ -230,8 +230,8 @@ impl Pipeline {
         request: &mut http::Request,
         options: Option<PipelineStreamOptions>,
     ) -> crate::Result<http::BufResponse> {
-        let (core_stream_options, send_options) = options.unwrap_or_default().deconstruct();
-        let result = self.0.stream(ctx, request, send_options).await?;
+        let (core_stream_options, stream_options) = options.unwrap_or_default().deconstruct();
+        let result = self.0.stream(ctx, request, stream_options).await?;
         if !core_stream_options.skip_checks {
             check_success(result, Some(core_stream_options.check_success)).await
         } else {

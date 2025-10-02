@@ -5,16 +5,38 @@
 ### Features Added
 
 - Added `Error::with_error_fn()`.
+- Added `AsyncResponse<T>` for responses that may stream the body outside the HTTP pipeline. This replaces `Response<T, F>` requiring an async read of the body that occurred outside the HTTP pipeline.
+- Added `http::response::BufResponseBody`, which also implements `Stream`.
+- Added a `Pipeline::stream()` to return a `Result<BufResponse>`.
+- Added `RawResponse::deconstruct()`.
+- Added `ResponseBody::collect_string()`.
+- Added `ResponseBody::from_bytes()`.
+- Implemented `AsRef<[u8]>` and `Deref<Target = [u8]>` for `ResponseBody`.
 
 ### Breaking Changes
 
+
 - Changed `ClientOptions::retry` from `Option<RetryOptions>` to `RetryOptions`.
-- Changed `RawResponse::json()` from `async` to synchronous function. The body was already buffered.
-- Changed `RawResponse::xml()` from `async` to synchronous function. The body was already buffered.
+- Changed `DeserializeWith::deserialize_with()` to be sync.
+- Changed `Pipeline::send()` to return a `Result<RawResponse>`.
+- Changed `RawResponse::body()` to return a `&ResponseBody` instead of `&Bytes`. `ResponseBody` wraps `&Bytes`, and implements `AsRef<[u8]>` and `Deref<Target = [u8]>`.
+- Changed `RawResponse::into_body()` to return a `ResponseBody` instead of `Bytes`. `ResponseBody` wraps `&Bytes`, and implements `AsRef<[u8]>` and `Deref<Target = [u8]>`.
+- Changed `RawResponse::json()` from `async` to a sync function. The body was already buffered.
+- Changed `RawResponse::xml()` from `async` to a sync function. The body was already buffered.
+- Changed `Response<T, F>` to fully sync; it holds a `RawResponse` that was already buffered entirely from the service so no longer needs or defines async functions.
+- Removed `create_extensible_enum` and `create_enum` macros.
+- Removed `BufResponse::json()`.
+- Removed `BufResponse::xml()`.
+- Removed `CustomHeadersPolicy` from public API.
 - Removed `ErrorKind::http_response()`. Construct an `ErrorResponse::HttpResponse` variant instead.
+- Removed `ExponentialRetryPolicy` from public API.
+- Removed `FixedRetryPolicy` from public API.
+- Removed `LoggingPolicy` from public API.
+- Removed `NoRetryPolicy` from public API.
+- Removed implementation of `Stream` for `ResponseBody`.
 - Removed several unreferenced HTTP headers and accessor structures for those headers.
-- Renamed `TransportOptions` to `Transport`.
 - Renamed `TransportOptions::new_custom_policy()` to `Transport::with_policy()`.
+- Renamed `TransportOptions` to `Transport`.
 - Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)"
   - Renamed `Error::full()` to `Error::with_error()`.
   - Renamed `Error::with_message()` to `Error::with_message_fn()`.
@@ -24,7 +46,8 @@
   - Renamed `ResultExt::map_kind()` to `ResultExt::with_kind()`.
   - Renamed `ResultExt::with_context()` to `ResultExt::with_context_fn()`.
   - Renamed `ResultExt::context()` to `ResultExt::with_context()`.
-  - Removed `create_extensible_enum` and `create_enum` macros.
+- Replaced implementation of `From<BufResponse>` for `Response<T, F>` to `From<RawResponse>`.
+- Replaced implementation of `From<Response<T, F>>` for `BufResponse` to `From<AsyncResponse<T>>`.
 
 ### Bugs Fixed
 
