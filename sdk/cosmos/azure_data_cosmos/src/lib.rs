@@ -13,11 +13,16 @@ mod partition_key;
 pub(crate) mod pipeline;
 pub mod query;
 pub(crate) mod resource_context;
+pub(crate) mod routing;
 pub(crate) mod utils;
 
 pub mod models;
 
+mod cache;
 mod location_cache;
+mod types;
+
+pub(crate) use types::*;
 
 #[doc(inline)]
 pub use clients::CosmosClient;

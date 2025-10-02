@@ -18,6 +18,8 @@ pub use partition_key_definition::*;
 pub use patch_operations::*;
 pub use throughput_properties::*;
 
+use crate::types::{EffectivePartitionKey, PartitionKeyRangeId};
+
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where
     D: Deserializer<'de>,
