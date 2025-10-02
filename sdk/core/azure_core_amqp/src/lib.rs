@@ -88,7 +88,7 @@ pub enum ReceiverSettleMode {
 }
 
 /// Trait for types that can be serialized to and deserialized from a byte buffer.
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 pub trait Serializable {
     /// Serializes the type into the provided byte buffer.
     fn serialize(&self, buffer: &mut [u8]) -> azure_core::Result<()>;
@@ -98,11 +98,11 @@ pub trait Serializable {
 }
 
 /// Trait for types that can be deserialized from a byte buffer.
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 pub trait Deserializable<T> {
     /// Deserializes the type from the provided byte buffer.
     fn decode(data: &[u8]) -> azure_core::Result<T>;
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 pub use value::{AmqpComposite, AmqpDescriptor};

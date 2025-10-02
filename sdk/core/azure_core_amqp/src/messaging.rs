@@ -7,9 +7,9 @@ use super::{
 };
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 use crate::fe2o3::error::Fe2o3SerializationError;
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 use crate::Deserializable;
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 use azure_core::error::ErrorKind;
 use azure_core::{time::Duration, Result, Uuid};
 use typespec_macros::SafeDebug;
@@ -312,7 +312,7 @@ impl From<String> for AmqpTarget {
     }
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl From<AmqpList> for AmqpTarget {
     fn from(list: AmqpList) -> Self {
         let mut builder = AmqpTarget::builder();
@@ -374,7 +374,7 @@ impl From<AmqpList> for AmqpTarget {
     }
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl From<AmqpTarget> for AmqpList {
     fn from(target: AmqpTarget) -> Self {
         let mut list = vec![AmqpValue::Null; 7];
@@ -477,7 +477,7 @@ impl AmqpSource {
     }
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl From<AmqpList> for AmqpSource {
     fn from(list: AmqpList) -> Self {
         let mut builder = AmqpSource::builder();
@@ -562,7 +562,7 @@ impl From<AmqpList> for AmqpSource {
     }
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl From<AmqpSource> for AmqpList {
     fn from(source: AmqpSource) -> Self {
         let mut list = vec![AmqpValue::Null; 11];
@@ -661,7 +661,7 @@ impl AmqpMessageHeader {}
 /// See also [Amqp Header](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-header) for more information
 ///
 ///
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl From<AmqpList> for AmqpMessageHeader {
     fn from(list: AmqpList) -> Self {
         let mut header = AmqpMessageHeader::default();
@@ -695,7 +695,7 @@ impl From<AmqpList> for AmqpMessageHeader {
     }
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl From<AmqpMessageHeader> for AmqpList {
     fn from(header: AmqpMessageHeader) -> AmqpList {
         let mut list = vec![AmqpValue::Null; 5];
@@ -786,7 +786,7 @@ impl AmqpMessageProperties {}
 /// See also [Amqp Header](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#type-properties) for more information
 ///
 ///
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl From<AmqpList> for AmqpMessageProperties {
     fn from(list: AmqpList) -> Self {
         let mut message_properties = AmqpMessageProperties::default();
@@ -886,7 +886,7 @@ impl From<AmqpList> for AmqpMessageProperties {
     }
 }
 
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl From<AmqpMessageProperties> for AmqpList {
     fn from(properties: AmqpMessageProperties) -> AmqpList {
         let mut list = vec![AmqpValue::Null; 13];
@@ -1399,7 +1399,7 @@ impl From<AmqpList> for AmqpMessage {
         }
     }
 }
-#[cfg(feature = "cplusplus")]
+#[cfg(feature = "ffi")]
 impl Deserializable<AmqpMessage> for AmqpMessage {
     fn decode(data: &[u8]) -> azure_core::Result<AmqpMessage> {
         #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
@@ -2188,7 +2188,7 @@ mod tests {
             assert_eq!(amqp_message, value.0);
         }
 
-        #[cfg(feature = "cplusplus")]
+        #[cfg(feature = "ffi")]
         {
             let deserialized = AmqpMessage::decode(&serialized).unwrap();
             assert_eq!(deserialized, message);

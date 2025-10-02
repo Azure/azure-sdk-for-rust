@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Removed non-idiomatic accessor functions from `AmqpDescribed`, `AmqpSessionOptions`, `AmqpDescribedError`, `AmqpMessage`, and `AmqpTarget`
+- Renamed the "cplusplus" feature to "ffi" because "ffi" is more idiomatic to Rust.
 
 ### Bugs Fixed
 
