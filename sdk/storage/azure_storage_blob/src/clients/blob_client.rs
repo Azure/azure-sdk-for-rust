@@ -47,7 +47,8 @@ pub struct BlobClient {
 }
 
 impl GeneratedBlobClient {
-    fn from_url(
+    #[tracing::new("Storage.Blob.Blob")]
+    pub fn from_url(
         blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
@@ -96,22 +97,9 @@ impl GeneratedBlobClient {
             endpoint: blob_url,
             version: options.version,
             pipeline,
-            tracer: options
-                .client_options
-                .instrumentation
-                .tracer_provider
-                .as_ref()
-                .map(|tracer_provider| {
-                    tracer_provider.get_tracer(
-                        Some("Storage.Blob.Blob"),
-                        option_env!("CARGO_PKG_NAME").unwrap_or("UNKNOWN"),
-                        option_env!("CARGO_PKG_VERSION"),
-                    )
-                }),
         })
     }
 }
-
 impl BlobClient {
     /// Creates a new BlobClient.
     ///
