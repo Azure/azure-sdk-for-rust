@@ -205,7 +205,13 @@ impl PerfRunner {
 
     pub async fn run(&self) -> azure_core::Result<()> {
         // We can only run tests if there was a test selected.
-        let test_name = self.get_selected_test_name()?;
+        let test_name = match self.get_selected_test_name() {
+            Ok(name) => name,
+            Err(e) => {
+                eprintln!("Error getting selected test name: {}", e);
+                return Ok(());
+            }
+        };
 
         let test = self
             .tests
