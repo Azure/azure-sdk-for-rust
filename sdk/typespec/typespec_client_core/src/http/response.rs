@@ -226,33 +226,13 @@ impl<T> AsyncResponse<T> {
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let response: AsyncResponse = unimplemented!();
     /// let body: Vec<u8> = response
-    ///     .into_raw_body()
+    ///     .into_body()
     ///     .collect()
     ///     .await?
     ///     .to_vec();
     /// # Ok(()) }
     /// ```
-    pub fn into_raw_body(self) -> BufResponseBody {
-        self.raw.into_body()
-    }
-
-    /// Get a [`Stream`] over the response body.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use typespec_client_core::http::response::AsyncResponse;
-    ///
-    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let response: AsyncResponse = unimplemented!();
-    /// let body: Vec<u8> = response
-    ///     .into_stream()
-    ///     .collect()
-    ///     .await?
-    ///     .to_vec();
-    /// # Ok(()) }
-    /// ```
-    pub fn into_stream(self) -> impl Stream<Item = crate::Result<Bytes>> {
+    pub fn into_body(self) -> BufResponseBody {
         self.raw.into_body()
     }
 }
@@ -360,7 +340,9 @@ impl fmt::Debug for BufResponseBody {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::http::{headers::Headers, BufResponse, RawResponse, Response, StatusCode};
+    use futures::stream;
 
     #[test]
     fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {
@@ -405,6 +387,22 @@ mod tests {
         assert_eq!(raw_response.status(), StatusCode::Ok);
         let body = raw_response.into_body();
         assert_eq!(b"Hello World", &*body);
+    }
+
+    #[tokio::test]
+    async fn into_body_collects_all_bytes() {
+        let response: AsyncResponse = BufResponse::new(
+            StatusCode::Ok,
+            Headers::new(),
+            stream::iter(vec![
+                Ok(Bytes::from_static(&[0xde, 0xad])),
+                Ok(Bytes::from_static(&[0xbe, 0xef])),
+            ])
+            .boxed(),
+        )
+        .into();
+        let buffer: Vec<u8> = response.into_body().collect().await.unwrap().to_vec();
+        assert_eq!(buffer, vec![0xde, 0xad, 0xbe, 0xef]);
     }
 
     mod json {

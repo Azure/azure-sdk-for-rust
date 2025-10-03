@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Normally you'd deserialize into a type or `collect()` the body,
     // but this better simulates fetching multiple chunks from a slow response.
-    let mut body = response.into_stream();
+    let mut body = response.into_body();
     while let Some(data) = body.next().await {
         // Assume bytes are a string in this example.
         let page = String::from_utf8(data?.into())?;

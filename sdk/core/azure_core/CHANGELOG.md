@@ -9,7 +9,7 @@
 - Added `http::response::BufResponseBody`, which also implements `Stream`.
 - Added a `Pipeline::stream()` to return a `Result<BufResponse>`.
 - Added `RawResponse::deconstruct()`.
-- Added `ResponseBody::collect_string()`.
+- Added `ResponseBody::into_string()`.
 - Added `ResponseBody::from_bytes()`.
 - Added the `cloud` module with types for configuring clients to use different Azure clouds.
 - Implemented `AsRef<[u8]>` and `Deref<Target = [u8]>` for `ResponseBody`.
@@ -25,6 +25,7 @@
 - Changed `RawResponse::json()` from `async` to a sync function. The body was already buffered.
 - Changed `RawResponse::xml()` from `async` to a sync function. The body was already buffered.
 - Changed `Response<T, F>` to fully sync; it holds a `RawResponse` that was already buffered entirely from the service so no longer needs or defines async functions.
+- Changed `ResponseBody::json()` and `xml()` to borrow `self`.
 - Removed `create_extensible_enum` and `create_enum` macros.
 - Removed `BufResponse::json()`.
 - Removed `BufResponse::xml()`.
