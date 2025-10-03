@@ -2,11 +2,7 @@ use std::sync::Arc;
 
 use moka::future::Cache;
 
-use crate::{
-    models::{ContainerProperties, PartitionKeyDefinition},
-    resource_context::ResourceLink,
-    ResourceId,
-};
+use crate::{models::ContainerProperties, resource_context::ResourceLink, ResourceId};
 
 #[derive(Debug)]
 pub enum CacheError {
