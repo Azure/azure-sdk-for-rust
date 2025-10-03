@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::sync::Arc;
-
 use crate::{
     clients::ContainerClient,
     connection::CosmosConnection,
