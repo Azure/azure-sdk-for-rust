@@ -9,6 +9,8 @@ use azure_core_test::TestContext;
 use azure_data_cosmos::{ConnectionString, CosmosClientOptions, Query};
 use reqwest::ClientBuilder;
 
+use crate::framework::LocalRecorder;
+
 /// Represents a Cosmos DB account for testing purposes.
 ///
 /// A [`TestAccount`] serves two main purposes:
@@ -25,6 +27,7 @@ pub struct TestAccount {
 #[derive(Default)]
 pub struct TestAccountOptions {
     pub allow_invalid_certificates: Option<bool>,
+    pub recorder: Option<Arc<LocalRecorder>>,
 }
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
@@ -112,6 +115,13 @@ impl TestAccount {
         self.context
             .recording()
             .instrument(&mut options.client_options);
+
+        if let Some(recorder) = &self.options.recorder {
+            options
+                .client_options
+                .per_try_policies
+                .push(recorder.clone());
+        }
 
         Ok(azure_data_cosmos::CosmosClient::with_key(
             &self.endpoint,

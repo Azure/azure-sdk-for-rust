@@ -1,16 +1,18 @@
+use std::sync::Arc;
+
 use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
 
 use crate::{
+    connection::CosmosConnection,
     constants,
-    pipeline::{self, CosmosPipeline},
     query::{OwnedQueryPipeline, QueryEngineRef, QueryResult},
     resource_context::{ResourceLink, ResourceType},
     FeedPage, FeedPager, Query, QueryOptions,
 };
 
 pub struct QueryExecutor<T: DeserializeOwned> {
-    http_pipeline: CosmosPipeline,
+    connection: CosmosConnection,
     container_link: ResourceLink,
     items_link: ResourceLink,
     context: Context<'static>,
@@ -29,7 +31,7 @@ pub struct QueryExecutor<T: DeserializeOwned> {
 
 impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     pub fn new(
-        http_pipeline: CosmosPipeline,
+        connection: CosmosConnection,
         container_link: ResourceLink,
         query: Query,
         options: QueryOptions<'_>,
@@ -38,7 +40,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         let items_link = container_link.feed(ResourceType::Items);
         let context = options.method_options.context.into_owned();
         Ok(Self {
-            http_pipeline,
+            connection,
             container_link,
             items_link,
             context,
@@ -77,7 +79,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
             None => {
                 // Initialize the pipeline.
                 let query_plan = get_query_plan(
-                    &self.http_pipeline,
+                    &self.connection,
                     &self.items_link,
                     self.context.to_borrowed(),
                     &self.query,
@@ -86,7 +88,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                 .await?
                 .into_body();
                 let pkranges = get_pkranges(
-                    &self.http_pipeline,
+                    &self.connection,
                     &self.container_link,
                     self.context.to_borrowed(),
                 )
@@ -97,8 +99,8 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                     self.query_engine
                         .create_pipeline(&self.query.text, &query_plan, &pkranges)?;
                 self.query.text = pipeline.query().into();
-                self.base_request = Some(crate::pipeline::create_base_query_request(
-                    self.http_pipeline.url(&self.items_link),
+                self.base_request = Some(crate::connection::create_base_query_request(
+                    self.connection.url(&self.items_link),
                     &self.query,
                 )?);
                 self.pipeline = Some(pipeline);
@@ -139,7 +141,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                 }
 
                 let resp = self
-                    .http_pipeline
+                    .connection
                     .send_raw(
                         self.context.to_borrowed(),
                         &mut query_request,
@@ -172,14 +174,14 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
 // This isn't an inherent method on QueryExecutor because that would force the whole executor to be Sync, which would force the pipeline to be Sync.
 #[tracing::instrument(skip_all)]
 async fn get_query_plan(
-    http_pipeline: &CosmosPipeline,
+    http_pipeline: &CosmosConnection,
     items_link: &ResourceLink,
     context: Context<'_>,
     query: &Query,
     supported_features: &str,
 ) -> azure_core::Result<RawResponse> {
     let url = http_pipeline.url(items_link);
-    let mut request = pipeline::create_base_query_request(url, query)?;
+    let mut request = crate::connection::create_base_query_request(url, query)?;
     request.insert_header(constants::QUERY_ENABLE_CROSS_PARTITION, "True");
     request.insert_header(constants::IS_QUERY_PLAN_REQUEST, "True");
     request.insert_header(
@@ -195,7 +197,7 @@ async fn get_query_plan(
 // This isn't an inherent method on QueryExecutor because that would force the whole executor to be Sync, which would force the pipeline to be Sync.
 #[tracing::instrument(skip_all)]
 async fn get_pkranges(
-    http_pipeline: &CosmosPipeline,
+    http_pipeline: &CosmosConnection,
     container_link: &ResourceLink,
     context: Context<'_>,
 ) -> azure_core::Result<RawResponse> {

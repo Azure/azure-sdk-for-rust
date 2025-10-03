@@ -70,7 +70,7 @@ mod tests {
     use azure_core::{http::Method, time};
 
     use crate::{
-        pipeline::signature_target::SignatureTarget,
+        connection::signature_target::SignatureTarget,
         resource_context::{ResourceLink, ResourceType},
     };
 

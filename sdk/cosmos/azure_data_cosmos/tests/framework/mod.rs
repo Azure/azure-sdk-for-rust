@@ -8,13 +8,15 @@
 //!
 //! The framework allows tests to easily run against real Cosmos DB instances, the local emulator, or a mock server using test-proxy.
 
+mod local_recorder;
 mod test_account;
 pub mod test_data;
 
 #[cfg(feature = "preview_query_engine")]
 pub mod query_engine;
 
-pub use test_account::TestAccount;
+pub use local_recorder::{LocalRecorder, Transaction};
+pub use test_account::{TestAccount, TestAccountOptions};
 
 use serde::{Deserialize, Serialize};
 
