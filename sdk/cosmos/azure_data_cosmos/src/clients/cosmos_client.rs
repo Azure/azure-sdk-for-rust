@@ -139,7 +139,7 @@ impl CosmosClient {
 
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
-        &self.connection.endpoint
+        self.connection.endpoint()
     }
 
     /// Executes a query against databases in the account.

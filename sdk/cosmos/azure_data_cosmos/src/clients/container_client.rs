@@ -26,7 +26,6 @@ use serde::{de::DeserializeOwned, Serialize};
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 #[derive(Clone)]
 pub struct ContainerClient {
-    id: String,
     link: ResourceLink,
     items_link: ResourceLink,
     connection: CosmosConnection,
@@ -44,7 +43,6 @@ impl ContainerClient {
         let items_link = link.feed(ResourceType::Items);
 
         Self {
-            id: container_id.to_string(),
             link,
             items_link,
             connection,
@@ -77,7 +75,10 @@ impl ContainerClient {
         // TODO: Replace with `response.body().json()` when that becomes borrowing.
         let properties = serde_json::from_slice::<ContainerProperties>(response.body())?;
         let metadata = ContainerMetadata::from_properties(&properties, self.link.clone())?;
-        self.connection.cache.set_container_metadata(metadata).await;
+        self.connection
+            .cache()
+            .set_container_metadata(metadata)
+            .await;
 
         Ok(response.into())
     }
@@ -705,7 +706,7 @@ impl ContainerClient {
     async fn metadata(&self) -> azure_core::Result<Arc<ContainerMetadata>> {
         Ok(self
             .connection
-            .cache
+            .cache()
             .get_container_metadata(&self.link, async {
                 let properties = self.read_properties(None).await?.into_body()?;
                 ContainerMetadata::from_properties(&properties, self.link.clone())

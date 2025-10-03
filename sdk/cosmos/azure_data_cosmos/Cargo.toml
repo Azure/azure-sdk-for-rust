@@ -17,7 +17,6 @@ categories = ["api-bindings"]
 async-trait.workspace = true
 azure_core.workspace = true
 futures.workspace = true
-pin-project.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 tracing.workspace = true

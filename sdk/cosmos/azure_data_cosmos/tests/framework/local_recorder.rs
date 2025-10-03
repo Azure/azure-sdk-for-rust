@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use azure_core::http::{
     policies::{Policy, PolicyResult},
-    BufResponse, Context, Method, RawResponse, Request, StatusCode,
+    BufResponse, Context, RawResponse, Request,
 };
 
 #[derive(Debug, Clone)]
@@ -23,21 +23,7 @@ impl LocalRecorder {
         }
     }
 
-    pub async fn to_transaction_summary(&self) -> Vec<(Method, String, Option<StatusCode>)> {
-        self.transactions
-            .read()
-            .await
-            .iter()
-            .map(|t| {
-                (
-                    t.request.method(),
-                    t.request.url().to_string(),
-                    t.response.as_ref().map(|r| r.status()),
-                )
-            })
-            .collect()
-    }
-
+    /// Returns a copy of all recorded transactions
     pub async fn to_transactions(&self) -> Vec<Transaction> {
         self.transactions.write().await.clone()
     }

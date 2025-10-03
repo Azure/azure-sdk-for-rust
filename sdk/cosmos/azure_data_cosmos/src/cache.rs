@@ -95,7 +95,7 @@ impl ContainerMetadata {
 /// The cache can be cloned cheaply, and all clones share the same underlying cache data.
 #[derive(Clone)]
 pub struct ContainerMetadataCache {
-    /// Caches stable container metadata, mapping from container link and RID to metadata.
+    /// Caches stable container metadata, mapping from container link to metadata.
     container_properties_cache: Cache<ResourceLink, Arc<ContainerMetadata>>,
 }
 
@@ -133,15 +133,11 @@ impl ContainerMetadataCache {
     ) -> Result<Arc<ContainerMetadata>, CacheError> {
         // TODO: Background refresh. We can do background refresh by storing an expiry time in the cache entry.
         // Then, if the entry is stale, we can return the stale entry and spawn a background task to refresh it.
-        // There's a little trickiness here in that
+        // There's a little trickiness here in that we can't directly spawn a task because that depends on a specific Async Runtime (tokio, smol, etc).
+        // The core SDK has an AsyncRuntime abstraction that we can use to spawn the task.
         Ok(self
             .container_properties_cache
             .try_get_with_by_ref(key, async { init.await.map(Arc::new) })
             .await?)
-    }
-
-    /// Clears the cached container metadata for the specified key, so that the next request will fetch fresh data.
-    pub async fn clear_container_metadata(&self, key: &ResourceLink) {
-        self.container_properties_cache.invalidate(key).await;
     }
 }
