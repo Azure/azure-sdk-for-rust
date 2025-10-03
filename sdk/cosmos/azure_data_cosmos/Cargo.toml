@@ -43,4 +43,9 @@ hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 
 [package.metadata.docs.rs]
-features = ["key_auth"]
+features = [
+  "key_auth",
+  "preview_query_engine",
+  "hmac_rust",
+  "hmac_openssl",
+]
