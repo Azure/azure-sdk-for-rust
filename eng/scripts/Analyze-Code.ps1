@@ -106,8 +106,8 @@ if (!$SkipPackageAnalysis) {
   if (!(Test-Path $PackageInfoDirectory)) {
     Write-Host "Analyzing workspace`n"
     # Temporary fix to exit immediately on failure. LogError should Write-Error
-    # instead$command =
-    "&$verifyDependenciesScript $RepoRoot/Cargo.toml"
+    # instead
+    $command = "&$verifyDependenciesScript $RepoRoot/Cargo.toml"
     $result = Invoke-LoggedCommand $command
     if ($LastExitCode) {
       Write-Error "Failed to execute $command"
