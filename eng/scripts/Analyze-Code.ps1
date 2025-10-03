@@ -20,18 +20,48 @@ Analyzing code with
 "@
 
 if ($CheckWasm) {
-  Invoke-LoggedCommand "rustup target add wasm32-unknown-unknown"
+  # Temporary fix to exit immediately on failure. LogError should Write-Error
+  # instead
+  $command = "rustup target add wasm32-unknown-unknown"
+  Invoke-LoggedCommand $command
+  if ($LastExitCode) {
+    Write-Error "Failed to execute $command"
+  }
 }
 
 if ($Deny) {
-  Invoke-LoggedCommand "cargo install cargo-deny --locked"
+  # Temporary fix to exit immediately on failure. LogError should Write-Error
+  # instead
+  $command = "cargo install cargo-deny --locked"
+  Invoke-LoggedCommand $command
+  if ($LastExitCode) {
+    Write-Error "Failed to execute $command"
+  }
 }
 
-Invoke-LoggedCommand "cargo check --package azure_core --all-features --all-targets --keep-going"
+# Temporary fix to exit immediately on failure. LogError should Write-Error
+# instead
+$command = "cargo check --package azure_core --all-features --all-targets --keep-going"
+Invoke-LoggedCommand $command
+if ($LastExitCode) {
+  Write-Error "Failed to execute $command"
+}
 
-Invoke-LoggedCommand "cargo fmt --all -- --check"
+# Temporary fix to exit immediately on failure. LogError should Write-Error
+# instead
+$command = "cargo fmt --all -- --check"
+Invoke-LoggedCommand $command
+if ($LastExitCode) {
+  Write-Error "Failed to execute $command"
+}
 
-Invoke-LoggedCommand "cargo clippy --workspace --all-features --all-targets --keep-going --no-deps"
+# Temporary fix to exit immediately on failure. LogError should Write-Error
+# instead
+$command = "cargo clippy --workspace --all-features --all-targets --keep-going --no-deps"
+Invoke-LoggedCommand $command
+if ($LastExitCode) {
+  Write-Error "Failed to execute $command"
+}
 
 if ($CheckWasm) {
   # Save the original RUSTFLAGS to restore later
@@ -39,17 +69,35 @@ if ($CheckWasm) {
   # This is needed to ensure that the `getrandom` crate uses the `wasm_js` backend
   $env:RUSTFLAGS = ${env:RUSTFLAGS} + ' --cfg getrandom_backend="wasm_js"'
 
-  Invoke-LoggedCommand "cargo clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
+  # Temporary fix to exit immediately on failure. LogError should Write-Error
+  # instead
+  $command = "cargo clippy --target=wasm32-unknown-unknown --workspace --keep-going --no-deps"
+  Invoke-LoggedCommand $command
+  if ($LastExitCode) {
+    Write-Error "Failed to execute $command"
+  }
 
   # Restore the original RUSTFLAGS, since the getrandom config option can only be set for wasm32-unknown-unknown builds.
   $env:RUSTFLAGS = $OriginalRustFlags
 }
 
 if ($Deny) {
-  Invoke-LoggedCommand "cargo deny --all-features check"
+  # Temporary fix to exit immediately on failure. LogError should Write-Error
+  # instead
+  $command = "cargo deny --all-features check"
+  Invoke-LoggedCommand $command
+  if ($LastExitCode) {
+    Write-Error "Failed to execute $command"
+  }
 }
 
-Invoke-LoggedCommand "cargo doc --workspace --no-deps --all-features"
+# Temporary fix to exit immediately on failure. LogError should Write-Error
+# instead
+$command = "cargo doc --workspace --no-deps --all-features"
+Invoke-LoggedCommand $command
+if ($LastExitCode) {
+  Write-Error "Failed to execute $command"
+}
 
 # Verify package dependencies
 $verifyDependenciesScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-dependencies.rs' -Resolve
@@ -57,7 +105,14 @@ $verifyDependenciesScript = Join-Path $RepoRoot 'eng' 'scripts' 'verify-dependen
 if (!$SkipPackageAnalysis) {
   if (!(Test-Path $PackageInfoDirectory)) {
     Write-Host "Analyzing workspace`n"
-    return Invoke-LoggedCommand "&$verifyDependenciesScript $RepoRoot/Cargo.toml"
+    # Temporary fix to exit immediately on failure. LogError should Write-Error
+    # instead
+    $command = "&$verifyDependenciesScript $RepoRoot/Cargo.toml"
+    $result = Invoke-LoggedCommand $command
+    if ($LastExitCode) {
+      Write-Error "Failed to execute $command"
+    }
+    return $result
   }
 
   $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
@@ -66,6 +121,12 @@ if (!$SkipPackageAnalysis) {
 
   foreach ($package in $packagesToTest) {
     Write-Host "Analyzing package '$($package.Name)' in directory '$($package.DirectoryPath)'`n"
-    Invoke-LoggedCommand "&$verifyDependenciesScript $($package.DirectoryPath)/Cargo.toml"
+    # Temporary fix to exit immediately on failure. LogError should Write-Error
+    # instead
+    $command = "&$verifyDependenciesScript $($package.DirectoryPath)/Cargo.toml"
+    Invoke-LoggedCommand $command
+    if ($LastExitCode) {
+      Write-Error "Failed to execute $command"
+    }
   }
 }

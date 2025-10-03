@@ -56,13 +56,31 @@ foreach ($package in $packagesToTest) {
 
     Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
-    Invoke-LoggedCommand "cargo build --keep-going" -GroupOutput
+    # Temporary fix to exit immediately on failure. LogError should Write-Error
+    # instead
+    $command = "cargo build --keep-going"
+    Invoke-LoggedCommand $command -GroupOutput
+    if ($LastExitCode) { 
+      Write-Error "Failed to execute $command"
+    }
     Write-Host "`n`n"
 
-    Invoke-LoggedCommand "cargo test --doc --no-fail-fast" -GroupOutput
+    # Temporary fix to exit immediately on failure. LogError should Write-Error
+    # instead
+    $command = "cargo test --doc --no-fail-fast" 
+    Invoke-LoggedCommand $command -GroupOutput
+    if ($LastExitCode) { 
+      Write-Error "Failed to execute $command"
+    }
     Write-Host "`n`n"
 
-    Invoke-LoggedCommand "cargo test --all-targets --no-fail-fast" -GroupOutput
+    # Temporary fix to exit immediately on failure. LogError should Write-Error
+    # instead
+    $command = "cargo test --all-targets --no-fail-fast" 
+    Invoke-LoggedCommand $command -GroupOutput
+    if ($LastExitCode) {
+      Write-Error "Failed to execute $command"
+    }
     Write-Host "`n`n"
 
     $cleanupScript = Join-Path $packageDirectory "Test-Cleanup.ps1"
