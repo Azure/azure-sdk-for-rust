@@ -194,7 +194,7 @@ impl<T, F> From<Response<T, F>> for RawResponse {
 /// The type parameter `T` is a marker type that identifies trait to deserialize defined headers;
 /// otherwise, it is the unit type `()` if no headers are defined.
 ///
-/// Given an `AsyncResponse<T>`, a user can access the raw [`BufResponseBody`] using [`AsyncResponse::into_raw_body`].
+/// Given an `AsyncResponse<T>`, a user can access the raw [`BufResponseBody`] using [`AsyncResponse::into_body`].
 pub struct AsyncResponse<T = ()> {
     raw: BufResponse,
     phantom: PhantomData<T>,
