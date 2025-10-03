@@ -1,6 +1,6 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## 0.8.0 (2025-10-03)
 
 ### Features Added
 
@@ -17,10 +17,6 @@
   - Renamed `ResultExt::map_kind()` to `ResultExt::with_kind()`.
   - Renamed `ResultExt::with_context()` to `ResultExt::with_context_fn()`.
   - Renamed `ResultExt::context()` to `ResultExt::with_context()`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.7.0 (2025-09-11)
 

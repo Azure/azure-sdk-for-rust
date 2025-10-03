@@ -1,14 +1,10 @@
 # Release History
 
-## 0.8.0 (Unreleased)
-
-### Features Added
+## 0.8.0 (2025-10-03)
 
 ### Breaking Changes
 
 - Removed non-idiomatic accessor functions from `AmqpDescribed`, `AmqpSessionOptions`, `AmqpDescribedError`, `AmqpMessage`, and `AmqpTarget`
-
-### Bugs Fixed
 
 ### Other Changes
 
