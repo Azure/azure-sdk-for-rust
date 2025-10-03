@@ -48,9 +48,7 @@ impl std::error::Error for CacheError {
 
 /// A subset of container properties that are stable and suitable for caching.
 pub(crate) struct ContainerMetadata {
-    pub self_link: String,
     pub resource_id: ResourceId,
-    pub partition_key: PartitionKeyDefinition,
     pub container_link: ResourceLink,
 }
 
@@ -60,17 +58,6 @@ impl ContainerMetadata {
         properties: &ContainerProperties,
         container_link: ResourceLink,
     ) -> azure_core::Result<Self> {
-        let self_link = properties
-            .system_properties
-            .self_link
-            .as_ref()
-            .ok_or_else(|| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    "container properties is missing expected value 'self_link'",
-                )
-            })?
-            .clone();
         let resource_id = properties
             .system_properties
             .resource_id
@@ -82,9 +69,7 @@ impl ContainerMetadata {
                 )
             })?;
         Ok(Self {
-            self_link,
             resource_id,
-            partition_key: properties.partition_key.clone(),
             container_link,
         })
     }
