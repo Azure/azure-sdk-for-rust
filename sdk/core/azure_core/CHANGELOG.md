@@ -1,6 +1,6 @@
 # Release History
 
-## 0.29.0 (Unreleased)
+## 0.29.0 (2025-10-03)
 
 ### Features Added
 
@@ -54,8 +54,6 @@
 ### Bugs Fixed
 
 - `ErrorKind::HttpResponse { raw_response, .. }` may have been incorrectly `None`.
-
-### Other Changes
 
 ## 0.28.0 (2025-09-11)
 

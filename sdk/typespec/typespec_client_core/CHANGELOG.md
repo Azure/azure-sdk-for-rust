@@ -1,6 +1,6 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## 0.8.0 (2025-10-03)
 
 ### Features Added
 
@@ -47,10 +47,6 @@
   - Renamed `ResultExt::context()` to `ResultExt::with_context()`.
 - Replaced implementation of `From<BufResponse>` for `Response<T, F>` to `From<RawResponse>`.
 - Replaced implementation of `From<Response<T, F>>` for `BufResponse` to `From<AsyncResponse<T>>`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.7.0 (2025-09-11)
 
