@@ -1,16 +1,19 @@
 //! Internal module to define several newtypes used in the SDK.
 
 macro_rules! string_newtype {
-    ($name:ident) => {
+    ($(#[$attr:meta])* $name:ident) => {
+        $(#[$attr])*
         #[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
         #[serde(transparent)]
         pub struct $name(String);
 
         impl $name {
+            #[doc = concat!("Creates a new `", stringify!($name), "` from a `String`.")]
             pub fn new(value: String) -> Self {
                 Self(value)
             }
 
+            #[doc = concat!("Returns a reference to the inner `str` of the `", stringify!($name), "`.")]
             pub fn value(&self) -> &str {
                 &self.0
             }
@@ -36,4 +39,9 @@ macro_rules! string_newtype {
     };
 }
 
-string_newtype!(ResourceId);
+string_newtype!(
+    /// Represents a Resource ID, which is a unique identifier for a resource within a Cosmos DB account.
+    ///
+    /// In most cases, you don't need to use this type directly, as the SDK will handle resource IDs for you.
+    ResourceId
+);

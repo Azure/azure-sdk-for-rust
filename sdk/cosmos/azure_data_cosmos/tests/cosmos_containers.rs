@@ -241,8 +241,6 @@ pub async fn container_crud_hierarchical_pk(context: TestContext) -> Result<(), 
 
 #[recorded::test]
 pub async fn container_read_throughput_twice(context: TestContext) -> Result<(), Box<dyn Error>> {
-    use azure_core::http::StatusCode;
-
     let recorder = Arc::new(LocalRecorder::new());
     let account = TestAccount::from_env(
         context,
@@ -256,7 +254,6 @@ pub async fn container_read_throughput_twice(context: TestContext) -> Result<(),
     let cosmos_client = account.connect_with_key(None)?;
     let db_client = test_data::create_database(&account, &cosmos_client).await?;
 
-    // Create the container with manual throughput
     let properties = ContainerProperties {
         id: "ThroughputTestContainer".into(),
         partition_key: "/id".into(),

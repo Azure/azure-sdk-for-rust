@@ -31,8 +31,8 @@ use crate::{
 /// A connection is cheap to clone, and all clones share the same underlying HTTP pipeline and metadata cache.
 #[derive(Clone)]
 pub struct CosmosConnection {
-    pub endpoint: Url,
-    pub cache: ContainerMetadataCache,
+    endpoint: Url,
+    cache: ContainerMetadataCache,
     pipeline: azure_core::http::Pipeline,
 }
 
@@ -54,6 +54,14 @@ impl CosmosConnection {
                 None,
             ),
         }
+    }
+
+    pub fn endpoint(&self) -> &Url {
+        &self.endpoint
+    }
+
+    pub fn cache(&self) -> &ContainerMetadataCache {
+        &self.cache
     }
 
     /// Creates a [`Url`] out of the provided [`ResourceLink`]
