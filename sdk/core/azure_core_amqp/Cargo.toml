@@ -38,7 +38,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
 default = ["fe2o3_amqp", "fe2o3-amqp/native-tls"]
-cplusplus = []
+ffi = []
 test = []
 fe2o3_amqp = [
   "dep:fe2o3-amqp",

@@ -370,7 +370,7 @@ impl From<&AmqpValue> for fe2o3_amqp_types::primitives::Value {
                     value: (&amqp_described.value).into(),
                 }),
             ),
-            #[cfg(feature = "cplusplus")]
+            #[cfg(feature = "ffi")]
             AmqpValue::Composite(amqp_composite) => fe2o3_amqp_types::primitives::Value::Described(
                 Box::new(serde_amqp::described::Described {
                     descriptor: amqp_composite.descriptor().into(),
@@ -423,7 +423,7 @@ impl From<AmqpValue> for fe2o3_amqp_types::primitives::Value {
             //
             // Iron Oxide does not directly support Composite types (they're handled via macros), so when a C++
             // component attempts to convert an AMQP Composite type to Iron Oxide, we convert it to a Described type
-            #[cfg(feature = "cplusplus")]
+            #[cfg(feature = "ffi")]
             AmqpValue::Composite(d) => fe2o3_amqp_types::primitives::Value::Described(Box::new(
                 serde_amqp::described::Described {
                     descriptor: d.descriptor().into(),
@@ -667,7 +667,7 @@ impl PartialEq<AmqpValue> for fe2o3_amqp_types::primitives::Value {
                 fe2o3_amqp_types::primitives::Value::Described(a) => **d == **a,
                 _ => false,
             },
-            #[cfg(feature = "cplusplus")]
+            #[cfg(feature = "ffi")]
             AmqpValue::Composite(_) => false,
 
             AmqpValue::Decimal128(d) => match self {
