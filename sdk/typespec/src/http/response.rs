@@ -69,7 +69,7 @@ impl ResponseBody {
     }
 
     /// Collect the stream into a [`String`].
-    pub fn collect_string(self) -> crate::Result<String> {
+    pub fn into_string(self) -> crate::Result<String> {
         std::str::from_utf8(&self.0)
             .with_context(
                 ErrorKind::DataConversion,
@@ -80,7 +80,7 @@ impl ResponseBody {
 
     /// Deserialize the JSON stream into type `T`.
     #[cfg(feature = "json")]
-    pub fn json<T>(self) -> crate::Result<T>
+    pub fn json<T>(&self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {
@@ -89,7 +89,7 @@ impl ResponseBody {
 
     /// Deserialize the XML stream into type `T`.
     #[cfg(feature = "xml")]
-    pub fn xml<T>(self) -> crate::Result<T>
+    pub fn xml<T>(&self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {

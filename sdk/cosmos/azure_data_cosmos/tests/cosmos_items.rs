@@ -68,7 +68,7 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     let response = container_client
         .create_item("Partition1", &item, None)
         .await?;
-    let body = response.into_raw_body().collect_string()?;
+    let body = response.into_raw_body().into_string()?;
     assert_eq!("", body);
 
     // Try to read the item
@@ -85,7 +85,7 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     let response = container_client
         .replace_item("Partition1", "Item1", &item, None)
         .await?;
-    let body = response.into_raw_body().collect_string()?;
+    let body = response.into_raw_body().into_string()?;
     assert_eq!("", body);
 
     // Update again, but this time ask for the response
@@ -110,7 +110,7 @@ pub async fn item_create_read_replace_delete(context: TestContext) -> Result<(),
     let response = container_client
         .delete_item("Partition1", "Item1", None)
         .await?;
-    let body = response.into_raw_body().collect_string()?;
+    let body = response.into_raw_body().into_string()?;
     assert_eq!("", body);
 
     // Try to read the item again, expecting a 404
