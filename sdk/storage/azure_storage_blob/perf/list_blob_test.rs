@@ -73,7 +73,7 @@ impl PerfTest for ListBlobTest {
     async fn setup(&self, _context: &TestContext) -> azure_core::Result<()> {
         // Setup code before running the test
 
-        let result = self.client.create_container(None).await?;
+        let _result = self.client.create_container(None).await?;
 
         for i in 0..self.count {
             let blob_name = format!("blob-{}", i);
@@ -82,7 +82,7 @@ impl PerfTest for ListBlobTest {
             let body = vec![0u8; 1024 * 1024]; // 1 MB blob
             let body_bytes = Bytes::from(body);
 
-            let result = blob_client.upload(body_bytes.into(), true, 5, None).await?;
+            let _result = blob_client.upload(body_bytes.into(), true, 5, None).await?;
         }
 
         Ok(())
@@ -93,7 +93,7 @@ impl PerfTest for ListBlobTest {
 
         let mut iterator = self.client.list_blobs(None)?;
         while let Some(blob_segment) = iterator.try_next().await? {
-            let body = blob_segment.into_body()?;
+            let _body = blob_segment.into_body()?;
         }
 
         Ok(())
