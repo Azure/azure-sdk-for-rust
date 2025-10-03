@@ -10,14 +10,28 @@ trigger:
     include:
     - sdk/typespec/
 
+parameters:
+- name: release_typespec
+  displayName: 'typespec'
+  type: boolean
+  default: true
+- name: release_release_typespec_macros
+  displayName: 'typespec_macros'
+  type: boolean
+  default: true
+- name: release_typespec_client_core
+  displayName: 'typespec_client_core'
+  type: boolean
+  default: true
+
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: typespec
     Artifacts:
     - name: typespec
-      safeName: Typespec
+      releaseInBatch: ${{ parameters.release_typespec }}
     - name: typespec_macros
-      safeName: TypespecMacros
+      releaseInBatch: ${{ parameters.release_release_typespec_macros }}
     - name: typespec_client_core
-      safeName: TypespecClientCore
+      releaseInBatch: ${{ parameters.release_typespec_client_core }}

@@ -84,7 +84,7 @@ extends:
           ServiceDirectory: ${{ parameters.ServiceDirectory }}
           PipelineArtifactName: packages
           Artifacts: ${{ parameters.Artifacts }}
-          TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }}
+          TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }} 
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           TestProxy: ${{ parameters.TestProxy }}
           MatrixConfigs:
@@ -148,6 +148,9 @@ extends:
             parameters:
               DependsOn: "Build"
               ServiceDirectory: ${{ parameters.ServiceDirectory }}
-              Artifacts: ${{ parameters.Artifacts }}
+              Artifacts: 
+                - ${{ each artifact in parameters.Artifacts }}: 
+                  - ${{ if ne(artifact.releaseInBatch, 'false')}}: 
+                    - ${{ artifact }}
               TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }}
               PipelineArtifactName: packages

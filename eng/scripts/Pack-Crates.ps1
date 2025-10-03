@@ -6,6 +6,8 @@ param(
   [string]$OutputPath,
   [Parameter(ParameterSetName = 'Named')]
   [string[]]$PackageNames,
+  [Parameter(ParameterSetName = 'Named')]
+  [switch]$RequireDependencies,
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
   [switch]$NoVerify
@@ -93,6 +95,10 @@ function Get-PackagesToBuild() {
 
     foreach ($dependency in $package.UnreleasedDependencies) {
       if (!$packagesToBuild.Contains($dependency) -and !$toProcess.Contains($dependency)) {
+        if ($RequireDependencies -and $dependency.name -notin $PackageNames) { 
+          Write-Warning "Package $($package.name) depends on unreleased or unspecified dependency: $($dependency.name)"
+        }
+        
         $packagesToBuild += $dependency
         $toProcess += $dependency
       }
@@ -162,6 +168,29 @@ try {
 
   [array]$packages = Get-PackagesToBuild
 
+  if ($RequireDependencies) {
+    $unspecifiedPackages = $packages.name | Where-Object { $_ -notin $PackageNames }
+    if ($unspecifiedPackages.Count -gt 0) { 
+      Write-Error "Packages in -PackageNames require dependencies that are either not released or not listed for packing: $($unspecifiedPackages -join ', ')"
+      exit 1
+    }
+
+    $orderMatches = $true
+    for ($i = 0; $i -lt $PackageNames.Count; $i++) {
+      if ($packages[$i].name -ne $PackageNames[$i]) {
+        $orderMatches = $false
+        break
+      }
+    }
+    
+    if (!$orderMatches) {
+      Write-Host "Expected order: $($packages.name -join ', ')"
+      Write-Host "Provided order: $($PackageNames -join ', ')"
+      Write-Error "The order of packages in -PackageNames does not match the required build order."
+      exit 1
+    }
+  }
+
   Write-Host "Building packages in the following order:"
   foreach ($package in $packages) {
     $packageName = $package.name
@@ -183,7 +212,6 @@ try {
 
     Invoke-LoggedCommand -Command $command -GroupOutput
 
-
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
       -LocalRegistryPath $localRegistryPath `
@@ -192,16 +220,11 @@ try {
     if ($OutputPath -and $package.OutputPackage) {
       $sourcePath = "$RepoRoot/target/package/$packageName-$packageVersion"
       $targetPath = "$OutputPath/$packageName"
-      $targetContentsPath = "$targetPath/contents"
       $targetApiReviewFile = "$targetPath/$packageName.rust.json"
 
-      if (Test-Path -Path $targetContentsPath) {
-        Remove-Item -Path $targetContentsPath -Recurse -Force
-      }
-
-      Write-Host "Copying package '$packageName' to '$targetContentsPath'"
-      New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
-      Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse -Exclude "Cargo.toml.orig"
+      Write-Host "Copying package '$packageName' to '$targetPath'"
+      New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
+      Copy-Item -Path "$sourcePath.crate" -Destination $targetPath
 
       Write-Host "Creating API review file"
       $apiReviewFile = Create-ApiViewFile $package
