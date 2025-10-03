@@ -20,11 +20,11 @@ fn create_failed_test(_runner: &PerfRunner) -> CreatePerfTestReturn {
 }
 
 // Helper function to create a basic test metadata for testing
-fn create_basic_test_metadata() -> TestMetadata {
-    TestMetadata {
+fn create_basic_test_metadata() -> PerfTestMetadata {
+    PerfTestMetadata {
         name: "basic_test",
         description: "A basic test for testing purposes",
-        options: vec![TestOption {
+        options: vec![PerfTestOption {
             name: "test-option",
             short_activator: 't',
             long_activator: "test-option",
@@ -38,12 +38,12 @@ fn create_basic_test_metadata() -> TestMetadata {
 }
 
 // Helper function to create test metadata with multiple options
-fn create_complex_test_metadata() -> TestMetadata {
-    TestMetadata {
+fn create_complex_test_metadata() -> PerfTestMetadata {
+    PerfTestMetadata {
         name: "complex_test",
         description: "A complex test with multiple options",
         options: vec![
-            TestOption {
+            PerfTestOption {
                 name: "mandatory-option",
                 short_activator: 'm',
                 long_activator: "mandatory",
@@ -52,7 +52,7 @@ fn create_complex_test_metadata() -> TestMetadata {
                 mandatory: true,
                 sensitive: false,
             },
-            TestOption {
+            PerfTestOption {
                 name: "sensitive-option",
                 short_activator: 's',
                 long_activator: "sensitive",
@@ -61,7 +61,7 @@ fn create_complex_test_metadata() -> TestMetadata {
                 mandatory: false,
                 sensitive: true,
             },
-            TestOption {
+            PerfTestOption {
                 name: "flag-option",
                 short_activator: 'f',
                 long_activator: "flag",
@@ -74,11 +74,11 @@ fn create_complex_test_metadata() -> TestMetadata {
 }
 
 // Helper function to create test metadata without short activators
-fn create_no_short_activator_test_metadata() -> TestMetadata {
-    TestMetadata {
+fn create_no_short_activator_test_metadata() -> PerfTestMetadata {
+    PerfTestMetadata {
         name: "no_short_test",
         description: "Test without short activators",
-        options: vec![TestOption {
+        options: vec![PerfTestOption {
             name: "long-only",
             short_activator: '\0',
             long_activator: "long-only",
@@ -494,7 +494,7 @@ fn test_perf_runner_options_debug() {
 
 #[test]
 fn test_test_option_debug_and_default() {
-    let option = TestOption::default();
+    let option = PerfTestOption::default();
 
     // Test default values
     assert_eq!(option.name, "");
@@ -592,11 +592,11 @@ fn complex_test_create(_runner: &PerfRunner) -> CreatePerfTestReturn {
 
 #[tokio::test]
 async fn test_perf_runner_with_test_functions() {
-    let tests = vec![TestMetadata {
+    let tests = vec![PerfTestMetadata {
         name: "complex_test",
         description: "A complex test with multiple options",
         options: vec![
-            TestOption {
+            PerfTestOption {
                 name: "mandatory-option",
                 short_activator: 'm',
                 long_activator: "mandatory",
@@ -605,7 +605,7 @@ async fn test_perf_runner_with_test_functions() {
                 mandatory: true,
                 sensitive: false,
             },
-            TestOption {
+            PerfTestOption {
                 name: "sensitive-option",
                 short_activator: 's',
                 long_activator: "sensitive",
@@ -614,7 +614,7 @@ async fn test_perf_runner_with_test_functions() {
                 mandatory: false,
                 sensitive: true,
             },
-            TestOption {
+            PerfTestOption {
                 name: "flag-option",
                 short_activator: 'f',
                 long_activator: "flag",

@@ -37,3 +37,8 @@ azure_storage_blob_test.path = "../azure_storage_blob_test"
 futures.workspace = true
 tokio = { workspace = true, features = ["macros"] }
 tracing.workspace = true
+
+[[test]]
+name = "performance_tests"
+path = "perf/perf_tests.rs"
+harness = false

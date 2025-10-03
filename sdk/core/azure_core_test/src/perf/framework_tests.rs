@@ -91,10 +91,10 @@ async fn test_perf_runner_with_single_test() {
     let runner = PerfRunner::with_command_line(
         env!("CARGO_MANIFEST_DIR"),
         file!(),
-        vec![TestMetadata {
+        vec![PerfTestMetadata {
             name: "fibonacci1",
             description: "A basic test for testing purposes",
-            options: vec![TestOption {
+            options: vec![PerfTestOption {
                 name: "count",
                 mandatory: true,
                 short_activator: 'c',

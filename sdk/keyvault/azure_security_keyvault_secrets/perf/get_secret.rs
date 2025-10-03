@@ -1,11 +1,23 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Keyvault Secrets performance tests.
+//!
+//! This test measures the performance of getting a secret from Azure Key Vault.
+//! It sets up a secret in the Key Vault during the setup phase and then repeatedly retrieves it
+//! during the run phase. The test can be configured with the vault URL via command line arguments
+//! to target different Key Vault instances.
+//!
+//! To run the test, use the following command line arguments:
+//!
+//! cargo test --package azure_security_keyvault_secrets --test performance_tests -- --duration 10 --parallel 20 get_secret -u https://<my_vault>.vault.azure.net/
+//!
+
 use std::sync::OnceLock;
 
 use azure_core::Result;
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, TestMetadata, TestOption},
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
     TestContext,
 };
 use azure_security_keyvault_secrets::{models::SetSecretParameters, SecretClient};
@@ -17,11 +29,11 @@ struct GetSecrets {
 }
 
 impl GetSecrets {
-    fn test_metadata() -> TestMetadata {
-        TestMetadata {
+    fn test_metadata() -> PerfTestMetadata {
+        PerfTestMetadata {
             name: "get_secret",
             description: "Get a secret from Key Vault",
-            options: vec![TestOption {
+            options: vec![PerfTestOption {
                 name: "vault_url",
                 display_message: "The URL of the Key Vault to use in the test",
                 mandatory: true,

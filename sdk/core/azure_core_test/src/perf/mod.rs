@@ -30,13 +30,13 @@ pub type CreatePerfTestReturn =
 
 /// Metadata about a performance test.
 #[derive(Debug, Clone)]
-pub struct TestMetadata {
+pub struct PerfTestMetadata {
     /// The name of the test suite.
     pub name: &'static str,
     /// A brief description of the test suite.
     pub description: &'static str,
     /// The set of test options supported by this test.
-    pub options: Vec<TestOption>,
+    pub options: Vec<PerfTestOption>,
 
     /// A function used to create the performance test.
     pub create_test: fn(&PerfRunner) -> CreatePerfTestReturn,
@@ -44,7 +44,7 @@ pub struct TestMetadata {
 
 /// #A `TestOptions` defines a set of options for the test which will be merged with the common test inputs to define the command line for the performance test.
 #[derive(Debug, Default, Clone)]
-pub struct TestOption {
+pub struct PerfTestOption {
     /// The name of the test option. This is used as the key in the `TestArguments` map.
     pub name: &'static str,
 
@@ -112,7 +112,7 @@ impl From<&ArgMatches> for PerfRunnerOptions {
 #[derive(Debug, Clone)]
 pub struct PerfRunner {
     options: PerfRunnerOptions,
-    tests: Vec<TestMetadata>,
+    tests: Vec<PerfTestMetadata>,
     arguments: ArgMatches,
     package_dir: &'static str,
     module_name: &'static str,
@@ -123,7 +123,7 @@ impl PerfRunner {
     pub fn new(
         package_dir: &'static str,
         module_name: &'static str,
-        tests: Vec<TestMetadata>,
+        tests: Vec<PerfTestMetadata>,
     ) -> azure_core::Result<Self> {
         let command = Self::get_command_from_metadata(&tests);
         let arguments = command.get_matches();
@@ -141,7 +141,7 @@ impl PerfRunner {
     pub fn with_command_line(
         package_dir: &'static str,
         module_name: &'static str,
-        tests: Vec<TestMetadata>,
+        tests: Vec<PerfTestMetadata>,
         args: Vec<&str>,
     ) -> azure_core::Result<Self> {
         let command = Self::get_command_from_metadata(&tests);
@@ -273,6 +273,7 @@ impl PerfRunner {
         _test_name: &str,
         duration: Duration,
     ) -> azure_core::Result<()> {
+        self.progress.store(0, Ordering::SeqCst);
         let mut tasks: JoinSet<Result<()>> = JoinSet::new();
         for _ in 0..self.options.parallel {
             let test_instance_clone = Arc::clone(&test_instance);
@@ -283,6 +284,7 @@ impl PerfRunner {
                 //                let context =
                 //                    TestContext::new(package_dir, module_name, " test_name_copy.as_str()")?;
 
+                tokio::task::yield_now().await;
                 loop {
                     test_instance_clone.run(/*&context*/).await?;
                     progress.fetch_add(1, Ordering::SeqCst);
@@ -295,12 +297,16 @@ impl PerfRunner {
                 _ = tokio::time::sleep(timeout) => {println!("Timeout reached, stopping test tasks: {:?}", start.elapsed());},
                 _ = tasks.join_all() =>  {println!("All test tasks completed: {:?}", start.elapsed());},
                 _ = async {
+                        let mut last_count = 0;
                         loop {
                             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-                            println!("{:<10?} elapsed: {:.5} op/sec, {:4} sec/operation.",
-                                start.elapsed(),
-                                self.progress.load(Ordering::SeqCst) as f64 / start.elapsed().as_secs_f64(),
-                                Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));
+                            let current_total = self.progress.load(Ordering::SeqCst);
+                            // println!("{:<10?} elapsed: {:.5} op/sec, {:4} sec/operation.",
+                            //     start.elapsed(),
+                            //     self.progress.load(Ordering::SeqCst) as f64 / start.elapsed().as_secs_f64(),
+                            //     Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));
+                            println!("Current {:3}, Total {:5} {:4}", current_total - last_count, current_total, Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));
+                            last_count = current_total;
                         }
                     }, if !self.options.disable_progress => {},
         );
@@ -323,7 +329,7 @@ impl PerfRunner {
     //   * Sync - run a synchronous version of the test
 
     /// Constructs a `clap::Command` from the provided test metadata.
-    fn get_command_from_metadata(tests: &[TestMetadata]) -> clap::Command {
+    fn get_command_from_metadata(tests: &[PerfTestMetadata]) -> clap::Command {
         let mut command = clap::Command::new("perf-tests")
             .about("Run performance tests for the Azure SDK for Rust")
             .arg(
