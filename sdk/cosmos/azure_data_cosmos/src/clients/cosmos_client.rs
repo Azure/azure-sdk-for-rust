@@ -3,8 +3,8 @@
 
 use crate::{
     clients::DatabaseClient,
+    connection::{AuthorizationPolicy, CosmosConnection},
     models::DatabaseProperties,
-    pipeline::{AuthorizationPolicy, CosmosPipeline},
     resource_context::{ResourceLink, ResourceType},
     CosmosClientOptions, CreateDatabaseOptions, FeedPager, Query, QueryDatabasesOptions,
 };
@@ -23,10 +23,13 @@ use std::sync::Arc;
 use azure_core::credentials::Secret;
 
 /// Client for Azure Cosmos DB.
-#[derive(Debug, Clone)]
+///
+/// A [`CosmosClient`] can be safely shared between threads and is cheap to clone, as it holds most of the connection state in an [`Arc`].
+/// However, it's generally preferred to have a single `CosmosClient` per Cosmos account in your application, and share that between threads as needed.
+#[derive(Clone)]
 pub struct CosmosClient {
     databases_link: ResourceLink,
-    pipeline: CosmosPipeline,
+    connection: CosmosConnection,
 }
 
 impl CosmosClient {
@@ -55,7 +58,7 @@ impl CosmosClient {
         let options = options.unwrap_or_default();
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline: CosmosPipeline::new(
+            connection: CosmosConnection::new(
                 endpoint.parse()?,
                 AuthorizationPolicy::from_token_credential(credential),
                 options.client_options,
@@ -88,7 +91,7 @@ impl CosmosClient {
         let options = options.unwrap_or_default();
         Ok(Self {
             databases_link: ResourceLink::root(ResourceType::Databases),
-            pipeline: CosmosPipeline::new(
+            connection: CosmosConnection::new(
                 endpoint.parse()?,
                 AuthorizationPolicy::from_shared_key(key),
                 options.client_options,
@@ -131,12 +134,12 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the database.
     pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(self.pipeline.clone(), id)
+        DatabaseClient::new(self.connection.clone(), id)
     }
 
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
-        &self.pipeline.endpoint
+        &self.connection.endpoint
     }
 
     /// Executes a query against databases in the account.
@@ -168,9 +171,9 @@ impl CosmosClient {
         options: Option<QueryDatabasesOptions<'_>>,
     ) -> azure_core::Result<FeedPager<DatabaseProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.databases_link);
+        let url = self.connection.url(&self.databases_link);
 
-        self.pipeline.send_query_request(
+        self.connection.send_query_request(
             options.method_options.context,
             query.into(),
             url,
@@ -198,13 +201,13 @@ impl CosmosClient {
             id: &'a str,
         }
 
-        let url = self.pipeline.url(&self.databases_link);
+        let url = self.connection.url(&self.databases_link);
         let mut req = Request::new(url, Method::Post);
         req.insert_headers(&options.throughput)?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&RequestBody { id })?;
 
-        self.pipeline
+        self.connection
             .send(
                 options.method_options.context,
                 &mut req,

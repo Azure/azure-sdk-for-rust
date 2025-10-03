@@ -18,7 +18,7 @@ pub use partition_key_definition::*;
 pub use patch_operations::*;
 pub use throughput_properties::*;
 
-use crate::types::{EffectivePartitionKey, PartitionKeyRangeId};
+use crate::ResourceId;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where
@@ -84,7 +84,7 @@ pub struct SystemProperties {
     // Some APIs do expect the "_rid" to be provided (Replace Offer, for example), so we do want to serialize it if it's provided.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "_rid")]
-    pub resource_id: Option<String>,
+    pub resource_id: Option<ResourceId>,
 
     /// A [`OffsetDateTime`] representing the last modified time of the resource.
     #[serde(default)]

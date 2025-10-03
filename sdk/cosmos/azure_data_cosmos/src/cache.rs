@@ -3,20 +3,100 @@ use std::sync::Arc;
 use moka::future::Cache;
 
 use crate::{
-    models::{ContainerProperties, DatabaseProperties},
-    routing::ContainerRoutingMap,
+    models::{ContainerProperties, PartitionKeyDefinition},
+    resource_context::ResourceLink,
     ResourceId,
 };
 
+#[derive(Debug)]
+pub enum CacheError {
+    FetchError(Arc<azure_core::Error>),
+}
+
+impl From<Arc<azure_core::Error>> for CacheError {
+    fn from(e: Arc<azure_core::Error>) -> Self {
+        CacheError::FetchError(e)
+    }
+}
+
+impl From<CacheError> for azure_core::Error {
+    fn from(e: CacheError) -> Self {
+        match e {
+            CacheError::FetchError(e) => {
+                let message = format!("error updating Container Metadata Cache: {}", e);
+                azure_core::Error::with_error(azure_core::error::ErrorKind::Other, e, message)
+            }
+        }
+    }
+}
+
+impl std::fmt::Display for CacheError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CacheError::FetchError(e) => write!(f, "error fetching latest value: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for CacheError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            CacheError::FetchError(e) => Some(&**e),
+        }
+    }
+}
+
+/// A subset of container properties that are stable and suitable for caching.
+pub(crate) struct ContainerMetadata {
+    pub self_link: String,
+    pub resource_id: ResourceId,
+    pub partition_key: PartitionKeyDefinition,
+    pub container_link: ResourceLink,
+}
+
+impl ContainerMetadata {
+    // We can't use From<ContainerProperties> because we also want the container link.
+    pub fn from_properties(
+        properties: &ContainerProperties,
+        container_link: ResourceLink,
+    ) -> azure_core::Result<Self> {
+        let self_link = properties
+            .system_properties
+            .self_link
+            .as_ref()
+            .ok_or_else(|| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    "container properties is missing expected value 'self_link'",
+                )
+            })?
+            .clone();
+        let resource_id = properties
+            .system_properties
+            .resource_id
+            .clone()
+            .ok_or_else(|| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    "container properties is missing expected value 'resource_id'",
+                )
+            })?;
+        Ok(Self {
+            self_link,
+            resource_id,
+            partition_key: properties.partition_key.clone(),
+            container_link,
+        })
+    }
+}
+
+/// A cache for container metadata, including properties and routing information.
+///
+/// The cache can be cloned cheaply, and all clones share the same underlying cache data.
+#[derive(Clone)]
 pub struct ContainerMetadataCache {
-    /// Caches a mapping from container ID (the "name") to container properties, including the RID.
-    container_properties_cache: Cache<String, Arc<ContainerProperties>>,
-
-    /// Caches a mapping from database ID (the "name") to database properties, including the RID.
-    database_properties_cache: Cache<String, Arc<DatabaseProperties>>,
-
-    /// Caches container routing information, mapping from container RID to routing info.
-    routing_map_cache: Cache<ResourceId, Arc<ContainerRoutingMap>>,
+    /// Caches stable container metadata, mapping from container link and RID to metadata.
+    container_properties_cache: Cache<ResourceLink, Arc<ContainerMetadata>>,
 }
 
 // TODO: Review this value.
@@ -29,14 +109,39 @@ impl ContainerMetadataCache {
     /// Creates a new `ContainerMetadataCache` with default settings.
     ///
     /// Since the cache is designed to be shared, it is returned inside an `Arc`.
-    pub fn new() -> Arc<Self> {
+    pub fn new() -> Self {
         let container_properties_cache = Cache::new(MAX_CACHE_CAPACITY);
-        let database_properties_cache = Cache::new(MAX_CACHE_CAPACITY);
-        let routing_map_cache = Cache::new(MAX_CACHE_CAPACITY);
-        Arc::new(Self {
+        Self {
             container_properties_cache,
-            database_properties_cache,
-            routing_map_cache,
-        })
+        }
+    }
+
+    /// Unconditionally updates the cache with the provided container metadata.
+    pub async fn set_container_metadata(&self, metadata: ContainerMetadata) {
+        let metadata = Arc::new(metadata);
+
+        self.container_properties_cache
+            .insert(metadata.container_link.clone(), metadata)
+            .await;
+    }
+
+    /// Gets the container metadata from the cache, or initializes it using the provided async function if not present.
+    pub async fn get_container_metadata(
+        &self,
+        key: &ResourceLink,
+        init: impl std::future::Future<Output = azure_core::Result<ContainerMetadata>>,
+    ) -> Result<Arc<ContainerMetadata>, CacheError> {
+        // TODO: Background refresh. We can do background refresh by storing an expiry time in the cache entry.
+        // Then, if the entry is stale, we can return the stale entry and spawn a background task to refresh it.
+        // There's a little trickiness here in that
+        Ok(self
+            .container_properties_cache
+            .try_get_with_by_ref(key, async { init.await.map(Arc::new) })
+            .await?)
+    }
+
+    /// Clears the cached container metadata for the specified key, so that the next request will fetch fresh data.
+    pub async fn clear_container_metadata(&self, key: &ResourceLink) {
+        self.container_properties_cache.invalidate(key).await;
     }
 }

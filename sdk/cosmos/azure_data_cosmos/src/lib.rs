@@ -10,25 +10,22 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(docsrs, feature(doc_cfg_hide))]
 
+mod cache;
 pub mod clients;
+mod connection;
 mod connection_string;
 pub mod constants;
 mod feed;
+mod location_cache;
+pub mod models;
 mod options;
 mod partition_key;
-pub(crate) mod pipeline;
 pub mod query;
-pub(crate) mod resource_context;
-pub(crate) mod routing;
-pub(crate) mod utils;
-
-pub mod models;
-
-mod cache;
-mod location_cache;
+mod resource_context;
 mod types;
+mod utils;
 
-pub(crate) use types::*;
+pub use types::ResourceId;
 
 #[doc(inline)]
 pub use clients::CosmosClient;

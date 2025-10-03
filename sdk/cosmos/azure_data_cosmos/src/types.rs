@@ -37,5 +37,3 @@ macro_rules! string_newtype {
 }
 
 string_newtype!(ResourceId);
-string_newtype!(PartitionKeyRangeId);
-string_newtype!(EffectivePartitionKey);

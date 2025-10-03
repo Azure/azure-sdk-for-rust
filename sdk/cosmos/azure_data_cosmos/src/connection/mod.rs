@@ -18,16 +18,21 @@ use serde::de::DeserializeOwned;
 use url::Url;
 
 use crate::{
+    cache::ContainerMetadataCache,
     constants,
     models::ThroughputProperties,
     resource_context::{ResourceLink, ResourceType},
-    FeedPage, FeedPager, Query,
+    FeedPage, FeedPager, Query, ResourceId,
 };
 
-/// Newtype that wraps an Azure Core pipeline to provide a Cosmos-specific pipeline which configures our authorization policy and enforces that a [`ResourceType`] is set on the context.
-#[derive(Debug, Clone)]
+/// Represents a connection to a specific Cosmos account.
+///
+/// The [`CosmosConnection`] holds all the shared state for a connection to a Cosmos DB account.
+/// A connection is cheap to clone, and all clones share the same underlying HTTP pipeline and metadata cache.
+#[derive(Clone)]
 pub struct CosmosConnection {
     pub endpoint: Url,
+    pub cache: ContainerMetadataCache,
     pipeline: azure_core::http::Pipeline,
 }
 
@@ -39,6 +44,7 @@ impl CosmosConnection {
     ) -> Self {
         CosmosConnection {
             endpoint,
+            cache: ContainerMetadataCache::new(),
             pipeline: azure_core::http::Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
@@ -124,7 +130,7 @@ impl CosmosConnection {
     pub async fn read_throughput_offer(
         &self,
         context: Context<'_>,
-        resource_id: &str,
+        resource_id: &ResourceId,
     ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
         // We only have to into_owned here in order to call send_query_request below,
         // since it returns `Pager` which must own it's data.
@@ -164,7 +170,7 @@ impl CosmosConnection {
     pub async fn replace_throughput_offer(
         &self,
         context: Context<'_>,
-        resource_id: &str,
+        resource_id: &ResourceId,
         throughput: ThroughputProperties,
     ) -> azure_core::Result<Response<ThroughputProperties>> {
         let response = self

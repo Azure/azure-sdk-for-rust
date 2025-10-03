@@ -1,11 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::sync::Arc;
+
 use crate::{
+    cache::ContainerMetadata,
+    connection::CosmosConnection,
     constants,
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
-    pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
     ThroughputOptions,
@@ -14,7 +17,7 @@ use crate::{
 use azure_core::http::{
     request::{options::ContentType, Request},
     response::Response,
-    Method,
+    Method, RawResponse,
 };
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -23,14 +26,15 @@ use serde::{de::DeserializeOwned, Serialize};
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 #[derive(Clone)]
 pub struct ContainerClient {
+    id: String,
     link: ResourceLink,
     items_link: ResourceLink,
-    pipeline: CosmosPipeline,
+    connection: CosmosConnection,
 }
 
 impl ContainerClient {
     pub(crate) fn new(
-        pipeline: CosmosPipeline,
+        connection: CosmosConnection,
         database_link: &ResourceLink,
         container_id: &str,
     ) -> Self {
@@ -40,9 +44,10 @@ impl ContainerClient {
         let items_link = link.feed(ResourceType::Items);
 
         Self {
+            id: container_id.to_string(),
             link,
             items_link,
-            pipeline,
+            connection,
         }
     }
 
@@ -66,12 +71,15 @@ impl ContainerClient {
         &self,
         options: Option<ReadContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
-        let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
-        let mut req = Request::new(url, Method::Get);
-        self.pipeline
-            .send(options.method_options.context, &mut req, self.link.clone())
-            .await
+        let response: RawResponse = self.read_properties(options).await?.into();
+
+        // Read the properties and cache the stable metadata (things that don't change for the life of a container)
+        // TODO: Replace with `response.body().json()` when that becomes borrowing.
+        let properties = serde_json::from_slice::<ContainerProperties>(response.body())?;
+        let metadata = ContainerMetadata::from_properties(&properties, self.link.clone())?;
+        self.connection.cache.set_container_metadata(metadata).await;
+
+        Ok(response.into())
     }
 
     /// Updates the indexing policy of the container.
@@ -110,11 +118,11 @@ impl ContainerClient {
         options: Option<ReplaceContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
+        let url = self.connection.url(&self.link);
         let mut req = Request::new(url, Method::Put);
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&properties)?;
-        self.pipeline
+        self.connection
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
     }
@@ -130,16 +138,9 @@ impl ContainerClient {
         options: Option<ThroughputOptions<'_>>,
     ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
         let options = options.unwrap_or_default();
-
-        // We need to get the RID for the database.
-        let db = self.read(None).await?.into_body()?;
-        let resource_id = db
-            .system_properties
-            .resource_id
-            .expect("service should always return a '_rid' for a container");
-
-        self.pipeline
-            .read_throughput_offer(options.method_options.context, &resource_id)
+        let resource_id = &self.metadata().await?.resource_id;
+        self.connection
+            .read_throughput_offer(options.method_options.context, resource_id)
             .await
     }
 
@@ -156,14 +157,9 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         // We need to get the RID for the database.
-        let db = self.read(None).await?.into_body()?;
-        let resource_id = db
-            .system_properties
-            .resource_id
-            .expect("service should always return a '_rid' for a container");
-
-        self.pipeline
-            .replace_throughput_offer(options.method_options.context, &resource_id, throughput)
+        let resource_id = &self.metadata().await?.resource_id;
+        self.connection
+            .replace_throughput_offer(options.method_options.context, resource_id, throughput)
             .await
     }
 
@@ -178,9 +174,9 @@ impl ContainerClient {
         options: Option<DeleteContainerOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
+        let url = self.connection.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
-        self.pipeline
+        self.connection
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
     }
@@ -257,13 +253,13 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.items_link);
+        let url = self.connection.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
-        self.pipeline
+        self.connection
             .send(
                 options.method_options.context,
                 &mut req,
@@ -346,13 +342,13 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
+        let url = self.connection.url(&link);
         let mut req = Request::new(url, Method::Put);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
-        self.pipeline
+        self.connection
             .send(options.method_options.context, &mut req, link)
             .await
     }
@@ -432,14 +428,14 @@ impl ContainerClient {
         options: Option<ItemOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.items_link);
+        let url = self.connection.url(&self.items_link);
         let mut req = Request::new(url, Method::Post);
         req.insert_headers(&options)?;
         req.insert_header(constants::IS_UPSERT, "true");
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
-        self.pipeline
+        self.connection
             .send(
                 options.method_options.context,
                 &mut req,
@@ -490,11 +486,11 @@ impl ContainerClient {
         options.enable_content_response_on_write = true;
 
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
+        let url = self.connection.url(&link);
         let mut req = Request::new(url, Method::Get);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
-        self.pipeline
+        self.connection
             .send(options.method_options.context, &mut req, link)
             .await
     }
@@ -527,11 +523,11 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
+        let url = self.connection.url(&link);
         let mut req = Request::new(url, Method::Delete);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
-        self.pipeline
+        self.connection
             .send(options.method_options.context, &mut req, link)
             .await
     }
@@ -600,14 +596,14 @@ impl ContainerClient {
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
         let link = self.items_link.item(item_id);
-        let url = self.pipeline.url(&link);
+        let url = self.connection.url(&link);
         let mut req = Request::new(url, Method::Patch);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&patch)?;
 
-        self.pipeline
+        self.connection
             .send(options.method_options.context, &mut req, link)
             .await
     }
@@ -686,7 +682,7 @@ impl ContainerClient {
         if partition_key.is_empty() {
             if let Some(query_engine) = options.query_engine.take() {
                 return crate::query::executor::QueryExecutor::new(
-                    self.pipeline.clone(),
+                    self.connection.clone(),
                     self.link.clone(),
                     query,
                     options,
@@ -696,13 +692,36 @@ impl ContainerClient {
             }
         }
 
-        let url = self.pipeline.url(&self.items_link);
-        self.pipeline.send_query_request(
+        let url = self.connection.url(&self.items_link);
+        self.connection.send_query_request(
             options.method_options.context,
             query,
             url,
             self.items_link.clone(),
             |r| r.insert_headers(&partition_key),
         )
+    }
+
+    async fn metadata(&self) -> azure_core::Result<Arc<ContainerMetadata>> {
+        Ok(self
+            .connection
+            .cache
+            .get_container_metadata(&self.link, async {
+                let properties = self.read_properties(None).await?.into_body()?;
+                ContainerMetadata::from_properties(&properties, self.link.clone())
+            })
+            .await?)
+    }
+
+    async fn read_properties(
+        &self,
+        options: Option<ReadContainerOptions<'_>>,
+    ) -> azure_core::Result<Response<ContainerProperties>> {
+        let options = options.unwrap_or_default();
+        let url = self.connection.url(&self.link);
+        let mut req = Request::new(url, Method::Get);
+        self.connection
+            .send(options.method_options.context, &mut req, self.link.clone())
+            .await
     }
 }

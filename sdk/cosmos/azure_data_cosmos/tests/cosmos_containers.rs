@@ -2,8 +2,9 @@
 
 mod framework;
 
-use std::error::Error;
+use std::{error::Error, sync::Arc};
 
+use azure_core::http::Method;
 use azure_core_test::{recorded, TestContext};
 use azure_data_cosmos::{
     models::{
@@ -14,7 +15,7 @@ use azure_data_cosmos::{
 };
 use futures::TryStreamExt;
 
-use framework::{test_data, TestAccount};
+use framework::{test_data, LocalRecorder, TestAccount, TestAccountOptions};
 
 #[recorded::test]
 pub async fn container_crud(context: TestContext) -> Result<(), Box<dyn Error>> {
@@ -235,5 +236,73 @@ pub async fn container_crud_hierarchical_pk(context: TestContext) -> Result<(), 
 
     account.cleanup().await?;
 
+    Ok(())
+}
+
+#[recorded::test]
+pub async fn container_read_throughput_twice(context: TestContext) -> Result<(), Box<dyn Error>> {
+    use azure_core::http::StatusCode;
+
+    let recorder = Arc::new(LocalRecorder::new());
+    let account = TestAccount::from_env(
+        context,
+        Some(TestAccountOptions {
+            recorder: Some(recorder.clone()),
+            ..Default::default()
+        }),
+    )
+    .await?;
+
+    let cosmos_client = account.connect_with_key(None)?;
+    let db_client = test_data::create_database(&account, &cosmos_client).await?;
+
+    // Create the container with manual throughput
+    let properties = ContainerProperties {
+        id: "ThroughputTestContainer".into(),
+        partition_key: "/id".into(),
+        ..Default::default()
+    };
+    let throughput = ThroughputProperties::manual(600);
+
+    db_client
+        .create_container(
+            properties.clone(),
+            Some(CreateContainerOptions {
+                throughput: Some(throughput),
+                ..Default::default()
+            }),
+        )
+        .await?
+        .into_body()?;
+    let container_client = db_client.container_client(&properties.id);
+
+    let first_throughput = container_client
+        .read_throughput(None)
+        .await?
+        .expect("throughput should be present")
+        .into_body()?;
+    assert_eq!(Some(600), first_throughput.throughput());
+
+    let second_throughput = container_client
+        .read_throughput(None)
+        .await?
+        .expect("throughput should be present")
+        .into_body()?;
+    assert_eq!(Some(600), second_throughput.throughput());
+
+    // Check the recorder to ensure only one request was made to read the container metadata
+    let txs = recorder.to_transactions().await;
+    assert_eq!(
+        1,
+        txs.iter()
+            .filter(|t| t.request.method() == Method::Get
+                && t.request
+                    .url()
+                    .path()
+                    .ends_with("/colls/ThroughputTestContainer"))
+            .count()
+    );
+
+    account.cleanup().await?;
     Ok(())
 }

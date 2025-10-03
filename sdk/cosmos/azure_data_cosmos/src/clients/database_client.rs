@@ -1,11 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::sync::Arc;
+
 use crate::{
     clients::ContainerClient,
+    connection::CosmosConnection,
     models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
     options::ReadDatabaseOptions,
-    pipeline::CosmosPipeline,
     resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, FeedPager, Query, QueryContainersOptions,
     ThroughputOptions,
@@ -20,15 +22,16 @@ use azure_core::http::{
 /// A client for working with a specific database in a Cosmos DB account.
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
+#[derive(Clone)]
 pub struct DatabaseClient {
     link: ResourceLink,
     containers_link: ResourceLink,
     database_id: String,
-    pipeline: CosmosPipeline,
+    connection: CosmosConnection,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(pipeline: CosmosPipeline, database_id: &str) -> Self {
+    pub(crate) fn new(connection: CosmosConnection, database_id: &str) -> Self {
         let database_id = database_id.to_string();
         let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let containers_link = link.feed(ResourceType::Containers);
@@ -37,7 +40,7 @@ impl DatabaseClient {
             link,
             containers_link,
             database_id,
-            pipeline,
+            connection,
         }
     }
 
@@ -46,7 +49,7 @@ impl DatabaseClient {
     /// # Arguments
     /// * `name` - The name of the container.
     pub fn container_client(&self, name: &str) -> ContainerClient {
-        ContainerClient::new(self.pipeline.clone(), &self.link, name)
+        ContainerClient::new(self.connection.clone(), &self.link, name)
     }
 
     /// Returns the identifier of the Cosmos database.
@@ -76,9 +79,9 @@ impl DatabaseClient {
         options: Option<ReadDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<DatabaseProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
+        let url = self.connection.url(&self.link);
         let mut req = Request::new(url, Method::Get);
-        self.pipeline
+        self.connection
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
     }
@@ -112,9 +115,9 @@ impl DatabaseClient {
         options: Option<QueryContainersOptions<'_>>,
     ) -> azure_core::Result<FeedPager<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.containers_link);
+        let url = self.connection.url(&self.containers_link);
 
-        self.pipeline.send_query_request(
+        self.connection.send_query_request(
             options.method_options.context,
             query.into(),
             url,
@@ -136,13 +139,13 @@ impl DatabaseClient {
         options: Option<CreateContainerOptions<'_>>,
     ) -> azure_core::Result<Response<ContainerProperties>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.containers_link);
+        let url = self.connection.url(&self.containers_link);
         let mut req = Request::new(url, Method::Post);
         req.insert_headers(&options.throughput)?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&properties)?;
 
-        self.pipeline
+        self.connection
             .send(
                 options.method_options.context,
                 &mut req,
@@ -162,9 +165,9 @@ impl DatabaseClient {
         options: Option<DeleteDatabaseOptions<'_>>,
     ) -> azure_core::Result<Response<()>> {
         let options = options.unwrap_or_default();
-        let url = self.pipeline.url(&self.link);
+        let url = self.connection.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
-        self.pipeline
+        self.connection
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
     }
@@ -188,7 +191,7 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        self.pipeline
+        self.connection
             .read_throughput_offer(options.method_options.context, &resource_id)
             .await
     }
@@ -212,7 +215,7 @@ impl DatabaseClient {
             .resource_id
             .expect("service should always return a '_rid' for a database");
 
-        self.pipeline
+        self.connection
             .replace_throughput_offer(options.method_options.context, &resource_id, throughput)
             .await
     }
