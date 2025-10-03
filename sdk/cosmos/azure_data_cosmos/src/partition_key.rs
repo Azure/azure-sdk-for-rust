@@ -81,6 +81,9 @@ impl PartitionKey {
     /// A single null partition key value, which can be used as the sole partition key or as part of a hierarchical partition key.
     pub const NULL: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Null);
 
+    /// A single undefined partition key value, which identifies the partition containing items with no partition key property at all.
+    pub const UNDEFINED: PartitionKeyValue = PartitionKeyValue(InnerPartitionKeyValue::Undefined);
+
     /// An empty list of partition key values, which is used to signal a cross-partition query, when querying a container.
     pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
 
@@ -115,6 +118,7 @@ impl AsHeaders for PartitionKey {
         for key in &self.0 {
             match key.0 {
                 InnerPartitionKeyValue::Null => json.push_str("null"),
+                InnerPartitionKeyValue::Undefined => json.push_str("{}"),
                 InnerPartitionKeyValue::String(ref string_key) => {
                     json.push('"');
                     for char in string_key.chars() {
@@ -168,6 +172,7 @@ pub struct PartitionKeyValue(InnerPartitionKeyValue);
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum InnerPartitionKeyValue {
     Null,
+    Undefined,
     String(Cow<'static, str>),
     Number(serde_json::Number), // serde_json::Number has special integer handling, so we'll use that.
 }
@@ -359,6 +364,11 @@ mod tests {
     }
 
     #[test]
+    pub fn undefined_value() {
+        assert_eq!(key_to_string(PartitionKey::UNDEFINED), r#"[{}]"#);
+    }
+
+    #[test]
     pub fn non_ascii_string() {
         let key = PartitionKey::from("smile 😀");
         assert_eq!(key_to_string(key), r#"["smile \ud83d\ude00"]"#);
@@ -369,6 +379,10 @@ mod tests {
         assert_eq!(
             key_to_string((42u8, "my_partition_key", PartitionKey::NULL)),
             r#"[42,"my_partition_key",null]"#
+        );
+        assert_eq!(
+            key_to_string((42u8, "my_partition_key", PartitionKey::UNDEFINED)),
+            r#"[42,"my_partition_key",{}]"#
         );
     }
 
