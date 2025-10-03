@@ -36,11 +36,6 @@ const AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY: &str = "AZURE_CLIENT_SEND_CER
 /// requests to Azure Active Directory.
 #[derive(Clone, Debug)]
 pub struct ClientCertificateCredentialOptions {
-    /// The base URL for token requests.
-    ///
-    /// The default is `https://login.microsoftonline.com`.
-    pub authority_host: Option<String>,
-
     /// Options for the credential's HTTP pipeline.
     pub client_options: ClientOptions,
 
@@ -54,7 +49,6 @@ impl Default for ClientCertificateCredentialOptions {
             .map(|s| s == "1" || s.to_lowercase() == "true")
             .unwrap_or(false);
         Self {
-            authority_host: None,
             client_options: ClientOptions::default(),
             send_certificate_chain,
         }
@@ -84,15 +78,14 @@ impl ClientCertificateCredential {
         client_id: String,
         client_certificate: C,
         client_certificate_pass: P,
-        options: impl Into<ClientCertificateCredentialOptions>,
+        options: Option<ClientCertificateCredentialOptions>,
     ) -> azure_core::Result<Arc<ClientCertificateCredential>>
     where
         C: Into<Secret>,
         P: Into<Secret>,
     {
-        let options = options.into();
-
-        let authority_host = get_authority_host(None, options.authority_host)?;
+        let options = options.unwrap_or_default();
+        let authority_host = get_authority_host(None, options.client_options.cloud.as_deref())?;
         let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
             .with_context_fn(ErrorKind::DataConversion, || {

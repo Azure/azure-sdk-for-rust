@@ -49,6 +49,7 @@ pub(crate) use virtual_machine_managed_identity_credential::*;
 
 use crate::env::Env;
 use azure_core::{
+    cloud::CloudConfiguration,
     error::{ErrorKind, ResultExt},
     http::{RawResponse, Url},
     Error, Result,
@@ -103,13 +104,33 @@ where
 const AZURE_AUTHORITY_HOST_ENV_KEY: &str = "AZURE_AUTHORITY_HOST";
 const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
 
-fn get_authority_host(env: Option<Env>, option: Option<String>) -> Result<Url> {
-    let authority_host = env
-        .unwrap_or_default()
-        .var(AZURE_AUTHORITY_HOST_ENV_KEY)
-        .unwrap_or_else(|_| option.unwrap_or_else(|| AZURE_PUBLIC_CLOUD.to_owned()));
+fn get_authority_host(env: Option<Env>, cloud: Option<&CloudConfiguration>) -> Result<Url> {
+    let authority_host = match cloud {
+        None => env
+            .unwrap_or_default()
+            .var(AZURE_AUTHORITY_HOST_ENV_KEY)
+            .unwrap_or_else(|_| AZURE_PUBLIC_CLOUD.to_string()),
+        Some(CloudConfiguration::Custom(config)) => config.authority_host.clone(),
+        Some(CloudConfiguration::AzureGovernment) => "https://login.microsoftonline.us".to_string(),
+        Some(CloudConfiguration::AzureChina) => "https://login.chinacloudapi.cn".to_string(),
+        Some(CloudConfiguration::AzurePublic) => AZURE_PUBLIC_CLOUD.to_string(),
+        // need this arm because CloudConfiguration is non-exhaustive
+        _ => {
+            return Err(Error::with_message(
+                ErrorKind::Other,
+                format!("unexpected cloud configuration: {:?}", cloud),
+            ))
+        }
+    };
 
-    Url::parse(&authority_host).map_err(Into::<Error>::into)
+    let url = Url::parse(&authority_host).map_err(Into::<Error>::into)?;
+    if url.scheme() != "https" {
+        return Err(Error::with_message(
+            ErrorKind::Other,
+            format!("authority host doesn't use HTTPS scheme: {authority_host}"),
+        ));
+    }
+    Ok(url)
 }
 
 #[test]
@@ -192,12 +213,14 @@ fn test_validate_tenant_id() {
 
 #[cfg(test)]
 mod tests {
-    use crate::process::Executor;
+    use super::*;
+    use crate::{env::Env, process::Executor};
     use async_trait::async_trait;
     use azure_core::{
+        cloud::{CloudConfiguration, CustomConfiguration},
         error::ErrorKind,
-        http::{BufResponse, Request},
-        Error, Result,
+        http::{headers::Headers, BufResponse, Request, StatusCode},
+        Bytes, Error, Result,
     };
     use std::{
         ffi::OsStr,
@@ -209,6 +232,7 @@ mod tests {
     };
 
     pub const FAKE_CLIENT_ID: &str = "fake-client";
+    pub const FAKE_PUBLIC_CLOUD_AUTHORITY: &str = "https://login.microsoftonline.com/fake-tenant";
     pub const FAKE_TENANT_ID: &str = "fake-tenant";
     pub const FAKE_TOKEN: &str = "***";
     pub const LIVE_TEST_RESOURCE: &str = "https://management.azure.com";
@@ -292,6 +316,16 @@ mod tests {
         }
     }
 
+    pub fn token_response() -> BufResponse {
+        BufResponse::from_bytes(
+            StatusCode::Ok,
+            Headers::default(),
+            Bytes::from(format!(
+                r#"{{"access_token":"{FAKE_TOKEN}","expires_in":3600,"token_type":"Bearer"}}"#,
+            )),
+        )
+    }
+
     pub type RequestCallback = Arc<dyn Fn(&Request) -> Result<()> + Send + Sync>;
 
     pub struct MockSts {
@@ -328,5 +362,50 @@ mod tests {
                 Ok(responses.remove(0)) // Use remove(0) to return responses in the correct order
             }
         }
+    }
+
+    pub fn cloud_configuration_cases() -> Vec<(CloudConfiguration, String)> {
+        let custom_host = "https://login.contoso.local/".to_string();
+
+        let mut custom_no_trailing_slash = CustomConfiguration::default();
+        custom_no_trailing_slash.authority_host = custom_host.trim_end_matches('/').to_string();
+
+        let mut custom_trailing_slash = CustomConfiguration::default();
+        custom_trailing_slash.authority_host = custom_host;
+
+        vec![
+            (
+                CloudConfiguration::AzurePublic,
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+            ),
+            (
+                CloudConfiguration::AzureGovernment,
+                format!("https://login.microsoftonline.us/{FAKE_TENANT_ID}"),
+            ),
+            (
+                CloudConfiguration::AzureChina,
+                format!("https://login.chinacloudapi.cn/{FAKE_TENANT_ID}"),
+            ),
+            (
+                CloudConfiguration::Custom(custom_trailing_slash),
+                format!("https://login.contoso.local/{FAKE_TENANT_ID}"),
+            ),
+            (
+                CloudConfiguration::Custom(custom_no_trailing_slash),
+                format!("https://login.contoso.local/{FAKE_TENANT_ID}"),
+            ),
+        ]
+    }
+
+    #[test]
+    fn cloud_configuration_overrides_env() {
+        let mut config = CustomConfiguration::default();
+        config.authority_host = "https://custom".to_string();
+        let cloud = CloudConfiguration::Custom(config);
+
+        let env = Env::from(&[(crate::AZURE_AUTHORITY_HOST_ENV_KEY, "https://env")][..]);
+
+        let authority = get_authority_host(Some(env), Some(&cloud)).unwrap();
+        assert_eq!(authority.as_str(), "https://custom/"); // Url::parse adds the trailing slash
     }
 }
