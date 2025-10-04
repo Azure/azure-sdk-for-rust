@@ -26,6 +26,7 @@ futures.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
 tracing.workspace = true
+typespec_client_core = { workspace = true }
 
 [build-dependencies]
 rustc_version.workspace = true
@@ -44,6 +45,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]
 in_memory_checkpoint_store = []
+socks5 = ["azure_core_amqp/socks5"]
 default = ["azure_core_amqp/default"]
 
 [[bench]]
