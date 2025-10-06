@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use azure_core::http::{headers::Headers, Context, Method, RawResponse, Request};
 use serde::de::DeserializeOwned;
 

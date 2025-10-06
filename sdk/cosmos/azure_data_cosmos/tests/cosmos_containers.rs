@@ -1,4 +1,8 @@
 #![cfg(feature = "key_auth")]
+#![allow(
+    unused_imports,
+    reason = "Each test builds this module separately and that means imports may be unused in certain builds."
+)]
 
 mod framework;
 
