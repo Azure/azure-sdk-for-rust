@@ -40,7 +40,7 @@ jobs:
       filePath: $(Build.SourcesDirectory)/eng/scripts/Analyze-Code.ps1
       arguments: >
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
-        -Toolchain '${{ parameters.Toolchain }}'
+        -Toolchain 'nightly'
         -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
         -Deny
 
