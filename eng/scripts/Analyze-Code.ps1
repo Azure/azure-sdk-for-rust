@@ -143,7 +143,7 @@ if (!$SkipPackageAnalysis) {
     if ($Toolchain -eq 'nightly') {
       # Temporary fix to exit immediately on failure. LogError should Write-Error
       # instead
-      $command = "cargo +nightly docs-rs --package "
+      $command = "cargo +nightly docs-rs --package $($package.Name)"
       Invoke-LoggedCommand $command
       if ($LastExitCode) {
         Write-Error "Failed to execute $command"
