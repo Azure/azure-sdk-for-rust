@@ -77,7 +77,7 @@ impl ClientCertificateCredential {
         tenant_id: String,
         client_id: String,
         client_certificate: C,
-        client_certificate_pass: P,
+        client_certificate_password: P,
         options: Option<ClientCertificateCredentialOptions>,
     ) -> azure_core::Result<Arc<ClientCertificateCredential>>
     where

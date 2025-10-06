@@ -123,7 +123,7 @@ fn get_authority_host(env: Option<Env>, cloud: Option<&CloudConfiguration>) -> R
         }
     };
 
-    let url = Url::parse(&authority_host).map_err(Into::<Error>::into)?;
+    let url = Url::parse(&authority_host)?;
     if url.scheme() != "https" {
         return Err(Error::with_message(
             ErrorKind::Other,
