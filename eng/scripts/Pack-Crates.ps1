@@ -10,7 +10,8 @@ param(
   [switch]$RequireDependencies,
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
-  [switch]$NoVerify
+  [switch]$NoVerify,
+  [string]$OutBuildOrderFile
 )
 
 $ErrorActionPreference = 'Stop'
@@ -174,21 +175,6 @@ try {
       Write-Error "Packages in -PackageNames require dependencies that are either not released or not listed for packing: $($unspecifiedPackages -join ', ')"
       exit 1
     }
-
-    $orderMatches = $true
-    for ($i = 0; $i -lt $PackageNames.Count; $i++) {
-      if ($packages[$i].name -ne $PackageNames[$i]) {
-        $orderMatches = $false
-        break
-      }
-    }
-    
-    if (!$orderMatches) {
-      Write-Host "Expected order: $($packages.name -join ', ')"
-      Write-Host "Provided order: $($PackageNames -join ', ')"
-      Write-Error "The order of packages in -PackageNames does not match the required build order."
-      exit 1
-    }
   }
 
   Write-Host "Building packages in the following order:"
@@ -196,6 +182,12 @@ try {
     $packageName = $package.name
     $type = if ($package.OutputPackage) { "output" } else { "dependency" }
     Write-Host "  $packageName ($type)"
+  }
+
+  if ($OutBuildOrderFile) {
+    $buildOrder = ConvertTo-Json $packages.name
+    Write-Host "Writing build order to $OutBuildOrderFile ($buildOrder)"
+    $buildOrder | Out-File -FilePath $OutBuildOrderFile -Encoding utf8 -Force
   }
 
   foreach ($package in $packages) {
