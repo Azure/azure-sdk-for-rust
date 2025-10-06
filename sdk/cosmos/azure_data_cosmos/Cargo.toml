@@ -22,7 +22,7 @@ serde.workspace = true
 tracing.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
-moka = { version = "0.12.11", features = ["future"] }
+moka.workspace = true
 
 [dev-dependencies]
 azure_identity.workspace = true

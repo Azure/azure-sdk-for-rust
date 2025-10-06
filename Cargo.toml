@@ -109,6 +109,7 @@ getrandom = { version = "0.3" }
 gloo-timers = { version = "0.3" }
 hmac = { version = "0.12" }
 litemap = "0.7.4"
+moka = { version = "0.12.11", features = ["future"] }
 openssl = { version = "0.10.72" }
 opentelemetry = { version = "0.30", features = ["trace"] }
 opentelemetry_sdk = "0.30"
