@@ -41,6 +41,7 @@ async fn deconstruct_raw_response() -> Result<(), Box<dyn std::error::Error>> {
         panic!("expected ErrorKind::HttpResponse");
     };
 
+    // Test comment, expect all success.
     assert_eq!(status, &StatusCode::BadRequest);
     assert_eq!(error_code.as_deref(), Some("BadParameter"));
     assert!(
