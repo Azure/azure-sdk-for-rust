@@ -1,5 +1,17 @@
 # Release History
 
+## 0.30.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Removed `constants` module.
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.29.1 (2025-10-06)
 
 ### Breaking Changes
