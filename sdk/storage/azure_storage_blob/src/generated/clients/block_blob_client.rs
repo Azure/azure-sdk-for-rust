@@ -29,8 +29,6 @@ use std::sync::Arc;
 
 #[tracing::client]
 pub struct BlockBlobClient {
-    pub(crate) blob_name: String,
-    pub(crate) container_name: String,
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
     pub(crate) version: String,
@@ -53,15 +51,11 @@ impl BlockBlobClient {
     /// * `endpoint` - Service host
     /// * `credential` - An implementation of [`TokenCredential`](azure_core::credentials::TokenCredential) that can provide an
     ///   Entra ID token to use when authenticating.
-    /// * `container_name` - The name of the container.
-    /// * `blob_name` - The name of the blob.
     /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.Container.Blob.BlockBlob")]
+    #[tracing::new("Storage.Blob.BlockBlob")]
     pub fn new(
         endpoint: &str,
         credential: Arc<dyn TokenCredential>,
-        container_name: String,
-        blob_name: String,
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
         let options = options.unwrap_or_default();
@@ -77,8 +71,6 @@ impl BlockBlobClient {
             vec!["https://storage.azure.com/.default"],
         ));
         Ok(Self {
-            blob_name,
-            container_name,
             endpoint,
             version: options.version,
             pipeline: Pipeline::new(
@@ -144,7 +136,7 @@ impl BlockBlobClient {
     /// * [`version_id`()](crate::generated::models::BlockBlobClientCommitBlockListResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlockBlobClientCommitBlockListResultHeaders`]: crate::generated::models::BlockBlobClientCommitBlockListResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.commitBlockList")]
+    #[tracing::function("Storage.Blob.BlockBlob.commitBlockList")]
     pub async fn commit_block_list(
         &self,
         blocks: RequestContent<BlockLookupList, XmlFormat>,
@@ -153,10 +145,6 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "blocklist");
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
@@ -306,7 +294,7 @@ impl BlockBlobClient {
     /// * [`blob_content_length`()](crate::generated::models::BlockListHeaders::blob_content_length) - x-ms-blob-content-length
     ///
     /// [`BlockListHeaders`]: crate::generated::models::BlockListHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.getBlockList")]
+    #[tracing::function("Storage.Blob.BlockBlob.getBlockList")]
     pub async fn get_block_list(
         &self,
         list_type: BlockListType,
@@ -315,10 +303,6 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "blocklist");
         url.query_pairs_mut()
             .append_pair("blocklisttype", list_type.as_ref());
@@ -421,7 +405,7 @@ impl BlockBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientQueryResultHeaders::is_server_encrypted) - x-ms-server-encrypted
     ///
     /// [`BlockBlobClientQueryResultHeaders`]: crate::generated::models::BlockBlobClientQueryResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.query")]
+    #[tracing::function("Storage.Blob.BlockBlob.query")]
     pub async fn query(
         &self,
         query_request: RequestContent<QueryRequest, XmlFormat>,
@@ -430,10 +414,6 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "query");
         if let Some(snapshot) = options.snapshot {
             url.query_pairs_mut().append_pair("snapshot", &snapshot);
@@ -539,7 +519,7 @@ impl BlockBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`BlockBlobClientStageBlockResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.stageBlock")]
+    #[tracing::function("Storage.Blob.BlockBlob.stageBlock")]
     pub async fn stage_block(
         &self,
         block_id: &[u8],
@@ -550,10 +530,6 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut().append_pair("comp", "block");
         url.query_pairs_mut()
             .append_pair("blockid", &encode(block_id));
@@ -663,7 +639,7 @@ impl BlockBlobClient {
     /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
     ///
     /// [`BlockBlobClientStageBlockFromUrlResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockFromUrlResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.stageBlockFromUrl")]
+    #[tracing::function("Storage.Blob.BlockBlob.stageBlockFromUrl")]
     pub async fn stage_block_from_url(
         &self,
         block_id: &[u8],
@@ -674,10 +650,6 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("comp", "block")
             .append_key_only("fromURL");
@@ -807,7 +779,7 @@ impl BlockBlobClient {
     /// * [`version_id`()](crate::generated::models::BlockBlobClientUploadResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlockBlobClientUploadResultHeaders`]: crate::generated::models::BlockBlobClientUploadResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.upload")]
+    #[tracing::function("Storage.Blob.BlockBlob.upload")]
     pub async fn upload(
         &self,
         body: RequestContent<Bytes, NoFormat>,
@@ -817,10 +789,6 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         if let Some(timeout) = options.timeout {
             url.query_pairs_mut()
                 .append_pair("timeout", &timeout.to_string());
@@ -968,11 +936,11 @@ impl BlockBlobClient {
     ///     if let Some(content_md5) = response.content_md5()? {
     ///         println!("Content-MD5: {:?}", content_md5);
     ///     }
+    ///     if let Some(date) = response.date()? {
+    ///         println!("Date: {:?}", date);
+    ///     }
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("Last-Modified: {:?}", last_modified);
-    ///     }
-    ///     if let Some(etag) = response.etag()? {
-    ///         println!("etag: {:?}", etag);
     ///     }
     ///     Ok(())
     /// }
@@ -980,6 +948,7 @@ impl BlockBlobClient {
     ///
     /// ### Available headers
     /// * [`content_md5`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::content_md5) - Content-MD5
+    /// * [`date`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::date) - Date
     /// * [`last_modified`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::last_modified) - Last-Modified
     /// * [`etag`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::etag) - etag
     /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
@@ -988,7 +957,7 @@ impl BlockBlobClient {
     /// * [`version_id`()](crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders::version_id) - x-ms-version-id
     ///
     /// [`BlockBlobClientUploadBlobFromUrlResultHeaders`]: crate::generated::models::BlockBlobClientUploadBlobFromUrlResultHeaders
-    #[tracing::function("Storage.Blob.Container.Blob.BlockBlob.uploadBlobFromUrl")]
+    #[tracing::function("Storage.Blob.BlockBlob.uploadBlobFromUrl")]
     pub async fn upload_blob_from_url(
         &self,
         copy_source: String,
@@ -997,10 +966,6 @@ impl BlockBlobClient {
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
-        let mut path = String::from("{containerName}/{blobName}");
-        path = path.replace("{blobName}", &self.blob_name);
-        path = path.replace("{containerName}", &self.container_name);
-        url = url.join(&path)?;
         url.query_pairs_mut()
             .append_key_only("BlockBlob")
             .append_key_only("fromUrl");

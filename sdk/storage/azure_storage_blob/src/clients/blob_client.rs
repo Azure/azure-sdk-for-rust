@@ -2,7 +2,10 @@
 // Licensed under the MIT License.
 
 use crate::{
+    generated::clients::AppendBlobClient as GeneratedAppendBlobClient,
     generated::clients::BlobClient as GeneratedBlobClient,
+    generated::clients::BlockBlobClient as GeneratedBlockBlobClient,
+    generated::clients::PageBlobClient as GeneratedPageBlobClient,
     generated::models::{
         BlobClientAcquireLeaseResult, BlobClientBreakLeaseResult, BlobClientChangeLeaseResult,
         BlobClientDownloadResult, BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
@@ -19,6 +22,7 @@ use crate::{
         BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList, StorageErrorCode,
     },
+    parsers::parse_url_name_components,
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
 };
@@ -27,9 +31,10 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        AsyncResponse, JsonFormat, NoFormat, RequestContent, Response, StatusCode, Url, XmlFormat,
+        AsyncResponse, JsonFormat, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url,
+        XmlFormat,
     },
-    Bytes, Result,
+    tracing, Bytes, Result,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -38,23 +43,15 @@ use std::sync::Arc;
 pub struct BlobClient {
     pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobClient,
+    pub(super) container_name: String,
+    pub(super) blob_name: String,
 }
 
-impl BlobClient {
-    /// Creates a new BlobClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `container_name` - The name of the container containing this blob.
-    /// * `blob_name` - The name of the blob to interact with.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    pub fn new(
-        endpoint: &str,
-        container_name: String,
-        blob_name: String,
-        credential: Arc<dyn TokenCredential>,
+impl GeneratedBlobClient {
+    #[tracing::new("Storage.Blob.Blob")]
+    pub fn from_url(
+        blob_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
@@ -65,16 +62,99 @@ impl BlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        let client = GeneratedBlobClient::new(
-            endpoint,
-            credential,
+        if !blob_url.scheme().starts_with("http") {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{blob_url} must use http(s)"),
+            ));
+        }
+
+        let pipeline = match credential {
+            Some(cred) => {
+                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                    cred,
+                    vec!["https://storage.azure.com/.default"],
+                ));
+                Pipeline::new(
+                    option_env!("CARGO_PKG_NAME"),
+                    option_env!("CARGO_PKG_VERSION"),
+                    options.client_options.clone(),
+                    Vec::default(),
+                    vec![auth_policy],
+                    None,
+                )
+            }
+            None => Pipeline::new(
+                option_env!("CARGO_PKG_NAME"),
+                option_env!("CARGO_PKG_VERSION"),
+                options.client_options.clone(),
+                Vec::default(),
+                Vec::default(),
+                None,
+            ),
+        };
+
+        Ok(Self {
+            endpoint: blob_url,
+            version: options.version,
+            pipeline,
+        })
+    }
+}
+impl BlobClient {
+    /// Creates a new BlobClient.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    /// * `container_name` - The name of the container containing this blob.
+    /// * `blob_name` - The name of the blob to interact with.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn new(
+        endpoint: &str,
+        container_name: String,
+        blob_name: String,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let mut url = Url::parse(endpoint)?;
+        if !url.scheme().starts_with("http") {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{url} must use http(s)"),
+            ));
+        }
+
+        // Build Blob URL, Url crate handles encoding only path params
+        url.path_segments_mut()
+            .expect("Cannot be base")
+            .extend([&container_name, &blob_name]);
+
+        let client = GeneratedBlobClient::from_url(url.clone(), credential, options)?;
+        Ok(Self {
+            endpoint: client.endpoint().clone(),
+            client,
             container_name,
             blob_name,
-            Some(options),
-        )?;
+        })
+    }
+
+    pub fn from_blob_url(
+        blob_url: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let url = Url::parse(blob_url)?;
+        let client = GeneratedBlobClient::from_url(url.clone(), credential, options)?;
+
+        let (container_name, blob_name) = parse_url_name_components(&url)?;
+
         Ok(Self {
-            endpoint: endpoint.parse()?,
+            endpoint: client.endpoint().clone(),
             client,
+            container_name,
+            blob_name,
         })
     }
 
@@ -85,7 +165,14 @@ impl BlobClient {
     pub fn append_blob_client(&self) -> AppendBlobClient {
         AppendBlobClient {
             endpoint: self.client.endpoint.clone(),
-            client: self.client.get_append_blob_client(),
+            client: GeneratedAppendBlobClient {
+                endpoint: self.client.endpoint.clone(),
+                pipeline: self.client.pipeline.clone(),
+                version: self.client.version.clone(),
+                tracer: self.client.tracer.clone(),
+            },
+            container_name: self.container_name().to_string(),
+            blob_name: self.blob_name().to_string(),
         }
     }
 
@@ -96,7 +183,14 @@ impl BlobClient {
     pub fn block_blob_client(&self) -> BlockBlobClient {
         BlockBlobClient {
             endpoint: self.client.endpoint.clone(),
-            client: self.client.get_block_blob_client(),
+            client: GeneratedBlockBlobClient {
+                endpoint: self.client.endpoint.clone(),
+                pipeline: self.client.pipeline.clone(),
+                version: self.client.version.clone(),
+                tracer: self.client.tracer.clone(),
+            },
+            container_name: self.container_name().to_string(),
+            blob_name: self.blob_name().to_string(),
         }
     }
 
@@ -107,7 +201,14 @@ impl BlobClient {
     pub fn page_blob_client(&self) -> PageBlobClient {
         PageBlobClient {
             endpoint: self.client.endpoint.clone(),
-            client: self.client.get_page_blob_client(),
+            client: GeneratedPageBlobClient {
+                endpoint: self.client.endpoint.clone(),
+                pipeline: self.client.pipeline.clone(),
+                version: self.client.version.clone(),
+                tracer: self.client.tracer.clone(),
+            },
+            container_name: self.container_name().to_string(),
+            blob_name: self.blob_name().to_string(),
         }
     }
 
@@ -118,12 +219,12 @@ impl BlobClient {
 
     /// Gets the container name of the Storage account this client is connected to.
     pub fn container_name(&self) -> &str {
-        &self.client.container_name
+        &self.container_name
     }
 
     /// Gets the blob name of the Storage account this client is connected to.
     pub fn blob_name(&self) -> &str {
-        &self.client.blob_name
+        &self.blob_name
     }
 
     /// Returns all user-defined metadata, standard HTTP properties, and system properties for the blob.
@@ -183,8 +284,8 @@ impl BlobClient {
             options.if_none_match = Some(String::from("*"));
         }
 
-        self.client
-            .get_block_blob_client()
+        self.block_blob_client()
+            .client
             .upload(data, content_length, Some(options))
             .await
     }

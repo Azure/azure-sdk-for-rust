@@ -78,7 +78,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(512, content_length.unwrap());
-    assert_eq!(data, response_body.collect().await?.to_vec());
+    assert_eq!(data, response_body.collect().await?);
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -112,7 +112,7 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(512, content_length.unwrap());
-    assert_eq!(vec![0; 512], response_body.collect().await?.to_vec());
+    assert_eq!(vec![0; 512], response_body.collect().await?);
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -159,7 +159,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(512, content_length.unwrap());
-    assert_eq!(vec![b'A'; 512], response_body.collect().await?.to_vec());
+    assert_eq!(vec![b'A'; 512], response_body.collect().await?);
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -232,12 +232,6 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
             None,
         )
         .await?;
-    let source_url = format!(
-        "{}{}/{}",
-        blob_client_1.endpoint(),
-        blob_client_1.container_name(),
-        blob_client_1.blob_name()
-    );
 
     page_blob_client_2.create(1024, None).await?;
     let mut data_a = vec![b'A'; 512];
@@ -251,7 +245,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .await?;
     page_blob_client_2
         .upload_pages_from_url(
-            source_url,
+            blob_client_1.endpoint().as_str().into(),
             format_page_range(0, data_b.len() as u64)?,
             data_b.len() as u64,
             format_page_range(512, data_b.len() as u64)?,
@@ -266,7 +260,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     assert!(status_code.is_success());
     assert_eq!(1024, content_length.unwrap());
     data_a.extend(&data_b);
-    assert_eq!(data_a, response_body.collect().await?.to_vec());
+    assert_eq!(data_a, response_body.collect().await?);
 
     container_client.delete_container(None).await?;
     Ok(())
