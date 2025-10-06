@@ -61,7 +61,6 @@ default = [
   "reqwest_gzip",
   "reqwest_native_tls",
 ]
-azurite_workaround = []
 debug = ["typespec_client_core/debug"]
 decimal = ["typespec_client_core/decimal"]
 hmac_openssl = ["dep:openssl"]

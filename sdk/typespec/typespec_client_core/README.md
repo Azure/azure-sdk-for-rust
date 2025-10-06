@@ -12,7 +12,7 @@ This is the runtime for [TypeSpec](https://typespec.io)-generated clients.
 - `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`. Enables `reqwest`'s `native-tls` feature.
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
-- `reqwest_native-tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
+- `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
 - `tokio`: enables and sets `tokio` as the default async runtime.
 - `wasm_bindgen`: enables the async runtime for WASM.
 - `xml`: enables XML support.

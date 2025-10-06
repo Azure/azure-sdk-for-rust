@@ -30,5 +30,8 @@ http = []
 json = ["dep:serde", "dep:serde_json"]
 xml = ["dep:quick-xml"]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [lints]
 workspace = true

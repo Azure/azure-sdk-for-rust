@@ -3,7 +3,7 @@
 #Requires -Version 7.0
 param(
   [string]$PackageInfoDirectory,
-  [string]$Toolchain = 'stable'
+  [string]$Toolchain = 'stable',
   [switch]$CheckWasm = $true,
   [switch]$Deny,
   [switch]$SkipPackageAnalysis
