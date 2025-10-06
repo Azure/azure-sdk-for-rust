@@ -408,4 +408,18 @@ mod tests {
         let authority = get_authority_host(Some(env), Some(&cloud)).unwrap();
         assert_eq!(authority.as_str(), "https://custom/"); // Url::parse adds the trailing slash
     }
+
+    #[test]
+    fn insecure_authority_host() {
+        let authority_host = "http://insecure";
+        let env = Env::from(&[(crate::AZURE_AUTHORITY_HOST_ENV_KEY, authority_host)][..]);
+        let err = get_authority_host(Some(env), None).unwrap_err();
+        assert!(err.to_string().contains("HTTPS"));
+
+        let mut config = CustomConfiguration::default();
+        config.authority_host = authority_host.to_string();
+        let cloud = CloudConfiguration::Custom(config);
+        let err = get_authority_host(None, Some(&cloud)).unwrap_err();
+        assert!(err.to_string().contains("HTTPS"));
+    }
 }
