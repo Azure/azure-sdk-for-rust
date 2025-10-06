@@ -5,14 +5,11 @@
 ### Features Added
 
 * Added `Query::with_text()` and `Query::append_text()` methods to modify query text after creation ([#3044](https://github.com/Azure/azure-sdk-for-rust/pull/3044))
+* Added `PatchDocument::with_condition()` methods to allow setting a condition on a patch operation ([#2969](https://github.com/Azure/azure-sdk-for-rust/pull/2969))
 
 ### Breaking Changes
 
 - Client methods that return a `Response<T>>` asynchronously buffer the entire model within the internal pipeline, so `into_body()` and other methods on the response are no longer async.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.27.0 (2025-09-17)
 
