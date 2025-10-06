@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    deserialize, get_authority_host, EntraIdErrorResponse, EntraIdTokenResponse, TokenCache,
+    authentication_error, deserialize, get_authority_host, EntraIdErrorResponse,
+    EntraIdTokenResponse, TokenCache,
 };
 use azure_core::credentials::TokenRequestOptions;
 use azure_core::http::{PipelineSendOptions, StatusCode};
@@ -159,13 +160,14 @@ impl TokenCredential for ClientSecretCredential {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
             .await
+            .map_err(authentication_error::<Self>)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
+    use crate::{tests::*, TSG_LINK};
     use azure_core::{
         http::{headers::Headers, BufResponse, StatusCode, Transport},
         Bytes, Result,
@@ -253,6 +255,11 @@ mod tests {
             err.to_string().contains(description),
             "expected error description from the response, got '{}'",
             err
+        );
+        assert!(
+            err.to_string()
+                .contains(&format!("{TSG_LINK}client-secret")),
+            "expected error to contain a link to the troubleshooting guide, got '{err}'",
         );
     }
 

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::{get_authority_host, EntraIdTokenResponse, TokenCache};
+use crate::{authentication_error, get_authority_host, EntraIdTokenResponse, TokenCache};
 use azure_core::{
     base64,
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
@@ -275,5 +275,6 @@ impl TokenCredential for ClientCertificateCredential {
         self.cache
             .get_token(scopes, options, |s, o| self.get_token(s, o))
             .await
+            .map_err(authentication_error::<Self>)
     }
 }
