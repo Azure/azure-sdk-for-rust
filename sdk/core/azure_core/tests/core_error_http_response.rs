@@ -44,7 +44,7 @@ async fn deconstruct_raw_response() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(status, &StatusCode::BadRequest);
     assert_eq!(error_code.as_deref(), Some("BadParameter"));
     assert!(
-        matches!(raw_response, Some(r) if str::from_utf8(r.body())?.contains("test-failure"))
+        matches!(raw_response, Some(r) if str::from_utf8(r.body())?.contains("Unknown parameter"))
     );
 
     Ok(())
