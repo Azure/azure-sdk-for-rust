@@ -1,6 +1,6 @@
 [package]
 name = "typespec"
-version = "0.9.0"
+version = "0.9.1"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -29,6 +29,9 @@ amqp = []
 http = []
 json = ["dep:serde", "dep:serde_json"]
 xml = ["dep:quick-xml"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [lints]
 workspace = true

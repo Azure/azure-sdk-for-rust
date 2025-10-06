@@ -1,5 +1,15 @@
 # Release History
 
+## 0.29.1 (2025-10-06)
+
+### Breaking Changes
+
+- Removed the `azurite_workaround` feature (unused).
+
+### Bugs Fixed
+
+- Fix feature documentation ([#3118](https://github.com/Azure/azure-sdk-for-rust/issues/3118))
+
 ## 0.29.0 (2025-10-03)
 
 ### Features Added

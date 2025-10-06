@@ -4,7 +4,7 @@
 #![recursion_limit = "128"]
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(feature = "in_memory_checkpoint_store")]
 mod in_memory_checkpoint_store;

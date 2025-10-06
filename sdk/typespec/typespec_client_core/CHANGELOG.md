@@ -1,5 +1,11 @@
 # Release History
 
+## 0.8.1 (2025-10-06)
+
+### Bugs Fixed
+
+- Fix feature documentation ([#3118](https://github.com/Azure/azure-sdk-for-rust/issues/3118))
+
 ## 0.8.0 (2025-10-03)
 
 ### Features Added

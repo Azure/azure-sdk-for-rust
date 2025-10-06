@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.29.0"
+version = "0.29.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors.workspace = true
@@ -61,7 +61,6 @@ default = [
   "reqwest_gzip",
   "reqwest_native_tls",
 ]
-azurite_workaround = []
 debug = ["typespec_client_core/debug"]
 decimal = ["typespec_client_core/decimal"]
 hmac_openssl = ["dep:openssl"]
