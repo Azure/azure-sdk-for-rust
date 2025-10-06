@@ -3,6 +3,7 @@
 #Requires -Version 7.0
 param(
   [string]$PackageInfoDirectory,
+  [string]$Toolchain = 'stable'
   [switch]$CheckWasm = $true,
   [switch]$Deny,
   [switch]$SkipPackageAnalysis
@@ -115,6 +116,16 @@ if (!$SkipPackageAnalysis) {
     return $result
   }
 
+  if ($Toolchain -eq 'nightly') {
+    # Temporary fix to exit immediately on failure. LogError should Write-Error
+    # instead
+    $command = "cargo install --locked cargo-docs-rs"
+    Invoke-LoggedCommand $command
+    if ($LastExitCode) {
+      Write-Error "Failed to execute $command"
+    }
+  }
+
   $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
   | Get-Content -Raw
   | ConvertFrom-Json
@@ -127,6 +138,16 @@ if (!$SkipPackageAnalysis) {
     Invoke-LoggedCommand $command
     if ($LastExitCode) {
       Write-Error "Failed to execute $command"
+    }
+
+    if ($Toolchain -eq 'nightly') {
+      # Temporary fix to exit immediately on failure. LogError should Write-Error
+      # instead
+      $command = "cargo +nightly docs-rs --package "
+      Invoke-LoggedCommand $command
+      if ($LastExitCode) {
+        Write-Error "Failed to execute $command"
+      }
     }
   }
 }
