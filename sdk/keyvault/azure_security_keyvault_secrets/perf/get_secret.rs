@@ -13,7 +13,7 @@
 //! cargo test --package azure_security_keyvault_secrets --test performance_tests -- --duration 10 --parallel 20 get_secret -u https://<my_vault>.vault.azure.net/
 //!
 
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use azure_core::Result;
 use azure_core_test::{
@@ -80,7 +80,7 @@ impl GetSecrets {
 #[cfg_attr(target_arch="wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl PerfTest for GetSecrets {
-    async fn setup(&self, _context: &TestContext) -> azure_core::Result<()> {
+    async fn setup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         let credential = azure_identity::DeveloperToolsCredential::new(None)?;
         let client = SecretClient::new(self.vault_url.as_str(), credential.clone(), None)?;
         self.client.get_or_init(|| client);
@@ -100,10 +100,10 @@ impl PerfTest for GetSecrets {
             .await?;
         Ok(())
     }
-    async fn cleanup(&self, _context: &TestContext) -> azure_core::Result<()> {
+    async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         Ok(())
     }
-    async fn run(&self) -> Result<()> {
+    async fn run(&self, _context: Arc<TestContext>) -> Result<()> {
         let _secret = self
             .client
             .get()
@@ -119,7 +119,7 @@ impl PerfTest for GetSecrets {
 async fn main() -> azure_core::Result<()> {
     let runner = PerfRunner::new(
         env!("CARGO_MANIFEST_DIR"),
-        "foo",
+        file!(),
         vec![GetSecrets::test_metadata()],
     )?;
 

@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use std::sync::Arc;
+
 use azure_core::{Bytes, Result};
 use azure_core_test::{
     perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
@@ -70,7 +72,7 @@ impl ListBlobTest {
 
 #[async_trait::async_trait]
 impl PerfTest for ListBlobTest {
-    async fn setup(&self, _context: &TestContext) -> azure_core::Result<()> {
+    async fn setup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // Setup code before running the test
 
         let _result = self.client.create_container(None).await?;
@@ -88,7 +90,7 @@ impl PerfTest for ListBlobTest {
         Ok(())
     }
 
-    async fn run(&self) -> azure_core::Result<()> {
+    async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // The actual performance test code
 
         let mut iterator = self.client.list_blobs(None)?;
@@ -99,7 +101,7 @@ impl PerfTest for ListBlobTest {
         Ok(())
     }
 
-    async fn cleanup(&self, _context: &TestContext) -> azure_core::Result<()> {
+    async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // Cleanup code after running the test
         Ok(())
     }

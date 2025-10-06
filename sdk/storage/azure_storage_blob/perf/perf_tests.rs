@@ -11,7 +11,7 @@ use list_blob_test::ListBlobTest;
 async fn main() -> azure_core::Result<()> {
     let runner = PerfRunner::new(
         env!("CARGO_MANIFEST_DIR"),
-        "foo",
+        file!(),
         vec![ListBlobTest::test_metadata()],
     )?;
 

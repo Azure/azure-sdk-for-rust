@@ -564,21 +564,21 @@ struct ComplexTest {}
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl PerfTest for ComplexTest {
-    async fn setup(&self, _context: &TestContext) -> azure_core::Result<()> {
+    async fn setup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         println!("Setting up ComplexTest...");
         // Simulate some async setup work
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         Ok(())
     }
 
-    async fn cleanup(&self, _context: &TestContext) -> azure_core::Result<()> {
+    async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         println!("Cleaning up ComplexTest...");
         // Simulate some async cleanup work
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         Ok(())
     }
 
-    async fn run(&self /*, _context: &TestContext*/) -> azure_core::Result<()> {
+    async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // Simulate some async test work
         println!("Running ComplexTest...");
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
@@ -667,19 +667,21 @@ async fn test_perf_runner_with_test_functions() {
 
     let crate_dir = env!("CARGO_MANIFEST_DIR");
 
-    let test_context = TestContext::new(crate_dir, crate_dir, runner.tests[0].name)
-        .expect("Failed to create TestContext");
+    let test_context = Arc::new(
+        TestContext::new(crate_dir, crate_dir, runner.tests[0].name)
+            .expect("Failed to create TestContext"),
+    );
 
     perf_tests_impl
-        .setup(&test_context)
+        .setup(test_context.clone())
         .await
         .expect("Setup failed");
     perf_tests_impl
-        .run(/*&test_context*/)
+        .run(test_context.clone())
         .await
         .expect("Run failed");
     perf_tests_impl
-        .cleanup(&test_context)
+        .cleanup(test_context.clone())
         .await
         .expect("Cleanup failed");
 }

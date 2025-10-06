@@ -35,10 +35,10 @@ fn create_fibonacci1_test(runner: &PerfRunner) -> CreatePerfTestReturn {
 
     #[async_trait::async_trait]
     impl PerfTest for Fibonacci1Test {
-        async fn setup(&self, _context: &TestContext) -> azure_core::Result<()> {
+        async fn setup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
             Ok(())
         }
-        async fn run(&self /*, _context: &TestContext*/) -> azure_core::Result<()> {
+        async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
             let _result = Self::fibonacci(self.count);
             // This is a CPU bound test, so yield to allow other tasks to run. Otherwise we jam the tokio scheduler.
             // Note that this significantly reduces the performance of the test, but it is necessary to allow parallelism.
@@ -47,7 +47,7 @@ fn create_fibonacci1_test(runner: &PerfRunner) -> CreatePerfTestReturn {
             tokio::task::yield_now().await;
             Ok(())
         }
-        async fn cleanup(&self, _context: &TestContext) -> azure_core::Result<()> {
+        async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
             Ok(())
         }
     }
