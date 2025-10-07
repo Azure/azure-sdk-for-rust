@@ -1,16 +1,10 @@
 # Release History
 
-## 0.8.0 (Unreleased)
-
-### Features Added
+## 0.8.0 (2025-10-07)
 
 ### Breaking Changes
 
 - Client methods that return a `Response<T>>` asynchronously buffer the entire model within the internal pipeline, so `into_body()` and other methods on the response are no longer async.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.7.0 (2025-09-16)
 
