@@ -84,7 +84,7 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
 
     // Act
     append_blob_client
-        .append_block_from_url(blob_client_2.endpoint().as_str().into(), 17, None)
+        .append_block_from_url(blob_client_2.blob_url().as_str().into(), 17, None)
         .await?;
 
     // Assert

@@ -102,7 +102,6 @@ impl BlobContainerClient {
         };
 
         BlobClient {
-            endpoint: blob_url,
             client,
             container_name: self.container_name.clone(),
             blob_name,

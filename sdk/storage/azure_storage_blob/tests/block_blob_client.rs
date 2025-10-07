@@ -138,7 +138,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // Regular Scenario
     blob_client
         .block_blob_client()
-        .upload_blob_from_url(source_blob_client.endpoint().as_str().into(), None)
+        .upload_blob_from_url(source_blob_client.blob_url().as_str().into(), None)
         .await?;
 
     let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().with_if_not_exists();
@@ -147,7 +147,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     let response = blob_client
         .block_blob_client()
         .upload_blob_from_url(
-            overwrite_blob_client.endpoint().as_str().into(),
+            overwrite_blob_client.blob_url().as_str().into(),
             Some(create_options),
         )
         .await;
@@ -158,7 +158,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // Overwrite Existing Blob Scenario
     blob_client
         .block_blob_client()
-        .upload_blob_from_url(overwrite_blob_client.endpoint().as_str().into(), None)
+        .upload_blob_from_url(overwrite_blob_client.blob_url().as_str().into(), None)
         .await?;
 
     // Public Resource Scenario
@@ -189,7 +189,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     blob_client
         .block_blob_client()
         .upload_blob_from_url(
-            overwrite_blob_client.endpoint().as_str().into(),
+            overwrite_blob_client.blob_url().as_str().into(),
             Some(source_auth_options),
         )
         .await?;

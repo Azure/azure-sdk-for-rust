@@ -39,9 +39,8 @@ use azure_core::{
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
+/// A client to interact with a specific Azure Storage blob, although that blob may not yet exist.
 pub struct BlobClient {
-    pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobClient,
     pub(super) container_name: String,
     pub(super) blob_name: String,
@@ -62,37 +61,31 @@ impl GeneratedBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        if !blob_url.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{blob_url} must use http(s)"),
-            ));
-        }
-
-        let pipeline = match credential {
-            Some(cred) => {
-                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
-                    cred,
-                    vec!["https://storage.azure.com/.default"],
+        let per_retry_policies = if let Some(token_credential) = credential {
+            if !blob_url.scheme().starts_with("http") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{blob_url} must use http(s)"),
                 ));
-                Pipeline::new(
-                    option_env!("CARGO_PKG_NAME"),
-                    option_env!("CARGO_PKG_VERSION"),
-                    options.client_options.clone(),
-                    Vec::default(),
-                    vec![auth_policy],
-                    None,
-                )
             }
-            None => Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options.clone(),
-                Vec::default(),
-                Vec::default(),
-                None,
-            ),
+
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
         };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
 
         Ok(Self {
             endpoint: blob_url,
@@ -112,28 +105,19 @@ impl BlobClient {
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn new(
-        endpoint: &str,
+        mut endpoint: Url,
         container_name: String,
         blob_name: String,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        let mut url = Url::parse(endpoint)?;
-        if !url.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{url} must use http(s)"),
-            ));
-        }
-
-        // Build Blob URL, Url crate handles encoding only path params
-        url.path_segments_mut()
-            .expect("Cannot be base")
+        endpoint
+            .path_segments_mut()
+            .expect("URL must be hierarchical with authority: HTTP/HTTPS scheme.")
             .extend([&container_name, &blob_name]);
 
-        let client = GeneratedBlobClient::from_url(url.clone(), credential, options)?;
+        let client = GeneratedBlobClient::from_url(endpoint, credential, options)?;
         Ok(Self {
-            endpoint: client.endpoint().clone(),
             client,
             container_name,
             blob_name,
@@ -141,17 +125,14 @@ impl BlobClient {
     }
 
     pub fn from_blob_url(
-        blob_url: &str,
+        blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        let url = Url::parse(blob_url)?;
-        let client = GeneratedBlobClient::from_url(url.clone(), credential, options)?;
-
-        let (container_name, blob_name) = parse_url_name_components(&url)?;
+        let (container_name, blob_name) = parse_url_name_components(&blob_url)?;
+        let client = GeneratedBlobClient::from_url(blob_url, credential, options)?;
 
         Ok(Self {
-            endpoint: client.endpoint().clone(),
             client,
             container_name,
             blob_name,
@@ -212,9 +193,9 @@ impl BlobClient {
         }
     }
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
+    /// Gets the full URL of the Storage blob this client is connected to.
+    pub fn blob_url(&self) -> &Url {
+        &self.client.endpoint
     }
 
     /// Gets the container name of the Storage account this client is connected to.
