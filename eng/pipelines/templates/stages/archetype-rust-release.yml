@@ -153,6 +153,7 @@ stages:
 
                     - pwsh: |
                         $index = [int]'$(ArtifactIndex)' + 1
+                        Write-Host "Setting ArtifactIndex to $index"
                         Write-Host "##vso[task.setvariable variable=ArtifactIndex]$index"
                       displayName: Increment ArtifactIndex
 
