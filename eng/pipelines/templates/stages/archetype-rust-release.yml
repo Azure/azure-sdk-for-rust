@@ -85,21 +85,36 @@ stages:
             runOnce:
               deploy:
                 steps:
+                  - pwsh: |
+                      Write-Host "##vso[task.setvariable variable=ArtifactIndex]0"
+                    displayName: Set ArtifactIndex to 0
+
                   - ${{ each artifact in parameters.Artifacts }}:
                     - pwsh: |
-                        $ArtifactName = '${{artifact.name}}'
-                        $ArtifactRootPath = '$(Pipeline.Workspace)/drop'
-                        $OutDir = '$(Pipeline.Workspace)/esrp-release'
-
-                        if (Test-Path $OutDir) {
-                          Write-Host "Cleaning output directory: $OutDir"
-                          Remove-Item -Path $OutDir -Recurse -Force
+                        # Read artifact release order from release-order.json 
+                        # and use ArtifactIndex to select the right one
+                        $index = [int]'$(ArtifactIndex)'
+                        $artifacts = Get-Content '$(Pipeline.Workspace)/drop/release-order.json' | ConvertFrom-Json
+                        if ($index -ge $artifacts.Count) {
+                          Write-Error "ArtifactIndex $index is out of range (0..$($artifacts.Count - 1))"
+                          exit 1
                         }
-                        New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
 
-                        Write-Host "Artifact name: $ArtifactName"
+                        $artifactName = $artifacts[$index]
+                        Write-Host "Releasing artifact $artifactName (index $index)"
 
-                        $packageMetadataPath = "$ArtifactRootPath/PackageInfo/$ArtifactName.json"
+                        $artifactRootPath = '$(Pipeline.Workspace)/drop'
+                        $outDir = '$(Pipeline.Workspace)/esrp-release'
+
+                        if (Test-Path $outDir) {
+                          Write-Host "Cleaning output directory: $outDir"
+                          Remove-Item -Path $outDir -Recurse -Force
+                        }
+                        New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+
+                        Write-Host "Artifact name: $artifactName"
+
+                        $packageMetadataPath = "$artifactRootPath/PackageInfo/$artifactName.json"
                         if (!(Test-Path $packageMetadataPath)) {
                           Write-Error "Package metadata file not found: $packageMetadataPath"
                           exit 1
@@ -109,16 +124,16 @@ stages:
                         $packageVersion = $packageMetadata.version
                         Write-Host "Package version: $packageVersion"
 
-                        $cratePath = "$ArtifactRootPath/$ArtifactName/$ArtifactName-$packageVersion.crate"
+                        $cratePath = "$artifactRootPath/$artifactName/$artifactName-$packageVersion.crate"
                         Copy-Item `
                           -Path $cratePath `
-                          -Destination $OutDir
-                        Write-Host "Contents of $OutDir"
-                        Get-ChildItem -Path $OutDir | ForEach-Object { Write-Host $_.FullName }
-                      displayName: 'Copy crate for ESRP: ${{artifact.name}}'
+                          -Destination $outDir
+                        Write-Host "Contents of $outDir"
+                        Get-ChildItem -Path $outDir | ForEach-Object { Write-Host $_.FullName }
+                      displayName: 'Copy crate for ESRP'
 
                     - task: EsrpRelease@10
-                      displayName: 'ESRP Release: ${{artifact.name}}'
+                      displayName: 'ESRP Release'
                       inputs:
                         connectedservicename: 'Azure SDK PME Managed Identity'
                         ClientId: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
@@ -135,6 +150,11 @@ stages:
                         approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
                         serviceendpointurl: 'https://api.esrp.microsoft.com/'
                         mainpublisher: 'ESRPRELPACMANTEST'
+
+                    - pwsh: |
+                        $index = [int]'$(ArtifactIndex)' + 1
+                        Write-Host "##vso[task.setvariable variable=ArtifactIndex]$index"
+                      displayName: Increment ArtifactIndex
 
         - job: UpdatePackageVersion
           displayName: "API Review and Package Version Update"
