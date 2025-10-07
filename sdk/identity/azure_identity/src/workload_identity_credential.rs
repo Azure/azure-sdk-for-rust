@@ -242,7 +242,9 @@ mod tests {
                     FAKE_TOKEN
                 )),
             )],
-            Some(Arc::new(is_valid_request())),
+            Some(Arc::new(is_valid_request(
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+            ))),
         );
         let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
@@ -342,7 +344,9 @@ mod tests {
                     FAKE_TOKEN
                 )),
             )],
-            Some(Arc::new(is_valid_request())),
+            Some(Arc::new(is_valid_request(
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+            ))),
         );
         let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
             client_id: Some(FAKE_CLIENT_ID.to_string()),

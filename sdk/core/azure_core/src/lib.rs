@@ -11,15 +11,12 @@
 mod macros;
 
 pub mod cloud;
-mod constants;
 pub mod credentials;
 pub mod error;
 pub mod hmac;
 pub mod http;
 #[cfg(feature = "test")]
 pub mod test;
-
-pub use constants::*;
 
 // Re-export modules in typespec_client_core such that azure_core-based crates don't need to reference it directly.
 pub use typespec_client_core::{

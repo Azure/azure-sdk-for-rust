@@ -27,11 +27,6 @@ const CLIENT_SECRET_CREDENTIAL: &str = "ClientSecretCredential";
 pub struct ClientSecretCredentialOptions {
     /// Options for constructing credentials.
     pub client_options: ClientOptions,
-
-    /// The base URL for token requests.
-    ///
-    /// The default is `https://login.microsoftonline.com`.
-    pub authority_host: Option<String>,
 }
 
 /// Authenticates an application with a client secret.
@@ -64,7 +59,7 @@ impl ClientSecretCredential {
         crate::validate_not_empty(secret.secret(), "no secret specified")?;
 
         let options = options.unwrap_or_default();
-        let authority_host = get_authority_host(None, options.authority_host)?;
+        let authority_host = get_authority_host(None, options.client_options.cloud.as_deref())?;
         let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
             .with_context_fn(ErrorKind::DataConversion, || {
@@ -172,7 +167,6 @@ mod tests {
     use super::*;
     use crate::tests::*;
     use azure_core::{
-        authority_hosts::AZURE_PUBLIC_CLOUD,
         http::{headers::Headers, BufResponse, StatusCode, Transport},
         Bytes, Result,
     };
@@ -180,8 +174,8 @@ mod tests {
 
     const FAKE_SECRET: &str = "fake secret";
 
-    fn is_valid_request(authority_host: &str, tenant_id: &str) -> impl Fn(&Request) -> Result<()> {
-        let expected_url = format!("{}{}/oauth2/v2.0/token", authority_host, tenant_id);
+    fn is_valid_request(expected_authority: String) -> impl Fn(&Request) -> Result<()> {
+        let expected_url = format!("{}/oauth2/v2.0/token", expected_authority);
         move |req: &Request| {
             assert_eq!(Method::Post, req.method());
             assert_eq!(expected_url, req.url().to_string());
@@ -190,6 +184,34 @@ mod tests {
                 content_type::APPLICATION_X_WWW_FORM_URLENCODED.as_str()
             );
             Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn cloud_configuration() {
+        for (cloud, expected_authority) in cloud_configuration_cases() {
+            let sts = MockSts::new(
+                vec![token_response()],
+                Some(Arc::new(is_valid_request(expected_authority))),
+            );
+            let credential = ClientSecretCredential::new(
+                FAKE_TENANT_ID,
+                FAKE_CLIENT_ID.to_string(),
+                FAKE_SECRET.into(),
+                Some(ClientSecretCredentialOptions {
+                    client_options: ClientOptions {
+                        transport: Some(Transport::new(Arc::new(sts))),
+                        cloud: Some(Arc::new(cloud)),
+                        ..Default::default()
+                    },
+                }),
+            )
+            .expect("valid credential");
+
+            credential
+                .get_token(LIVE_TEST_SCOPES, None)
+                .await
+                .expect("token");
         }
     }
 
@@ -206,8 +228,7 @@ mod tests {
                 )),
             )],
             Some(Arc::new(is_valid_request(
-                AZURE_PUBLIC_CLOUD.as_str(),
-                FAKE_TENANT_ID,
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
             ))),
         );
         let cred = ClientSecretCredential::new(
@@ -219,7 +240,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(sts))),
                     ..Default::default()
                 },
-                ..Default::default()
             }),
         )
         .expect("valid credential");
@@ -240,17 +260,9 @@ mod tests {
     async fn get_token_success() {
         let expires_in = 3600;
         let sts = MockSts::new(
-            vec![BufResponse::from_bytes(
-                StatusCode::Ok,
-                Headers::default(),
-                Bytes::from(format!(
-                    r#"{{"access_token":"{}","expires_in":{},"token_type":"Bearer"}}"#,
-                    FAKE_TOKEN, expires_in
-                )),
-            )],
+            vec![token_response()],
             Some(Arc::new(is_valid_request(
-                AZURE_PUBLIC_CLOUD.as_str(),
-                FAKE_TENANT_ID,
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
             ))),
         );
         let cred = ClientSecretCredential::new(
@@ -262,7 +274,6 @@ mod tests {
                     transport: Some(Transport::new(Arc::new(sts))),
                     ..Default::default()
                 },
-                ..Default::default()
             }),
         )
         .expect("valid credential");
