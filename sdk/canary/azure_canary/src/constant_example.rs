@@ -45,7 +45,7 @@ pub enum TemperatureUnit {
     Celsius,
     Fahrenheit,
     Kelvin,
-    Rankine,    // Testing APIView
+    Rankine, // Testing APIView
 }
 
 impl Temperature {
