@@ -34,7 +34,6 @@ tokio-socks = { workspace = true, optional = true }
 native-tls = { workspace = true, optional = true }
 tracing.workspace = true
 typespec = { workspace = true, features = ["amqp"] }
-typespec_client_core = { workspace = true }
 typespec_macros.workspace = true
 
 [dev-dependencies]

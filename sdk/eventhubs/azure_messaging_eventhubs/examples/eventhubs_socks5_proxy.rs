@@ -94,25 +94,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Successfully sent message through SOCKS5 proxy"
     );
 
-    // Send a more complex event with properties
-    use azure_messaging_eventhubs::models::EventData;
-    let event = EventData::builder()
-        .with_content_type("application/json".to_string())
-        .with_body(r#"{"event_type": "socks5_test", "timestamp": "2024-01-01T00:00:00Z"}"#)
-        .add_property("proxy_type".to_string(), "socks5")
-        .add_property(
-            "test_run".to_string(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs(),
-        )
-        .build();
-
-    client.send_event(event, None).await?;
-
-    info!("Successfully sent structured event through SOCKS5 proxy");
-
     // Clean up
     client.close().await?;
     info!("Closed producer client connection");
@@ -125,9 +106,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// This function replaces username and password in the proxy URL with asterisks
 /// to prevent credential exposure in log files.
 fn mask_proxy_credentials(url: &str) -> String {
-    use azure_core::http::Url;
+    use azure_core::http::{Sanitizer, Url};
     use std::collections::HashSet;
-    use typespec_client_core::http::Sanitizer;
 
     if let Ok(parsed_url) = Url::parse(url) {
         let mut masked = parsed_url.clone();

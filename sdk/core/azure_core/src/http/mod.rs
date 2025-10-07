@@ -26,6 +26,9 @@ pub use typespec_client_core::http::{
     Method, NoFormat, StatusCode, Url,
 };
 
+pub use typespec_client_core::http::{Sanitizer, DEFAULT_ALLOWED_QUERY_PARAMETERS};
+pub use typespec::http::{DEFAULT_ALLOWED_HEADER_NAMES, REDACTED_PATTERN};
+
 pub use crate::error::check_success;
 #[cfg(feature = "xml")]
 pub use typespec_client_core::http::XmlFormat;

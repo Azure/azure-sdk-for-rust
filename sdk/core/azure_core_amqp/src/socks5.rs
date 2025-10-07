@@ -3,7 +3,7 @@
 
 //! SOCKS5 proxy support module.
 
-use azure_core::{error::Result, http::Url};
+use azure_core::{error::Result, http::{Sanitizer, Url}};
 use native_tls::TlsConnector as NativeTlsConnector;
 use std::collections::HashSet;
 use std::pin::Pin;
@@ -12,7 +12,6 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_native_tls::TlsConnector;
 use tokio_socks::{tcp::Socks5Stream, TargetAddr};
 use tracing::{debug, error, trace};
-use typespec_client_core::http::Sanitizer;
 
 /// A trait that combines AsyncRead, AsyncWrite, Unpin, Send and Debug for SOCKS5 streams
 pub trait SocksStream: AsyncRead + AsyncWrite + Unpin + Send + std::fmt::Debug + 'static {}
