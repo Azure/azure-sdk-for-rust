@@ -144,8 +144,8 @@ fn authentication_error<T: 'static>(e: azure_core::Error) -> azure_core::Error {
         let type_name = std::any::type_name::<T>();
         let short_name = type_name.rsplit("::").next().unwrap_or(type_name); // cspell:ignore rsplit
         let link = match short_name {
-            "AzureCliCredential" => format!("{TSG_LINK}azd"),
-            "AzureDeveloperCliCredential" => format!("{TSG_LINK}azure-cli"),
+            "AzureCliCredential" => format!("{TSG_LINK}azure-cli"),
+            "AzureDeveloperCliCredential" => format!("{TSG_LINK}azd"),
             "AzurePipelinesCredential" => format!("{TSG_LINK}apc"),
             #[cfg(feature = "client_certificate")]
             "ClientCertificateCredential" => format!("{TSG_LINK}client-cert"),
