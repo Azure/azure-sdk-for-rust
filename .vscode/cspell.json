@@ -71,6 +71,7 @@
     "pwsh",
     "reqwest",
     "runtimes",
+    "rustfmt",
     "rustup",
     "schannel",
     "seekable",
