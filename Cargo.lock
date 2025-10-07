@@ -229,10 +229,13 @@ dependencies = [
  "fe2o3-amqp-ext",
  "fe2o3-amqp-management",
  "fe2o3-amqp-types",
+ "native-tls",
  "serde",
  "serde_amqp",
  "serde_bytes",
  "tokio",
+ "tokio-native-tls",
+ "tokio-socks",
  "tracing",
  "tracing-subscriber",
  "typespec",
@@ -377,6 +380,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "typespec_client_core",
 ]
 
 [[package]]
@@ -2971,6 +2975,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbae76ab933c85776efabc971569dd6119c580d8f5d448769dec1764bf796ef2"
 dependencies = [
  "native-tls",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-socks"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d4770b8024672c1101b3f6733eab95b18007dbe0847a8afe341fcf79e06043f"
+dependencies = [
+ "either",
+ "futures-util",
+ "thiserror 1.0.69",
  "tokio",
 ]
 
