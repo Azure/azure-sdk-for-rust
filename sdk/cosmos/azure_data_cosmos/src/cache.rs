@@ -1,3 +1,5 @@
+// cSpell:ignore smol
+
 use std::sync::Arc;
 
 use moka::future::Cache;

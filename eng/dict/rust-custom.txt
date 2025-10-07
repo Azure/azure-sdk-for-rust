@@ -5,6 +5,7 @@ consts
 deque
 impls
 newtype
+newtypes
 oneshot
 repr
 rustc
