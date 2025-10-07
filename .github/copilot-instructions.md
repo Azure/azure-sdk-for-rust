@@ -47,3 +47,26 @@ Use these instructions for test generation as well.
 -   The `tests` module should always import APIs from `super`.
 -   Do not begin test function names with "test" unless necessary to disambiguate from the function being tested.
 -   Test functions do not need to be public.
+
+## Searching for Code Patterns
+
+When searching for function call chains in Rust code, be aware that rustfmt often formats method chains across multiple lines:
+
+-   **Single-line format**: `obj.foo().bar().baz()`
+-   **Multi-line format** (rustfmt style):
+    ```rust
+    obj
+        .foo()
+        .bar()
+        .baz()
+    ```
+
+When using `grep` or similar tools to search for function call chains:
+
+-   **Don't assume** call chains are on a single line.
+-   **Use multi-line search** patterns when possible (e.g., `rg` with `-U` flag for multi-line search, or `pcregrep` with `-M`).
+-   **Consider using AST-based tools** like `ast-grep` or `rust-analyzer` for more reliable pattern matching.
+-   **Search for individual method names** rather than complete call chains if you need to use simple grep.
+-   **Example with ripgrep**: `rg -U 'obj\s*\.\s*foo\(\)\s*\.\s*bar\(\)'` to match across whitespace and newlines.
+
+Remember that Rust code in this repository follows rustfmt conventions, which means method chains with 2+ calls are typically formatted with each method on its own line.
