@@ -196,11 +196,11 @@ stages:
                   -ServiceDirectory '${{parameters.ServiceDirectory}}'
                   -PackageName '${{artifact.name}}'
 
-            - template: /eng/common/pipelines/templates/steps/create-pull-request.yml
-              parameters:
-                PRBranchName: increment-package-version-${{parameters.ServiceDirectory}}-$(Build.BuildId)
-                CommitMsg: "Increment package version after release of ${{ artifact.name }}"
-                PRTitle: "Increment versions for ${{parameters.ServiceDirectory}} releases"
-                CloseAfterOpenForTesting: '${{parameters.TestPipeline}}'
-                ${{ if startsWith(variables['Build.SourceBranch'], 'refs/pull/') }}:
-                  BaseBranchName: main
+          - template: /eng/common/pipelines/templates/steps/create-pull-request.yml
+            parameters:
+              PRBranchName: increment-package-version-${{parameters.ServiceDirectory}}-$(Build.BuildId)
+              CommitMsg: "Increment package version after release of ${{ join(', ', parameters.Artifacts.*.name) }}"
+              PRTitle: "Increment versions for ${{parameters.ServiceDirectory}} releases"
+              CloseAfterOpenForTesting: '${{parameters.TestPipeline}}'
+              ${{ if startsWith(variables['Build.SourceBranch'], 'refs/pull/') }}:
+                BaseBranchName: main
