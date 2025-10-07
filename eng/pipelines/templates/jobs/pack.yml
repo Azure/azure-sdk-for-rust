@@ -70,10 +70,8 @@ jobs:
     - pwsh: |
         $artifacts = '${{ convertToJson(parameters.Artifacts) }}' | ConvertFrom-Json
         $requireDependencies = $true
-        $artifactsToBuild = $artifacts | Where-Object { $_.releaseInBatch -ne 'False' }
+        $artifactsToBuild = $artifacts | Where-Object { $_.releaseInBatch -eq 'True' }
 
-
-        
         if (!$artifactsToBuild) {
           Write-Host "No packages to release. Building all packages in the service directory with no dependency validation."
           $artifactsToBuild = $artifacts
@@ -84,7 +82,6 @@ jobs:
 
         Write-Host "##vso[task.setvariable variable=PackageNames]$packageNames"
         Write-Host "##vso[task.setvariable variable=RequireDependencies]$requireDependencies"
-        
       displayName: Create package list
 
     - task: Powershell@2
