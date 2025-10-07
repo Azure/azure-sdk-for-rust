@@ -84,7 +84,7 @@ extends:
           ServiceDirectory: ${{ parameters.ServiceDirectory }}
           PipelineArtifactName: packages
           Artifacts: ${{ parameters.Artifacts }}
-          TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }} 
+          TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }}
           TestTimeoutInMinutes: ${{ parameters.TestTimeoutInMinutes }}
           TestProxy: ${{ parameters.TestProxy }}
           MatrixConfigs:
