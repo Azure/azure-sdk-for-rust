@@ -57,7 +57,7 @@ jobs:
 
   - ${{ if eq('auto', parameters.ServiceDirectory) }}:
     - task: Powershell@2
-      displayName: "Pack Crates (PR build)"
+      displayName: Pack Crates
       condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
       inputs:
         pwsh: true
@@ -85,7 +85,7 @@ jobs:
       displayName: Create package list
 
     - task: Powershell@2
-      displayName: "Pack Crates"
+      displayName: Pack Crates
       condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
       inputs:
         pwsh: true
