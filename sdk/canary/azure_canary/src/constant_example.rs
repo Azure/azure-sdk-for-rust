@@ -45,7 +45,6 @@ pub enum TemperatureUnit {
     Celsius,
     Fahrenheit,
     Kelvin,
-    Rankine, // Testing APIView
 }
 
 impl Temperature {
@@ -61,7 +60,6 @@ impl Temperature {
             TemperatureUnit::Celsius => self.value < 0.0,
             TemperatureUnit::Fahrenheit => self.value < 32.0,
             TemperatureUnit::Kelvin => self.value < 273.15,
-            TemperatureUnit::Rankine => self.value < 491.67,
         }
     }
 }
