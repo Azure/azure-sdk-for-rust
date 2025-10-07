@@ -142,12 +142,12 @@ function Get-rust-AdditionalValidationPackagesFromPackageSet ($packagesWithChang
 # $GetPackageInfoFromPackageFileFn = "Get-${Language}-PackageInfoFromPackageFile"
 function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$workingDirectory) {
   # Create a temporary folder for extraction
-  $extractionPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
+  $extractionPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.IO.Path]::GetRandomFileName())
   New-Item -ItemType Directory -Path $extractionPath | Out-Null
 
   # Extract the .crate file (which is a tarball) to the temporary folder
   tar -xvf $pkg.FullName -C $extractionPath
-  $cargoTomlPath = Join-Path $extractionPath $pkg.BaseName 'Cargo.toml'
+  $cargoTomlPath = [System.IO.Path]::Combine($extractionPath, $pkg.BaseName, 'Cargo.toml')
 
   Write-Host "Reading package info from $cargoTomlPath"
   if (!(Test-Path $cargoTomlPath)) {
@@ -161,7 +161,7 @@ function Get-rust-PackageInfoFromPackageFile([IO.FileInfo]$pkg, [string]$working
   $packageName = $package.name
   $packageVersion = $package.version
 
-  $packageAssetPath = Join-Path $extractionPath "$packageName-$packageVersion"
+  $packageAssetPath = [System.IO.Path]::Combine($extractionPath, "$packageName-$packageVersion")
 
   $changeLogLoc = Get-ChildItem -Path $packageAssetPath -Filter "CHANGELOG.md" | Select-Object -First 1
   $readmeContentLoc = Get-ChildItem -Path $packageAssetPath -Filter "README.md" | Select-Object -First 1
