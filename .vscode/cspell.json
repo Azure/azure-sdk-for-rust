@@ -70,6 +70,7 @@
     "posix",
     "pwsh",
     "reqwest",
+    "rsplit",
     "runtimes",
     "rustup",
     "schannel",
