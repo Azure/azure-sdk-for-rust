@@ -96,7 +96,6 @@ jobs:
           -RequireDependencies:$$(RequireDependencies)
           -OutBuildOrderFile '$(Build.ArtifactStagingDirectory)/release-order.json'
 
-  # TODO: Ensure APIView works given a change to the crates output folder structure
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
     parameters:
       ArtifactPath: $(Build.ArtifactStagingDirectory)
