@@ -25,7 +25,7 @@ extends:
   parameters:
     ServiceDirectory: canary
     Artifacts:
-    - name: azure_canary_core
-      releaseInBatch: ${{ parameters.release_azure_canary_core }}
     - name: azure_canary
       releaseInBatch: ${{ parameters.release_azure_canary }}
+    - name: azure_canary_core
+      releaseInBatch: ${{ parameters.release_azure_canary_core }}
