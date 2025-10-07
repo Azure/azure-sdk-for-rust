@@ -3,7 +3,10 @@
 
 //! SOCKS5 proxy support module.
 
-use azure_core::{error::Result, http::{Sanitizer, Url}};
+use azure_core::{
+    error::Result,
+    http::{Sanitizer, Url},
+};
 use native_tls::TlsConnector as NativeTlsConnector;
 use std::collections::HashSet;
 use std::pin::Pin;
