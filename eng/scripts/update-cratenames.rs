@@ -9,7 +9,7 @@ toml = "0.8.10"
 ---
 
 use cargo_util_schemas::manifest::TomlManifest;
-use std::{collections::HashSet, ffi::OsStr, fs, io::Write as _, path::PathBuf};
+use std::{collections::HashSet, fs, io::Write as _, path::PathBuf};
 
 fn main() {
     let workspace_root = get_workspace_root();
@@ -49,11 +49,8 @@ fn main() {
             .map(|s| s.to_string_lossy().into_owned())
             .expect("member directory name");
         let member_manifest_path = workspace_root.join(relative_path).join("Cargo.toml");
-        eprintln!("Reading member manifest {member_manifest_path:?}");
-        let member_manifest = fs::read_to_string(&member_manifest_path)
-            .unwrap_or_else(|_| panic!("member manifest content: {member_manifest_path:?}"));
-        let member_manifest: TomlManifest = toml::from_str(&member_manifest)
-            .unwrap_or_else(|_| panic!("deserialize member manifest: {member_manifest_path:?}"));
+        let member_manifest = fs::read_to_string(&member_manifest_path).unwrap();
+        let member_manifest: TomlManifest = toml::from_str(&member_manifest).unwrap();
 
         let sections = [
             member_manifest.dependencies,
