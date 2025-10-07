@@ -62,13 +62,7 @@ if (!$SkipPackageAnalysis) {
   }
 
   if ($Toolchain -eq 'nightly') {
-    # Temporary fix to exit immediately on failure. LogError should Write-Error
-    # instead
-    $command = "cargo install --locked cargo-docs-rs"
-    Invoke-LoggedCommand $command
-    if ($LastExitCode) {
-      Write-Error "Failed to execute $command"
-    }
+    Invoke-LoggedCommand "cargo install --locked cargo-docs-rs"
   }
 
   $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
@@ -77,22 +71,10 @@ if (!$SkipPackageAnalysis) {
 
   foreach ($package in $packagesToTest) {
     Write-Host "Analyzing package '$($package.Name)' in directory '$($package.DirectoryPath)'`n"
-    # Temporary fix to exit immediately on failure. LogError should Write-Error
-    # instead
-    $command = "&$verifyDependenciesScript $($package.DirectoryPath)/Cargo.toml"
-    Invoke-LoggedCommand $command
-    if ($LastExitCode) {
-      Write-Error "Failed to execute $command"
-    }
+    Invoke-LoggedCommand "&$verifyDependenciesScript $($package.DirectoryPath)/Cargo.toml"
 
     if ($Toolchain -eq 'nightly') {
-      # Temporary fix to exit immediately on failure. LogError should Write-Error
-      # instead
-      $command = "cargo +nightly docs-rs --package $($package.Name)"
-      Invoke-LoggedCommand $command
-      if ($LastExitCode) {
-        Write-Error "Failed to execute $command"
-      }
+      Invoke-LoggedCommand "cargo +nightly docs-rs --package $($package.Name)"
     }
   }
 }
