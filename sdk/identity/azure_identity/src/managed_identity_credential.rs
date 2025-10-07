@@ -165,8 +165,11 @@ fn get_source(env: &Env) -> ManagedIdentitySource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::env::Env;
-    use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
+    use crate::{
+        env::Env,
+        tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES},
+        TroubleshootingGuide, TSG_LINK_ERROR_TEXT,
+    };
     use azure_core::http::headers::Headers;
     use azure_core::http::{BufResponse, Method, Request, StatusCode, Transport, Url};
     use azure_core::time::OffsetDateTime;
@@ -459,8 +462,10 @@ mod tests {
             .to_string()
             .contains("the requested identity has not been assigned to this resource"));
         assert!(
-            err.to_string()
-                .contains(&format!("{}managed-id", crate::TSG_LINK)),
+            err.to_string().contains(&format!(
+                "{TSG_LINK_ERROR_TEXT}{}",
+                ManagedIdentityCredential::FRAGMENT
+            )),
             "expected error to contain a link to the troubleshooting guide, got '{err}'",
         );
     }

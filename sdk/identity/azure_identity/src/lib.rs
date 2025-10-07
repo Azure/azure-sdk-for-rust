@@ -133,26 +133,75 @@ fn get_authority_host(env: Option<Env>, cloud: Option<&CloudConfiguration>) -> R
     Ok(url)
 }
 
-const TSG_LINK: &str = ". To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#";
+const TSG_LINK_ERROR_TEXT: &str =
+    ". To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot";
+
+/// A troubleshooting guide entry.
+#[doc(hidden)]
+pub trait TroubleshootingGuide: private::Sealed {
+    /// The URL fragment (leading '#' and an anchor) for this type's entry in the troubleshooting guide.
+    const FRAGMENT: &'static str;
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl TroubleshootingGuide for AzureCliCredential {
+    const FRAGMENT: &'static str = "#azure-cli";
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl TroubleshootingGuide for AzureDeveloperCliCredential {
+    const FRAGMENT: &'static str = "#azd";
+}
+
+impl TroubleshootingGuide for AzurePipelinesCredential {
+    const FRAGMENT: &'static str = "#apc";
+}
+
+#[cfg(feature = "client_certificate")]
+impl TroubleshootingGuide for ClientCertificateCredential {
+    const FRAGMENT: &'static str = "#client-cert";
+}
+
+impl TroubleshootingGuide for ClientSecretCredential {
+    const FRAGMENT: &'static str = "#client-secret";
+}
+
+impl TroubleshootingGuide for ManagedIdentityCredential {
+    const FRAGMENT: &'static str = "#managed-id";
+}
+
+impl TroubleshootingGuide for WorkloadIdentityCredential {
+    const FRAGMENT: &'static str = "#workload";
+}
+
+mod private {
+    pub trait Sealed {}
+    #[cfg(not(target_arch = "wasm32"))]
+    impl Sealed for super::AzureCliCredential {}
+    #[cfg(not(target_arch = "wasm32"))]
+    impl Sealed for super::AzureDeveloperCliCredential {}
+    impl Sealed for super::AzurePipelinesCredential {}
+    #[cfg(feature = "client_certificate")]
+    impl Sealed for super::ClientCertificateCredential {}
+    impl Sealed for super::ClientSecretCredential {}
+    impl Sealed for super::ManagedIdentityCredential {}
+    impl Sealed for super::WorkloadIdentityCredential {}
+}
 
 /// Map an error from a credential's get_token() method to an ErrorKind::Credential error, appending
 /// a link to the troubleshooting guide entry for that credential, if it has one.
 ///
 /// TODO: decide whether to map to ErrorKind::Credential here (https://github.com/Azure/azure-sdk-for-rust/issues/3127)
-fn authentication_error<T: 'static>(e: azure_core::Error) -> azure_core::Error {
+fn authentication_error<T: TroubleshootingGuide + 'static>(
+    e: azure_core::Error,
+) -> azure_core::Error {
     azure_core::Error::with_message_fn(e.kind().clone(), || {
         let type_name = std::any::type_name::<T>();
-        let short_name = type_name.rsplit("::").next().unwrap_or(type_name); // cspell:ignore rsplit
-        let link = match short_name {
-            "AzureCliCredential" => format!("{TSG_LINK}azure-cli"),
-            "AzureDeveloperCliCredential" => format!("{TSG_LINK}azd"),
-            "AzurePipelinesCredential" => format!("{TSG_LINK}apc"),
-            #[cfg(feature = "client_certificate")]
-            "ClientCertificateCredential" => format!("{TSG_LINK}client-cert"),
-            "ClientSecretCredential" => format!("{TSG_LINK}client-secret"),
-            "ManagedIdentityCredential" => format!("{TSG_LINK}managed-id"),
-            "WorkloadIdentityCredential" => format!("{TSG_LINK}workload"),
-            _ => "".to_string(),
+        let short_name = type_name.rsplit("::").next().unwrap_or(type_name);
+        let link = if T::FRAGMENT.is_empty() {
+            String::new()
+        } else {
+            format!("{TSG_LINK_ERROR_TEXT}{}", T::FRAGMENT)
         };
 
         format!("{short_name} authentication failed: {e}{link}")

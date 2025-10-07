@@ -167,7 +167,7 @@ impl TokenCredential for ClientSecretCredential {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{tests::*, TSG_LINK};
+    use crate::{tests::*, TroubleshootingGuide, TSG_LINK_ERROR_TEXT};
     use azure_core::{
         http::{headers::Headers, BufResponse, StatusCode, Transport},
         Bytes, Result,
@@ -257,8 +257,10 @@ mod tests {
             err
         );
         assert!(
-            err.to_string()
-                .contains(&format!("{TSG_LINK}client-secret")),
+            err.to_string().contains(&format!(
+                "{TSG_LINK_ERROR_TEXT}{}",
+                ClientSecretCredential::FRAGMENT
+            )),
             "expected error to contain a link to the troubleshooting guide, got '{err}'",
         );
     }
