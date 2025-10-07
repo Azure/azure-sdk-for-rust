@@ -10,16 +10,34 @@ trigger:
     include:
     - sdk/core/
 
+parameters:
+- name: release_azure_core
+  displayName: 'azure_core'
+  type: boolean
+  default: true
+- name: release_azure_core_macros
+  displayName: 'azure_core_macros'
+  type: boolean
+  default: true
+- name: release_azure_core_amqp
+  displayName: 'azure_core_amqp'
+  type: boolean
+  default: true
+- name: release_azure_core_opentelemetry
+  displayName: 'azure_core_opentelemetry'
+  type: boolean
+  default: true
+
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: core
     Artifacts:
     - name: azure_core
-      safeName: AzureCore
+      releaseInBatch: ${{ parameters.release_azure_core }}
     - name: azure_core_macros
-      safeName: AzureCoreMacros
+      releaseInBatch: ${{ parameters.release_azure_core_macros }}
     - name: azure_core_amqp
-      safeName: AzureCoreAmqp
+      releaseInBatch: ${{ parameters.release_azure_core_amqp }}
     - name: azure_core_opentelemetry
-      safeName: AzureCoreOpentelemetry
+      releaseInBatch: ${{ parameters.release_azure_core_opentelemetry }}

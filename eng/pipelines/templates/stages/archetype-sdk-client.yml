@@ -148,6 +148,9 @@ extends:
             parameters:
               DependsOn: "Build"
               ServiceDirectory: ${{ parameters.ServiceDirectory }}
-              Artifacts: ${{ parameters.Artifacts }}
+              Artifacts: 
+                - ${{ each artifact in parameters.Artifacts }}: 
+                  - ${{ if ne(artifact.releaseInBatch, 'false')}}: 
+                    - ${{ artifact }}
               TestPipeline: ${{ eq(parameters.ServiceDirectory, 'canary') }}
               PipelineArtifactName: packages

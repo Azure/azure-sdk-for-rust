@@ -1,10 +1,4 @@
 # NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
-parameters:
-- name: RunLiveTests
-  displayName: 'Run live tests'
-  type: boolean
-  default: false
-
 trigger:
   branches:
     include:
@@ -15,6 +9,24 @@ trigger:
     include:
     - sdk/keyvault/
 
+parameters:
+- name: RunLiveTests
+  displayName: 'Run live tests'
+  type: boolean
+  default: false
+- name: release_azure_security_keyvault_secrets
+  displayName: 'azure_security_keyvault_secrets'
+  type: boolean
+  default: true
+- name: release_azure_security_keyvault_keys
+  displayName: 'azure_security_keyvault_keys'
+  type: boolean
+  default: true
+- name: release_azure_security_keyvault_certificates
+  displayName: 'azure_security_keyvault_certificates'
+  type: boolean
+  default: true
+
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
@@ -22,8 +34,8 @@ extends:
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule')) }}
     Artifacts:
     - name: azure_security_keyvault_secrets
-      safeName: AzureSecurityKeyvaultSecrets
-    - name: azure_security_keyvault_keys
-      safeName: AzureSecurityKeyvaultKeys
+      releaseInBatch: ${{ parameters.release_azure_security_keyvault_secrets }}
     - name: azure_security_keyvault_certificates
-      safeName: AzureSecurityKeyvaultCertificates
+      releaseInBatch: ${{ parameters.release_azure_security_keyvault_certificates }}
+    - name: azure_security_keyvault_keys
+      releaseInBatch: ${{ parameters.release_azure_security_keyvault_keys }}

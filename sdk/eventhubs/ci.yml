@@ -10,12 +10,22 @@ trigger:
     include:
     - sdk/eventhubs/
 
+parameters:
+- name: release_azure_messaging_eventhubs
+  displayName: 'azure_messaging_eventhubs'
+  type: boolean
+  default: true
+- name: release_azure_messaging_eventhubs_checkpointstore_blob
+  displayName: 'azure_messaging_eventhubs_checkpointstore_blob'
+  type: boolean
+  default: true
+
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: eventhubs
     Artifacts:
     - name: azure_messaging_eventhubs
-      safeName: AzureMessagingEventHubs
+      releaseInBatch: ${{ parameters.release_azure_messaging_eventhubs }}
     - name: azure_messaging_eventhubs_checkpointstore_blob
-      safeName: AzureMessagingEventHubsBlobCheckpointStore
+      releaseInBatch: ${{ parameters.release_azure_messaging_eventhubs_checkpointstore_blob }}

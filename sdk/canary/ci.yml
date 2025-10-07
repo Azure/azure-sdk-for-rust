@@ -10,12 +10,22 @@ trigger:
     include:
     - sdk/canary/
 
+parameters:
+- name: release_azure_canary_core
+  displayName: 'azure_canary_core'
+  type: boolean
+  default: true
+- name: release_azure_canary
+  displayName: 'azure_canary'
+  type: boolean
+  default: true
+
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: canary
     Artifacts:
-    - name: azure_canary_core
-      safeName: AzureTemplateCore
     - name: azure_canary
-      safeName: AzureTemplate
+      releaseInBatch: ${{ parameters.release_azure_canary }}
+    - name: azure_canary_core
+      releaseInBatch: ${{ parameters.release_azure_canary_core }}
