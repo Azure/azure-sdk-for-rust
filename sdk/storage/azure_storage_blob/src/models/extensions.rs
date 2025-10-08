@@ -6,6 +6,7 @@ use crate::models::{
     BlockBlobClientUploadOptions, PageBlobClientCreateOptions, StorageError, StorageErrorCode,
 };
 use azure_core::{error::ErrorKind, http::headers::Headers};
+use serde_json::Value;
 use std::collections::HashMap;
 
 /// Augments the current options bag to only create if the Page blob does not already exist.
@@ -110,39 +111,82 @@ impl From<HashMap<String, String>> for BlobTags {
     }
 }
 
+use serde::Deserialize;
+
+/// Internal struct for deserializing Azure Storage XML error responses.
+#[derive(Debug, Deserialize)]
+#[serde(rename = "Error")]
+struct StorageErrorXml {
+    #[serde(rename = "Code")]
+    code: String,
+    #[serde(rename = "Message")]
+    message: String,
+
+    // Dump any unknown fields into a HashMap to avoid deserialization failures.
+    // For now I am using "Value" because this lets us capture any type of value.
+    // We can additionally get these to all be Strings, but we will need to introduce a lightweight
+    // deserializer to go from all possible XML field types to String (e.g. numbers, bools, etc.)
+    #[serde(flatten)]
+    additional_fields: HashMap<String, Value>,
+}
+
 impl TryFrom<azure_core::Error> for StorageError {
     type Error = azure_core::Error;
 
     fn try_from(error: azure_core::Error) -> Result<Self, Self::Error> {
-        let message = error.to_string();
-
         match error.kind() {
             ErrorKind::HttpResponse {
                 status,
-                error_code,
                 raw_response,
+                ..
             } => {
-                let error_code = error_code.as_ref().ok_or_else(|| {
+                // Existence Check for Option<RawResponse>
+                let raw_response = raw_response.as_ref().ok_or_else(|| {
                     azure_core::Error::with_message(
                         azure_core::error::ErrorKind::DataConversion,
-                        "error_code field missing from HttpResponse.",
+                        "Cannot convert to StorageError: raw_response is missing.",
                     )
                 })?;
 
-                let headers = raw_response
-                    .as_ref()
-                    .map(|raw_resp| raw_resp.headers().clone())
-                    .unwrap_or_default();
+                // Extract Headers From Raw Response
+                let headers = raw_response.headers().clone();
 
-                let error_code_enum = error_code
+                // Parse XML Body
+                let body = raw_response.body();
+                if body.is_empty() {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        "Cannot convert to StorageError: Response Body is empty.",
+                    ));
+                }
+                let xml_error = azure_core::xml::read_xml::<StorageErrorXml>(body)?;
+
+                // Validate that Error Code and Error Message Are Present
+                if xml_error.code.is_empty() {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        "XML Error Response missing 'Code' field.",
+                    ));
+                }
+                if xml_error.message.is_empty() {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        "XML Error Response missing 'Message' field.",
+                    ));
+                }
+
+                // Map Error Code to StorageErrorCode Enum
+                let error_code_enum = xml_error
+                    .code
                     .parse()
-                    .unwrap_or(StorageErrorCode::UnknownValue(error_code.clone()));
+                    .unwrap_or(StorageErrorCode::UnknownValue(xml_error.code));
 
                 Ok(StorageError {
                     status_code: *status,
                     error_code: error_code_enum,
-                    message,
+                    message: xml_error.message,
                     headers,
+                    additional_error_info: xml_error.additional_fields,
                 })
             }
             _ => Err(azure_core::Error::with_message(
@@ -155,13 +199,16 @@ impl TryFrom<azure_core::Error> for StorageError {
 
 impl std::fmt::Display for StorageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Standard Error Message: {}\n", self.message)?;
-        writeln!(f, "Http Status Code: {}", self.status_code)?;
-        writeln!(f, "Storage Error Code: {}", self.error_code)?;
-        writeln!(f, "Response Headers:")?;
+        writeln!(f, "HTTP Status Code: {}\n", self.status_code)?;
+        writeln!(f, "Error Message: {}\n", self.message)?;
+        writeln!(f, "Storage Error Code: {}\n", self.error_code)?;
+        writeln!(f, "Response Headers: {:?}\n", self.headers)?;
 
-        for (name, value) in self.headers.iter() {
-            writeln!(f, "  \"{}\": \"{}\"", name.as_str(), value.as_str())?;
+        if !self.additional_error_info.is_empty() {
+            writeln!(f, "\nAdditional Error Info:")?;
+            for (key, value) in &self.additional_error_info {
+                writeln!(f, "  {}: {}", key, value)?;
+            }
         }
 
         Ok(())

@@ -87,9 +87,9 @@ pub use extensions::*;
 use azure_core::error::ErrorKind;
 use azure_core::http::{headers::Headers, StatusCode};
 use azure_core::Error;
+use serde_json::Value;
+use std::collections::HashMap;
 
-/// A Storage-specific error that provides access to HTTP response details.
-///
 #[derive(Debug, Clone)]
 pub struct StorageError {
     /// The HTTP status code.
@@ -100,6 +100,8 @@ pub struct StorageError {
     pub message: String,
     /// The headers from the response.
     pub headers: Headers,
+    /// Additional fields from the error response that weren't explicitly mapped.
+    pub additional_error_info: HashMap<String, Value>,
 }
 
 impl StorageError {
@@ -117,5 +119,10 @@ impl StorageError {
 
     pub fn headers(&self) -> &Headers {
         &self.headers
+    }
+
+    /// Returns any additional error information fields returned by the Service.
+    pub fn additional_error_info(&self) -> &HashMap<String, Value> {
+        &self.additional_error_info
     }
 }
