@@ -22,7 +22,7 @@ use crate::{
         BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList, StorageErrorCode,
     },
-    parsers::parse_url_name_components,
+    parsers::{build_blob_url, parse_url_name_components},
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
 };
@@ -49,7 +49,7 @@ pub struct BlobClient {
 impl GeneratedBlobClient {
     #[tracing::new("Storage.Blob.Blob")]
     pub fn from_url(
-        blob_url: Url,
+        blob_url: &str,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
@@ -62,13 +62,12 @@ impl GeneratedBlobClient {
             .push(storage_headers_policy);
 
         let per_retry_policies = if let Some(token_credential) = credential {
-            if !blob_url.scheme().starts_with("http") {
+            if !blob_url.starts_with("https://") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     format!("{blob_url} must use http(s)"),
                 ));
             }
-
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
@@ -88,7 +87,9 @@ impl GeneratedBlobClient {
         );
 
         Ok(Self {
-            endpoint: blob_url,
+            // This is the crux of the issue. We have now resolved the encoding to align with other Storage SDK offerings
+            // However because the generated code has to build a Request model that expects a Url type, we will always get our '/' encoded as '%2F'
+            endpoint: Url::parse(blob_url)?,
             version: options.version,
             pipeline,
         })
@@ -105,18 +106,15 @@ impl BlobClient {
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn new(
-        mut endpoint: Url,
+        endpoint: &str,
         container_name: String,
         blob_name: String,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        endpoint
-            .path_segments_mut()
-            .expect("URL must be hierarchical with authority: HTTP/HTTPS scheme.")
-            .extend([&container_name, &blob_name]);
+        let blob_url = build_blob_url(endpoint, &container_name, &blob_name);
 
-        let client = GeneratedBlobClient::from_url(endpoint, credential, options)?;
+        let client = GeneratedBlobClient::from_url(&blob_url, credential, options)?;
         Ok(Self {
             client,
             container_name,
@@ -125,11 +123,11 @@ impl BlobClient {
     }
 
     pub fn from_blob_url(
-        blob_url: Url,
+        blob_url: &str,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        let (container_name, blob_name) = parse_url_name_components(&blob_url)?;
+        let (container_name, blob_name) = parse_url_name_components(blob_url)?;
         let client = GeneratedBlobClient::from_url(blob_url, credential, options)?;
 
         Ok(Self {
@@ -193,6 +191,7 @@ impl BlobClient {
         }
     }
 
+    //TODO: This should be a &str, therefore generated code needs to be changed here to hold a &str on the struct and not a Url type
     /// Gets the full URL of the Storage blob this client is connected to.
     pub fn blob_url(&self) -> &Url {
         &self.client.endpoint

@@ -12,7 +12,9 @@ immutabilitypolicy
 incrementalcopy
 legalhold
 missingcontainer
+numofmessages
 pagelist
+peekonly
 policyid
 prevsnapshot
 RAGRS
@@ -25,7 +27,6 @@ testblob3
 testblob4
 testcontainer
 uncommittedblobs
+urlencoding
 westus
 yourtagname
-numofmessages
-peekonly
