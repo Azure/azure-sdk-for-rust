@@ -287,7 +287,9 @@ mod tests {
                     description
                 )),
             )],
-            Some(Arc::new(is_valid_request(FAKE_PUBLIC_CLOUD_AUTHORITY.to_string()))),
+            Some(Arc::new(is_valid_request(
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+            ))),
         );
         let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
             credential_options: ClientAssertionCredentialOptions {
