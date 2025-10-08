@@ -1515,7 +1515,7 @@ impl CertificateClient {
 impl Default for CertificateClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("7.6"),
+            api_version: String::from("2025-07-01"),
             client_options: ClientOptions::default(),
         }
     }

@@ -60,6 +60,11 @@ pub struct DeletedSecret {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 
+    /// The version of the previous certificate, if applicable. Applies only to certificates created after June 1, 2025. Certificates
+    /// created before this date are not retroactively updated.
+    #[serde(rename = "previousVersion", skip_serializing_if = "Option::is_none")]
+    pub previous_version: Option<String>,
+
     /// The url of the recovery object, used to identify and recover the deleted secret.
     #[serde(rename = "recoveryId", skip_serializing_if = "Option::is_none")]
     pub recovery_id: Option<String>,
@@ -194,6 +199,11 @@ pub struct Secret {
     /// true.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
+
+    /// The version of the previous certificate, if applicable. Applies only to certificates created after June 1, 2025. Certificates
+    /// created before this date are not retroactively updated.
+    #[serde(rename = "previousVersion", skip_serializing_if = "Option::is_none")]
+    pub previous_version: Option<String>,
 
     /// Application specific metadata in the form of key-value pairs.
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -264,6 +264,10 @@ impl SecretClient {
         url = url.join(&path)?;
         url.query_pairs_mut()
             .append_pair("api-version", &self.api_version);
+        if let Some(out_content_type) = options.out_content_type {
+            url.query_pairs_mut()
+                .append_pair("outContentType", out_content_type.as_ref());
+        }
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/json");
         let rsp = self
@@ -756,7 +760,7 @@ impl SecretClient {
 impl Default for SecretClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("7.6"),
+            api_version: String::from("2025-07-01"),
             client_options: ClientOptions::default(),
         }
     }
