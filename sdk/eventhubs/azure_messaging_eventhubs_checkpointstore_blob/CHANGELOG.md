@@ -2,7 +2,7 @@
 
 ## 0.2.0 (2025-10-08)
 
-## Other Changes
+### Other Changes
 
 - Updated dependencies.
 
