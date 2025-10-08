@@ -3,24 +3,18 @@
 trigger:
   branches:
     include:
-    - main
-    - feature/*
-    - release/*
-    - hotfix/*
+      - main
+      - feature/*
+      - release/*
+      - hotfix/*
   paths:
     include:
-    - sdk/servicebus/
-
-parameters:
-- name: release_azure_messaging_servicebus
-  displayName: 'azure_messaging_servicebus'
-  type: boolean
-  default: true
+      - sdk/servicebus/
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: servicebus
     Artifacts:
-    - name: azure_messaging_servicebus
-      releaseInBatch: ${{ parameters.release_azure_messaging_servicebus }}
+      - name: azure_messaging_servicebus
+        safeName: AzureMessagingServiceBus

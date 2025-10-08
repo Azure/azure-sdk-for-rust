@@ -55,46 +55,15 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
-  - ${{ if eq('auto', parameters.ServiceDirectory) }}:
-    - task: Powershell@2
-      displayName: Pack Crates
-      condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
-      inputs:
-        pwsh: true
-        filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
-        arguments: >
-          -OutputPath '$(Build.ArtifactStagingDirectory)'
-          -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
-
-  - ${{ else }}:
-    - pwsh: |
-        $artifacts = '${{ convertToJson(parameters.Artifacts) }}' | ConvertFrom-Json
-        $requireDependencies = $true
-        $artifactsToBuild = $artifacts | Where-Object { $_.releaseInBatch -eq 'True' }
-
-        if (!$artifactsToBuild) {
-          Write-Host "No packages to release. Building all packages in the service directory with no dependency validation."
-          $artifactsToBuild = $artifacts
-          $requireDependencies = $false
-        }
-
-        $packageNames = $artifactsToBuild.name -join ','
-
-        Write-Host "##vso[task.setvariable variable=PackageNames]$packageNames"
-        Write-Host "##vso[task.setvariable variable=RequireDependencies]$requireDependencies"
-      displayName: Create package list
-
-    - task: Powershell@2
-      displayName: Pack Crates
-      condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
-      inputs:
-        pwsh: true
-        filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
-        arguments: >
-          -OutputPath '$(Build.ArtifactStagingDirectory)'
-          -PackageNames $(PackageNames)
-          -RequireDependencies:$$(RequireDependencies)
-          -OutBuildOrderFile '$(Build.ArtifactStagingDirectory)/release-order.json'
+  - task: Powershell@2
+    displayName: "Pack Crates"
+    condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
+      arguments: >
+        -OutputPath '$(Build.ArtifactStagingDirectory)'
+        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
 
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
     parameters:
