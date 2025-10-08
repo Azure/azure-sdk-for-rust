@@ -5,8 +5,8 @@ Project: azure-storage-blobs-perf
 PrimaryPackage: azure_storage_blob
 
 PackageVersions:
-- azure_storage_blob: 0.6.0
-  azure_core: 1.7.2
+# - azure_storage_blob: 0.6.0
+#   azure_core: 1.7.2
 - azure_storage_blob: source
   azure_core: source
 
