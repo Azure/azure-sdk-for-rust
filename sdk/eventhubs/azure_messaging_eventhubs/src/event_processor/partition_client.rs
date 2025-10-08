@@ -8,6 +8,8 @@ use crate::{
     EventReceiver,
 };
 use azure_core::Result;
+use azure_core_amqp::message::AmqpAnnotationKey;
+use azure_core_amqp::AmqpValue;
 use futures::Stream;
 use std::pin::Pin;
 use std::sync::{Arc, OnceLock, Weak};
@@ -127,13 +129,39 @@ impl PartitionClient {
     /// # Errors
     /// Returns an error if the sequence number or offset is invalid, or if updating the checkpoint fails.
     pub async fn update_checkpoint(&self, event_data: &ReceivedEventData) -> Result<()> {
+        let mut offset_option = None;
+        let mut sequence_number_option = None;
+
+        let event_data_message = event_data.raw_amqp_message();
+        let Some(message_annotations) = event_data_message.message_annotations.as_ref() else {
+            // No message annotations. Nothing to do.
+            return Ok(());
+        };
+        for (key, value) in message_annotations.0.iter() {
+            let AmqpAnnotationKey::Symbol(symbol) = key else {
+                continue;
+            };
+
+            if *symbol == "x-opt-offset" {
+                let AmqpValue::String(offset_value) = value else {
+                    continue;
+                };
+                offset_option = Some(offset_value.clone());
+            } else if *symbol == "x-opt-sequence-number" {
+                let AmqpValue::Long(sequence_number_value) = value else {
+                    continue;
+                };
+                sequence_number_option = Some(*sequence_number_value);
+            }
+        }
+
         let checkpoint = Checkpoint {
             fully_qualified_namespace: self.client_details.fully_qualified_namespace.clone(),
             event_hub_name: self.client_details.eventhub_name.clone(),
             consumer_group: self.client_details.consumer_group.clone(),
             partition_id: self.partition_id.clone(),
-            offset: event_data.offset().clone(),
-            sequence_number: event_data.sequence_number(),
+            offset: offset_option,
+            sequence_number: sequence_number_option,
         };
         self.checkpoint_store.update_checkpoint(checkpoint).await
     }
