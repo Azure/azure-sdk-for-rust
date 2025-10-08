@@ -133,6 +133,33 @@ fn get_authority_host(env: Option<Env>, cloud: Option<&CloudConfiguration>) -> R
     Ok(url)
 }
 
+const TSG_LINK_ERROR_TEXT: &str =
+    ". To troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot";
+
+/// Map an error from a credential's get_token() method to an ErrorKind::Credential error, appending
+/// a link to the troubleshooting guide entry for that credential, if it has one.
+///
+/// TODO: decide whether to map to ErrorKind::Credential here (https://github.com/Azure/azure-sdk-for-rust/issues/3127)
+fn authentication_error<T: 'static>(e: azure_core::Error) -> azure_core::Error {
+    azure_core::Error::with_message_fn(e.kind().clone(), || {
+        let type_name = std::any::type_name::<T>();
+        let short_name = type_name.rsplit("::").next().unwrap_or(type_name); // cspell:ignore rsplit
+        let link = match short_name {
+            "AzureCliCredential" => format!("{TSG_LINK_ERROR_TEXT}#azure-cli"),
+            "AzureDeveloperCliCredential" => format!("{TSG_LINK_ERROR_TEXT}#azd"),
+            "AzurePipelinesCredential" => format!("{TSG_LINK_ERROR_TEXT}#apc"),
+            #[cfg(feature = "client_certificate")]
+            "ClientCertificateCredential" => format!("{TSG_LINK_ERROR_TEXT}#client-cert"),
+            "ClientSecretCredential" => format!("{TSG_LINK_ERROR_TEXT}#client-secret"),
+            "ManagedIdentityCredential" => format!("{TSG_LINK_ERROR_TEXT}#managed-id"),
+            "WorkloadIdentityCredential" => format!("{TSG_LINK_ERROR_TEXT}#workload"),
+            _ => "".to_string(),
+        };
+
+        format!("{short_name} authentication failed: {e}{link}")
+    })
+}
+
 #[test]
 fn test_validate_not_empty() {
     assert!(validate_not_empty("", "it's empty").is_err());

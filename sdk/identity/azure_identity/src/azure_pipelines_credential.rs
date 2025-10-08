@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    env::Env, ClientAssertion, ClientAssertionCredential, ClientAssertionCredentialOptions,
+    authentication_error, env::Env, ClientAssertion, ClientAssertionCredential,
+    ClientAssertionCredentialOptions,
 };
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
@@ -123,7 +124,10 @@ impl TokenCredential for AzurePipelinesCredential {
         scopes: &[&str],
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
-        self.0.get_token(scopes, options).await
+        self.0
+            .get_token(scopes, options)
+            .await
+            .map_err(authentication_error::<Self>)
     }
 }
 
@@ -222,7 +226,7 @@ impl fmt::Display for ErrorHeaders {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::env::Env;
+    use crate::{env::Env, TSG_LINK_ERROR_TEXT};
     use azure_core::{
         http::{BufResponse, ClientOptions, Transport},
         Bytes,
@@ -284,16 +288,22 @@ mod tests {
         let credential =
             AzurePipelinesCredential::new("a".into(), "b".into(), "c", "d", Some(options))
                 .expect("valid AzurePipelinesCredential");
+        let err = credential
+            .get_token(&["default"], None)
+            .await
+            .expect_err("expected error");
         assert!(matches!(
-            credential.get_token(&["default"], None).await,
-            Err(err) if matches!(
-                err.kind(),
-                ErrorKind::HttpResponse { status, .. }
-                    if *status == StatusCode::Forbidden &&
-                        err.to_string().contains("foo") &&
-                        err.to_string().contains("bar"),
-            )
+            err.kind(),
+            ErrorKind::HttpResponse { status, .. }
+                if *status == StatusCode::Forbidden &&
+                    err.to_string().contains("foo") &&
+                    err.to_string().contains("bar"),
         ));
+        assert!(
+            err.to_string()
+                .contains(&format!("{TSG_LINK_ERROR_TEXT}#apc")),
+            "expected error to contain a link to the troubleshooting guide, got '{err}'",
+        );
     }
 
     #[tokio::test]

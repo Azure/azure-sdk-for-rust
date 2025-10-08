@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::env::Env;
+use crate::{authentication_error, env::Env};
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
@@ -106,7 +106,10 @@ impl TokenCredential for WorkloadIdentityCredential {
                 "no scopes specified",
             ));
         }
-        self.0.get_token(scopes, options).await
+        self.0
+            .get_token(scopes, options)
+            .await
+            .map_err(authentication_error::<Self>)
     }
 }
 
@@ -188,6 +191,7 @@ mod tests {
         client_assertion_credential::tests::{is_valid_request, FAKE_ASSERTION},
         env::Env,
         tests::*,
+        TSG_LINK_ERROR_TEXT,
     };
     use azure_core::{
         http::{
@@ -268,6 +272,58 @@ mod tests {
         let token = cred.get_token(LIVE_TEST_SCOPES, None).await.expect("token");
         assert_eq!(FAKE_TOKEN, token.token.secret());
         assert!(token.expires_on > SystemTime::now());
+    }
+
+    #[tokio::test]
+    async fn get_token_error() {
+        let temp_file = TempFile::new(FAKE_ASSERTION);
+        let description = "invalid assertion";
+        let mock = MockSts::new(
+            vec![BufResponse::from_bytes(
+                StatusCode::BadRequest,
+                Headers::default(),
+                Bytes::from(format!(
+                    r#"{{"error":"invalid_request","error_description":"{}"}}"#,
+                    description
+                )),
+            )],
+            Some(Arc::new(is_valid_request(
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+            ))),
+        );
+        let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
+            credential_options: ClientAssertionCredentialOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(Arc::new(mock))),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            env: Env::from(
+                &[
+                    (AZURE_CLIENT_ID, FAKE_CLIENT_ID),
+                    (AZURE_TENANT_ID, FAKE_TENANT_ID),
+                    (AZURE_FEDERATED_TOKEN_FILE, temp_file.path.to_str().unwrap()),
+                ][..],
+            ),
+            ..Default::default()
+        }))
+        .expect("valid credential");
+
+        let err = cred
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect_err("expected error");
+        assert!(matches!(
+            err.kind(),
+            azure_core::error::ErrorKind::Credential
+        ));
+        assert!(err.to_string().contains(description));
+        assert!(
+            err.to_string()
+                .contains(&format!("{TSG_LINK_ERROR_TEXT}#workload")),
+            "expected error to contain a link to the troubleshooting guide, got '{err}'",
+        );
     }
 
     #[test]

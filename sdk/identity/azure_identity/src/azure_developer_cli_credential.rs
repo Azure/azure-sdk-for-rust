@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
+    authentication_error,
     env::Env,
     process::{new_executor, shell_exec, Executor, OutputProcessor},
     validate_scope, validate_tenant_id,
@@ -128,7 +129,9 @@ impl TokenCredential for AzureDeveloperCliCredential {
             command.push(" --tenant-id ");
             command.push(tenant_id);
         }
-        shell_exec::<AzdTokenResponse>(self.executor.clone(), &self.env, &command).await
+        shell_exec::<AzdTokenResponse>(self.executor.clone(), &self.env, &command)
+            .await
+            .map_err(authentication_error::<Self>)
     }
 }
 
