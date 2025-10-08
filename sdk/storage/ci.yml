@@ -1,4 +1,10 @@
 # NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
+parameters:
+- name: RunLiveTests
+  displayName: 'Run live tests'
+  type: boolean
+  default: false
+
 trigger:
   branches:
     include:
@@ -9,24 +15,6 @@ trigger:
     include:
     - sdk/storage/
 
-parameters:
-- name: RunLiveTests
-  displayName: 'Run live tests'
-  type: boolean
-  default: false
-- name: release_azure_storage_common
-  displayName: 'azure_storage_common'
-  type: boolean
-  default: true
-- name: release_azure_storage_blob
-  displayName: 'azure_storage_blob'
-  type: boolean
-  default: true
-- name: release_azure_storage_queue
-  displayName: 'azure_storage_queue'
-  type: boolean
-  default: true
-
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
@@ -34,12 +22,9 @@ extends:
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule')) }}
     TestTimeoutInMinutes: 120
     Artifacts:
-    # Artifact order in this file maps to order evaluated by Pack-Crates.ps1
-    # When the artifacts like blob and queue depend on common, common will need
-    # to be listed first.
-    - name: azure_storage_blob
-      releaseInBatch: ${{ parameters.release_azure_storage_blob }}
     - name: azure_storage_common
-      releaseInBatch: ${{ parameters.release_azure_storage_common }}
+      safeName: AzureStorageCommon
+    - name: azure_storage_blob
+      safeName: AzureStorageBlob
     - name: azure_storage_queue
-      releaseInBatch: ${{ parameters.release_azure_storage_queue }}
+      safeName: AzureStorageQueue

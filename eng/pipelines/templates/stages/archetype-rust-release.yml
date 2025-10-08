@@ -14,13 +14,16 @@ parameters:
 - name: DevFeedName
   type: string
   default: 'public/azure-sdk-for-rust'
+- name: Environment
+  type: string
+  default: 'cratesio'
 
 stages:
 - ${{ if eq(variables['System.TeamProject'], 'internal') }}:
   - ${{ if in(variables['Build.Reason'], 'Manual', '') }}:
-    - ${{ if gt(length(parameters.Artifacts), 0) }}:
-      - stage: Release_Batch
-        displayName: "Releasing: ${{length(parameters.Artifacts)}} crates"
+    - ${{ each artifact in parameters.Artifacts }}:
+      - stage: Release_${{artifact.safeName}}
+        displayName: "Release: ${{artifact.name}}"
         dependsOn: ${{parameters.DependsOn}}
         condition: and(succeeded(), ne(variables['SetDevVersion'], 'true'), ne(variables['Skip.Release'], 'true'), ne(variables['Build.Repository.Name'], 'Azure/azure-sdk-for-rust-pr'))
         variables:
@@ -47,17 +50,16 @@ stages:
 
           - template: /eng/common/pipelines/templates/steps/retain-run.yml
 
-          - ${{ each artifact in parameters.Artifacts }}:
-            - script: |
-                echo "##vso[build.addbuildtag]${{artifact.name}}"
-              displayName: Add build tag '${{artifact.name}}'
+          - script: |
+              echo "##vso[build.addbuildtag]${{artifact.name}}"
+            displayName: Add build tag '${{artifact.name}}'
 
-            - template: /eng/common/pipelines/templates/steps/create-tags-and-git-release.yml
-              parameters:
-                ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/${{artifact.name}}
-                PackageRepository: Crates.io
-                ReleaseSha: $(Build.SourceVersion)
-                WorkingDirectory: $(Pipeline.Workspace)/_work
+          - template: /eng/common/pipelines/templates/steps/create-tags-and-git-release.yml
+            parameters:
+              ArtifactLocation: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/${{artifact.name}}
+              PackageRepository: Crates.io
+              ReleaseSha: $(Build.SourceVersion)
+              WorkingDirectory: $(Pipeline.Workspace)/_work
 
         - deployment: PublishPackage
           displayName: "Publish to Crates.io"
@@ -69,10 +71,7 @@ stages:
             - input: pipelineArtifact  # Required, type of the input artifact
               artifactName: ${{parameters.PipelineArtifactName}}  # Required, name of the pipeline artifact
               targetPath: $(Pipeline.Workspace)/drop  # Optional, specifies where the artifact is downloaded to
-          ${{if parameters.TestPipeline}}:
-            environment: none
-          ${{else}}:
-            environment: cratesio
+          environment: ${{parameters.Environment}}
           # This timeout shouldn't be necessary once we're able to parallelize better. Right now,
           # this is here to ensure larger areas (30+) libraries don't time out.
           timeoutInMinutes: 120
@@ -85,77 +84,33 @@ stages:
             runOnce:
               deploy:
                 steps:
-                  - pwsh: |
-                      Write-Host "##vso[task.setvariable variable=ArtifactIndex]0"
-                    displayName: Set ArtifactIndex to 0
+                - template: /eng/pipelines/templates/steps/use-rust.yml@self
+                  parameters:
+                    Toolchain: stable
 
-                  - ${{ each artifact in parameters.Artifacts }}:
-                    - pwsh: |
-                        # Read artifact release order from release-order.json 
-                        # and use ArtifactIndex to select the right one
-                        $index = [int]'$(ArtifactIndex)'
-                        $artifacts = Get-Content '$(Pipeline.Workspace)/drop/release-order.json' | ConvertFrom-Json
-                        if ($index -ge $artifacts.Count) {
-                          Write-Error "ArtifactIndex $index is out of range (0..$($artifacts.Count - 1))"
-                          exit 1
-                        }
+                - pwsh: |
+                    $additionalOwners = @('heaths', 'hallipr')
+                    $token = $env:CARGO_REGISTRY_TOKEN
+                    $crateName = '${{artifact.name}}'
 
-                        $artifactName = $artifacts[$index]
-                        Write-Host "Releasing artifact $artifactName (index $index)"
+                    $manifestPath = "$(Pipeline.Workspace)/drop/$crateName/contents/Cargo.toml"
+                    Write-Host "> cargo publish --manifest-path `"$manifestPath`""
+                    cargo publish --manifest-path $manifestPath
+                    if (!$?) {
+                      Write-Error "Failed to publish package: '$crateName'"
+                      exit 1
+                    }
 
-                        $artifactRootPath = '$(Pipeline.Workspace)/drop'
-                        $outDir = '$(Pipeline.Workspace)/esrp-release'
+                    $existingOwners = (cargo owner --list $crateName) -replace " \(.*", ""
+                    $missingOwners = $additionalOwners | Where-Object { $existingOwners -notcontains $_ }
 
-                        if (Test-Path $outDir) {
-                          Write-Host "Cleaning output directory: $outDir"
-                          Remove-Item -Path $outDir -Recurse -Force
-                        }
-                        New-Item -ItemType Directory -Path $outDir -Force | Out-Null
-
-                        Write-Host "Artifact name: $artifactName"
-
-                        $packageMetadataPath = "$artifactRootPath/PackageInfo/$artifactName.json"
-                        if (!(Test-Path $packageMetadataPath)) {
-                          Write-Error "Package metadata file not found: $packageMetadataPath"
-                          exit 1
-                        }
-
-                        $packageMetadata = Get-Content -Raw $packageMetadataPath | ConvertFrom-Json
-                        $packageVersion = $packageMetadata.version
-                        Write-Host "Package version: $packageVersion"
-
-                        $cratePath = "$artifactRootPath/$artifactName/$artifactName-$packageVersion.crate"
-                        Copy-Item `
-                          -Path $cratePath `
-                          -Destination $outDir
-                        Write-Host "Contents of $outDir"
-                        Get-ChildItem -Path $outDir | ForEach-Object { Write-Host $_.FullName }
-                      displayName: 'Copy crate for ESRP'
-
-                    - task: EsrpRelease@10
-                      displayName: 'ESRP Release'
-                      inputs:
-                        connectedservicename: 'Azure SDK PME Managed Identity'
-                        ClientId: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
-                        DomainTenantId: '975f013f-7f24-47e8-a7d3-abc4752bf346'
-                        Usemanagedidentity: true
-                        KeyVaultName: 'kv-azuresdk-codesign'
-                        SignCertName: 'azure-sdk-esrp-release-certificate'
-                        intent: 'packagedistribution'
-                        contenttype: 'Rust'
-                        contentsource: 'Folder'
-                        folderlocation: '$(Pipeline.Workspace)/esrp-release'
-                        waitforreleasecompletion: true
-                        owners: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
-                        approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
-                        serviceendpointurl: 'https://api.esrp.microsoft.com/'
-                        mainpublisher: 'ESRPRELPACMANTEST'
-
-                    - pwsh: |
-                        $index = [int]'$(ArtifactIndex)' + 1
-                        Write-Host "Setting ArtifactIndex to $index"
-                        Write-Host "##vso[task.setvariable variable=ArtifactIndex]$index"
-                      displayName: Increment ArtifactIndex
+                    foreach ($owner in $missingOwners) {
+                      Write-Host "> cargo owner --add $owner $crateName"
+                      cargo owner --add $owner $crateName
+                    }
+                  displayName: Publish Crate
+                  env:
+                    CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
 
         - job: UpdatePackageVersion
           displayName: "API Review and Package Version Update"
@@ -175,32 +130,69 @@ stages:
             displayName: Download ${{parameters.PipelineArtifactName}} artifact
             artifact: ${{parameters.PipelineArtifactName}}
 
-          - ${{each artifact in parameters.Artifacts }}:
-            - template: /eng/common/pipelines/templates/steps/create-apireview.yml
-              parameters:
-                ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
-                Artifacts: ${{parameters.Artifacts}}
-                ConfigFileDir: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo
-                MarkPackageAsShipped: true
-                ArtifactName: ${{parameters.PipelineArtifactName}}
-                SourceRootPath: $(System.DefaultWorkingDirectory)
-                PackageName: ${{artifact.name}}
+          - template: /eng/common/pipelines/templates/steps/create-apireview.yml
+            parameters:
+              ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
+              Artifacts: ${{parameters.Artifacts}}
+              ConfigFileDir: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo
+              MarkPackageAsShipped: true
+              ArtifactName: ${{parameters.PipelineArtifactName}}
+              SourceRootPath: $(System.DefaultWorkingDirectory)
+              PackageName: ${{artifact.name}}
 
-            # Apply the version increment to each library, which updates the Cargo.toml and changelog files.
-            - task: PowerShell@2
-              displayName: Increment ${{artifact.name}} version
-              inputs:
-                targetType: filePath
-                filePath: $(Build.SourcesDirectory)/eng/scripts/Update-PackageVersion.ps1
-                arguments: >
-                  -ServiceDirectory '${{parameters.ServiceDirectory}}'
-                  -PackageName '${{artifact.name}}'
+          # Apply the version increment to each library, which updates the Cargo.toml and changelog files.
+          - task: PowerShell@2
+            displayName: Increment ${{artifact.name}} version
+            inputs:
+              targetType: filePath
+              filePath: $(Build.SourcesDirectory)/eng/scripts/Update-PackageVersion.ps1
+              arguments: >
+                -ServiceDirectory '${{parameters.ServiceDirectory}}'
+                -PackageName '${{artifact.name}}'
 
           - template: /eng/common/pipelines/templates/steps/create-pull-request.yml
             parameters:
               PRBranchName: increment-package-version-${{parameters.ServiceDirectory}}-$(Build.BuildId)
-              CommitMsg: "Increment package version after release of ${{ join(', ', parameters.Artifacts.*.name) }}"
+              CommitMsg: "Increment package version after release of ${{ artifact.name }}"
               PRTitle: "Increment versions for ${{parameters.ServiceDirectory}} releases"
               CloseAfterOpenForTesting: '${{parameters.TestPipeline}}'
               ${{ if startsWith(variables['Build.SourceBranch'], 'refs/pull/') }}:
                 BaseBranchName: main
+
+        - ${{ if eq(parameters.TestPipeline, true) }}:
+          - job: ManualApproval
+            displayName: "Manual approval"
+            dependsOn: PublishPackage
+            condition: ne(variables['Skip.PublishPackage'], 'true')
+            pool: server
+            timeoutInMinutes: 120 # 2 hours
+            steps:
+            - task: ManualValidation@1
+              timeoutInMinutes: 60 # 1 hour
+              inputs:
+                notifyUsers: '' # Required, but empty string allowed
+                allowApproversToApproveTheirOwnRuns: true
+                instructions: "Approve yank of ${{ artifact.name }}"
+                onTimeout: 'resume'
+
+          - job: YankCrates
+            displayName: "Yank Crates"
+            dependsOn: ManualApproval
+            condition: and(succeeded(), ne(variables['Skip.PublishPackage'], 'true'))
+            steps:
+            - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+
+            - download: current
+              displayName: Download ${{parameters.PipelineArtifactName}} artifact
+              artifact: ${{parameters.PipelineArtifactName}}
+
+            - task: PowerShell@2
+              displayName: Yank Crates
+              env:
+                CARGO_REGISTRY_TOKEN: $(azure-sdk-cratesio-token)
+              inputs:
+                targetType: filePath
+                filePath: $(Build.SourcesDirectory)/eng/scripts/Yank-Crates.ps1
+                arguments:
+                  -CrateNames '${{artifact.name}}'
+                  -PackageInfoDirectory '$(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}/PackageInfo'
