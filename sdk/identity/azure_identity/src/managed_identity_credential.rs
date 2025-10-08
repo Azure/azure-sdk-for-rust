@@ -168,7 +168,7 @@ mod tests {
     use crate::{
         env::Env,
         tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES},
-        TroubleshootingGuide, TSG_LINK_ERROR_TEXT,
+        TSG_LINK_ERROR_TEXT,
     };
     use azure_core::http::headers::Headers;
     use azure_core::http::{BufResponse, Method, Request, StatusCode, Transport, Url};
@@ -462,10 +462,8 @@ mod tests {
             .to_string()
             .contains("the requested identity has not been assigned to this resource"));
         assert!(
-            err.to_string().contains(&format!(
-                "{TSG_LINK_ERROR_TEXT}{}",
-                ManagedIdentityCredential::FRAGMENT
-            )),
+            err.to_string()
+                .contains(&format!("{TSG_LINK_ERROR_TEXT}#managed-id")),
             "expected error to contain a link to the troubleshooting guide, got '{err}'",
         );
     }

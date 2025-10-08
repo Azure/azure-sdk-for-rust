@@ -191,7 +191,7 @@ mod tests {
         client_assertion_credential::tests::{is_valid_request, FAKE_ASSERTION},
         env::Env,
         tests::*,
-        TroubleshootingGuide, TSG_LINK_ERROR_TEXT,
+        TSG_LINK_ERROR_TEXT,
     };
     use azure_core::{
         http::{
@@ -318,10 +318,8 @@ mod tests {
         ));
         assert!(err.to_string().contains(description));
         assert!(
-            err.to_string().contains(&format!(
-                "{TSG_LINK_ERROR_TEXT}{}",
-                WorkloadIdentityCredential::FRAGMENT
-            )),
+            err.to_string()
+                .contains(&format!("{TSG_LINK_ERROR_TEXT}#workload")),
             "expected error to contain a link to the troubleshooting guide, got '{err}'",
         );
     }

@@ -226,7 +226,7 @@ impl fmt::Display for ErrorHeaders {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{env::Env, TroubleshootingGuide, TSG_LINK_ERROR_TEXT};
+    use crate::{env::Env, TSG_LINK_ERROR_TEXT};
     use azure_core::{
         http::{BufResponse, ClientOptions, Transport},
         Bytes,
@@ -300,10 +300,8 @@ mod tests {
                     err.to_string().contains("bar"),
         ));
         assert!(
-            err.to_string().contains(&format!(
-                "{TSG_LINK_ERROR_TEXT}{}",
-                AzurePipelinesCredential::FRAGMENT
-            )),
+            err.to_string()
+                .contains(&format!("{TSG_LINK_ERROR_TEXT}#apc")),
             "expected error to contain a link to the troubleshooting guide, got '{err}'",
         );
     }
