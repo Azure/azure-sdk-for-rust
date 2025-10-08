@@ -1,14 +1,10 @@
 # Release History
 
-## 0.8.0 (Unreleased)
-
-### Features Added
+## 0.8.0 (2025-10-08)
 
 ### Breaking Changes
 
 - `EventProcessor` now consumes its `ConsumerClient` parameter rather than accepting a clone of an `Arc`.
-
-### Bugs Fixed
 
 ### Other Changes
 
