@@ -18,10 +18,11 @@ use std::sync::{Arc, OnceLock};
 use azure_core::Result;
 use azure_core_test::{
     perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
-    TestContext,
+    Recording, TestContext,
 };
-use azure_security_keyvault_secrets::{models::SetSecretParameters, SecretClient};
-use rand::{distr::Alphanumeric, Rng};
+use azure_security_keyvault_secrets::{
+    models::SetSecretParameters, SecretClient, SecretClientOptions,
+};
 struct GetSecrets {
     vault_url: String,
     random_key_name: OnceLock<String>,
@@ -62,34 +63,39 @@ impl GetSecrets {
         Box::pin(create_secret_client(runner.clone()))
     }
 
-    fn create_random_key_name() -> String {
-        let random_suffix: String = rand::rng()
-            .sample_iter(&Alphanumeric)
-            .take(8)
-            .map(char::from)
-            .collect();
+    fn create_random_key_name(recording: &Recording) -> String {
+        let random_suffix: String = recording.random_string::<8>(Some("perf-"));
         format!("perf-{}", random_suffix)
     }
 
-    fn get_random_key_name(&self) -> &String {
+    fn get_random_key_name(&self, recording: &Recording) -> &String {
         self.random_key_name
-            .get_or_init(Self::create_random_key_name)
+            .get_or_init(|| Self::create_random_key_name(recording))
     }
 }
 
 #[cfg_attr(target_arch="wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl PerfTest for GetSecrets {
-    async fn setup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
-        let credential = azure_identity::DeveloperToolsCredential::new(None)?;
-        let client = SecretClient::new(self.vault_url.as_str(), credential.clone(), None)?;
+    async fn setup(&self, context: Arc<TestContext>) -> azure_core::Result<()> {
+        let recording = context.recording();
+        let credential = recording.credential();
+
+        let mut client_options = SecretClientOptions::default();
+        recording.instrument(&mut client_options.client_options);
+
+        let client = SecretClient::new(
+            self.vault_url.as_str(),
+            credential.clone(),
+            Some(client_options),
+        )?;
         self.client.get_or_init(|| client);
 
         self.client
             .get()
             .unwrap()
             .set_secret(
-                self.get_random_key_name(),
+                self.get_random_key_name(recording),
                 SetSecretParameters {
                     value: Some("secret_value".into()),
                     ..Default::default()
@@ -103,12 +109,13 @@ impl PerfTest for GetSecrets {
     async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         Ok(())
     }
-    async fn run(&self, _context: Arc<TestContext>) -> Result<()> {
+    async fn run(&self, context: Arc<TestContext>) -> Result<()> {
+        let recording = context.recording();
         let _secret = self
             .client
             .get()
             .unwrap()
-            .get_secret(self.get_random_key_name(), None)
+            .get_secret(self.get_random_key_name(recording), None)
             .await?
             .into_body()?;
         Ok(())

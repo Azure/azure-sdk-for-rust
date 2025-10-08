@@ -7,8 +7,10 @@
 use crate::TestContext;
 use azure_core::{time::Duration, Error, Result};
 use clap::ArgMatches;
+use serde::Serialize;
 use std::{
     any::Any,
+    fmt::Display,
     future::Future,
     pin::Pin,
     sync::{
@@ -81,6 +83,17 @@ pub struct PerfTestOption {
     pub sensitive: bool,
 }
 
+#[derive(Debug, Clone, Default, Serialize)]
+#[allow(dead_code)]
+struct PerfTestOutputs {
+    //     * Package Versions - a set of packages tested and their versions.
+    pub package_versions: Vec<String>,
+    pub test_name: String,
+    pub operations_per_second: f64,
+    pub average_cpu_use: Option<f64>,
+    pub average_memory_use: Option<f64>,
+}
+
 #[derive(Debug, Clone)]
 struct PerfRunnerOptions {
     no_cleanup: bool,
@@ -89,8 +102,23 @@ struct PerfRunnerOptions {
     duration: Duration,
     warmup: Duration,
     disable_progress: bool,
-    #[allow(dead_code)]
     test_results_filename: String,
+}
+
+impl Display for PerfRunnerOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "PerfRunnerOptions {{ no_cleanup: {}, iterations: {}, parallel: {}, duration: {}, warmup: {}, disable_progress: {}, test_results_filename: '{}' }}",
+            self.no_cleanup,
+            self.iterations,
+            self.parallel,
+            self.duration,
+            self.warmup,
+            self.disable_progress,
+            self.test_results_filename
+        )
+    }
 }
 
 impl PerfRunnerOptions {}
@@ -134,13 +162,27 @@ pub struct PerfRunner {
 }
 
 impl PerfRunner {
+    /// Run the performance tests in `tests` using the current process command line.
+    ///
+    /// # Arguments
+    ///
+    /// * package_dir - The directory containing the package with the tests. Typically `env!("CARGO_PACKAGE_DIR")`
+    /// * module_name - the name of the module containing the test, typically `file!()`
+    /// * tests - the set of tests to configure.
+    ///
     pub fn new(
         package_dir: &'static str,
         module_name: &'static str,
         tests: Vec<PerfTestMetadata>,
     ) -> azure_core::Result<Self> {
         let command = Self::get_command_from_metadata(&tests);
-        let arguments = command.get_matches();
+        let arguments = command.try_get_matches().map_err(|e| {
+            azure_core::error::Error::with_error(
+                azure_core::error::ErrorKind::Other,
+                e,
+                "Failed to parse command line arguments.",
+            )
+        })?;
         Ok(Self {
             options: PerfRunnerOptions::from(&arguments),
             tests,
@@ -151,7 +193,7 @@ impl PerfRunner {
         })
     }
 
-    #[cfg(test)]
+    /// Run the performance tests in `tests` with the command line specified in `args`
     pub fn with_command_line(
         package_dir: &'static str,
         module_name: &'static str,
@@ -253,6 +295,8 @@ impl PerfRunner {
             .await?,
         );
 
+        println!("Test Configuration: {:#}", self.options);
+
         for iteration in 0..self.options.iterations {
             println!(
                 "Running test iteration {}/{}",
@@ -304,17 +348,51 @@ impl PerfRunner {
 
             let iteration_count = self.progress.load(Ordering::SeqCst);
             println!(
-                "Completed test iteration {}/{} - {} iterations run in {} seconds - {} seconds/iteration",
+                "Completed test iteration {}/{} - {} iterations run in {} seconds - {} iterations/second, {} seconds/iteration",
                 iteration + 1,
                 self.options.iterations,
                 iteration_count,
                 self.options.duration.as_seconds_f64(),
+                iteration_count as f64 / self.options.duration.as_seconds_f64(),
                 self.options.duration.as_seconds_f64() / iteration_count as f64
             );
             let operations_per_second =
+                iteration_count as f64 / self.options.duration.as_seconds_f64();
+            let seconds_per_operation =
                 self.options.duration.as_seconds_f64() / iteration_count as f64;
-            let duration_per_operation = Duration::seconds_f64(operations_per_second);
-            println!("{:4} seconds/operation", duration_per_operation);
+            let duration_per_operation = Duration::seconds_f64(seconds_per_operation);
+            println!("{operations_per_second:4} operations/second, {duration_per_operation:4} seconds/operation");
+
+            if !self.options.test_results_filename.is_empty() {
+                // Write out the results to a file.
+                println!(
+                    "Writing test results to {}",
+                    self.options.test_results_filename
+                );
+                let results = PerfTestOutputs {
+                    test_name: test.name.to_string(),
+                    package_versions: vec![self.package_dir.to_string()],
+                    operations_per_second,
+                    average_cpu_use: None,
+                    average_memory_use: None,
+                };
+
+                let json = serde_json::to_string_pretty(&results).map_err(|e| {
+                    Error::with_error(
+                        azure_core::error::ErrorKind::Other,
+                        e,
+                        "Failed to serialize test results to JSON.",
+                    )
+                })?;
+                println!("Test results: {}", json);
+                std::fs::write(&self.options.test_results_filename, json).map_err(|e| {
+                    Error::with_error(
+                        azure_core::error::ErrorKind::Io,
+                        e,
+                        "Failed to write test results to file.",
+                    )
+                })?;
+            }
         }
         Ok(())
     }
