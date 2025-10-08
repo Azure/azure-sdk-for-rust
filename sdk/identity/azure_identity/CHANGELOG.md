@@ -1,8 +1,6 @@
 # Release History
 
-## 0.29.0 (Unreleased)
-
-### Features Added
+## 0.29.0 (2025-10-08)
 
 ### Breaking Changes
 
@@ -10,10 +8,6 @@
 - Credential constructors return an error when given a non-HTTPS authority host.
 - Renamed `ClientCertificateCredential::new()` parameter `client_certificate_pass` to `client_certificate_password`.
 - Replaced credential-specific `authority_host` options with `azure_core::cloud::CloudConfiguration` configured via `ClientOptions.cloud`.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.28.0 (2025-09-16)
 
