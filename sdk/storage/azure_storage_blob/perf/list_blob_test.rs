@@ -27,7 +27,14 @@ impl ListBlobTest {
             println!("Parsed count: {}", count);
 
             let endpoint: Option<&String> = runner.try_get_test_arg("endpoint")?;
-            let endpoint = endpoint.expect("endpoint argument is mandatory").clone();
+            let endpoint = match endpoint {
+                Some(e) => e.clone(),
+                None => format!(
+                    "https://{}.blob.core.windows.net",
+                    std::env::var("AZURE_STORAGE_ACCOUNT_NAME")
+                        .expect("AZURE_STORAGE_ACCOUNT_NAME is not set")
+                ),
+            };
             println!("Using endpoint: {}", endpoint);
 
             let container_name = format!("perf-container-{}", uuid::Uuid::new_v4());
@@ -58,7 +65,7 @@ impl ListBlobTest {
                 PerfTestOption {
                     name: "endpoint",
                     display_message: "The endpoint of the blob storage",
-                    mandatory: true,
+                    mandatory: false,
                     short_activator: 'e',
                     long_activator: "endpoint",
                     expected_args_len: 1,

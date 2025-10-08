@@ -430,7 +430,13 @@ impl PerfRunner {
                             //     start.elapsed(),
                             //     self.progress.load(Ordering::SeqCst) as f64 / start.elapsed().as_secs_f64(),
                             //     Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));
-                            println!("Current {:3}, Total {:5} {:4}", current_total - last_count, current_total, Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));
+                            if start.elapsed().as_secs_f64() != 0f64 && current_total != 0 {
+                                println!("Current {:3}, Total {:5} {:4}", current_total - last_count, current_total, Duration::seconds_f64( start.elapsed().as_secs_f64() / current_total as f64 ));
+                            }
+                            else{
+                                println!("Current {:3}, Total {:5} ---", current_total - last_count, current_total);
+                            }
+
                             last_count = current_total;
                         }
                     }, if !self.options.disable_progress => {},
@@ -464,12 +470,13 @@ impl PerfRunner {
                     .value_parser(clap::value_parser!(u32))
                     .global(false),
             )
+            .arg(clap::arg!(--sync).global(true).required(false))
             .arg(
                 clap::arg!(--parallel <COUNT> "The number of concurrent tasks to use when running each test")
                     .required(false)
                     .default_value("1")
                     .value_parser(clap::value_parser!(usize))
-                    .global(false),
+                    .global(true),
             )
             .arg(clap::arg!(--"no-progress" "Disable progress reporting").required(false).global(false))
             .arg(
@@ -477,14 +484,14 @@ impl PerfRunner {
                     .required(false)
                     .default_value("30")
                     .value_parser(clap::value_parser!(i64))
-                    .global(false),
+                    .global(true),
             )
             .arg(
                 clap::arg!(--warmup <SECONDS> "The duration of the warmup period in seconds")
                     .required(false)
                     .default_value("5")
                     .value_parser(clap::value_parser!(i64))
-                    .global(false),
+                    .global(true),
             )
             .arg(
                 clap::arg!(--"test-results" <FILE> "The file to write test results to")

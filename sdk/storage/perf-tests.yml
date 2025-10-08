@@ -2,33 +2,33 @@ Service: storage-blob
 
 Project: azure-storage-blobs-perf
 
-PrimaryPackage: azure_storage_blobs
+PrimaryPackage: azure_storage_blob
 
 PackageVersions:
-- azure_storage_blobs: 12.6.2
+- azure_storage_blob: 0.6.0
   azure_core: 1.7.2
-- azure_storage_blobs: source
+- azure_storage_blob: source
   azure_core: source
 
 Tests:
-- Test: download
-  Class: DownloadBlob
-  Arguments:
-  - --size 10240 --parallel 64
-  - --size 10485760 --parallel 32
-  - --size 1073741824 --parallel 1 --warmup 60 --duration 60
-  - --size 1073741824 --parallel 8 --warmup 60 --duration 60
+# - Test: download
+#   Class: DownloadBlob
+#   Arguments:
+#   - --size 10240 --parallel 64
+#   - --size 10485760 --parallel 32
+#   - --size 1073741824 --parallel 1 --warmup 60 --duration 60
+#   - --size 1073741824 --parallel 8 --warmup 60 --duration 60
 
-- Test: upload
-  Class: UploadBlob
-  Arguments:
-  - --size 10240 --parallel 64
-  - --size 10485760 --parallel 32
-  - --size 1073741824 --parallel 1 --warmup 60 --duration 60
-  - --size 1073741824 --parallel 8 --warmup 60 --duration 60
+# - Test: upload
+#   Class: UploadBlob
+#   Arguments:
+#   - --size 10240 --parallel 64
+#   - --size 10485760 --parallel 32
+#   - --size 1073741824 --parallel 1 --warmup 60 --duration 60
+#   - --size 1073741824 --parallel 8 --warmup 60 --duration 60
 
 - Test: list-blobs
-  Class: ListBlob
+  Class: list_blob
   Arguments:
   - --count 5 --parallel 64
   - --count 500 --parallel 32
