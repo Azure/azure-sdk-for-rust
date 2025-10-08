@@ -14,6 +14,7 @@ use azure_storage_blob::models::{
     BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
     LeaseState,
 };
+use futures::TryStreamExt;
 
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -484,5 +485,49 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(sku_name.is_some());
     assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_blob_name_with_leading_spaces(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+
+    // Create a blob with leading spaces
+    let blob_name_with_spaces = "  with leading spaces".to_string();
+    let blob_client = container_client.blob_client(blob_name_with_spaces.clone());
+
+    // Create the blob using helper function
+    create_test_blob(&blob_client, None, None).await?;
+
+    // Use list_blobs API to retrieve the blob name
+    let mut list_blobs_response = container_client.list_blobs(None)?;
+
+    // Get the first page of results
+    let page = list_blobs_response.try_next().await?;
+    let list_blob_segment_response = page.unwrap().into_body()?;
+    let blob_list = list_blob_segment_response.segment.blob_items;
+
+    // Assert that we found exactly one blob
+    assert_eq!(1, blob_list.len());
+
+    // Get the returned blob name
+    let returned_blob_name = blob_list[0]
+        .name
+        .as_ref()
+        .unwrap()
+        .content
+        .as_ref()
+        .unwrap();
+
+    // Assert that the returned blob name matches the original (with spaces preserved)
+    assert_eq!(
+        blob_name_with_spaces, *returned_blob_name,
+        "Blob name with leading spaces should be preserved. Expected: '{}', Got: '{}'",
+        blob_name_with_spaces, returned_blob_name
+    );
+
+    container_client.delete_container(None).await?;
     Ok(())
 }
