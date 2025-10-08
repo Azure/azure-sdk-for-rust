@@ -19,10 +19,10 @@
 
 # Catch all for loose files in the root, which are mostly global configuration and
 # should not be changed without team discussion.
-/*                       @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/*                       @heaths @RickWinter @ronniegeraghty @LarryOsterman @j7nw4r
 
 # Catch all for non-code project files and unowned files | folders
-/**                      @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/**                      @heaths @RickWinter @ronniegeraghty @LarryOsterman @j7nw4r
 
 # Allow service owners to approve crate version updates, which impact Cargo.lock
 /Cargo.lock
@@ -32,23 +32,23 @@
 ##################
 
 # GitHub integration and bot rules
-/.github/                @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/.github/                @heaths @RickWinter @ronniegeraghty @LarryOsterman @j7nw4r
 
 ###########
 # SDK
 ###########
 # Catch all
-/sdk/                    @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/sdk/                    @heaths @RickWinter @ronniegeraghty @LarryOsterman @j7nw4r
 
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Core
 # PRLabel: %Azure.Core
-/sdk/core/               @heaths @RickWinter @LarryOsterman
+/sdk/core/               @heaths @RickWinter @LarryOsterman @j7nw4r
 
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Identity
 # PRLabel: %Azure.Identity
-/sdk/identity/           @heaths @RickWinter @LarryOsterman @chlowell
+/sdk/identity/           @heaths @RickWinter @LarryOsterman @chlowell @j7nw4r
 
 ####################
 # Client Libraries
@@ -72,6 +72,12 @@
 
 # ServiceLabel: %Storage
 # AzureSDKOwners: @vincenttran-msft @jalauzon-msft
+
+# PRLabel: %EventHubs
+/sdk/eventhubs/          @j7nw4r
+
+# ServiceLabel: %EventHubs
+# AzureSDKOwners: @j7nw4r
 
 ####################
 # Management Libraries
