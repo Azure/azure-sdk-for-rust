@@ -381,7 +381,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "azure_core",
