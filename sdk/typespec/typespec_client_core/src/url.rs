@@ -15,12 +15,13 @@ impl UrlOperations for Url {
     fn append_path(&mut self, p: &str) {
         if self.path().len() == 1 {
             self.set_path(p);
-        }
-        else {
-            match if self.path().ends_with('/') { 1 } else { 0 } + if p.starts_with('/') { 1 } else { 0 } {
+        } else if !p.is_empty() {
+            match if self.path().ends_with('/') { 1 } else { 0 }
+                + if p.starts_with('/') { 1 } else { 0 }
+            {
                 0 => self.set_path(&format!("{}/{}", self.path(), p).to_string()),
                 1 => self.set_path(&(self.path().to_owned() + p)),
-                _ => self.set_path(&(self.path()[..self.path().len() - 2].to_owned() + p)),
+                _ => self.set_path(&(self.path()[..self.path().len() - 1].to_owned() + p)),
             }
         }
     }
