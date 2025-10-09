@@ -128,7 +128,8 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
             }
 
             // No items, so make any requests we need to make and provide them to the pipeline.
-            for request in results.requests {
+            // TODO: We can absolutely parallelize these requests.
+            for mut request in results.requests {
                 let mut query_request = if let Some(query) = request.query {
                     let mut query = Query::from(query);
                     if request.include_parameters {
@@ -146,30 +147,42 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                     constants::PARTITION_KEY_RANGE_ID,
                     request.partition_key_range_id.clone(),
                 );
-                if let Some(continuation) = request.continuation {
-                    query_request.insert_header(constants::CONTINUATION, continuation);
+
+                let mut draining = true;
+                while draining {
+                    if let Some(c) = request.continuation.clone() {
+                        query_request.insert_header(constants::CONTINUATION, c);
+                    } else {
+                        // Make sure we don't send a continuation header if we don't have one, even if we did on a previous iteration.
+                        query_request.headers_mut().remove(constants::CONTINUATION);
+                    }
+
+                    let resp = self
+                        .http_pipeline
+                        .send_raw(
+                            self.context.to_borrowed(),
+                            &mut query_request,
+                            self.items_link.clone(),
+                        )
+                        .await?;
+
+                    let next_continuation =
+                        resp.headers().get_optional_string(&constants::CONTINUATION);
+
+                    draining = request.drain && next_continuation.is_some();
+
+                    let body = resp.into_body();
+                    let result = QueryResult {
+                        partition_key_range_id: &request.partition_key_range_id,
+                        request_index: request.index,
+                        next_continuation,
+                        result: &body,
+                    };
+
+                    // For now, just provide a single result at a time.
+                    // When we parallelize requests, we can more easily provide multiple results at once.
+                    pipeline.provide_data(vec![result])?;
                 }
-
-                let resp = self
-                    .http_pipeline
-                    .send_raw(
-                        self.context.to_borrowed(),
-                        &mut query_request,
-                        self.items_link.clone(),
-                    )
-                    .await?;
-
-                let next_continuation =
-                    resp.headers().get_optional_string(&constants::CONTINUATION);
-                let body = resp.into_body();
-
-                let result = QueryResult {
-                    partition_key_range_id: &request.partition_key_range_id,
-                    next_continuation,
-                    result: &body,
-                };
-
-                pipeline.provide_data(result)?;
             }
 
             // No items, but we provided more data (probably), so continue the loop.

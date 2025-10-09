@@ -114,6 +114,7 @@ struct PartitionState {
     started: bool,
     queue: VecDeque<MockItem>,
     next_continuation: Option<String>,
+    next_index: usize,
 }
 
 impl PartitionState {
@@ -158,6 +159,7 @@ impl MockQueryPipeline {
                 started: false,
                 queue: VecDeque::new(),
                 next_continuation: None,
+                next_index: 0,
             })
             .collect();
 
@@ -170,25 +172,26 @@ impl MockQueryPipeline {
     }
 
     fn get_requests(&self) -> Vec<azure_data_cosmos::query::QueryRequest> {
+        let (query, include_parameters) = if let Some(config) = &self.query_request_config {
+            (config.query.clone(), config.include_parameters)
+        } else {
+            (None, false)
+        };
+
         self.partitions
             .iter()
             .filter(|state| !state.exhausted())
-            .map(|state| azure_data_cosmos::query::QueryRequest {
+            .map(move |state| azure_data_cosmos::query::QueryRequest {
                 partition_key_range_id: state.range.id.clone(),
+                index: state.next_index,
                 continuation: if state.started {
                     state.next_continuation.clone()
                 } else {
                     None
                 },
-                query: self
-                    .query_request_config
-                    .as_ref()
-                    .and_then(|config| config.query.clone()),
-                include_parameters: self
-                    .query_request_config
-                    .as_ref()
-                    .map(|config| config.include_parameters)
-                    .unwrap_or(false),
+                query: query.clone(),
+                include_parameters,
+                drain: false,
             })
             .collect()
     }
@@ -266,31 +269,43 @@ impl QueryPipeline for MockQueryPipeline {
 
     fn provide_data(
         &mut self,
-        data: azure_data_cosmos::query::QueryResult,
+        data: std::vec::Vec<azure_data_cosmos::query::QueryResult<'_>>,
     ) -> azure_core::Result<()> {
-        let payload: DocumentPayload<MockItem> =
-            serde_json::from_slice(data.result).map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Failed to deserialize payload",
-                )
-            })?;
+        for data in data {
+            let payload: DocumentPayload<MockItem> =
+                serde_json::from_slice(data.result).map_err(|_| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "Failed to deserialize payload",
+                    )
+                })?;
 
-        let partition_state = self
-            .partitions
-            .iter_mut()
-            .find(|state| state.range.id == data.partition_key_range_id);
-        if let Some(partition_state) = partition_state {
-            partition_state.provide_data(payload.documents, data.next_continuation);
-            Ok(())
-        } else {
-            Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
-                    "Partition key range {} not found",
-                    data.partition_key_range_id
-                ),
-            ))
+            let partition_state = self
+                .partitions
+                .iter_mut()
+                .find(|state| state.range.id == data.partition_key_range_id);
+            if let Some(partition_state) = partition_state {
+                if partition_state.next_index != data.request_index {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        format!(
+                            "Out of order data provided for partition key range {}: expected index {}, got {}",
+                            data.partition_key_range_id, partition_state.next_index, data.request_index
+                        ),
+                    ));
+                }
+                partition_state.next_index += 1;
+                partition_state.provide_data(payload.documents, data.next_continuation);
+            } else {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!(
+                        "Partition key range {} not found",
+                        data.partition_key_range_id
+                    ),
+                ));
+            }
         }
+        Ok(())
     }
 }
