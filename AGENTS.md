@@ -188,7 +188,7 @@ Agents should follow guidelines in `.github/copilot-instructions.md` and `CONTRI
 - **Documentation**:
   - All public APIs need `///` doc comments
   - Include runnable doc test examples where appropriate
-  - Hero scenario examples should have `#[tokio::main]` async main functions
+  - Hero scenario examples under the `examples/` directory should have `#[tokio::main]` async main functions
 
 - **Testing**:
   - Place unit tests in `#[cfg(test)] mod tests`
