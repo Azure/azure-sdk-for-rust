@@ -5,6 +5,8 @@
 //!
 //! These tests cover various scenarios for running the `PerfRunner` with different options and measurements.
 //!
+use futures::FutureExt;
+
 use super::*;
 use std::boxed::Box;
 
@@ -52,25 +54,8 @@ fn create_fibonacci1_test(runner: PerfRunner) -> CreatePerfTestReturn {
         }
     }
 
-    // // Helper function to handle the async creation of the test.
-    // async fn create_test(runner: PerfRunner) -> Result<Box<dyn PerfTest>> {
-    //     let count: Option<&String> = runner.try_get_test_arg("count")?;
-
-    //     println!("Fibonacci1Test with count: {:?}", count);
-    //     let count = count.expect("count argument is mandatory");
-    //     let count = count.parse::<u32>().map_err(|e| {
-    //         azure_core::Error::with_error(
-    //             azure_core::error::ErrorKind::Other,
-    //             e,
-    //             "Invalid count argument",
-    //         )
-    //     })?;
-    //     Ok(Box::new(Fibonacci1Test { count }) as Box<dyn PerfTest>)
-    // }
-
     // Return a pinned future that creates the test.
-    //  Box::pin(create_test(runner.clone()))
-    Box::pin(async move {
+    async move {
         let count: Option<&String> = runner.try_get_test_arg("count")?;
 
         println!("Fibonacci1Test with count: {:?}", count);
@@ -83,7 +68,8 @@ fn create_fibonacci1_test(runner: PerfRunner) -> CreatePerfTestReturn {
             )
         })?;
         Ok(Box::new(Fibonacci1Test { count }) as Box<dyn PerfTest>)
-    })
+    }
+    .boxed()
 }
 
 #[tokio::test]
