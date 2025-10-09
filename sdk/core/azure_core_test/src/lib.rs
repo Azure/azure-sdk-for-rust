@@ -38,8 +38,6 @@ pub struct TestContext {
     recording: Option<Recording>,
 }
 
-unsafe impl Send for TestContext {}
-
 impl TestContext {
     pub(crate) fn new(
         crate_dir: &'static str,

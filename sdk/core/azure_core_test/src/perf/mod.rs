@@ -5,11 +5,14 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use crate::TestContext;
-use azure_core::{time::Duration, Error, Result};
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    time::Duration,
+    Error, Result,
+};
 use clap::ArgMatches;
 use serde::Serialize;
 use std::{
-    any::Any,
     fmt::Display,
     future::Future,
     pin::Pin,
@@ -63,14 +66,14 @@ pub struct PerfTestMetadata {
     pub create_test: CreatePerfTestFn,
 }
 
-/// #A `TestOptions` defines a set of options for the test which will be merged with the common test inputs to define the command line for the performance test.
+/// A `PerfTestOptions` defines a set of options for the test which will be merged with the common test inputs to define the command line for the performance test.
 #[derive(Debug, Default, Clone)]
 pub struct PerfTestOption {
     /// The name of the test option. This is used as the key in the `TestArguments` map.
     pub name: &'static str,
 
     /// The short form activator for this argument e.g., `-t`. Does not include the hyphen.
-    pub short_activator: char,
+    pub short_activator: Option<char>,
 
     /// The long form activator for this argument e.g., `--test-option`. Does not include the hyphens.
     pub long_activator: &'static str,
@@ -101,7 +104,7 @@ struct PerfTestOutputs {
 struct PerfRunnerOptions {
     no_cleanup: bool,
     iterations: u32,
-    parallel: usize,
+    parallel: u32,
     duration: Duration,
     warmup: Duration,
     disable_progress: bool,
@@ -124,8 +127,6 @@ impl Display for PerfRunnerOptions {
     }
 }
 
-impl PerfRunnerOptions {}
-
 impl From<&ArgMatches> for PerfRunnerOptions {
     fn from(matches: &ArgMatches) -> Self {
         Self {
@@ -134,7 +135,7 @@ impl From<&ArgMatches> for PerfRunnerOptions {
                 .get_one::<u32>("iterations")
                 .expect("defaulted by clap"),
             parallel: *matches
-                .get_one::<usize>("parallel")
+                .get_one::<u32>("parallel")
                 .expect("defaulted by clap"),
             disable_progress: matches.get_flag("no-progress"),
             duration: Duration::seconds(
@@ -177,7 +178,7 @@ impl PerfRunner {
         package_dir: &'static str,
         module_name: &'static str,
         tests: Vec<PerfTestMetadata>,
-    ) -> azure_core::Result<Self> {
+    ) -> Result<Self> {
         let command = Self::get_command_from_metadata(&tests);
         let arguments = command.try_get_matches();
         let arguments = match arguments {
@@ -205,13 +206,10 @@ impl PerfRunner {
         args: Vec<&str>,
     ) -> azure_core::Result<Self> {
         let command = Self::get_command_from_metadata(&tests);
-        let arguments = command.try_get_matches_from(args).map_err(|e| {
-            azure_core::error::Error::with_error(
-                azure_core::error::ErrorKind::Other,
-                e,
-                "Failed to parse command line arguments.",
-            )
-        })?;
+        let arguments = command
+            .try_get_matches_from(args)
+            .with_context(ErrorKind::Other, "Failed to parse command line arguments.")?;
+
         Ok(Self {
             options: PerfRunnerOptions::from(&arguments),
             tests,
@@ -225,34 +223,38 @@ impl PerfRunner {
     /// Gets a reference to a typed argument by its id.
     pub fn try_get_global_arg<T>(&self, id: &str) -> Result<Option<&T>>
     where
-        T: Any + Clone + Send + Sync + 'static,
+        T: Clone + Send + Sync + 'static,
     {
-        self.arguments.try_get_one::<T>(id).map_err(|e| {
-            Error::with_error(
-                azure_core::error::ErrorKind::Other,
-                e,
-                format!("Failed to get argument '{}'.", id),
-            )
-        })
+        self.arguments.try_get_one::<T>(id).with_context(
+            ErrorKind::Other,
+            format!("Failed to get argument '{}'.", id),
+        )
     }
 
+    /// Gets a reference to a typed argument for the selected test by its id.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the argument to get.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the argument if it exists, or None.
     pub fn try_get_test_arg<T>(&self, id: &str) -> Result<Option<&T>>
     where
-        T: Any + Clone + Send + Sync + 'static,
+        T: Clone + Send + Sync + 'static,
     {
         if let Some((_, args)) = self.arguments.subcommand() {
-            args.try_get_one::<T>(id).map_err(|e| {
-                Error::with_error(
-                    azure_core::error::ErrorKind::Other,
-                    e,
-                    format!("Failed to get argument '{}' for test.", id),
-                )
-            })
+            args.try_get_one::<T>(id).with_context(
+                ErrorKind::Other,
+                format!("Failed to get argument '{}' for test.", id),
+            )
         } else {
             Ok(None)
         }
     }
 
+    /// Gets the name of the selected test.
     pub fn get_selected_test_name(&self) -> Result<&str> {
         match self.arguments.subcommand_name() {
             Some(name) => Ok(name),
@@ -263,6 +265,16 @@ impl PerfRunner {
         }
     }
 
+    /// Runs the selected performance test.
+    ///
+    /// This will run the selected test for the configured number of iterations, parallel tasks, and duration.
+    ///
+    /// If no test has been selected, this will print an error message and return Ok(()).
+    ///
+    /// # Returns
+    ///
+    /// A result indicating the success or failure of the test run.
+    ///
     pub async fn run(&self) -> azure_core::Result<()> {
         // We can only run tests if there was a test selected.
         let test_name = match self.get_selected_test_name() {
@@ -380,21 +392,14 @@ impl PerfRunner {
                     average_memory_use: None,
                 };
 
-                let json = serde_json::to_string_pretty(&results).map_err(|e| {
-                    Error::with_error(
-                        azure_core::error::ErrorKind::Other,
-                        e,
-                        "Failed to serialize test results to JSON.",
-                    )
-                })?;
+                let json = serde_json::to_string_pretty(&results).with_context(
+                    ErrorKind::DataConversion,
+                    "Failed to serialize test results to JSON.",
+                )?;
+
                 println!("Test results: {}", json);
-                std::fs::write(&self.options.test_results_filename, json).map_err(|e| {
-                    Error::with_error(
-                        azure_core::error::ErrorKind::Io,
-                        e,
-                        "Failed to write test results to file.",
-                    )
-                })?;
+                std::fs::write(&self.options.test_results_filename, json)
+                    .with_context(ErrorKind::Io, "Failed to write test results to file.")?;
             }
         }
         Ok(())
@@ -411,7 +416,7 @@ impl PerfRunner {
         (0..self.options.parallel).for_each(|i| {
             let test_instance_clone = Arc::clone(&test_instance);
             let progress = self.progress.clone();
-            let test_context = test_contexts[i].clone();
+            let test_context = test_contexts[i as usize].clone();
             tasks.spawn(async move {
                 loop {
                     test_instance_clone.run(test_context.clone()).await?;
@@ -429,10 +434,7 @@ impl PerfRunner {
                         loop {
                             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                             let current_total = self.progress.load(Ordering::SeqCst);
-                            // println!("{:<10?} elapsed: {:.5} op/sec, {:4} sec/operation.",
-                            //     start.elapsed(),
-                            //     self.progress.load(Ordering::SeqCst) as f64 / start.elapsed().as_secs_f64(),
-                            //     Duration::seconds_f64( start.elapsed().as_secs_f64() / self.progress.load(Ordering::SeqCst) as f64 ));
+
                             if start.elapsed().as_secs_f64() != 0f64 && current_total != 0 {
                                 println!("Current {:3}, Total {:5} {:4}", current_total - last_count, current_total, Duration::seconds_f64( start.elapsed().as_secs_f64() / current_total as f64 ));
                             }
@@ -448,7 +450,7 @@ impl PerfRunner {
         Ok(())
     }
 
-    // * Disable test cleanup
+    // Future command line switches:
     // * Test Proxy servers.
     // * TLS
     //   * Allow untrusted TLS certificates
@@ -478,7 +480,7 @@ impl PerfRunner {
                 clap::arg!(--parallel <COUNT> "The number of concurrent tasks to use when running each test")
                     .required(false)
                     .default_value("1")
-                    .value_parser(clap::value_parser!(usize))
+                    .value_parser(clap::value_parser!(u32))
                     .global(true),
             )
             .arg(clap::arg!(--"no-progress" "Disable progress reporting").required(false).global(false))
@@ -514,8 +516,8 @@ impl PerfRunner {
                     .num_args(option.expected_args_len..=option.expected_args_len)
                     .required(option.mandatory)
                     .global(false);
-                if option.short_activator != '\0' {
-                    arg = arg.short(option.short_activator);
+                if let Some(short_activator) = option.short_activator {
+                    arg = arg.short(short_activator);
                 }
                 if option.sensitive {
                     arg = arg.hide(true);

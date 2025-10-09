@@ -89,7 +89,7 @@ async fn test_perf_runner_with_single_test() {
             options: vec![PerfTestOption {
                 name: "count",
                 mandatory: true,
-                short_activator: 'c',
+                short_activator: Some('c'),
                 expected_args_len: 1,
                 display_message: "The Fibonacci number to compute",
                 ..Default::default()

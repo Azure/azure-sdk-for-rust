@@ -55,7 +55,7 @@ impl ListBlobTest {
                     name: "count",
                     display_message: "The number of blobs to list",
                     mandatory: true,
-                    short_activator: 'c',
+                    short_activator: Some('c'),
                     long_activator: "count",
                     expected_args_len: 1,
                     ..Default::default()
@@ -64,7 +64,7 @@ impl ListBlobTest {
                     name: "endpoint",
                     display_message: "The endpoint of the blob storage",
                     mandatory: false,
-                    short_activator: 'e',
+                    short_activator: Some('e'),
                     long_activator: "endpoint",
                     expected_args_len: 1,
                     ..Default::default()

@@ -60,6 +60,10 @@ pub struct Recording {
     rand: OnceLock<Mutex<ChaCha20Rng>>,
 }
 
+// It's not 100% clear to me that Recording is Send, but it seems to be.
+// TODO: See if there's a way to remove this explicit unsafe impl.
+unsafe impl Send for Recording {}
+
 impl Recording {
     /// Adds a [`Sanitizer`] to sanitize PII for the current test.
     pub async fn add_sanitizer<S>(&self, sanitizer: S) -> azure_core::Result<()>

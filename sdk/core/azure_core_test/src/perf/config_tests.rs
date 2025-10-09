@@ -26,7 +26,7 @@ fn create_basic_test_metadata() -> PerfTestMetadata {
         description: "A basic test for testing purposes",
         options: vec![PerfTestOption {
             name: "test-option",
-            short_activator: 't',
+            short_activator: Some('t'),
             long_activator: "test-option",
             display_message: "Test option for basic test",
             expected_args_len: 1,
@@ -45,7 +45,7 @@ fn create_complex_test_metadata() -> PerfTestMetadata {
         options: vec![
             PerfTestOption {
                 name: "mandatory-option",
-                short_activator: 'm',
+                short_activator: Some('m'),
                 long_activator: "mandatory",
                 display_message: "Mandatory option",
                 expected_args_len: 1,
@@ -54,7 +54,7 @@ fn create_complex_test_metadata() -> PerfTestMetadata {
             },
             PerfTestOption {
                 name: "sensitive-option",
-                short_activator: 's',
+                short_activator: None,
                 long_activator: "sensitive",
                 display_message: "Sensitive option",
                 expected_args_len: 1,
@@ -63,7 +63,7 @@ fn create_complex_test_metadata() -> PerfTestMetadata {
             },
             PerfTestOption {
                 name: "flag-option",
-                short_activator: 'f',
+                short_activator: Some('f'),
                 long_activator: "flag",
                 display_message: "Flag option",
                 ..Default::default()
@@ -80,7 +80,7 @@ fn create_no_short_activator_test_metadata() -> PerfTestMetadata {
         description: "Test without short activators",
         options: vec![PerfTestOption {
             name: "long-only",
-            short_activator: '\0',
+            short_activator: None,
             long_activator: "long-only",
             display_message: "Long activator only",
             expected_args_len: 1,
@@ -498,7 +498,7 @@ fn test_test_option_debug_and_default() {
 
     // Test default values
     assert_eq!(option.name, "");
-    assert_eq!(option.short_activator, '\0');
+    assert_eq!(option.short_activator, None);
     assert_eq!(option.long_activator, "");
     assert_eq!(option.display_message, "");
     assert_eq!(option.expected_args_len, 0);
@@ -598,7 +598,7 @@ async fn test_perf_runner_with_test_functions() {
         options: vec![
             PerfTestOption {
                 name: "mandatory-option",
-                short_activator: 'm',
+                short_activator: Some('m'),
                 long_activator: "mandatory",
                 display_message: "Mandatory option",
                 expected_args_len: 1,
@@ -607,7 +607,7 @@ async fn test_perf_runner_with_test_functions() {
             },
             PerfTestOption {
                 name: "sensitive-option",
-                short_activator: 's',
+                short_activator: Some('s'),
                 long_activator: "sensitive",
                 display_message: "Sensitive option",
                 expected_args_len: 1,
@@ -616,7 +616,7 @@ async fn test_perf_runner_with_test_functions() {
             },
             PerfTestOption {
                 name: "flag-option",
-                short_activator: 'f',
+                short_activator: Some('f'),
                 long_activator: "flag",
                 display_message: "Flag option",
                 expected_args_len: 0,

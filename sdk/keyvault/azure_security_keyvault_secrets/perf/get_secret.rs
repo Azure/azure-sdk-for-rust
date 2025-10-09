@@ -39,7 +39,7 @@ impl GetSecrets {
                 name: "vault_url",
                 display_message: "The URL of the Key Vault to use in the test",
                 mandatory: true,
-                short_activator: 'u',
+                short_activator: Some('u'),
                 long_activator: "vault-url",
                 expected_args_len: 1,
                 ..Default::default()
