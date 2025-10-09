@@ -129,7 +129,19 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
 
             // No items, so make any requests we need to make and provide them to the pipeline.
             for request in results.requests {
-                let mut query_request = base_request.clone();
+                let mut query_request = if let Some(query) = request.query {
+                    let mut query = Query::from(query);
+                    if request.include_parameters {
+                        query = query.with_parameters_from(&self.query)
+                    }
+                    crate::pipeline::create_base_query_request(
+                        self.http_pipeline.url(&self.items_link),
+                        &query,
+                    )?
+                } else {
+                    base_request.clone()
+                };
+
                 query_request.insert_header(
                     constants::PARTITION_KEY_RANGE_ID,
                     request.partition_key_range_id.clone(),

@@ -5,6 +5,14 @@ pub struct QueryRequest {
 
     /// The continuation to use, if any.
     pub continuation: Option<String>,
+
+    /// The query to execute for this partition key range, if different from the original query.
+    pub query: Option<String>,
+
+    /// If a query is specified, this flag indicates if the query parameters should be included with that query.
+    ///
+    /// Sometimes, when an override query is specified, it differs in structure from the original query, and the original parameters are not valid.
+    pub include_parameters: bool,
 }
 
 /// The request of a single-partition query for a specific partition key range.

@@ -108,6 +108,14 @@ impl Query {
         Ok(self)
     }
 
+    /// Replaces all parameters in this [`Query`] instance with the parameters from another [`Query`] instance, and returns it.
+    ///
+    /// Since the parameters in the other query are already serialized, this method cannot fail.
+    pub fn with_parameters_from(mut self, other: &Query) -> Self {
+        self.parameters = other.parameters.clone();
+        self
+    }
+
     /// Consumes this [`Query`] instance, replaces its text with the provided value, and returns it.
     pub fn with_text(mut self, text: String) -> Self {
         self.text = text;
@@ -133,7 +141,7 @@ impl<T: Into<String>> From<T> for Query {
 
 /// Represents a single parameter in a Cosmos DB query.
 #[derive(Clone, Debug, Serialize)]
-struct QueryParameter {
+pub(crate) struct QueryParameter {
     name: String,
     value: serde_json::Value,
 }
@@ -246,6 +254,38 @@ mod tests {
             "SELECT * FROM c WHERE c.time >= @low_time AND c.time <= @high_time"
         );
         assert_eq!(query.parameters.len(), 2);
+        Ok(())
+    }
+
+    #[test]
+    pub fn with_parameters_from_replaces_all_parameters() -> Result<(), Box<dyn Error>> {
+        let source_query = Query::from("SELECT * FROM c")
+            .with_parameter("@id", 42)?
+            .with_parameter("@name", "Contoso")?;
+
+        let target_query = Query::from("SELECT c.value FROM c WHERE c.id = @id AND c.name = @name")
+            .with_parameter("@old_param", "old_value")?
+            .with_parameters_from(&source_query);
+
+        // Check that the text is preserved from the target query
+        assert_eq!(
+            target_query.text,
+            "SELECT c.value FROM c WHERE c.id = @id AND c.name = @name"
+        );
+
+        // Check that parameters are replaced with those from source query
+        assert_eq!(target_query.parameters.len(), 2);
+        assert_eq!(target_query.parameters[0].name, "@id");
+        assert_eq!(
+            target_query.parameters[0].value,
+            serde_json::Value::Number(serde_json::Number::from(42))
+        );
+        assert_eq!(target_query.parameters[1].name, "@name");
+        assert_eq!(
+            target_query.parameters[1].value,
+            serde_json::Value::String("Contoso".to_string())
+        );
+
         Ok(())
     }
 }
