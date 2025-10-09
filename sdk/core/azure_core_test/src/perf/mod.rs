@@ -44,6 +44,10 @@ pub trait PerfTest: Send + Sync {
 pub type CreatePerfTestReturn =
     Pin<Box<dyn Future<Output = azure_core::Result<Box<dyn PerfTest>>>>>;
 
+/// Type alias for an async function that creates a PerfTest instance.
+/// Takes a PerfRunner reference and returns a future that resolves to a PerfTest trait object.
+pub type CreatePerfTestFn = fn(PerfRunner) -> CreatePerfTestReturn;
+
 /// Metadata about a performance test.
 #[derive(Debug, Clone)]
 pub struct PerfTestMetadata {
@@ -54,8 +58,9 @@ pub struct PerfTestMetadata {
     /// The set of test options supported by this test.
     pub options: Vec<PerfTestOption>,
 
-    /// A function used to create the performance test.
-    pub create_test: fn(&PerfRunner) -> CreatePerfTestReturn,
+    /// An async function used to create the performance test.
+    /// Takes a PerfRunner reference and returns a future that resolves to a PerfTest trait object.
+    pub create_test: CreatePerfTestFn,
 }
 
 /// #A `TestOptions` defines a set of options for the test which will be merged with the common test inputs to define the command line for the performance test.
@@ -86,8 +91,6 @@ pub struct PerfTestOption {
 #[derive(Debug, Clone, Default, Serialize)]
 #[allow(dead_code)]
 struct PerfTestOutputs {
-    //     * Package Versions - a set of packages tested and their versions.
-    pub package_versions: Vec<String>,
     pub test_name: String,
     pub operations_per_second: f64,
     pub average_cpu_use: Option<f64>,
@@ -176,13 +179,14 @@ impl PerfRunner {
         tests: Vec<PerfTestMetadata>,
     ) -> azure_core::Result<Self> {
         let command = Self::get_command_from_metadata(&tests);
-        let arguments = command.try_get_matches().map_err(|e| {
-            azure_core::error::Error::with_error(
-                azure_core::error::ErrorKind::Other,
-                e,
-                "Failed to parse command line arguments.",
-            )
-        })?;
+        let arguments = command.try_get_matches();
+        let arguments = match arguments {
+            Ok(a) => a,
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            }
+        };
         Ok(Self {
             options: PerfRunnerOptions::from(&arguments),
             tests,
@@ -279,7 +283,7 @@ impl PerfRunner {
                     format!("Test '{}' not found.", test_name),
                 )
             })?;
-        let test_instance = (test.create_test)(self).await?;
+        let test_instance = (test.create_test)(self.clone()).await?;
         let test_instance: Arc<dyn PerfTest> = Arc::from(test_instance);
 
         let test_mode = crate::TestMode::current()?;
@@ -371,7 +375,6 @@ impl PerfRunner {
                 );
                 let results = PerfTestOutputs {
                     test_name: test.name.to_string(),
-                    package_versions: vec![self.package_dir.to_string()],
                     operations_per_second,
                     average_cpu_use: None,
                     average_memory_use: None,

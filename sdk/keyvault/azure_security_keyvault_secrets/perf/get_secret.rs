@@ -23,6 +23,7 @@ use azure_core_test::{
 use azure_security_keyvault_secrets::{
     models::SetSecretParameters, SecretClient, SecretClientOptions,
 };
+use futures::FutureExt;
 struct GetSecrets {
     vault_url: String,
     random_key_name: OnceLock<String>,
@@ -47,8 +48,8 @@ impl GetSecrets {
         }
     }
 
-    fn create_new_test(runner: &PerfRunner) -> CreatePerfTestReturn {
-        async fn create_secret_client(runner: PerfRunner) -> Result<Box<dyn PerfTest>> {
+    fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn {
+        async move {
             let vault_url_ref: Option<&String> = runner.try_get_test_arg("vault_url")?;
             let vault_url = vault_url_ref
                 .expect("vault_url argument is mandatory")
@@ -59,8 +60,7 @@ impl GetSecrets {
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
-
-        Box::pin(create_secret_client(runner.clone()))
+        .boxed()
     }
 
     fn create_random_key_name(recording: &Recording) -> String {
@@ -74,8 +74,7 @@ impl GetSecrets {
     }
 }
 
-#[cfg_attr(target_arch="wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl PerfTest for GetSecrets {
     async fn setup(&self, context: Arc<TestContext>) -> azure_core::Result<()> {
         let recording = context.recording();

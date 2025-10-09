@@ -42,6 +42,6 @@ rustc_version.workspace = true
 workspace = true
 
 [[test]]
-name = "performance_tests"
+name = "perf"
 path = "perf/get_secret.rs"
 harness = false

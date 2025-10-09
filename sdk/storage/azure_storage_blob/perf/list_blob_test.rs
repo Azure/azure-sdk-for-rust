@@ -3,14 +3,14 @@
 
 use std::sync::Arc;
 
-use azure_core::{Bytes, Result};
+use azure_core::Bytes;
 use azure_core_test::{
     perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
     TestContext,
 };
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::BlobContainerClient;
-use futures::TryStreamExt;
+use futures::{FutureExt, TryStreamExt};
 
 pub struct ListBlobTest {
     count: u32,
@@ -18,8 +18,8 @@ pub struct ListBlobTest {
 }
 
 impl ListBlobTest {
-    fn create_list_blob_test(runner: &PerfRunner) -> CreatePerfTestReturn {
-        async fn create_test(runner: PerfRunner) -> Result<Box<dyn PerfTest>> {
+    fn create_list_blob_test(runner: PerfRunner) -> CreatePerfTestReturn {
+        async move {
             let count: Option<&String> = runner.try_get_test_arg("count")?;
 
             println!("ListBlobTest with count: {:?}", count);
@@ -43,9 +43,7 @@ impl ListBlobTest {
 
             Ok(Box::new(ListBlobTest { count, client }) as Box<dyn PerfTest>)
         }
-        // Here you would create and return an instance of your performance test.
-        // For example:
-        Box::pin(create_test(runner.clone()))
+        .boxed()
     }
 
     pub fn test_metadata() -> PerfTestMetadata {

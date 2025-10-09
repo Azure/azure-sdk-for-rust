@@ -10,7 +10,7 @@
 use super::*;
 use std::{env, error::Error};
 
-fn create_failed_test(_runner: &PerfRunner) -> CreatePerfTestReturn {
+fn create_failed_test(_runner: PerfRunner) -> CreatePerfTestReturn {
     Box::pin(async {
         Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
@@ -586,7 +586,7 @@ impl PerfTest for ComplexTest {
     }
 }
 
-fn complex_test_create(_runner: &PerfRunner) -> CreatePerfTestReturn {
+fn complex_test_create(_runner: PerfRunner) -> CreatePerfTestReturn {
     Box::pin(async { Ok(Box::new(ComplexTest {}) as Box<dyn PerfTest>) })
 }
 
@@ -661,7 +661,7 @@ async fn test_perf_runner_with_test_functions() {
     let flag_value: bool = *flag_value.unwrap();
     assert!(flag_value);
 
-    let perf_tests_impl = (runner.tests[0].create_test)(&runner)
+    let perf_tests_impl = (runner.tests[0].create_test)(runner.clone())
         .await
         .expect("Failed to create test instance");
 
