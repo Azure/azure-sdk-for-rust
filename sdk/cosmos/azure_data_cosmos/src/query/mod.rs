@@ -111,6 +111,7 @@ impl Query {
     /// Replaces all parameters in this [`Query`] instance with the parameters from another [`Query`] instance, and returns it.
     ///
     /// Since the parameters in the other query are already serialized, this method cannot fail.
+    #[cfg(feature = "preview_query_engine")]
     pub(crate) fn with_parameters_from(mut self, other: &Query) -> Self {
         self.parameters = other.parameters.clone();
         self

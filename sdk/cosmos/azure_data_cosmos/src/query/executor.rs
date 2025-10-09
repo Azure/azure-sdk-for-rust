@@ -129,7 +129,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
 
             // No items, so make any requests we need to make and provide them to the pipeline.
             // TODO: We can absolutely parallelize these requests.
-            for mut request in results.requests {
+            for request in results.requests {
                 let mut query_request = if let Some(query) = request.query {
                     let mut query = Query::from(query);
                     if request.include_parameters {
