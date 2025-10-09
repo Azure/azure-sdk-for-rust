@@ -4,13 +4,20 @@ This document provides guidance for AI agents (e.g., GitHub Copilot, MCP servers
 
 ## Repository Overview
 
-**Purpose**: The Azure SDK for Rust provides Rust language bindings and client libraries for Azure services, following the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html).
+### Purpose
 
-**Status**: ⚠️ Under active development. Large breaking changes may occur before 1.0 release.
+The Azure SDK for Rust provides Rust language bindings and client libraries for Azure services, following the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html).
 
-**Primary Language**: Rust (MSRV: 1.85)
+### Status
 
-**Key Technologies**:
+⚠️ Under active development. Large breaking changes may occur before 1.0 release.
+
+### Primary Language
+
+Rust (MSRV: 1.85)
+
+### Key Technologies
+
 - Rust toolchain with Cargo
 - TypeSpec for API specification and code generation
 - OpenTelemetry for distributed tracing
@@ -20,16 +27,20 @@ This document provides guidance for AI agents (e.g., GitHub Copilot, MCP servers
 
 ```
 .
-├── sdk/                    # Service-specific SDK crates (e.g., identity, keyvault, storage)
-│   └── <service>/         # Each service has its own crate(s)
-├── eng/                   # Engineering system scripts and common tooling
-├── doc/                   # Additional documentation
+├── sdk/                       # Service-specific crates organized by service
+│   └── <service>/            # Service directory (e.g., "keyvault", "storage")
+│       ├── <crate>/          # Service crate (e.g., "azure_security_keyvault_secrets")
+│       ├── assets.json       # Pointer to test recordings (may be under <crate>/)
+│       ├── test-resources.bicep # Test resource definitions (may be under <crate>/)
+│       └── tsp-location.yaml # Pointer to TypeSpec in azure-rest-api-specs (may be under <crate>/)
+├── eng/                      # Engineering system scripts and common tooling
+├── doc/                      # Additional documentation
 ├── .github/              
-│   ├── copilot-instructions.md  # Copilot-specific Rust coding guidelines
-│   ├── instructions/            # Agent instruction files for specific tasks
-│   └── prompts/                 # Reusable Copilot prompts
-├── CONTRIBUTING.md       # Contribution guidelines
-└── README.md            # Repository overview
+│   ├── copilot-instructions.md # Copilot-specific Rust coding guidelines
+│   ├── instructions/         # Agent instruction files for specific tasks
+│   └── prompts/              # Reusable Copilot prompts
+├── CONTRIBUTING.md           # Contribution guidelines (see for detailed workflows)
+└── README.md                 # Repository overview
 ```
 
 ## Agent Capabilities
@@ -41,20 +52,22 @@ AI agents can assist with:
 1. **Code Generation**
    - Writing new Rust code following repository conventions (see `.github/copilot-instructions.md`)
    - Generating unit tests using `#[cfg(test)]` modules
-   - Creating integration tests with `#[recorded::test]` attributes
-   - Generating documentation tests with ` ```rust no_run` blocks
+   - Creating integration tests with `#[recorded::test]` attributes (see `CONTRIBUTING.md` for details)
+   - Generating documentation tests in `.rs` files (avoid `no_run` when tests can be run)
+   - In README markdown files, use ` ```rust no_run` for examples with placeholders
+   - Running `rustfmt` on all generated code to ensure proper formatting
 
 2. **Code Review Support**
    - Identifying potential bugs or safety issues
    - Suggesting improvements for idiomatic Rust patterns
    - Checking adherence to Azure SDK design guidelines
-   - Reviewing error handling using `Result<T, E>` types
+   - Reviewing error handling using `azure_core::Result<T>`
 
 3. **Documentation**
    - Improving inline documentation (using `///` doc comments)
    - Updating README files
    - Creating or updating CHANGELOG entries (see `.github/instructions/changelog.instructions.md`)
-   - Writing code examples in `examples/` directories
+   - Writing hero scenario examples in doc comments (avoid examples in `examples/` directories unless demonstrating primary use cases)
 
 4. **Issue Triage**
    - Labeling issues with appropriate tags
@@ -66,6 +79,7 @@ AI agents can assist with:
    - Applying clippy suggestions
    - Improving code organization and modularity
    - Updating dependencies in `Cargo.toml`
+   - Consolidating imports (e.g., `use std::{borrow::Cow, marker::PhantomData};` instead of separate lines)
 
 ### Restricted Actions
 
@@ -114,11 +128,16 @@ cargo test -p <crate-name>
 # Run integration tests with recordings
 cargo test -p <crate-name> --test <test-name>
 
-# Record new test sessions (requires live resources)
+# Provision test resources (see CONTRIBUTING.md for details)
+eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service>
+
+# Record new test sessions (requires provisioned resources)
 AZURE_TEST_MODE=record cargo test -p <crate-name> --test <test-name>
 ```
 
-### Linting
+See `CONTRIBUTING.md` for comprehensive testing guidance including debugging, Test Proxy usage, and trace logging.
+
+### Linting and Formatting
 
 ```bash
 # Check for common issues
@@ -126,6 +145,9 @@ cargo clippy -p <crate-name>
 
 # Auto-fix some issues
 cargo clippy --fix -p <crate-name>
+
+# Format code
+cargo fmt -p <crate-name>
 ```
 
 ### Code Generation
@@ -145,7 +167,7 @@ cargo run --package <crate-name> --example <example-name>
 
 ## Coding Standards
 
-Agents should follow guidelines in `.github/copilot-instructions.md`, including:
+Agents should follow guidelines in `.github/copilot-instructions.md` and `CONTRIBUTING.md`, including:
 
 - **Naming Conventions**: 
   - Types/variants: `PascalCase`
@@ -155,41 +177,35 @@ Agents should follow guidelines in `.github/copilot-instructions.md`, including:
 
 - **Import Style**:
   - Explicit imports (no `use foo::*`)
+  - Consolidate related imports (e.g., `use std::{borrow::Cow, marker::PhantomData};`)
   - Prefer `crate::` for internal references
-  - Keep imports at module top level
 
 - **Error Handling**:
-  - Use `Result<T, E>` and `?` operator
-  - Provide meaningful error messages
+  - Service crate code should return `azure_core::Result<T>` (where `E` defaults to `azure_core::Error`)
+  - Use the `?` operator for error propagation
+  - Examples should use `Result<(), Box<dyn std::error::Error>>`
 
 - **Documentation**:
   - All public APIs need `///` doc comments
-  - Include examples in doc comments where appropriate
-  - Use `no_run` for examples that require live resources
+  - Include runnable doc test examples where appropriate
+  - Hero scenario examples should have `#[tokio::main]` async main functions
 
 - **Testing**:
   - Place unit tests in `#[cfg(test)] mod tests`
-  - Use `#[recorded::test]` for integration tests
+  - Use `#[recorded::test]` for integration tests (see `CONTRIBUTING.md`)
   - Test names should be descriptive, not prefixed with "test"
 
 ## CI/CD Integration
-
-### Automated Checks
 
 All pull requests trigger:
 - `cargo build` - Compilation check
 - `cargo test` - Unit and integration tests
 - `cargo clippy` - Lint checks
+- `cargo fmt --check` - Format validation
 - License/CLA verification
 - Code coverage analysis
 
-### Test Proxy
-
-Integration tests use the Azure SDK Test Proxy for recording/playback:
-- Recordings stored in `<crate>/tests/recordings/`
-- Automatically started during test execution
-- Set `AZURE_TEST_MODE=record` to update recordings
-- Set `PROXY_MANUAL_START=true` to start manually for debugging
+Integration tests use the Azure SDK Test Proxy for recording/playback. See `CONTRIBUTING.md` for Test Proxy setup and usage.
 
 ## Safety and Security
 
@@ -201,8 +217,10 @@ Integration tests use the Azure SDK Test Proxy for recording/playback:
 
 ## Cross-References
 
-- **General Rust Guidelines**: `.github/copilot-instructions.md`
-- **Contribution Process**: `CONTRIBUTING.md`
+For detailed guidance, see:
+
+- **Rust Coding Guidelines**: `.github/copilot-instructions.md`
+- **Contribution Workflows**: `CONTRIBUTING.md`
 - **Changelog Guidelines**: `.github/instructions/changelog.instructions.md`
 - **Git Commit Standards**: `doc/git-commit-instructions.md`
 - **Deprecation Process**: `doc/deprecation-process.md`
@@ -222,10 +240,7 @@ Additional specialized instructions for specific workflows can be found in:
 
 ## Telemetry and Privacy
 
-The SDK includes telemetry via `User-Agent` headers. When generating code:
-- Respect user telemetry preferences in `ClientOptions`
-- Do not log or transmit sensitive data
-- Follow Microsoft Privacy Statement: https://go.microsoft.com/fwlink/?LinkID=824704
+The SDK includes telemetry via `User-Agent` headers. Follow Microsoft Privacy Statement: https://go.microsoft.com/fwlink/?LinkID=824704
 
 ## License
 
