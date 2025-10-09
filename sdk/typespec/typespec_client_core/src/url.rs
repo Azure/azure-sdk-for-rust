@@ -15,7 +15,7 @@ impl UrlOperations for Url {
     fn append_path(&mut self, p: &str) {
         if self.path().len() == 1 {
             self.set_path(p);
-        } else if !p.is_empty() {
+        } else if !p.is_empty() && p != "/" {
             match if self.path().ends_with('/') { 1 } else { 0 }
                 + if p.starts_with('/') { 1 } else { 0 }
             {
@@ -132,7 +132,7 @@ fn test_url_append_path() {
     {
         let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
         url.append_path("/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
+        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
     }
     {
         let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
