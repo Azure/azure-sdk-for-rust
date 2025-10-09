@@ -111,7 +111,7 @@ impl Query {
     /// Replaces all parameters in this [`Query`] instance with the parameters from another [`Query`] instance, and returns it.
     ///
     /// Since the parameters in the other query are already serialized, this method cannot fail.
-    pub fn with_parameters_from(mut self, other: &Query) -> Self {
+    pub(crate) fn with_parameters_from(mut self, other: &Query) -> Self {
         self.parameters = other.parameters.clone();
         self
     }
@@ -141,7 +141,7 @@ impl<T: Into<String>> From<T> for Query {
 
 /// Represents a single parameter in a Cosmos DB query.
 #[derive(Clone, Debug, Serialize)]
-pub(crate) struct QueryParameter {
+struct QueryParameter {
     name: String,
     value: serde_json::Value,
 }
