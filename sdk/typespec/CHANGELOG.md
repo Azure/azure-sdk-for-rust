@@ -33,7 +33,7 @@
 - Changed `RawResponse::xml()` from `async` to a sync function. The body was already buffered.
 - Moved `AsHeaders`, `FromHeaders`, `Header`, `Headers`, `HeaderName`, and `HeaderValue` to `http::headers` module to align with `typespec_client_core`.
 - Removed `ErrorKind::http_response()`. Construct an `ErrorResponse::HttpResponse` variant instead.
-- Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)"
+- Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)
   - Renamed `Error::full()` to `Error::with_error()`.
   - Renamed `Error::with_message()` to `Error::with_message_fn()`.
   - Renamed `Error::message()` to `Error::with_message()`.
