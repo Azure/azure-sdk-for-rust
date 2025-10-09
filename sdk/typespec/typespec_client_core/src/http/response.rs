@@ -534,6 +534,7 @@ mod tests {
         struct GetSecretResponse {
             name: String,
             value: String,
+            whitespace: String,
         }
 
         /// A sample service client function.
@@ -541,7 +542,7 @@ mod tests {
             RawResponse::from_bytes(
                 StatusCode::Ok,
                 Headers::new(),
-                "<GetSecretResponse><name>my_secret</name><value>my_value</value></GetSecretResponse>",
+                "<GetSecretResponse><name>my_secret</name><value>my_value</value><whitespace> foo </whitespace></GetSecretResponse>",
             ).into()
         }
 
@@ -551,6 +552,7 @@ mod tests {
             let secret = response.into_body().unwrap();
             assert_eq!(secret.name, "my_secret");
             assert_eq!(secret.value, "my_value");
+            assert_eq!(secret.whitespace, " foo ");
         }
 
         #[test]
@@ -561,12 +563,15 @@ mod tests {
                 yon_name: String,
                 #[serde(rename = "value")]
                 yon_value: String,
+                #[serde(rename = "whitespace")]
+                yon_whitespace: String,
             }
 
             let response: Response<GetSecretResponse, XmlFormat> = get_secret();
             let secret: MySecretResponse = response.into_raw_body().xml().unwrap();
             assert_eq!(secret.yon_name, "my_secret");
             assert_eq!(secret.yon_value, "my_value");
+            assert_eq!(secret.yon_whitespace, " foo ");
         }
     }
 }
