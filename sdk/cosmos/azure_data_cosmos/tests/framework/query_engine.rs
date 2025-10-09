@@ -42,6 +42,17 @@ pub struct MockItem {
 pub struct MockQueryEngine {
     /// An error to return when creating a pipeline.
     pub create_error: Mutex<Option<azure_core::Error>>,
+    /// Configuration for what kind of QueryRequest the pipeline should return.
+    pub query_request_config: Mutex<Option<QueryRequestConfig>>,
+}
+
+/// Configuration for controlling what QueryRequest objects the MockQueryPipeline returns.
+#[derive(Clone)]
+pub struct QueryRequestConfig {
+    /// The query to return in QueryRequest.query (None means no override)
+    pub query: Option<String>,
+    /// The value of include_parameters in the QueryRequest
+    pub include_parameters: bool,
 }
 
 impl MockQueryEngine {
@@ -49,6 +60,7 @@ impl MockQueryEngine {
     pub fn new() -> Self {
         Self {
             create_error: Mutex::new(None),
+            query_request_config: Mutex::new(None),
         }
     }
 
@@ -56,6 +68,15 @@ impl MockQueryEngine {
     pub fn with_error(error: azure_core::Error) -> Self {
         Self {
             create_error: Mutex::new(Some(error)),
+            query_request_config: Mutex::new(None),
+        }
+    }
+
+    /// Creates a MockQueryEngine with a specific QueryRequest configuration.
+    pub fn with_query_request_config(config: QueryRequestConfig) -> Self {
+        Self {
+            create_error: Mutex::new(None),
+            query_request_config: Mutex::new(Some(config)),
         }
     }
 }
@@ -77,7 +98,8 @@ impl QueryEngine for MockQueryEngine {
         let pkranges: PkRanges = serde_json::from_slice(pkranges)?;
 
         // Create a mock pipeline with the partition key ranges.
-        let pipeline = MockQueryPipeline::new(query.to_string(), pkranges.ranges);
+        let config = self.query_request_config.lock().unwrap().clone();
+        let pipeline = MockQueryPipeline::new(query.to_string(), pkranges.ranges, config);
 
         Ok(Box::new(pipeline))
     }
@@ -120,10 +142,15 @@ struct MockQueryPipeline {
     query: String,
     partitions: Vec<PartitionState>,
     completed: bool,
+    query_request_config: Option<QueryRequestConfig>,
 }
 
 impl MockQueryPipeline {
-    pub fn new(query: String, pkranges: Vec<PartitionKeyRange>) -> Self {
+    pub fn new(
+        query: String,
+        pkranges: Vec<PartitionKeyRange>,
+        config: Option<QueryRequestConfig>,
+    ) -> Self {
         let partitions = pkranges
             .into_iter()
             .map(|range| PartitionState {
@@ -138,6 +165,7 @@ impl MockQueryPipeline {
             query,
             partitions,
             completed: false,
+            query_request_config: config,
         }
     }
 
@@ -152,6 +180,15 @@ impl MockQueryPipeline {
                 } else {
                     None
                 },
+                query: self
+                    .query_request_config
+                    .as_ref()
+                    .and_then(|config| config.query.clone()),
+                include_parameters: self
+                    .query_request_config
+                    .as_ref()
+                    .map(|config| config.include_parameters)
+                    .unwrap_or(false),
             })
             .collect()
     }
