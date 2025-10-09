@@ -189,6 +189,8 @@ Agents should follow guidelines in `.github/copilot-instructions.md` and `CONTRI
   - All public APIs need `///` doc comments
   - Include runnable doc test examples where appropriate
   - Hero scenario examples under the `examples/` directory should have `#[tokio::main]` async main functions
+  - Use absolute links in markdown files (e.g., `https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md`) instead of relative links (e.g., `../AGENTS.md`)
+  - Links must work both online (from github.com) and offline (when viewed in an IDE)
 
 - **Testing**:
   - Place unit tests in `#[cfg(test)] mod tests`

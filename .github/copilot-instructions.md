@@ -6,7 +6,7 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 -   Do not be overly apologetic and focus on clear guidance.
 -   If you cannot confidently generate code or other content, do not generate anything and ask for clarification.
 
-> **Note**: For comprehensive guidance on how AI agents should interact with this repository, including workflows, automation boundaries, and repository structure, see [AGENTS.md](../AGENTS.md).
+> **Note**: For comprehensive guidance on how AI agents should interact with this repository, including workflows, automation boundaries, and repository structure, see [AGENTS.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md).
 
 ## Prerequisites
 
