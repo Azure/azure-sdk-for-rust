@@ -74,6 +74,7 @@
     "rsplit",
     "rustfmt",
     "runtimes",
+    "rustfmt",
     "rustup",
     "schannel",
     "seekable",
