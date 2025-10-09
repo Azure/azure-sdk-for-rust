@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Removed `CustomHeaders` policy.
+
 ### Bugs Fixed
 
 ### Other Changes

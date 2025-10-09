@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - Removed `constants` module.
+- Removed `CustomHeaders` policy.
 
 ### Bugs Fixed
 

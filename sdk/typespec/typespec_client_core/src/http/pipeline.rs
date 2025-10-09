@@ -4,7 +4,7 @@
 use typespec::http::RawResponse;
 
 use crate::http::{
-    policies::{Buffer, CustomHeadersPolicy, LoggingPolicy, Policy, TransportPolicy},
+    policies::{Buffer, LoggingPolicy, Policy, TransportPolicy},
     BufResponse, ClientOptions, Context, PipelineOptions, Request,
 };
 use std::sync::Arc;
@@ -17,11 +17,10 @@ use std::sync::Arc;
 ///    immediately.
 /// 2. User-specified per-call policies in [`ClientOptions::per_call_policies`] are executed.
 /// 3. The retry policy is executed. It allows to re-execute the following policies.
-/// 4. The policy that adds [`CustomHeaders`](crate::http::policies::CustomHeaders) is executed
-/// 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are
+/// 4. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are
 ///    re-executed in case of retries.
-/// 6. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
-/// 7. The transport policy is executed. Transport policy is always the last policy and is the policy that
+/// 5. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
+/// 6. The transport policy is executed. Transport policy is always the last policy and is the policy that
 ///    actually constructs the [`BufResponse`] to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
@@ -56,13 +55,18 @@ impl Pipeline {
         per_try_policies: Vec<Arc<dyn Policy>>,
         pipeline_options: Option<PipelineOptions>,
     ) -> Self {
+        // The number of policies we'll push to the pipeline Vec ourselves.
+        const BUILT_IN_LEN: usize = 3;
         let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
-            options.per_call_policies.len()
-                + per_call_policies.len()
-                + options.per_try_policies.len()
+            per_call_policies.len()
+                + options.per_call_policies.len()
                 + per_try_policies.len()
-                + 3,
+                + options.per_try_policies.len()
+                + BUILT_IN_LEN,
         );
+
+        #[cfg(debug_assertions)]
+        let initial_capacity = pipeline.capacity();
 
         pipeline.extend_from_slice(&per_call_policies);
         pipeline.extend_from_slice(&options.per_call_policies);
@@ -72,7 +76,6 @@ impl Pipeline {
         let retry_policy = options.retry.to_policy(pipeline_options.retry_headers);
         pipeline.push(retry_policy);
 
-        pipeline.push(Arc::new(CustomHeadersPolicy::default()));
         pipeline.push(Arc::new(LoggingPolicy::new(options.logging)));
 
         pipeline.extend_from_slice(&per_try_policies);
@@ -81,6 +84,9 @@ impl Pipeline {
         let transport: Arc<dyn Policy> =
             Arc::new(TransportPolicy::new(options.transport.unwrap_or_default()));
         pipeline.push(transport);
+
+        // Make sure we didn't have to resize the Vec.
+        debug_assert_eq!(pipeline.len(), initial_capacity);
 
         Self { pipeline }
     }
