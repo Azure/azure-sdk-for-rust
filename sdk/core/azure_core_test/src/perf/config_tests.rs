@@ -507,7 +507,7 @@ fn test_test_option_debug_and_default() {
 
     // Test Debug implementation
     let debug_output = format!("{:?}", option);
-    assert!(debug_output.contains("TestOption"));
+    assert!(debug_output.contains("PerfTestOption"));
 }
 
 #[test]

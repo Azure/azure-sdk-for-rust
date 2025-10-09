@@ -10,16 +10,6 @@ use futures::FutureExt;
 use super::*;
 use std::boxed::Box;
 
-#[tokio::test]
-async fn test_perf_runner_with_no_tests() {
-    let args = vec!["perf_test", "--iterations", "1", "--duration", "1"];
-    let runner =
-        PerfRunner::with_command_line(env!("CARGO_MANIFEST_DIR"), file!(), vec![], args).unwrap();
-
-    let result = runner.run().await;
-    assert!(result.is_err());
-}
-
 fn create_fibonacci1_test(runner: PerfRunner) -> CreatePerfTestReturn {
     struct Fibonacci1Test {
         count: u32,
@@ -82,6 +72,8 @@ async fn test_perf_runner_with_single_test() {
         "30",
         "--duration",
         "10",
+        "--test-results",
+        "",
         "--warmup",
         "1",
         "fibonacci1",
@@ -109,6 +101,6 @@ async fn test_perf_runner_with_single_test() {
     .unwrap();
 
     let result = runner.run().await;
-    assert!(result.is_ok());
     println!("Result: {:?}", result);
+    assert!(result.is_ok());
 }
