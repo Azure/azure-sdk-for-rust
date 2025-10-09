@@ -765,6 +765,14 @@ pub struct SubjectAlternativeNames {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub emails: Option<Vec<String>>,
 
+    /// IP addresses; supports IPv4 and IPv6.
+    #[serde(rename = "ipAddresses", skip_serializing_if = "Option::is_none")]
+    pub ip_addresses: Option<Vec<String>>,
+
+    /// Uniform Resource Identifiers.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uris: Option<Vec<String>>,
+
     /// User Principal Names.
     #[serde(rename = "upns", skip_serializing_if = "Option::is_none")]
     pub user_principal_names: Option<Vec<String>>,
