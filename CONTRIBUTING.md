@@ -29,6 +29,8 @@ To generate a new performance test, for example, you might prompt with:
 Using #perf-test.prompt.md generate a perf test for SecretClient::get_secret.
 ```
 
+For comprehensive guidance on how AI agents should interact with this repository, including workflows, automation boundaries, and safety guidelines, see [AGENTS.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md).
+
 ## Generated code
 
 If you want to contribute to a file that is generated (the file is located in a `generated` subdirectory), the best approach is to open a PR on the TypeSpec specification since we cannot replace generated code that will be replaced when regenerated.
