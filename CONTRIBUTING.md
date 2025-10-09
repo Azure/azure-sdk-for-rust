@@ -23,6 +23,8 @@ Further discussion on or pull requests for these issues is highly valued, and we
 This repository is [configured](https://code.visualstudio.com/docs/copilot/copilot-customization) to facilitate Copilot.
 In addition to [general instructions](https://github.com/Azure/azure-sdk-for-rust/blob/main/.github/copilot-instructions.md), you can find additional prompts in [.github/prompts] or type `#prompt` in Copilot.
 
+For comprehensive guidance on how AI agents should interact with this repository, including workflows, automation boundaries, and safety guidelines, see [AGENTS.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md).
+
 To generate a new performance test, for example, you might prompt with:
 
 ```text
