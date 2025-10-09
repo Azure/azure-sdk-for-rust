@@ -7,12 +7,10 @@ use crate::http::{BufResponse, Context, Request};
 use async_trait::async_trait;
 use std::sync::Arc;
 
-mod custom_headers;
 mod logging;
 mod retry;
 mod transport;
 
-pub use custom_headers::*;
 pub(crate) use logging::*;
 pub use retry::*;
 pub use transport::*;
