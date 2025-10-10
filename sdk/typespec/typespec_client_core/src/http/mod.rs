@@ -74,7 +74,7 @@ impl UrlExt for Url {
             match if self.path().ends_with('/') { 1 } else { 0 }
                 + if p.starts_with('/') { 1 } else { 0 }
             {
-                0 => self.set_path(&format!("{}/{}", self.path(), p).to_string()),
+                0 => self.set_path(&format!("{}/{}", self.path(), p)),
                 1 => self.set_path(&(self.path().to_owned() + p)),
                 _ => self.set_path(&(self.path()[..self.path().len() - 1].to_owned() + p)),
             }
