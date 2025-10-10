@@ -86,6 +86,7 @@ impl Pipeline {
         pipeline.push(transport);
 
         // Make sure we didn't have to resize the Vec.
+        #[cfg(debug_assertions)]
         debug_assert_eq!(pipeline.len(), initial_capacity);
 
         Self { pipeline }
