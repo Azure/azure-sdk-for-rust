@@ -25,7 +25,7 @@ impl LocalRecorder {
 
     /// Returns a copy of all recorded transactions
     pub async fn to_transactions(&self) -> Vec<Transaction> {
-        self.transactions.write().await.clone()
+        self.transactions.read().await.clone()
     }
 }
 
