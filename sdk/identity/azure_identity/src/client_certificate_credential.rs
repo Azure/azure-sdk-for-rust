@@ -434,6 +434,18 @@ mod tests {
         assert_eq!(token.expires_on, cached_token.expires_on);
     }
 
+    #[test]
+    fn invalid_tenant_id() {
+        ClientCertificateCredential::new(
+            "not a valid tenant".to_string(),
+            FAKE_CLIENT_ID.to_string(),
+            TEST_CERT.to_string(),
+            Secret::new(""),
+            None,
+        )
+        .expect_err("invalid tenant ID");
+    }
+
     #[tokio::test]
     async fn no_scopes() {
         ClientCertificateCredential::new(
