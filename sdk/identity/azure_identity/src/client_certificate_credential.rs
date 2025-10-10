@@ -245,11 +245,27 @@ impl ClientCertificateCredential {
                 }),
             )
             .await?;
-        let response: EntraIdTokenResponse = rsp.into_body().json()?;
-        Ok(AccessToken::new(
-            response.access_token,
-            OffsetDateTime::now_utc() + Duration::seconds(response.expires_in),
-        ))
+
+        match rsp.status() {
+            StatusCode::Ok => {
+                let response: EntraIdTokenResponse =
+                    deserialize("ClientCertificateCredential", rsp)?;
+                Ok(AccessToken::new(
+                    response.access_token,
+                    OffsetDateTime::now_utc() + Duration::seconds(response.expires_in),
+                ))
+            }
+            _ => {
+                let error_response: EntraIdErrorResponse =
+                    deserialize("ClientCertificateCredential", rsp)?;
+                let message = if error_response.error_description.is_empty() {
+                    "authentication failed".to_string()
+                } else {
+                    error_response.error_description.clone()
+                };
+                Err(Error::with_message(ErrorKind::Credential, message))
+            }
+        }
     }
 }
 
