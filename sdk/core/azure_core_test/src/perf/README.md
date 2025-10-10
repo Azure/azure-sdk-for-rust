@@ -150,3 +150,50 @@ Options:
 ```
 
 Note that some of these test options are not specific to the `list_blobs` test. This is to allow test options to be provided in any order in the command line.
+
+### Declaring a test pipeline
+
+Test pipelines are defined using a `perf.yml` file declared in the package directory.
+
+```yml
+parameters:
+- name: PackageVersions
+  displayName: PackageVersions (regex of package versions to run)
+  type: string
+  default: '12|source'
+- name: Tests
+  displayName: Tests (regex of tests to run)
+  type: string
+  default: '^(download|upload|list-blobs)$'
+- name: Arguments
+  displayName: Arguments (regex of arguments to run)
+  type: string
+  default: '(10240)|(10485760)|(1073741824)|(5 )|(500 )|(50000 )'
+- name: Iterations
+  displayName: Iterations (times to run each test)
+  type: number
+  default: '5'
+- name: Profile
+  type: boolean
+  default: false
+- name: AdditionalArguments
+  displayName: AdditionalArguments (passed to PerfAutomation)
+  type: string
+  default: ' '
+
+extends:
+  template: /eng/pipelines/templates/jobs/perf.yml
+  parameters:
+    ServiceDirectory: storage/azure_storage_blob
+    PackageVersions: ${{ parameters.PackageVersions }}
+    Tests: ${{ parameters.Tests }}
+    Arguments: ${{ parameters.Arguments }}
+    Iterations: ${{ parameters.Iterations }}
+    AdditionalArguments: ${{ parameters.AdditionalArguments }}
+    Profile: ${{ parameters.Profile }}
+    EnvVars:
+      # This is set in the InstallLanguageSteps
+      VCPKG_BINARY_SOURCES_SECRET: $(VCPKG_BINARY_SOURCES_SECRET)
+```
+
+You'll want to configure the `ServiceDirectory` field to match the location of your package.
