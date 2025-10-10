@@ -7,6 +7,7 @@
     "**/test-resources.json",
     "**/test-resources-post.ps1",
     "**/assets.json",
+    "**/*.pfx",
     ".config",
     ".devcontainer/devcontainer.json",
     ".devcontainer/Dockerfile",
