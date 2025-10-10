@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 mod extensions;
+mod storage_error;
 
 pub use crate::generated::models::{
     AccessTier, AccountKind, AppendBlobClientAppendBlockFromUrlOptions,
@@ -83,46 +84,4 @@ pub use crate::generated::models::{
     VecSignedIdentifierHeaders,
 };
 pub use extensions::*;
-
-use azure_core::error::ErrorKind;
-use azure_core::http::{headers::Headers, StatusCode};
-use azure_core::Error;
-use serde_json::Value;
-use std::collections::HashMap;
-
-#[derive(Debug, Clone)]
-pub struct StorageError {
-    /// The HTTP status code.
-    pub status_code: StatusCode,
-    /// The Storage error code.
-    pub error_code: StorageErrorCode,
-    /// The error message.
-    pub message: String,
-    /// The headers from the response.
-    pub headers: Headers,
-    /// Additional fields from the error response that weren't explicitly mapped.
-    pub additional_error_info: HashMap<String, Value>,
-}
-
-impl StorageError {
-    pub fn status_code(&self) -> StatusCode {
-        self.status_code
-    }
-
-    pub fn error_code(&self) -> StorageErrorCode {
-        self.error_code.clone()
-    }
-
-    pub fn message(&self) -> &str {
-        &self.message
-    }
-
-    pub fn headers(&self) -> &Headers {
-        &self.headers
-    }
-
-    /// Returns any additional error information fields returned by the Service.
-    pub fn additional_error_info(&self) -> &HashMap<String, Value> {
-        &self.additional_error_info
-    }
-}
+pub use storage_error::StorageError;

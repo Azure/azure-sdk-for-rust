@@ -504,6 +504,27 @@ async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>
 }
 
 #[recorded::test]
+async fn test_bodyless_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+
+    // Act
+    let response = blob_client.get_properties(None).await;
+    let error_response = response.unwrap_err();
+
+    let error_kind = error_response.kind();
+    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
+
+    let storage_error: StorageError = error_response.try_into()?;
+
+    println!("{}", storage_error);
+
+    Ok(())
+}
+
+#[recorded::test]
 async fn test_additional_storage_info_parsing(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
