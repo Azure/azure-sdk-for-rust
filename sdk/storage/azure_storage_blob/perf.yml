@@ -37,9 +37,9 @@ extends:
       # This is set in the InstallLanguageSteps
       VCPKG_BINARY_SOURCES_SECRET: $(VCPKG_BINARY_SOURCES_SECRET)
 
-trigger:
+trigger: none
 
-pr:
+pr: none
 
 schedules:
 - cron: "0 0 * * *"
