@@ -15,12 +15,12 @@ use azure_storage_blob::{
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
         BlockBlobClientUploadOptions, ContainerClientCreateOptions, LeaseState, PublicAccessType,
     },
-    BlobClient,
+    BlobClient, BlobClientOptions, BlobContainerClient, ContainerClientOptions,
 };
-
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
+use typespec_client_core::http::Url;
 
 #[recorded::test]
 async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -467,6 +467,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 #[recorded::test]
 async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
+
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_client = container_client.blob_client(get_blob_name(recording));
@@ -513,8 +514,8 @@ async fn test_public_access(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     );
     let unauthenticated_blob_client = BlobClient::new(
         &endpoint,
-        blob_client.container_name().to_string(),
-        blob_client.blob_name().to_string(),
+        blob_client.container_name(),
+        blob_client.blob_name(),
         None,
         None,
     )?;
@@ -556,3 +557,272 @@ async fn test_public_access(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
 //     Ok(())
 // }
+
+// Do we even want to allow for trailing `/` or `\`? While the service won't reject this, it does mean you get a blob with <no name> segment at the end.
+// #[recorded::test]
+// async fn test_blob_url_encoding(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+//     // Recording Setup
+//     println!("Input Blob Name: forward/forward/forward/back\\blob/ (escaped backslash)\n");
+
+//     use azure_core::http::ClientOptions;
+//     use azure_storage_blob::ContainerClientOptions;
+//     let recording = ctx.recording();
+//     let blob_url =
+//         "https://ruststoragedev.blob.core.windows.net/test-container-paths/forward/forward/forward/back\\blob/";
+//     let mut client_options = ClientOptions::default();
+//     recording.instrument(&mut client_options);
+//     let blob_client_options = BlobClientOptions {
+//         client_options: client_options.clone(),
+//         ..Default::default()
+//     };
+
+//     println!("Created using Blob URL directly (Url::parse)");
+//     // Create BlobClient from blob URL
+//     let blob_client = BlobClient::from_blob_url(
+//         Url::parse(blob_url)?,
+//         Some(recording.credential()),
+//         Some(blob_client_options.clone()),
+//     )?;
+
+//     // Simple upload
+//     let data = b"hello world";
+//     blob_client
+//         .upload(
+//             RequestContent::from(data.to_vec()),
+//             true, // overwrite
+//             u64::try_from(data.len())?,
+//             None,
+//         )
+//         .await?;
+
+//     // Get properties to verify the blob was created
+//     let response = blob_client.get_properties(None).await?;
+
+//     // Assert
+//     let content_length = response.content_length()?;
+//     let etag = response.etag()?;
+
+//     assert_eq!(11, content_length.unwrap());
+//     assert!(etag.is_some());
+//     assert!(blob_client.exists().await?);
+
+//     // Print from accessors
+//     // println!("Container Name:{}", blob_client.container_name());
+//     println!("Blob Name: [{}]\n", blob_client.blob_name());
+
+//     /////////// new() ///////////////
+//     // Create BlobClient using new() constructor
+//     println!("Created using Blob's new() constructor (url.path_segments_mut().extend())");
+//     let blob_client_ctor = BlobClient::new(
+//         "https://ruststoragedev.blob.core.windows.net/",
+//         "test-container-paths",
+//         "forward/forward/forward/back\\blob/",
+//         Some(recording.credential()),
+//         Some(blob_client_options),
+//     )?;
+
+//     // Simple upload
+//     let data = b"hello world";
+//     blob_client_ctor
+//         .upload(
+//             RequestContent::from(data.to_vec()),
+//             true, // overwrite
+//             u64::try_from(data.len())?,
+//             None,
+//         )
+//         .await?;
+
+//     // Get properties to verify the blob was created
+//     let response = blob_client_ctor.get_properties(None).await?;
+
+//     // Assert
+//     let content_length = response.content_length()?;
+//     let etag = response.etag()?;
+
+//     assert_eq!(11, content_length.unwrap());
+//     assert!(etag.is_some());
+//     assert!(blob_client.exists().await?);
+
+//     // Print from accessors
+//     // println!("Container Name:{}", blob_client_ctor.container_name());
+//     println!("Blob Name: [{}]\n", blob_client_ctor.blob_name());
+
+//     /////////// Through Container Client Accessor ///////////////
+//     println!("Created using Container Client Accessor (url.path_segments_mut().extend())");
+
+//     let container_client_options = ContainerClientOptions {
+//         client_options: client_options.clone(),
+//         ..Default::default()
+//     };
+//     let container_client = BlobContainerClient::new(
+//         "https://ruststoragedev.blob.core.windows.net/",
+//         "test-container-paths".to_string(),
+//         recording.credential(),
+//         Some(container_client_options),
+//     )?;
+
+//     let blob_client_from_cc =
+//         container_client.blob_client("forward/forward/forward/back\\blob/".to_string());
+
+//     // Simple upload
+//     let data = b"hello world";
+//     blob_client_from_cc
+//         .upload(
+//             RequestContent::from(data.to_vec()),
+//             true, // overwrite
+//             u64::try_from(data.len())?,
+//             None,
+//         )
+//         .await?;
+
+//     // Get properties to verify the blob was created
+//     let response = blob_client_from_cc.get_properties(None).await?;
+
+//     // Assert
+//     let content_length = response.content_length()?;
+//     let etag = response.etag()?;
+
+//     assert_eq!(11, content_length.unwrap());
+//     assert!(etag.is_some());
+//     assert!(blob_client.exists().await?);
+
+//     // Print from accessors
+//     // println!("Container Name:{}", blob_client_from_cc.container_name());
+//     println!("Blob Name: [{}]\n", blob_client_from_cc.blob_name());
+
+//     Ok(())
+// }
+
+#[recorded::test]
+async fn test_blob_url_encoding_percent_sign(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    println!("Input Blob Name: forward/forward/forward/back\\blob/% (escaped backslash)\n");
+
+    use azure_core::http::ClientOptions;
+    use azure_storage_blob::ContainerClientOptions;
+    let recording = ctx.recording();
+    let blob_url =
+        "https://ruststoragedev.blob.core.windows.net/test-container-paths/forward/forward/forward/back\\blob/%";
+    let mut client_options = ClientOptions::default();
+    recording.instrument(&mut client_options);
+    let blob_client_options = BlobClientOptions {
+        client_options: client_options.clone(),
+        ..Default::default()
+    };
+
+    println!("Created using Blob URL directly (Url::parse)");
+    // Create BlobClient from blob URL
+    let blob_client = BlobClient::from_blob_url(
+        Url::parse(blob_url)?,
+        Some(recording.credential()),
+        Some(blob_client_options.clone()),
+    )?;
+
+    // Simple upload
+    let data = b"hello world";
+    blob_client
+        .upload(
+            RequestContent::from(data.to_vec()),
+            true, // overwrite
+            u64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+
+    // Get properties to verify the blob was created
+    let response = blob_client.get_properties(None).await?;
+
+    // Assert
+    let content_length = response.content_length()?;
+    let etag = response.etag()?;
+
+    assert_eq!(11, content_length.unwrap());
+    assert!(etag.is_some());
+    assert!(blob_client.exists().await?);
+
+    // Print from accessors
+    // println!("Container Name:{}", blob_client.container_name());
+    println!("Blob Name: [{}]\n", blob_client.blob_name());
+
+    /////////// new() ///////////////
+    // Create BlobClient using new() constructor
+    println!("Created using Blob's new() constructor (url.path_segments_mut().extend())");
+    let blob_client_ctor = BlobClient::new(
+        "https://ruststoragedev.blob.core.windows.net/",
+        "test-container-paths",
+        "forward/forward/forward/back\\blob/%",
+        Some(recording.credential()),
+        Some(blob_client_options),
+    )?;
+
+    // Simple upload
+    let data = b"hello world";
+    blob_client_ctor
+        .upload(
+            RequestContent::from(data.to_vec()),
+            true, // overwrite
+            u64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+
+    // Get properties to verify the blob was created
+    let response = blob_client_ctor.get_properties(None).await?;
+
+    // Assert
+    let content_length = response.content_length()?;
+    let etag = response.etag()?;
+
+    assert_eq!(11, content_length.unwrap());
+    assert!(etag.is_some());
+    assert!(blob_client.exists().await?);
+
+    // Print from accessors
+    // println!("Container Name:{}", blob_client_ctor.container_name());
+    println!("Blob Name: [{}]\n", blob_client_ctor.blob_name());
+
+    /////////// Through Container Client Accessor ///////////////
+    println!("Created using Container Client Accessor (url.path_segments_mut().extend())");
+
+    let container_client_options = ContainerClientOptions {
+        client_options: client_options.clone(),
+        ..Default::default()
+    };
+    let container_client = BlobContainerClient::new(
+        "https://ruststoragedev.blob.core.windows.net/",
+        "test-container-paths".to_string(),
+        recording.credential(),
+        Some(container_client_options),
+    )?;
+
+    let blob_client_from_cc =
+        container_client.blob_client("forward/forward/forward/back\\blob/%".to_string());
+
+    // Simple upload
+    let data = b"hello world";
+    blob_client_from_cc
+        .upload(
+            RequestContent::from(data.to_vec()),
+            true, // overwrite
+            u64::try_from(data.len())?,
+            None,
+        )
+        .await?;
+
+    // Get properties to verify the blob was created
+    let response = blob_client_from_cc.get_properties(None).await?;
+
+    // Assert
+    let content_length = response.content_length()?;
+    let etag = response.etag()?;
+
+    assert_eq!(11, content_length.unwrap());
+    assert!(etag.is_some());
+    assert!(blob_client.exists().await?);
+
+    // Print from accessors
+    // println!("Container Name:{}", blob_client_from_cc.container_name());
+    println!("Blob Name: [{}]\n", blob_client_from_cc.blob_name());
+
+    Ok(())
+}

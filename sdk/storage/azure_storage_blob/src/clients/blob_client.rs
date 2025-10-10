@@ -61,37 +61,30 @@ impl GeneratedBlobClient {
             .per_call_policies
             .push(storage_headers_policy);
 
-        if !blob_url.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{blob_url} must use http(s)"),
-            ));
-        }
-
-        let pipeline = match credential {
-            Some(cred) => {
-                let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
-                    cred,
-                    vec!["https://storage.azure.com/.default"],
+        let per_retry_policies = if let Some(token_credential) = credential {
+            if !blob_url.scheme().starts_with("https") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{blob_url} must use http(s)"),
                 ));
-                Pipeline::new(
-                    option_env!("CARGO_PKG_NAME"),
-                    option_env!("CARGO_PKG_VERSION"),
-                    options.client_options.clone(),
-                    Vec::default(),
-                    vec![auth_policy],
-                    None,
-                )
             }
-            None => Pipeline::new(
-                option_env!("CARGO_PKG_NAME"),
-                option_env!("CARGO_PKG_VERSION"),
-                options.client_options.clone(),
-                Vec::default(),
-                Vec::default(),
-                None,
-            ),
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
         };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
 
         Ok(Self {
             endpoint: blob_url,
@@ -112,42 +105,39 @@ impl BlobClient {
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
-        container_name: String,
-        blob_name: String,
+        container_name: &str,
+        blob_name: &str,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
-        if !url.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{url} must use http(s)"),
-            ));
-        }
 
         // Build Blob URL, Url crate handles encoding only path params
         url.path_segments_mut()
-            .expect("Cannot be base")
-            .extend([&container_name, &blob_name]);
+            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
+            .extend([container_name, blob_name]);
 
         let client = GeneratedBlobClient::from_url(url.clone(), credential, options)?;
         Ok(Self {
             endpoint: client.endpoint().clone(),
             client,
-            container_name,
-            blob_name,
+            // So the contentious point is this: Do we store the container_name/blob_name as-is, or do we just go through the same exact path as the from_blob_url function
+            // i.e. Input Blob Name: a/b/c/d\blob/ (but again, the Service treats '/' and '\' as valid path separators)
+            // Saved as-is, blob_name() returns: a/b/c/d\blob/
+            // Parsed through the URL parser, blob_name() returns: a/b/c/d/blob/ (since on the Service the '\' was transformed to '/')
+            container_name: container_name.to_string(),
+            blob_name: blob_name.to_string(),
         })
     }
 
     pub fn from_blob_url(
-        blob_url: &str,
+        blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        let url = Url::parse(blob_url)?;
-        let client = GeneratedBlobClient::from_url(url.clone(), credential, options)?;
+        let client = GeneratedBlobClient::from_url(blob_url.clone(), credential, options)?;
 
-        let (container_name, blob_name) = parse_url_name_components(&url)?;
+        let (container_name, blob_name) = parse_url_name_components(&blob_url)?;
 
         Ok(Self {
             endpoint: client.endpoint().clone(),

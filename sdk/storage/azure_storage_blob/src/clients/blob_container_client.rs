@@ -88,11 +88,12 @@ impl BlobContainerClient {
     ///
     /// * `blob_name` - The name of the blob.
     pub fn blob_client(&self, blob_name: String) -> BlobClient {
+        // Copy exact logic from new() constructor, but assume container is already contained in URL
         let mut blob_url = self.endpoint.clone();
-        blob_url
-            .path_segments_mut()
-            .expect("Cannot be base")
-            .push(&blob_name);
+        // Build Blob URL, Url crate handles encoding only path params
+        blob_url.path_segments_mut()
+            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
+            .extend([blob_name.clone()]);
 
         let client = GeneratedBlobClient {
             endpoint: blob_url.clone(),

@@ -77,16 +77,18 @@ pub(crate) fn parse_url_name_components(url: &Url) -> azure_core::Result<(String
         .ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                "URL cannot be a base URL",
+                format!("Invalid blob URL '{}': URL must have a path component with container name and blob name.", url),
             )
         })?
-        .filter(|s| !s.is_empty()) // Filter out empty segments
         .collect();
 
-    if path_segments.is_empty() {
+    if path_segments.len() < 2 {
         return Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
-            "URL path must contain at least a container name",
+            format!(
+                "Invalid blob URL '{}': URL path must contain both container name and blob name",
+                url
+            ),
         ));
     }
 
@@ -94,14 +96,7 @@ pub(crate) fn parse_url_name_components(url: &Url) -> azure_core::Result<(String
     let container_name = path_segments[0].to_string();
 
     // Remaining segments form the blob name
-    let blob_name = if path_segments.len() > 1 {
-        path_segments[1..].join("/")
-    } else {
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "URL path must contain both container name and blob name",
-        ));
-    };
+    let blob_name = path_segments[1..].join("/");
 
     Ok((container_name, blob_name))
 }
