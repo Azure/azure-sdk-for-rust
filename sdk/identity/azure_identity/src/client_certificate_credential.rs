@@ -136,20 +136,6 @@ impl ClientCertificateCredential {
         scopes: &[&str],
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
-        if scopes.len() != 1 {
-            return Err(Error::with_message(
-                ErrorKind::Credential,
-                "only one scope is supported for IMDS authentication",
-            ));
-        }
-
-        let Some(scope) = scopes.first() else {
-            return Err(Error::with_message(
-                ErrorKind::Credential,
-                "no scopes were provided",
-            ));
-        };
-
         let certificate = base64::decode(self.certificate.secret())
             .map_err(|_| Error::with_message(ErrorKind::Credential, "Base64 decode failed"))?;
 
@@ -218,7 +204,7 @@ impl ClientCertificateCredential {
             let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
             encoded = encoded
                 .append_pair("client_id", self.client_id.as_str())
-                .append_pair("scope", scope)
+                .append_pair("scope", &scopes.join(" "))
                 .append_pair(
                     "client_assertion_type",
                     "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
@@ -291,6 +277,12 @@ impl TokenCredential for ClientCertificateCredential {
         scopes: &[&str],
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
+        if scopes.is_empty() {
+            return Err(Error::with_message(
+                ErrorKind::Credential,
+                "no scopes specified",
+            ));
+        }
         self.cache
             .get_token(scopes, options, |s, o| self.get_token_impl(s, o))
             .await
