@@ -148,8 +148,8 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                     request.partition_key_range_id.clone(),
                 );
 
-                let mut draining = true;
-                while draining {
+                let mut fetch_more_pages = true;
+                while fetch_more_pages {
                     if let Some(c) = request.continuation.clone() {
                         query_request.insert_header(constants::CONTINUATION, c);
                     } else {
@@ -169,7 +169,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                     let next_continuation =
                         resp.headers().get_optional_string(&constants::CONTINUATION);
 
-                    draining = request.drain && next_continuation.is_some();
+                    fetch_more_pages = request.drain && next_continuation.is_some();
 
                     let body = resp.into_body();
                     let result = QueryResult {

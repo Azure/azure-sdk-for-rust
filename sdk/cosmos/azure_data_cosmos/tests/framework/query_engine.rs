@@ -5,7 +5,7 @@ use std::{collections::VecDeque, sync::Mutex};
 
 use serde::{Deserialize, Serialize};
 
-use azure_data_cosmos::query::{PipelineResult, QueryEngine, QueryPipeline};
+use azure_data_cosmos::query::{PipelineResult, QueryEngine, QueryPipeline, QueryResult};
 use serde_json::value::RawValue;
 
 #[derive(Deserialize)]
@@ -267,10 +267,7 @@ impl QueryPipeline for MockQueryPipeline {
         })
     }
 
-    fn provide_data(
-        &mut self,
-        data: std::vec::Vec<azure_data_cosmos::query::QueryResult<'_>>,
-    ) -> azure_core::Result<()> {
+    fn provide_data(&mut self, data: Vec<QueryResult<'_>>) -> azure_core::Result<()> {
         for data in data {
             let payload: DocumentPayload<MockItem> =
                 serde_json::from_slice(data.result).map_err(|_| {
