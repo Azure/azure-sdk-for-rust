@@ -2,7 +2,7 @@ parameters:
 - name: PackageVersions
   displayName: PackageVersions (regex of package versions to run)
   type: string
-  default: 'source'
+  default: '12|source'
 - name: Tests
   displayName: Tests (regex of tests to run)
   type: string
@@ -14,7 +14,7 @@ parameters:
 - name: Iterations
   displayName: Iterations (times to run each test)
   type: number
-  default: '1'
+  default: '5'
 - name: Profile
   type: boolean
   default: false
