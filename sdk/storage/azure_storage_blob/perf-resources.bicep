@@ -49,7 +49,6 @@ resource storage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
     name: 'Premium_LRS'
   }
   properties: {
-    accessTier: 'Hot'
     allowSharedKeyAccess: false
     encryption: encryption
     networkAcls: networkAcls
