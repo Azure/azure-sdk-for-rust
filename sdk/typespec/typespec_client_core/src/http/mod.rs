@@ -82,126 +82,131 @@ impl UrlExt for Url {
     }
 }
 
-#[test]
-fn test_url_append_path() {
-    {
-        let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
-        url.append_path("alpha");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
-        url.append_path("alpha");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
-        url.append_path("/alpha");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
-        url.append_path("/alpha");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
-        url.append_path("alpha/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
-        url.append_path("alpha/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
-        url.append_path("/alpha/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
-        url.append_path("/alpha/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
-        url.append_path("beta");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
-        url.append_path("beta");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
-        url.append_path("/beta");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
-        url.append_path("/beta");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
-        url.append_path("beta/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
-        url.append_path("beta/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
-        url.append_path("/beta/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
-        url.append_path("/beta/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
-        url.append_path("/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
-        url.append_path("/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
-        url.append_path("");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
-        url.append_path("");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
-        url.append_path("/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
-        url.append_path("/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
-        url.append_path("");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
-    }
-    {
-        let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
-        url.append_path("");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn url_append_path() {
+        {
+            let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
+            url.append_path("alpha");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
+            url.append_path("alpha");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
+            url.append_path("/alpha");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
+            url.append_path("/alpha");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
+            url.append_path("alpha/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
+            url.append_path("alpha/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
+            url.append_path("/alpha/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
+            url.append_path("/alpha/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
+            url.append_path("beta");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
+            url.append_path("beta");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
+            url.append_path("/beta");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
+            url.append_path("/beta");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
+            url.append_path("beta/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
+            url.append_path("beta/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
+            url.append_path("/beta/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
+            url.append_path("/beta/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/beta/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
+            url.append_path("/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/?q=q").unwrap();
+            url.append_path("/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
+            url.append_path("");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com?q=q").unwrap();
+            url.append_path("");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
+            url.append_path("/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
+            url.append_path("/");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha?q=q").unwrap();
+            url.append_path("");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha?q=q");
+        }
+        {
+            let mut url = Url::parse("https://www.microsoft.com/alpha/?q=q").unwrap();
+            url.append_path("");
+            assert_eq!(url.as_str(), "https://www.microsoft.com/alpha/?q=q");
+        }
     }
 }
