@@ -153,7 +153,9 @@ Note that some of these test options are not specific to the `list_blobs` test. 
 
 ### Declaring a test pipeline
 
-Test pipelines are defined using a `perf.yml` file declared in the package directory.
+Test pipelines are defined using a [`perf.yml`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/storage/perf.yml) file declared in the service directory.
+
+For example, from the `storage` service:
 
 ```yml
 parameters:
@@ -197,3 +199,13 @@ extends:
 ```
 
 You'll want to configure the `ServiceDirectory` field to match the location of your package.
+
+Next you need to create a pull request containing this file and find the SHA for the commit containing your changes. This will be important for the next steps.
+
+Navigate to the `azure-sdk` Azure DevOps instance, and select the `internal` project.
+
+Within the `internal` project, select `Pipelines`, select "All" from the right hand pane. This will show a tree structured hierarchy of pipelines.
+
+Navigate to the `perf` part of the hierarchy and you'll see a list of languages (`cpp`, `java`, `net`, `rust`).
+
+Open the `rust` node and you'll see the defined Rust performance test pipelines.
