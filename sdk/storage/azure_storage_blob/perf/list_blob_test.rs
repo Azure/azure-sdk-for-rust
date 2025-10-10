@@ -1,20 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
-use azure_core::Bytes;
+use azure_core::{error::ErrorKind, Bytes};
 use azure_core_test::{
     perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
     TestContext,
 };
-use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::BlobContainerClient;
 use futures::{FutureExt, TryStreamExt};
 
 pub struct ListBlobTest {
     count: u32,
-    client: BlobContainerClient,
+    endpoint: String,
+    client: OnceLock<BlobContainerClient>,
 }
 
 impl ListBlobTest {
@@ -37,11 +37,11 @@ impl ListBlobTest {
             };
             println!("Using endpoint: {}", endpoint);
 
-            let container_name = format!("perf-container-{}", uuid::Uuid::new_v4());
-            let credential = DeveloperToolsCredential::new(None)?;
-            let client = BlobContainerClient::new(&endpoint, container_name, credential, None)?;
-
-            Ok(Box::new(ListBlobTest { count, client }) as Box<dyn PerfTest>)
+            Ok(Box::new(ListBlobTest {
+                count,
+                endpoint,
+                client: OnceLock::new(),
+            }) as Box<dyn PerfTest>)
         }
         .boxed()
     }
@@ -77,15 +77,22 @@ impl ListBlobTest {
 
 #[async_trait::async_trait]
 impl PerfTest for ListBlobTest {
-    async fn setup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
+    async fn setup(&self, context: Arc<TestContext>) -> azure_core::Result<()> {
         // Setup code before running the test
 
-        let _result = self.client.create_container(None).await?;
+        let recording = context.recording();
+        let credential = recording.credential();
+        let container_name = format!("perf-container-{}", uuid::Uuid::new_v4());
+        let client = BlobContainerClient::new(&self.endpoint, container_name, credential, None)?;
+        self.client.set(client).map_err(|_| {
+            azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
+        })?;
+
+        let _result = self.client.get().unwrap().create_container(None).await?;
 
         for i in 0..self.count {
             let blob_name = format!("blob-{}", i);
-            let blob_client = self.client.blob_client(blob_name);
-
+            let blob_client = self.client.get().unwrap().blob_client(blob_name);
             let body = vec![0u8; 1024 * 1024]; // 1 MB blob
             let body_bytes = Bytes::from(body);
 
@@ -98,7 +105,7 @@ impl PerfTest for ListBlobTest {
     async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // The actual performance test code
 
-        let mut iterator = self.client.list_blobs(None)?;
+        let mut iterator = self.client.get().unwrap().list_blobs(None)?;
         while let Some(blob_segment) = iterator.try_next().await? {
             let _body = blob_segment.into_body()?;
         }

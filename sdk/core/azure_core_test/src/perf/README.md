@@ -208,4 +208,11 @@ Within the `internal` project, select `Pipelines`, select "All" from the right h
 
 Navigate to the `perf` part of the hierarchy and you'll see a list of languages (`cpp`, `java`, `net`, `rust`).
 
-Open the `rust` node and you'll see the defined Rust performance test pipelines.
+Open the `rust` node and you'll see the defined Rust performance test pipelines. Click on the `rust` node to select just the `rust` pipeline container.
+
+Click on the `New pipeline` button on the top right of the window:
+![New pipeline button](img/new pipeline.png)
+
+Select `GitHub` and then select the 'All Repositories` combo on the right.
+
+Next select `Azure/azure-sdk-for-rust` to specify the Rust SDK and configure your pipeline with an `Existing Azure Pipelines YAML file`.
