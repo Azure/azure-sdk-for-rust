@@ -68,7 +68,7 @@ pub trait UrlExt {
 
 impl UrlExt for Url {
     fn append_path(&mut self, p: &str) {
-        if self.path().len() == 1 {
+        if self.path() == "/" {
             self.set_path(p);
         } else if !p.is_empty() && p != "/" {
             match if self.path().ends_with('/') { 1 } else { 0 }
