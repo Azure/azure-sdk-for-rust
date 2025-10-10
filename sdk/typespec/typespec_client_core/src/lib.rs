@@ -18,7 +18,6 @@ pub mod stream;
 pub mod time;
 #[cfg(feature = "http")]
 pub mod tracing;
-pub mod url;
 #[cfg(feature = "xml")]
 pub use typespec::xml;
 
