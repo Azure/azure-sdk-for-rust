@@ -1,3 +1,6 @@
+variables:
+  - group: Secrets for Resource Provisioner
+
 parameters:
   - name: InstallLanguageSteps
     type: object

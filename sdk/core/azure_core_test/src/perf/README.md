@@ -29,9 +29,9 @@ Each test has its own set of parameters which are specific to the test.
 
 Performance tests have three phases:
 
-1.. Setup - Establish any resources needed to run the test.
-2.. Run - Actually perform the test.
-3.. Cleanup - Cleanup any resources used by the test.
+1. Setup - Establish any resources needed to run the test.
+2. Run - Actually perform the test.
+3. Cleanup - Cleanup any resources used by the test.
 
 Each is defined by functions on the `PerfTest` trait.
 
@@ -122,7 +122,7 @@ This declares a test named `perf` (which is required for the perf automation tes
 After this, to invoke your perf test, you simply use:
 
 ```bash
-cargo test --package azure_storage_blob --test perf -- <performance test command line>
+cargo test --package azure_storage_blob --test perf -- {performance test command line}
 ```
 
 For example,
