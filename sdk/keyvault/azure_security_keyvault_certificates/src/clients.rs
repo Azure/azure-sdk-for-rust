@@ -3,16 +3,17 @@
 
 pub use crate::generated::clients::*;
 use crate::models::{
-    CertificateClientBeginCreateCertificateOptions,
+    Certificate, CertificateClientBeginCreateCertificateOptions,
     CertificateClientResumeCertificateOperationOptions, CertificateOperation,
     CreateCertificateParameters,
 };
 use azure_core::{
+    error::ErrorKind,
     http::{
         headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
         poller::{get_retry_after, PollerResult, PollerState, StatusMonitor as _},
         poller::{Poller, PollerStatus},
-        Body, Method, RawResponse, Request, RequestContent, Url,
+        Body, Method, RawResponse, Request, RequestContent, Response, Url,
     },
     json, Result,
 };
@@ -135,6 +136,7 @@ impl CertificateClient {
 
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
+                let api_version = api_version.clone();
                 async move {
                     let rsp: RawResponse = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
@@ -152,6 +154,34 @@ impl CertificateClient {
                             retry_after,
                             next: next_link,
                         },
+                        PollerStatus::Succeeded => {
+                            let final_link: Url = res
+                                .target
+                                .ok_or_else(|| {
+                                    azure_core::Error::new(ErrorKind::Other, "missing target")
+                                })?
+                                .parse()?;
+
+                            // Make sure the `api-version` is set appropriately.
+                            let qp = final_link
+                                .query_pairs()
+                                .filter(|(name, _)| name.ne("api-version"));
+                            let mut final_link = final_link.clone();
+                            final_link
+                                .query_pairs_mut()
+                                .clear()
+                                .extend_pairs(qp)
+                                .append_pair("api-version", &api_version);
+
+                            let mut request = Request::new(final_link, Method::Get);
+                            request.insert_header("accept", "application/json");
+
+                            let rsp: RawResponse = pipeline.send(&ctx, &mut request, None).await?;
+                            let (status, headers, body) = rsp.deconstruct();
+                            let response: Response<Certificate> =
+                                RawResponse::from_bytes(status, headers, body).into();
+                            PollerResult::Succeeded { response }
+                        }
                         _ => PollerResult::Done { response: rsp },
                     })
                 }
