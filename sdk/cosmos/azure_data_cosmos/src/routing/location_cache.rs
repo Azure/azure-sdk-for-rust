@@ -9,6 +9,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 use tracing::info;
+use crate::routing::ReadOnlyUrlCollection;
 
 const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(5 * 60);
 
@@ -45,7 +46,7 @@ impl RequestOperation {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct DatabaseAccountLocationsInfo {
     pub preferred_locations: Vec<String>,
     account_write_locations: Vec<String>,
@@ -62,6 +63,7 @@ pub struct LocationUnavailabilityInfo {
     pub unavailable_operation: RequestOperation,
 }
 
+#[derive(Default, Debug)]
 pub struct LocationCache {
     pub default_endpoint: String,
     pub locations_info: DatabaseAccountLocationsInfo,
@@ -79,6 +81,10 @@ impl LocationCache {
             location_unavailability_info_map: RwLock::new(HashMap::new()),
         }
     }
+
+    pub fn read_endpoints(&self) -> Vec<String> {  self.locations_info.read_endpoints.clone() }
+
+    pub fn write_endpoints(&self) -> Vec<String> { self.locations_info.write_endpoints.clone() }
 
     pub fn update(
         &mut self,
