@@ -29,9 +29,9 @@ Each test has its own set of parameters which are specific to the test.
 
 Performance tests have three phases:
 
-1.. Setup - Establish any resources needed to run the test.
-2.. Run - Actually perform the test.
-3.. Cleanup - Cleanup any resources used by the test.
+1. Setup - Establish any resources needed to run the test.
+2. Run - Actually perform the test.
+3. Cleanup - Cleanup any resources used by the test.
 
 Each is defined by functions on the `PerfTest` trait.
 
@@ -122,7 +122,7 @@ This declares a test named `perf` (which is required for the perf automation tes
 After this, to invoke your perf test, you simply use:
 
 ```bash
-cargo test --package azure_storage_blob --test perf -- <performance test command line>
+cargo test --package azure_storage_blob --test perf -- {performance test command line}
 ```
 
 For example,
@@ -150,3 +150,122 @@ Options:
 ```
 
 Note that some of these test options are not specific to the `list_blobs` test. This is to allow test options to be provided in any order in the command line.
+
+### Declaring a test pipeline
+
+Before you can declare your test pipeline, you need to create some infrastructure for your tests.
+
+#### Test Pipeline Yaml Configuration
+
+Test pipelines are defined using a [`perf.yml`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/storage/azure_storage_blob/perf.yml) file declared in the package directory.
+
+For example, from the `storage/azure_storage_blob` package:
+
+```yml
+parameters:
+- name: PackageVersions
+  displayName: PackageVersions (regex of package versions to run)
+  type: string
+  default: '12|source'
+- name: Tests
+  displayName: Tests (regex of tests to run)
+  type: string
+  default: '^(download|upload|list-blobs)$'
+- name: Arguments
+  displayName: Arguments (regex of arguments to run)
+  type: string
+  default: '(10240)|(10485760)|(1073741824)|(5 )|(500 )|(50000 )'
+- name: Iterations
+  displayName: Iterations (times to run each test)
+  type: number
+  default: '5'
+- name: Profile
+  type: boolean
+  default: false
+- name: AdditionalArguments
+  displayName: AdditionalArguments (passed to PerfAutomation)
+  type: string
+  default: ' '
+
+extends:
+  template: /eng/pipelines/templates/jobs/perf.yml
+  parameters:
+    ServiceDirectory: storage/azure_storage_blob
+    PackageVersions: ${{ parameters.PackageVersions }}
+    Tests: ${{ parameters.Tests }}
+    Arguments: ${{ parameters.Arguments }}
+    Iterations: ${{ parameters.Iterations }}
+    AdditionalArguments: ${{ parameters.AdditionalArguments }}
+    Profile: ${{ parameters.Profile }}
+```
+
+***TODO Update this to include yml based triggers***
+
+You'll want to configure the `ServiceDirectory` field to match the location of your package.
+
+#### Performance Test Yaml Configuration
+
+Once you've created a `perf.yml` file, you need to create a `perf-tests.yml` file in the same directory. This file is used during the performance automation to configure the performance tests which are run.
+
+```yml
+Service: storage-blob
+
+Project: azure-storage-blobs-perf
+
+PrimaryPackage: azure_storage_blob
+
+PackageVersions:
+- azure_storage_blob: source
+  azure_core: source
+
+Tests:
+- Test: download
+  Class: DownloadBlob
+  Arguments:
+  - --size 10240 --parallel 64
+  - --size 10485760 --parallel 32
+  - --size 1073741824 --parallel 1 --warmup 60 --duration 60
+  - --size 1073741824 --parallel 8 --warmup 60 --duration 60
+
+- Test: upload
+  Class: UploadBlob
+  Arguments:
+  - --size 10240 --parallel 64
+  - --size 10485760 --parallel 32
+  - --size 1073741824 --parallel 1 --warmup 60 --duration 60
+  - --size 1073741824 --parallel 8 --warmup 60 --duration 60
+
+- Test: list-blobs
+  Class: list_blob
+  Arguments:
+  - --count 5 --parallel 64
+  - --count 500 --parallel 32
+  - --count 50000 --parallel 32 --warmup 60 --duration 60
+```
+
+This example (from Azure Storage Blobs) defines a service and project, and specifies the package versions which are going to be tested (this option currently is unsupported for Rust, so leave this as 'source').
+
+The key part is the "Tests" node - that defines the test parameters which will be run for each performance test.
+
+And FINALLY, you need to create a pull request containing this file and find the SHA for the commit containing your changes. This will be important for the next steps.
+
+#### Creating the performance pipeline
+
+Once the pull request
+Navigate to the `azure-sdk` Azure DevOps instance, and select the `internal` project.
+
+Within the `internal` project, select `Pipelines`, select "All" from the right hand pane. This will show a tree structured hierarchy of pipelines.
+
+Navigate to the `perf` part of the hierarchy and you'll see a list of languages (`cpp`, `java`, `net`, `rust`).
+
+Open the `rust` node and you'll see the defined Rust performance test pipelines. Click on the `rust` node to select just the `rust` pipeline container.
+
+Click on the `New pipeline` button on the top right of the window.
+
+Select `GitHub` and then select the 'All Repositories` combo on the right.
+
+Next select `Azure/azure-sdk-for-rust` to specify the Rust SDK and configure your pipeline with an `Existing Azure Pipelines YAML file`.
+
+Select your pipeline file from the main branch of the repository and you're almost done.
+
+The next thing you want to do is to "save" the new pipeline.

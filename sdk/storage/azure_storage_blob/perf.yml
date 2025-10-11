@@ -1,3 +1,15 @@
+trigger: none
+
+pr: none
+
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight build
+  branches:
+    include:
+    - main
+  always: true
+
 parameters:
 - name: PackageVersions
   displayName: PackageVersions (regex of package versions to run)
@@ -26,7 +38,7 @@ parameters:
 extends:
   template: /eng/pipelines/templates/jobs/perf.yml
   parameters:
-    ServiceDirectory: storage/azure_storage_blobs
+    ServiceDirectory: storage/azure_storage_blob
     PackageVersions: ${{ parameters.PackageVersions }}
     Tests: ${{ parameters.Tests }}
     Arguments: ${{ parameters.Arguments }}
@@ -36,3 +48,4 @@ extends:
     EnvVars:
       # This is set in the InstallLanguageSteps
       VCPKG_BINARY_SOURCES_SECRET: $(VCPKG_BINARY_SOURCES_SECRET)
+
