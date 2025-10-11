@@ -153,9 +153,13 @@ Note that some of these test options are not specific to the `list_blobs` test. 
 
 ### Declaring a test pipeline
 
-Test pipelines are defined using a [`perf.yml`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/storage/perf.yml) file declared in the service directory.
+Before you can declare your test pipeline, you need to create some infrastructure for your tests.
 
-For example, from the `storage` service:
+#### Test Pipeline Yaml Configuration
+
+Test pipelines are defined using a [`perf.yml`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/storage/azure_storage_blob/perf.yml) file declared in the package directory.
+
+For example, from the `storage/azure_storage_blob` package:
 
 ```yml
 parameters:
@@ -193,15 +197,61 @@ extends:
     Iterations: ${{ parameters.Iterations }}
     AdditionalArguments: ${{ parameters.AdditionalArguments }}
     Profile: ${{ parameters.Profile }}
-    EnvVars:
-      # This is set in the InstallLanguageSteps
-      VCPKG_BINARY_SOURCES_SECRET: $(VCPKG_BINARY_SOURCES_SECRET)
 ```
+
+***TODO Update this to include yml based triggers***
 
 You'll want to configure the `ServiceDirectory` field to match the location of your package.
 
-Next you need to create a pull request containing this file and find the SHA for the commit containing your changes. This will be important for the next steps.
+#### Performance Test Yaml Configuration
 
+Once you've created a `perf.yml` file, you need to create a `perf-tests.yml` file in the same directory. This file is used during the performance automation to configure the performance tests which are run.
+
+```yml
+Service: storage-blob
+
+Project: azure-storage-blobs-perf
+
+PrimaryPackage: azure_storage_blob
+
+PackageVersions:
+- azure_storage_blob: source
+  azure_core: source
+
+Tests:
+- Test: download
+  Class: DownloadBlob
+  Arguments:
+  - --size 10240 --parallel 64
+  - --size 10485760 --parallel 32
+  - --size 1073741824 --parallel 1 --warmup 60 --duration 60
+  - --size 1073741824 --parallel 8 --warmup 60 --duration 60
+
+- Test: upload
+  Class: UploadBlob
+  Arguments:
+  - --size 10240 --parallel 64
+  - --size 10485760 --parallel 32
+  - --size 1073741824 --parallel 1 --warmup 60 --duration 60
+  - --size 1073741824 --parallel 8 --warmup 60 --duration 60
+
+- Test: list-blobs
+  Class: list_blob
+  Arguments:
+  - --count 5 --parallel 64
+  - --count 500 --parallel 32
+  - --count 50000 --parallel 32 --warmup 60 --duration 60
+```
+
+This example (from Azure Storage Blobs) defines a service and project, and specifies the package versions which are going to be tested (this option currently is unsupported for Rust, so leave this as 'source').
+
+The key part is the "Tests" node - that defines the test parameters which will be run for each performance test.
+
+And FINALLY, you need to create a pull request containing this file and find the SHA for the commit containing your changes. This will be important for the next steps.
+
+#### Creating the performance pipeline
+
+Once the pull request
 Navigate to the `azure-sdk` Azure DevOps instance, and select the `internal` project.
 
 Within the `internal` project, select `Pipelines`, select "All" from the right hand pane. This will show a tree structured hierarchy of pipelines.
@@ -210,9 +260,12 @@ Navigate to the `perf` part of the hierarchy and you'll see a list of languages 
 
 Open the `rust` node and you'll see the defined Rust performance test pipelines. Click on the `rust` node to select just the `rust` pipeline container.
 
-Click on the `New pipeline` button on the top right of the window:
-![New pipeline button](img/new pipeline.png)
+Click on the `New pipeline` button on the top right of the window.
 
 Select `GitHub` and then select the 'All Repositories` combo on the right.
 
 Next select `Azure/azure-sdk-for-rust` to specify the Rust SDK and configure your pipeline with an `Existing Azure Pipelines YAML file`.
+
+Select your pipeline file from the main branch of the repository and you're almost done.
+
+The next thing you want to do is to "save" the new pipeline.
