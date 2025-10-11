@@ -88,11 +88,14 @@ impl PerfTest for ListBlobTest {
             azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
         })?;
 
-        let _result = self.client.get().unwrap().create_container(None).await?;
+        // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).
+        let container_client = self.client.get().unwrap();
+        let _result = container_client.create_container(None).await?;
 
+        // Create the blobs for the test.
         for i in 0..self.count {
             let blob_name = format!("blob-{}", i);
-            let blob_client = self.client.get().unwrap().blob_client(blob_name);
+            let blob_client = container_client.blob_client(blob_name);
             let body = vec![0u8; 1024 * 1024]; // 1 MB blob
             let body_bytes = Bytes::from(body);
 
