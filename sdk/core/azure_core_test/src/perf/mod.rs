@@ -376,8 +376,12 @@ impl PerfRunner {
                 iteration_count as f64 / self.options.duration.as_seconds_f64();
             let seconds_per_operation =
                 self.options.duration.as_seconds_f64() / iteration_count as f64;
-            let duration_per_operation = Duration::seconds_f64(seconds_per_operation);
-            println!("{operations_per_second:4} operations/second, {duration_per_operation:4} seconds/operation");
+            if seconds_per_operation != 0.0 {
+                let duration_per_operation = Duration::seconds_f64(seconds_per_operation);
+                println!("{operations_per_second:4} operations/second, {duration_per_operation:4} seconds/operation");
+            } else {
+                println!("{operations_per_second:4} operations/second, {seconds_per_operation:4} seconds/operation");
+            }
 
             if !self.options.test_results_filename.is_empty() {
                 // Write out the results to a file.

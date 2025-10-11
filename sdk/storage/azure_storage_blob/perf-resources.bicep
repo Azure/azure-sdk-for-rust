@@ -7,12 +7,6 @@ param location string = resourceGroup().location
 
 var blobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 var blobDataOwnerRoleId = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
-var networkAcls = {
-  bypass: 'AzureServices'
-  defaultAction: 'Allow'
-  ipRules: []
-  virtualNetworkRules: []
-}
 
 resource blobDataContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(blobDataContributorRoleId, resourceGroup().id)
@@ -39,7 +33,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2024-01-01' = {
   }
   properties: {
     allowSharedKeyAccess: false
-    networkAcls: networkAcls
+    publicNetworkAccess: null
     supportsHttpsTrafficOnly: true
   }
 }
