@@ -57,11 +57,28 @@ function Get-OutputPackageNames($workspacePackages) {
     }
   }
 
-  return $names
+  return , $names
 }
 
 function Get-CargoMetadata() {
   cargo metadata --no-deps --format-version 1 --manifest-path "$RepoRoot/Cargo.toml" | ConvertFrom-Json -Depth 100 -AsHashtable
+}
+
+function Test-PublishedOnCratesIo($name, $version) { 
+  try {
+    Invoke-WebRequest -Uri "https://crates.io/api/v1/crates/$name/$version"
+    return $true
+  }
+  catch {
+    if ($_.Exception.Response.StatusCode -eq 404) {
+      # 404 means package version is not found and doesn't exist
+      return $false
+    }
+    else {
+      # Re-throw other exceptions
+      throw $_
+    }
+  }
 }
 
 function Get-CargoPackages() {
@@ -97,7 +114,7 @@ function Get-PackagesToBuild() {
     foreach ($dependency in $package.UnreleasedDependencies) {
       if (!$packagesToBuild.Contains($dependency) -and !$toProcess.Contains($dependency)) {
         if ($RequireDependencies -and $dependency.name -notin $PackageNames) { 
-          Write-Warning "Package $($package.name) depends on unreleased or unspecified dependency: $($dependency.name)"
+          Write-Warning "Package $($package.name) depends on potentially unreleased or unspecified dependency: $($dependency.name)`@$($dependency.version)"
         }
         
         $packagesToBuild += $dependency
@@ -170,7 +187,7 @@ try {
   [array]$packages = Get-PackagesToBuild
 
   if ($RequireDependencies) {
-    $unspecifiedPackages = $packages.name | Where-Object { $_ -notin $PackageNames }
+    $unspecifiedPackages = $packages | Where-Object { $_.name -notin $PackageNames -and !(Test-PublishedOnCratesIo -name $_.name -version $_.version) } | Foreach-Object { "$($_.name)`@$($_.version)" }
     if ($unspecifiedPackages.Count -gt 0) { 
       Write-Error "Packages in -PackageNames require dependencies that are either not released or not listed for packing: $($unspecifiedPackages -join ', ')"
       exit 1
