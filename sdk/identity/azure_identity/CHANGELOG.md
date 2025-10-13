@@ -6,7 +6,15 @@
 
 ### Breaking Changes
 
+- `ClientCertificateCredential::new()`:
+  - `client_certificate` parameter is now `certificate`
+  - `client_certificate_password` parameter is now `password: Option<azure_core::credentials::Secret>` in `ClientCertificateCredentialOptions`
+  - now returns an error when the given certificate can't be parsed
+- Removed `ClientCertificateCredentialOptions.send_certificate_chain`. Set environment variable `AZURE_CLIENT_SEND_CERTIFICATE_CHAIN` to "1" or "true" to enable this feature.
+
 ### Bugs Fixed
+
+- `ClientCertificateCredential::get_token()` returned an error when given multiple scopes
 
 ### Other Changes
 
