@@ -25,7 +25,7 @@ use azure_security_keyvault_secrets::{
 };
 use futures::FutureExt;
 struct GetSecrets {
-    vault_url: String,
+    vault_url: Option<String>,
     random_key_name: OnceLock<String>,
     client: OnceLock<SecretClient>,
 }
@@ -38,7 +38,7 @@ impl GetSecrets {
             options: vec![PerfTestOption {
                 name: "vault_url",
                 display_message: "The URL of the Key Vault to use in the test",
-                mandatory: true,
+                mandatory: false,
                 short_activator: Some('u'),
                 long_activator: "vault-url",
                 expected_args_len: 1,
@@ -51,9 +51,7 @@ impl GetSecrets {
     fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn {
         async move {
             let vault_url_ref: Option<&String> = runner.try_get_test_arg("vault_url")?;
-            let vault_url = vault_url_ref
-                .expect("vault_url argument is mandatory")
-                .clone();
+            let vault_url = vault_url_ref.cloned();
             Ok(Box::new(GetSecrets {
                 vault_url,
                 random_key_name: OnceLock::new(),
@@ -83,11 +81,12 @@ impl PerfTest for GetSecrets {
         let mut client_options = SecretClientOptions::default();
         recording.instrument(&mut client_options.client_options);
 
-        let client = SecretClient::new(
-            self.vault_url.as_str(),
-            credential.clone(),
-            Some(client_options),
-        )?;
+        let vault_url = self
+            .vault_url
+            .clone()
+            .unwrap_or_else(|| recording.var("AZURE_KEYVAULT_URL", None));
+
+        let client = SecretClient::new(&vault_url, credential.clone(), Some(client_options))?;
         self.client.get_or_init(|| client);
 
         self.client

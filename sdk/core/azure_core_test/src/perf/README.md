@@ -162,6 +162,18 @@ Test pipelines are defined using a [`perf.yml`](https://github.com/Azure/azure-s
 For example, from the `storage/azure_storage_blob` package:
 
 ```yml
+trigger: none
+
+pr: none
+
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight run.
+  branches:
+    include:
+    - main
+  always: true
+
 parameters:
 - name: PackageVersions
   displayName: PackageVersions (regex of package versions to run)
@@ -268,4 +280,4 @@ Next select `Azure/azure-sdk-for-rust` to specify the Rust SDK and configure you
 
 Select your pipeline file from the main branch of the repository and you're almost done.
 
-The next thing you want to do is to "save" the new pipeline.
+The next thing you want to do is to "save" the new pipeline. You can also attempt to `run` the pipeline at this point.
