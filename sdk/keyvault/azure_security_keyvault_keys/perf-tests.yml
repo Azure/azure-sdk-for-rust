@@ -8,6 +8,9 @@ PackageVersions:
 Tests:
   - Test: get_key
     Class: get_key
-
+    Arguments:
+      - --parallel 4
   - Test: create_key
     Class: create_key
+    Arguments:
+      - --parallel 4

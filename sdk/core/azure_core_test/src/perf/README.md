@@ -291,3 +291,23 @@ That will bring up a pane on the right with a number of variable groups. You wan
 Once you've saved these changes, your pipeline should be ready to run.
 
 You may need to ask for help from the Azure SDK Engineering Systems team to enable access to test resources for your pipeline, but that should be a relatively straightforward request.
+
+## Running the test automation locally
+
+It is possible to run the performance test automation locally, that is often helpful when debugging performance tests.
+
+Running the performance tests locally requires a clone of the `Azure/azure-sdk-tools` repo.
+
+Start at the root of the `azure-sdk-tools` repo and navigate to the `tools/perf-automation/Azure.Sdk.Tools/PerfAutomation` directory:
+
+```bash
+cd tools/perf-automation/Azure.Sdk.Tools/PerfAutomation
+```
+
+Then run the perf automation tool, replacing your repo on the command line:
+
+```bash
+ dotnet run . -- -l rust --language-version N/A --tests-file {Path to perf-tests.yml file in your repo} --repo-root {Path to the root of your repo}
+ ```
+
+ This will run your performance tests and save the results in the `results` directory locally.
