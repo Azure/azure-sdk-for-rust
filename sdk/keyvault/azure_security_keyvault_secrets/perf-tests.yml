@@ -9,5 +9,4 @@ Tests:
   - Test: get_secret
     Class: get_secret
     Arguments:
-      - --sync
-      - --parallel 64 --sync
+      - --parallel 4

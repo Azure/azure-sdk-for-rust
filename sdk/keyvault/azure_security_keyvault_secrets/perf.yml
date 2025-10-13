@@ -19,7 +19,7 @@ parameters:
 - name: Tests
   displayName: Tests (regex of tests to run)
   type: string
-  default: '^(get-secret)$'
+  default: '^(get_secret)$'
 - name: Arguments
   displayName: Arguments (regex of arguments to run)
   type: string
