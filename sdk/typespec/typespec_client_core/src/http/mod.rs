@@ -60,7 +60,7 @@ where
     }
 }
 
-/// Extension trait for `Url` to provide additional URL manipulation methods.
+/// Extension trait for [`Url`] to provide additional URL manipulation methods.
 pub trait UrlExt {
     /// Appends a path segment to the URL's path, handling slashes appropriately and preserving query parameters.
     fn append_path(&mut self, p: &str);
