@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    authentication_error, deserialize, get_authority_host, EntraIdErrorResponse,
-    EntraIdTokenResponse, TokenCache,
+    authentication_error, deserialize, get_authority_host, validate_not_empty, validate_tenant_id,
+    EntraIdErrorResponse, EntraIdTokenResponse, TokenCache,
 };
 use azure_core::{
     base64,
@@ -21,13 +21,13 @@ use azure_core::{
 // cspell:ignore pkey
 use openssl::{
     error::ErrorStack,
-    hash::{hash, DigestBytes, MessageDigest},
+    hash::MessageDigest,
     pkcs12::Pkcs12,
     pkey::{PKey, Private},
     sign::Signer,
     x509::X509,
 };
-use std::{str, sync::Arc};
+use std::sync::Arc;
 use url::form_urlencoded;
 
 /// Refresh time to use in seconds.
@@ -66,11 +66,10 @@ impl Default for ClientCertificateCredentialOptions {
 #[derive(Debug)]
 pub struct ClientCertificateCredential {
     client_id: String,
-    certificate: Secret,
-    password: Secret,
+    key: PKey<Private>,
     endpoint: Url,
     pipeline: Pipeline,
-    send_certificate_chain: bool,
+    header: String,
     cache: TokenCache,
 }
 
@@ -82,12 +81,41 @@ impl ClientCertificateCredential {
         client_certificate: C,
         client_certificate_password: P,
         options: Option<ClientCertificateCredentialOptions>,
-    ) -> azure_core::Result<Arc<ClientCertificateCredential>>
-    where
-        C: Into<Secret>,
-        P: Into<Secret>,
-    {
+    ) -> azure_core::Result<Arc<ClientCertificateCredential>> {
+        validate_tenant_id(&tenant_id)?;
+        validate_not_empty(&client_id, "no client ID specified")?;
+
         let options = options.unwrap_or_default();
+
+        let cert_bytes = base64::decode(certificate.into().secret())
+            .with_context_fn(ErrorKind::Credential, || {
+                "failed to decode base64 certificate data"
+            })?;
+
+        let (key, cert, ca_chain) = parse_certificate(&cert_bytes, options.password.as_ref())?;
+        let thumbprint = cert
+            .digest(MessageDigest::sha1())
+            .with_context(ErrorKind::Credential, "failed to compute thumbprint")?
+            .to_vec();
+        let thumbprint = base64::encode(thumbprint);
+        let header = if options.send_certificate_chain {
+            let base_signature = get_encoded_cert(&cert)?;
+            let x5c = match &ca_chain {
+                Some(chain) => {
+                    let chain = chain
+                        .iter()
+                        .map(get_encoded_cert)
+                        .collect::<azure_core::Result<Vec<String>>>()?
+                        .join(",");
+                    format!("{base_signature},{chain}")
+                }
+                None => base_signature,
+            };
+            format!(r#"{{"alg":"RS256","typ":"JWT","x5c":[{x5c}],"x5t":"{thumbprint}"}}"#)
+        } else {
+            format!(r#"{{"alg":"RS256","typ":"JWT","x5t":"{thumbprint}"}}"#)
+        };
+
         let authority_host = get_authority_host(None, options.client_options.cloud.as_deref())?;
         let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
@@ -106,11 +134,10 @@ impl ClientCertificateCredential {
 
         Ok(Arc::new(ClientCertificateCredential {
             client_id,
-            certificate: client_certificate.into(),
-            password: client_certificate_password.into(),
+            key,
             endpoint,
             pipeline,
-            send_certificate_chain: options.send_certificate_chain,
+            header: ClientCertificateCredential::as_jwt_part(header.as_bytes()),
             cache: TokenCache::new(),
         }))
     }
@@ -119,12 +146,6 @@ impl ClientCertificateCredential {
         let mut signer = Signer::new(MessageDigest::sha256(), pkey)?;
         signer.update(jwt.as_bytes())?;
         signer.sign_to_vec()
-    }
-
-    fn get_thumbprint(cert: &X509) -> Result<DigestBytes, ErrorStack> {
-        let der = cert.to_der()?;
-        let digest = hash(MessageDigest::sha1(), &der)?;
-        Ok(digest)
     }
 
     fn as_jwt_part(part: &[u8]) -> String {
@@ -136,67 +157,18 @@ impl ClientCertificateCredential {
         scopes: &[&str],
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
-        let certificate = base64::decode(self.certificate.secret())
-            .map_err(|_| Error::with_message(ErrorKind::Credential, "Base64 decode failed"))?;
-
-        let pkcs12_certificate = Pkcs12::from_der(&certificate)
-            .map_err(openssl_error)?
-            .parse2(self.password.secret())
-            .map_err(openssl_error)?;
-
-        let Some(cert) = pkcs12_certificate.cert.as_ref() else {
-            return Err(Error::with_message(
-                ErrorKind::Credential,
-                "Certificate not found",
-            ));
-        };
-
-        let Some(pkey) = pkcs12_certificate.pkey.as_ref() else {
-            return Err(Error::with_message(
-                ErrorKind::Credential,
-                "Private key not found",
-            ));
-        };
-
-        let thumbprint =
-            ClientCertificateCredential::get_thumbprint(cert).map_err(openssl_error)?;
-
         let uuid = Uuid::new_v4();
         let current_time = OffsetDateTime::now_utc().unix_timestamp();
         let expiry_time = current_time + DEFAULT_REFRESH_TIME;
-        let x5t = base64::encode(thumbprint);
-
-        let header = match self.send_certificate_chain {
-            true => {
-                let base_signature = get_encoded_cert(cert)?;
-                let x5c = match pkcs12_certificate.ca {
-                    Some(chain) => {
-                        let chain = chain
-                            .into_iter()
-                            .map(|x| get_encoded_cert(&x))
-                            .collect::<azure_core::Result<Vec<String>>>()?
-                            .join(",");
-                        format! {"{},{}", base_signature, chain}
-                    }
-                    None => base_signature,
-                };
-                format!(
-                    r#"{{"alg":"RS256","typ":"JWT", "x5t":"{}", "x5c":[{}]}}"#,
-                    x5t, x5c
-                )
-            }
-            false => format!(r#"{{"alg":"RS256","typ":"JWT", "x5t":"{}"}}"#, x5t),
-        };
-        let header = ClientCertificateCredential::as_jwt_part(header.as_bytes());
-
         let payload = format!(
             r#"{{"aud":"{}","exp":{},"iss": "{}", "jti": "{}", "nbf": {}, "sub": "{}"}}"#,
             self.endpoint, expiry_time, self.client_id, uuid, current_time, self.client_id
         );
         let payload = ClientCertificateCredential::as_jwt_part(payload.as_bytes());
 
-        let jwt = format!("{}.{}", header, payload);
-        let signature = ClientCertificateCredential::sign(&jwt, pkey).map_err(openssl_error)?;
+        let jwt = format!("{}.{}", self.header, payload);
+        let signature = ClientCertificateCredential::sign(&jwt, &self.key)
+            .with_context(ErrorKind::Credential, "failed to sign JWT")?;
         let sig = ClientCertificateCredential::as_jwt_part(&signature);
         let client_assertion = format!("{}.{}", jwt, sig);
 
@@ -258,15 +230,50 @@ impl ClientCertificateCredential {
     }
 }
 
+/// Parse a base64-encoded PKCS12 certificate into key, certificate, and optional CA chain.
+fn parse_certificate(
+    cert_bytes: &[u8],
+    password: Option<&Secret>,
+) -> azure_core::Result<(PKey<Private>, X509, Option<Vec<X509>>)> {
+    let pkcs12 = Pkcs12::from_der(cert_bytes).with_context(
+        ErrorKind::Credential,
+        "deserializing PKCS12 from DER failed",
+    )?;
+    let parsed = pkcs12
+        .parse2(password.map(|p| p.secret()).unwrap_or(""))
+        .with_context(ErrorKind::Credential, "PKCS12 parsing failed")?;
+    let key = parsed.pkey.ok_or_else(|| {
+        Error::with_message(
+            ErrorKind::Credential,
+            "PKCS12 bundle contains no private key",
+        )
+    })?;
+    let cert = parsed.cert.ok_or_else(|| {
+        Error::with_message(
+            ErrorKind::Credential,
+            "PKCS12 bundle contains no certificate",
+        )
+    })?;
+    let ca_chain = parsed.ca.and_then(|stack| {
+        let certs: Vec<X509> = stack.into_iter().collect();
+        if certs.is_empty() {
+            None
+        } else {
+            Some(certs)
+        }
+    });
+
+    Ok((key, cert, ca_chain))
+}
+
 fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
     Ok(format!(
         "\"{}\"",
-        base64::encode(cert.to_pem().map_err(openssl_error)?)
+        base64::encode(
+            cert.to_pem()
+                .with_context(ErrorKind::Credential, "PEM encoding failed")?
+        )
     ))
-}
-
-fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
-    Error::new(ErrorKind::Credential, err)
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -432,6 +439,17 @@ mod tests {
             .expect("cached token");
         assert_eq!(token.token.secret(), cached_token.token.secret());
         assert_eq!(token.expires_on, cached_token.expires_on);
+    }
+
+    #[test]
+    fn invalid_certificate() {
+        ClientCertificateCredential::new(
+            FAKE_TENANT_ID.to_string(),
+            FAKE_CLIENT_ID.to_string(),
+            "not a certificate".to_string(),
+            None,
+        )
+        .expect_err("invalid certificate");
     }
 
     #[test]
