@@ -202,9 +202,15 @@ try {
   }
 
   if ($OutBuildOrderFile) {
-    $buildOrder = ConvertTo-Json $packages.name
-    Write-Host "Writing build order to $OutBuildOrderFile ($buildOrder)"
-    $buildOrder | Out-File -FilePath $OutBuildOrderFile -Encoding utf8 -Force
+    $buildOrder = @()
+    foreach ($package in $packages) {
+      if ($package.OutputPackage) {
+        $buildOrder += $package.name
+      }
+    }
+    $buildOrderJson = ConvertTo-Json $buildOrder
+    Write-Host "Writing build order to $OutBuildOrderFile ($buildOrderJson)"
+    $buildOrderJson | Out-File -FilePath $OutBuildOrderFile -Encoding utf8 -Force
   }
 
   foreach ($package in $packages) {
