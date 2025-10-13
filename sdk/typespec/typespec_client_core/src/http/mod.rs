@@ -75,7 +75,7 @@ pub trait UrlExt: crate::private::Sealed {
     /// url.append_path("bar");
     /// assert_eq!(url.as_str(), "https://contoso.com/foo/bar?a=1");
     /// ```
-    fn append_path(&mut self, p: &str);
+    fn append_path(&mut self, path: impl AsRef<str>);
 }
 
 impl UrlExt for Url {
