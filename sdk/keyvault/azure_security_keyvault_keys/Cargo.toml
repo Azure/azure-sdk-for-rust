@@ -45,3 +45,8 @@ workspace = true
 [[bench]]
 name = "benchmarks"
 harness = false
+
+[[test]]
+name = "perf"
+path = "perf/perf_tests.rs"
+harness = false

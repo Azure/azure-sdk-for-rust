@@ -159,15 +159,16 @@ Before you can declare your test pipeline, you need to create some infrastructur
 
 Test pipelines are defined using a [`perf.yml`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/storage/azure_storage_blob/perf.yml) file declared in the package directory.
 
-For example, from the `storage/azure_storage_blob` package:
+For example (from the `storage/azure_storage_blob` package):
 
 ```yml
 trigger: none
 
 pr: none
 
+# Schedule the pipeline to run at UTC+7 Hours (Midnight Pacific time)
 schedules:
-- cron: "0 0 * * *"
+- cron: "0 7 * * *"
   displayName: Daily midnight run.
   branches:
     include:
@@ -211,9 +212,7 @@ extends:
     Profile: ${{ parameters.Profile }}
 ```
 
-***TODO Update this to include yml based triggers***
-
-You'll want to configure the `ServiceDirectory` field to match the location of your package.
+You'll want to configure the `ServiceDirectory` field to match the location of your package, and tweak the default values for the variables to match your performance tests.
 
 #### Performance Test Yaml Configuration
 
@@ -263,7 +262,8 @@ And FINALLY, you need to create a pull request containing this file and find the
 
 #### Creating the performance pipeline
 
-Once the pull request
+Once the pull request you created above has been committed to the branch, you can start to create the performance pipelines (note: DO NOT ATTEMPT TO CREATE THE PIPELINE UNTIL THE `perf.yml` file mentioned above is in `main` - if you don't, you are highly likely to disrupt all operations in the repository).
+
 Navigate to the `azure-sdk` Azure DevOps instance, and select the `internal` project.
 
 Within the `internal` project, select `Pipelines`, select "All" from the right hand pane. This will show a tree structured hierarchy of pipelines.
@@ -280,4 +280,14 @@ Next select `Azure/azure-sdk-for-rust` to specify the Rust SDK and configure you
 
 Select your pipeline file from the main branch of the repository and you're almost done.
 
-The next thing you want to do is to "save" the new pipeline. You can also attempt to `run` the pipeline at this point.
+The next thing you want to do is to "save" the new pipeline, this will cause your pipeline to be created. You can also attempt to `run` the pipeline at this point but it is likely to fail.
+
+You now need to set the required variables or the pipeline. Performance pipelines require the `Secrets for Resource Provisioner` variable group added to the pipeline. To add this, select the newly created pipeline, and click on `Edit`. Navigate to the `...` menu and select `Triggers`. This brings up the `Yaml`, `Variables`, `Triggers` and `History` edit. Make sure that all the triggers (included scheduled triggers) are cleared from the `Triggers` - Rust performance pipeline triggers are managed by the pipeline yaml file, rather than in the Azure DevOps user interface.
+
+Select `Variables`, which allows you to add variables to the pipeline. You want to select `Variable groups` in the left hand column and select `Link variable group` in the right hand column.
+
+That will bring up a pane on the right with a number of variable groups. You want to select the `Secrets for Resource Provisioner` variable group and click the `Link` button.
+
+Once you've saved these changes, your pipeline should be ready to run.
+
+You may need to ask for help from the Azure SDK Engineering Systems team to enable access to test resources for your pipeline, but that should be a relatively straightforward request.
