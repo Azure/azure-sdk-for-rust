@@ -37,25 +37,16 @@ const AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY: &str = "AZURE_CLIENT_SEND_CER
 
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct ClientCertificateCredentialOptions {
     /// Options for the credential's HTTP pipeline.
     pub client_options: ClientOptions,
 
     /// Whether to send the certificate chain.
     pub send_certificate_chain: bool,
-}
 
-impl Default for ClientCertificateCredentialOptions {
-    fn default() -> Self {
-        let send_certificate_chain = std::env::var(AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY)
-            .map(|s| s == "1" || s.to_lowercase() == "true")
-            .unwrap_or(false);
-        Self {
-            client_options: ClientOptions::default(),
-            send_certificate_chain,
-        }
-    }
+    /// The password for the certificate.
+    pub password: Option<Secret>,
 }
 
 /// Enables authentication to Azure Active Directory using a client certificate that
@@ -98,7 +89,10 @@ impl ClientCertificateCredential {
             .with_context(ErrorKind::Credential, "failed to compute thumbprint")?
             .to_vec();
         let thumbprint = base64::encode(thumbprint);
-        let header = if options.send_certificate_chain {
+        let send_x5c = std::env::var(AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY)
+            .map(|s| s == "1" || s.to_lowercase() == "true")
+            .unwrap_or(false);
+        let header = if send_x5c {
             let base_signature = get_encoded_cert(&cert)?;
             let x5c = match &ca_chain {
                 Some(chain) => {
