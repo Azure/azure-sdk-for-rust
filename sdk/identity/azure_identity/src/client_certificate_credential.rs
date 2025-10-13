@@ -42,9 +42,6 @@ pub struct ClientCertificateCredentialOptions {
     /// Options for the credential's HTTP pipeline.
     pub client_options: ClientOptions,
 
-    /// Whether to send the certificate chain.
-    pub send_certificate_chain: bool,
-
     /// The password for the certificate.
     pub password: Option<Secret>,
 }
@@ -66,11 +63,10 @@ pub struct ClientCertificateCredential {
 
 impl ClientCertificateCredential {
     /// Create a new `ClientCertificateCredential`.
-    pub fn new<C, P>(
+    pub fn new(
         tenant_id: String,
         client_id: String,
-        client_certificate: C,
-        client_certificate_password: P,
+        certificate: impl Into<Secret>,
         options: Option<ClientCertificateCredentialOptions>,
     ) -> azure_core::Result<Arc<ClientCertificateCredential>> {
         validate_tenant_id(&tenant_id)?;
@@ -323,7 +319,6 @@ mod tests {
                 FAKE_TENANT_ID.to_string(),
                 FAKE_CLIENT_ID.to_string(),
                 Secret::new(TEST_CERT.to_string()),
-                Secret::new(""),
                 Some(ClientCertificateCredentialOptions {
                     client_options: ClientOptions {
                         transport: Some(Transport::new(Arc::new(sts))),
@@ -362,7 +357,6 @@ mod tests {
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
             TEST_CERT.to_string(),
-            Secret::new(""),
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
@@ -403,7 +397,6 @@ mod tests {
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
             TEST_CERT.to_string(),
-            Secret::new(""),
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
@@ -452,7 +445,6 @@ mod tests {
             "not a valid tenant".to_string(),
             FAKE_CLIENT_ID.to_string(),
             TEST_CERT.to_string(),
-            Secret::new(""),
             None,
         )
         .expect_err("invalid tenant ID");
@@ -464,7 +456,6 @@ mod tests {
             FAKE_TENANT_ID.to_string(),
             FAKE_CLIENT_ID.to_string(),
             TEST_CERT.to_string(),
-            Secret::new(""),
             None,
         )
         .expect("valid credential")
