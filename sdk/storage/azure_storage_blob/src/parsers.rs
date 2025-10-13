@@ -62,7 +62,46 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
     Ok(format_expression.join(" and "))
 }
 
-/// Parses the container name and blob name from a full blob URL.
+// /// Parses the container name and blob name from a full blob URL.
+// ///
+// /// # Arguments
+// ///
+// /// * `url` - The URL to parse.
+// ///
+// /// # Returns
+// ///
+// /// A tuple containing (container_name, blob_name).
+// pub(crate) fn parse_url_name_components(url: &Url) -> azure_core::Result<(String, String)> {
+//     let path_segments: Vec<&str> = url
+//         .path_segments()
+//         .ok_or_else(|| {
+//             azure_core::Error::with_message(
+//                 azure_core::error::ErrorKind::Other,
+//                 format!("Invalid blob URL '{}': URL must have a path component with container name and blob name.", url),
+//             )
+//         })?
+//         .collect();
+
+//     if path_segments.len() < 2 {
+//         return Err(azure_core::Error::with_message(
+//             azure_core::error::ErrorKind::Other,
+//             format!(
+//                 "Invalid blob URL '{}': URL path must contain both container name and blob name",
+//                 url
+//             ),
+//         ));
+//     }
+
+//     // First segment is the container name
+//     let container_name = path_segments[0].to_string();
+
+//     // Remaining segments form the blob name
+//     let blob_name = path_segments[1..].join("/");
+
+//     Ok((container_name, blob_name))
+// }
+
+/// Parses the container name and blob name from a full blob URL and applies first-order decoding.
 ///
 /// # Arguments
 ///
@@ -70,8 +109,17 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
 ///
 /// # Returns
 ///
-/// A tuple containing (container_name, blob_name). Both will be URL-decoded.
-pub(crate) fn parse_url_name_components(url: &Url) -> azure_core::Result<(String, String)> {
+/// A tuple containing (container_name, blob_name). Both will be percent-decoded.
+/// Parses the container name and blob name from a full blob URL and applies percent-decoding.
+///
+/// # Arguments
+///
+/// * `url` - The URL to parse.
+///
+/// # Returns
+///
+/// A tuple containing (container_name, blob_name). Both will be percent-decoded.
+pub(crate) fn parse_url_name_components_decoded(url: &Url) -> azure_core::Result<(String, String)> {
     let path_segments: Vec<&str> = url
         .path_segments()
         .ok_or_else(|| {
@@ -92,11 +140,28 @@ pub(crate) fn parse_url_name_components(url: &Url) -> azure_core::Result<(String
         ));
     }
 
-    // First segment is the container name (automatically URL-decoded by url crate)
-    let container_name = path_segments[0].to_string();
+    // First segment is the container name - percent-decode it
+    let container_name = percent_encoding::percent_decode_str(path_segments[0])
+        .decode_utf8()
+        .map_err(|e| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!("Failed to decode container name: {}", e),
+            )
+        })?
+        .to_string();
 
-    // Remaining segments form the blob name
-    let blob_name = path_segments[1..].join("/");
+    // Remaining segments form the blob name - join then percent-decode
+    let blob_name_encoded = path_segments[1..].join("/");
+    let blob_name = percent_encoding::percent_decode_str(&blob_name_encoded)
+        .decode_utf8()
+        .map_err(|e| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!("Failed to decode blob name: {}", e),
+            )
+        })?
+        .to_string();
 
     Ok((container_name, blob_name))
 }

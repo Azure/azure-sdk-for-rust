@@ -794,10 +794,6 @@ impl BlockBlobClient {
                 .append_pair("timeout", &timeout.to_string());
         }
         let mut request = Request::new(url, Method::Put);
-        println!(
-            "Request URI (logical representation, Url's Display): {}",
-            request.url().as_str()
-        );
         request.insert_header("content-length", content_length.to_string());
         if let Some(transactional_content_md5) = options.transactional_content_md5 {
             request.insert_header("content-md5", encode(transactional_content_md5));

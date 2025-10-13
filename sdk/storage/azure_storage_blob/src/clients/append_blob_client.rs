@@ -9,7 +9,6 @@ use crate::{
         AppendBlobClientCreateOptions, AppendBlobClientCreateResult, AppendBlobClientSealOptions,
         AppendBlobClientSealResult,
     },
-    parsers::parse_url_name_components,
     pipeline::StorageHeadersPolicy,
     AppendBlobClientOptions, BlobClientOptions,
 };

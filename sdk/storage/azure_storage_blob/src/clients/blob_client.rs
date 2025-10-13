@@ -22,7 +22,7 @@ use crate::{
         BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList, StorageErrorCode,
     },
-    parsers::parse_url_name_components,
+    parsers::parse_url_name_components_decoded,
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
 };
@@ -121,10 +121,6 @@ impl BlobClient {
         Ok(Self {
             endpoint: client.endpoint().clone(),
             client,
-            // So the contentious point is this: Do we store the container_name/blob_name as-is, or do we just go through the same exact path as the from_blob_url function
-            // i.e. Input Blob Name: a/b/c/d\blob/ (but again, the Service treats '/' and '\' as valid path separators)
-            // Saved as-is, blob_name() returns: a/b/c/d\blob/
-            // Parsed through the URL parser, blob_name() returns: a/b/c/d/blob/ (since on the Service the '\' was transformed to '/')
             container_name: container_name.to_string(),
             blob_name: blob_name.to_string(),
         })
@@ -137,7 +133,7 @@ impl BlobClient {
     ) -> Result<Self> {
         let client = GeneratedBlobClient::from_url(blob_url.clone(), credential, options)?;
 
-        let (container_name, blob_name) = parse_url_name_components(&blob_url)?;
+        let (container_name, blob_name) = parse_url_name_components_decoded(&blob_url)?;
 
         Ok(Self {
             endpoint: client.endpoint().clone(),
