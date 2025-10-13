@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Keyvault Secrets performance tests.
+//! Keyvault Keys performance tests.
 //!
-//! This test measures the performance of getting a secret from Azure Key Vault.
-//! It sets up a secret in the Key Vault during the setup phase and then repeatedly retrieves it
+//! This test measures the performance of creating a key in Azure Key Vault.
+//! It sets up the parameters for a key in the Key Vault during the setup phase and then repeatedly creates a key
 //! during the run phase. The test can be configured with the vault URL via command line arguments
 //! to target different Key Vault instances.
 //!
 //! To run the test, use the following command line arguments:
 //!
-//! cargo test --package azure_security_keyvault_secrets --test perf -- --duration 10 --parallel 20 get_secret -u https://<my_vault>.vault.azure.net/
+//! cargo test --package azure_security_keyvault_keys --test perf -- --duration 10 --parallel 20 create_key -u https://<my_vault>.vault.azure.net/
 //!
 
 use crate::ENV_NAME;
