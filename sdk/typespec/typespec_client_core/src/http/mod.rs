@@ -71,8 +71,9 @@ impl UrlExt for Url {
         if self.path() == "/" {
             self.set_path(p);
         } else if !p.is_empty() && p != "/" {
-            match if self.path().ends_with('/') { 1 } else { 0 }
-                + if p.starts_with('/') { 1 } else { 0 }
+            let mut combinator = self.path().ends_with('/') { 1 } else { 0 };
+            combinator += if p.starts_with('/') { 1 } else { 0 };
+            match combinator {
             {
                 0 => self.set_path(&format!("{}/{}", self.path(), p)),
                 1 => self.set_path(&(self.path().to_owned() + p)),
