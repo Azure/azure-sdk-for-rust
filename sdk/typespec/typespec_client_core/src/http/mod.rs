@@ -87,8 +87,8 @@ impl UrlExt for Url {
             combinator += if p.as_ref().starts_with('/') { 1 } else { 0 };
             match combinator {
                 0 => self.set_path(&format!("{}/{}", self.path(), p.as_ref())),
-                1 => self.set_path(&(self.path().to_owned() + p.as_ref())),
-                _ => self.set_path(&(self.path()[..self.path().len() - 1].to_owned() + p.as_ref())),
+                1 => self.set_path(&format!("{}{}", self.path(), p.as_ref())),
+                _ => self.set_path(&format!("{}{}", &self.path()[..self.path().len() - 1], p.as_ref())),
             }
         }
     }
