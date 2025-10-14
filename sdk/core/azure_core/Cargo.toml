@@ -97,5 +97,10 @@ name = "benchmarks"
 harness = false
 
 [[bench]]
+name = "deserialization"
+harness = false
+required-features = ["xml"]
+
+[[bench]]
 name = "http_transport_benchmarks"
 harness = false
