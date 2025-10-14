@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Removed `ErrorKind::MockFramework`.
+
 ### Bugs Fixed
 
 ### Other Changes
