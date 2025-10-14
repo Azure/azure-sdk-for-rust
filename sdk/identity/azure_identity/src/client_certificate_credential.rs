@@ -252,7 +252,7 @@ impl ClientCertificateCredential {
         match rsp.status() {
             StatusCode::Ok => {
                 let response: EntraIdTokenResponse =
-                    deserialize("ClientCertificateCredential", rsp)?;
+                    deserialize(stringify!(ClientCertificateCredential), rsp)?;
                 Ok(AccessToken::new(
                     response.access_token,
                     OffsetDateTime::now_utc() + Duration::seconds(response.expires_in),
@@ -260,7 +260,7 @@ impl ClientCertificateCredential {
             }
             _ => {
                 let error_response: EntraIdErrorResponse =
-                    deserialize("ClientCertificateCredential", rsp)?;
+                    deserialize(stringify!(ClientCertificateCredential), rsp)?;
                 let message = if error_response.error_description.is_empty() {
                     "authentication failed".to_string()
                 } else {
