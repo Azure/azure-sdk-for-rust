@@ -3,9 +3,9 @@
 [workspace]
 resolver = "2"
 members = [
-  "sdk/typespec",
-  "sdk/typespec/typespec_client_core",
-  "sdk/typespec/typespec_macros",
+  "sdk/core/typespec",
+  "sdk/core/typespec_client_core",
+  "sdk/core/typespec_macros",
   "sdk/core/azure_core",
   "sdk/core/azure_core_amqp",
   "sdk/core/azure_core_macros",
@@ -39,17 +39,17 @@ rust-version = "1.85"
 
 [workspace.dependencies.typespec]
 default-features = false
-path = "sdk/typespec"
+path = "sdk/core/typespec"
 version = "0.10.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
-path = "sdk/typespec/typespec_client_core"
+path = "sdk/core/typespec_client_core"
 version = "0.9.0"
 
 [workspace.dependencies.typespec_macros]
 version = "0.9.0"
-path = "sdk/typespec/typespec_macros"
+path = "sdk/core/typespec_macros"
 
 [workspace.dependencies.azure_core]
 default-features = false

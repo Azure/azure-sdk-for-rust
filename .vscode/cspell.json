@@ -201,7 +201,7 @@
       ]
     },
     {
-      "filename": "sdk/typespec/**",
+      "filename": "sdk/core/typespec*/**",
       "flagWords": [
         "azure",
         "azurite"

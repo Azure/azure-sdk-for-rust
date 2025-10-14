@@ -60,7 +60,7 @@ When you submit a pull request, a CLA-bot will automatically determine whether y
 
 This project has adopted the [Microsoft Open Source Code of Conduct]. For more information see the [Code of Conduct FAQ] or contact <opencode@microsoft.com> with any additional questions or comments.
 
-[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/typespec/typespec_macros/src
+[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/core/typespec_macros/src
 [Package (crates.io)]: https://crates.io/crates/typespec_macros
 [API reference documentation]: https://docs.rs/typespec_macros
 [TypeSpec documentation]: https://typespec.io/

@@ -82,7 +82,7 @@
 - Changed `TryFrom<&'static str> for RequestContent<T, F>` to `RequestContent::from_static()`.
 - Changed `TryFrom<Bytes> for RequestContent<T, F>` to `From<Bytes> for RequestContent<T, F>` because it was already infallible.
 - Removed `TryFrom<Vec<u8>> for RequestContent<T, F>` since `RequestContent::from()` already exists.
-- Removed feature `reqwest_rustls_tls`. See [README.md](https://github.com/heaths/azure-sdk-for-rust/blob/main/sdk/typespec/typespec_client_core/README.md) for alternative HTTP client configuration.
+- Removed feature `reqwest_rustls_tls`. See [README.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/typespec_client_core/README.md) for alternative HTTP client configuration.
 - Removed the `fs` module including the `FileStream` and `FileStreamBuilder` types. Moved to `examples/` to copy if needed.
 - Removed the `setters` macro.
 - Removed the cloud service specific retry headers from typespec_client_core.
