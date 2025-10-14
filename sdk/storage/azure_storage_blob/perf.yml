@@ -2,8 +2,9 @@ trigger: none
 
 pr: none
 
+# Schedule the pipeline to run at UTC+7 Hours (Midnight Pacific time)
 schedules:
-- cron: "0 0 * * *"
+- cron: "0 7 * * *"
   displayName: Daily midnight build
   branches:
     include:
