@@ -8,10 +8,9 @@
 
 - Removed `constants` module.
 - Removed `CustomHeaders` policy.
+- Removed `ErrorKind::MockFramework`.
 
 ### Bugs Fixed
-
-- Removed `ErrorKind::MockFramework`.
 
 ### Other Changes
 

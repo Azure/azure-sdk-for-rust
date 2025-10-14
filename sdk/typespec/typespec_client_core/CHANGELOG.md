@@ -7,10 +7,9 @@
 ### Breaking Changes
 
 - Removed `CustomHeaders` policy.
+- Removed `ErrorKind::MockFramework`.
 
 ### Bugs Fixed
-
-- Removed `ErrorKind::MockFramework`.
 
 ### Other Changes
 
