@@ -39,11 +39,17 @@ use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage blob, although that blob may not yet exist.
 pub struct BlobClient {
-    pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobClient,
 }
 
 impl GeneratedBlobClient {
+    /// Creates a new GeneratedBlobClient from a blob URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.Blob")]
     pub fn from_url(
         blob_url: Url,
@@ -91,7 +97,7 @@ impl GeneratedBlobClient {
     }
 }
 impl BlobClient {
-    /// Creates a new BlobClient.
+    /// Creates a new BlobClient, using Entra ID authentication.
     ///
     /// # Arguments
     ///
@@ -109,35 +115,32 @@ impl BlobClient {
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
-        // Build Blob URL, Url crate handles encoding only path params
         url.path_segments_mut()
             .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
             .extend([container_name, blob_name]);
 
         let client = GeneratedBlobClient::from_url(url, credential, options)?;
-        Ok(Self {
-            endpoint: client.endpoint().clone(),
-            client,
-        })
+        Ok(Self { client })
     }
 
+    /// Creates a new BlobClient from a blob URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
     pub fn from_blob_url(
         blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
-        let client = GeneratedBlobClient::from_url(blob_url.clone(), credential, options)?;
+        let client = GeneratedBlobClient::from_url(blob_url, credential, options)?;
 
-        Ok(Self {
-            endpoint: client.endpoint().clone(),
-            client,
-        })
+        Ok(Self { client })
     }
 
     /// Returns a new instance of AppendBlobClient.
-    ///
-    /// # Arguments
-    ///
     pub fn append_blob_client(&self) -> AppendBlobClient {
         AppendBlobClient {
             client: GeneratedAppendBlobClient {
@@ -150,9 +153,6 @@ impl BlobClient {
     }
 
     /// Returns a new instance of BlockBlobClient.
-    ///
-    /// # Arguments
-    ///
     pub fn block_blob_client(&self) -> BlockBlobClient {
         BlockBlobClient {
             client: GeneratedBlockBlobClient {
@@ -165,9 +165,6 @@ impl BlobClient {
     }
 
     /// Returns a new instance of PageBlobClient.
-    ///
-    /// # Arguments
-    ///
     pub fn page_blob_client(&self) -> PageBlobClient {
         PageBlobClient {
             client: GeneratedPageBlobClient {

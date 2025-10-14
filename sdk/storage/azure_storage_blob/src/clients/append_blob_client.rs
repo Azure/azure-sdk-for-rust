@@ -10,21 +10,76 @@ use crate::{
         AppendBlobClientSealResult,
     },
     pipeline::StorageHeadersPolicy,
-    AppendBlobClientOptions, BlobClientOptions,
+    AppendBlobClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url,
+        NoFormat, Pipeline, RequestContent, Response, Url,
     },
-    Bytes, Result,
+    tracing, Bytes, Result,
 };
 use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage Append blob, although that blob may not yet exist.
 pub struct AppendBlobClient {
     pub(super) client: GeneratedAppendBlobClient,
+}
+
+impl GeneratedAppendBlobClient {
+    /// Creates a new GeneratedAppendBlobClient from a blob URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the Append blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Blob.AppendBlob")]
+    pub fn from_url(
+        blob_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<AppendBlobClientOptions>,
+    ) -> Result<Self> {
+        let mut options = options.unwrap_or_default();
+
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+
+        let per_retry_policies = if let Some(token_credential) = credential {
+            if !blob_url.scheme().starts_with("https") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{blob_url} must use http(s)"),
+                ));
+            }
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
+        };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
+
+        Ok(Self {
+            endpoint: blob_url,
+            version: options.version,
+            pipeline,
+        })
+    }
 }
 
 impl AppendBlobClient {
@@ -39,33 +94,35 @@ impl AppendBlobClient {
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
-        container_name: String,
-        blob_name: String,
-        credential: Arc<dyn TokenCredential>,
+        container_name: &str,
+        blob_name: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<AppendBlobClientOptions>,
     ) -> Result<Self> {
-        let mut options = options.unwrap_or_default();
-
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
-
         let mut url = Url::parse(endpoint)?;
-        if !url.scheme().starts_with("http") {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{url} must use http(s)"),
-            ));
-        }
 
-        // Build Blob URL, Url crate handles encoding only path params
         url.path_segments_mut()
-            .expect("Cannot be base")
-            .extend([&container_name, &blob_name]);
+            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
+            .extend([container_name, blob_name]);
 
-        let client = GeneratedAppendBlobClient::new(url.as_str(), credential, Some(options))?;
+        let client = GeneratedAppendBlobClient::from_url(url, credential, options)?;
+        Ok(Self { client })
+    }
+
+    /// Creates a new AppendBlobClient from a blob URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the Append blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn from_blob_url(
+        blob_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<AppendBlobClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedAppendBlobClient::from_url(blob_url, credential, options)?;
+
         Ok(Self { client })
     }
 

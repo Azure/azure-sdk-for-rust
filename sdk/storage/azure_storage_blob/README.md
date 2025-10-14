@@ -48,8 +48,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
         "https://<storage_account_name>.blob.core.windows.net/", // endpoint
-        "container_name".to_string(),                            // container name
-        "blob_name".to_string(),                                 // blob name
+        "container_name",                                        // container name
+        "blob_name",                                             // blob name
         Some(credential),                                        // credential
         Some(BlobClientOptions::default()),                      // BlobClient options
     )?;
@@ -75,8 +75,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
         "https://<storage_account_name>.blob.core.windows.net/", // endpoint
-        "container_name".to_string(),                            // container name
-        "blob_name".to_string(),                                 // blob name
+        "container_name",                                        // container name
+        "blob_name",                                             // blob name
         Some(credential),                                        // credential
         Some(BlobClientOptions::default()),                      // BlobClient options
     )?;
@@ -96,8 +96,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
         "https://<storage_account_name>.blob.core.windows.net/",
-        "container_name".to_string(),
-        "blob_name".to_string(),
+        "container_name",
+        "blob_name",
         Some(credential),
         Some(BlobClientOptions::default()),
     )?;
@@ -127,8 +127,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
         "https://<storage_account_name>.blob.core.windows.net/",
-        "container_name".to_string(),
-        "blob_name".to_string(),
+        "container_name",
+        "blob_name",
         Some(credential),
         Some(BlobClientOptions::default()),
     )?;

@@ -18,16 +18,70 @@ use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, PageIterator, RequestContent, Response, Url, XmlFormat,
+        NoFormat, PageIterator, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
-    Result,
+    tracing, Result,
 };
 use std::sync::Arc;
 
 /// A client to interact with an Azure storage account.
 pub struct BlobServiceClient {
-    pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobServiceClient,
+}
+
+impl GeneratedBlobServiceClient {
+    /// Creates a new GeneratedBlobServiceClient from the URL of the Azure storage account.
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Blob.Service")]
+    pub fn from_url(
+        url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<ServiceClientOptions>,
+    ) -> Result<Self> {
+        let mut options = options.unwrap_or_default();
+
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+
+        let per_retry_policies = if let Some(token_credential) = credential {
+            if !url.scheme().starts_with("https") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{url} must use http(s)"),
+                ));
+            }
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
+        };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
+
+        Ok(Self {
+            endpoint: url,
+            version: options.version,
+            pipeline,
+        })
+    }
 }
 
 impl BlobServiceClient {
@@ -40,25 +94,30 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
-        credential: Arc<dyn TokenCredential>,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<ServiceClientOptions>,
     ) -> Result<Self> {
-        let mut options = options.unwrap_or_default();
-
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
-
         let url = Url::parse(endpoint)?;
-        let client =
-            GeneratedBlobServiceClient::new(url.as_str(), credential.clone(), Some(options))?;
 
-        Ok(Self {
-            endpoint: client.endpoint().clone(),
-            client,
-        })
+        let client = GeneratedBlobServiceClient::from_url(url, credential, options)?;
+        Ok(Self { client })
+    }
+
+    /// Creates a new BlobServiceClient from the URL of the Azure storage account.
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn from_url(
+        url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<ServiceClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedBlobServiceClient::from_url(url, credential, options)?;
+
+        Ok(Self { client })
     }
 
     /// Returns a new instance of BlobContainerClient.
@@ -66,15 +125,15 @@ impl BlobServiceClient {
     /// # Arguments
     ///
     /// * `container_name` - The name of the container.
-    pub fn blob_container_client(&self, container_name: String) -> BlobContainerClient {
-        let mut container_url = self.endpoint.clone();
+    pub fn blob_container_client(&self, container_name: &str) -> BlobContainerClient {
+        let mut container_url = self.url().clone();
         container_url
             .path_segments_mut()
             .expect("Cannot be base")
-            .push(&container_name);
+            .push(container_name);
 
         let client = GeneratedBlobContainerClient {
-            endpoint: container_url.clone(),
+            endpoint: container_url,
             pipeline: self.client.pipeline.clone(),
             version: self.client.version.clone(),
             tracer: self.client.tracer.clone(),

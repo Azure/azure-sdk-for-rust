@@ -20,7 +20,7 @@ async fn test_create_page_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
 
     // Regular Create Scenario
@@ -59,7 +59,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
@@ -89,7 +89,7 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
     page_blob_client.create(512, None).await?;
     let data = vec![b'A'; 512];
@@ -123,7 +123,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
 
     // Blob Too Small Scenario
@@ -171,7 +171,7 @@ async fn test_set_sequence_number(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
 
     // Update Action
@@ -216,8 +216,8 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client_1 = container_client.blob_client(get_blob_name(recording));
-    let blob_client_2 = container_client.blob_client(get_blob_name(recording));
+    let blob_client_1 = container_client.blob_client(&get_blob_name(recording));
+    let blob_client_2 = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client_1 = blob_client_1.page_blob_client();
     let page_blob_client_2 = blob_client_2.page_blob_client();
 
@@ -245,7 +245,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .await?;
     page_blob_client_2
         .upload_pages_from_url(
-            blob_client_1.endpoint().as_str().into(),
+            blob_client_1.url().as_str().into(),
             format_page_range(0, data_b.len() as u64)?,
             data_b.len() as u64,
             format_page_range(512, data_b.len() as u64)?,
@@ -271,7 +271,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let page_blob_client = blob_client.page_blob_client();
     page_blob_client.create(1024, None).await?;
 

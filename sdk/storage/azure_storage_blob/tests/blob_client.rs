@@ -17,8 +17,9 @@ use azure_storage_blob::{
     },
     BlobClient, BlobClientOptions, BlobContainerClient, ContainerClientOptions,
 };
-use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
-use futures::TryStreamExt;
+use azure_storage_blob_test::{
+    create_test_blob, get_blob_name, get_container_client, get_container_name, recorded_test_setup,
+};
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 use typespec_client_core::http::Url;
@@ -28,7 +29,7 @@ async fn test_get_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, false).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Container Doesn't Exist Scenario
     let response = blob_client.get_properties(None).await;
@@ -66,7 +67,7 @@ async fn test_set_blob_properties(ctx: TestContext) -> Result<(), Box<dyn Error>
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
     // Set Content Settings
@@ -96,7 +97,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     let data = b"hello rusty world";
 
@@ -164,7 +165,7 @@ async fn test_delete_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
     // Existence Check
@@ -187,7 +188,7 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let data = b"hello rusty world";
 
     blob_client
@@ -220,7 +221,7 @@ async fn test_set_blob_metadata(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     let data = b"hello rusty world";
 
     // Upload Blob With Metadata
@@ -268,7 +269,7 @@ async fn test_set_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
     let original_response = blob_client.get_properties(None).await?;
@@ -293,8 +294,8 @@ async fn test_blob_lease_operations(ctx: TestContext) -> Result<(), Box<dyn Erro
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_name = get_blob_name(recording);
-    let blob_client = container_client.blob_client(blob_name.clone());
-    let other_blob_client = container_client.blob_client(blob_name);
+    let blob_client = container_client.blob_client(&blob_name.clone());
+    let other_blob_client = container_client.blob_client(&blob_name);
     create_test_blob(&blob_client, None, None).await?;
 
     // Acquire Lease
@@ -349,7 +350,7 @@ async fn test_leased_blob_operations(ctx: TestContext) -> Result<(), Box<dyn Err
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
     let blob_name = get_blob_name(recording);
-    let blob_client = container_client.blob_client(blob_name.clone());
+    let blob_client = container_client.blob_client(&blob_name.clone());
     create_test_blob(&blob_client, None, None).await?;
     let acquire_response = blob_client.acquire_lease(-1, None).await?;
     let lease_id = acquire_response.lease_id()?.unwrap();
@@ -438,7 +439,7 @@ async fn test_blob_tags(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     recording.set_matcher(Matcher::BodilessMatcher).await?;
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
     create_test_blob(&blob_client, None, None).await?;
 
     // Set Tags with Tags Specified
@@ -471,7 +472,7 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let recording = ctx.recording();
     let container_client = get_container_client(recording, true).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Act
     let response = blob_client.get_account_info(None).await?;
@@ -495,8 +496,20 @@ async fn test_public_access(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     // Arrange
     let recording = ctx.recording();
-    let container_client = get_container_client(recording, false).await?;
-    let blob_client = container_client.blob_client(get_blob_name(recording));
+    let container_name = get_container_name(recording);
+    let (options, endpoint) = recorded_test_setup(recording);
+    let container_client_options = ContainerClientOptions {
+        client_options: options.clone(),
+        ..Default::default()
+    };
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        &container_name,
+        Some(recording.credential()),
+        Some(container_client_options),
+    )?;
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(&blob_name.clone());
 
     let public_access_create_options = ContainerClientCreateOptions {
         access: Some(PublicAccessType::Blob),
@@ -513,13 +526,8 @@ async fn test_public_access(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         "https://{}.blob.core.windows.net/",
         recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
     );
-    let unauthenticated_blob_client = BlobClient::new(
-        &endpoint,
-        blob_client.container_name(),
-        blob_client.blob_name(),
-        None,
-        None,
-    )?;
+    let unauthenticated_blob_client =
+        BlobClient::new(&endpoint, &container_name, &blob_name, None, None)?;
 
     // Act
     let response = unauthenticated_blob_client.get_properties(None).await?;
@@ -594,7 +602,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             "Q4 2024/report 50%+tax?final=true&approved#section-1.pdf",
         ),
         // Unicode (multi-script) + unreserved chars - combines UTF-8 with chars that don't need encoding
-        ("test-container-unicode", "文件-テスト_файл~🦀.txt"),
+        ("test-container-unicode", "カニのフェリス_🦀.txt"),
         // Consecutive special chars
         (
             "test-container-edge-cases",
@@ -615,8 +623,8 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         // Create Container & Container Client
         let container_client = BlobContainerClient::new(
             &endpoint,
-            container_name.to_string(),
-            recording.credential(),
+            container_name,
+            Some(recording.credential()),
             Some(container_client_options.clone()),
         )?;
         container_client.create_container(None).await?;
@@ -697,7 +705,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         assert_eq!(17, properties.content_length()?.unwrap());
 
         // Test Case 4: Initialize BlobClient using ContainerClient accessor
-        let blob_client_from_cc = container_client.blob_client(blob_name.to_string());
+        let blob_client_from_cc = container_client.blob_client(&blob_name.to_string());
 
         // Upload Blob
         blob_client_from_cc
