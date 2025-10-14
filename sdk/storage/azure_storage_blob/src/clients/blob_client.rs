@@ -22,7 +22,6 @@ use crate::{
         BlobTags, BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions, BlockList,
         BlockListType, BlockLookupList, StorageErrorCode,
     },
-    parsers::parse_url_name_components_decoded,
     pipeline::StorageHeadersPolicy,
     AppendBlobClient, BlobClientOptions, BlockBlobClient, PageBlobClient,
 };
@@ -42,8 +41,6 @@ use std::sync::Arc;
 pub struct BlobClient {
     pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobClient,
-    pub(super) container_name: String,
-    pub(super) blob_name: String,
 }
 
 impl GeneratedBlobClient {
@@ -117,12 +114,10 @@ impl BlobClient {
             .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
             .extend([container_name, blob_name]);
 
-        let client = GeneratedBlobClient::from_url(url.clone(), credential, options)?;
+        let client = GeneratedBlobClient::from_url(url, credential, options)?;
         Ok(Self {
             endpoint: client.endpoint().clone(),
             client,
-            container_name: container_name.to_string(),
-            blob_name: blob_name.to_string(),
         })
     }
 
@@ -133,13 +128,9 @@ impl BlobClient {
     ) -> Result<Self> {
         let client = GeneratedBlobClient::from_url(blob_url.clone(), credential, options)?;
 
-        let (container_name, blob_name) = parse_url_name_components_decoded(&blob_url)?;
-
         Ok(Self {
             endpoint: client.endpoint().clone(),
             client,
-            container_name,
-            blob_name,
         })
     }
 
@@ -149,15 +140,12 @@ impl BlobClient {
     ///
     pub fn append_blob_client(&self) -> AppendBlobClient {
         AppendBlobClient {
-            endpoint: self.client.endpoint.clone(),
             client: GeneratedAppendBlobClient {
                 endpoint: self.client.endpoint.clone(),
                 pipeline: self.client.pipeline.clone(),
                 version: self.client.version.clone(),
                 tracer: self.client.tracer.clone(),
             },
-            container_name: self.container_name().to_string(),
-            blob_name: self.blob_name().to_string(),
         }
     }
 
@@ -167,15 +155,12 @@ impl BlobClient {
     ///
     pub fn block_blob_client(&self) -> BlockBlobClient {
         BlockBlobClient {
-            endpoint: self.client.endpoint.clone(),
             client: GeneratedBlockBlobClient {
                 endpoint: self.client.endpoint.clone(),
                 pipeline: self.client.pipeline.clone(),
                 version: self.client.version.clone(),
                 tracer: self.client.tracer.clone(),
             },
-            container_name: self.container_name().to_string(),
-            blob_name: self.blob_name().to_string(),
         }
     }
 
@@ -185,31 +170,18 @@ impl BlobClient {
     ///
     pub fn page_blob_client(&self) -> PageBlobClient {
         PageBlobClient {
-            endpoint: self.client.endpoint.clone(),
             client: GeneratedPageBlobClient {
                 endpoint: self.client.endpoint.clone(),
                 pipeline: self.client.pipeline.clone(),
                 version: self.client.version.clone(),
                 tracer: self.client.tracer.clone(),
             },
-            container_name: self.container_name().to_string(),
-            blob_name: self.blob_name().to_string(),
         }
     }
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// Gets the container name of the Storage account this client is connected to.
-    pub fn container_name(&self) -> &str {
-        &self.container_name
-    }
-
-    /// Gets the blob name of the Storage account this client is connected to.
-    pub fn blob_name(&self) -> &str {
-        &self.blob_name
+    /// Gets the URL of the Storage account this client is connected to.
+    pub fn url(&self) -> &Url {
+        &self.client.endpoint
     }
 
     /// Returns all user-defined metadata, standard HTTP properties, and system properties for the blob.

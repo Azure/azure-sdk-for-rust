@@ -565,7 +565,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     let recording = ctx.recording();
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
-    let mut failures = Vec::new();
 
     // ContainerClient Options
     let container_client_options = ContainerClientOptions {
@@ -599,7 +598,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         // Consecutive special chars
         (
             "test-container-edge-cases",
-            "path////with___...~~~consecutive///chars",
+            "path\\\\with___...~~~consecutive///chars",
         ),
         // Additional reserved chars: parentheses, brackets, colon, quotes, leading/trailing spaces
         (
@@ -645,46 +644,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_new.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Assert Accessor Names
-        if container_name != blob_client_new.container_name() {
-            failures.push(format!(
-                "Container name mismatch (new()): Input='{}', Accessor='{}'",
-                container_name,
-                blob_client_new.container_name()
-            ));
-        }
-        if blob_name != blob_client_new.blob_name() {
-            failures.push(format!(
-                "Blob name mismatch (new()): Input='{}', Accessor='{}'",
-                blob_name,
-                blob_client_new.blob_name()
-            ));
-        }
-
-        // List Blobs
-        let mut list_blobs_response = container_client.list_blobs(None)?;
-        let page = list_blobs_response.try_next().await?;
-        let list_blob_segment_response = page.unwrap().into_body().await?;
-        let blob_items = list_blob_segment_response.segment.blob_items;
-        assert_eq!(1, blob_items.len());
-        let listed_blob_name = blob_items[0]
-            .name
-            .as_ref()
-            .unwrap()
-            .content
-            .as_ref()
-            .unwrap();
-
-        // Verify List Blob Name Matches Accessor
-        if listed_blob_name != blob_client_new.blob_name() {
-            failures.push(format!(
-                "Blob name mismatch (new()): List Blobs='{}', Accessor='{}'",
-                listed_blob_name,
-                blob_client_new.blob_name()
-            ));
-        }
-
-        // Test Case 2: Initialize BlobClient using from_blob_url()
+        // Test Case 2: Initialize BlobClient using from_blob_url(), separate path segments
         let mut blob_url = Url::parse(&endpoint)?;
         blob_url
             .path_segments_mut()
@@ -692,29 +652,11 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             .push(container_name)
             .push(blob_name);
 
-        println!("Blob URL: {}", blob_url);
         let blob_client_from_url = BlobClient::from_blob_url(
             blob_url,
             Some(recording.credential()),
             Some(blob_client_options.clone()),
         )?;
-
-        // Test Case But Push Each Blob Segment Separately
-        // let mut blob_url = Url::parse(&endpoint)?;
-        // blob_url
-        //     .path_segments_mut()
-        //     .expect("Storage Endpoint must be a valid base URL with http/https scheme")
-        //     .push(container_name)
-        //     .push("forward")
-        //     .push("back\\")
-        //     .push("forward")
-        //     .push("back\\");
-        // println!("Blob URL: {}", blob_url);
-        // let blob_client_from_url = BlobClient::from_blob_url(
-        //     blob_url,
-        //     Some(recording.credential()),
-        //     Some(blob_client_options.clone()),
-        // )?;
 
         // Upload Blob
         blob_client_from_url
@@ -730,46 +672,31 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_from_url.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Assert Accessor Names
-        if container_name != blob_client_from_url.container_name() {
-            failures.push(format!(
-                "Container name mismatch (from_blob_url()): Input='{}', Accessor='{}'",
-                container_name,
-                blob_client_from_url.container_name()
-            ));
-        }
-        if blob_name != blob_client_from_url.blob_name() {
-            failures.push(format!(
-                "Blob name mismatch (from_blob_url()): Input='{}', Accessor='{}'",
-                blob_name,
-                blob_client_from_url.blob_name()
-            ));
-        }
+        // Test Case 3: Initialize BlobClient using from_blob_url(), Url::parse() on full URL
+        let blob_url_string = format!("{}{}/{}", endpoint, container_name, blob_name);
+        let blob_url = Url::parse(&blob_url_string)?;
 
-        // List Blobs
-        let mut list_blobs_response = container_client.list_blobs(None)?;
-        let page = list_blobs_response.try_next().await?;
-        let list_blob_segment_response = page.unwrap().into_body().await?;
-        let blob_items = list_blob_segment_response.segment.blob_items;
-        assert_eq!(1, blob_items.len());
-        let listed_blob_name = blob_items[0]
-            .name
-            .as_ref()
-            .unwrap()
-            .content
-            .as_ref()
-            .unwrap();
+        let blob_client_from_url_parse = BlobClient::from_blob_url(
+            blob_url,
+            Some(recording.credential()),
+            Some(blob_client_options.clone()),
+        )?;
 
-        // Verify List Blob Name Matches Accessor
-        if listed_blob_name != blob_client_from_url.blob_name() {
-            failures.push(format!(
-                "Blob name mismatch (from_blob_url()): List Blobs='{}', Accessor='{}'",
-                listed_blob_name,
-                blob_client_from_url.blob_name()
-            ));
-        }
+        // Upload Blob
+        blob_client_from_url_parse
+            .upload(
+                RequestContent::from(b"hello rusty world".to_vec()),
+                true,
+                17,
+                None,
+            )
+            .await?;
 
-        // Test Case 3: Initialize BlobClient using ContainerClient accessor
+        // Get Properties
+        let properties = blob_client_from_url_parse.get_properties(None).await?;
+        assert_eq!(17, properties.content_length()?.unwrap());
+
+        // Test Case 4: Initialize BlobClient using ContainerClient accessor
         let blob_client_from_cc = container_client.blob_client(blob_name.to_string());
 
         // Upload Blob
@@ -786,52 +713,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_from_cc.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Assert Accessor Names
-        if container_name != blob_client_from_cc.container_name() {
-            failures.push(format!(
-                "Container name mismatch (container_client accessor): Input='{}', Accessor='{}'",
-                container_name,
-                blob_client_from_cc.container_name()
-            ));
-        }
-        if blob_name != blob_client_from_cc.blob_name() {
-            failures.push(format!(
-                "Blob name mismatch (container_client accessor): Input='{}', Accessor='{}'",
-                blob_name,
-                blob_client_from_cc.blob_name()
-            ));
-        }
-        // List Blobs
-        let mut list_blobs_response = container_client.list_blobs(None)?;
-        let page = list_blobs_response.try_next().await?;
-        let list_blob_segment_response = page.unwrap().into_body().await?;
-        let blob_items = list_blob_segment_response.segment.blob_items;
-        assert_eq!(1, blob_items.len());
-        let listed_blob_name = blob_items[0]
-            .name
-            .as_ref()
-            .unwrap()
-            .content
-            .as_ref()
-            .unwrap();
-        // Verify List Blob Name Matches Accessor
-        if listed_blob_name != blob_client_from_cc.blob_name() {
-            failures.push(format!(
-                "Blob name mismatch (container_client accessor): List Blobs='{}', Accessor='{}'",
-                listed_blob_name,
-                blob_client_from_cc.blob_name()
-            ));
-        }
         container_client.delete_container(None).await?;
-    }
-
-    // Print Failed Test Cases
-    if !failures.is_empty() {
-        panic!(
-            "\n{} Assertion(s) Failed:\n  {}",
-            failures.len(),
-            failures.join("\n  ")
-        );
     }
 
     Ok(())

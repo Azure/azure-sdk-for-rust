@@ -80,16 +80,12 @@ impl BlobServiceClient {
             tracer: self.client.tracer.clone(),
         };
 
-        BlobContainerClient {
-            endpoint: container_url,
-            client,
-            container_name,
-        }
+        BlobContainerClient { client }
     }
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
+    /// Gets the URL of the Storage account this client is connected to.
+    pub fn url(&self) -> &Url {
+        &self.client.endpoint
     }
 
     /// Gets the properties of a Storage account's Blob service, including Azure Storage Analytics.

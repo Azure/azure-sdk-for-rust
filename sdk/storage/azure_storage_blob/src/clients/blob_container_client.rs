@@ -33,9 +33,7 @@ use std::{collections::HashMap, sync::Arc};
 
 /// A client to interact with a specified Azure storage container.
 pub struct BlobContainerClient {
-    pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobContainerClient,
-    pub(super) container_name: String,
 }
 
 impl BlobContainerClient {
@@ -75,11 +73,7 @@ impl BlobContainerClient {
             .push(&container_name);
 
         let client = GeneratedBlobContainerClient::new(url.as_str(), credential, Some(options))?;
-        Ok(Self {
-            endpoint: client.endpoint().clone(),
-            client,
-            container_name,
-        })
+        Ok(Self { client })
     }
 
     /// Returns a new instance of BlobClient.
@@ -89,7 +83,7 @@ impl BlobContainerClient {
     /// * `blob_name` - The name of the blob.
     pub fn blob_client(&self, blob_name: String) -> BlobClient {
         // Copy exact logic from new() constructor, but assume container is already contained in URL
-        let mut blob_url = self.endpoint.clone();
+        let mut blob_url = self.url().clone();
         // Build Blob URL, Url crate handles encoding only path params
         blob_url.path_segments_mut()
             .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
@@ -105,19 +99,12 @@ impl BlobContainerClient {
         BlobClient {
             endpoint: blob_url,
             client,
-            container_name: self.container_name.clone(),
-            blob_name,
         }
     }
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// Gets the container name of the Storage account this client is connected to.
-    pub fn container_name(&self) -> &str {
-        &self.container_name
+    /// Gets the URL of the Storage account this client is connected to.
+    pub fn url(&self) -> &Url {
+        &self.client.endpoint
     }
 
     /// Creates a new container under the specified account. If the container with the same name already exists, the operation fails.

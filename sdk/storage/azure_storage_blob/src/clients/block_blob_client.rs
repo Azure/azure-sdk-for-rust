@@ -30,10 +30,7 @@ use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage Block blob, although that blob may not yet exist.
 pub struct BlockBlobClient {
-    pub(super) endpoint: Url,
     pub(super) client: GeneratedBlockBlobClient,
-    pub(super) container_name: String,
-    pub(super) blob_name: String,
 }
 
 impl BlockBlobClient {
@@ -75,27 +72,12 @@ impl BlockBlobClient {
             .extend([&container_name, &blob_name]);
 
         let client = GeneratedBlockBlobClient::new(url.as_str(), credential, Some(options))?;
-        Ok(Self {
-            endpoint: client.endpoint().clone(),
-            client,
-            container_name,
-            blob_name,
-        })
+        Ok(Self { client })
     }
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// Gets the container name of the Storage account this client is connected to.
-    pub fn container_name(&self) -> &str {
-        &self.container_name
-    }
-
-    /// Gets the blob name of the Storage account this client is connected to.
-    pub fn blob_name(&self) -> &str {
-        &self.blob_name
+    /// Gets the URL of the Storage account this client is connected to.
+    pub fn url(&self) -> &Url {
+        &self.client.endpoint
     }
 
     /// Writes to a blob based on blocks specified by the list of IDs and content that make up the blob.
