@@ -280,7 +280,7 @@ Next select `Azure/azure-sdk-for-rust` to specify the Rust SDK and configure you
 
 Select your pipeline file from the main branch of the repository and you're almost done.
 
-The next thing you want to do is to "save" the new pipeline, this will cause your pipeline to be created. You can also attempt to `run` the pipeline at this point but it is likely to fail.
+The next thing you want to do is to "save" the new pipeline. This will cause your pipeline to be created. You can also attempt to `run` the pipeline at this point but it is likely to fail.
 
 You now need to set the required variables or the pipeline. Performance pipelines require the `Secrets for Resource Provisioner` variable group added to the pipeline. To add this, select the newly created pipeline, and click on `Edit`. Navigate to the `...` menu and select `Triggers`. This brings up the `Yaml`, `Variables`, `Triggers` and `History` edit. Make sure that all the triggers (included scheduled triggers) are cleared from the `Triggers` - Rust performance pipeline triggers are managed by the pipeline yaml file, rather than in the Azure DevOps user interface.
 
