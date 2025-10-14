@@ -85,11 +85,18 @@ impl UrlExt for Url {
         } else if !p.as_ref().is_empty() && p.as_ref() != "/" {
             let mut combinator = if self.path().ends_with('/') { 1 } else { 0 };
             combinator += if p.as_ref().starts_with('/') { 1 } else { 0 };
-            match combinator {
-                0 => self.set_path(&format!("{}/{}", self.path(), p.as_ref())),
-                1 => self.set_path(&format!("{}{}", self.path(), p.as_ref())),
-                _ => self.set_path(&format!("{}{}", &self.path()[..self.path().len() - 1], p.as_ref())),
+
+            let mut new_path = if combinator < 2 {
+                self.path().to_owned()
+            } else {
+                self.path()[..self.path().len() - 1].to_owned()
+            };
+            if combinator == 0 {
+                new_path.push('/');
             }
+            new_path.push_str(p.as_ref());
+
+            self.set_path(&new_path);
         }
     }
 }
