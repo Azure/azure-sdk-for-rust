@@ -290,7 +290,7 @@ That will bring up a pane on the right with a number of variable groups. You wan
 
 Once you've saved these changes, your pipeline should be ready to run.
 
-You may need to ask for help from the Azure SDK Engineering Systems team to enable access to test resources for your pipeline, but that should be a relatively straightforward request.
+You may need to ask for help from the Azure SDK Engineering Systems team to enable access to test resources for your pipeline.
 
 ## Running the test automation locally
 
