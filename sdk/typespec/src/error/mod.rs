@@ -35,8 +35,6 @@ pub enum ErrorKind {
     DataConversion,
     /// An error getting an API credential token.
     Credential,
-    /// An error having to do with the mock framework.
-    MockFramework,
     /// A catch all for other kinds of errors.
     Other,
 }
@@ -64,7 +62,6 @@ impl Display for ErrorKind {
             ErrorKind::Io => f.write_str("Io"),
             ErrorKind::DataConversion => f.write_str("DataConversion"),
             ErrorKind::Credential => f.write_str("Credential"),
-            ErrorKind::MockFramework => f.write_str("MockFramework"),
             ErrorKind::Other => f.write_str("Other"),
             #[cfg(feature = "amqp")]
             ErrorKind::Amqp => f.write_str("Amqp"),

@@ -10,6 +10,8 @@
 
 ### Bugs Fixed
 
+- Removed `ErrorKind::MockFramework`.
+
 ### Other Changes
 
 ## 0.8.1 (2025-10-06)
