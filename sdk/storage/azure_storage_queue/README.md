@@ -62,11 +62,10 @@ You may need to specify RBAC roles to access Queues via Microsoft Entra ID. Plea
 
 ## Examples
 
-<!-- TODO: Uncomment the links below when the PR is merged -->
 You can find executable examples for all major SDK functions in:
 
-* [queue_client.rs]<!--(https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/samples/queue_client.rs)-->
-* [queue_service_client.rs]<!--(https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/samples/queue_service_client.rs)-->
+* [queue_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs)
+* [queue_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_service_client.rs)
 
 ## Next steps
 
