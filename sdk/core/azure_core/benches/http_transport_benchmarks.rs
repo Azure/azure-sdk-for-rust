@@ -15,6 +15,7 @@ use azure_identity::DeveloperToolsCredential;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::sync::Arc;
 
+#[cfg_attr(target_os = "macos", allow(unused_variables))]
 const HTTP_ENDPOINT: &str = "https://azuresdkforcpp.azurewebsites.net";
 //const HTTP_ENDPOINT: &str = "http://httpbin.org";
 
