@@ -505,7 +505,7 @@ impl PerfRunner {
             .arg(
                 clap::arg!(--"test-results" <FILE> "The file to write test results to")
                     .required(false)
-                    .default_value("./tests/results.json")
+                    .default_value("./results.json")
                     .global(false),
             )
             .arg(clap::arg!(--"no-cleanup" "Disable test cleanup")

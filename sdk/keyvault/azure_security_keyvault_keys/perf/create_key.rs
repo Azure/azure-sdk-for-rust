@@ -1,40 +1,31 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Keyvault Secrets performance tests.
-//!
-//! This test measures the performance of getting a secret from Azure Key Vault.
-//! It sets up a secret in the Key Vault during the setup phase and then repeatedly retrieves it
-//! during the run phase. The test can be configured with the vault URL via command line arguments
-//! to target different Key Vault instances.
-//!
-//! To run the test, use the following command line arguments:
-//!
-//! cargo test --package azure_security_keyvault_secrets --test performance_tests -- --duration 10 --parallel 20 get_secret -u https://<my_vault>.vault.azure.net/
-//!
-
-use std::sync::{Arc, OnceLock};
-
+use crate::ENV_NAME;
 use azure_core::Result;
 use azure_core_test::{
     perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
     Recording, TestContext,
 };
-use azure_security_keyvault_secrets::{
-    models::SetSecretParameters, SecretClient, SecretClientOptions,
+use azure_security_keyvault_keys::{
+    models::{CreateKeyParameters, CurveName, KeyType},
+    KeyClient, KeyClientOptions,
 };
 use futures::FutureExt;
-struct GetSecrets {
+use std::sync::{Arc, OnceLock};
+
+pub struct CreateKey {
     vault_url: Option<String>,
     random_key_name: OnceLock<String>,
-    client: OnceLock<SecretClient>,
+    client: OnceLock<KeyClient>,
+    body: CreateKeyParameters,
 }
 
-impl GetSecrets {
-    fn test_metadata() -> PerfTestMetadata {
+impl CreateKey {
+    pub(crate) fn test_metadata() -> PerfTestMetadata {
         PerfTestMetadata {
-            name: "get_secret",
-            description: "Get a secret from Key Vault",
+            name: "create_key",
+            description: "Create a key in Key Vault",
             options: vec![PerfTestOption {
                 name: "vault_url",
                 display_message: "The URL of the Key Vault to use in the test",
@@ -52,18 +43,22 @@ impl GetSecrets {
         async move {
             let vault_url_ref: Option<&String> = runner.try_get_test_arg("vault_url")?;
             let vault_url = vault_url_ref.cloned();
-            Ok(Box::new(GetSecrets {
+            Ok(Box::new(CreateKey {
                 vault_url,
                 random_key_name: OnceLock::new(),
                 client: OnceLock::new(),
+                body: CreateKeyParameters {
+                    kty: Some(KeyType::Ec),
+                    curve: Some(CurveName::P256),
+                    ..Default::default()
+                },
             }) as Box<dyn PerfTest>)
         }
         .boxed()
     }
 
     fn create_random_key_name(recording: &Recording) -> String {
-        let random_suffix: String = recording.random_string::<8>(Some("perf-"));
-        format!("perf-{}", random_suffix)
+        recording.random_string::<8>(Some("perf-"))
     }
 
     fn get_random_key_name(&self, recording: &Recording) -> &String {
@@ -73,32 +68,29 @@ impl GetSecrets {
 }
 
 #[async_trait::async_trait]
-impl PerfTest for GetSecrets {
+impl PerfTest for CreateKey {
     async fn setup(&self, context: Arc<TestContext>) -> azure_core::Result<()> {
         let recording = context.recording();
         let credential = recording.credential();
 
-        let mut client_options = SecretClientOptions::default();
+        let mut client_options = KeyClientOptions::default();
         recording.instrument(&mut client_options.client_options);
 
         let vault_url = self
             .vault_url
             .clone()
-            .unwrap_or_else(|| recording.var("AZURE_KEYVAULT_URL", None));
+            .unwrap_or_else(|| recording.var(ENV_NAME, None));
 
-        let client = SecretClient::new(&vault_url, credential.clone(), Some(client_options))?;
+        let client = KeyClient::new(&vault_url, credential.clone(), Some(client_options))?;
         self.client.get_or_init(|| client);
 
+        // Seed the initial key to ensure the benchmark runs in a clean state
         self.client
             .get()
             .unwrap()
-            .set_secret(
+            .create_key(
                 self.get_random_key_name(recording),
-                SetSecretParameters {
-                    value: Some("secret_value".into()),
-                    ..Default::default()
-                }
-                .try_into()?,
+                self.body.clone().try_into()?,
                 None,
             )
             .await?;
@@ -109,26 +101,17 @@ impl PerfTest for GetSecrets {
     }
     async fn run(&self, context: Arc<TestContext>) -> Result<()> {
         let recording = context.recording();
-        let _secret = self
+        let _key = self
             .client
             .get()
             .unwrap()
-            .get_secret(self.get_random_key_name(recording), None)
+            .create_key(
+                self.get_random_key_name(recording),
+                self.body.clone().try_into()?,
+                None,
+            )
             .await?
             .into_body()?;
         Ok(())
     }
-}
-
-#[tokio::main]
-async fn main() -> azure_core::Result<()> {
-    let runner = PerfRunner::new(
-        env!("CARGO_MANIFEST_DIR"),
-        file!(),
-        vec![GetSecrets::test_metadata()],
-    )?;
-
-    runner.run().await?;
-
-    Ok(())
 }
