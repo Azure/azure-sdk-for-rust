@@ -21,8 +21,8 @@ foreach ($package in $packagesToBuild) {
   $packageParams += "--package", $package.name
 }
 
-Write-Host "cargo publish --dry-run $($packageParams -join ' ') --target-dir $OutputPath --allow-dirty"
-cargo publish --dry-run @packageParams --target-dir $OutputPath --allow-dirty 2>&1 | Tee-Object -Variable result
+Write-Host "cargo publish --dry-run $($packageParams -join ' ') --allow-dirty"
+cargo publish --dry-run @packageParams --allow-dirty 2>&1 | Tee-Object -Variable result
 
 if ($LASTEXITCODE) {
   Write-Host "cargo publish failed with exit code $LASTEXITCODE"
