@@ -17,15 +17,15 @@ parameters:
 - name: release_azure_storage_common
   displayName: 'azure_storage_common'
   type: boolean
-  default: true
+  default: false
 - name: release_azure_storage_blob
   displayName: 'azure_storage_blob'
   type: boolean
-  default: true
+  default: false
 - name: release_azure_storage_queue
   displayName: 'azure_storage_queue'
   type: boolean
-  default: true
+  default: false
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml

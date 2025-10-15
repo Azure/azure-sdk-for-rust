@@ -14,11 +14,11 @@ parameters:
 - name: release_azure_messaging_eventhubs
   displayName: 'azure_messaging_eventhubs'
   type: boolean
-  default: true
+  default: false
 - name: release_azure_messaging_eventhubs_checkpointstore_blob
   displayName: 'azure_messaging_eventhubs_checkpointstore_blob'
   type: boolean
-  default: true
+  default: false
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml

@@ -17,15 +17,15 @@ parameters:
 - name: release_azure_security_keyvault_secrets
   displayName: 'azure_security_keyvault_secrets'
   type: boolean
-  default: true
+  default: false
 - name: release_azure_security_keyvault_keys
   displayName: 'azure_security_keyvault_keys'
   type: boolean
-  default: true
+  default: false
 - name: release_azure_security_keyvault_certificates
   displayName: 'azure_security_keyvault_certificates'
   type: boolean
-  default: true
+  default: false
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml

@@ -15,7 +15,7 @@ parameters:
 - name: release_azure_messaging_servicebus
   displayName: 'azure_messaging_servicebus'
   type: boolean
-  default: true
+  default: false
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml

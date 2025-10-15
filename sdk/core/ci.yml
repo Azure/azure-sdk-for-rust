@@ -14,19 +14,19 @@ parameters:
 - name: release_azure_core
   displayName: 'azure_core'
   type: boolean
-  default: true
+  default: false
 - name: release_azure_core_macros
   displayName: 'azure_core_macros'
   type: boolean
-  default: true
+  default: false
 - name: release_azure_core_amqp
   displayName: 'azure_core_amqp'
   type: boolean
-  default: true
+  default: false
 - name: release_azure_core_opentelemetry
   displayName: 'azure_core_opentelemetry'
   type: boolean
-  default: true
+  default: false
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml

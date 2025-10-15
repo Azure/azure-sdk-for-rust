@@ -14,11 +14,11 @@ parameters:
 - name: release_azure_canary_core
   displayName: 'azure_canary_core'
   type: boolean
-  default: true
+  default: false
 - name: release_azure_canary
   displayName: 'azure_canary'
   type: boolean
-  default: true
+  default: false
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
