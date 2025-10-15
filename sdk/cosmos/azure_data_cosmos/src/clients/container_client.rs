@@ -9,6 +9,7 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
     ThroughputOptions,
+    handler::retry_handler::{AbstractRetryHandler, RetryHandler},
 };
 
 use azure_core::http::{
@@ -26,6 +27,7 @@ pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
     pipeline: CosmosPipeline,
+    retry_handler: RetryHandler,
 }
 
 impl ContainerClient {
@@ -38,11 +40,13 @@ impl ContainerClient {
             .feed(ResourceType::Containers)
             .item(container_id);
         let items_link = link.feed(ResourceType::Items);
+        let retry_handler = RetryHandler::new(pipeline.clone());
 
         Self {
             link,
             items_link,
             pipeline,
+            retry_handler,
         }
     }
 
@@ -494,9 +498,10 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Get);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
-        self.pipeline
-            .send(options.method_options.context, &mut req, link)
-            .await
+        
+        // Use the retry handler instance's send_async method which includes automatic retry logic
+        let raw_response = self.retry_handler.send_async(options.method_options.context, &mut req, link).await?;
+        Ok(raw_response.into())
     }
 
     /// Deletes an item from the container.

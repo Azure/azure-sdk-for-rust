@@ -27,3 +27,5 @@ pub use query::Query;
 
 pub use feed::{FeedPage, FeedPager};
 pub mod routing;
+pub mod retry_policies;
+pub(crate) mod handler;

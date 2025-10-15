@@ -185,6 +185,10 @@ impl LocationCache {
         }
     }
 
+    pub fn can_use_multiple_write_locations(&mut self) -> bool {
+        self.write_endpoints().iter().count() > 0
+    }
+
     fn refresh_endpoints(&mut self) {
         // Get preferred available endpoints for write and read operations
         self.locations_info.write_endpoints = self.get_preferred_available_endpoints(
