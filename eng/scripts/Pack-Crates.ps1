@@ -6,17 +6,16 @@ param(
   [string]$OutputPath,
   [Parameter(ParameterSetName = 'Named')]
   [string[]]$PackageNames,
-  [Parameter(ParameterSetName = 'Named')]
-  [switch]$RequireDependencies,
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
-  [switch]$NoVerify,
-  [string]$OutBuildOrderFile
+  [switch]$NoVerify
 )
 
 $ErrorActionPreference = 'Stop'
 
-. (Join-Path $PSScriptRoot '..' 'common' 'scripts' 'common.ps1')
+# TODO: Don't use Join-Path
+. ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'Pack-Common.ps1'))
 
 Write-Host @"
 Packing crates with
@@ -57,28 +56,7 @@ function Get-OutputPackageNames($workspacePackages) {
     }
   }
 
-  return , $names
-}
-
-function Get-CargoMetadata() {
-  cargo metadata --no-deps --format-version 1 --manifest-path "$RepoRoot/Cargo.toml" | ConvertFrom-Json -Depth 100 -AsHashtable
-}
-
-function Test-PublishedOnCratesIo($name, $version) { 
-  try {
-    Invoke-WebRequest -Uri "https://crates.io/api/v1/crates/$name/$version"
-    return $true
-  }
-  catch {
-    if ($_.Exception.Response.StatusCode -eq 404) {
-      # 404 means package version is not found and doesn't exist
-      return $false
-    }
-    else {
-      # Re-throw other exceptions
-      throw $_
-    }
-  }
+  return $names
 }
 
 function Get-CargoPackages() {
@@ -113,10 +91,6 @@ function Get-PackagesToBuild() {
 
     foreach ($dependency in $package.UnreleasedDependencies) {
       if (!$packagesToBuild.Contains($dependency) -and !$toProcess.Contains($dependency)) {
-        if ($RequireDependencies -and $dependency.name -notin $PackageNames) { 
-          Write-Warning "Package $($package.name) depends on potentially unreleased or unspecified dependency: $($dependency.name)`@$($dependency.version)"
-        }
-        
         $packagesToBuild += $dependency
         $toProcess += $dependency
       }
@@ -170,47 +144,17 @@ function Add-CrateToLocalRegistry($LocalRegistryPath, $Package) {
   '{"files":{}}' | Out-File -FilePath "$LocalRegistryPath/$packageName-$packageVersion/.cargo-checksum.json" -Encoding utf8
 }
 
-function Create-ApiViewFile($package) {
-  $packageName = $package.name
-  $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $packageName"
-  Invoke-LoggedCommand $command -GroupOutput | Out-Host
-
-  $packagePath = Split-Path -Path $package.manifest_path -Parent
-
-  "$packagePath/review/$packageName.rust.json"
-}
-
 Push-Location $RepoRoot
 try {
   $localRegistryPath = Initialize-VendorDirectory
 
   [array]$packages = Get-PackagesToBuild
 
-  if ($RequireDependencies) {
-    $unspecifiedPackages = $packages | Where-Object { $_.name -notin $PackageNames -and !(Test-PublishedOnCratesIo -name $_.name -version $_.version) } | Foreach-Object { "$($_.name)`@$($_.version)" }
-    if ($unspecifiedPackages.Count -gt 0) { 
-      Write-Error "Packages in -PackageNames require dependencies that are either not released or not listed for packing: $($unspecifiedPackages -join ', ')"
-      exit 1
-    }
-  }
-
   Write-Host "Building packages in the following order:"
   foreach ($package in $packages) {
     $packageName = $package.name
     $type = if ($package.OutputPackage) { "output" } else { "dependency" }
     Write-Host "  $packageName ($type)"
-  }
-
-  if ($OutBuildOrderFile) {
-    $buildOrder = @()
-    foreach ($package in $packages) {
-      if ($package.OutputPackage) {
-        $buildOrder += $package.name
-      }
-    }
-    $buildOrderJson = ConvertTo-Json $buildOrder
-    Write-Host "Writing build order to $OutBuildOrderFile ($buildOrderJson)"
-    $buildOrderJson | Out-File -FilePath $OutBuildOrderFile -Encoding utf8 -Force
   }
 
   foreach ($package in $packages) {
@@ -227,6 +171,7 @@ try {
 
     Invoke-LoggedCommand -Command $command -GroupOutput
 
+
     # copy the package to the local registry
     Add-CrateToLocalRegistry `
       -LocalRegistryPath $localRegistryPath `
@@ -235,11 +180,16 @@ try {
     if ($OutputPath -and $package.OutputPackage) {
       $sourcePath = "$RepoRoot/target/package/$packageName-$packageVersion"
       $targetPath = "$OutputPath/$packageName"
+      $targetContentsPath = "$targetPath/contents"
       $targetApiReviewFile = "$targetPath/$packageName.rust.json"
 
-      Write-Host "Copying package '$packageName' to '$targetPath'"
-      New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
-      Copy-Item -Path "$sourcePath.crate" -Destination $targetPath
+      if (Test-Path -Path $targetContentsPath) {
+        Remove-Item -Path $targetContentsPath -Recurse -Force
+      }
+
+      Write-Host "Copying package '$packageName' to '$targetContentsPath'"
+      New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
+      Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse -Exclude "Cargo.toml.orig"
 
       Write-Host "Creating API review file"
       $apiReviewFile = Create-ApiViewFile $package
