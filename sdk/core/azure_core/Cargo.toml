@@ -104,3 +104,8 @@ required-features = ["xml"]
 [[bench]]
 name = "http_transport_benchmarks"
 harness = false
+
+[[test]]
+name = "perf"
+path = "perf/perf.rs"
+harness = false
