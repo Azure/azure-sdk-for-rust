@@ -80,21 +80,20 @@ jobs:
 
         $packageNames = $artifactsToBuild.name -join ','
 
-        Write-Host "##vso[task.setvariable variable=PackageNames]$packageNames"
-        Write-Host "##vso[task.setvariable variable=RequireDependencies]$requireDependencies"
-      displayName: Create package list
-
-    - task: Powershell@2
+        if ($requireDependencies) {
+          Write-Host "Building crates with dependency validation for reelase"
+          & $(Build.SourcesDirectory)/eng/scripts/Pack-ReleaseCrates.ps1 `
+            -OutputPath '$(Build.ArtifactStagingDirectory)' `
+            -PackageNames $packageNames `
+            -OutBuildOrderFile '$(Build.ArtifactStagingDirectory)/release-order.json'
+        } else {
+          Write-Host "Building crates without validating dependencies"
+          & $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1 `
+            -OutputPath '$(Build.ArtifactStagingDirectory)' `
+            -PackageNames $packageNames
+        }
       displayName: Pack Crates
       condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
-      inputs:
-        pwsh: true
-        filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
-        arguments: >
-          -OutputPath '$(Build.ArtifactStagingDirectory)'
-          -PackageNames $(PackageNames)
-          -RequireDependencies:$$(RequireDependencies)
-          -OutBuildOrderFile '$(Build.ArtifactStagingDirectory)/release-order.json'
 
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
     parameters:
