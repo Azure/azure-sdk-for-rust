@@ -12,7 +12,7 @@ trigger:
 
 parameters:
 - name: release_azure_identity
-  displayName: 'azure_identity'
+  displayName: azure_identity
   type: boolean
   default: false
 

@@ -12,11 +12,11 @@ trigger:
 
 parameters:
 - name: release_azure_canary_core
-  displayName: 'azure_canary_core'
+  displayName: azure_canary_core
   type: boolean
   default: false
 - name: release_azure_canary
-  displayName: 'azure_canary'
+  displayName: azure_canary
   type: boolean
   default: false
 

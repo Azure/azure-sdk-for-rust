@@ -11,19 +11,19 @@ trigger:
 
 parameters:
 - name: RunLiveTests
-  displayName: 'Run live tests'
+  displayName: Run live tests
   type: boolean
   default: false
 - name: release_azure_security_keyvault_secrets
-  displayName: 'azure_security_keyvault_secrets'
+  displayName: azure_security_keyvault_secrets
   type: boolean
   default: false
 - name: release_azure_security_keyvault_keys
-  displayName: 'azure_security_keyvault_keys'
+  displayName: azure_security_keyvault_keys
   type: boolean
   default: false
 - name: release_azure_security_keyvault_certificates
-  displayName: 'azure_security_keyvault_certificates'
+  displayName: azure_security_keyvault_certificates
   type: boolean
   default: false
 

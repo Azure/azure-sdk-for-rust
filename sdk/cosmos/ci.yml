@@ -12,7 +12,7 @@ trigger:
 
 parameters:
 - name: release_azure_data_cosmos
-  displayName: 'azure_data_cosmos'
+  displayName: azure_data_cosmos
   type: boolean
   default: false
 

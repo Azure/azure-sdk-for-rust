@@ -13,7 +13,7 @@ trigger:
 
 parameters:
 - name: release_azure_messaging_servicebus
-  displayName: 'azure_messaging_servicebus'
+  displayName: azure_messaging_servicebus
   type: boolean
   default: false
 
