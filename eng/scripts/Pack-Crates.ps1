@@ -128,8 +128,14 @@ try {
     $packageParams += "--no-verify"
   }
 
-  Write-Host "> cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
-  & cargo publish --locked --dry-run --allow-dirty @packageParams 2>&1 | Tee-Object -Variable packResult
+  LogGroupStart "cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
+  Write-Host "cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
+  & cargo publish --locked --dry-run --allow-dirty @packageParams 2>&1 `
+  | Tee-Object -Variable packResult `
+  | ForEach-Object { Write-Host $_ -ForegroundColor Gray }
+  LogGroupEnd
+
+  Write-Host "Finished packing crates"
   if ($LASTEXITCODE) {
     Write-Host "cargo publish failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE

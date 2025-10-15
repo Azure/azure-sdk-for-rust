@@ -97,7 +97,7 @@ stages:
                         $artifacts = Get-Content '$(Pipeline.Workspace)/drop/release-order.json' | ConvertFrom-Json
                         
                         # Force $artifacts to be an array (PowerShell unrolls single-item arrays)
-                        if ($artifacts -isnot [Array]) {                          
+                        if ($artifacts -isnot [Array]) {
                           $artifacts = @($artifacts)
                         }
 
