@@ -116,7 +116,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `metadata` - A `HashMap` containing the metadata key-value pairs to set for the queue.
+    /// * `metadata` - A [`HashMap`] containing the metadata key-value pairs to set for the queue.
     /// * `options` - Optional configuration for the request.
     pub async fn set_metadata(
         &self,

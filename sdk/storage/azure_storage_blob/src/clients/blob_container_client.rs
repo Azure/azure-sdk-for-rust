@@ -114,7 +114,7 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `metadata` - A `HashMap` containing the metadata key-value pairs to set for the container.
+    /// * `metadata` - A [`HashMap`] containing the metadata key-value pairs to set for the container.
     /// * `options` - Optional configuration for the request.
     pub async fn set_metadata(
         &self,

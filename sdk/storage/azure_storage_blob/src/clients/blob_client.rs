@@ -195,7 +195,7 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
-    /// * `metadata` - A `HashMap` containing the metadata key-value pairs to set for the blob.
+    /// * `metadata` - A [`HashMap`] containing the metadata key-value pairs to set for the blob.
     /// * `options` - Optional configuration for the request.
     pub async fn set_metadata(
         &self,
