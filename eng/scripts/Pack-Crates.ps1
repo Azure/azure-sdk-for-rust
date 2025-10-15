@@ -8,13 +8,14 @@ param(
   [string[]]$PackageNames,
   [Parameter(ParameterSetName = 'PackageInfo')]
   [string]$PackageInfoDirectory,
-  [switch]$NoVerify
+  [switch]$Release,
+  [switch]$NoVerify,
+  [string]$OutBuildOrderFile
 )
 
 $ErrorActionPreference = 'Stop'
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, 'Pack-Common.ps1'))
 
 Write-Host @"
 Packing crates with
@@ -61,8 +62,8 @@ function Get-OutputPackageNames($workspacePackages) {
 function Get-CargoPackages() {
   $metadata = Get-CargoMetadata
 
-  # path based depdenencies are assumed to be unreleased package versions
-  # they must be included in this build and build before packages that depend on them
+  # Path based dependencies are assumed to be unreleased package versions. In
+  # non-release builds these should be packed as well.
   foreach ($package in $metadata.packages) {
     $package.UnreleasedDependencies = @()
     foreach ($dependency in $package.dependencies) {
@@ -80,9 +81,13 @@ function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
   $outputPackageNames = Get-OutputPackageNames $packages
 
-  # We start with output packages, then recursively add unreleased dependencies to the list of packages that need to be built
   [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
 
+  if ($Release) { 
+    return $packagesToBuild
+  }
+
+  # If not releasing, expand dependencies into list of packages to build
   $toProcess = $packagesToBuild
   while ($toProcess.Length -gt 0) {
     $package = $toProcess[0]
@@ -96,111 +101,77 @@ function Get-PackagesToBuild() {
     }
   }
 
-  $buildOrder = @()
-
-  # Then we order the packages to that dependencies are built first
-  while ($packagesToBuild.Count -gt 0) {
-    # Pick any package with no unreleased dependencies, add it to the build order and remove it from the list of other packages' unreleased dependencies
-    $package = $packagesToBuild | Where-Object { $_.UnreleasedDependencies.Count -eq 0 } | Select-Object -First 1
-
-    if (-not $package) {
-      Write-Error "These packages cannot be built because they depend on unreleased dependencies that aren't being built." -ErrorAction Continue
-      foreach ($package in $packagesToBuild) {
-        Write-Error "  $($package.name) -> $($package.UnreleasedDependencies -join ', ')" -ErrorAction Continue
-      }
-      exit 1
-    }
-
-    $package.OutputPackage = $outputPackageNames.Contains($package.name)
-    $buildOrder += $package
-    $packagesToBuild = @($packagesToBuild -ne $package)
-
-    foreach ($otherPackage in $packagesToBuild) {
-      $otherPackage.UnreleasedDependencies = $otherPackage.UnreleasedDependencies -ne $package
-    }
-  }
-
-  return $buildOrder
+  return $packagesToBuild
 }
 
-function Initialize-VendorDirectory() {
-  $path = "$RepoRoot/target/vendor"
-  Invoke-LoggedCommand "cargo vendor $path" -GroupOutput | Out-Host
-  return $path
+function Get-CargoMetadata() {
+  cargo metadata --no-deps --format-version 1 --manifest-path "$RepoRoot/Cargo.toml" | ConvertFrom-Json -Depth 100 -AsHashtable
 }
 
-function Add-CrateToLocalRegistry($LocalRegistryPath, $Package) {
-  $packageName = $Package.name
-  $packageVersion = $Package.version
+function Create-ApiViewFile($package) {
+  $packageName = $package.name
+  $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $packageName"
+  Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
-  # create an index entry for the package
-  $packagePath = "$RepoRoot/target/package/$packageName-$packageVersion"
+  $packagePath = Split-Path -Path $package.manifest_path -Parent
 
-  Write-Host "Copying package '$packageName' to vendor directory '$LocalRegistryPath'"
-  Copy-Item -Path $packagePath -Destination $LocalRegistryPath -Recurse
-
-  #write an empty checksum file
-  '{"files":{}}' | Out-File -FilePath "$LocalRegistryPath/$packageName-$packageVersion/.cargo-checksum.json" -Encoding utf8
+  "$packagePath/review/$packageName.rust.json"
 }
 
-Push-Location $RepoRoot
+$originalLocation = Get-Location
 try {
-  $localRegistryPath = Initialize-VendorDirectory
+  Set-Location $RepoRoot
 
   [array]$packages = Get-PackagesToBuild
-
-  Write-Host "Building packages in the following order:"
+  $packageParams = @()
   foreach ($package in $packages) {
-    $packageName = $package.name
-    $type = if ($package.OutputPackage) { "output" } else { "dependency" }
-    Write-Host "  $packageName ($type)"
+    $packageParams += "--package", $package.name
   }
 
-  foreach ($package in $packages) {
-    Write-Host ""
+  if ($NoVerify) {
+    $packageParams += "--no-verify"
+  }
 
-    $packageName = $package.name
-    $packageVersion = $package.version
+  Write-Host "> cargo publish --locked --dry-run --allow-dirty $($packageParams -join ' ')"
+  & cargo publish --locked --dry-run --allow-dirty @packageParams 2>&1 | Tee-Object -Variable packResult
+  if ($LASTEXITCODE) {
+    Write-Host "cargo publish failed with exit code $LASTEXITCODE"
+    exit $LASTEXITCODE
+  }
 
-    $command = "cargo publish --locked --dry-run --package $packageName --registry crates-io --config `"source.crates-io.replace-with='local'`" --config `"source.local.directory='$localRegistryPath'`" --allow-dirty"
+  if ($OutputPath -and $package.OutputPackage) {
+    $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$packageName-$packageVersion")
+    $targetPath = [System.IO.Path]::Combine($OutputPath, $packageName)
+    $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
+    $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$packageName.rust.json")
 
-    if ($NoVerify) {
-      $command += " --no-verify"
+    if (Test-Path -Path $targetContentsPath) {
+      Remove-Item -Path $targetContentsPath -Recurse -Force
     }
 
-    Invoke-LoggedCommand -Command $command -GroupOutput
+    Write-Host "Copying package '$packageName' to '$targetContentsPath'"
+    New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
+    Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse -Exclude "Cargo.toml.orig"
 
-
-    # copy the package to the local registry
-    Add-CrateToLocalRegistry `
-      -LocalRegistryPath $localRegistryPath `
-      -Package $package
-
-    if ($OutputPath -and $package.OutputPackage) {
-      $sourcePath = "$RepoRoot/target/package/$packageName-$packageVersion"
-      $targetPath = "$OutputPath/$packageName"
-      $targetContentsPath = "$targetPath/contents"
-      $targetApiReviewFile = "$targetPath/$packageName.rust.json"
-
-      if (Test-Path -Path $targetContentsPath) {
-        Remove-Item -Path $targetContentsPath -Recurse -Force
-      }
-
-      Write-Host "Copying package '$packageName' to '$targetContentsPath'"
-      New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
-      Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse -Exclude "Cargo.toml.orig"
-
-      Write-Host "Creating API review file"
-      $apiReviewFile = Create-ApiViewFile $package
+    Write-Host "Creating API review file"
+    $apiReviewFile = Create-ApiViewFile $package
       
-      Write-Host "Copying API review file to '$targetApiReviewFile'"
-      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
-    }
+    Write-Host "Copying API review file to '$targetApiReviewFile'"
+    Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
   }
 
-  Write-Host "Removing local registry"
-  Remove-Item -Path $localRegistryPath -Recurse -Force | Out-Null
+  if ($OutBuildOrderFile) {
+    $buildOrder = @()
+    foreach ($line in $packResult) { 
+      if ($line -match '^\s*Packaging (\w*) ([\w\d\.-]*)') {
+        $buildOrder += $matches[1]
+      }
+    }
+
+    Write-Host "Build Order: $($buildOrder -join ', ')"
+    $buildOrder | ConvertTo-Json -Depth 100 | Set-Content $OutBuildOrderFile
+  }
 }
 finally {
-  Pop-Location
+  Set-Location $originalLocation
 }

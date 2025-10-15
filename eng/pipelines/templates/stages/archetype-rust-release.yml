@@ -95,6 +95,12 @@ stages:
                         # and use ArtifactIndex to select the right one
                         $index = [int]'$(ArtifactIndex)'
                         $artifacts = Get-Content '$(Pipeline.Workspace)/drop/release-order.json' | ConvertFrom-Json
+                        
+                        # Force $artifacts to be an array (PowerShell unrolls single-item arrays)
+                        if ($artifacts -isnot [Array]) {                          
+                          $artifacts = @($artifacts)
+                        }
+
                         if ($index -ge $artifacts.Count) {
                           Write-Error "ArtifactIndex $index is out of range (0..$($artifacts.Count - 1))"
                           exit 1
