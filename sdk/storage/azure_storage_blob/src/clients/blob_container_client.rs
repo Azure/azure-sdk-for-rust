@@ -277,7 +277,7 @@ impl BlobContainerClient {
         self.client.get_account_info(options).await
     }
 
-    /// Checks if the blob exists.
+    /// Checks if the container exists.
     ///
     /// Returns `true` if the container exists, `false` if the container does not exist, and propagates all other errors.
     pub async fn exists(&self) -> Result<bool> {
