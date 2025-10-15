@@ -92,7 +92,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.getProperties")]
     pub async fn get_properties(
         &self,
@@ -151,7 +151,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     ///
     /// ## Response Headers
     ///
@@ -217,7 +217,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.getQueues")]
     pub fn list_queues(
         &self,
@@ -311,7 +311,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `queue_service_properties` - The storage service properties to set.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.setProperties")]
     pub async fn set_properties(
         &self,
