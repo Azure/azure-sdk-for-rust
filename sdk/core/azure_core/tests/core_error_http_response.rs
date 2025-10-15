@@ -67,6 +67,7 @@ async fn deserialize_error_response() -> Result<(), Box<dyn std::error::Error>> 
 
     let err = client.get_secret("secret-name", None).await.unwrap_err();
 
+    // Test comment
     // Deconstruct the HttpResponse
     let ErrorKind::HttpResponse {
         status,
