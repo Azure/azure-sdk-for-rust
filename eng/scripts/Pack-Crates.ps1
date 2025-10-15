@@ -13,7 +13,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# TODO: Don't use Join-Path
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'Pack-Common.ps1'))
 

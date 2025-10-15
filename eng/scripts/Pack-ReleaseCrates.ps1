@@ -9,8 +9,6 @@ param(
 )
 
 . ([System.IO.Path]::Combine($PSScriptRoot, 'Pack-Common.ps1'))
-
-# TODO: Ensure this works
 $RepoRoot = [System.IO.Path]::Combine($PSScriptRoot, '../..')
 
 $metadata = Get-CargoMetadata
