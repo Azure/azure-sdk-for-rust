@@ -22,10 +22,6 @@ Packing crates with
     RUSTFLAGS: '${env:RUSTFLAGS}'
 "@
 
-if ($OutputPath) {
-  $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
-}
-
 function Get-OutputPackageNames($workspacePackages) {
   $packablePackages = $workspacePackages | Where-Object -Property publish -NE -Value @()
   $packablePackageNames = $packablePackages.name
@@ -139,25 +135,32 @@ try {
     exit $LASTEXITCODE
   }
 
-  if ($OutputPath -and $package.OutputPackage) {
-    $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$packageName-$packageVersion")
-    $targetPath = [System.IO.Path]::Combine($OutputPath, $packageName)
-    $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
-    $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$packageName.rust.json")
+  if ($OutputPath) {
+    $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
 
-    if (Test-Path -Path $targetContentsPath) {
-      Remove-Item -Path $targetContentsPath -Recurse -Force
+    foreach ($package in $packages) {
+      $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$($package.name)-$($package.version)")
+      $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)
+      $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
+      $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name).rust.json")
+
+      if (Test-Path -Path $targetContentsPath) {
+        Remove-Item -Path $targetContentsPath -Recurse -Force
+      }
+
+      Write-Host "Copying package contents '$($package.name)' to '$targetContentsPath'"
+      New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
+      Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse
+
+      Write-Host "Copying .crate file for '$($package.name)' to '$targetPath'"
+      Copy-Item -Path "$sourcePath.crate" -Destination $targetPath -Force
+
+      Write-Host "Creating API review file"
+      $apiReviewFile = Create-ApiViewFile $package
+        
+      Write-Host "Copying API review file to '$targetApiReviewFile'"
+      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
     }
-
-    Write-Host "Copying package '$packageName' to '$targetContentsPath'"
-    New-Item -ItemType Directory -Path $targetContentsPath -Force | Out-Null
-    Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse -Exclude "Cargo.toml.orig"
-
-    Write-Host "Creating API review file"
-    $apiReviewFile = Create-ApiViewFile $package
-      
-    Write-Host "Copying API review file to '$targetApiReviewFile'"
-    Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
   }
 
   if ($OutBuildOrderFile) {
