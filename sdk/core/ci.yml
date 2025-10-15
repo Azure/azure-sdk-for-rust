@@ -10,16 +10,52 @@ trigger:
     include:
     - sdk/core/
 
+parameters: 
+- name: typespec
+  displayName: typespec
+  type: boolean
+  default: false
+- name: typespec_macros
+  displayName: typespec_macros
+  type: boolean
+  default: false
+- name: typespec_client_core
+  displayName: typespec_client_core
+  type: boolean
+  default: false
+- name: release_azure_core
+  displayName: azure_core
+  type: boolean
+  default: false
+- name: release_azure_core_macros
+  displayName: azure_core_macros
+  type: boolean
+  default: false
+- name: release_azure_core_amqp
+  displayName: azure_core_amqp
+  type: boolean
+  default: false
+- name: release_azure_core_opentelemetry
+  displayName: azure_core_opentelemetry
+  type: boolean
+  default: false
+
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: core
     Artifacts:
+    - name: typespec
+      releaseInBatch: ${{ parameters.typespec }}
+    - name: typespec_macros
+      releaseInBatch: ${{ parameters.typespec_macros }}
+    - name: typespec_client_core
+      releaseInBatch: ${{ parameters.typespec_client_core }}
     - name: azure_core
-      safeName: AzureCore
+      releaseInBatch: ${{ parameters.azure_core }}
     - name: azure_core_macros
-      safeName: AzureCoreMacros
+      releaseInBatch: ${{ parameters.azure_core_macros }}
     - name: azure_core_amqp
-      safeName: AzureCoreAmqp
+      releaseInBatch: ${{ parameters.azure_core_amqp }}
     - name: azure_core_opentelemetry
-      safeName: AzureCoreOpentelemetry
+      releaseInBatch: ${{ parameters.azure_core_opentelemetry }}
