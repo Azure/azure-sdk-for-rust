@@ -78,10 +78,10 @@ jobs:
           $requireDependencies = $false
         }
 
-        $packageNames = $artifactsToBuild.name -join ','
+        $packageNames = $artifactsToBuild.name
 
         if ($requireDependencies) {
-          Write-Host "Building crates with dependency validation for reelase"
+          Write-Host "Building crates with dependency validation for release"
           & $(Build.SourcesDirectory)/eng/scripts/Pack-ReleaseCrates.ps1 `
             -OutputPath '$(Build.ArtifactStagingDirectory)' `
             -PackageNames $packageNames `
