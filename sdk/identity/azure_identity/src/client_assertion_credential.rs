@@ -203,6 +203,7 @@ pub(crate) mod tests {
 
     pub fn is_valid_request(
         expected_authority: String,
+        expected_assertion: Option<String>,
     ) -> impl Fn(&Request) -> azure_core::Result<()> {
         let expected_url = format!("{expected_authority}/oauth2/v2.0/token");
         move |req: &Request| {
@@ -212,13 +213,6 @@ pub(crate) mod tests {
                 content_type::APPLICATION_X_WWW_FORM_URLENCODED.as_str(),
                 req.headers().get_str(&headers::CONTENT_TYPE).unwrap()
             );
-            let expected_params = [
-                ("client_assertion", FAKE_ASSERTION),
-                ("client_assertion_type", ASSERTION_TYPE),
-                ("client_id", FAKE_CLIENT_ID),
-                ("grant_type", "client_credentials"),
-                ("scope", &LIVE_TEST_SCOPES.join(" ")),
-            ];
             let body = match req.body() {
                 Body::Bytes(bytes) => str::from_utf8(bytes).unwrap(),
                 _ => panic!("unexpected body type"),
@@ -226,6 +220,22 @@ pub(crate) mod tests {
             let actual_params: HashMap<String, String> = form_urlencoded::parse(body.as_bytes())
                 .map(|(k, v)| (k.to_string(), v.to_string()))
                 .collect();
+            let assertion = actual_params
+                .get("client_assertion")
+                .expect("request body should contain client_assertion");
+            match &expected_assertion {
+                Some(expected) => assert_eq!(expected, assertion),
+                None => assert!(
+                    !assertion.is_empty(),
+                    "expected client_assertion to be present"
+                ),
+            }
+            let expected_params = [
+                ("client_assertion_type", ASSERTION_TYPE),
+                ("client_id", FAKE_CLIENT_ID),
+                ("grant_type", "client_credentials"),
+                ("scope", &LIVE_TEST_SCOPES.join(" ")),
+            ];
             for (key, value) in expected_params.iter() {
                 assert_eq!(
                     *value,
@@ -263,6 +273,7 @@ pub(crate) mod tests {
             )],
             Some(Arc::new(is_valid_request(
                 FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+                Some(FAKE_ASSERTION.to_string()),
             ))),
         );
         let credential = ClientAssertionCredential::new(
@@ -297,6 +308,7 @@ pub(crate) mod tests {
             vec![token_response()],
             Some(Arc::new(is_valid_request(
                 FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+                Some(FAKE_ASSERTION.to_string()),
             ))),
         );
         let credential = ClientAssertionCredential::new(
@@ -335,7 +347,10 @@ pub(crate) mod tests {
         for (cloud, expected_authority) in cloud_configuration_cases() {
             let mock = MockSts::new(
                 vec![token_response()],
-                Some(Arc::new(is_valid_request(expected_authority))),
+                Some(Arc::new(is_valid_request(
+                    expected_authority,
+                    Some(FAKE_ASSERTION.to_string()),
+                ))),
             );
             let credential = ClientAssertionCredential::new(
                 FAKE_TENANT_ID.to_string(),
