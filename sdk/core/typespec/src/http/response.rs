@@ -93,7 +93,7 @@ impl ResponseBody {
     where
         T: DeserializeOwned,
     {
-        crate::xml::read_xml(&self.0)
+        crate::xml::from_xml(&self.0)
     }
 }
 
