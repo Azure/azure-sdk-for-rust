@@ -14,7 +14,7 @@ use tracing::trace;
 pub fn create_test_checkpoint_store(recording: &Recording) -> Result<Arc<BlobCheckpointStore>> {
     let credential = recording.credential();
     let mut options = BlobContainerClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
     let blob_container_client = BlobContainerClient::new(
         &recording.var("AZURE_STORAGE_BLOB_ENDPOINT", None),
         recording.var("AZURE_STORAGE_BLOB_CONTAINER", None),

@@ -452,7 +452,7 @@ pub async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result
 /// * `recording` - A reference to a Recording instance.
 fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String) {
     let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
+    recording.instrument(&mut client_options, None);
     let endpoint = format!(
         "https://{}.queue.core.windows.net/",
         recording

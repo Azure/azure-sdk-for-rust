@@ -13,7 +13,7 @@ use crate::{
             ClientAddSanitizerOptions, ClientRemoveSanitizersOptions, ClientSetMatcherOptions,
         },
         models::{SanitizerList, StartPayload, VariablePayload},
-        policy::RecordingPolicy,
+        policy::{RecordingOptions, RecordingPolicy},
         Proxy, ProxyExt, RecordingId,
     },
     recording::policy::RecordingModePolicy,
@@ -40,7 +40,7 @@ use std::{
     env,
     sync::{Arc, Mutex, OnceLock, RwLock},
 };
-use tracing::span::EnteredSpan;
+use tracing::{span::EnteredSpan, trace};
 
 /// Represents a playback or recording session using the [`Proxy`].
 #[derive(Debug)]
@@ -116,13 +116,17 @@ impl Recording {
     ///     let recording = ctx.recording();
     ///
     ///     let mut options = MyClientOptions::default();
-    ///     ctx.instrument(&mut options.client_options);
+    ///     ctx.instrument(&mut options.client_options, None);
     ///
     ///     let client = MyClient::new("https://azure.net", Some(options));
     ///     client.invoke().await
     /// }
     /// ```
-    pub fn instrument(&self, options: &mut ClientOptions) {
+    pub fn instrument(
+        &self,
+        options: &mut ClientOptions,
+        recording_options: Option<RecordingOptions>,
+    ) {
         let Some(client) = self.proxy.client() else {
             return;
         };
@@ -142,6 +146,7 @@ impl Recording {
             options.per_call_policies.push(test_mode_policy);
         }
 
+        trace!("Setting recording options to {recording_options:?}");
         let recording_policy = self
             .recording_policy
             .get_or_init(|| {
@@ -149,7 +154,7 @@ impl Recording {
                     test_mode: self.test_mode,
                     host: Some(client.endpoint().clone()),
                     recording_id: self.id.clone(),
-                    ..Default::default()
+                    options: RwLock::new(recording_options.unwrap_or_default()),
                 })
             })
             .clone();
@@ -584,6 +589,26 @@ impl Drop for SkipGuard<'_> {
         if self.0.test_mode == TestMode::Record {
             let _ = self.0.set_skip(None);
         }
+    }
+}
+
+/// Whether to remove records during recording playback.
+///
+/// This option is used for test recordings, if true, the recording will be removed from the test-proxy when retrieved,
+/// otherwise it will be kept. The default is true.
+///
+#[derive(Debug)]
+pub struct RemoveRecording(pub bool);
+
+impl Header for RemoveRecording {
+    fn name(&self) -> HeaderName {
+        trace!("RemoveRecording::name");
+        HeaderName::from_static("x-recording-remove")
+    }
+
+    fn value(&self) -> HeaderValue {
+        trace!("RemoveRecording::value: {}", self.0);
+        HeaderValue::from_static(if self.0 { "true" } else { "false" })
     }
 }
 

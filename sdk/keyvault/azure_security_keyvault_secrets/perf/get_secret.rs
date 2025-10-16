@@ -10,7 +10,7 @@
 //!
 //! To run the test, use the following command line arguments:
 //!
-//! cargo test --package azure_security_keyvault_secrets --test performance_tests -- --duration 10 --parallel 20 get_secret -u https://<my_vault>.vault.azure.net/
+//! cargo test --package azure_security_keyvault_secrets --test perf -- --duration 10 --parallel 20 get_secret -u https://<my_vault>.vault.azure.net/
 //!
 
 use std::sync::{Arc, OnceLock};
@@ -18,7 +18,7 @@ use std::sync::{Arc, OnceLock};
 use azure_core::Result;
 use azure_core_test::{
     perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
-    Recording, TestContext,
+    Recording, RecordingOptions, RemoveRecording, TestContext,
 };
 use azure_security_keyvault_secrets::{
     models::SetSecretParameters, SecretClient, SecretClientOptions,
@@ -79,7 +79,13 @@ impl PerfTest for GetSecrets {
         let credential = recording.credential();
 
         let mut client_options = SecretClientOptions::default();
-        recording.instrument(&mut client_options.client_options);
+        recording.instrument(
+            &mut client_options.client_options,
+            Some(RecordingOptions {
+                remove_recording: Some(RemoveRecording(false)),
+                ..Default::default()
+            }),
+        );
 
         let vault_url = self
             .vault_url

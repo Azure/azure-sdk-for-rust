@@ -3,7 +3,7 @@
 
 use crate::{
     proxy::{RecordingId, RECORDING_MODE, RECORDING_UPSTREAM_BASE_URI},
-    Skip,
+    RemoveRecording, Skip,
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -118,6 +118,7 @@ impl Policy for RecordingPolicy {
 #[derive(Debug, Default)]
 pub struct RecordingOptions {
     pub skip: Option<Skip>,
+    pub remove_recording: Option<RemoveRecording>,
 }
 
 impl AsHeaders for RecordingOptions {
@@ -125,6 +126,7 @@ impl AsHeaders for RecordingOptions {
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
-        self.skip.as_headers()
+        self.skip.as_headers()?;
+        self.remove_recording.as_headers()
     }
 }

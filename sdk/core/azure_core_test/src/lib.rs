@@ -17,6 +17,7 @@ pub mod stream;
 pub mod tracing;
 use azure_core::Error;
 pub use azure_core::{error::ErrorKind, test::TestMode};
+pub use proxy::policy::RecordingOptions;
 pub use proxy::{matchers::*, sanitizers::*};
 pub use recording::*;
 use std::path::{Path, PathBuf};

@@ -257,7 +257,7 @@ async fn test_service_client_new(ctx: TestContext) -> Result<()> {
     let mut options = TestServiceClientOptions {
         ..Default::default()
     };
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     assert_eq!(client.endpoint().as_str(), "https://www.microsoft.com/");
@@ -273,7 +273,7 @@ async fn test_service_client_get(ctx: TestContext) -> Result<()> {
     let endpoint = "https://azuresdkforcpp.azurewebsites.net";
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     let response = client.get("get", None).await;
@@ -305,7 +305,7 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
         },
         ..Default::default()
     };
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     let response = client.get("get", None).await;
@@ -360,7 +360,7 @@ async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
         },
         ..Default::default()
     };
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = TestServiceClient::new(endpoint, credential.clone(), Some(options)).unwrap();
     let response = client.get("failing_url", None).await;
@@ -421,7 +421,7 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
         },
         ..Default::default()
     };
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     let response = client.get_with_function_tracing("get", None).await;
@@ -484,7 +484,7 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
         },
         ..Default::default()
     };
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = TestServiceClient::new(endpoint, credential, Some(options)).unwrap();
     let response = client.get_with_function_tracing("failing_url", None).await;
