@@ -1,0 +1,115 @@
+name: Copilot Setup Steps
+
+# This workflow sets up the development environment for GitHub Copilot coding agent
+# It uses a pre-built container image with all the necessary tools already installed
+#
+# The workflow:
+# - Uses the heaths/azure-sdk-for-rust:latest container image with all dependencies
+# - Maps the repository into the standard devcontainer workspace location
+# - Caches Cargo dependencies for improved performance
+# - Runs comprehensive workspace verification (check, clippy, fmt)
+# - Tests basic functionality to ensure the environment is ready
+#
+# This approach leverages a pre-built image that contains all the tools from
+# the devcontainer configuration, avoiding the need to install tools at runtime
+#
+# Triggers:
+# - Manual execution via workflow_dispatch 
+# - Weekly scheduled runs to keep environment fresh
+# - Automatic runs when key configuration files change
+
+on:
+  workflow_dispatch: # Allow manual triggering
+  schedule:
+    # Run weekly to keep the environment fresh
+    - cron: '0 2 * * 1' # Monday at 2 AM UTC
+  push:
+    branches: [main]
+    paths:
+      - 'rust-toolchain.toml'
+      - 'Cargo.toml'
+      - '.devcontainer/**'
+      - '.github/workflows/copilot-setup-steps.yml'
+  pull_request:
+    paths:
+      - 'rust-toolchain.toml'
+      - 'Cargo.toml'
+      - '.devcontainer/**'
+      - '.github/workflows/copilot-setup-steps.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  copilot-setup-steps:
+    name: Setup Copilot Coding Agent Environment
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    environment: Copilot
+    container:
+      image: heaths/azure-sdk-for-rust:latest
+      volumes:
+        - ${{ github.workspace }}:/workspaces/azure-sdk-for-rust
+      options: --workdir /workspaces/azure-sdk-for-rust
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      
+      - name: Verify workspace setup
+        run: |
+          # Verify the workspace can be built
+          cargo check --workspace --all-targets
+          
+          # Run basic linting
+          cargo clippy --workspace --all-targets -- -D warnings
+          
+          # Check formatting
+          cargo fmt --all -- --check
+      
+      - name: Setup environment variables
+        run: |
+          echo "RUST_BACKTRACE=1" >> $GITHUB_ENV
+          echo "CARGO_TERM_COLOR=always" >> $GITHUB_ENV
+          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
+      
+      - name: Test basic functionality
+        run: |
+          # Test that we can run basic cargo commands
+          cargo --version
+          cargo tree --workspace | head -20
+          
+          # Verify that tests can be discovered
+          cargo test --workspace --no-run
+      
+      - name: Environment summary
+        run: |
+          echo "=== Rust Environment Summary ==="
+          rustc --version
+          cargo --version
+          echo "=== Installed Components ==="
+          rustup component list --installed
+          echo "=== Available Tools ==="
+          which cargo-watch && cargo-watch --version || echo "cargo-watch not available"
+          which http-server && http-server --version || echo "http-server not available"
+          echo "=== System Dependencies ==="
+          openssl version
+          pkg-config --exists openssl && echo "OpenSSL pkg-config: OK" || echo "OpenSSL pkg-config: NOT FOUND"
+          echo "=== Workspace Structure ==="
+          find . -name "Cargo.toml" | head -10
+          echo "=== Environment Ready for Copilot Coding Agent ==="
