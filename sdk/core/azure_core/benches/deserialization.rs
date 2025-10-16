@@ -61,7 +61,7 @@ fn deserialize_list_blobs(c: &mut Criterion) {
         group.bench_function("xml", |b| {
             b.iter(|| {
                 let _: ListBlobsFlatSegmentResponse =
-                    black_box(xml::read_xml(&blobs_xml).expect("deserialize xml"));
+                    black_box(xml::from_xml(&blobs_xml).expect("deserialize xml"));
             });
         });
         group.finish();

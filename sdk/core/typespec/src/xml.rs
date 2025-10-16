@@ -6,7 +6,7 @@ use crate::error::{ErrorKind, Result, ResultExt};
 use bytes::Bytes;
 pub use quick_xml::serde_helpers::text_content as content;
 use quick_xml::{
-    de::{from_reader, from_str},
+    de::from_reader,
     se::{to_string, to_string_with_root},
 };
 use serde::de::DeserializeOwned;
@@ -18,18 +18,7 @@ const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 const DECLARATION: &[u8; 38] = br#"<?xml version="1.0" encoding="utf-8"?>"#;
 
 /// Reads XML from bytes.
-pub fn read_xml_str<T>(body: &str) -> Result<T>
-where
-    T: DeserializeOwned,
-{
-    from_str(body).with_context_fn(ErrorKind::DataConversion, || {
-        let t = core::any::type_name::<T>();
-        format!("failed to deserialize the following xml into a {t}\n{body}")
-    })
-}
-
-/// Reads XML from bytes.
-pub fn read_xml<T>(body: &[u8]) -> Result<T>
+pub fn from_xml<T>(body: &[u8]) -> Result<T>
 where
     T: DeserializeOwned,
 {
@@ -110,15 +99,9 @@ mod test {
             x: "Hello, world!".into(),
         };
         let xml = br#"<?xml version="1.0" encoding="utf-8"?><Foo><x>Hello, world!</x></Foo>"#;
-        assert_eq!(test, read_xml(xml)?);
+        assert_eq!(test, from_xml(xml)?);
 
-        let error = read_xml::<Test>(&xml[..xml.len() - 2]).unwrap_err();
-        assert!(format!("{error}").contains("typespec::xml::test::Test"));
-
-        let xml = r#"<?xml version="1.0" encoding="utf-8"?><Foo><x>Hello, world!</x></Foo>"#;
-        assert_eq!(test, read_xml_str(xml)?);
-
-        let error = read_xml_str::<Test>(&xml[..xml.len() - 2]).unwrap_err();
+        let error = from_xml::<Test>(&xml[..xml.len() - 2]).unwrap_err();
         assert!(format!("{error}").contains("typespec::xml::test::Test"));
         Ok(())
     }

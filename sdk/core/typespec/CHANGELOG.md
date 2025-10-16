@@ -7,6 +7,8 @@
 ### Breaking Changes
 
 - Removed `ErrorKind::MockFramework`.
+- Removed `xml::read_xml_str()`.
+- Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 
 ### Bugs Fixed
 
