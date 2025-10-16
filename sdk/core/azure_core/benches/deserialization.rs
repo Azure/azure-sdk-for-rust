@@ -242,9 +242,9 @@ mod models {
         /// The content MD5 of the blob.
         #[serde(
             default,
-            deserialize_with = "azure_core::base64::deserialize",
+            deserialize_with = "azure_core::base64::option::deserialize",
             rename = "Content-MD5",
-            serialize_with = "azure_core::base64::serialize",
+            serialize_with = "azure_core::base64::option::serialize",
             skip_serializing_if = "Option::is_none"
         )]
         pub content_md5: Option<Vec<u8>>,
