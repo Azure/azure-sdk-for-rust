@@ -42,6 +42,7 @@
     "cppvsdbg",
     "datalake",
     "datetime",
+    "deserializers",
     "devicecode",
     "docsrs",
     "doctest",

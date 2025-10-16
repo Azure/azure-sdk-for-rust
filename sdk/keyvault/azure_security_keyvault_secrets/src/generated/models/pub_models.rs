@@ -5,7 +5,7 @@
 
 use super::DeletionRecoveryLevel;
 use azure_core::{
-    base64::{deserialize_url_safe, serialize_url_safe},
+    base64::option::{deserialize_url_safe, serialize_url_safe},
     fmt::SafeDebug,
     time::OffsetDateTime,
 };
