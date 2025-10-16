@@ -45,7 +45,3 @@ extends:
     Iterations: ${{ parameters.Iterations }}
     AdditionalArguments: ${{ parameters.AdditionalArguments }}
     Profile: ${{ parameters.Profile }}
-    EnvVars:
-      # This is set in the InstallLanguageSteps
-      VCPKG_BINARY_SOURCES_SECRET: $(VCPKG_BINARY_SOURCES_SECRET)
-

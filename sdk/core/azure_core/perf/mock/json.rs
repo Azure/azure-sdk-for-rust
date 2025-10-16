@@ -1,18 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{List, ListItem, ListItemProperties, ListItemsContainer};
+use super::List;
 use azure_core::{
-    base64,
-    http::{
-        headers::Headers, BufResponse, ClientOptions, Context, JsonFormat, Method, Pipeline,
-        RawResponse, Request, Response, StatusCode, Transport,
-    },
+    http::{Context, JsonFormat, Method, Pipeline, RawResponse, Request, Response},
     json,
-    time::OffsetDateTime,
 };
 use azure_core_test::{
-    http::MockHttpClient,
     perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
     TestContext,
 };
@@ -30,54 +24,7 @@ impl MockJsonTest {
                 .try_get_test_arg("count")?
                 .cloned()
                 .unwrap_or(super::DEFAULT_COUNT);
-            let mut list = List {
-                name: Some("t0123456789abcdef".into()),
-                ..Default::default()
-            };
-            let mut items = Vec::with_capacity(count);
-            let now = OffsetDateTime::now_utc();
-            for i in 0..count {
-                let name = format!("testItem{i}");
-                let hash = base64::encode(&name).into_bytes();
-                items.push(ListItem {
-                    name: Some(name),
-                    properties: Some(ListItemProperties {
-                        etag: Some(i.to_string().into()),
-                        creation_time: Some(now),
-                        last_modified: Some(now),
-                        content_md5: Some(hash),
-                    }),
-                });
-            }
-            list.container = Some(ListItemsContainer { items: Some(items) });
-
-            let body = json::to_json(&list)?;
-            let client = Arc::new(MockHttpClient::new(move |_| {
-                let body = body.clone();
-                async move {
-                    // Yield simulates an expected network call but kills performance by ~45%.
-                    tokio::task::yield_now().await;
-                    Ok(BufResponse::from_bytes(
-                        StatusCode::Ok,
-                        Headers::new(),
-                        body,
-                    ))
-                }
-                .boxed()
-            }));
-            let options = ClientOptions {
-                transport: Some(Transport::new(client)),
-                ..Default::default()
-            };
-            let pipeline = Pipeline::new(
-                Some("perf"),
-                Some("0.1.0"),
-                options,
-                Vec::new(),
-                Vec::new(),
-                None,
-            );
-
+            let pipeline = super::create_pipeline(count, json::to_json)?;
             Ok(Box::new(MockJsonTest { pipeline }) as Box<dyn PerfTest>)
         }
         .boxed()
@@ -118,8 +65,13 @@ impl PerfTest for MockJsonTest {
         let (status, headers, body) = response.deconstruct();
         let response: Response<List, JsonFormat> =
             RawResponse::from_bytes(status, headers, body).into();
-        let list: List = response.into_body()?;
-        black_box(list.name);
+        let list: List = tokio::spawn(async move {
+            tokio::task::yield_now().await;
+            response.into_body()
+        })
+        .await
+        .unwrap()?;
+        assert_eq!(black_box(list.name), Some("t0123456789abcdef".into()));
 
         Ok(())
     }
