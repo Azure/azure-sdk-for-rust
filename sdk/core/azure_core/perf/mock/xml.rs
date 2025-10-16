@@ -36,10 +36,10 @@ impl MockXmlTest {
             };
             let mut items = Vec::with_capacity(count);
             let now = OffsetDateTime::now_utc();
-            for (i, item) in items.iter_mut().enumerate() {
+            for i in 0..count {
                 let name = format!("testItem{i}");
-                let hash = base64::encode(&name).as_bytes().to_vec();
-                *item = ListItem {
+                let hash = base64::encode(&name).into_bytes();
+                items.push(ListItem {
                     name: Some(name),
                     properties: Some(ListItemProperties {
                         etag: Some(i.to_string().into()),
@@ -47,7 +47,7 @@ impl MockXmlTest {
                         last_modified: Some(now),
                         content_md5: Some(hash),
                     }),
-                };
+                });
             }
             list.container = Some(ListItemsContainer { items: Some(items) });
 
@@ -119,7 +119,7 @@ impl PerfTest for MockXmlTest {
         let response: Response<List, XmlFormat> =
             RawResponse::from_bytes(status, headers, body).into();
         let list: List = response.into_body()?;
-        black_box(&list);
+        black_box(list.name);
 
         Ok(())
     }
