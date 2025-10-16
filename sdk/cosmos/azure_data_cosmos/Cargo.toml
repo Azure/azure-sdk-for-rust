@@ -23,6 +23,7 @@ tracing.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
 uuid = "1.18.0"
+tokio = { workspace = true, features = ["time"] }
 
 [dev-dependencies]
 azure_identity.workspace = true
@@ -31,7 +32,7 @@ clap.workspace = true
 reqwest.workspace = true
 time.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 
 [lints]
 workspace = true
