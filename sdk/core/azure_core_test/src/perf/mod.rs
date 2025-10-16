@@ -298,7 +298,7 @@ impl PerfRunner {
         let test_instance = (test.create_test)(self.clone()).await?;
         let test_instance: Arc<dyn PerfTest> = Arc::from(test_instance);
 
-        let test_mode = crate::TestMode::current()?;
+        let test_mode = crate::TestMode::current_opt()?.unwrap_or(crate::TestMode::Live);
 
         let context = Arc::new(
             crate::recorded::start(
