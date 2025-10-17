@@ -77,9 +77,14 @@ function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
   $outputPackageNames = Get-OutputPackageNames $packages
 
+  # Force array in instances of a single package name
+  if ($outputPackageNames -isnot [array]) {
+    $outputPackageNames = @($outputPackageNames)
+  }
+
   [array]$packagesToBuild = $packages | Where-Object { $outputPackageNames.Contains($_.name) }
 
-  if ($Release) { 
+  if ($Release) {
     return $packagesToBuild
   }
 
@@ -163,7 +168,7 @@ try {
 
       Write-Host "Creating API review file"
       $apiReviewFile = Create-ApiViewFile $package
-        
+
       Write-Host "Copying API review file to '$targetApiReviewFile'"
       Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
     }
@@ -171,14 +176,14 @@ try {
 
   if ($OutBuildOrderFile) {
     $buildOrder = @()
-    foreach ($line in $packResult) { 
+    foreach ($line in $packResult) {
       if ($line -match '^\s*Packaging (\w*) ([\w\d\.-]*)') {
         $buildOrder += $matches[1]
       }
     }
 
     Write-Host "Build Order: $($buildOrder -join ', ')"
-    $buildOrder | ConvertTo-Json -Depth 100 | Set-Content $OutBuildOrderFile
+    ConvertTo-Json $buildOrder -Depth 100 | Set-Content $OutBuildOrderFile
   }
 }
 finally {
