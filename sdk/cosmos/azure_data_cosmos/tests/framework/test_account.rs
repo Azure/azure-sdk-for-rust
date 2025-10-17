@@ -4,9 +4,13 @@
 
 use std::{borrow::Cow, str::FromStr, sync::Arc};
 
-use azure_core::{credentials::Secret, http::Transport, test::TestMode};
+use azure_core::{
+    credentials::{Secret, TokenCredential},
+    http::Transport,
+    test::TestMode,
+};
 use azure_core_test::TestContext;
-use azure_data_cosmos::{ConnectionString, CosmosClientOptions, Query};
+use azure_data_cosmos::{ConnectionString, CosmosClient, CosmosClientOptions, Query};
 use reqwest::ClientBuilder;
 
 /// Represents a Cosmos DB account for testing purposes.
@@ -116,6 +120,36 @@ impl TestAccount {
         Ok(azure_data_cosmos::CosmosClient::with_key(
             &self.endpoint,
             self.key.clone(),
+            Some(options),
+        )?)
+    }
+
+    pub fn connect_with_token(
+        &self,
+        cred: Arc<dyn TokenCredential>,
+    ) -> Result<CosmosClient, Box<dyn std::error::Error>> {
+        let allow_invalid_certificates = match self.options.allow_invalid_certificates {
+            Some(b) => b,
+            None => std::env::var(ALLOW_INVALID_CERTS_ENV_VAR).map(|s| s.parse())??,
+        };
+
+        let mut options = CosmosClientOptions::default();
+
+        if allow_invalid_certificates {
+            let client = ClientBuilder::new()
+                .danger_accept_invalid_certs(true)
+                .pool_max_idle_per_host(0)
+                .build()?;
+            options.client_options.transport = Some(Transport::new(Arc::new(client)));
+        }
+
+        self.context
+            .recording()
+            .instrument(&mut options.client_options);
+
+        Ok(CosmosClient::new(
+            &self.endpoint,
+            cred,
             Some(options),
         )?)
     }
