@@ -116,13 +116,17 @@ impl Recording {
     ///     let recording = ctx.recording();
     ///
     ///     let mut options = MyClientOptions::default();
-    ///     ctx.instrument(&mut options.client_options, None);
+    ///     recording.instrument(&mut options.client_options);
     ///
     ///     let client = MyClient::new("https://azure.net", Some(options));
     ///     client.invoke().await
     /// }
     /// ```
-    pub fn instrument(
+    pub fn instrument(&self, options: &mut ClientOptions) {
+        self.instrument_internal(options, None)
+    }
+
+    pub(crate) fn instrument_internal(
         &self,
         options: &mut ClientOptions,
         recording_options: Option<RecordingOptions>,

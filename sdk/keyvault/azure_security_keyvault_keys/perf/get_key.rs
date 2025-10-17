@@ -74,7 +74,7 @@ impl PerfTest for GetKey {
         let credential = recording.credential();
 
         let mut client_options = KeyClientOptions::default();
-        perf::instrument_for_perf_test(recording, &mut client_options.client_options);
+        perf::instrument_perf(recording, &mut client_options.client_options);
 
         let vault_url = self
             .vault_url

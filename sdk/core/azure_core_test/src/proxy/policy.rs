@@ -118,7 +118,7 @@ impl Policy for RecordingPolicy {
 #[derive(Debug, Default)]
 pub struct RecordingOptions {
     pub skip: Option<Skip>,
-    pub remove_recording: Option<RemoveRecording>,
+    pub remove_recording: Option<bool>,
 }
 
 impl AsHeaders for RecordingOptions {
@@ -128,7 +128,11 @@ impl AsHeaders for RecordingOptions {
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
         let it_self = self.skip.as_headers()?;
 
-        let it_remove = self.remove_recording.as_headers()?;
+        let it_remove = if let Some(remove) = self.remove_recording {
+            RemoveRecording(remove).as_headers()
+        } else {
+            Ok(Vec::<_>::new().into_iter())
+        }?;
 
         Ok(it_self.chain(it_remove).collect::<Vec<_>>().into_iter())
     }

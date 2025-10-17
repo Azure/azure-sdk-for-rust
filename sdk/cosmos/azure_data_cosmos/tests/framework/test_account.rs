@@ -111,7 +111,7 @@ impl TestAccount {
 
         self.context
             .recording()
-            .instrument(&mut options.client_options, None);
+            .instrument(&mut options.client_options);
 
         Ok(azure_data_cosmos::CosmosClient::with_key(
             &self.endpoint,

@@ -220,7 +220,7 @@ mod tests {
             },
             ..Default::default()
         };
-        recording.instrument(&mut options.client_options, None);
+        recording.instrument(&mut options.client_options);
 
         TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap()
     }
@@ -284,7 +284,7 @@ mod tests {
         let mut options = TestServiceClientWithMacrosOptions {
             ..Default::default()
         };
-        recording.instrument(&mut options.client_options, None);
+        recording.instrument(&mut options.client_options);
 
         let client = TestServiceClientWithMacros::new(endpoint, credential, Some(options)).unwrap();
         assert_eq!(client.endpoint().as_str(), "https://microsoft.com/");
