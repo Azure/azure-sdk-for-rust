@@ -2,50 +2,16 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use async_trait::async_trait;
-use azure_core::http::{request::Request, RawResponse, StatusCode};
-
-#[derive(Debug, Clone)]
-pub struct ShouldRetryResult {
-    pub should_retry: bool,
-    pub backoff_time: Duration,
-}
-
-impl ShouldRetryResult {
-    pub fn no_retry() -> Self {
-        Self {
-            should_retry: false,
-            backoff_time: Duration::ZERO,
-        }
-    }
-    pub fn retry_after(backoff: Duration) -> Self {
-        Self {
-            should_retry: true,
-            backoff_time: backoff,
-        }
-    }
-}
-
-#[async_trait]
-pub trait DocumentClientRetryPolicy: Send + Sync {
-    async fn should_retry_exception(
-        &self,
-        err: &azure_core::Error,
-    ) -> ShouldRetryResult;
-
-    async fn should_retry_response(
-        &self,
-        response: &RawResponse,
-    ) -> ShouldRetryResult;
-
-    fn on_before_send_request(&self, request: &mut Request);
-}
+use azure_core::http::{RawResponse, StatusCode};
+use typespec_client_core::http::Request;
+use super::{DocumentClientRetryPolicy, ShouldRetryResult};
 
 pub struct ResourceThrottleRetryPolicy {
     max_attempt_count: usize,
     backoff_delay_factor: u32,
     max_wait_time: Duration,
     current_attempt_count: AtomicUsize,
-    cumulative_retry_delay: Arc<AtomicUsize>, // milliseconds
+    cumulative_retry_delay: Arc<AtomicUsize>,
 }
 
 impl ResourceThrottleRetryPolicy {
@@ -86,6 +52,30 @@ impl ResourceThrottleRetryPolicy {
         }
         (false, Duration::ZERO)
     }
+
+    /// Common retry logic for both exceptions and responses
+    /// 
+    /// This method encapsulates the shared retry decision logic:
+    /// - Checks if we haven't exceeded max retry attempts
+    /// - Calculates backoff delay
+    /// - Increments attempt counter if retrying
+    /// 
+    /// # Arguments
+    /// * `retry_after` - Optional duration to wait before retrying
+    /// 
+    /// # Returns
+    /// `ShouldRetryResult` indicating whether to retry and the backoff time
+    fn should_retry_with_backoff(&self, retry_after: Option<Duration>) -> ShouldRetryResult {
+        let attempt = self.current_attempt_count.load(Ordering::Relaxed);
+        if attempt < self.max_attempt_count {
+            let (should_retry, delay) = self.check_if_retry_needed(retry_after);
+            if should_retry {
+                self.current_attempt_count.fetch_add(1, Ordering::Relaxed);
+                return ShouldRetryResult::retry_after(delay);
+            }
+        }
+        ShouldRetryResult::no_retry()
+    }
 }
 
 #[async_trait]
@@ -94,39 +84,16 @@ impl DocumentClientRetryPolicy for ResourceThrottleRetryPolicy {
         &self,
         err: &azure_core::Error,
     ) -> ShouldRetryResult {
-        // When an error occurs, we can only access limited information without consuming it:
-        // 1. HTTP status code (if it's an HTTP error)
-        // 2. Error message via Display trait
-        //
-        // To extract headers (like x-ms-substatus), we would need to:
-        // - Convert err to ErrorResponse (which consumes it)
-        // - This is not possible in retry logic since we need to return the original error
-        //
-        // Therefore, retry decisions for exceptions are based only on:
-        // - HTTP status code (if available)
-        // - Retry attempt count
-        // - Backoff timing
-        
+
         // Check if the error has an HTTP status code and if it's a valid throttle status
-        if let Some(status) = err.http_status() {
-            if !self.is_valid_throttle_status_code(status) {
-                return ShouldRetryResult::no_retry();
-            }
-        } else {
-            // For non-HTTP errors (network errors, timeouts), don't retry
-            // These are typically not transient Cosmos DB throttling issues
+        // Early return for invalid or missing status codes
+        let status = err.http_status().filter(|&s| self.is_valid_throttle_status_code(s));
+        if status.is_none() {
+            // For non-HTTP errors or non-throttle status codes, don't retry
             return ShouldRetryResult::no_retry();
         }
-        let attempt = self.current_attempt_count.load(Ordering::Relaxed);
-        if attempt < self.max_attempt_count {
-            let (should_retry, delay) = self.check_if_retry_needed(Some(Duration::from_secs(10)));
-            if should_retry {
-                self.current_attempt_count.fetch_add(1, Ordering::Relaxed);
-                return ShouldRetryResult::retry_after(delay);
-            }
-        }
 
-        ShouldRetryResult::no_retry()
+        self.should_retry_with_backoff(Some(Duration::from_secs(10)))
     }
 
     async fn should_retry_response(
@@ -136,15 +103,8 @@ impl DocumentClientRetryPolicy for ResourceThrottleRetryPolicy {
         if !self.is_valid_throttle_status_code(response.status()) {
             return ShouldRetryResult::no_retry();
         }
-        let attempt = self.current_attempt_count.load(Ordering::Relaxed);
-        if attempt < self.max_attempt_count {
-            let (should_retry, delay) = self.check_if_retry_needed(Some(Duration::from_secs(10)));
-            if should_retry {
-                self.current_attempt_count.fetch_add(1, Ordering::Relaxed);
-                return ShouldRetryResult::retry_after(delay);
-            }
-        }
-        ShouldRetryResult::no_retry()
+
+        self.should_retry_with_backoff(Some(Duration::from_secs(10)))
     }
 
     fn on_before_send_request(&self, _request: &mut Request) {

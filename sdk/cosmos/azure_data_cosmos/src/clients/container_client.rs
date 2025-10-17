@@ -73,9 +73,10 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Get);
-        self.pipeline
-            .send(options.method_options.context, &mut req, self.link.clone())
+        self.retry_handler
+            .send_async(options.method_options.context, &mut req, self.link.clone())
             .await
+            .map(Into::into)
     }
 
     /// Updates the indexing policy of the container.
@@ -118,9 +119,10 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Put);
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&properties)?;
-        self.pipeline
-            .send(options.method_options.context, &mut req, self.link.clone())
+        self.retry_handler
+            .send_async(options.method_options.context, &mut req, self.link.clone())
             .await
+            .map(Into::into)
     }
 
     /// Reads container throughput properties, if any.
@@ -184,9 +186,10 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
-        self.pipeline
-            .send(options.method_options.context, &mut req, self.link.clone())
+        self.retry_handler
+            .send_async(options.method_options.context, &mut req, self.link.clone())
             .await
+            .map(Into::into)
     }
 
     /// Creates a new item in the container.
@@ -267,13 +270,14 @@ impl ContainerClient {
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
-        self.pipeline
-            .send(
+        self.retry_handler
+            .send_async(
                 options.method_options.context,
                 &mut req,
                 self.items_link.clone(),
             )
             .await
+            .map(Into::into)
     }
 
     /// Replaces an existing item in the container.
@@ -356,9 +360,10 @@ impl ContainerClient {
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
-        self.pipeline
-            .send(options.method_options.context, &mut req, link)
+        self.retry_handler
+            .send_async(options.method_options.context, &mut req, link)
             .await
+            .map(Into::into)
     }
 
     /// Creates or replaces an item in the container.
@@ -443,13 +448,14 @@ impl ContainerClient {
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
-        self.pipeline
-            .send(
+        self.retry_handler
+            .send_async(
                 options.method_options.context,
                 &mut req,
                 self.items_link.clone(),
             )
             .await
+            .map(Into::into)
     }
 
     /// Reads a specific item from the container.
@@ -500,8 +506,10 @@ impl ContainerClient {
         req.insert_headers(&partition_key.into())?;
         
         // Use the retry handler instance's send_async method which includes automatic retry logic
-        let raw_response = self.retry_handler.send_async(options.method_options.context, &mut req, link).await?;
-        Ok(raw_response.into())
+        self.retry_handler
+            .send_async(options.method_options.context, &mut req, link)
+            .await
+            .map(Into::into)
     }
 
     /// Deletes an item from the container.
@@ -536,9 +544,10 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Delete);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
-        self.pipeline
-            .send(options.method_options.context, &mut req, link)
+        self.retry_handler
+            .send_async(options.method_options.context, &mut req, link)
             .await
+            .map(Into::into)
     }
 
     /// Patches an item in the container.
@@ -612,9 +621,10 @@ impl ContainerClient {
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&patch)?;
 
-        self.pipeline
-            .send(options.method_options.context, &mut req, link)
+        self.retry_handler
+            .send_async(options.method_options.context, &mut req, link)
             .await
+            .map(Into::into)
     }
 
     /// Executes a single-partition query against items in the container.
