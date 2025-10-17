@@ -712,7 +712,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         assert_eq!(17, properties.content_length()?.unwrap());
 
         // Test Case 4: Initialize BlobClient using ContainerClient accessor
-        let blob_client_from_cc = container_client.blob_client(&blob_name.to_string());
+        let blob_client_from_cc = container_client.blob_client(blob_name);
 
         // Upload Blob
         blob_client_from_cc
