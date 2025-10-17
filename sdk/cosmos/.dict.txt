@@ -10,4 +10,5 @@ udfs
 autoscale
 
 # Words used within the Cosmos Native Client (azure_data_cosmos_native)
+azurecosmos
 cosmosclient
