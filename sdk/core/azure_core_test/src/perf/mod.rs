@@ -4,9 +4,10 @@
 #![doc = include_str!("README.md")]
 #![cfg(not(target_arch = "wasm32"))]
 
-use crate::TestContext;
+use crate::{Recording, RecordingOptions, RemoveRecording, TestContext};
 use azure_core::{
     error::{ErrorKind, ResultExt},
+    http::ClientOptions,
     time::Duration,
     Error, Result,
 };
@@ -479,7 +480,13 @@ impl PerfRunner {
                     .value_parser(clap::value_parser!(u32))
                     .global(false),
             )
-            .arg(clap::arg!(--sync).global(true).required(false))
+            .arg(clap::arg!(--sync "Run synchronous tests (ignored)")
+                .global(true)
+                .required(false))
+            .arg(clap::arg!(--"test-proxy" <URL> "The URL of the test proxy, ignored.")
+                .global(true)
+                .value_parser(clap::value_parser!(String))
+                .required(false))
             .arg(
                 clap::arg!(--parallel <COUNT> "The number of concurrent tasks to use when running each test")
                     .required(false)
@@ -535,6 +542,23 @@ impl PerfRunner {
 
         command
     }
+}
+
+/// Instrument a client options appropriately for a perf test.
+///
+/// # Arguments:
+///
+/// - recording: Test recording.
+/// - client_options: Core client options
+///
+pub fn instrument_for_perf_test(recording: &Recording, client_options: &mut ClientOptions) {
+    recording.instrument(
+        client_options,
+        Some(RecordingOptions {
+            remove_recording: Some(RemoveRecording(false)),
+            ..Default::default()
+        }),
+    );
 }
 
 #[cfg(test)]

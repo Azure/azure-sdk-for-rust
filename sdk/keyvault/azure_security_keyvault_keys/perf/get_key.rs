@@ -4,7 +4,7 @@
 use crate::ENV_NAME;
 use azure_core::Result;
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
+    perf::{self, CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
     Recording, TestContext,
 };
 use azure_security_keyvault_keys::{
@@ -74,7 +74,7 @@ impl PerfTest for GetKey {
         let credential = recording.credential();
 
         let mut client_options = KeyClientOptions::default();
-        recording.instrument(&mut client_options.client_options, None);
+        perf::instrument_for_perf_test(recording, &mut client_options.client_options);
 
         let vault_url = self
             .vault_url
