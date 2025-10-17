@@ -3,22 +3,22 @@
 
 use crate::{
     generated::clients::BlobClient as GeneratedBlobClient,
-    generated::clients::ContainerClient as GeneratedBlobContainerClient,
+    generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::{
-        ContainerClientAcquireLeaseOptions, ContainerClientAcquireLeaseResult,
-        ContainerClientBreakLeaseOptions, ContainerClientBreakLeaseResult,
-        ContainerClientChangeLeaseOptions, ContainerClientChangeLeaseResult,
-        ContainerClientCreateOptions, ContainerClientDeleteOptions,
-        ContainerClientFindBlobsByTagsOptions, ContainerClientGetAccountInfoOptions,
-        ContainerClientGetAccountInfoResult, ContainerClientGetPropertiesOptions,
-        ContainerClientGetPropertiesResult, ContainerClientListBlobFlatSegmentOptions,
-        ContainerClientReleaseLeaseOptions, ContainerClientReleaseLeaseResult,
-        ContainerClientRenewLeaseOptions, ContainerClientRenewLeaseResult,
-        ContainerClientSetMetadataOptions,
+        BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
+        BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
+        BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
+        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+        BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccountInfoOptions,
+        BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesOptions,
+        BlobContainerClientGetPropertiesResult, BlobContainerClientListBlobFlatSegmentOptions,
+        BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
+        BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
+        BlobContainerClientSetMetadataOptions,
     },
     models::{FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode},
     pipeline::StorageHeadersPolicy,
-    BlobClient, ContainerClientOptions,
+    BlobClient, BlobContainerClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -48,7 +48,7 @@ impl GeneratedBlobContainerClient {
     pub fn from_url(
         container_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<ContainerClientOptions>,
+        options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
 
@@ -104,7 +104,7 @@ impl BlobContainerClient {
         endpoint: &str,
         container_name: &str,
         credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<ContainerClientOptions>,
+        options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
@@ -126,7 +126,7 @@ impl BlobContainerClient {
     pub fn from_container_url(
         container_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<ContainerClientOptions>,
+        options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
         let client = GeneratedBlobContainerClient::from_url(container_url, credential, options)?;
 
@@ -167,7 +167,7 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub async fn create_container(
         &self,
-        options: Option<ContainerClientCreateOptions<'_>>,
+        options: Option<BlobContainerClientCreateOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.create(options).await
     }
@@ -183,7 +183,7 @@ impl BlobContainerClient {
     pub async fn set_metadata(
         &self,
         metadata: HashMap<String, String>,
-        options: Option<ContainerClientSetMetadataOptions<'_>>,
+        options: Option<BlobContainerClientSetMetadataOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.set_metadata(metadata, options).await
     }
@@ -195,7 +195,7 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub async fn delete_container(
         &self,
-        options: Option<ContainerClientDeleteOptions<'_>>,
+        options: Option<BlobContainerClientDeleteOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client.delete(options).await
     }
@@ -208,8 +208,8 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_properties(
         &self,
-        options: Option<ContainerClientGetPropertiesOptions<'_>>,
-    ) -> Result<Response<ContainerClientGetPropertiesResult, NoFormat>> {
+        options: Option<BlobContainerClientGetPropertiesOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientGetPropertiesResult, NoFormat>> {
         self.client.get_properties(options).await
     }
 
@@ -220,7 +220,7 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub fn list_blobs(
         &self,
-        options: Option<ContainerClientListBlobFlatSegmentOptions<'_>>,
+        options: Option<BlobContainerClientListBlobFlatSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListBlobsFlatSegmentResponse, XmlFormat>>> {
         self.client.list_blob_flat_segment(options)
     }
@@ -243,7 +243,7 @@ impl BlobContainerClient {
     pub async fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
-        options: Option<ContainerClientFindBlobsByTagsOptions<'_>>,
+        options: Option<BlobContainerClientFindBlobsByTagsOptions<'_>>,
     ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         self.client
             .find_blobs_by_tags(filter_expression, options)
@@ -260,8 +260,8 @@ impl BlobContainerClient {
     pub async fn acquire_lease(
         &self,
         duration: i32,
-        options: Option<ContainerClientAcquireLeaseOptions<'_>>,
-    ) -> Result<Response<ContainerClientAcquireLeaseResult, NoFormat>> {
+        options: Option<BlobContainerClientAcquireLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientAcquireLeaseResult, NoFormat>> {
         self.client.acquire_lease(duration, options).await
     }
 
@@ -273,8 +273,8 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub async fn break_lease(
         &self,
-        options: Option<ContainerClientBreakLeaseOptions<'_>>,
-    ) -> Result<Response<ContainerClientBreakLeaseResult, NoFormat>> {
+        options: Option<BlobContainerClientBreakLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientBreakLeaseResult, NoFormat>> {
         self.client.break_lease(options).await
     }
 
@@ -290,8 +290,8 @@ impl BlobContainerClient {
         &self,
         lease_id: String,
         proposed_lease_id: String,
-        options: Option<ContainerClientChangeLeaseOptions<'_>>,
-    ) -> Result<Response<ContainerClientChangeLeaseResult, NoFormat>> {
+        options: Option<BlobContainerClientChangeLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientChangeLeaseResult, NoFormat>> {
         self.client
             .change_lease(lease_id, proposed_lease_id, options)
             .await
@@ -308,8 +308,8 @@ impl BlobContainerClient {
     pub async fn release_lease(
         &self,
         lease_id: String,
-        options: Option<ContainerClientReleaseLeaseOptions<'_>>,
-    ) -> Result<Response<ContainerClientReleaseLeaseResult, NoFormat>> {
+        options: Option<BlobContainerClientReleaseLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientReleaseLeaseResult, NoFormat>> {
         self.client.release_lease(lease_id, options).await
     }
 
@@ -323,8 +323,8 @@ impl BlobContainerClient {
     pub async fn renew_lease(
         &self,
         lease_id: String,
-        options: Option<ContainerClientRenewLeaseOptions<'_>>,
-    ) -> Result<Response<ContainerClientRenewLeaseResult, NoFormat>> {
+        options: Option<BlobContainerClientRenewLeaseOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientRenewLeaseResult, NoFormat>> {
         self.client.renew_lease(lease_id, options).await
     }
 
@@ -336,8 +336,8 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_account_info(
         &self,
-        options: Option<ContainerClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<ContainerClientGetAccountInfoResult, NoFormat>> {
+        options: Option<BlobContainerClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobContainerClientGetAccountInfoResult, NoFormat>> {
         self.client.get_account_info(options).await
     }
 

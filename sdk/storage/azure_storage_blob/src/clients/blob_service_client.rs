@@ -2,17 +2,17 @@
 // Licensed under the MIT License.
 
 use crate::{
-    generated::clients::ContainerClient as GeneratedBlobContainerClient,
-    generated::clients::ServiceClient as GeneratedBlobServiceClient,
-    generated::models::ServiceClientGetAccountInfoResult,
+    generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
+    generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
+    generated::models::BlobServiceClientGetAccountInfoResult,
     models::{
-        BlobServiceProperties, FilterBlobSegment, ListContainersSegmentResponse,
-        ServiceClientFindBlobsByTagsOptions, ServiceClientGetAccountInfoOptions,
-        ServiceClientGetPropertiesOptions, ServiceClientListContainersSegmentOptions,
-        ServiceClientSetPropertiesOptions,
+        BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
+        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
+        BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
+        ListContainersSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
-    BlobContainerClient, ServiceClientOptions,
+    BlobContainerClient, BlobServiceClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -41,7 +41,7 @@ impl GeneratedBlobServiceClient {
     pub fn from_url(
         url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<ServiceClientOptions>,
+        options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
         let mut options = options.unwrap_or_default();
 
@@ -95,7 +95,7 @@ impl BlobServiceClient {
     pub fn new(
         endpoint: &str,
         credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<ServiceClientOptions>,
+        options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
         let url = Url::parse(endpoint)?;
 
@@ -113,7 +113,7 @@ impl BlobServiceClient {
     pub fn from_url(
         url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<ServiceClientOptions>,
+        options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
         let client = GeneratedBlobServiceClient::from_url(url, credential, options)?;
 
@@ -154,7 +154,7 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_properties(
         &self,
-        options: Option<ServiceClientGetPropertiesOptions<'_>>,
+        options: Option<BlobServiceClientGetPropertiesOptions<'_>>,
     ) -> Result<Response<BlobServiceProperties, XmlFormat>> {
         self.client.get_properties(options).await
     }
@@ -166,7 +166,7 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub fn list_containers(
         &self,
-        options: Option<ServiceClientListContainersSegmentOptions<'_>>,
+        options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
         self.client.list_containers_segment(options)
     }
@@ -189,7 +189,7 @@ impl BlobServiceClient {
     pub async fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
-        options: Option<ServiceClientFindBlobsByTagsOptions<'_>>,
+        options: Option<BlobServiceClientFindBlobsByTagsOptions<'_>>,
     ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
         self.client
             .find_blobs_by_tags(filter_expression, options)
@@ -205,7 +205,7 @@ impl BlobServiceClient {
     pub async fn set_properties(
         &self,
         storage_service_properties: RequestContent<BlobServiceProperties, XmlFormat>,
-        options: Option<ServiceClientSetPropertiesOptions<'_>>,
+        options: Option<BlobServiceClientSetPropertiesOptions<'_>>,
     ) -> Result<Response<(), NoFormat>> {
         self.client
             .set_properties(storage_service_properties, options)
@@ -220,8 +220,8 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the request.
     pub async fn get_account_info(
         &self,
-        options: Option<ServiceClientGetAccountInfoOptions<'_>>,
-    ) -> Result<Response<ServiceClientGetAccountInfoResult, NoFormat>> {
+        options: Option<BlobServiceClientGetAccountInfoOptions<'_>>,
+    ) -> Result<Response<BlobServiceClientGetAccountInfoResult, NoFormat>> {
         self.client.get_account_info(options).await
     }
 }

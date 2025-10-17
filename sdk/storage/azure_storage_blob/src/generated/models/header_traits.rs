@@ -12,27 +12,27 @@ use super::{
     BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult, BlobClientReleaseLeaseResult,
     BlobClientRenewLeaseResult, BlobClientSetExpiryResult, BlobClientSetImmutabilityPolicyResult,
     BlobClientSetLegalHoldResult, BlobClientStartCopyFromUrlResult, BlobClientUndeleteResult,
-    BlobImmutabilityPolicyMode, BlobTags, BlobType, BlockBlobClientCommitBlockListResult,
-    BlockBlobClientQueryResult, BlockBlobClientStageBlockFromUrlResult,
-    BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
-    BlockBlobClientUploadResult, BlockList, ContainerClientAcquireLeaseResult,
-    ContainerClientBreakLeaseResult, ContainerClientChangeLeaseResult,
-    ContainerClientGetAccountInfoResult, ContainerClientGetPropertiesResult,
-    ContainerClientReleaseLeaseResult, ContainerClientRenameResult,
-    ContainerClientRenewLeaseResult, ContainerClientRestoreResult,
-    ContainerClientSetAccessPolicyResult, CopyStatus, LeaseDuration, LeaseState, LeaseStatus,
-    ListBlobsFlatSegmentResponse, ListBlobsHierarchySegmentResponse,
-    PageBlobClientClearPagesResult, PageBlobClientCopyIncrementalResult,
-    PageBlobClientCreateResult, PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
-    PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
-    PublicAccessType, RehydratePriority, ServiceClientGetAccountInfoResult, SignedIdentifier,
-    SkuName, StorageServiceStats, UserDelegationKey,
+    BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
+    BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
+    BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
+    BlobContainerClientRenameResult, BlobContainerClientRenewLeaseResult,
+    BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyResult,
+    BlobImmutabilityPolicyMode, BlobServiceClientGetAccountInfoResult, BlobTags, BlobType,
+    BlockBlobClientCommitBlockListResult, BlockBlobClientQueryResult,
+    BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
+    BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadResult, BlockList, CopyStatus,
+    LeaseDuration, LeaseState, LeaseStatus, ListBlobsFlatSegmentResponse,
+    ListBlobsHierarchySegmentResponse, PageBlobClientClearPagesResult,
+    PageBlobClientCopyIncrementalResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
+    PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
+    PageBlobClientUploadPagesResult, PageList, PublicAccessType, RehydratePriority,
+    SignedIdentifier, SkuName, StorageServiceStats, UserDelegationKey,
 };
 use azure_core::{
     base64::decode,
     http::{
         headers::{HeaderName, Headers},
-        NoFormat, Response, XmlFormat,
+        AsyncResponse, NoFormat, Response, XmlFormat,
     },
     time::{parse_rfc7231, OffsetDateTime},
     Result,
@@ -771,10 +771,10 @@ impl BlobClientDeleteImmutabilityPolicyResultHeaders
 /// # Examples
 ///
 /// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_core::{Result, http::AsyncResponse};
 /// use azure_storage_blob::models::{BlobClientDownloadResult, BlobClientDownloadResultHeaders};
 /// async fn example() -> Result<()> {
-///     let response: Response<BlobClientDownloadResult, NoFormat> = unimplemented!();
+///     let response: AsyncResponse<BlobClientDownloadResult> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(cache_control) = response.cache_control()? {
 ///         println!("Cache-Control: {:?}", cache_control);
@@ -829,7 +829,7 @@ pub trait BlobClientDownloadResultHeaders: private::Sealed {
     fn version_id(&self) -> Result<Option<String>>;
 }
 
-impl BlobClientDownloadResultHeaders for Response<BlobClientDownloadResult, NoFormat> {
+impl BlobClientDownloadResultHeaders for AsyncResponse<BlobClientDownloadResult> {
     /// This header is returned if it was previously specified for the blob.
     fn cache_control(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &CACHE_CONTROL)
@@ -1778,6 +1778,567 @@ impl BlobClientUndeleteResultHeaders for Response<BlobClientUndeleteResult, NoFo
     }
 }
 
+/// Provides access to typed response headers for `BlobContainerClient::acquire_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientAcquireLeaseResult, BlobContainerClientAcquireLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientAcquireLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_id) = response.lease_id()? {
+///         println!("x-ms-lease-id: {:?}", lease_id);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientAcquireLeaseResultHeaders: private::Sealed {
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn etag(&self) -> Result<Option<String>>;
+    fn lease_id(&self) -> Result<Option<String>>;
+}
+
+impl BlobContainerClientAcquireLeaseResultHeaders
+    for Response<BlobContainerClientAcquireLeaseResult, NoFormat>
+{
+    /// The date/time that the container was last modified.
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The ETag contains a value that you can use to perform operations conditionally.
+    fn etag(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ETAG)
+    }
+
+    /// Uniquely identifies a blobs' lease
+    fn lease_id(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &LEASE_ID)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::break_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientBreakLeaseResult, BlobContainerClientBreakLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientBreakLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_time) = response.lease_time()? {
+///         println!("x-ms-lease-time: {:?}", lease_time);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientBreakLeaseResultHeaders: private::Sealed {
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn etag(&self) -> Result<Option<String>>;
+    fn lease_time(&self) -> Result<Option<i32>>;
+}
+
+impl BlobContainerClientBreakLeaseResultHeaders
+    for Response<BlobContainerClientBreakLeaseResult, NoFormat>
+{
+    /// The date/time that the container was last modified.
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The ETag contains a value that you can use to perform operations conditionally.
+    fn etag(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ETAG)
+    }
+
+    /// Approximate time remaining in the lease period, in seconds.
+    fn lease_time(&self) -> Result<Option<i32>> {
+        Headers::get_optional_as(self.headers(), &LEASE_TIME)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::change_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientChangeLeaseResult, BlobContainerClientChangeLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientChangeLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_id) = response.lease_id()? {
+///         println!("x-ms-lease-id: {:?}", lease_id);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientChangeLeaseResultHeaders: private::Sealed {
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn etag(&self) -> Result<Option<String>>;
+    fn lease_id(&self) -> Result<Option<String>>;
+}
+
+impl BlobContainerClientChangeLeaseResultHeaders
+    for Response<BlobContainerClientChangeLeaseResult, NoFormat>
+{
+    /// The date/time that the container was last modified.
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The ETag contains a value that you can use to perform operations conditionally.
+    fn etag(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ETAG)
+    }
+
+    /// Uniquely identifies a blobs' lease
+    fn lease_id(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &LEASE_ID)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::get_account_info()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientGetAccountInfoResult, BlobContainerClientGetAccountInfoResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientGetAccountInfoResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(account_kind) = response.account_kind()? {
+///         println!("x-ms-account-kind: {:?}", account_kind);
+///     }
+///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
+///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientGetAccountInfoResultHeaders: private::Sealed {
+    fn date(&self) -> Result<Option<OffsetDateTime>>;
+    fn account_kind(&self) -> Result<Option<AccountKind>>;
+    fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
+    fn sku_name(&self) -> Result<Option<SkuName>>;
+}
+
+impl BlobContainerClientGetAccountInfoResultHeaders
+    for Response<BlobContainerClientGetAccountInfoResult, NoFormat>
+{
+    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
+    fn date(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
+    }
+
+    /// Identifies the account kind
+    fn account_kind(&self) -> Result<Option<AccountKind>> {
+        Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
+    }
+
+    /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
+    fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
+    }
+
+    /// Identifies the sku name of the account
+    fn sku_name(&self) -> Result<Option<SkuName>> {
+        Headers::get_optional_as(self.headers(), &SKU_NAME)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::get_properties()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientGetPropertiesResult, BlobContainerClientGetPropertiesResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientGetPropertiesResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(access) = response.access()? {
+///         println!("x-ms-blob-public-access: {:?}", access);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientGetPropertiesResultHeaders: private::Sealed {
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn etag(&self) -> Result<Option<String>>;
+    fn access(&self) -> Result<Option<PublicAccessType>>;
+    fn default_encryption_scope(&self) -> Result<Option<String>>;
+    fn prevent_encryption_scope_override(&self) -> Result<Option<bool>>;
+    fn has_immutability_policy(&self) -> Result<Option<bool>>;
+    fn has_legal_hold(&self) -> Result<Option<bool>>;
+    fn is_immutable_storage_with_versioning_enabled(&self) -> Result<Option<bool>>;
+    fn duration(&self) -> Result<Option<LeaseDuration>>;
+    fn lease_state(&self) -> Result<Option<LeaseState>>;
+    fn lease_status(&self) -> Result<Option<LeaseStatus>>;
+    fn metadata(&self) -> Result<HashMap<String, String>>;
+}
+
+impl BlobContainerClientGetPropertiesResultHeaders
+    for Response<BlobContainerClientGetPropertiesResult, NoFormat>
+{
+    /// The date/time that the container was last modified.
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The ETag contains a value that you can use to perform operations conditionally.
+    fn etag(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ETAG)
+    }
+
+    /// The public access setting for the container.
+    fn access(&self) -> Result<Option<PublicAccessType>> {
+        Headers::get_optional_as(self.headers(), &BLOB_PUBLIC_ACCESS)
+    }
+
+    /// The default encryption scope for the container.
+    fn default_encryption_scope(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &DEFAULT_ENCRYPTION_SCOPE)
+    }
+
+    /// If a blob has a lease and the lease is of infinite duration then the value of this header is set to true, otherwise it
+    /// is set to false.
+    fn prevent_encryption_scope_override(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &DENY_ENCRYPTION_SCOPE_OVERRIDE)
+    }
+
+    /// Indicates whether the container has an immutability policy set on it.
+    fn has_immutability_policy(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &HAS_IMMUTABILITY_POLICY)
+    }
+
+    /// Indicates whether the container has a legal hold.
+    fn has_legal_hold(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &HAS_LEGAL_HOLD)
+    }
+
+    /// Indicates whether version level worm is enabled on a container
+    fn is_immutable_storage_with_versioning_enabled(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED)
+    }
+
+    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
+    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
+    fn duration(&self) -> Result<Option<LeaseDuration>> {
+        Headers::get_optional_as(self.headers(), &LEASE_DURATION)
+    }
+
+    /// Lease state of the blob.
+    fn lease_state(&self) -> Result<Option<LeaseState>> {
+        Headers::get_optional_as(self.headers(), &LEASE_STATE)
+    }
+
+    /// The lease status of the blob.
+    fn lease_status(&self) -> Result<Option<LeaseStatus>> {
+        Headers::get_optional_as(self.headers(), &LEASE_STATUS)
+    }
+
+    /// The metadata headers.
+    fn metadata(&self) -> Result<HashMap<String, String>> {
+        let mut values = HashMap::new();
+        for h in self.headers().iter() {
+            let name = h.0.as_str();
+            if name.len() > META.len() && name.starts_with(META) {
+                values.insert(name[META.len()..].to_owned(), h.1.as_str().to_owned());
+            }
+        }
+        Ok(values)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::release_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientReleaseLeaseResult, BlobContainerClientReleaseLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientReleaseLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientReleaseLeaseResultHeaders: private::Sealed {
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn etag(&self) -> Result<Option<String>>;
+}
+
+impl BlobContainerClientReleaseLeaseResultHeaders
+    for Response<BlobContainerClientReleaseLeaseResult, NoFormat>
+{
+    /// The date/time that the container was last modified.
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The ETag contains a value that you can use to perform operations conditionally.
+    fn etag(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ETAG)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::rename()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientRenameResult, BlobContainerClientRenameResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientRenameResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientRenameResultHeaders: private::Sealed {
+    fn date(&self) -> Result<Option<OffsetDateTime>>;
+}
+
+impl BlobContainerClientRenameResultHeaders
+    for Response<BlobContainerClientRenameResult, NoFormat>
+{
+    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
+    fn date(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::renew_lease()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientRenewLeaseResult, BlobContainerClientRenewLeaseResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientRenewLeaseResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     if let Some(lease_id) = response.lease_id()? {
+///         println!("x-ms-lease-id: {:?}", lease_id);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientRenewLeaseResultHeaders: private::Sealed {
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn etag(&self) -> Result<Option<String>>;
+    fn lease_id(&self) -> Result<Option<String>>;
+}
+
+impl BlobContainerClientRenewLeaseResultHeaders
+    for Response<BlobContainerClientRenewLeaseResult, NoFormat>
+{
+    /// The date/time that the container was last modified.
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The ETag contains a value that you can use to perform operations conditionally.
+    fn etag(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ETAG)
+    }
+
+    /// Uniquely identifies a blobs' lease
+    fn lease_id(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &LEASE_ID)
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::restore()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientRestoreResult, BlobContainerClientRestoreResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientRestoreResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientRestoreResultHeaders: private::Sealed {
+    fn date(&self) -> Result<Option<OffsetDateTime>>;
+}
+
+impl BlobContainerClientRestoreResultHeaders
+    for Response<BlobContainerClientRestoreResult, NoFormat>
+{
+    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
+    fn date(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
+    }
+}
+
+/// Provides access to typed response headers for `BlobContainerClient::set_access_policy()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobContainerClientSetAccessPolicyResult, BlobContainerClientSetAccessPolicyResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobContainerClientSetAccessPolicyResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(last_modified) = response.last_modified()? {
+///         println!("Last-Modified: {:?}", last_modified);
+///     }
+///     if let Some(etag) = response.etag()? {
+///         println!("etag: {:?}", etag);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobContainerClientSetAccessPolicyResultHeaders: private::Sealed {
+    fn date(&self) -> Result<Option<OffsetDateTime>>;
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn etag(&self) -> Result<Option<String>>;
+}
+
+impl BlobContainerClientSetAccessPolicyResultHeaders
+    for Response<BlobContainerClientSetAccessPolicyResult, NoFormat>
+{
+    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
+    fn date(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
+    }
+
+    /// The date/time that the container was last modified.
+    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
+            parse_rfc7231(h.as_str())
+        })
+    }
+
+    /// The ETag contains a value that you can use to perform operations conditionally.
+    fn etag(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &ETAG)
+    }
+}
+
+/// Provides access to typed response headers for `BlobServiceClient::get_account_info()`
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_storage_blob::models::{BlobServiceClientGetAccountInfoResult, BlobServiceClientGetAccountInfoResultHeaders};
+/// async fn example() -> Result<()> {
+///     let response: Response<BlobServiceClientGetAccountInfoResult, NoFormat> = unimplemented!();
+///     // Access response headers
+///     if let Some(date) = response.date()? {
+///         println!("Date: {:?}", date);
+///     }
+///     if let Some(account_kind) = response.account_kind()? {
+///         println!("x-ms-account-kind: {:?}", account_kind);
+///     }
+///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
+///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub trait BlobServiceClientGetAccountInfoResultHeaders: private::Sealed {
+    fn date(&self) -> Result<Option<OffsetDateTime>>;
+    fn account_kind(&self) -> Result<Option<AccountKind>>;
+    fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
+    fn sku_name(&self) -> Result<Option<SkuName>>;
+}
+
+impl BlobServiceClientGetAccountInfoResultHeaders
+    for Response<BlobServiceClientGetAccountInfoResult, NoFormat>
+{
+    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
+    fn date(&self) -> Result<Option<OffsetDateTime>> {
+        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
+    }
+
+    /// Identifies the account kind
+    fn account_kind(&self) -> Result<Option<AccountKind>> {
+        Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
+    }
+
+    /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
+    fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
+    }
+
+    /// Identifies the sku name of the account
+    fn sku_name(&self) -> Result<Option<SkuName>> {
+        Headers::get_optional_as(self.headers(), &SKU_NAME)
+    }
+}
+
 /// Provides access to typed response headers for `BlobClient::get_tags()`
 ///
 /// # Examples
@@ -1895,10 +2456,10 @@ impl BlockBlobClientCommitBlockListResultHeaders
 /// # Examples
 ///
 /// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
+/// use azure_core::{Result, http::AsyncResponse};
 /// use azure_storage_blob::models::{BlockBlobClientQueryResult, BlockBlobClientQueryResultHeaders};
 /// async fn example() -> Result<()> {
-///     let response: Response<BlockBlobClientQueryResult, NoFormat> = unimplemented!();
+///     let response: AsyncResponse<BlockBlobClientQueryResult> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(accept_ranges) = response.accept_ranges()? {
 ///         println!("Accept-Ranges: {:?}", accept_ranges);
@@ -1944,7 +2505,7 @@ pub trait BlockBlobClientQueryResultHeaders: private::Sealed {
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
-impl BlockBlobClientQueryResultHeaders for Response<BlockBlobClientQueryResult, NoFormat> {
+impl BlockBlobClientQueryResultHeaders for AsyncResponse<BlockBlobClientQueryResult> {
     /// Indicates that the service supports requests for partial blob content.
     fn accept_ranges(&self) -> Result<Option<String>> {
         Headers::get_optional_as(self.headers(), &ACCEPT_RANGES)
@@ -2469,511 +3030,7 @@ impl BlockListHeaders for Response<BlockList, XmlFormat> {
     }
 }
 
-/// Provides access to typed response headers for `ContainerClient::acquire_lease()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientAcquireLeaseResult, ContainerClientAcquireLeaseResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientAcquireLeaseResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("Last-Modified: {:?}", last_modified);
-///     }
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     if let Some(lease_id) = response.lease_id()? {
-///         println!("x-ms-lease-id: {:?}", lease_id);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientAcquireLeaseResultHeaders: private::Sealed {
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn lease_id(&self) -> Result<Option<String>>;
-}
-
-impl ContainerClientAcquireLeaseResultHeaders
-    for Response<ContainerClientAcquireLeaseResult, NoFormat>
-{
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// Uniquely identifies a blobs' lease
-    fn lease_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::break_lease()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientBreakLeaseResult, ContainerClientBreakLeaseResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientBreakLeaseResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("Last-Modified: {:?}", last_modified);
-///     }
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     if let Some(lease_time) = response.lease_time()? {
-///         println!("x-ms-lease-time: {:?}", lease_time);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientBreakLeaseResultHeaders: private::Sealed {
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn lease_time(&self) -> Result<Option<i32>>;
-}
-
-impl ContainerClientBreakLeaseResultHeaders
-    for Response<ContainerClientBreakLeaseResult, NoFormat>
-{
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// Approximate time remaining in the lease period, in seconds.
-    fn lease_time(&self) -> Result<Option<i32>> {
-        Headers::get_optional_as(self.headers(), &LEASE_TIME)
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::change_lease()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientChangeLeaseResult, ContainerClientChangeLeaseResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientChangeLeaseResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("Last-Modified: {:?}", last_modified);
-///     }
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     if let Some(lease_id) = response.lease_id()? {
-///         println!("x-ms-lease-id: {:?}", lease_id);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientChangeLeaseResultHeaders: private::Sealed {
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn lease_id(&self) -> Result<Option<String>>;
-}
-
-impl ContainerClientChangeLeaseResultHeaders
-    for Response<ContainerClientChangeLeaseResult, NoFormat>
-{
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// Uniquely identifies a blobs' lease
-    fn lease_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::get_account_info()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientGetAccountInfoResult, ContainerClientGetAccountInfoResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientGetAccountInfoResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(date) = response.date()? {
-///         println!("Date: {:?}", date);
-///     }
-///     if let Some(account_kind) = response.account_kind()? {
-///         println!("x-ms-account-kind: {:?}", account_kind);
-///     }
-///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
-///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientGetAccountInfoResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn account_kind(&self) -> Result<Option<AccountKind>>;
-    fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
-    fn sku_name(&self) -> Result<Option<SkuName>>;
-}
-
-impl ContainerClientGetAccountInfoResultHeaders
-    for Response<ContainerClientGetAccountInfoResult, NoFormat>
-{
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
-    }
-
-    /// Identifies the account kind
-    fn account_kind(&self) -> Result<Option<AccountKind>> {
-        Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
-    }
-
-    /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
-    fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
-        Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
-    }
-
-    /// Identifies the sku name of the account
-    fn sku_name(&self) -> Result<Option<SkuName>> {
-        Headers::get_optional_as(self.headers(), &SKU_NAME)
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::get_properties()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientGetPropertiesResult, ContainerClientGetPropertiesResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientGetPropertiesResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("Last-Modified: {:?}", last_modified);
-///     }
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     if let Some(access) = response.access()? {
-///         println!("x-ms-blob-public-access: {:?}", access);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientGetPropertiesResultHeaders: private::Sealed {
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn access(&self) -> Result<Option<PublicAccessType>>;
-    fn default_encryption_scope(&self) -> Result<Option<String>>;
-    fn prevent_encryption_scope_override(&self) -> Result<Option<bool>>;
-    fn has_immutability_policy(&self) -> Result<Option<bool>>;
-    fn has_legal_hold(&self) -> Result<Option<bool>>;
-    fn is_immutable_storage_with_versioning_enabled(&self) -> Result<Option<bool>>;
-    fn duration(&self) -> Result<Option<LeaseDuration>>;
-    fn lease_state(&self) -> Result<Option<LeaseState>>;
-    fn lease_status(&self) -> Result<Option<LeaseStatus>>;
-    fn metadata(&self) -> Result<HashMap<String, String>>;
-}
-
-impl ContainerClientGetPropertiesResultHeaders
-    for Response<ContainerClientGetPropertiesResult, NoFormat>
-{
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// The public access setting for the container.
-    fn access(&self) -> Result<Option<PublicAccessType>> {
-        Headers::get_optional_as(self.headers(), &BLOB_PUBLIC_ACCESS)
-    }
-
-    /// The default encryption scope for the container.
-    fn default_encryption_scope(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &DEFAULT_ENCRYPTION_SCOPE)
-    }
-
-    /// If a blob has a lease and the lease is of infinite duration then the value of this header is set to true, otherwise it
-    /// is set to false.
-    fn prevent_encryption_scope_override(&self) -> Result<Option<bool>> {
-        Headers::get_optional_as(self.headers(), &DENY_ENCRYPTION_SCOPE_OVERRIDE)
-    }
-
-    /// Indicates whether the container has an immutability policy set on it.
-    fn has_immutability_policy(&self) -> Result<Option<bool>> {
-        Headers::get_optional_as(self.headers(), &HAS_IMMUTABILITY_POLICY)
-    }
-
-    /// Indicates whether the container has a legal hold.
-    fn has_legal_hold(&self) -> Result<Option<bool>> {
-        Headers::get_optional_as(self.headers(), &HAS_LEGAL_HOLD)
-    }
-
-    /// Indicates whether version level worm is enabled on a container
-    fn is_immutable_storage_with_versioning_enabled(&self) -> Result<Option<bool>> {
-        Headers::get_optional_as(self.headers(), &IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED)
-    }
-
-    /// Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease
-    /// can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
-    fn duration(&self) -> Result<Option<LeaseDuration>> {
-        Headers::get_optional_as(self.headers(), &LEASE_DURATION)
-    }
-
-    /// Lease state of the blob.
-    fn lease_state(&self) -> Result<Option<LeaseState>> {
-        Headers::get_optional_as(self.headers(), &LEASE_STATE)
-    }
-
-    /// The lease status of the blob.
-    fn lease_status(&self) -> Result<Option<LeaseStatus>> {
-        Headers::get_optional_as(self.headers(), &LEASE_STATUS)
-    }
-
-    /// The metadata headers.
-    fn metadata(&self) -> Result<HashMap<String, String>> {
-        let mut values = HashMap::new();
-        for h in self.headers().iter() {
-            let name = h.0.as_str();
-            if name.len() > META.len() && name.starts_with(META) {
-                values.insert(name[META.len()..].to_owned(), h.1.as_str().to_owned());
-            }
-        }
-        Ok(values)
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::release_lease()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientReleaseLeaseResult, ContainerClientReleaseLeaseResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientReleaseLeaseResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("Last-Modified: {:?}", last_modified);
-///     }
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientReleaseLeaseResultHeaders: private::Sealed {
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-}
-
-impl ContainerClientReleaseLeaseResultHeaders
-    for Response<ContainerClientReleaseLeaseResult, NoFormat>
-{
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::rename()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientRenameResult, ContainerClientRenameResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientRenameResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(date) = response.date()? {
-///         println!("Date: {:?}", date);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientRenameResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-}
-
-impl ContainerClientRenameResultHeaders for Response<ContainerClientRenameResult, NoFormat> {
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::renew_lease()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientRenewLeaseResult, ContainerClientRenewLeaseResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientRenewLeaseResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("Last-Modified: {:?}", last_modified);
-///     }
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     if let Some(lease_id) = response.lease_id()? {
-///         println!("x-ms-lease-id: {:?}", lease_id);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientRenewLeaseResultHeaders: private::Sealed {
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-    fn lease_id(&self) -> Result<Option<String>>;
-}
-
-impl ContainerClientRenewLeaseResultHeaders
-    for Response<ContainerClientRenewLeaseResult, NoFormat>
-{
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-
-    /// Uniquely identifies a blobs' lease
-    fn lease_id(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &LEASE_ID)
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::restore()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientRestoreResult, ContainerClientRestoreResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientRestoreResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(date) = response.date()? {
-///         println!("Date: {:?}", date);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientRestoreResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-}
-
-impl ContainerClientRestoreResultHeaders for Response<ContainerClientRestoreResult, NoFormat> {
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::set_access_policy()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ContainerClientSetAccessPolicyResult, ContainerClientSetAccessPolicyResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ContainerClientSetAccessPolicyResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(date) = response.date()? {
-///         println!("Date: {:?}", date);
-///     }
-///     if let Some(last_modified) = response.last_modified()? {
-///         println!("Last-Modified: {:?}", last_modified);
-///     }
-///     if let Some(etag) = response.etag()? {
-///         println!("etag: {:?}", etag);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ContainerClientSetAccessPolicyResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
-    fn etag(&self) -> Result<Option<String>>;
-}
-
-impl ContainerClientSetAccessPolicyResultHeaders
-    for Response<ContainerClientSetAccessPolicyResult, NoFormat>
-{
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
-    }
-
-    /// The date/time that the container was last modified.
-    fn last_modified(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
-            parse_rfc7231(h.as_str())
-        })
-    }
-
-    /// The ETag contains a value that you can use to perform operations conditionally.
-    fn etag(&self) -> Result<Option<String>> {
-        Headers::get_optional_as(self.headers(), &ETAG)
-    }
-}
-
-/// Provides access to typed response headers for `ContainerClient::list_blob_flat_segment()`
+/// Provides access to typed response headers for `BlobContainerClient::list_blob_flat_segment()`
 ///
 /// # Examples
 ///
@@ -3000,7 +3057,7 @@ impl ListBlobsFlatSegmentResponseHeaders for Response<ListBlobsFlatSegmentRespon
     }
 }
 
-/// Provides access to typed response headers for `ContainerClient::list_blob_hierarchy_segment()`
+/// Provides access to typed response headers for `BlobContainerClient::list_blob_hierarchy_segment()`
 ///
 /// # Examples
 ///
@@ -3526,60 +3583,7 @@ impl PageListHeaders for Response<PageList, XmlFormat> {
     }
 }
 
-/// Provides access to typed response headers for `ServiceClient::get_account_info()`
-///
-/// # Examples
-///
-/// ```no_run
-/// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{ServiceClientGetAccountInfoResult, ServiceClientGetAccountInfoResultHeaders};
-/// async fn example() -> Result<()> {
-///     let response: Response<ServiceClientGetAccountInfoResult, NoFormat> = unimplemented!();
-///     // Access response headers
-///     if let Some(date) = response.date()? {
-///         println!("Date: {:?}", date);
-///     }
-///     if let Some(account_kind) = response.account_kind()? {
-///         println!("x-ms-account-kind: {:?}", account_kind);
-///     }
-///     if let Some(is_hierarchical_namespace_enabled) = response.is_hierarchical_namespace_enabled()? {
-///         println!("x-ms-is-hns-enabled: {:?}", is_hierarchical_namespace_enabled);
-///     }
-///     Ok(())
-/// }
-/// ```
-pub trait ServiceClientGetAccountInfoResultHeaders: private::Sealed {
-    fn date(&self) -> Result<Option<OffsetDateTime>>;
-    fn account_kind(&self) -> Result<Option<AccountKind>>;
-    fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>>;
-    fn sku_name(&self) -> Result<Option<SkuName>>;
-}
-
-impl ServiceClientGetAccountInfoResultHeaders
-    for Response<ServiceClientGetAccountInfoResult, NoFormat>
-{
-    /// UTC date/time value generated by the service that indicates the time at which the response was initiated
-    fn date(&self) -> Result<Option<OffsetDateTime>> {
-        Headers::get_optional_with(self.headers(), &DATE, |h| parse_rfc7231(h.as_str()))
-    }
-
-    /// Identifies the account kind
-    fn account_kind(&self) -> Result<Option<AccountKind>> {
-        Headers::get_optional_as(self.headers(), &ACCOUNT_KIND)
-    }
-
-    /// Version 2019-07-07 and newer. Indicates if the account has a hierarchical namespace enabled.
-    fn is_hierarchical_namespace_enabled(&self) -> Result<Option<bool>> {
-        Headers::get_optional_as(self.headers(), &IS_HNS_ENABLED)
-    }
-
-    /// Identifies the sku name of the account
-    fn sku_name(&self) -> Result<Option<SkuName>> {
-        Headers::get_optional_as(self.headers(), &SKU_NAME)
-    }
-}
-
-/// Provides access to typed response headers for `ServiceClient::get_statistics()`
+/// Provides access to typed response headers for `BlobServiceClient::get_statistics()`
 ///
 /// # Examples
 ///
@@ -3606,7 +3610,7 @@ impl StorageServiceStatsHeaders for Response<StorageServiceStats, XmlFormat> {
     }
 }
 
-/// Provides access to typed response headers for `ServiceClient::get_user_delegation_key()`
+/// Provides access to typed response headers for `BlobServiceClient::get_user_delegation_key()`
 ///
 /// # Examples
 ///
@@ -3633,7 +3637,7 @@ impl UserDelegationKeyHeaders for Response<UserDelegationKey, XmlFormat> {
     }
 }
 
-/// Provides access to typed response headers for `ContainerClient::get_access_policy()`
+/// Provides access to typed response headers for `BlobContainerClient::get_access_policy()`
 ///
 /// # Examples
 ///
@@ -3696,26 +3700,28 @@ mod private {
         BlobClientGetAccountInfoResult, BlobClientGetPropertiesResult,
         BlobClientReleaseLeaseResult, BlobClientRenewLeaseResult, BlobClientSetExpiryResult,
         BlobClientSetImmutabilityPolicyResult, BlobClientSetLegalHoldResult,
-        BlobClientStartCopyFromUrlResult, BlobClientUndeleteResult, BlobTags,
-        BlockBlobClientCommitBlockListResult, BlockBlobClientQueryResult,
-        BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
-        BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadResult, BlockList,
-        ContainerClientAcquireLeaseResult, ContainerClientBreakLeaseResult,
-        ContainerClientChangeLeaseResult, ContainerClientGetAccountInfoResult,
-        ContainerClientGetPropertiesResult, ContainerClientReleaseLeaseResult,
-        ContainerClientRenameResult, ContainerClientRenewLeaseResult, ContainerClientRestoreResult,
-        ContainerClientSetAccessPolicyResult, ListBlobsFlatSegmentResponse,
+        BlobClientStartCopyFromUrlResult, BlobClientUndeleteResult,
+        BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
+        BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
+        BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
+        BlobContainerClientRenameResult, BlobContainerClientRenewLeaseResult,
+        BlobContainerClientRestoreResult, BlobContainerClientSetAccessPolicyResult,
+        BlobServiceClientGetAccountInfoResult, BlobTags, BlockBlobClientCommitBlockListResult,
+        BlockBlobClientQueryResult, BlockBlobClientStageBlockFromUrlResult,
+        BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+        BlockBlobClientUploadResult, BlockList, ListBlobsFlatSegmentResponse,
         ListBlobsHierarchySegmentResponse, PageBlobClientClearPagesResult,
         PageBlobClientCopyIncrementalResult, PageBlobClientCreateResult,
         PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
         PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesResult, PageList,
-        ServiceClientGetAccountInfoResult, SignedIdentifier, StorageServiceStats,
-        UserDelegationKey,
+        SignedIdentifier, StorageServiceStats, UserDelegationKey,
     };
-    use azure_core::http::{NoFormat, Response, XmlFormat};
+    use azure_core::http::{AsyncResponse, NoFormat, Response, XmlFormat};
 
     pub trait Sealed {}
 
+    impl Sealed for AsyncResponse<BlobClientDownloadResult> {}
+    impl Sealed for AsyncResponse<BlockBlobClientQueryResult> {}
     impl Sealed for Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientAppendBlockResult, NoFormat> {}
     impl Sealed for Response<AppendBlobClientCreateResult, NoFormat> {}
@@ -3727,7 +3733,6 @@ mod private {
     impl Sealed for Response<BlobClientCopyFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlobClientCreateSnapshotResult, NoFormat> {}
     impl Sealed for Response<BlobClientDeleteImmutabilityPolicyResult, NoFormat> {}
-    impl Sealed for Response<BlobClientDownloadResult, NoFormat> {}
     impl Sealed for Response<BlobClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlobClientGetPropertiesResult, NoFormat> {}
     impl Sealed for Response<BlobClientReleaseLeaseResult, NoFormat> {}
@@ -3737,24 +3742,24 @@ mod private {
     impl Sealed for Response<BlobClientSetLegalHoldResult, NoFormat> {}
     impl Sealed for Response<BlobClientStartCopyFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlobClientUndeleteResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientAcquireLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientBreakLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientChangeLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientGetAccountInfoResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientGetPropertiesResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientReleaseLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientRenameResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientRenewLeaseResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientRestoreResult, NoFormat> {}
+    impl Sealed for Response<BlobContainerClientSetAccessPolicyResult, NoFormat> {}
+    impl Sealed for Response<BlobServiceClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlobTags, XmlFormat> {}
     impl Sealed for Response<BlockBlobClientCommitBlockListResult, NoFormat> {}
-    impl Sealed for Response<BlockBlobClientQueryResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientStageBlockResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientUploadResult, NoFormat> {}
     impl Sealed for Response<BlockList, XmlFormat> {}
-    impl Sealed for Response<ContainerClientAcquireLeaseResult, NoFormat> {}
-    impl Sealed for Response<ContainerClientBreakLeaseResult, NoFormat> {}
-    impl Sealed for Response<ContainerClientChangeLeaseResult, NoFormat> {}
-    impl Sealed for Response<ContainerClientGetAccountInfoResult, NoFormat> {}
-    impl Sealed for Response<ContainerClientGetPropertiesResult, NoFormat> {}
-    impl Sealed for Response<ContainerClientReleaseLeaseResult, NoFormat> {}
-    impl Sealed for Response<ContainerClientRenameResult, NoFormat> {}
-    impl Sealed for Response<ContainerClientRenewLeaseResult, NoFormat> {}
-    impl Sealed for Response<ContainerClientRestoreResult, NoFormat> {}
-    impl Sealed for Response<ContainerClientSetAccessPolicyResult, NoFormat> {}
     impl Sealed for Response<ListBlobsFlatSegmentResponse, XmlFormat> {}
     impl Sealed for Response<ListBlobsHierarchySegmentResponse, XmlFormat> {}
     impl Sealed for Response<PageBlobClientClearPagesResult, NoFormat> {}
@@ -3765,7 +3770,6 @@ mod private {
     impl Sealed for Response<PageBlobClientUploadPagesFromUrlResult, NoFormat> {}
     impl Sealed for Response<PageBlobClientUploadPagesResult, NoFormat> {}
     impl Sealed for Response<PageList, XmlFormat> {}
-    impl Sealed for Response<ServiceClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<StorageServiceStats, XmlFormat> {}
     impl Sealed for Response<UserDelegationKey, XmlFormat> {}
     impl Sealed for Response<Vec<SignedIdentifier>, XmlFormat> {}
