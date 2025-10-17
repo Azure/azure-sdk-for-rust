@@ -39,7 +39,5 @@ extends:
     # to be listed first.
     - name: azure_storage_blob
       releaseInBatch: ${{ parameters.release_azure_storage_blob }}
-    - name: azure_storage_common
-      releaseInBatch: ${{ parameters.release_azure_storage_common }}
     - name: azure_storage_queue
       releaseInBatch: ${{ parameters.release_azure_storage_queue }}
