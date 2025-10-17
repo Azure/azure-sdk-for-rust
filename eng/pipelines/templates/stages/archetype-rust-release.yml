@@ -85,6 +85,11 @@ stages:
             runOnce:
               deploy:
                 steps:
+                  - pwsh: |
+                      Write-Host "Setting ArtifactName to empty"
+                      Write-Host "##vso[task.setvariable variable=ArtifactName;]"
+                    displayName: Initialize ArtifactName variable
+
                   # This loop over the artifacts never uses `artifact` directly.
                   # It is instead used to generate the correct number of tasks
                   # for publishing each artifact in an order specified in the
