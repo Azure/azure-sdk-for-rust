@@ -36,7 +36,7 @@ You can specify this using the `AZURE_COSMOS_CONNECTION_STRING` environment vari
 This can contain a valid Cosmos DB connection string, **or** the special string `emulator` to use the Cosmos DB Emulator.
 The `emulator` marker is highly recommended when running against a local emulator because it ALSO automatically disables TLS certificate validation, which is often necessary when testing against the local emulator.
 
-If you need to disable TLS certificate validation when using a different connections
+If you need to disable TLS certificate validation when using a different connection string, you can also set the `AZURE_COSMOS_ALLOW_INVALID_CERT` environment variable to `true`.
 
 ### Saving Recordings
 
