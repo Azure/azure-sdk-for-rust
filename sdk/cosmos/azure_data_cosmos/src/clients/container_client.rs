@@ -9,7 +9,6 @@ use crate::{
     resource_context::{ResourceLink, ResourceType},
     DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
     ThroughputOptions,
-    handler::retry_handler::{AbstractRetryHandler, RetryHandler},
 };
 
 use azure_core::http::{
@@ -27,7 +26,6 @@ pub struct ContainerClient {
     link: ResourceLink,
     items_link: ResourceLink,
     pipeline: CosmosPipeline,
-    retry_handler: RetryHandler,
 }
 
 impl ContainerClient {
@@ -40,13 +38,11 @@ impl ContainerClient {
             .feed(ResourceType::Containers)
             .item(container_id);
         let items_link = link.feed(ResourceType::Items);
-        let retry_handler = RetryHandler::new(pipeline.clone());
 
         Self {
             link,
             items_link,
             pipeline,
-            retry_handler,
         }
     }
 
@@ -73,10 +69,9 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Get);
-        self.retry_handler
-            .send_async(options.method_options.context, &mut req, self.link.clone())
+        self.pipeline
+            .send(options.method_options.context, &mut req, self.link.clone())
             .await
-            .map(Into::into)
     }
 
     /// Updates the indexing policy of the container.
@@ -119,10 +114,9 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Put);
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&properties)?;
-        self.retry_handler
-            .send_async(options.method_options.context, &mut req, self.link.clone())
+        self.pipeline
+            .send(options.method_options.context, &mut req, self.link.clone())
             .await
-            .map(Into::into)
     }
 
     /// Reads container throughput properties, if any.
@@ -186,10 +180,9 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let url = self.pipeline.url(&self.link);
         let mut req = Request::new(url, Method::Delete);
-        self.retry_handler
-            .send_async(options.method_options.context, &mut req, self.link.clone())
+        self.pipeline
+            .send(options.method_options.context, &mut req, self.link.clone())
             .await
-            .map(Into::into)
     }
 
     /// Creates a new item in the container.
@@ -270,14 +263,13 @@ impl ContainerClient {
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
-        self.retry_handler
-            .send_async(
+        self.pipeline
+            .send(
                 options.method_options.context,
                 &mut req,
                 self.items_link.clone(),
             )
             .await
-            .map(Into::into)
     }
 
     /// Replaces an existing item in the container.
@@ -360,10 +352,9 @@ impl ContainerClient {
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
-        self.retry_handler
-            .send_async(options.method_options.context, &mut req, link)
+        self.pipeline
+            .send(options.method_options.context, &mut req, link)
             .await
-            .map(Into::into)
     }
 
     /// Creates or replaces an item in the container.
@@ -448,14 +439,13 @@ impl ContainerClient {
         req.insert_headers(&partition_key.into())?;
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&item)?;
-        self.retry_handler
-            .send_async(
+        self.pipeline
+            .send(
                 options.method_options.context,
                 &mut req,
                 self.items_link.clone(),
             )
             .await
-            .map(Into::into)
     }
 
     /// Reads a specific item from the container.
@@ -504,12 +494,9 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Get);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
-        
-        // Use the retry handler instance's send_async method which includes automatic retry logic
-        self.retry_handler
-            .send_async(options.method_options.context, &mut req, link)
+        self.pipeline
+            .send(options.method_options.context, &mut req, link)
             .await
-            .map(Into::into)
     }
 
     /// Deletes an item from the container.
@@ -544,10 +531,9 @@ impl ContainerClient {
         let mut req = Request::new(url, Method::Delete);
         req.insert_headers(&options)?;
         req.insert_headers(&partition_key.into())?;
-        self.retry_handler
-            .send_async(options.method_options.context, &mut req, link)
+        self.pipeline
+            .send(options.method_options.context, &mut req, link)
             .await
-            .map(Into::into)
     }
 
     /// Patches an item in the container.
@@ -621,10 +607,9 @@ impl ContainerClient {
         req.insert_headers(&ContentType::APPLICATION_JSON)?;
         req.set_json(&patch)?;
 
-        self.retry_handler
-            .send_async(options.method_options.context, &mut req, link)
+        self.pipeline
+            .send(options.method_options.context, &mut req, link)
             .await
-            .map(Into::into)
     }
 
     /// Executes a single-partition query against items in the container.

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -6,6 +9,7 @@ use azure_core::http::{RawResponse, StatusCode};
 use typespec_client_core::http::Request;
 use super::{IRetryPolicy, ShouldRetryResult};
 
+#[derive(Debug)]
 pub struct ResourceThrottleRetryPolicy {
     max_attempt_count: usize,
     backoff_delay_factor: u32,

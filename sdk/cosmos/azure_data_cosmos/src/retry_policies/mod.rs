@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 pub mod resource_throttle_retry_policy;
 use std::sync::Arc;
 use std::time::Duration;
@@ -109,7 +112,7 @@ impl Default for RetryPolicyConfig {
 /// - GoneRetryPolicy: Handles 410 Gone errors (partition splits/merges)
 /// - SessionRetryPolicy: Handles session consistency issues
 /// - DefaultRetryPolicy: Handles general connection errors
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct BaseRetryPolicy {
     /// Policy for handling resource throttling (429 TooManyRequests)
     resource_throttle_policy: Arc<ResourceThrottleRetryPolicy>,
@@ -216,23 +219,6 @@ impl BaseRetryPolicy {
     ///
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    ///
-    /// # Returns
-    /// An Arc-wrapped trait object implementing DocumentClientRetryPolicy
-    ///
-    /// # Example
-    /// ```ignore
-    /// use azure_core::http::request::Request;
-    /// use url::Url;
-    /// use azure_data_cosmos::retry_policies::BaseRetryPolicy;
-    ///
-    /// let base_policy = BaseRetryPolicy::new();
-    /// let url = Url::parse("https://localhost:8081/dbs/mydb").unwrap();
-    /// let request = Request::new(url, azure_core::http::Method::Get);
-    ///
-    /// let policy = base_policy.get_policy_for_request(&request);
-    /// // policy can now be used for retry logic
-    /// ```
     pub fn get_policy_for_request(&self, _request: &azure_core::http::request::Request) -> Arc<dyn IRetryPolicy> {
         // TODO: Implement policy selection logic based on request headers
         // For now, always return ResourceThrottleRetryPolicy
