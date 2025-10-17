@@ -4,7 +4,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use azure_core::http::{RawResponse, StatusCode};
 use typespec_client_core::http::Request;
-use super::{DocumentClientRetryPolicy, ShouldRetryResult};
+use super::{IRetryPolicy, ShouldRetryResult};
 
 pub struct ResourceThrottleRetryPolicy {
     max_attempt_count: usize,
@@ -79,7 +79,11 @@ impl ResourceThrottleRetryPolicy {
 }
 
 #[async_trait]
-impl DocumentClientRetryPolicy for ResourceThrottleRetryPolicy {
+impl IRetryPolicy for ResourceThrottleRetryPolicy {
+    fn on_before_send_request(&self, _request: &mut Request) {
+        // No-op for this policy
+    }
+
     async fn should_retry_exception(
         &self,
         err: &azure_core::Error,
@@ -105,9 +109,5 @@ impl DocumentClientRetryPolicy for ResourceThrottleRetryPolicy {
         }
 
         self.should_retry_with_backoff(Some(Duration::from_secs(10)))
-    }
-
-    fn on_before_send_request(&self, _request: &mut Request) {
-        // No-op for this policy
     }
 }

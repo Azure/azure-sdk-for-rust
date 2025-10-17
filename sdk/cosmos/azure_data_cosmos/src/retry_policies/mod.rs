@@ -1,8 +1,4 @@
-pub mod gone_retry_policy;
 pub mod resource_throttle_retry_policy;
-pub mod default_retry_policy;
-pub mod session_retry_policy;
-
 use std::sync::Arc;
 use std::time::Duration;
 use async_trait::async_trait;
@@ -37,7 +33,7 @@ impl ShouldRetryResult {
 /// in Azure Cosmos DB operations. Implementers can define custom retry behavior for
 /// both exceptions (errors) and HTTP responses based on their specific requirements.
 #[async_trait]
-pub trait DocumentClientRetryPolicy: Send + Sync {
+pub trait IRetryPolicy: Send + Sync {
 
     /// Called before sending a request to allow policy-specific modifications
     /// 
@@ -118,18 +114,6 @@ pub struct BaseRetryPolicy {
     /// Policy for handling resource throttling (429 TooManyRequests)
     resource_throttle_policy: Arc<ResourceThrottleRetryPolicy>,
 
-    /// Policy for handling gone exceptions (410 Gone - partition splits)
-    // TODO: Uncomment when GoneRetryPolicy implements DocumentClientRetryPolicy
-    // gone_retry_policy: Arc<dyn DocumentClientRetryPolicy>,
-
-    /// Policy for handling session unavailability
-    // TODO: Uncomment when SessionRetryPolicy implements DocumentClientRetryPolicy
-    // session_retry_policy: Arc<dyn DocumentClientRetryPolicy>,
-
-    /// Default policy for handling connection errors
-    // TODO: Uncomment when DefaultRetryPolicy implements DocumentClientRetryPolicy
-    // default_retry_policy: Arc<dyn DocumentClientRetryPolicy>,
-
     /// Configuration used to initialize the policies
     config: RetryPolicyConfig,
 }
@@ -179,15 +163,6 @@ impl BaseRetryPolicy {
             config.throttle_backoff_factor,
         ));
 
-        // TODO: Initialize GoneRetryPolicy when it implements DocumentClientRetryPolicy
-        // let gone_retry_policy = Arc::new(GoneRetryPolicy::new(...));
-
-        // TODO: Initialize SessionRetryPolicy when it implements DocumentClientRetryPolicy
-        // let session_retry_policy = Arc::new(SessionRetryPolicy::new(...));
-
-        // TODO: Initialize DefaultRetryPolicy when it implements DocumentClientRetryPolicy
-        // let default_retry_policy = Arc::new(DefaultRetryPolicy::new(...));
-
         Self {
             resource_throttle_policy,
             config,
@@ -204,26 +179,9 @@ impl BaseRetryPolicy {
     /// Returns the resource throttle retry policy as a trait object
     ///
     /// Useful when you need to work with the DocumentClientRetryPolicy trait.
-    pub fn resource_throttle_policy_dyn(&self) -> Arc<dyn DocumentClientRetryPolicy> {
+    pub fn resource_throttle_policy_dyn(&self) -> Arc<dyn IRetryPolicy> {
         self.resource_throttle_policy.clone()
     }
-
-    // TODO: Add getters for other policies when they implement DocumentClientRetryPolicy
-    //
-    // /// Returns the gone retry policy
-    // pub fn gone_retry_policy(&self) -> Arc<dyn DocumentClientRetryPolicy> {
-    //     self.gone_retry_policy.clone()
-    // }
-    //
-    // /// Returns the session retry policy
-    // pub fn session_retry_policy(&self) -> Arc<dyn DocumentClientRetryPolicy> {
-    //     self.session_retry_policy.clone()
-    // }
-    //
-    // /// Returns the default retry policy
-    // pub fn default_retry_policy(&self) -> Arc<dyn DocumentClientRetryPolicy> {
-    //     self.default_retry_policy.clone()
-    // }
 
     /// Returns the configuration used to initialize this retry policy
     pub fn config(&self) -> &RetryPolicyConfig {
@@ -275,7 +233,7 @@ impl BaseRetryPolicy {
     /// let policy = base_policy.get_policy_for_request(&request);
     /// // policy can now be used for retry logic
     /// ```
-    pub fn get_policy_for_request(&self, _request: &azure_core::http::request::Request) -> Arc<dyn DocumentClientRetryPolicy> {
+    pub fn get_policy_for_request(&self, _request: &azure_core::http::request::Request) -> Arc<dyn IRetryPolicy> {
         // TODO: Implement policy selection logic based on request headers
         // For now, always return ResourceThrottleRetryPolicy
         //
