@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    authentication_error, deserialize, get_authority_host, validate_not_empty, validate_tenant_id,
-    EntraIdErrorResponse, EntraIdTokenResponse, TokenCache,
+    authentication_error, deserialize, env::Env, get_authority_host, validate_not_empty,
+    validate_tenant_id, EntraIdErrorResponse, EntraIdTokenResponse, TokenCache,
 };
 use azure_core::{
     base64,
@@ -44,6 +44,9 @@ pub struct ClientCertificateCredentialOptions {
 
     /// The password for the certificate.
     pub password: Option<Secret>,
+
+    #[cfg(test)]
+    pub(crate) env: Option<Env>,
 }
 
 /// Enables authentication to Azure Active Directory using a client certificate that
@@ -85,7 +88,14 @@ impl ClientCertificateCredential {
             .with_context(ErrorKind::Credential, "failed to compute thumbprint")?
             .to_vec();
         let thumbprint = base64::encode(thumbprint);
-        let send_x5c = std::env::var(AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY)
+
+        #[cfg(test)]
+        let env = options.env.unwrap_or_default();
+        #[cfg(not(test))]
+        let env = Env::default();
+
+        let send_x5c = env
+            .var(AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY)
             .map(|s| s == "1" || s.to_lowercase() == "true")
             .unwrap_or(false);
         let header = if send_x5c {
@@ -294,10 +304,18 @@ mod tests {
         client_assertion_credential::tests::is_valid_request, tests::*, TSG_LINK_ERROR_TEXT,
     };
     use azure_core::{
-        http::{headers::Headers, BufResponse, StatusCode, Transport},
+        http::{
+            headers::Headers,
+            policies::{Policy, PolicyResult},
+            BufResponse, Context, StatusCode, Transport,
+        },
         Bytes,
     };
-    use std::sync::{Arc, LazyLock};
+    use openssl::{pkey::Public, sign::Verifier};
+    use std::{
+        collections::HashMap,
+        sync::{Arc, LazyLock},
+    };
 
     static TEST_CERT: LazyLock<String> = LazyLock::new(|| {
         let pfx = std::fs::read(concat!(
@@ -307,6 +325,116 @@ mod tests {
         .expect("failed to read test certificate");
         base64::encode(pfx)
     });
+
+    #[derive(Debug, Clone)]
+    struct VerifyAssertionPolicy {
+        public_key: PKey<Public>,
+        cert_der: Vec<u8>,
+        expect_x5c: bool,
+    }
+
+    impl VerifyAssertionPolicy {
+        fn new(certificate: String, expect_x5c: bool) -> Self {
+            let pfx = base64::decode(certificate).expect("base64 encoding");
+            let (_, cert, _) = parse_certificate(&pfx, None).expect("valid certificate");
+            let public_key = cert.public_key().expect("public key");
+            let cert_der = cert.to_der().expect("valid certificate");
+            Self {
+                public_key,
+                cert_der,
+                expect_x5c,
+            }
+        }
+    }
+
+    #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+    #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+    impl Policy for VerifyAssertionPolicy {
+        async fn send(
+            &self,
+            ctx: &Context,
+            request: &mut Request,
+            next: &[Arc<dyn Policy>],
+        ) -> PolicyResult {
+            if !request.url().path().ends_with("/token") {
+                return next[0].send(ctx, request, &next[1..]).await;
+            }
+
+            let body = request.body();
+            let body_bytes: Bytes = body.into();
+
+            let params: HashMap<String, String> = form_urlencoded::parse(body_bytes.as_ref())
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect();
+
+            let client_assertion = params
+                .get("client_assertion")
+                .expect("client_assertion should be present");
+
+            let parts: Vec<_> = client_assertion.split('.').collect();
+            let [header, payload, signature] = parts.as_slice() else {
+                panic!("JWT should have 3 parts");
+            };
+
+            let header_bytes =
+                base64::decode_url_safe(header).expect("header should be base64url encoded");
+            let header_str = std::str::from_utf8(&header_bytes).expect("header should be UTF-8");
+
+            let header_json: serde_json::Value =
+                serde_json::from_str(header_str).expect("header should be JSON");
+
+            if self.expect_x5c {
+                let x5c_array = header_json
+                    .get("x5c")
+                    .expect("header should contain x5c field")
+                    .as_array()
+                    .expect("x5c should be an array");
+
+                assert!(!x5c_array.is_empty(), "x5c array should not be empty");
+
+                let x5c_cert_base64 = x5c_array[0]
+                    .as_str()
+                    .expect("x5c certificate should be a string");
+                let x5c_cert_pem = base64::decode(x5c_cert_base64)
+                    .expect("x5c certificate should be valid base64");
+                let x5c_cert =
+                    X509::from_pem(&x5c_cert_pem).expect("x5c certificate should be valid PEM");
+
+                let x5c_der = x5c_cert
+                    .to_der()
+                    .expect("x5c certificate should convert to DER");
+                assert_eq!(
+                    self.cert_der, x5c_der,
+                    "the first certificate in x5c should match the certificate provided to ClientCertificateCredential::new()"
+                );
+            } else {
+                assert!(
+                    header_json.get("x5c").is_none(),
+                    "header should not contain x5c field when expect_x5c is false"
+                );
+            }
+
+            let signature_bytes =
+                base64::decode_url_safe(signature).expect("signature should be base64url encoded");
+
+            let mut verifier =
+                Verifier::new(openssl::hash::MessageDigest::sha256(), &self.public_key)
+                    .expect("verifier creation should succeed");
+            verifier
+                .update(format!("{header}.{payload}").as_bytes())
+                .expect("verifier update should succeed");
+            let verified = verifier
+                .verify(&signature_bytes)
+                .expect("verification should complete");
+
+            assert!(
+                verified,
+                "JWT signature should verify with the certificate's public key"
+            );
+
+            next[0].send(ctx, request, &next[1..]).await
+        }
+    }
 
     #[tokio::test]
     async fn cloud_configuration() {
@@ -400,6 +528,10 @@ mod tests {
             Some(ClientCertificateCredentialOptions {
                 client_options: ClientOptions {
                     transport: Some(Transport::new(Arc::new(sts))),
+                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(
+                        TEST_CERT.to_string(),
+                        false,
+                    ))],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -462,5 +594,43 @@ mod tests {
         .get_token(&[], None)
         .await
         .expect_err("no scopes provided");
+    }
+
+    #[tokio::test]
+    async fn sni() {
+        let sts = MockSts::new(
+            vec![token_response()],
+            Some(Arc::new(is_valid_request(
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+                None,
+            ))),
+        );
+        let credential = ClientCertificateCredential::new(
+            FAKE_TENANT_ID.to_string(),
+            FAKE_CLIENT_ID.to_string(),
+            TEST_CERT.to_string(),
+            Some(ClientCertificateCredentialOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(Arc::new(sts))),
+                    per_try_policies: vec![Arc::new(VerifyAssertionPolicy::new(
+                        TEST_CERT.to_string(),
+                        true,
+                    ))],
+                    ..Default::default()
+                },
+                env: Some(Env::from(
+                    &[(AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY, "true")][..],
+                )),
+                ..Default::default()
+            }),
+        )
+        .expect("credential");
+
+        let token = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect("token");
+
+        assert_eq!(FAKE_TOKEN, token.token.secret());
     }
 }
