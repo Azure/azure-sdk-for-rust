@@ -30,7 +30,8 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        JsonFormat, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url, XmlFormat,
+        AsyncResponse, JsonFormat, NoFormat, Pipeline, RequestContent, Response, StatusCode, Url,
+        XmlFormat,
     },
     tracing, Bytes, Result,
 };
