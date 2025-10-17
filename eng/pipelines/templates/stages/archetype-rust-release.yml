@@ -85,82 +85,76 @@ stages:
             runOnce:
               deploy:
                 steps:
+                - pwsh: |
+                    Write-Host "Setting ArtifactName to empty"
+                    Write-Host "##vso[task.setvariable variable=ArtifactName;]"
+                  displayName: Initialize ArtifactName variable
+
+                # This loop over artifacts is used to produce the correct number
+                # of ESRP release tasks. It has the side effect of also setting
+                # the artifact name by looking up the index of the current
+                # "artifact.name" in the parameters.Artifacts array, using that
+                # as an "index" and then using that same index to look up the
+                # actual artifact to release in the release-order.json file.
+                - ${{ each artifact in parameters.Artifacts }}:
                   - pwsh: |
-                      Write-Host "Setting ArtifactName to empty"
-                      Write-Host "##vso[task.setvariable variable=ArtifactName;]"
-                    displayName: Initialize ArtifactName variable
+                      # From the DevOps template artifact loop calculate the current index
+                      $indexItem = '${{ artifact.name }}'
+                      [array] $indexList = ConvertFrom-Json '${{ convertToJson(parameters.Artifacts.*.name) }}'
+                      $index = $indexList.IndexOf($indexItem)
+                      Write-Host "Index of template artifact: $index"
 
-                  # This loop over the artifacts never uses `artifact` directly.
-                  # It is instead used to generate the correct number of tasks
-                  # for publishing each artifact in an order specified in the
-                  # release-order.json file.
-                  - ${{ each artifact in parameters.Artifacts }}:
-                    - pwsh: |
-                        $artifacts = Get-Content '$(Pipeline.Workspace)/drop/release-order.json' | ConvertFrom-Json
+                      [array] $artifacts = Get-Content '$(Pipeline.Workspace)/drop/release-order.json' | ConvertFrom-Json
 
-                        # Force $artifacts to be an array (PowerShell unrolls single-item arrays)
-                        if ($artifacts -isnot [Array]) {
-                          $artifacts = @($artifacts)
-                        }
+                      $artifactName = $artifacts[$index]
 
-                        $artifactName = '$(ArtifactName)'
-                        if (!$artifactName) {
-                            $artifactName = $artifacts[0]
-                        }
+                      Write-Host "Releasing artifact: $artifactName"
 
-                        Write-Host "Releasing artifact: $artifactName"
+                      $artifactRootPath = '$(Pipeline.Workspace)/drop'
+                      $outDir = '$(Pipeline.Workspace)/esrp-release'
 
-                        $artifactRootPath = '$(Pipeline.Workspace)/drop'
-                        $outDir = '$(Pipeline.Workspace)/esrp-release'
+                      if (Test-Path $outDir) {
+                        Write-Host "Cleaning output directory: $outDir"
+                        Remove-Item -Path $outDir -Recurse -Force
+                      }
+                      New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 
-                        if (Test-Path $outDir) {
-                          Write-Host "Cleaning output directory: $outDir"
-                          Remove-Item -Path $outDir -Recurse -Force
-                        }
-                        New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+                      $packageMetadataPath = "$artifactRootPath/PackageInfo/$artifactName.json"
+                      if (!(Test-Path $packageMetadataPath)) {
+                        Write-Error "Package metadata file not found: $packageMetadataPath"
+                        exit 1
+                      }
 
-                        $packageMetadataPath = "$artifactRootPath/PackageInfo/$artifactName.json"
-                        if (!(Test-Path $packageMetadataPath)) {
-                          Write-Error "Package metadata file not found: $packageMetadataPath"
-                          exit 1
-                        }
+                      $packageMetadata = Get-Content -Raw $packageMetadataPath | ConvertFrom-Json
+                      $packageVersion = $packageMetadata.version
+                      Write-Host "Package version: $packageVersion"
 
-                        $packageMetadata = Get-Content -Raw $packageMetadataPath | ConvertFrom-Json
-                        $packageVersion = $packageMetadata.version
-                        Write-Host "Package version: $packageVersion"
+                      $cratePath = "$artifactRootPath/$artifactName/$artifactName-$packageVersion.crate"
+                      Copy-Item `
+                        -Path $cratePath `
+                        -Destination $outDir
+                      Write-Host "Contents of $outDir"
+                      Get-ChildItem -Path $outDir | ForEach-Object { Write-Host $_.FullName }
+                    displayName: 'Copy crate for ESRP'
 
-                        $cratePath = "$artifactRootPath/$artifactName/$artifactName-$packageVersion.crate"
-                        Copy-Item `
-                          -Path $cratePath `
-                          -Destination $outDir
-                        Write-Host "Contents of $outDir"
-                        Get-ChildItem -Path $outDir | ForEach-Object { Write-Host $_.FullName }
-
-                        # Set next artifact to release by
-                        $artifactIndex = $artifacts.IndexOf($artifactName)
-                        $nextArtifactName = $artifacts[$artifactIndex + 1]
-                        Write-Host "Next artifact to release: $nextArtifactName"
-                        Write-Host "##vso[task.setvariable variable=ArtifactName]$nextArtifactName"
-                      displayName: 'Copy crate for ESRP'
-
-                    - task: EsrpRelease@10
-                      displayName: 'ESRP Release'
-                      inputs:
-                        connectedservicename: 'Azure SDK PME Managed Identity'
-                        ClientId: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
-                        DomainTenantId: '975f013f-7f24-47e8-a7d3-abc4752bf346'
-                        Usemanagedidentity: true
-                        KeyVaultName: 'kv-azuresdk-codesign'
-                        SignCertName: 'azure-sdk-esrp-release-certificate'
-                        intent: 'packagedistribution'
-                        contenttype: 'Rust'
-                        contentsource: 'Folder'
-                        folderlocation: '$(Pipeline.Workspace)/esrp-release'
-                        waitforreleasecompletion: true
-                        owners: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
-                        approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
-                        serviceendpointurl: 'https://api.esrp.microsoft.com/'
-                        mainpublisher: 'ESRPRELPACMANTEST'
+                  - task: EsrpRelease@10
+                    displayName: 'ESRP Release'
+                    inputs:
+                      connectedservicename: 'Azure SDK PME Managed Identity'
+                      ClientId: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
+                      DomainTenantId: '975f013f-7f24-47e8-a7d3-abc4752bf346'
+                      Usemanagedidentity: true
+                      KeyVaultName: 'kv-azuresdk-codesign'
+                      SignCertName: 'azure-sdk-esrp-release-certificate'
+                      intent: 'packagedistribution'
+                      contenttype: 'Rust'
+                      contentsource: 'Folder'
+                      folderlocation: '$(Pipeline.Workspace)/esrp-release'
+                      waitforreleasecompletion: true
+                      owners: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
+                      approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
+                      serviceendpointurl: 'https://api.esrp.microsoft.com/'
+                      mainpublisher: 'ESRPRELPACMANTEST'
 
         - job: UpdatePackageVersion
           displayName: "API Review and Package Version Update"
