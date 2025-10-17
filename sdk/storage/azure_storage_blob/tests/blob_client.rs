@@ -13,9 +13,10 @@ use azure_storage_blob::{
         BlobClientDownloadResultHeaders, BlobClientGetAccountInfoResultHeaders,
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetMetadataOptions, BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
-        BlockBlobClientUploadOptions, ContainerClientCreateOptions, LeaseState, PublicAccessType,
+        BlobContainerClientCreateOptions, BlockBlobClientUploadOptions, LeaseState,
+        PublicAccessType,
     },
-    BlobClient, BlobClientOptions, BlobContainerClient, ContainerClientOptions,
+    BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_container_client, get_container_name, recorded_test_setup,
@@ -504,7 +505,7 @@ async fn test_public_access(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let recording = ctx.recording();
     let container_name = get_container_name(recording);
     let (options, endpoint) = recorded_test_setup(recording);
-    let container_client_options = ContainerClientOptions {
+    let container_client_options = BlobContainerClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };
@@ -517,7 +518,7 @@ async fn test_public_access(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let blob_name = get_blob_name(recording);
     let blob_client = container_client.blob_client(&blob_name.clone());
 
-    let public_access_create_options = ContainerClientCreateOptions {
+    let public_access_create_options = BlobContainerClientCreateOptions {
         access: Some(PublicAccessType::Blob),
         ..Default::default()
     };
@@ -581,7 +582,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     recording.instrument(&mut client_options);
 
     // ContainerClient Options
-    let container_client_options = ContainerClientOptions {
+    let container_client_options = BlobContainerClientOptions {
         client_options: client_options.clone(),
         ..Default::default()
     };

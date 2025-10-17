@@ -5,10 +5,10 @@ use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, Matcher, TestContext, TestMode};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
-    AccountKind, BlobType, BlockBlobClientUploadOptions, ContainerClientAcquireLeaseResultHeaders,
-    ContainerClientChangeLeaseResultHeaders, ContainerClientGetAccountInfoResultHeaders,
-    ContainerClientGetPropertiesResultHeaders, ContainerClientListBlobFlatSegmentOptions,
-    ContainerClientSetMetadataOptions, LeaseState,
+    AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
+    BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
+    BlobContainerClientGetPropertiesResultHeaders, BlobContainerClientListBlobFlatSegmentOptions,
+    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
@@ -168,7 +168,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     .await?;
 
     // Continuation Token with Token Provided
-    let list_blobs_options = ContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
         maxresults: Some(2),
         ..Default::default()
     };
@@ -184,7 +184,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
     }
-    let list_blobs_options = ContainerClientListBlobFlatSegmentOptions {
+    let list_blobs_options = BlobContainerClientListBlobFlatSegmentOptions {
         marker: continuation_token,
         ..Default::default()
     };
@@ -259,7 +259,7 @@ async fn test_container_lease_operations(ctx: TestContext) -> Result<(), Box<dyn
     assert_eq!(StatusCode::Conflict, error.unwrap());
 
     let update_metadata = HashMap::from([("hello".to_string(), "world".to_string())]);
-    let set_metadata_options = ContainerClientSetMetadataOptions {
+    let set_metadata_options = BlobContainerClientSetMetadataOptions {
         lease_id: Some(lease_id.clone()),
         ..Default::default()
     };

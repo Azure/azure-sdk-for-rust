@@ -5,9 +5,9 @@ use azure_core::http::{RequestContent, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
-    AccountKind, BlobServiceProperties, BlockBlobClientUploadOptions,
-    ServiceClientGetAccountInfoResultHeaders, ServiceClientGetPropertiesOptions,
-    ServiceClientListContainersSegmentOptions,
+    AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
+    BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
+    BlobServiceProperties, BlockBlobClientUploadOptions,
 };
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
@@ -24,7 +24,7 @@ async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Err
     let service_client = get_blob_service_client(recording)?;
 
     let response = service_client
-        .get_properties(Some(ServiceClientGetPropertiesOptions::default()))
+        .get_properties(Some(BlobServiceClientGetPropertiesOptions::default()))
         .await?;
 
     // Assert
@@ -96,7 +96,7 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
         container_clients.push(container_client);
     }
 
-    let list_containers_options = ServiceClientListContainersSegmentOptions {
+    let list_containers_options = BlobServiceClientListContainersSegmentOptions {
         maxresults: Some(2),
         ..Default::default()
     };
