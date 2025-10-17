@@ -9,7 +9,6 @@ use std::{
     time::{Duration, SystemTime},
 };
 use tracing::info;
-use crate::routing::ReadOnlyUrlCollection;
 
 const DEFAULT_EXPIRATION_TIME: Duration = Duration::from_secs(5 * 60);
 
