@@ -1,21 +1,71 @@
 # Release History
 
-## 0.29.0 (Unreleased)
+## 0.30.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+- Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
+- Removed `constants` module.
+- Removed `CustomHeaders` policy.
+- Removed `ErrorKind::MockFramework`.
+- Removed `xml::read_xml_str()`.
+- Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.29.1 (2025-10-06)
+
+### Breaking Changes
+
+- Removed the `azurite_workaround` feature (unused).
+
+### Bugs Fixed
+
+- Fix feature documentation ([#3118](https://github.com/Azure/azure-sdk-for-rust/issues/3118))
+
+## 0.29.0 (2025-10-03)
 
 ### Features Added
 
 - Added `Error::with_error_fn()`.
+- Added `AsyncResponse<T>` for responses that may stream the body outside the HTTP pipeline. This replaces `Response<T, F>` requiring an async read of the body that occurred outside the HTTP pipeline.
+- Added `http::response::BufResponseBody`, which also implements `Stream`.
+- Added a `Pipeline::stream()` to return a `Result<BufResponse>`.
+- Added `RawResponse::deconstruct()`.
+- Added `ResponseBody::into_string()`.
+- Added `ResponseBody::from_bytes()`.
+- Added the `cloud` module with types for configuring clients to use different Azure clouds.
+- Implemented `AsRef<[u8]>` and `Deref<Target = [u8]>` for `ResponseBody`.
 
 ### Breaking Changes
 
 - Changed `ClientOptions::retry` from `Option<RetryOptions>` to `RetryOptions`.
-- Changed `RawResponse::json()` from `async` to synchronous function. The body was already buffered.
-- Changed `RawResponse::xml()` from `async` to synchronous function. The body was already buffered.
+- Changed `DeserializeWith::deserialize_with()` to be sync.
+- Changed `Pipeline::send()` to return a `Result<RawResponse>`.
+- Changed `RawResponse::body()` to return a `&ResponseBody` instead of `&Bytes`. `ResponseBody` wraps `&Bytes`, and implements `AsRef<[u8]>` and `Deref<Target = [u8]>`.
+- Changed `RawResponse::into_body()` to return a `ResponseBody` instead of `Bytes`. `ResponseBody` wraps `&Bytes`, and implements `AsRef<[u8]>` and `Deref<Target = [u8]>`.
+- Changed `RawResponse::json()` from `async` to a sync function. The body was already buffered.
+- Changed `RawResponse::xml()` from `async` to a sync function. The body was already buffered.
+- Changed `Response<T, F>` to fully sync; it holds a `RawResponse` that was already buffered entirely from the service so no longer needs or defines async functions.
+- Changed `ResponseBody::json()` and `xml()` to borrow `self`.
+- Removed `create_extensible_enum` and `create_enum` macros.
+- Removed `BufResponse::json()`.
+- Removed `BufResponse::xml()`.
+- Removed `CustomHeadersPolicy` from public API.
 - Removed `ErrorKind::http_response()`. Construct an `ErrorResponse::HttpResponse` variant instead.
+- Removed `ExponentialRetryPolicy` from public API.
+- Removed `FixedRetryPolicy` from public API.
+- Removed `LoggingPolicy` from public API.
+- Removed `NoRetryPolicy` from public API.
+- Removed implementation of `Stream` for `ResponseBody`.
 - Removed several unreferenced HTTP headers and accessor structures for those headers.
-- Renamed `TransportOptions` to `Transport`.
 - Renamed `TransportOptions::new_custom_policy()` to `Transport::with_policy()`.
-- Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)"
+- Renamed `TransportOptions` to `Transport`.
+- Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)
   - Renamed `Error::full()` to `Error::with_error()`.
   - Renamed `Error::with_message()` to `Error::with_message_fn()`.
   - Renamed `Error::message()` to `Error::with_message()`.
@@ -24,13 +74,12 @@
   - Renamed `ResultExt::map_kind()` to `ResultExt::with_kind()`.
   - Renamed `ResultExt::with_context()` to `ResultExt::with_context_fn()`.
   - Renamed `ResultExt::context()` to `ResultExt::with_context()`.
-  - Removed `create_extensible_enum` and `create_enum` macros.
+- Replaced implementation of `From<BufResponse>` for `Response<T, F>` to `From<RawResponse>`.
+- Replaced implementation of `From<Response<T, F>>` for `BufResponse` to `From<AsyncResponse<T>>`.
 
 ### Bugs Fixed
 
 - `ErrorKind::HttpResponse { raw_response, .. }` may have been incorrectly `None`.
-
-### Other Changes
 
 ## 0.28.0 (2025-09-11)
 

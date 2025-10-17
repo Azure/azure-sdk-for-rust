@@ -15,6 +15,12 @@ extends:
   parameters:
     ServiceDirectory: core
     Artifacts:
+    - name: typespec
+      safeName: Typespec
+    - name: typespec_macros
+      safeName: TypespecMacros
+    - name: typespec_client_core
+      safeName: TypespecClientCore
     - name: azure_core
       safeName: AzureCore
     - name: azure_core_macros

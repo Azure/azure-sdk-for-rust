@@ -140,7 +140,7 @@ where
     type Item = P::Item;
     type IntoIter = P::IntoIter;
     async fn into_items(self) -> crate::Result<Self::IntoIter> {
-        let page: P = self.into_body().await?;
+        let page: P = self.into_body()?;
         page.into_items().await
     }
 }
@@ -185,7 +185,7 @@ impl<P: Page> ItemIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{BufResponse, Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, Context, ItemIterator, pager::{Page, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -226,9 +226,8 @@ impl<P: Page> ItemIterator<P> {
     ///           .send(&Context::new(), &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
-    ///         let bytes = body.collect().await?;
-    ///         let result: ListItemsResult = json::from_json(&bytes)?;
-    ///         let resp: Response<ListItemsResult> = BufResponse::from_bytes(status, headers, bytes).into();
+    ///         let result: ListItemsResult = json::from_json(&body)?;
+    ///         let resp: Response<ListItemsResult> = RawResponse::from_bytes(status, headers, body).into();
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
@@ -387,7 +386,7 @@ impl<P> PageIterator<P> {
     /// To page results using a next link:
     ///
     /// ```rust,no_run
-    /// # use azure_core::{Result, http::{BufResponse, Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
+    /// # use azure_core::{Result, http::{RawResponse, Context, pager::{PageIterator, PagerResult, PagerState}, Pipeline, Request, Response, Method, Url}, json};
     /// # let api_version = "2025-06-04".to_string();
     /// # let pipeline: Pipeline = panic!("Not a runnable example");
     /// #[derive(serde::Deserialize)]
@@ -419,9 +418,8 @@ impl<P> PageIterator<P> {
     ///           .send(&Context::new(), &mut req, None)
     ///           .await?;
     ///         let (status, headers, body) = resp.deconstruct();
-    ///         let bytes = body.collect().await?;
-    ///         let result: ListItemsResult = json::from_json(&bytes)?;
-    ///         let resp: Response<ListItemsResult> = BufResponse::from_bytes(status, headers, bytes).into();
+    ///         let result: ListItemsResult = json::from_json(&body)?;
+    ///         let resp: Response<ListItemsResult> = RawResponse::from_bytes(status, headers, body).into();
     ///         Ok(match result.next_link {
     ///             Some(next_link) => PagerResult::More {
     ///                 response: resp,
@@ -545,7 +543,7 @@ impl<P> PageIterator<P> {
     ///     .with_continuation_token("continuation_token_from_another_pager".to_string());
     ///
     /// while let Some(secrets) = pager.try_next().await? {
-    ///     let secrets = secrets.into_body().await?;
+    ///     let secrets = secrets.into_body()?;
     ///     for secret in secrets.value {
     ///         println!("{:?}", secret.id);
     ///     }
@@ -657,7 +655,7 @@ mod tests {
     use crate::http::{
         headers::{HeaderName, HeaderValue},
         pager::{PageIterator, Pager, PagerResult, PagerState},
-        BufResponse, Response, StatusCode,
+        RawResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
     use futures::{StreamExt as _, TryStreamExt as _};
@@ -686,7 +684,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 PagerState::Initial => Ok(PagerResult::More {
-                    response: BufResponse::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -699,7 +697,7 @@ mod tests {
                     continuation: "1",
                 }),
                 PagerState::More("1") => Ok(PagerResult::More {
-                    response: BufResponse::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -712,7 +710,7 @@ mod tests {
                     continuation: "2",
                 }),
                 PagerState::More("2") => Ok(PagerResult::Done {
-                    response: BufResponse::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -737,7 +735,7 @@ mod tests {
         let pager: Pager<Page> = Pager::from_callback(|continuation| async move {
             match continuation {
                 PagerState::Initial => Ok(PagerResult::More {
-                    response: BufResponse::from_bytes(
+                    response: RawResponse::from_bytes(
                         StatusCode::Ok,
                         HashMap::from([(
                             HeaderName::from_static("x-test-header"),
@@ -766,7 +764,7 @@ mod tests {
                     .headers()
                     .get_optional_string(&HeaderName::from_static("x-test-header"))
                     .unwrap();
-                let body = r.into_body().await?;
+                let body = r.into_body()?;
                 Ok((header, body))
             })
             .collect()
@@ -794,7 +792,7 @@ mod tests {
             |continuation: PagerState<String>| async move {
                 match continuation.as_deref() {
                     PagerState::Initial => Ok(PagerResult::More {
-                        response: BufResponse::from_bytes(
+                        response: RawResponse::from_bytes(
                             StatusCode::Ok,
                             Default::default(),
                             r#"{"items":[1],"page":1}"#,
@@ -803,7 +801,7 @@ mod tests {
                         continuation: "next-token-1".to_string(),
                     }),
                     PagerState::More("next-token-1") => Ok(PagerResult::More {
-                        response: BufResponse::from_bytes(
+                        response: RawResponse::from_bytes(
                             StatusCode::Ok,
                             HashMap::from([(
                                 HeaderName::from_static("x-test-header"),
@@ -816,7 +814,7 @@ mod tests {
                         continuation: "next-token-2".to_string(),
                     }),
                     PagerState::More("next-token-2") => Ok(PagerResult::Done {
-                        response: BufResponse::from_bytes(
+                        response: RawResponse::from_bytes(
                             StatusCode::Ok,
                             HashMap::from([(
                                 HeaderName::from_static("x-test-header"),
@@ -848,7 +846,6 @@ mod tests {
             .expect("expected first page")
             .expect("expected successful first page")
             .into_body()
-            .await
             .expect("expected page");
         assert_eq!(first_page.page, Some(1));
         assert_eq!(first_page.items, vec![1]);
@@ -877,7 +874,6 @@ mod tests {
             .expect("expected second page")
             .expect("expected successful second page")
             .into_body()
-            .await
             .expect("expected page");
         assert_eq!(second_page.page, Some(2));
         assert_eq!(second_page.items, vec![2]);
@@ -893,7 +889,6 @@ mod tests {
             .expect("expected last page")
             .expect("expected successful last page")
             .into_body()
-            .await
             .expect("expected page");
         assert_eq!(last_page.page, None);
         assert_eq!(last_page.items, vec![3]);

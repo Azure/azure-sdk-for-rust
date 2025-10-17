@@ -61,7 +61,7 @@ impl ReadCommand {
                         println!("Item not found!")
                     }
                     Ok(r) => {
-                        let item: serde_json::Value = r.into_body().await?;
+                        let item: serde_json::Value = r.into_body()?;
                         println!("Found item:");
                         println!("{:#?}", item);
                     }
@@ -71,7 +71,7 @@ impl ReadCommand {
             }
             Subcommands::Database { database } => {
                 let db_client = client.database_client(&database);
-                let response = db_client.read(None).await?.into_body().await?;
+                let response = db_client.read(None).await?.into_body()?;
                 println!("Database:");
                 println!(" {:#?}", response);
 
@@ -80,7 +80,7 @@ impl ReadCommand {
                 match resp {
                     None => println!("Database does not have provisioned throughput"),
                     Some(r) => {
-                        let throughput = r.into_body().await?;
+                        let throughput = r.into_body()?;
                         println!("Throughput:");
                         crate::utils::print_throughput(throughput);
                     }
@@ -93,7 +93,7 @@ impl ReadCommand {
             } => {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container);
-                let response = container_client.read(None).await?.into_body().await?;
+                let response = container_client.read(None).await?.into_body()?;
                 println!("Container:");
                 println!("  {:#?}", response);
 
@@ -102,7 +102,7 @@ impl ReadCommand {
                 match resp {
                     None => println!("Container does not have provisioned throughput"),
                     Some(r) => {
-                        let throughput = r.into_body().await?;
+                        let throughput = r.into_body()?;
                         println!("Throughput:");
                         crate::utils::print_throughput(throughput);
                     }

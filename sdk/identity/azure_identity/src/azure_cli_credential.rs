@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
+    authentication_error,
     env::Env,
     process::{new_executor, shell_exec, Executor, OutputProcessor},
     validate_scope, validate_subscription, validate_tenant_id,
@@ -158,7 +159,9 @@ impl TokenCredential for AzureCliCredential {
 
         trace!("running Azure CLI command: {command:?}");
 
-        shell_exec::<CliTokenResponse>(self.executor.clone(), &self.env, &command).await
+        shell_exec::<CliTokenResponse>(self.executor.clone(), &self.env, &command)
+            .await
+            .map_err(authentication_error::<Self>)
     }
 }
 

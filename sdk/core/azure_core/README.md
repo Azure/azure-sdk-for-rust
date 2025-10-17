@@ -55,7 +55,7 @@ We guarantee that all client instance methods are thread-safe and independent of
 - `reqwest` (default): enables and sets `reqwest` as the default `HttpClient`.
 - `reqwest_deflate` (default): enables deflate compression for `reqwest`.
 - `reqwest_gzip` (default): enables gzip compression for `reqwest`.
-- `reqwest_native-tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
+- `reqwest_native_tls` (default): enables `reqwest`'s `native-tls` feature, which uses schannel on Windows and openssl elsewhere.
 - `tokio`: enables and sets `tokio` as the default async runtime.
 - `wasm_bindgen`: enables the async runtime for WASM.
 - `xml`: enables XML support.
@@ -159,7 +159,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Response<T> has two main accessors:
     // 1. The `into_body()` function consumes self to deserialize into a model type
-    let secret = response.into_body().await?;
+    let secret = response.into_body()?;
 
     // get response again because it was moved in above statement
     let response: Response<Secret> = client.get_secret("secret-name", None).await?;
@@ -199,7 +199,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     match client.get_secret("secret-name", None).await {
-        Ok(secret) => println!("Secret: {:?}", secret.into_body().await?.value),
+        Ok(secret) => println!("Secret: {:?}", secret.into_body()?.value),
         Err(e) => match e.kind() {
             ErrorKind::HttpResponse { status, error_code, .. } if *status == StatusCode::NotFound => {
                 // handle not found error
@@ -272,7 +272,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // poll the pager until there are no more SecretListResults
     while let Some(secrets) = pager.try_next().await? {
-        let secrets = secrets.into_body().await?.value;
+        let secrets = secrets.into_body()?.value;
         // loop through secrets in SecretsListResults
         for secret in secrets {
             // get the secret name from the ID
@@ -328,7 +328,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The Poller implements futures::Stream and automatically waits between polls.
     let mut poller = client.begin_create_certificate("certificate-name", body.try_into()?, None)?;
     while let Some(operation) = poller.try_next().await? {
-        let operation = operation.into_body().await?;
+        let operation = operation.into_body()?;
         match operation.status.as_deref().unwrap_or("unknown") {
             "inProgress" => continue,
             "completed" => {
@@ -385,8 +385,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .wait()
         .await?
         // Deserialize the CertificateOperation:
-        .into_body()
-        .await?;
+        .into_body()?;
 
     if matches!(operation.status, Some(status) if status == "completed") {
         let target = operation.target.ok_or("expected target")?;
@@ -577,8 +576,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // get a secret
     let secret = client.get_secret("secret-name", None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     println!("{secret:#?}");
 

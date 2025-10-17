@@ -1,6 +1,6 @@
 [package]
 name = "azure_security_keyvault_secrets"
-version = "0.8.0"
+version = "0.9.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Key Vault Secrets"
 readme = "README.md"
 authors.workspace = true
@@ -40,3 +40,8 @@ rustc_version.workspace = true
 
 [lints]
 workspace = true
+
+[[test]]
+name = "perf"
+path = "perf/get_secret.rs"
+harness = false

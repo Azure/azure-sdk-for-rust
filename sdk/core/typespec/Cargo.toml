@@ -1,0 +1,37 @@
+[package]
+name = "typespec"
+version = "0.10.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Project root for all TypeSpec-related crates."
+homepage = "https://typespec.io"
+repository.workspace = true
+license.workspace = true
+categories = ["compilers", "development-tools"]
+keywords = ["typespec"]
+
+[dependencies]
+base64.workspace = true
+bytes.workspace = true
+futures.workspace = true
+quick-xml = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+url.workspace = true
+
+[dev-dependencies]
+thiserror.workspace = true
+
+[features]
+default = ["http", "json"]
+amqp = []
+http = []
+json = ["dep:serde", "dep:serde_json"]
+xml = ["dep:quick-xml"]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[lints]
+workspace = true

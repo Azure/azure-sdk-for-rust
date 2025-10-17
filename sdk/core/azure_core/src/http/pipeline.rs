@@ -29,11 +29,10 @@ use typespec_client_core::http::{
 ///    immediately.
 /// 2. User-specified per-call policies in [`ClientOptions::per_call_policies`] are executed.
 /// 3. The retry policy is executed. It allows to re-execute the following policies.
-/// 4. The [`CustomHeadersPolicy`](crate::http::policies::CustomHeadersPolicy) is executed
-/// 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are
+/// 4. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are
 ///    re-executed in case of retries.
-/// 6. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
-/// 7. The transport policy is executed. Transport policy is always the last policy and is the policy that
+/// 5. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
+/// 6. The transport policy is executed. Transport policy is always the last policy and is the policy that
 ///    actually constructs the [`BufResponse`](http::BufResponse) to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
@@ -43,13 +42,13 @@ use typespec_client_core::http::{
 #[derive(Debug, Clone)]
 pub struct Pipeline(http::Pipeline);
 
-/// Options for sending a request through the pipeline.
+/// Options for the [`Pipeline::send`] function.
 #[derive(Debug, Default)]
 pub struct PipelineSendOptions {
-    /// If true, skip all checks including `[check_success]`.
+    /// If true, skip all checks including [`check_success`].
     pub skip_checks: bool,
 
-    /// Options for `[check_success]`. If `skip_checks` is true, this field is ignored.
+    /// Options for [`check_success`]. If `skip_checks` is true, this field is ignored.
     pub check_success: CheckSuccessOptions,
 }
 
@@ -62,10 +61,44 @@ struct CorePipelineSendOptions {
 
 impl PipelineSendOptions {
     /// Deconstructs the `PipelineSendOptions` into its core components.
-    #[expect(private_interfaces)]
-    pub fn deconstruct(self) -> (CorePipelineSendOptions, Option<http::PipelineSendOptions>) {
+    fn deconstruct(self) -> (CorePipelineSendOptions, Option<http::PipelineSendOptions>) {
         (
             CorePipelineSendOptions {
+                skip_checks: self.skip_checks,
+                check_success: self.check_success,
+            },
+            None,
+        )
+    }
+}
+
+/// Options for the [`Pipeline::stream`] function.
+#[derive(Debug, Default)]
+pub struct PipelineStreamOptions {
+    /// If true, skip all checks including [`check_success`].
+    pub skip_checks: bool,
+
+    /// Options for [`check_success`]. If `skip_checks` is true, this field is ignored.
+    pub check_success: CheckSuccessOptions,
+}
+
+/// Internal structure used to pass options to the core pipeline.
+#[derive(Debug, Default)]
+struct CorePipelineStreamOptions {
+    check_success: CheckSuccessOptions,
+    skip_checks: bool,
+}
+
+impl PipelineStreamOptions {
+    /// Deconstructs the `PipelineStreamOptions` into its core components.
+    fn deconstruct(
+        self,
+    ) -> (
+        CorePipelineStreamOptions,
+        Option<http::PipelineStreamOptions>,
+    ) {
+        (
+            CorePipelineStreamOptions {
                 skip_checks: self.skip_checks,
                 check_success: self.check_success,
             },
@@ -151,15 +184,16 @@ impl Pipeline {
         ))
     }
 
-    /// Sends the request through the pipeline, returning the response or an error.
+    /// Sends a [`Request`](http::Request) through each configured [`Policy`] to get a [`RawResponse`](http::RawResponse) that is processed by each policy in reverse.
     ///
     /// # Arguments
-    /// * `ctx` - The context for the request.
-    /// * `request` - The request to send.
-    /// * `options` - Options for sending the request, including check success options. If none, `[check_success]` will not be called.
+    /// * `ctx` - The context for the `Request`.
+    /// * `request` - The `Request` to send.
+    /// * `options` - Options for sending the `Request`, including check success options. If none, [`check_success`] will not be called.
     ///
     /// # Returns
-    /// A [`http::BufResponse`] if the request was successful, or an `Error` if it failed.
+    ///
+    /// A [`http::RawResponse`] if the request was successful, or an `Error` if it failed.
     /// If the response status code indicates an HTTP error, the function will attempt to parse the error response
     /// body into an `ErrorResponse` and include it in the `Error`.
     pub async fn send(
@@ -167,11 +201,38 @@ impl Pipeline {
         ctx: &http::Context<'_>,
         request: &mut http::Request,
         options: Option<PipelineSendOptions>,
-    ) -> crate::Result<http::BufResponse> {
+    ) -> crate::Result<http::RawResponse> {
         let (core_send_options, send_options) = options.unwrap_or_default().deconstruct();
         let result = self.0.send(ctx, request, send_options).await?;
         if !core_send_options.skip_checks {
             check_success(result, Some(core_send_options.check_success)).await
+        } else {
+            Ok(result)
+        }
+    }
+
+    /// Sends a [`Request`](http::Request) through each configured [`Policy`] to get a [`BufResponse`](http::BufResponse) that is processed by each policy in reverse.
+    ///
+    /// # Arguments
+    /// * `ctx` - The context for the `Request`.
+    /// * `request` - The `Request` to send.
+    /// * `options` - Options for sending the `Request`, including check success options. If none, [`check_success`] will not be called.
+    ///
+    /// # Returns
+    ///
+    /// A [`http::RawResponse`] if the request was successful, or an `Error` if it failed.
+    /// If the response status code indicates an HTTP error, the function will attempt to parse the error response
+    /// body into an `ErrorResponse` and include it in the `Error`.
+    pub async fn stream(
+        &self,
+        ctx: &http::Context<'_>,
+        request: &mut http::Request,
+        options: Option<PipelineStreamOptions>,
+    ) -> crate::Result<http::BufResponse> {
+        let (core_stream_options, stream_options) = options.unwrap_or_default().deconstruct();
+        let result = self.0.stream(ctx, request, stream_options).await?;
+        if !core_stream_options.skip_checks {
+            check_success(result, Some(core_stream_options.check_success)).await
         } else {
             Ok(result)
         }

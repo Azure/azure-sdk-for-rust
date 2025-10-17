@@ -63,8 +63,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
     let certificate = client
         .get_certificate("certificate-roundtrip", None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     let version = certificate.resource_id()?.version;
 
     assert!(certificate.id.is_some());
@@ -101,8 +100,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
     let certificate = client
         .get_certificate("update-properties", None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     let certificate_version = certificate.resource_id()?.version;
 
     // Update certificate properties.
@@ -124,8 +122,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     assert_eq!(
         certificate.tags.expect("expected tags").get("test-name"),
@@ -299,8 +296,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     let signature = key_client
         .sign(NAME, body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(signature.result.is_some());
     // example: 6AIg-utePBdmCU-uGvpjh4uKb3UV0yvdWKNLSp-EivC4oavdqpfxmfMB9GsR6dBMM1Ekp8ZBrzUMaCvShXWyog
     // cspell:enable
@@ -340,16 +336,14 @@ async fn get_certificate_operation(ctx: TestContext) -> Result<()> {
         .resume_certificate_operation(CERTIFICATE_NAME, None)?
         .wait()
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(operation.status, Some("completed".into()));
 
     // Get the latest version of the certificate we just created.
     let certificate = client
         .get_certificate(CERTIFICATE_NAME, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     let version = certificate.resource_id()?.version;
 
     assert!(certificate.id.is_some());

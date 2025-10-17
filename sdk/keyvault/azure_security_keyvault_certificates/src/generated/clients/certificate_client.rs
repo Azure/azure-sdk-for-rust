@@ -34,7 +34,7 @@ use azure_core::{
     http::{
         pager::{PagerResult, PagerState},
         policies::{BearerTokenCredentialPolicy, Policy},
-        BufResponse, ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions,
+        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
         Request, RequestContent, Response, Url,
     },
     json, tracing, Result,
@@ -775,9 +775,8 @@ impl CertificateClient {
                     )
                     .await?;
                 let (status, headers, body) = rsp.deconstruct();
-                let bytes = body.collect().await?;
-                let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                let res: ListCertificatePropertiesResult = json::from_json(&body)?;
+                let rsp = RawResponse::from_bytes(status, headers, body).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -859,9 +858,8 @@ impl CertificateClient {
                     )
                     .await?;
                 let (status, headers, body) = rsp.deconstruct();
-                let bytes = body.collect().await?;
-                let res: ListCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                let res: ListCertificatePropertiesResult = json::from_json(&body)?;
+                let rsp = RawResponse::from_bytes(status, headers, body).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -939,9 +937,8 @@ impl CertificateClient {
                     )
                     .await?;
                 let (status, headers, body) = rsp.deconstruct();
-                let bytes = body.collect().await?;
-                let res: ListDeletedCertificatePropertiesResult = json::from_json(&bytes)?;
-                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                let res: ListDeletedCertificatePropertiesResult = json::from_json(&body)?;
+                let rsp = RawResponse::from_bytes(status, headers, body).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -1013,9 +1010,8 @@ impl CertificateClient {
                     )
                     .await?;
                 let (status, headers, body) = rsp.deconstruct();
-                let bytes = body.collect().await?;
-                let res: ListIssuerPropertiesResult = json::from_json(&bytes)?;
-                let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                let res: ListIssuerPropertiesResult = json::from_json(&body)?;
+                let rsp = RawResponse::from_bytes(status, headers, body).into();
                 Ok(match res.next_link {
                     Some(next_link) if !next_link.is_empty() => PagerResult::More {
                         response: rsp,
@@ -1519,7 +1515,7 @@ impl CertificateClient {
 impl Default for CertificateClientOptions {
     fn default() -> Self {
         Self {
-            api_version: String::from("7.6"),
+            api_version: String::from("2025-07-01"),
             client_options: ClientOptions::default(),
         }
     }

@@ -40,11 +40,6 @@ pub struct ClientAssertionCredentialOptions {
     /// Add the wildcard value "*" to allow the credential to acquire tokens for any tenant in which the application is registered.
     pub additionally_allowed_tenants: Vec<String>,
 
-    /// The base URL for token requests.
-    ///
-    /// The default is `https://login.microsoftonline.com`.
-    pub authority_host: Option<String>,
-
     /// Should be set true only by applications authenticating in disconnected clouds, or private clouds such as Azure Stack.
     ///
     /// It determines whether the credential requests Microsoft Entra instance metadata
@@ -89,7 +84,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         validate_tenant_id(&tenant_id)?;
         validate_not_empty(&client_id, "no client ID specified")?;
         let options = options.unwrap_or_default();
-        let authority_host = get_authority_host(None, options.authority_host)?;
+        let authority_host = get_authority_host(None, options.client_options.cloud.as_deref())?;
         let endpoint = authority_host
             .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
             .with_context_fn(ErrorKind::DataConversion, || {
@@ -98,7 +93,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
-            options.client_options.clone(),
+            options.client_options,
             Vec::default(),
             Vec::default(),
             None,
@@ -152,7 +147,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
         match res.status() {
             StatusCode::Ok => {
                 let token_response: EntraIdTokenResponse =
-                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res).await?;
+                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res)?;
                 Ok(AccessToken::new(
                     token_response.access_token,
                     OffsetDateTime::now_utc() + Duration::seconds(token_response.expires_in),
@@ -160,7 +155,7 @@ impl<C: ClientAssertion> ClientAssertionCredential<C> {
             }
             _ => {
                 let error_response: EntraIdErrorResponse =
-                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res).await?;
+                    deserialize(CLIENT_ASSERTION_CREDENTIAL, res)?;
                 let message = if error_response.error_description.is_empty() {
                     format!("{} authentication failed.", CLIENT_ASSERTION_CREDENTIAL)
                 } else {
@@ -194,7 +189,6 @@ pub(crate) mod tests {
     use super::*;
     use crate::tests::*;
     use azure_core::{
-        authority_hosts::AZURE_PUBLIC_CLOUD,
         http::{
             headers::{self, content_type, Headers},
             Body, BufResponse, Method, Request, Transport,
@@ -207,12 +201,11 @@ pub(crate) mod tests {
 
     pub const FAKE_ASSERTION: &str = "fake assertion";
 
-    pub fn is_valid_request() -> impl Fn(&Request) -> azure_core::Result<()> {
-        let expected_url = format!(
-            "{}{}/oauth2/v2.0/token",
-            AZURE_PUBLIC_CLOUD.as_str(),
-            FAKE_TENANT_ID
-        );
+    pub fn is_valid_request(
+        expected_authority: String,
+        expected_assertion: Option<String>,
+    ) -> impl Fn(&Request) -> azure_core::Result<()> {
+        let expected_url = format!("{expected_authority}/oauth2/v2.0/token");
         move |req: &Request| {
             assert_eq!(Method::Post, req.method());
             assert_eq!(expected_url, req.url().to_string());
@@ -220,13 +213,6 @@ pub(crate) mod tests {
                 content_type::APPLICATION_X_WWW_FORM_URLENCODED.as_str(),
                 req.headers().get_str(&headers::CONTENT_TYPE).unwrap()
             );
-            let expected_params = [
-                ("client_assertion", FAKE_ASSERTION),
-                ("client_assertion_type", ASSERTION_TYPE),
-                ("client_id", FAKE_CLIENT_ID),
-                ("grant_type", "client_credentials"),
-                ("scope", &LIVE_TEST_SCOPES.join(" ")),
-            ];
             let body = match req.body() {
                 Body::Bytes(bytes) => str::from_utf8(bytes).unwrap(),
                 _ => panic!("unexpected body type"),
@@ -234,6 +220,22 @@ pub(crate) mod tests {
             let actual_params: HashMap<String, String> = form_urlencoded::parse(body.as_bytes())
                 .map(|(k, v)| (k.to_string(), v.to_string()))
                 .collect();
+            let assertion = actual_params
+                .get("client_assertion")
+                .expect("request body should contain client_assertion");
+            match &expected_assertion {
+                Some(expected) => assert_eq!(expected, assertion),
+                None => assert!(
+                    !assertion.is_empty(),
+                    "expected client_assertion to be present"
+                ),
+            }
+            let expected_params = [
+                ("client_assertion_type", ASSERTION_TYPE),
+                ("client_id", FAKE_CLIENT_ID),
+                ("grant_type", "client_credentials"),
+                ("scope", &LIVE_TEST_SCOPES.join(" ")),
+            ];
             for (key, value) in expected_params.iter() {
                 assert_eq!(
                     *value,
@@ -269,7 +271,10 @@ pub(crate) mod tests {
                     expected
                 )),
             )],
-            Some(Arc::new(is_valid_request())),
+            Some(Arc::new(is_valid_request(
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+                Some(FAKE_ASSERTION.to_string()),
+            ))),
         );
         let credential = ClientAssertionCredential::new(
             FAKE_TENANT_ID.to_string(),
@@ -300,15 +305,11 @@ pub(crate) mod tests {
     #[tokio::test]
     async fn get_token_success() {
         let mock = MockSts::new(
-            vec![BufResponse::from_bytes(
-                StatusCode::Ok,
-                Headers::default(),
-                Bytes::from(format!(
-                    r#"{{"access_token":"{}","expires_in":3600,"token_type":"Bearer"}}"#,
-                    FAKE_TOKEN
-                )),
-            )],
-            Some(Arc::new(is_valid_request())),
+            vec![token_response()],
+            Some(Arc::new(is_valid_request(
+                FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+                Some(FAKE_ASSERTION.to_string()),
+            ))),
         );
         let credential = ClientAssertionCredential::new(
             FAKE_TENANT_ID.to_string(),
@@ -339,5 +340,37 @@ pub(crate) mod tests {
             .expect("cached token");
         assert_eq!(token.token.secret(), cached_token.token.secret());
         assert_eq!(token.expires_on, cached_token.expires_on);
+    }
+
+    #[tokio::test]
+    async fn cloud_configuration() {
+        for (cloud, expected_authority) in cloud_configuration_cases() {
+            let mock = MockSts::new(
+                vec![token_response()],
+                Some(Arc::new(is_valid_request(
+                    expected_authority,
+                    Some(FAKE_ASSERTION.to_string()),
+                ))),
+            );
+            let credential = ClientAssertionCredential::new(
+                FAKE_TENANT_ID.to_string(),
+                FAKE_CLIENT_ID.to_string(),
+                MockAssertion {},
+                Some(ClientAssertionCredentialOptions {
+                    client_options: ClientOptions {
+                        transport: Some(Transport::new(Arc::new(mock))),
+                        cloud: Some(Arc::new(cloud)),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }),
+            )
+            .expect("valid credential");
+
+            credential
+                .get_token(LIVE_TEST_SCOPES, None)
+                .await
+                .expect("token");
+        }
     }
 }

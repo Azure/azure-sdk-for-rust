@@ -95,7 +95,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.Queue.clear")]
     pub async fn clear(
         &self,
@@ -132,7 +132,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.Queue.create")]
     pub async fn create(
         &self,
@@ -176,7 +176,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.Queue.delete")]
     pub async fn delete(
         &self,
@@ -223,7 +223,7 @@ impl QueueClient {
     /// * `message_id` - The id of the queue message.
     /// * `pop_receipt` - Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or
     ///   Update Message operation.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.Queue.deleteMessage")]
     pub async fn delete_message(
         &self,
@@ -270,7 +270,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     ///
     /// ## Response Headers
     ///
@@ -337,7 +337,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     ///
     /// ## Response Headers
     ///
@@ -401,7 +401,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.Queue.peekMessages")]
     pub async fn peek_messages(
         &self,
@@ -446,7 +446,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.Queue.receiveMessages")]
     pub async fn receive_messages(
         &self,
@@ -503,7 +503,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `queue_message` - A Message object which can be stored in a Queue
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.Queue.sendMessage")]
     pub async fn send_message(
         &self,
@@ -553,7 +553,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `queue_acl` - The access control list for the queue.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     ///
     /// ## Response Headers
     ///
@@ -622,7 +622,7 @@ impl QueueClient {
     /// # Arguments
     ///
     /// * `metadata` - The metadata headers.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.Queue.setMetadata")]
     pub async fn set_metadata(
         &self,
@@ -679,7 +679,7 @@ impl QueueClient {
     ///   value is 30 seconds. A specified value must be larger than or equal to 1 second, and cannot be larger than 7 days, or
     ///   larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be
     ///   set to a value later than the expiry time.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.Queue.update")]
     pub async fn update(
         &self,

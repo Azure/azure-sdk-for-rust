@@ -3,9 +3,9 @@
 [workspace]
 resolver = "2"
 members = [
-  "sdk/typespec",
-  "sdk/typespec/typespec_client_core",
-  "sdk/typespec/typespec_macros",
+  "sdk/core/typespec",
+  "sdk/core/typespec_client_core",
+  "sdk/core/typespec_macros",
   "sdk/core/azure_core",
   "sdk/core/azure_core_amqp",
   "sdk/core/azure_core_macros",
@@ -39,33 +39,33 @@ rust-version = "1.85"
 
 [workspace.dependencies.typespec]
 default-features = false
-path = "sdk/typespec"
-version = "0.9.0"
+path = "sdk/core/typespec"
+version = "0.10.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
-path = "sdk/typespec/typespec_client_core"
-version = "0.8.0"
+path = "sdk/core/typespec_client_core"
+version = "0.9.0"
 
 [workspace.dependencies.typespec_macros]
-version = "0.8.0"
-path = "sdk/typespec/typespec_macros"
+version = "0.9.0"
+path = "sdk/core/typespec_macros"
 
 [workspace.dependencies.azure_core]
 default-features = false
-version = "0.29.0"
+version = "0.30.0"
 path = "sdk/core/azure_core"
 
 [workspace.dependencies.azure_core_macros]
-version = "0.3.0"
+version = "0.4.0"
 path = "sdk/core/azure_core_macros"
 
 [workspace.dependencies.azure_core_amqp]
-version = "0.8.0"
+version = "0.9.0"
 path = "sdk/core/azure_core_amqp"
 
 [workspace.dependencies.azure_messaging_eventhubs]
-version = "0.8.0"
+version = "0.9.0"
 path = "sdk/eventhubs/azure_messaging_eventhubs"
 
 [workspace.dependencies.azure_core_opentelemetry]
@@ -86,7 +86,7 @@ path = "sdk/identity/azure_identity"
 
 [workspace.dependencies.azure_storage_blob]
 path = "sdk/storage/azure_storage_blob"
-version = "0.6.0"
+version = "0.7.0"
 
 [workspace.dependencies]
 async-lock = "3.0"

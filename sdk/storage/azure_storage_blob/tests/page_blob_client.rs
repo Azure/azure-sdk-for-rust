@@ -78,7 +78,7 @@ async fn test_upload_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(512, content_length.unwrap());
-    assert_eq!(data, response_body.collect().await?);
+    assert_eq!(data, response_body.collect().await?.to_vec());
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -112,7 +112,7 @@ async fn test_clear_page(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(512, content_length.unwrap());
-    assert_eq!(vec![0; 512], response_body.collect().await?);
+    assert_eq!(vec![0; 512], response_body.collect().await?.to_vec());
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -159,7 +159,7 @@ async fn test_resize_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let (status_code, _, response_body) = response.deconstruct();
     assert!(status_code.is_success());
     assert_eq!(512, content_length.unwrap());
-    assert_eq!(vec![b'A'; 512], response_body.collect().await?);
+    assert_eq!(vec![b'A'; 512], response_body.collect().await?.to_vec());
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -260,7 +260,7 @@ async fn test_upload_page_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     assert!(status_code.is_success());
     assert_eq!(1024, content_length.unwrap());
     data_a.extend(&data_b);
-    assert_eq!(data_a, response_body.collect().await?);
+    assert_eq!(data_a, response_body.collect().await?.to_vec());
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -278,7 +278,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Empty Page Range Scenario
     let get_page_ranges_response = page_blob_client.get_page_ranges(None).await?;
     // Assert
-    let page_ranges = get_page_ranges_response.into_body().await?;
+    let page_ranges = get_page_ranges_response.into_body()?;
     let page_range = page_ranges.page_range;
     assert!(page_range.is_none());
 
@@ -294,7 +294,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
     let get_page_ranges_response = page_blob_client.get_page_ranges(None).await?;
     // Assert
-    let page_ranges = get_page_ranges_response.into_body().await?;
+    let page_ranges = get_page_ranges_response.into_body()?;
     let page_range = page_ranges.page_range.unwrap();
     for range in page_range {
         assert_eq!(0, range.start.unwrap());

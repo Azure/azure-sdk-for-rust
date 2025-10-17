@@ -1,14 +1,27 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## 0.9.0 (Unreleased)
 
 ### Features Added
 
 ### Breaking Changes
 
-- Removed non-idiomatic accessor functions from `AmqpDescribed`, `AmqpSessionOptions`, `AmqpDescribedError`, `AmqpMessage`, and `AmqpTarget`
+### Bugs Fixed
+
+### Other Changes
+
+## 0.8.1 (2025-10-06)
 
 ### Bugs Fixed
+
+- Fix feature documentation ([#3118](https://github.com/Azure/azure-sdk-for-rust/issues/3118))
+
+## 0.8.0 (2025-10-03)
+
+### Breaking Changes
+
+- Removed non-idiomatic accessor functions from `AmqpDescribed`, `AmqpSessionOptions`, `AmqpDescribedError`, `AmqpMessage`, and `AmqpTarget`
+- Renamed the "cplusplus" feature to "ffi" because "ffi" is more idiomatic to Rust.
 
 ### Other Changes
 

@@ -13,6 +13,8 @@ pub use typespec_client_core::http::{
 };
 pub use user_agent::*;
 
+use crate::cloud::CloudConfiguration;
+
 /// Client options allow customization of general client policies, retry options, and more.
 #[derive(Clone, Debug, Default)]
 pub struct ClientOptions {
@@ -41,6 +43,9 @@ pub struct ClientOptions {
     ///
     /// Specifies which headers and query parameters should be logged. All headers and query parameters not in the allow list will be redacted.
     pub logging: LoggingOptions,
+
+    /// Cloud configuration for the client. If None, the client will default to Azure Public Cloud.
+    pub cloud: Option<Arc<CloudConfiguration>>,
 }
 
 pub(crate) struct CoreClientOptions {

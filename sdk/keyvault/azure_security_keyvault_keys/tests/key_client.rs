@@ -41,8 +41,7 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
     let key = client
         .create_key("key-roundtrip", body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(key.key, Some(ref jwk) if jwk.e == Some(vec![1, 0, 1])));
 
     // Get a specific version of a key.
@@ -56,8 +55,7 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(key.key, Some(ref jwk) if jwk.e == Some(vec![1, 0, 1])));
 
     Ok(())
@@ -85,8 +83,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
     let key = client
         .create_key("update-key", body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(key.key, Some(ref jwk) if jwk.x.is_some()));
 
     // Update key properties.
@@ -101,8 +98,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
     let key = client
         .update_key_properties("update-key", properties.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(
         key.tags.expect("expected tags").get("test-name"),
         Some(&String::from("update_key"))
@@ -135,8 +131,7 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
             None,
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(secret1.key, Some(ref jwk) if jwk.x.is_some()));
 
     let secret2 = client
@@ -146,8 +141,7 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
             None,
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(secret2.key, Some(ref jwk) if jwk.x.is_some()));
 
     // List keys.
@@ -186,8 +180,7 @@ async fn purge_key(ctx: TestContext) -> Result<()> {
     let key = client
         .create_key("purge-key", body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(key.key, Some(ref jwk) if jwk.e == Some(vec![1, 0, 1])));
 
     // Delete the key.
@@ -247,8 +240,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     let key = client
         .create_key(NAME, body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     let key_version = key.resource_id()?.version;
 
     // Encrypt plaintext.
@@ -268,8 +260,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(encrypted.result.as_ref(), Some(ciphertext) if !ciphertext.is_empty()));
 
     // Decrypt ciphertext.
@@ -284,8 +275,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(decrypted.result, Some(result) if result.eq(&plaintext)));
 
     Ok(())
@@ -319,8 +309,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
     let key = client
         .create_key(NAME, body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     let key_version = key.resource_id()?.version;
 
     // Hash and sign plaintext.
@@ -341,8 +330,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(signed.result.as_ref(), Some(signature) if !signature.is_empty()));
 
     // Verify signature.
@@ -361,8 +349,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(verified.value, Some(true));
 
     Ok(())
@@ -394,8 +381,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     let key = client
         .create_key(NAME, body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     let key_version = key.resource_id()?.version;
 
     // Generate a data encryption key.
@@ -417,8 +403,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(wrapped.result.as_ref(), Some(result) if !result.is_empty()));
 
     // Unwrap the DEK.
@@ -433,8 +418,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert!(matches!(unwrapped.result, Some(result) if result.eq(&dek)));
 
     Ok(())

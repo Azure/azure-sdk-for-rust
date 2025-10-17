@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use crate::{
-    env::Env, AppServiceManagedIdentityCredential, ImdsId, VirtualMachineManagedIdentityCredential,
+    authentication_error, env::Env, AppServiceManagedIdentityCredential, ImdsId,
+    VirtualMachineManagedIdentityCredential,
 };
 use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
 use azure_core::http::ClientOptions;
@@ -104,7 +105,10 @@ impl TokenCredential for ManagedIdentityCredential {
                 || "ManagedIdentityCredential requires exactly one scope".to_string(),
             ));
         }
-        self.credential.get_token(scopes, options).await
+        self.credential
+            .get_token(scopes, options)
+            .await
+            .map_err(authentication_error::<Self>)
     }
 }
 
@@ -161,8 +165,11 @@ fn get_source(env: &Env) -> ManagedIdentitySource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::env::Env;
-    use crate::tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES};
+    use crate::{
+        env::Env,
+        tests::{LIVE_TEST_RESOURCE, LIVE_TEST_SCOPES},
+        TSG_LINK_ERROR_TEXT,
+    };
     use azure_core::http::headers::Headers;
     use azure_core::http::{BufResponse, Method, Request, StatusCode, Transport, Url};
     use azure_core::time::OffsetDateTime;
@@ -420,6 +427,44 @@ mod tests {
         run_unsupported_source_test(
             Env::from(&[(MSI_ENDPOINT, "http://localhost")][..]),
             ManagedIdentitySource::CloudShell,
+        );
+    }
+
+    #[tokio::test]
+    async fn get_token_error() {
+        let mock_client = MockHttpClient::new(|_| {
+            async move {
+                Ok(BufResponse::from_bytes(
+                    StatusCode::BadRequest,
+                    Headers::default(),
+                    Bytes::new(),
+                ))
+            }
+            .boxed()
+        });
+        let options = ManagedIdentityCredentialOptions {
+            client_options: ClientOptions {
+                transport: Some(Transport::new(Arc::new(mock_client))),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let credential = ManagedIdentityCredential::new(Some(options)).expect("credential");
+        let err = credential
+            .get_token(LIVE_TEST_SCOPES, None)
+            .await
+            .expect_err("expected error");
+        assert!(matches!(
+            err.kind(),
+            azure_core::error::ErrorKind::Credential
+        ));
+        assert!(err
+            .to_string()
+            .contains("the requested identity has not been assigned to this resource"));
+        assert!(
+            err.to_string()
+                .contains(&format!("{TSG_LINK_ERROR_TEXT}#managed-id")),
+            "expected error to contain a link to the troubleshooting guide, got '{err}'",
         );
     }
 

@@ -212,7 +212,7 @@ impl BlobClient {
     pub async fn download(
         &self,
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<Response<BlobClientDownloadResult, NoFormat>> {
+    ) -> Result<AsyncResponse<BlobClientDownloadResult>> {
         self.client.download(options).await
     }
 
@@ -250,7 +250,7 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
-    /// * `metadata` - The metadata headers.
+    /// * `metadata` - A [`HashMap`] containing the metadata key-value pairs to set for the blob.
     /// * `options` - Optional configuration for the request.
     pub async fn set_metadata(
         &self,
@@ -412,6 +412,8 @@ impl BlobClient {
         self.client.get_account_info(options).await
     }
 
+    /// Checks if the blob exists.
+    ///
     /// Returns `true` if the blob exists, `false` if the blob does not exist, and propagates all other errors.
     pub async fn exists(&self) -> Result<bool> {
         match self.client.get_properties(None).await {

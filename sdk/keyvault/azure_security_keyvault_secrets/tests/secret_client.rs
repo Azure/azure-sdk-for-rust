@@ -41,8 +41,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     let secret = client
         .set_secret("secret-roundtrip", body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(secret.value, Some("secret-value".into()));
 
     // Get a specific version of a secret.
@@ -56,8 +55,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
             }),
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(secret.value, Some("secret-value".into()));
 
     Ok(())
@@ -84,8 +82,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
     let secret = client
         .set_secret("update-secret", body.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(secret.value, Some("secret-value".into()));
 
     // Update secret properties.
@@ -100,8 +97,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
     let secret = client
         .update_secret_properties("update-secret", properties.try_into()?, None)
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(secret.content_type, Some("text/plain".into()));
     assert_eq!(
         secret.tags.expect("expected tags").get("test-name"),
@@ -135,8 +131,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
             None,
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(secret1.value, Some("secret-value-1".into()));
 
     let secret2 = client
@@ -146,8 +141,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
             None,
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
     assert_eq!(secret2.value, Some("secret-value-2".into()));
 
     // List secrets.
@@ -189,8 +183,7 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
             None,
         )
         .await?
-        .into_body()
-        .await?;
+        .into_body()?;
 
     // Delete the secret.
     let name = secret.resource_id()?.name;
@@ -252,8 +245,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
                 let secret = client
                     .set_secret("secret-roundtrip-instrument", body.try_into()?, None)
                     .await?
-                    .into_body()
-                    .await?;
+                    .into_body()?;
                 assert_eq!(secret.value, Some("secret-value-instrument".into()));
 
                 // Get a specific version of a secret.
@@ -267,8 +259,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
                         }),
                     )
                     .await?
-                    .into_body()
-                    .await?;
+                    .into_body()?;
                 assert_eq!(secret.value, Some("secret-value-instrument".into()));
                 Ok(())
             })

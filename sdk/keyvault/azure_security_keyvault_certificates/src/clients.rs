@@ -12,7 +12,7 @@ use azure_core::{
         headers::{RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
         poller::{get_retry_after, PollerResult, PollerState, StatusMonitor as _},
         poller::{Poller, PollerStatus},
-        Body, BufResponse, Method, Request, RequestContent, Url,
+        Body, Method, RawResponse, Request, RequestContent, Url,
     },
     json, Result,
 };
@@ -69,8 +69,7 @@ impl CertificateClient {
     ///     .wait()
     ///     .await?
     ///     // Deserialize the CertificateOperation:
-    ///     .into_body()
-    ///     .await?;
+    ///     .into_body()?;
     ///
     /// if matches!(operation.status, Some(status) if status == "completed") {
     ///     let target = operation.target.ok_or("expected target")?;
@@ -137,16 +136,15 @@ impl CertificateClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: BufResponse = pipeline.send(&ctx, &mut request, None).await?;
+                    let rsp: RawResponse = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
                         &headers,
                         &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
                         &options.poller_options,
                     );
-                    let bytes = body.collect().await?;
-                    let res: CertificateOperation = json::from_json(&bytes)?;
-                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                    let res: CertificateOperation = json::from_json(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
 
                     Ok(match res.status() {
                         PollerStatus::InProgress => PollerResult::InProgress {
@@ -211,8 +209,7 @@ impl CertificateClient {
     ///     .wait()
     ///     .await?
     ///     // Deserialize the CertificateOperation:
-    ///     .into_body()
-    ///     .await?;
+    ///     .into_body()?;
     ///
     /// if matches!(operation.status, Some(status) if status == "completed") {
     ///     let target = operation.target.ok_or("expected target")?;
@@ -242,16 +239,15 @@ impl CertificateClient {
                 let ctx = options.method_options.context.clone();
                 let pipeline = pipeline.clone();
                 async move {
-                    let rsp: BufResponse = pipeline.send(&ctx, &mut request, None).await?;
+                    let rsp: RawResponse = pipeline.send(&ctx, &mut request, None).await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let retry_after = get_retry_after(
                         &headers,
                         &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
                         &options.poller_options,
                     );
-                    let bytes = body.collect().await?;
-                    let res: CertificateOperation = json::from_json(&bytes)?;
-                    let rsp = BufResponse::from_bytes(status, headers, bytes).into();
+                    let res: CertificateOperation = json::from_json(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
 
                     Ok(match res.status() {
                         PollerStatus::InProgress => PollerResult::InProgress {

@@ -65,7 +65,7 @@ async fn test_append_block(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(status_code.is_success());
     assert_eq!(17, content_length.unwrap());
     block_1.extend(&block_2);
-    assert_eq!(block_1, response_body.collect().await?);
+    assert_eq!(block_1, response_body.collect().await?.to_vec());
 
     container_client.delete_container(None).await?;
     Ok(())
@@ -95,7 +95,7 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
     assert_eq!(17, content_length.unwrap());
     assert_eq!(
         b"hello rusty world".to_vec(),
-        response_body.collect().await?
+        response_body.collect().await?.to_vec(),
     );
 
     container_client.delete_container(None).await?;
@@ -134,7 +134,7 @@ async fn test_seal_append_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Assert
     assert!(status_code.is_success());
     assert_eq!(0, content_length.unwrap());
-    assert_eq!(b"".to_vec(), response_body.collect().await?);
+    assert_eq!(b"".to_vec(), response_body.collect().await?.to_vec());
 
     container_client.delete_container(None).await?;
     Ok(())

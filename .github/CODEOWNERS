@@ -73,6 +73,12 @@
 # ServiceLabel: %Storage
 # AzureSDKOwners: @vincenttran-msft @jalauzon-msft
 
+# PRLabel: %Event Hubs
+/sdk/eventhubs/          @j7nw4r
+
+# ServiceLabel: %Event Hubs
+# AzureSDKOwners: @j7nw4r
+
 ####################
 # Management Libraries
 ####################

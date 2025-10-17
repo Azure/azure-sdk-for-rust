@@ -4,21 +4,19 @@
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations, nonstandard_style)]
 #![doc = include_str!("../README.md")]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 
 #[macro_use]
 mod macros;
 
-mod constants;
+pub mod cloud;
 pub mod credentials;
 pub mod error;
 pub mod hmac;
 pub mod http;
 #[cfg(feature = "test")]
 pub mod test;
-
-pub use constants::*;
 
 // Re-export modules in typespec_client_core such that azure_core-based crates don't need to reference it directly.
 pub use typespec_client_core::{
@@ -37,3 +35,7 @@ pub mod tracing {
 
 #[cfg(feature = "xml")]
 pub use typespec_client_core::xml;
+
+mod private {
+    pub trait Sealed {}
+}

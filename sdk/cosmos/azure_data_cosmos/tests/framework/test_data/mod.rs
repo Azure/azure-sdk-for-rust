@@ -85,7 +85,7 @@ pub async fn create_database(
         }
     };
 
-    let props = response.into_body().await?;
+    let props = response.into_body()?;
 
     let db_client = cosmos_client.database_client(&props.id);
     Ok(db_client)

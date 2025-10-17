@@ -1,0 +1,12 @@
+Service: azure_security_keyvault_secrets
+
+Project: azure_security_keyvault_secrets
+
+PackageVersions:
+  - azure_security_keyvault_secrets: source
+
+Tests:
+  - Test: get_secret
+    Class: get_secret
+    Arguments:
+      - --parallel 4

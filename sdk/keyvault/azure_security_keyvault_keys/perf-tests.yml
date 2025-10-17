@@ -9,9 +9,4 @@ Tests:
   - Test: get_key
     Class: get_key
     Arguments:
-      - --sync
-
-  - Test: create_key
-    Class: create_key
-    Arguments:
-      - --sync
+      - --parallel 4

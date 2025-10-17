@@ -6,7 +6,7 @@
 #![doc = include_str!("../README.md")]
 #![allow(dead_code)]
 #![allow(unused_imports)]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod clients;
 mod generated;

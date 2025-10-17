@@ -141,7 +141,7 @@ impl Client {
             .await?
             .into();
         let recording_id = resp.headers().get_str(&RECORDING_ID)?.to_string();
-        let mut result: PlaybackStartResult = resp.into_body().await?;
+        let mut result: PlaybackStartResult = resp.into_body()?;
         result.recording_id = recording_id;
         Ok(result)
     }
@@ -274,7 +274,6 @@ impl Client {
             .await?
             .into_body()
             .json()
-            .await
     }
 
     #[tracing::instrument(level = "trace", skip_all, fields(endpoint = %self.endpoint, recording_id), err)]

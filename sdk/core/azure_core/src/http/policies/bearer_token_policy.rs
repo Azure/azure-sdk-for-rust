@@ -142,7 +142,7 @@ mod tests {
         credentials::{Secret, TokenCredential, TokenRequestOptions},
         http::{
             headers::{Headers, AUTHORIZATION},
-            policies::Policy,
+            policies::{Policy, TransportPolicy},
             Request, StatusCode,
         },
         time::OffsetDateTime,
@@ -156,7 +156,7 @@ mod tests {
         Arc,
     };
     use typespec_client_core::{
-        http::{policies::TransportPolicy, BufResponse, Method, Transport},
+        http::{BufResponse, Method, Transport},
         time::Duration,
     };
 

@@ -62,11 +62,10 @@ You may need to specify RBAC roles to access Queues via Microsoft Entra ID. Plea
 
 ## Examples
 
-<!-- TODO: Uncomment the links below when the PR is merged -->
 You can find executable examples for all major SDK functions in:
 
-* [queue_client.rs]<!--(https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/samples/queue_client.rs)-->
-* [queue_service_client.rs]<!--(https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/samples/queue_service_client.rs)-->
+* [queue_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_client.rs)
+* [queue_service_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue/examples/queue_service_client.rs)
 
 ## Next steps
 
@@ -82,7 +81,6 @@ When you submit a pull request, a CLA-bot will automatically determine whether y
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
-<!-- TODO: Uncomment the links below when the PR is merged -->
 <!-- LINKS -->
 [Azure subscription]: https://azure.microsoft.com/free/
 [Azure storage account]: https://learn.microsoft.com/azure/storage/common/storage-account-overview
@@ -91,8 +89,8 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure CLI]: https://learn.microsoft.com/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
 [cargo]: https://dev-doc.rust-lang.org/stable/cargo/commands/cargo.html
 [Azure Identity]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/identity/azure_identity
-<!--[API reference documentation]: https://docs.rs/crate/azure_storage_queue/latest-->
-<!--[Package (crates.io)]: https://crates.io/crates/azure_storage_queue-->
+[API reference documentation]: https://docs.rs/crate/azure_storage_queue/latest
+[Package (crates.io)]: https://crates.io/crates/azure_storage_queue
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_queue
 [REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/blob-service-rest-api
 [Product documentation]: https://learn.microsoft.com/azure/storage/blobs/storage-blobs-overview
