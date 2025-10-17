@@ -27,9 +27,9 @@ Each test has its own set of parameters which are specific to the test.
 
 ***NOTE: Performance Tests are "recorded" tests***
 
-This means that they follow the same rules as tests annotated with the `#[recorded::test]` attribute. Specifically, if `AZURE_TEST_MODE` is not defined, the tests default to `playback` mode.
+This means that they follow the same rules as tests annotated with the `#[recorded::test]` attribute. There is one difference between perf tests and tests with the `recorded::test` attribute: perf tests default to `live` mode, and normal `recorded::test` tests default to `playback` mode.
 
-To configure the tests for live mode, set the `AZURE_TEST_MODE` environment variable to `live`, to record tests, set `AZURE_TEST_MODE` to `record` before running your performance tests, and to run your tests using the test proxy, set `AZURE_TEST_MODE` to `playback`
+To configure the tests for record mode tests, set `AZURE_TEST_MODE` to `record` before running your performance tests, and to run your tests using the test proxy, set `AZURE_TEST_MODE` to `playback`
 
 ## Test authoring
 

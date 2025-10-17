@@ -483,6 +483,7 @@ impl PerfRunner {
             .arg(
                 clap::arg!(--parallel <COUNT> "The number of concurrent tasks to use when running each test")
                     .required(false)
+                    .short('p')
                     .default_value("1")
                     .value_parser(clap::value_parser!(u32))
                     .global(true),
@@ -491,6 +492,7 @@ impl PerfRunner {
             .arg(
                 clap::arg!(--duration <SECONDS> "The duration of each test in seconds")
                     .required(false)
+                    .short('d')
                     .default_value("30")
                     .value_parser(clap::value_parser!(i64))
                     .global(true),
