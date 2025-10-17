@@ -332,3 +332,168 @@ pub mod option {
         <Option<String>>::serialize(&encoded, serializer)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        decode, decode_url_safe, deserialize, deserialize_url_safe, encode, encode_url_safe,
+        option, serialize, serialize_url_safe,
+    };
+    use serde::{Deserialize, Serialize};
+
+    #[test]
+    fn standard_encode() {
+        assert_eq!(encode(b"Hello, world!"), "SGVsbG8sIHdvcmxkIQ==");
+        assert_eq!(encode(b""), "");
+        assert_eq!(encode(b"f"), "Zg==");
+        assert_eq!(encode(b"fo"), "Zm8=");
+        assert_eq!(encode(b"foo"), "Zm9v");
+    }
+
+    #[test]
+    fn standard_decode() {
+        assert_eq!(decode("SGVsbG8sIHdvcmxkIQ==").unwrap(), b"Hello, world!");
+        assert_eq!(decode("").unwrap(), b"");
+        assert_eq!(decode("Zg==").unwrap(), b"f");
+        assert_eq!(decode("Zm8=").unwrap(), b"fo");
+        assert_eq!(decode("Zm9v").unwrap(), b"foo");
+    }
+
+    #[test]
+    fn url_safe_encode() {
+        assert_eq!(encode_url_safe(b"Hello, world!"), "SGVsbG8sIHdvcmxkIQ");
+        assert_eq!(encode_url_safe(b""), "");
+        assert_eq!(encode_url_safe(b"f"), "Zg");
+        assert_eq!(encode_url_safe(b"fo"), "Zm8");
+        assert_eq!(encode_url_safe(b"foo"), "Zm9v");
+    }
+
+    #[test]
+    fn url_safe_decode() {
+        assert_eq!(
+            decode_url_safe("SGVsbG8sIHdvcmxkIQ").unwrap(),
+            b"Hello, world!"
+        );
+        assert_eq!(decode_url_safe("").unwrap(), b"");
+        assert_eq!(decode_url_safe("Zg").unwrap(), b"f");
+        assert_eq!(decode_url_safe("Zm8").unwrap(), b"fo");
+        assert_eq!(decode_url_safe("Zm9v").unwrap(), b"foo");
+    }
+
+    #[test]
+    fn roundtrip_standard() {
+        let data = b"The quick brown fox jumps over the lazy dog";
+        assert_eq!(decode(encode(data)).unwrap(), data);
+    }
+
+    #[test]
+    fn roundtrip_url_safe() {
+        let data = b"The quick brown fox jumps over the lazy dog";
+        assert_eq!(decode_url_safe(encode_url_safe(data)).unwrap(), data);
+    }
+
+    #[derive(Serialize, Deserialize)]
+    struct TestStruct {
+        #[serde(serialize_with = "serialize", deserialize_with = "deserialize")]
+        data: Vec<u8>,
+    }
+
+    #[test]
+    fn serde_standard() {
+        let original = TestStruct {
+            data: b"test data".to_vec(),
+        };
+        let json = serde_json::to_string(&original).unwrap();
+        assert!(json.contains("dGVzdCBkYXRh"));
+        let deserialized: TestStruct = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.data, original.data);
+    }
+
+    #[derive(Serialize, Deserialize)]
+    struct TestStructUrlSafe {
+        #[serde(
+            serialize_with = "serialize_url_safe",
+            deserialize_with = "deserialize_url_safe"
+        )]
+        data: Vec<u8>,
+    }
+
+    #[test]
+    fn serde_url_safe() {
+        let original = TestStructUrlSafe {
+            data: b"test data".to_vec(),
+        };
+        let json = serde_json::to_string(&original).unwrap();
+        assert!(json.contains("dGVzdCBkYXRh"));
+        let deserialized: TestStructUrlSafe = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.data, original.data);
+    }
+
+    #[derive(Serialize, Deserialize)]
+    struct TestOptionalStruct {
+        #[serde(
+            serialize_with = "option::serialize",
+            deserialize_with = "option::deserialize"
+        )]
+        data: Option<Vec<u8>>,
+    }
+
+    #[test]
+    fn serde_option_some() {
+        let original = TestOptionalStruct {
+            data: Some(b"test data".to_vec()),
+        };
+        let json = serde_json::to_string(&original).unwrap();
+        assert!(json.contains("dGVzdCBkYXRh"));
+        let deserialized: TestOptionalStruct = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.data, original.data);
+    }
+
+    #[test]
+    fn serde_option_none() {
+        let original = TestOptionalStruct { data: None };
+        let json = serde_json::to_string(&original).unwrap();
+        assert!(json.contains("null"));
+        let deserialized: TestOptionalStruct = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.data, None);
+    }
+
+    #[derive(Serialize, Deserialize)]
+    struct TestOptionalStructUrlSafe {
+        #[serde(
+            serialize_with = "option::serialize_url_safe",
+            deserialize_with = "option::deserialize_url_safe"
+        )]
+        data: Option<Vec<u8>>,
+    }
+
+    #[test]
+    fn serde_option_url_safe_some() {
+        let original = TestOptionalStructUrlSafe {
+            data: Some(b"test data".to_vec()),
+        };
+        let json = serde_json::to_string(&original).unwrap();
+        assert!(json.contains("dGVzdCBkYXRh"));
+        let deserialized: TestOptionalStructUrlSafe = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.data, original.data);
+    }
+
+    #[test]
+    fn serde_option_url_safe_none() {
+        let original = TestOptionalStructUrlSafe { data: None };
+        let json = serde_json::to_string(&original).unwrap();
+        assert!(json.contains("null"));
+        let deserialized: TestOptionalStructUrlSafe = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.data, None);
+    }
+
+    #[test]
+    fn decode_invalid_standard() {
+        assert!(decode("invalid!@#$").is_err());
+    }
+
+    #[test]
+    fn decode_invalid_url_safe() {
+        assert!(decode_url_safe("invalid!@#$").is_err());
+    }
+}
