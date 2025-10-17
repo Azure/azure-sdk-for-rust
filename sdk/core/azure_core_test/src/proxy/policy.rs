@@ -131,7 +131,7 @@ impl AsHeaders for RecordingOptions {
         let it_remove = if let Some(remove) = self.remove_recording {
             RemoveRecording(remove).as_headers()
         } else {
-            Ok(Vec::<_>::new().into_iter())
+            Ok(Vec::new().into_iter())
         }?;
 
         Ok(it_self.chain(it_remove).collect::<Vec<_>>().into_iter())
