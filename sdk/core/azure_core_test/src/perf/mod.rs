@@ -4,10 +4,9 @@
 #![doc = include_str!("README.md")]
 #![cfg(not(target_arch = "wasm32"))]
 
-use crate::{proxy::policy::RecordingOptions, Recording, TestContext};
+use crate::{Recording, TestContext};
 use azure_core::{
     error::{ErrorKind, ResultExt},
-    http::ClientOptions,
     time::Duration,
     Error, Result,
 };
@@ -549,16 +548,8 @@ impl PerfRunner {
 /// # Arguments:
 ///
 /// - recording: Test recording.
-/// - client_options: Core client options
-///
-pub fn instrument_perf(recording: &Recording, client_options: &mut ClientOptions) {
-    recording.instrument_internal(
-        client_options,
-        Some(RecordingOptions {
-            remove_recording: Some(false),
-            ..Default::default()
-        }),
-    );
+pub fn instrument_perf(recording: &Recording) -> azure_core::Result<()> {
+    recording.remove_recording(false)
 }
 
 #[cfg(test)]

@@ -13,7 +13,7 @@ use crate::{
             ClientAddSanitizerOptions, ClientRemoveSanitizersOptions, ClientSetMatcherOptions,
         },
         models::{SanitizerList, StartPayload, VariablePayload},
-        policy::{RecordingOptions, RecordingPolicy},
+        policy::RecordingPolicy,
         Proxy, ProxyExt, RecordingId,
     },
     recording::policy::RecordingModePolicy,
@@ -123,14 +123,6 @@ impl Recording {
     /// }
     /// ```
     pub fn instrument(&self, options: &mut ClientOptions) {
-        self.instrument_internal(options, None)
-    }
-
-    pub(crate) fn instrument_internal(
-        &self,
-        options: &mut ClientOptions,
-        recording_options: Option<RecordingOptions>,
-    ) {
         let Some(client) = self.proxy.client() else {
             return;
         };
@@ -150,7 +142,6 @@ impl Recording {
             options.per_call_policies.push(test_mode_policy);
         }
 
-        trace!("Setting recording options to {recording_options:?}");
         let recording_policy = self
             .recording_policy
             .get_or_init(|| {
@@ -158,7 +149,7 @@ impl Recording {
                     test_mode: self.test_mode,
                     host: Some(client.endpoint().clone()),
                     recording_id: self.id.clone(),
-                    options: RwLock::new(recording_options.unwrap_or_default()),
+                    ..Default::default()
                 })
             })
             .clone();
@@ -314,6 +305,11 @@ impl Recording {
         Ok(SkipGuard(self))
     }
 
+    pub(crate) fn remove_recording(&self, remove: bool) -> azure_core::Result<()> {
+        self.set_remove_recording(Some(remove))?;
+        Ok(())
+    }
+
     /// Gets the current [`TestMode`].
     pub fn test_mode(&self) -> TestMode {
         self.test_mode
@@ -466,6 +462,20 @@ impl Recording {
             .write()
             .map_err(|err| azure_core::Error::with_message(ErrorKind::Other, err.to_string()))?;
         options.skip = skip;
+
+        Ok(())
+    }
+
+    fn set_remove_recording(&self, remove: Option<bool>) -> azure_core::Result<()> {
+        let Some(policy) = self.recording_policy.get() else {
+            return Ok(());
+        };
+
+        let mut options = policy
+            .options
+            .write()
+            .map_err(|err| azure_core::Error::with_message(ErrorKind::Other, err.to_string()))?;
+        options.remove_recording = remove;
 
         Ok(())
     }
