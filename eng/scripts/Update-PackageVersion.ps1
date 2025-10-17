@@ -86,7 +86,7 @@ if ($content -ne $updated) {
   Write-Host "Updaging dependencies in Cargo.toml files."
   Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
 
-  git diff main
+  git diff djurek/esrp-publish
 
   Write-Host "Updating Cargo.lock using 'cargo update --workspace'."
   Invoke-LoggedCommand "cargo update --workspace" | Out-Null
