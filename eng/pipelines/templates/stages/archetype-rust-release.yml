@@ -72,7 +72,7 @@ stages:
           ${{if parameters.TestPipeline}}:
             environment: none
           ${{else}}:
-            environment: cratesio
+            environment: package-publish
           # This timeout shouldn't be necessary once we're able to parallelize better. Right now,
           # this is here to ensure larger areas (30+) libraries don't time out.
           timeoutInMinutes: 120
@@ -85,29 +85,25 @@ stages:
             runOnce:
               deploy:
                 steps:
-                  - pwsh: |
-                      Write-Host "##vso[task.setvariable variable=ArtifactIndex]0"
-                    displayName: Set ArtifactIndex to 0
-
+                  # This loop over the artifacts never uses `artifact` directly.
+                  # It is instead used to generate the correct number of tasks
+                  # for publishing each artifact in an order specified in the
+                  # release-order.json file.
                   - ${{ each artifact in parameters.Artifacts }}:
                     - pwsh: |
-                        # Read artifact release order from release-order.json 
-                        # and use ArtifactIndex to select the right one
-                        $index = [int]'$(ArtifactIndex)'
                         $artifacts = Get-Content '$(Pipeline.Workspace)/drop/release-order.json' | ConvertFrom-Json
-                        
+
                         # Force $artifacts to be an array (PowerShell unrolls single-item arrays)
                         if ($artifacts -isnot [Array]) {
                           $artifacts = @($artifacts)
                         }
 
-                        if ($index -ge $artifacts.Count) {
-                          Write-Error "ArtifactIndex $index is out of range (0..$($artifacts.Count - 1))"
-                          exit 1
+                        $artifactName = '$(ArtifactName)'
+                        if (!$artifactName) {
+                            $artifactName = $artifacts[0]
                         }
 
-                        $artifactName = $artifacts[$index]
-                        Write-Host "Releasing artifact $artifactName (index $index)"
+                        Write-Host "Releasing artifact: $artifactName"
 
                         $artifactRootPath = '$(Pipeline.Workspace)/drop'
                         $outDir = '$(Pipeline.Workspace)/esrp-release'
@@ -117,8 +113,6 @@ stages:
                           Remove-Item -Path $outDir -Recurse -Force
                         }
                         New-Item -ItemType Directory -Path $outDir -Force | Out-Null
-
-                        Write-Host "Artifact name: $artifactName"
 
                         $packageMetadataPath = "$artifactRootPath/PackageInfo/$artifactName.json"
                         if (!(Test-Path $packageMetadataPath)) {
@@ -136,6 +130,12 @@ stages:
                           -Destination $outDir
                         Write-Host "Contents of $outDir"
                         Get-ChildItem -Path $outDir | ForEach-Object { Write-Host $_.FullName }
+
+                        # Set next artifact to release by
+                        $artifactIndex = $artifacts.IndexOf($artifactName)
+                        $nextArtifactName = $artifacts[$artifactIndex + 1]
+                        Write-Host "Next artifact to release: $nextArtifactName"
+                        Write-Host "##vso[task.setvariable variable=ArtifactName]$nextArtifactName"
                       displayName: 'Copy crate for ESRP'
 
                     - task: EsrpRelease@10
@@ -157,12 +157,6 @@ stages:
                         serviceendpointurl: 'https://api.esrp.microsoft.com/'
                         mainpublisher: 'ESRPRELPACMANTEST'
 
-                    - pwsh: |
-                        $index = [int]'$(ArtifactIndex)' + 1
-                        Write-Host "Setting ArtifactIndex to $index"
-                        Write-Host "##vso[task.setvariable variable=ArtifactIndex]$index"
-                      displayName: Increment ArtifactIndex
-
         - job: UpdatePackageVersion
           displayName: "API Review and Package Version Update"
           condition: and(succeeded(), ne(variables['Skip.UpdatePackageVersion'], 'true'))
@@ -181,7 +175,7 @@ stages:
             displayName: Download ${{parameters.PipelineArtifactName}} artifact
             artifact: ${{parameters.PipelineArtifactName}}
 
-          - ${{each artifact in parameters.Artifacts }}:
+          - ${{ each artifact in parameters.Artifacts }}:
             - template: /eng/common/pipelines/templates/steps/create-apireview.yml
               parameters:
                 ArtifactPath: $(Pipeline.Workspace)/${{parameters.PipelineArtifactName}}
