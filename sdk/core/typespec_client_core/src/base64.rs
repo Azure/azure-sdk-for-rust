@@ -366,6 +366,11 @@ mod tests {
         assert_eq!(encode_url_safe(b"f"), "Zg");
         assert_eq!(encode_url_safe(b"fo"), "Zm8");
         assert_eq!(encode_url_safe(b"foo"), "Zm9v");
+
+        // Verify no padding in base64url encoding
+        assert!(!encode_url_safe(b"f").contains('='));
+        assert!(!encode_url_safe(b"fo").contains('='));
+        assert!(!encode_url_safe(b"foo").contains('='));
     }
 
     #[test]
@@ -485,6 +490,47 @@ mod tests {
         assert!(json.contains("null"));
         let deserialized: TestOptionalStructUrlSafe = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.data, None);
+    }
+
+    #[test]
+    fn padding_behavior_differences() {
+        // base64url encoding never produces padding
+        let encoded_url_safe = encode_url_safe(b"f");
+        assert!(!encoded_url_safe.contains('='));
+
+        // standard base64 encoding produces padding when needed
+        let encoded_standard = encode(b"f");
+        assert!(encoded_standard.contains('='));
+
+        // Both decoders accept both padded and unpadded input (DecodePaddingMode::Indifferent)
+        assert_eq!(decode_url_safe("Zg==").unwrap(), b"f"); // padded input accepted
+        assert_eq!(decode_url_safe("Zg").unwrap(), b"f"); // unpadded input accepted
+        assert_eq!(decode("Zg==").unwrap(), b"f"); // padded input accepted
+        assert_eq!(decode("Zg").unwrap(), b"f"); // unpadded input accepted
+    }
+
+    #[test]
+    fn decode_truly_invalid_fails() {
+        // Characters outside base64 alphabet should fail
+        assert!(decode("Zg!@").is_err());
+        assert!(decode_url_safe("Zg!@").is_err());
+
+        // Invalid length for certain inputs should fail
+        assert!(decode("Z").is_err()); // single character
+        assert!(decode_url_safe("Z").is_err());
+    }
+
+    #[test]
+    fn decode_cross_alphabet_characters_fail() {
+        // Test data containing base64url-specific characters (- and _) should fail standard base64 decoding
+        // These strings contain characters that are valid in base64url but not in standard base64
+        assert!(decode("SGVs-bG8sIHdvcmxkIQ").is_err()); // contains '-' (base64url char 62)
+        assert!(decode("SGVs_bG8sIHdvcmxkIQ").is_err()); // contains '_' (base64url char 63)
+
+        // Test data containing standard base64-specific characters (+ and /) should fail base64url decoding
+        // These strings contain characters that are valid in standard base64 but not in base64url
+        assert!(decode_url_safe("SGVs+bG8sIHdvcmxkIQ").is_err()); // contains '+' (base64 char 62)
+        assert!(decode_url_safe("SGVs/bG8sIHdvcmxkIQ").is_err()); // contains '/' (base64 char 63)
     }
 
     #[test]
