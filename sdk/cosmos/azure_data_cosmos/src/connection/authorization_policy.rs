@@ -21,7 +21,7 @@ use azure_core::{
 use std::sync::Arc;
 use tracing::trace;
 
-use crate::{pipeline::signature_target::SignatureTarget, resource_context::ResourceLink};
+use crate::{connection::signature_target::SignatureTarget, resource_context::ResourceLink};
 
 use crate::utils::url_encode;
 
@@ -153,7 +153,7 @@ mod tests {
     use url::Url;
 
     use crate::{
-        pipeline::{
+        connection::{
             authorization_policy::{generate_authorization, scope_from_url, Credential},
             signature_target::SignatureTarget,
         },

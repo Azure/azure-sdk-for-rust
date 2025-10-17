@@ -1,20 +1,28 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Some tests don't use all the features of this module.
-#![allow(dead_code)]
+#![allow(
+    dead_code,
+    reason = "Some tests don't use all the features of this module."
+)]
+#![allow(
+    unused_imports,
+    reason = "Some tests don't use all the re-exports from this module."
+)]
 
 //! Provides a framework for integration tests for the Azure Cosmos DB service.
 //!
 //! The framework allows tests to easily run against real Cosmos DB instances, the local emulator, or a mock server using test-proxy.
 
+mod local_recorder;
 mod test_account;
 pub mod test_data;
 
 #[cfg(feature = "preview_query_engine")]
 pub mod query_engine;
 
-pub use test_account::TestAccount;
+pub use local_recorder::LocalRecorder;
+pub use test_account::{TestAccount, TestAccountOptions};
 
 use serde::{Deserialize, Serialize};
 
