@@ -170,7 +170,7 @@ fn update_package_versions(
         .and_then(Item::as_table)
         .and_then(|table| table.get("name"))
         .and_then(Item::as_str)
-        .unwrap_or("<unknown>")
+        .unwrap_or("<workspace>")
         .trim_matches('"')
         .trim()
         .to_string();
