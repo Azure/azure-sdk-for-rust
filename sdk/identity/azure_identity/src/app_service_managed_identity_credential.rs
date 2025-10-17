@@ -48,6 +48,7 @@ impl AppServiceManagedIdentityCredential {
                 SECRET_ENV,
                 id,
                 client_options,
+                None,
                 env,
             ),
         }))
