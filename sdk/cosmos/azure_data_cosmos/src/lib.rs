@@ -18,6 +18,7 @@ pub mod query;
 mod resource_context;
 mod types;
 mod utils;
+mod status;
 
 pub use types::ResourceId;
 
