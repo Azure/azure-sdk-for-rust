@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::{
+    error::ErrorKind,
     http::{RequestContent, StatusCode},
     Bytes,
 };
@@ -12,7 +13,7 @@ use azure_storage_blob::models::{
     BlobClientGetAccountInfoResultHeaders, BlobClientGetPropertiesOptions,
     BlobClientGetPropertiesResultHeaders, BlobClientSetMetadataOptions,
     BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlockBlobClientUploadOptions,
-    LeaseState,
+    LeaseState, StorageError,
 };
 
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
@@ -484,5 +485,90 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(sku_name.is_some());
     assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+
+    // Act
+    let response = blob_client.download(None).await;
+    let error_response = response.unwrap_err();
+
+    let error_kind = error_response.kind();
+    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
+
+    let storage_error: StorageError = error_response.try_into()?;
+
+    println!("{}", storage_error);
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_bodyless_storage_error_model(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+
+    // Act
+    let response = blob_client.get_properties(None).await;
+    let error_response = response.unwrap_err();
+
+    let error_kind = error_response.kind();
+    assert!(matches!(error_kind, ErrorKind::HttpResponse { .. }));
+
+    let storage_error: StorageError = error_response.try_into()?;
+
+    println!("{}", storage_error);
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_additional_storage_info_parsing(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, true).await?;
+    let source_blob_client = container_client.blob_client(get_blob_name(recording));
+    create_test_blob(&source_blob_client, None, None).await?;
+
+    let blob_client = container_client.blob_client(get_blob_name(recording));
+
+    let overwrite_blob_client = container_client.blob_client(get_blob_name(recording));
+    create_test_blob(
+        &overwrite_blob_client,
+        Some(RequestContent::from(b"overruled!".to_vec())),
+        None,
+    )
+    .await?;
+
+    // Inject an erroneous 'c' so we raise Copy Source Errors
+    let overwrite_url = format!(
+        "{}{}c/{}",
+        overwrite_blob_client.endpoint(),
+        overwrite_blob_client.container_name(),
+        overwrite_blob_client.blob_name()
+    );
+
+    // Copy Source Error Scenario
+    let response = blob_client
+        .block_blob_client()
+        .upload_blob_from_url(overwrite_url.clone(), None)
+        .await;
+    // Assert
+    let error = response.unwrap_err();
+    assert_eq!(StatusCode::NotFound, error.http_status().unwrap());
+
+    let storage_error: StorageError = error.try_into()?;
+
+    println!("{}", storage_error);
+
+    container_client.delete_container(None).await?;
     Ok(())
 }
