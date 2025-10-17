@@ -116,7 +116,7 @@ impl Recording {
     ///     let recording = ctx.recording();
     ///
     ///     let mut options = MyClientOptions::default();
-    ///     ctx.instrument(&mut options.client_options);
+    ///     recording.instrument(&mut options.client_options);
     ///
     ///     let client = MyClient::new("https://azure.net", Some(options));
     ///     client.invoke().await
@@ -305,6 +305,11 @@ impl Recording {
         Ok(SkipGuard(self))
     }
 
+    pub(crate) fn remove_recording(&self, remove: bool) -> azure_core::Result<()> {
+        self.set_remove_recording(Some(remove))?;
+        Ok(())
+    }
+
     /// Gets the current [`TestMode`].
     pub fn test_mode(&self) -> TestMode {
         self.test_mode
@@ -461,6 +466,20 @@ impl Recording {
         Ok(())
     }
 
+    fn set_remove_recording(&self, remove: Option<bool>) -> azure_core::Result<()> {
+        let Some(policy) = self.recording_policy.get() else {
+            return Ok(());
+        };
+
+        let mut options = policy
+            .options
+            .write()
+            .map_err(|err| azure_core::Error::with_message(ErrorKind::Other, err.to_string()))?;
+        options.remove_recording = remove;
+
+        Ok(())
+    }
+
     /// Starts recording or playback.
     ///
     /// If playing back a recording, environment variable that were recorded will be reloaded.
@@ -584,6 +603,24 @@ impl Drop for SkipGuard<'_> {
         if self.0.test_mode == TestMode::Record {
             let _ = self.0.set_skip(None);
         }
+    }
+}
+
+/// Whether to remove records during recording playback.
+///
+/// This option is used for test recordings, if true, the recording will be removed from the test-proxy when retrieved,
+/// otherwise it will be kept. The default is true.
+///
+#[derive(Debug)]
+pub struct RemoveRecording(pub bool);
+
+impl Header for RemoveRecording {
+    fn name(&self) -> HeaderName {
+        HeaderName::from_static("x-recording-remove")
+    }
+
+    fn value(&self) -> HeaderValue {
+        HeaderValue::from_static(if self.0 { "true" } else { "false" })
     }
 }
 
