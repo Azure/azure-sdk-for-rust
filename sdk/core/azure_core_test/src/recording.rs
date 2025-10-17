@@ -40,7 +40,7 @@ use std::{
     env,
     sync::{Arc, Mutex, OnceLock, RwLock},
 };
-use tracing::{span::EnteredSpan, trace};
+use tracing::span::EnteredSpan;
 
 /// Represents a playback or recording session using the [`Proxy`].
 #[derive(Debug)]
@@ -616,12 +616,10 @@ pub struct RemoveRecording(pub bool);
 
 impl Header for RemoveRecording {
     fn name(&self) -> HeaderName {
-        trace!("RemoveRecording::name");
         HeaderName::from_static("x-recording-remove")
     }
 
     fn value(&self) -> HeaderValue {
-        trace!("RemoveRecording::value: {}", self.0);
         HeaderValue::from_static(if self.0 { "true" } else { "false" })
     }
 }
