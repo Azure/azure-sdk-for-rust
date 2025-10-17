@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore Hdvcmxk
+// cspell:ignore Hdvcmxk unpadded
 
 //! Base64 encoding and decoding functions.
 
