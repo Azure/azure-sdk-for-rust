@@ -60,7 +60,7 @@ impl FromHeaders for SubStatusCode {
 pub struct CosmosStatus(StatusCode, Option<SubStatusCode>);
 
 impl CosmosStatus {
-    const NAME_CACHE_IS_STALE: CosmosStatus =
+    pub const NAME_CACHE_IS_STALE: CosmosStatus =
         CosmosStatus::new(StatusCode::Gone, Some(SubStatusCode::new(1000)));
 
     pub const fn new(status: StatusCode, substatus: Option<SubStatusCode>) -> Self {

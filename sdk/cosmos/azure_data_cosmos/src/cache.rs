@@ -123,4 +123,9 @@ impl ContainerMetadataCache {
             .try_get_with_by_ref(key, async { init.await.map(Arc::new) })
             .await?)
     }
+
+    /// Removes the container metadata from the cache, forcing a refresh on the next access.
+    pub async fn remove_container_metadata(&self, key: &ResourceLink) {
+        self.container_properties_cache.invalidate(key).await;
+    }
 }

@@ -10,6 +10,7 @@ use crate::{
     models::{ContainerProperties, PatchDocument, ThroughputProperties},
     options::{QueryOptions, ReadContainerOptions},
     resource_context::{ResourceLink, ResourceType},
+    status::{CosmosStatus, ErrorExt},
     DeleteContainerOptions, FeedPager, ItemOptions, PartitionKey, Query, ReplaceContainerOptions,
     ThroughputOptions,
 };
@@ -139,10 +140,11 @@ impl ContainerClient {
         options: Option<ThroughputOptions<'_>>,
     ) -> azure_core::Result<Option<Response<ThroughputProperties>>> {
         let options = options.unwrap_or_default();
-        let resource_id = &self.metadata().await?.resource_id;
-        self.connection
-            .read_throughput_offer(options.method_options.context, resource_id)
-            .await
+        self.retry_if_cache_stale(|metadata| async move {
+            self.connection
+                .read_throughput_offer(options.method_options.context, &metadata.resource_id)
+                .await
+        })
     }
 
     /// Replaces the container throughput properties.
@@ -703,17 +705,6 @@ impl ContainerClient {
         )
     }
 
-    async fn metadata(&self) -> azure_core::Result<Arc<ContainerMetadata>> {
-        Ok(self
-            .connection
-            .cache()
-            .get_container_metadata(&self.link, async {
-                let properties = self.read_properties(None).await?.into_body()?;
-                ContainerMetadata::from_properties(&properties, self.link.clone())
-            })
-            .await?)
-    }
-
     async fn read_properties(
         &self,
         options: Option<ReadContainerOptions<'_>>,
@@ -724,5 +715,42 @@ impl ContainerClient {
         self.connection
             .send(options.method_options.context, &mut req, self.link.clone())
             .await
+    }
+
+    /// Executes the provided closure with cached container metadata, retrying once after refreshing the cache if the cache is stale.
+    ///
+    /// We only provide this mechanism for reading the metadata, to ensure we refresh the cache when necessary.
+    // TODO: If we need a way to write with cached metadata (since those operations may not be idempotent), we can add that later.
+    async fn retry_if_cache_stale<F, Fut, T>(&self, f: F) -> azure_core::Result<T>
+    where
+        F: Fn(Arc<ContainerMetadata>) -> Fut,
+        Fut: std::future::Future<Output = azure_core::Result<T>>,
+    {
+        async fn get_metadata(
+            client: &ContainerClient,
+        ) -> azure_core::Result<Arc<ContainerMetadata>> {
+            Ok(client
+                .connection
+                .cache()
+                .get_container_metadata(&client.link, async {
+                    let properties = client.read_properties(None).await?.into_body()?;
+                    ContainerMetadata::from_properties(&properties, client.link.clone())
+                })
+                .await?)
+        }
+
+        let metadata = get_metadata(self).await?;
+        match f(metadata).await {
+            Err(err) if err.cosmos_status()? == Some(CosmosStatus::NAME_CACHE_IS_STALE) => {
+                // Invalidate the cache and try again
+                self.connection
+                    .cache()
+                    .remove_container_metadata(&self.link)
+                    .await;
+                let metadata = get_metadata(self).await?;
+                f(metadata).await
+            }
+            x => x,
+        }
     }
 }
