@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::retry_policies::BaseRetryPolicy;
 use async_trait::async_trait;
+use azure_core::http::{request::Request, RawResponse};
 use std::time::Duration;
 use tokio::time::sleep;
-use azure_core::http::{
-    request::Request, RawResponse,
-};
-use crate::retry_policies::BaseRetryPolicy;
 
 /// Trait defining the interface for retry handlers in Cosmos DB operations
 ///
@@ -29,7 +27,6 @@ use crate::retry_policies::BaseRetryPolicy;
 #[allow(dead_code)]
 #[async_trait]
 pub trait AbstractRetryHandler: Send + Sync {
-
     /// Sends an HTTP request with automatic retry logic
     ///
     /// This method wraps the provided sender callback with retry logic, automatically
@@ -66,7 +63,8 @@ pub trait AbstractRetryHandler: Send + Sync {
     /// 4. If yes: Sleep(backoff) → Go to step 1
     /// 5. If no: Return result
     /// ```
-    async fn send<Sender, Fut>(&self,
+    async fn send<Sender, Fut>(
+        &self,
         request: &mut Request,
         sender: Sender,
     ) -> azure_core::Result<RawResponse>
@@ -109,7 +107,6 @@ pub struct BackoffRetryHandler {
 }
 
 impl BackoffRetryHandler {
-
     /// Creates a new retry handler with default retry policies
     ///
     /// Initializes a `BackoffRetryHandler` with a `BaseRetryPolicy` using default
@@ -136,7 +133,6 @@ impl BackoffRetryHandler {
 
 #[async_trait]
 impl AbstractRetryHandler for BackoffRetryHandler {
-
     /// Sends an HTTP request with automatic retry and exponential backoff
     ///
     /// This implementation of the `AbstractRetryHandler::send` method provides robust
@@ -168,12 +164,13 @@ impl AbstractRetryHandler for BackoffRetryHandler {
     /// # Policy Selection
     /// The handler automatically selects the appropriate retry policy based on request
     /// characteristics (headers, method, etc.) via `BaseRetryPolicy::get_policy_for_request`.
-    async fn send<Sender, Fut>(&self,
-                               request: &mut Request,
-                               sender: Sender,
+    async fn send<Sender, Fut>(
+        &self,
+        request: &mut Request,
+        sender: Sender,
     ) -> azure_core::Result<RawResponse>
     where
-        Sender: Fn( &mut Request) -> Fut + Send + Sync,
+        Sender: Fn(&mut Request) -> Fut + Send + Sync,
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + Send,
     {
         // Get the appropriate retry policy based on the request

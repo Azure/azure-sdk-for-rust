@@ -81,9 +81,13 @@ impl LocationCache {
         }
     }
 
-    pub fn read_endpoints(&self) -> Vec<String> {  self.locations_info.read_endpoints.clone() }
+    pub fn read_endpoints(&self) -> Vec<String> {
+        self.locations_info.read_endpoints.clone()
+    }
 
-    pub fn write_endpoints(&self) -> Vec<String> { self.locations_info.write_endpoints.clone() }
+    pub fn write_endpoints(&self) -> Vec<String> {
+        self.locations_info.write_endpoints.clone()
+    }
 
     pub fn update(
         &mut self,
@@ -185,7 +189,7 @@ impl LocationCache {
     }
 
     pub fn can_use_multiple_write_locations(&mut self) -> bool {
-        self.write_endpoints().iter().count() > 0
+        !self.write_endpoints().is_empty()
     }
 
     fn refresh_endpoints(&mut self) {

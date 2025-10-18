@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 pub mod resource_throttle_retry_policy;
-use std::sync::Arc;
-use std::time::Duration;
 use async_trait::async_trait;
 use azure_core::http::RawResponse;
-use typespec_client_core::http::Request;
 use resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
+use std::sync::Arc;
+use std::time::Duration;
+use typespec_client_core::http::Request;
 
 /// Result of a retry policy decision
 ///
@@ -63,55 +63,48 @@ impl ShouldRetryResult {
 }
 
 /// Trait defining the retry policy interface for Cosmos DB operations
-/// 
+///
 /// This trait provides a contract for implementing retry logic for transient failures
 /// in Azure Cosmos DB operations. Implementers can define custom retry behavior for
 /// both exceptions (errors) and HTTP responses based on their specific requirements.
 #[async_trait]
 pub trait RetryPolicy: Send + Sync {
-
     /// Called before sending a request to allow policy-specific modifications
-    /// 
+    ///
     /// This method is invoked immediately before each request is sent (including retries).
     /// # Arguments
     /// * `request` - Mutable reference to the HTTP request being sent
     fn on_before_send_request(&self, request: &mut Request);
-    
+
     /// Determines whether to retry an operation that resulted in an error
-    /// 
+    ///
     /// This method is called when an operation fails with an exception (network error,
     /// timeout, or HTTP error). The implementation should examine the error and decide
     /// whether the operation should be retried and how long to wait before retrying.
-    /// 
+    ///
     /// # Arguments
     /// * `err` - The error that occurred during the operation
-    /// 
+    ///
     /// # Returns
     /// `ShouldRetryResult` indicating:
     /// - `should_retry`: Whether the operation should be retried
     /// - `backoff_time`: How long to wait before retrying (if `should_retry` is true)
-    async fn should_retry_exception(
-        &self,
-        err: &azure_core::Error,
-    ) -> ShouldRetryResult;
+    async fn should_retry_exception(&self, err: &azure_core::Error) -> ShouldRetryResult;
 
     /// Determines whether to retry an operation based on the HTTP response
-    /// 
+    ///
     /// This method is called when an operation completes with an HTTP response that
     /// might indicate a transient failure (e.g., 429, 503, 410). The implementation
     /// should examine the response status code and headers to decide whether to retry.
-    /// 
+    ///
     /// # Arguments
     /// * `response` - The HTTP response received from the server
-    /// 
+    ///
     /// # Returns
     /// `ShouldRetryResult` indicating:
     /// - `should_retry`: Whether the operation should be retried
     /// - `backoff_time`: How long to wait before retrying (if `should_retry` is true)
-    async fn should_retry_response(
-        &self,
-        response: &RawResponse,
-    ) -> ShouldRetryResult;
+    async fn should_retry_response(&self, response: &RawResponse) -> ShouldRetryResult;
 }
 
 /// Configuration for retry policies
@@ -122,7 +115,7 @@ pub struct RetryPolicyConfig {
 
     /// Maximum wait time in seconds for throttling retries
     pub max_throttle_wait_time_secs: u64,
-    
+
     /// Backoff delay multiplication factor for throttling
     pub throttle_backoff_factor: u32,
 }
@@ -311,7 +304,13 @@ mod tests {
         let url = Url::parse("https://localhost:8081/dbs/mydb/colls/mycoll/docs").unwrap();
 
         // Test with different HTTP methods
-        for method in [Method::Get, Method::Post, Method::Put, Method::Delete, Method::Patch] {
+        for method in [
+            Method::Get,
+            Method::Post,
+            Method::Put,
+            Method::Delete,
+            Method::Patch,
+        ] {
             let request = Request::new(url.clone(), method);
             let policy = base_policy.get_policy_for_request(&request);
             assert!(Arc::strong_count(&policy) >= 1);

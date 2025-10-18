@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use super::{RetryPolicy, ShouldRetryResult};
+use async_trait::async_trait;
+use azure_core::http::{RawResponse, StatusCode};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use async_trait::async_trait;
-use azure_core::http::{RawResponse, StatusCode};
 use typespec_client_core::http::Request;
-use super::{RetryPolicy, ShouldRetryResult};
 
 /// Retry policy for handling resource throttling (429 TooManyRequests) errors
 ///
@@ -89,21 +89,21 @@ impl ResourceThrottleRetryPolicy {
     /// A tuple of (should_retry: bool, retry_delay: Duration)
     /// - `should_retry`: true if retry is allowed within timing constraints
     /// - `retry_delay`: The calculated delay duration (with backoff applied)
-    fn check_if_retry_needed(
-        &self,
-        retry_after: Option<Duration>,
-    ) -> (bool, Duration) {
+    fn check_if_retry_needed(&self, retry_after: Option<Duration>) -> (bool, Duration) {
         let mut retry_delay = retry_after.unwrap_or(Duration::from_secs(0));
         if self.backoff_delay_factor > 1 {
             retry_delay *= self.backoff_delay_factor;
         }
         let cumulative = self.cumulative_retry_delay.load(Ordering::Relaxed) as u64;
         let new_cumulative = cumulative + retry_delay.as_millis() as u64;
-        if retry_delay < self.max_wait_time && new_cumulative <= self.max_wait_time.as_millis() as u64 {
+        if retry_delay < self.max_wait_time
+            && new_cumulative <= self.max_wait_time.as_millis() as u64
+        {
             if retry_delay == Duration::ZERO {
                 retry_delay = Duration::from_secs(5);
             }
-            self.cumulative_retry_delay.store(new_cumulative as usize, Ordering::Relaxed);
+            self.cumulative_retry_delay
+                .store(new_cumulative as usize, Ordering::Relaxed);
             return (true, retry_delay);
         }
         (false, Duration::ZERO)
@@ -171,14 +171,12 @@ impl RetryPolicy for ResourceThrottleRetryPolicy {
     /// # Note
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the error context.
-    async fn should_retry_exception(
-        &self,
-        err: &azure_core::Error,
-    ) -> ShouldRetryResult {
-
+    async fn should_retry_exception(&self, err: &azure_core::Error) -> ShouldRetryResult {
         // Check if the error has an HTTP status code and if it's a valid throttle status
         // Early return for invalid or missing status codes
-        let status = err.http_status().filter(|&s| self.is_valid_throttle_status_code(s));
+        let status = err
+            .http_status()
+            .filter(|&s| self.is_valid_throttle_status_code(s));
         if status.is_none() {
             // For non-HTTP errors or non-throttle status codes, don't retry
             return ShouldRetryResult::no_retry();
@@ -206,10 +204,7 @@ impl RetryPolicy for ResourceThrottleRetryPolicy {
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the response headers to respect
     /// server-suggested retry delays.
-    async fn should_retry_response(
-        &self,
-        response: &RawResponse,
-    ) -> ShouldRetryResult {
+    async fn should_retry_response(&self, response: &RawResponse) -> ShouldRetryResult {
         if !self.is_valid_throttle_status_code(response.status()) {
             return ShouldRetryResult::no_retry();
         }
