@@ -55,15 +55,52 @@ jobs:
       ServiceDirectory: ${{ parameters.ServiceDirectory }}
       PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
 
-  - task: Powershell@2
-    displayName: "Pack Crates"
-    condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
-    inputs:
-      pwsh: true
-      filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
-      arguments: >
-        -OutputPath '$(Build.ArtifactStagingDirectory)'
-        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+  - ${{ if eq('auto', parameters.ServiceDirectory) }}:
+    - task: Powershell@2
+      displayName: Pack Crates
+      condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
+        arguments: >
+          -OutputPath '$(Build.ArtifactStagingDirectory)'
+          -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+
+  - ${{ else }}:
+    - pwsh: |
+        $artifacts = '${{ convertToJson(parameters.Artifacts) }}' | ConvertFrom-Json
+        $isReleaseBuild = $true
+        $artifactsToBuild = $artifacts | Where-Object { $_.releaseInBatch -eq 'True' }
+
+        if (!$artifactsToBuild) {
+          Write-Host "No packages to release. Building all packages in the service directory with no dependency validation."
+          $artifactsToBuild = $artifacts
+          $isReleaseBuild = $false
+        }
+
+        $packageNames = $artifactsToBuild.name
+
+        Write-Host "##vso[task.setvariable variable=PackageNames]$($packageNames -join ',')"
+        if ($isReleaseBuild) {
+          Write-Host "##vso[task.setvariable variable=AdditionalPackageParams]-Release"
+        } else {
+          Write-Host "##vso[task.setvariable variable=AdditionalPackageParams]"
+        }
+      displayName: Configure crate packing
+      condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+
+    - task: Powershell@2
+      displayName: Pack Crates
+      condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
+        arguments: >
+          -OutputPath '$(Build.ArtifactStagingDirectory)'
+          -PackageNames $(PackageNames)
+          -OutBuildOrderFile '$(Build.ArtifactStagingDirectory)/release-order.json'
+          $(AdditionalPackageParams)
+
 
   - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
     parameters:
