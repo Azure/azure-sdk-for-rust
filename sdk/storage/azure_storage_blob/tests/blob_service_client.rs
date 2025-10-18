@@ -47,7 +47,7 @@ async fn test_list_containers(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     ]);
     let mut container_clients = Vec::new();
     for container_name in container_names.keys() {
-        let container_client = service_client.blob_container_client(container_name.to_string());
+        let container_client = service_client.blob_container_client(&container_name.to_string());
         container_client.create_container(None).await?;
         container_clients.push(container_client);
     }
@@ -91,7 +91,7 @@ async fn test_list_containers_with_continuation(ctx: TestContext) -> Result<(), 
     ]);
     let mut container_clients = Vec::new();
     for container_name in container_names.keys() {
-        let container_client = service_client.blob_container_client(container_name.to_string());
+        let container_client = service_client.blob_container_client(&container_name.to_string());
         container_client.create_container(None).await?;
         container_clients.push(container_client);
     }
@@ -184,7 +184,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     // Create Test Blobs with Tags
     let blob1_name = get_blob_name(recording);
     create_test_blob(
-        &container_client_1.blob_client(blob1_name.clone()),
+        &container_client_1.blob_client(&blob1_name.clone()),
         Some(RequestContent::from("hello world".as_bytes().into())),
         Some(
             BlockBlobClientUploadOptions::default()
@@ -194,7 +194,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     .await?;
     let blob2_name = get_blob_name(recording);
     create_test_blob(
-        &container_client_1.blob_client(blob2_name.clone()),
+        &container_client_1.blob_client(&blob2_name.clone()),
         Some(RequestContent::from("ferris the crab".as_bytes().into())),
         Some(
             BlockBlobClientUploadOptions::default()
@@ -205,7 +205,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     let blob3_name = get_blob_name(recording);
     let blob3_tags = HashMap::from([("tagged".to_string(), "true".to_string())]);
     create_test_blob(
-        &container_client_1.blob_client(blob3_name.clone()),
+        &container_client_1.blob_client(&blob3_name.clone()),
         Some(RequestContent::from("six seven".as_bytes().into())),
         Some(BlockBlobClientUploadOptions::default().with_tags(blob3_tags.clone())),
     )

@@ -13,22 +13,76 @@ use crate::{
         PageBlobClientUploadPagesResult, PageList, SequenceNumberActionType,
     },
     pipeline::StorageHeadersPolicy,
-    BlobClientOptions, PageBlobClientOptions,
+    PageBlobClientOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, RequestContent, Response, Url, XmlFormat,
+        NoFormat, Pipeline, RequestContent, Response, Url, XmlFormat,
     },
-    Bytes, Result,
+    tracing, Bytes, Result,
 };
 use std::sync::Arc;
 
 /// A client to interact with a specific Azure storage Page blob, although that blob may not yet exist.
 pub struct PageBlobClient {
-    pub(crate) endpoint: Url,
-    pub(crate) client: GeneratedPageBlobClient,
+    pub(super) client: GeneratedPageBlobClient,
+}
+
+impl GeneratedPageBlobClient {
+    /// Creates a new GeneratedPageBlobClient from a blob URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the Page blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Blob.PageBlob")]
+    pub fn from_url(
+        blob_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<PageBlobClientOptions>,
+    ) -> Result<Self> {
+        let mut options = options.unwrap_or_default();
+
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+
+        let per_retry_policies = if let Some(token_credential) = credential {
+            if !blob_url.scheme().starts_with("https") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{blob_url} must use http(s)"),
+                ));
+            }
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
+        };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
+
+        Ok(Self {
+            endpoint: blob_url,
+            version: options.version,
+            pipeline,
+        })
+    }
 }
 
 impl PageBlobClient {
@@ -43,45 +97,41 @@ impl PageBlobClient {
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
-        container_name: String,
-        blob_name: String,
-        credential: Arc<dyn TokenCredential>,
+        container_name: &str,
+        blob_name: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<PageBlobClientOptions>,
     ) -> Result<Self> {
-        let mut options = options.unwrap_or_default();
+        let mut url = Url::parse(endpoint)?;
 
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
+        url.path_segments_mut()
+            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
+            .extend([container_name, blob_name]);
 
-        let client = GeneratedPageBlobClient::new(
-            endpoint,
-            credential,
-            container_name,
-            blob_name,
-            Some(options),
-        )?;
-        Ok(Self {
-            endpoint: endpoint.parse()?,
-            client,
-        })
+        let client = GeneratedPageBlobClient::from_url(url, credential, options)?;
+        Ok(Self { client })
     }
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
+    /// Creates a new PageBlobClient from a blob URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the Page blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn from_blob_url(
+        blob_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<PageBlobClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedPageBlobClient::from_url(blob_url, credential, options)?;
+
+        Ok(Self { client })
     }
 
-    /// Gets the container name of the Storage account this client is connected to.
-    pub fn container_name(&self) -> &str {
-        &self.client.container_name
-    }
-
-    /// Gets the blob name of the Storage account this client is connected to.
-    pub fn blob_name(&self) -> &str {
-        &self.client.blob_name
+    /// Gets the URL of the Storage account this client is connected to.
+    pub fn url(&self) -> &Url {
+        &self.client.endpoint
     }
 
     /// Creates a new Page blob.

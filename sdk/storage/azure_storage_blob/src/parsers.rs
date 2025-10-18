@@ -4,6 +4,7 @@
 use crate::models::{BlobTag, BlobTags};
 use std::collections::HashMap;
 use std::io::{Error, ErrorKind};
+use url::Url;
 
 /// Takes in an offset and a length, verifies alignment to a 512-byte boundary, and
 ///  returns the HTTP range in String format.

@@ -2,22 +2,21 @@
 // Licensed under the MIT License.
 
 use crate::{
+    generated::clients::BlobClient as GeneratedBlobClient,
     generated::clients::BlobContainerClient as GeneratedBlobContainerClient,
     generated::models::{
-        BlobContainerClientAcquireLeaseResult, BlobContainerClientBreakLeaseResult,
-        BlobContainerClientChangeLeaseResult, BlobContainerClientGetAccountInfoResult,
-        BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
-        BlobContainerClientRenewLeaseResult,
+        BlobContainerClientAcquireLeaseOptions, BlobContainerClientAcquireLeaseResult,
+        BlobContainerClientBreakLeaseOptions, BlobContainerClientBreakLeaseResult,
+        BlobContainerClientChangeLeaseOptions, BlobContainerClientChangeLeaseResult,
+        BlobContainerClientCreateOptions, BlobContainerClientDeleteOptions,
+        BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccountInfoOptions,
+        BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesOptions,
+        BlobContainerClientGetPropertiesResult, BlobContainerClientListBlobFlatSegmentOptions,
+        BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
+        BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
+        BlobContainerClientSetMetadataOptions,
     },
-    models::{
-        BlobContainerClientAcquireLeaseOptions, BlobContainerClientBreakLeaseOptions,
-        BlobContainerClientChangeLeaseOptions, BlobContainerClientCreateOptions,
-        BlobContainerClientDeleteOptions, BlobContainerClientFindBlobsByTagsOptions,
-        BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetPropertiesOptions,
-        BlobContainerClientListBlobFlatSegmentOptions, BlobContainerClientReleaseLeaseOptions,
-        BlobContainerClientRenewLeaseOptions, BlobContainerClientSetMetadataOptions,
-        FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode,
-    },
+    models::{FilterBlobSegment, ListBlobsFlatSegmentResponse, StorageErrorCode},
     pipeline::StorageHeadersPolicy,
     BlobClient, BlobContainerClientOptions,
 };
@@ -26,16 +25,70 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{BearerTokenCredentialPolicy, Policy},
-        NoFormat, PageIterator, Pager, Response, StatusCode, Url, XmlFormat,
+        NoFormat, PageIterator, Pager, Pipeline, Response, StatusCode, Url, XmlFormat,
     },
-    Result,
+    tracing, Result,
 };
 use std::{collections::HashMap, sync::Arc};
 
-/// A client to interact with a specified Azure storage container.
+/// A client to interact with a specified Azure storage container, although that container may not yet exist.
 pub struct BlobContainerClient {
-    pub(super) endpoint: Url,
     pub(super) client: GeneratedBlobContainerClient,
+}
+
+impl GeneratedBlobContainerClient {
+    /// Creates a new GeneratedBlobContainerClient from a container URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_url` - The full URL of the container, for example `https://myaccount.blob.core.windows.net/mycontainer`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Blob.Container")]
+    pub fn from_url(
+        container_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<Self> {
+        let mut options = options.unwrap_or_default();
+
+        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
+        options
+            .client_options
+            .per_call_policies
+            .push(storage_headers_policy);
+
+        let per_retry_policies = if let Some(token_credential) = credential {
+            if !container_url.scheme().starts_with("https") {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("{container_url} must use http(s)"),
+                ));
+            }
+            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
+                token_credential,
+                vec!["https://storage.azure.com/.default"],
+            ));
+            vec![auth_policy]
+        } else {
+            Vec::default()
+        };
+
+        let pipeline = Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            options.client_options.clone(),
+            Vec::default(),
+            per_retry_policies,
+            None,
+        );
+
+        Ok(Self {
+            endpoint: container_url,
+            version: options.version,
+            pipeline,
+        })
+    }
 }
 
 impl BlobContainerClient {
@@ -49,29 +102,35 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
-        container_name: String,
-        credential: Arc<dyn TokenCredential>,
+        container_name: &str,
+        credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
-        let mut options = options.unwrap_or_default();
+        let mut url = Url::parse(endpoint)?;
 
-        let storage_headers_policy = Arc::new(StorageHeadersPolicy);
-        options
-            .client_options
-            .per_call_policies
-            .push(storage_headers_policy);
+        url.path_segments_mut()
+            .expect("Invalid endpoint URL: Cannot append container_name to the blob endpoint.")
+            .extend([container_name]);
 
-        let client = GeneratedBlobContainerClient::new(
-            endpoint,
-            credential.clone(),
-            container_name.clone(),
-            Some(options),
-        )?;
+        let client = GeneratedBlobContainerClient::from_url(url, credential, options)?;
+        Ok(Self { client })
+    }
 
-        Ok(Self {
-            endpoint: endpoint.parse()?,
-            client,
-        })
+    /// Creates a new BlobContainerClient from a container URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_url` - The full URL of the container, for example `https://myaccount.blob.core.windows.net/mycontainer`.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn from_container_url(
+        container_url: Url,
+        credential: Option<Arc<dyn TokenCredential>>,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedBlobContainerClient::from_url(container_url, credential, options)?;
+
+        Ok(Self { client })
     }
 
     /// Returns a new instance of BlobClient.
@@ -79,21 +138,26 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `blob_name` - The name of the blob.
-    pub fn blob_client(&self, blob_name: String) -> BlobClient {
-        BlobClient {
-            endpoint: self.client.endpoint.clone(),
-            client: self.client.get_blob_client(blob_name),
-        }
+    pub fn blob_client(&self, blob_name: &str) -> BlobClient {
+        let mut blob_url = self.url().clone();
+        blob_url
+            .path_segments_mut()
+            .expect("Invalid endpoint URL: Cannot append blob_name to the blob endpoint.")
+            .extend([blob_name]);
+
+        let client = GeneratedBlobClient {
+            endpoint: blob_url,
+            pipeline: self.client.pipeline.clone(),
+            version: self.client.version.clone(),
+            tracer: self.client.tracer.clone(),
+        };
+
+        BlobClient { client }
     }
 
-    /// Gets the endpoint of the Storage account this client is connected to.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// Gets the container name of the Storage account this client is connected to.
-    pub fn container_name(&self) -> &str {
-        &self.client.container_name
+    /// Gets the URL of the Storage account this client is connected to.
+    pub fn url(&self) -> &Url {
+        &self.client.endpoint
     }
 
     /// Creates a new container under the specified account. If the container with the same name already exists, the operation fails.
