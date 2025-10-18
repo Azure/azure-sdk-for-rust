@@ -23,7 +23,7 @@ use openssl::{
     error::ErrorStack,
     hash::MessageDigest,
     pkcs12::Pkcs12,
-    pkey::{PKey, Private},
+    pkey::{Id, PKey, Private},
     sign::Signer,
     x509::X509,
 };
@@ -96,7 +96,7 @@ impl ClientCertificateCredential {
 
         let send_x5c = env
             .var(AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY)
-            .map(|s| s == "1" || s.to_lowercase() == "true")
+            .map(|s| s == "1" || s.eq_ignore_ascii_case("true"))
             .unwrap_or(false);
         let header = if send_x5c {
             let base_signature = get_encoded_cert(&cert)?;
@@ -248,6 +248,12 @@ fn parse_certificate(
             "PKCS12 bundle contains no private key",
         )
     })?;
+    if key.id() != Id::RSA {
+        return Err(Error::with_message(
+            ErrorKind::Credential,
+            "only RSA private keys are supported",
+        ));
+    }
     let cert = parsed.cert.ok_or_else(|| {
         Error::with_message(
             ErrorKind::Credential,
