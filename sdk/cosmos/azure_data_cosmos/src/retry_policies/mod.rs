@@ -9,6 +9,14 @@ use azure_core::http::RawResponse;
 use typespec_client_core::http::Request;
 use resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 
+/// Result of a retry policy decision
+///
+/// This struct encapsulates the decision made by a retry policy about whether
+/// an operation should be retried and how long to wait before the retry attempt.
+///
+/// # Fields
+/// * `should_retry` - Whether the operation should be retried
+/// * `backoff_time` - Duration to wait before retrying (meaningful only if `should_retry` is true)
 #[derive(Debug, Clone)]
 pub struct ShouldRetryResult {
     pub should_retry: bool,
@@ -16,12 +24,36 @@ pub struct ShouldRetryResult {
 }
 
 impl ShouldRetryResult {
+    /// Creates a result indicating the operation should not be retried
+    ///
+    /// # Example
+    /// ```
+    /// use azure_data_cosmos::retry_policies::ShouldRetryResult;
+    ///
+    /// let result = ShouldRetryResult::no_retry();
+    /// assert!(!result.should_retry);
+    /// ```
     pub fn no_retry() -> Self {
         Self {
             should_retry: false,
             backoff_time: Duration::ZERO,
         }
     }
+
+    /// Creates a result indicating the operation should be retried after a delay
+    ///
+    /// # Arguments
+    /// * `backoff` - The duration to wait before retrying
+    ///
+    /// # Example
+    /// ```
+    /// use azure_data_cosmos::retry_policies::ShouldRetryResult;
+    /// use std::time::Duration;
+    ///
+    /// let result = ShouldRetryResult::retry_after(Duration::from_secs(5));
+    /// assert!(result.should_retry);
+    /// assert_eq!(result.backoff_time, Duration::from_secs(5));
+    /// ```
     pub fn retry_after(backoff: Duration) -> Self {
         Self {
             should_retry: true,
@@ -36,7 +68,7 @@ impl ShouldRetryResult {
 /// in Azure Cosmos DB operations. Implementers can define custom retry behavior for
 /// both exceptions (errors) and HTTP responses based on their specific requirements.
 #[async_trait]
-pub trait IRetryPolicy: Send + Sync {
+pub trait RetryPolicy: Send + Sync {
 
     /// Called before sending a request to allow policy-specific modifications
     /// 
@@ -182,7 +214,7 @@ impl BaseRetryPolicy {
     /// Returns the resource throttle retry policy as a trait object
     ///
     /// Useful when you need to work with the DocumentClientRetryPolicy trait.
-    pub fn resource_throttle_policy_dyn(&self) -> Arc<dyn IRetryPolicy> {
+    pub fn resource_throttle_policy_dyn(&self) -> Arc<dyn RetryPolicy> {
         self.resource_throttle_policy.clone()
     }
 
@@ -195,40 +227,12 @@ impl BaseRetryPolicy {
     ///
     /// This method examines the request headers and method to determine which
     /// retry policy should be used for this specific request.
-    ///
-    /// # Policy Selection Logic
-    ///
-    /// Currently, this method returns the ResourceThrottleRetryPolicy for all requests.
-    /// Future enhancements will check for:
-    ///
-    /// - **GoneRetryPolicy**: For requests that might encounter 410 Gone errors
-    ///   (partition splits/merges). This is typically needed for:
-    ///   - Requests with partition key headers
-    ///   - Long-running operations
-    ///
-    /// - **SessionRetryPolicy**: For requests with session consistency requirements.
-    ///   Detected by checking for:
-    ///   - `x-ms-session-token` header
-    ///   - `x-ms-consistency-level: Session` header
-    ///
-    /// - **DefaultRetryPolicy**: For general connection errors and transient failures.
-    ///   Used as a fallback for requests that don't match other specific policies.
-    ///
-    /// - **ResourceThrottleRetryPolicy**: For handling 429 TooManyRequests errors.
-    ///   This is the default policy for all requests.
-    ///
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    pub fn get_policy_for_request(&self, _request: &azure_core::http::request::Request) -> Arc<dyn IRetryPolicy> {
-        // TODO: Implement policy selection logic based on request headers
-        // For now, always return ResourceThrottleRetryPolicy
-        //
-        // Future implementation should check:
-        // 1. request.headers().get(constants::SESSION_TOKEN) -> SessionRetryPolicy
-        // 2. request.headers().get(constants::CONSISTENCY_LEVEL) == "Session" -> SessionRetryPolicy
-        // 3. request.headers().get(constants::PARTITION_KEY) for partition-related requests -> GoneRetryPolicy
-        // 4. Default to ResourceThrottleRetryPolicy for throttling protection
-
+    pub fn get_policy_for_request(&self, _request: &Request) -> Arc<dyn RetryPolicy> {
+        // For now, always return ResourceThrottleRetryPolicy.  Future implementation should check
+        // the request operation type and resource type and accordingly return the respective retry
+        // policy.
         self.resource_throttle_policy_dyn()
     }
 }
