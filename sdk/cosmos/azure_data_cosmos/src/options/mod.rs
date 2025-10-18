@@ -10,7 +10,7 @@ use std::fmt;
 use std::fmt::Display;
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct CosmosClientOptions {
     pub client_options: ClientOptions,
 }
