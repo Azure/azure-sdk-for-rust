@@ -99,8 +99,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let consumer_client = ConsumerClient::builder()
         .open(
             "my-eventhubs-host-name",
-            "my-eventhub-name",
-            Some(credential.clone()),
+            "my-eventhub-name".to_string(),
+            credential.clone(),
         )
         .await?;
 
