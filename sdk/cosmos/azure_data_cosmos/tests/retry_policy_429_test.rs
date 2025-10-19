@@ -16,7 +16,7 @@ use std::time::Duration;
 
 /// Helper function to create a mock RawResponse with a given status code
 fn create_mock_response(status: StatusCode) -> RawResponse {
-    use typespec_client_core::http::{headers::Headers, Response};
+    use typespec_client_core::http::{headers::Headers};
 
     // Create headers
     let mut headers = Headers::new();
