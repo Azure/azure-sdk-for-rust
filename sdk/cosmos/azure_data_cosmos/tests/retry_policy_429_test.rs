@@ -22,11 +22,7 @@ fn create_mock_response(status: StatusCode) -> RawResponse {
     let mut headers = Headers::new();
     headers.insert("content-type", "application/json");
 
-    RawResponse::from_bytes(
-        status,
-        headers,
-        r#"{"id":12,"name":"Too Many Requests"}"#,
-    )
+    RawResponse::from_bytes(status, headers, r#"{"id":12,"name":"Too Many Requests"}"#)
 }
 
 #[tokio::test]
