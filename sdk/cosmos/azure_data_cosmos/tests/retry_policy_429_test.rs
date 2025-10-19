@@ -23,7 +23,7 @@ fn create_mock_response(status: StatusCode) -> RawResponse {
     headers.insert("content-type", "application/json");
 
     RawResponse::from_bytes(
-        StatusCode::TooManyRequests,
+        status,
         headers,
         r#"{"id":12,"name":"Too Many Requests"}"#,
     )

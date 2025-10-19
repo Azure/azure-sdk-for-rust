@@ -78,29 +78,6 @@ pub trait AbstractRetryHandler: Send + Sync {
 /// This handler provides automatic retry capabilities for Cosmos DB operations using
 /// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
 /// that handles both transient network errors and HTTP error responses.
-///
-/// # Features
-/// - **Automatic Retry**: Transparently retries failed requests based on policy decisions
-/// - **Exponential Backoff**: Implements progressive delay increases between retries
-/// - **Policy-Based**: Uses `BaseRetryPolicy` to select appropriate retry strategy per request
-/// - **Error Handling**: Handles both network exceptions and HTTP error responses (4xx/5xx)
-/// - **Thread-Safe**: Can be cloned and shared across async tasks
-///
-/// # Retry Policies
-/// The handler delegates retry decisions to `BaseRetryPolicy`, which selects the
-/// appropriate policy based on the request:
-/// - **ResourceThrottleRetryPolicy**: For 429 TooManyRequests errors
-/// - **GoneRetryPolicy**: For 410 Gone errors (partition splits) - planned
-/// - **SessionRetryPolicy**: For session consistency issues - planned
-/// - **DefaultRetryPolicy**: For general transient failures - planned
-///
-/// # Example
-/// ```ignore
-/// use azure_data_cosmos::handler::retry_handler::BackoffRetryHandler;
-///
-/// let handler = BackoffRetryHandler::new();
-/// // Handler is now ready to wrap requests with retry logic
-/// ```
 #[derive(Debug, Clone)]
 pub struct BackoffRetryHandler {
     base_retry_policy: BaseRetryPolicy,
@@ -114,16 +91,6 @@ impl BackoffRetryHandler {
     /// - Max throttle retry count: 3
     /// - Max throttle wait time: 100 seconds
     /// - Throttle backoff factor: 30
-    ///
-    /// The handler is ready to use immediately and can be cloned for concurrent use.
-    ///
-    /// # Example
-    /// ```
-    /// use azure_data_cosmos::handler::retry_handler::BackoffRetryHandler;
-    ///
-    /// let handler = BackoffRetryHandler::new();
-    /// // Use handler with pipeline to send requests with retry logic
-    /// ```
     pub fn new() -> Self {
         Self {
             base_retry_policy: BaseRetryPolicy::new(),
