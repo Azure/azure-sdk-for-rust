@@ -85,11 +85,6 @@ stages:
             runOnce:
               deploy:
                 steps:
-                - pwsh: |
-                    Write-Host "Setting ArtifactName to empty"
-                    Write-Host "##vso[task.setvariable variable=ArtifactName;]"
-                  displayName: Initialize ArtifactName variable
-
                 # This loop over artifacts is used to produce the correct number
                 # of ESRP release tasks. It has the side effect of also setting
                 # the artifact name by looking up the index of the current
