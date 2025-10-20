@@ -7,7 +7,7 @@ use super::{
     models_serde, CertificatePolicyAction, CurveName, DeletionRecoveryLevel, KeyType, KeyUsageType,
 };
 use azure_core::{
-    base64::{deserialize, deserialize_url_safe, serialize, serialize_url_safe},
+    base64::option::{deserialize, deserialize_url_safe, serialize, serialize_url_safe},
     fmt::SafeDebug,
     time::OffsetDateTime,
 };

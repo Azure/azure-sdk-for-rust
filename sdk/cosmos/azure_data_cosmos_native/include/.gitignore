@@ -1,0 +1,3 @@
+# Ignore everything except this ignore file, this directory contains build artifacts
+*
+!.gitignore

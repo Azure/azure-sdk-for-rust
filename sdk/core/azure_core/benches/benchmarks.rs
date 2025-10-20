@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 use azure_core::http::{
     headers::Headers, BufResponse, HttpClient, Method, Request, StatusCode, Url,
 };
@@ -23,6 +26,44 @@ fn url_parsing_benchmark(c: &mut Criterion) {
             })
         });
     }
+}
+
+const ENDPOINT: &str = "https://my-vault.vault.azure.net";
+
+fn url_construction(c: &mut Criterion) {
+    let endpoint: Url = ENDPOINT.parse().unwrap();
+    let api_version = "7.6";
+
+    let mut group = c.benchmark_group("url_construction");
+
+    group.bench_function("append", |b| {
+        b.iter(|| {
+            let mut url = endpoint
+                .clone()
+                .join("secrets/")
+                .unwrap()
+                .join("secret-name")
+                .unwrap()
+                .join("secret-version")
+                .unwrap();
+            url.query_pairs_mut()
+                .append_pair("api-version", api_version);
+            let _ = black_box(url);
+        })
+    });
+
+    group.bench_function("format", |b| {
+        b.iter(|| {
+            let mut url = endpoint.clone();
+            let mut path = String::from("secrets/{secret-name}/{secret-version}");
+            path = path.replace("{secret-name}", "secret-name");
+            path = path.replace("{secret-version}", "secret-version");
+            url = url.join(&path).unwrap();
+            url.query_pairs_mut()
+                .append_pair("api-version", api_version);
+            let _ = black_box(url);
+        })
+    });
 }
 
 fn http_transport_test(c: &mut Criterion) {
@@ -65,7 +106,7 @@ fn http_transport_test(c: &mut Criterion) {
 criterion_group! {
     name = benchmarks;
     config = Criterion::default();
-    targets = url_parsing_benchmark, http_transport_test
+    targets = url_parsing_benchmark, url_construction, http_transport_test
 }
 
 criterion_main!(benchmarks);

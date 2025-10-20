@@ -6,8 +6,12 @@
 
 ### Breaking Changes
 
+- Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
 - Removed `constants` module.
 - Removed `CustomHeaders` policy.
+- Removed `ErrorKind::MockFramework`.
+- Removed `xml::read_xml_str()`.
+- Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 
 ### Bugs Fixed
 
@@ -38,7 +42,6 @@
 - Implemented `AsRef<[u8]>` and `Deref<Target = [u8]>` for `ResponseBody`.
 
 ### Breaking Changes
-
 
 - Changed `ClientOptions::retry` from `Option<RetryOptions>` to `RetryOptions`.
 - Changed `DeserializeWith::deserialize_with()` to be sync.

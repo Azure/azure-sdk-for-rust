@@ -248,6 +248,7 @@ mod tests {
             )],
             Some(Arc::new(is_valid_request(
                 FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+                Some(FAKE_ASSERTION.to_string()),
             ))),
         );
         let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
@@ -289,6 +290,7 @@ mod tests {
             )],
             Some(Arc::new(is_valid_request(
                 FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+                Some(FAKE_ASSERTION.to_string()),
             ))),
         );
         let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
@@ -402,6 +404,7 @@ mod tests {
             )],
             Some(Arc::new(is_valid_request(
                 FAKE_PUBLIC_CLOUD_AUTHORITY.to_string(),
+                Some(FAKE_ASSERTION.to_string()),
             ))),
         );
         let cred = WorkloadIdentityCredential::new(Some(WorkloadIdentityCredentialOptions {
