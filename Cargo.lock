@@ -188,7 +188,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "0.29.1"
+version = "0.30.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -220,7 +220,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.8.1"
+version = "0.9.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -241,7 +241,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_macros"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -254,7 +254,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -358,7 +358,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "async-lock",
  "async-stream",
@@ -381,7 +381,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -531,7 +531,7 @@ version = "0.1.0"
 
 [[package]]
 name = "azure_storage_queue"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -2156,9 +2156,9 @@ dependencies = [
 
 [[package]]
 name = "quick-xml"
-version = "0.31.0"
+version = "0.38.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1004a344b30a54e2ee58d66a71b32d2db2feb0a31f9a2d302bf0536f15de2a33"
+checksum = "42a232e7487fc2ef313d96dde7948e7a3c05101870d8985e4fd8d26aedd27b89"
 dependencies = [
  "memchr",
  "serde",
@@ -3146,7 +3146,7 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "typespec"
-version = "0.9.1"
+version = "0.10.0"
 dependencies = [
  "base64",
  "bytes",
@@ -3160,7 +3160,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.8.1"
+version = "0.9.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -3188,7 +3188,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_macros"
-version = "0.8.1"
+version = "0.9.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",

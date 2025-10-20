@@ -6,7 +6,12 @@
 
 ### Breaking Changes
 
+- Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.
 - Removed `constants` module.
+- Removed `CustomHeaders` policy.
+- Removed `ErrorKind::MockFramework`.
+- Removed `xml::read_xml_str()`.
+- Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 
 ### Bugs Fixed
 
@@ -38,7 +43,6 @@
 
 ### Breaking Changes
 
-
 - Changed `ClientOptions::retry` from `Option<RetryOptions>` to `RetryOptions`.
 - Changed `DeserializeWith::deserialize_with()` to be sync.
 - Changed `Pipeline::send()` to return a `Result<RawResponse>`.
@@ -61,7 +65,7 @@
 - Removed several unreferenced HTTP headers and accessor structures for those headers.
 - Renamed `TransportOptions::new_custom_policy()` to `Transport::with_policy()`.
 - Renamed `TransportOptions` to `Transport`.
-- Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)"
+- Renamed a number of construction functions for `Error` to align with [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)
   - Renamed `Error::full()` to `Error::with_error()`.
   - Renamed `Error::with_message()` to `Error::with_message_fn()`.
   - Renamed `Error::message()` to `Error::with_message()`.

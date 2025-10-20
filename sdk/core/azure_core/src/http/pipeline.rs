@@ -29,11 +29,10 @@ use typespec_client_core::http::{
 ///    immediately.
 /// 2. User-specified per-call policies in [`ClientOptions::per_call_policies`] are executed.
 /// 3. The retry policy is executed. It allows to re-execute the following policies.
-/// 4. The policy that adds [`CustomHeaders`](crate::http::policies::CustomHeaders) is executed
-/// 5. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are
+/// 4. Client library-specified per-retry policies. Per-retry polices are always executed at least once but are
 ///    re-executed in case of retries.
-/// 6. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
-/// 7. The transport policy is executed. Transport policy is always the last policy and is the policy that
+/// 5. User-specified per-retry policies in [`ClientOptions::per_try_policies`] are executed.
+/// 6. The transport policy is executed. Transport policy is always the last policy and is the policy that
 ///    actually constructs the [`BufResponse`](http::BufResponse) to be passed up the pipeline.
 ///
 /// A pipeline is immutable. In other words a policy can either succeed and call the following

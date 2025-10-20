@@ -7,6 +7,7 @@
     "**/test-resources.json",
     "**/test-resources-post.ps1",
     "**/assets.json",
+    "**/*.pfx",
     ".config",
     ".devcontainer/devcontainer.json",
     ".devcontainer/Dockerfile",
@@ -34,12 +35,14 @@
     "bugbug",
     "checkpointstore",
     "clippy",
+    "codeowners",
     "contoso",
     "cplusplus",
     "cpptools",
     "cppvsdbg",
     "datalake",
     "datetime",
+    "deserializers",
     "devicecode",
     "docsrs",
     "doctest",
@@ -71,7 +74,9 @@
     "pwsh",
     "reqwest",
     "rsplit",
+    "rustfmt",
     "runtimes",
+    "rustfmt",
     "rustup",
     "schannel",
     "seekable",
@@ -198,7 +203,7 @@
       ]
     },
     {
-      "filename": "sdk/typespec/**",
+      "filename": "sdk/core/typespec*/**",
       "flagWords": [
         "azure",
         "azurite"

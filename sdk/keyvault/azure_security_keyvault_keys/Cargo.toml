@@ -42,6 +42,7 @@ rustc_version.workspace = true
 [lints]
 workspace = true
 
-[[bench]]
-name = "benchmarks"
+[[test]]
+name = "perf"
+path = "perf/perf_tests.rs"
 harness = false

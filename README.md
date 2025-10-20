@@ -102,6 +102,8 @@ We would love to incorporate the community's input into our library design proce
 
 For details on contributing to this repository, see the [contributing guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md).
 
+For guidance on how AI agents should interact with this repository, see [AGENTS.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md).
+
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit <https://cla.opensource.microsoft.com>.

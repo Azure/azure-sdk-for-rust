@@ -18,32 +18,14 @@ pub struct QueueClient {
 }
 
 impl QueueClient {
-    /// Returns the endpoint URL of the Azure storage account this client is associated with.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the URL of the storage account.
-    pub fn endpoint(&self) -> &Url {
-        self.client.endpoint()
-    }
-
-    /// Returns the name of the queue this client is associated with.
-    ///
-    /// # Returns
-    ///
-    /// A reference to the name of the queue.
-    pub fn queue_name(&self) -> &str {
-        &self.client.queue_name
-    }
-
     /// Creates a new QueueClient using Entra ID authentication.
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://<storage_account_name>.queue.core.windows.net/`
-    /// * `queue_name` - The name of the queue to interact with
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token for authentication
-    /// * `options` - Optional configuration for the client
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
+    /// * `queue_name` - The name of the queue to interact with.
+    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
     ///
     /// # Returns
     ///
@@ -65,19 +47,21 @@ impl QueueClient {
         Ok(Self { client })
     }
 
+    /// Returns the endpoint URL of the Azure storage account this client is associated with.
+    pub fn endpoint(&self) -> &Url {
+        self.client.endpoint()
+    }
+
+    /// Returns the name of the queue this client is associated with.
+    pub fn queue_name(&self) -> &str {
+        &self.client.queue_name
+    }
+
     /// Creates a new queue under the given account.
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the response if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue already exists or if the request fails
+    /// * `options` - Optional configuration for the request.
     pub async fn create(
         &self,
         options: Option<QueueClientCreateOptions<'_>>,
@@ -89,15 +73,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the response if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
+    /// * `options` - Optional configuration for the request.
     pub async fn delete(
         &self,
         options: Option<QueueClientDeleteOptions<'_>>,
@@ -107,15 +83,7 @@ impl QueueClient {
 
     /// Checks if the queue exists.
     ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing:
-    /// - `Ok(true)` if the queue exists
-    /// - `Ok(false)` if the queue does not exist
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the request fails for any reason other than a non-existent queue
+    /// Returns `true` if the queue exists, `false` if the queue does not exist, and propagates all other errors.
     pub async fn exists(&self) -> Result<bool> {
         match self.get_metadata(None).await {
             Ok(_) => Ok(true),
@@ -134,15 +102,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the response if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
+    /// * `options` - Optional configuration for the request.
     pub async fn clear(
         &self,
         options: Option<QueueClientClearOptions<'_>>,
@@ -150,22 +110,14 @@ impl QueueClient {
         self.client.clear(options).await
     }
 
-    /// Sets the metadata for the specified queue.
+    /// Sets user-defined metadata for the specified queue as one or more name-value pairs. Each call to this operation
+    /// replaces all existing metadata attached to the queue. To remove all metadata from the queue, call this operation with
+    /// no metadata headers.
     ///
     /// # Arguments
     ///
-    /// * `metadata` - A HashMap containing the metadata key-value pairs to set for the queue.
-    ///   This will replace all existing metadata on the queue. If an empty HashMap is provided, all
-    ///   existing metadata will be deleted from the queue.
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the response if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
+    /// * `metadata` - A [`HashMap`] containing the metadata key-value pairs to set for the queue.
+    /// * `options` - Optional configuration for the request.
     pub async fn set_metadata(
         &self,
         metadata: HashMap<String, String>,
@@ -178,15 +130,7 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the queue's metadata if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
+    /// * `options` - Optional configuration for the request.
     pub async fn get_metadata(
         &self,
         options: Option<QueueClientGetMetadataOptions<'_>>,
@@ -198,16 +142,8 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `message` - The message text to be added to the queue
-    /// * `options` - Optional parameters for the enqueue operation, including visibility timeout and message time-to-live
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the enqueued message details if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist, if no message was sent, or if the request fails
+    /// * `message` - The message text to be added to the queue.
+    /// * `options` - Optional configuration for the request.
     pub async fn send_message(
         &self,
         queue_message: RequestContent<QueueMessage, XmlFormat>,
@@ -221,22 +157,13 @@ impl QueueClient {
         .await
     }
 
-    /// Deletes a specific message from the queue.
+    /// Deletes the specified message from the queue.
     ///
     /// # Arguments
     ///
-    /// * `message_id` - The ID of the message to delete
-    /// * `pop_receipt` - The pop receipt obtained when the message was retrieved
-    /// * `options` - Optional parameters for the delete operation
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the response if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the message doesn't exist, the pop receipt is invalid,
-    /// or if the request fails
+    /// * `message_id` - The ID of the message to delete.
+    /// * `pop_receipt` - The pop receipt obtained when the message was retrieved.
+    /// * `options` - Optional configuration for the request.
     pub async fn delete_message(
         &self,
         message_id: &str,
@@ -248,23 +175,14 @@ impl QueueClient {
             .await
     }
 
-    /// Updates a specific message in the queue.
+    /// Updates the specified message in the queue.
     ///
     /// # Arguments
     ///
-    /// * `message_id` - The ID of the message to update
-    /// * `pop_receipt` - The pop receipt obtained when the message was retrieved
-    /// * `visibility_timeout` - The new visibility timeout for the message, in seconds
-    /// * `options` - Optional parameters for the update operation
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the response if successful
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the message doesn't exist, the pop receipt is invalid,
-    /// or if the request fails
+    /// * `message_id` - The ID of the message to update.
+    /// * `pop_receipt` - The pop receipt obtained when the message was retrieved.
+    /// * `visibility_timeout` - The new visibility timeout for the message, in seconds.
+    /// * `options` - Optional configuration for the request.
     pub async fn update_message(
         &self,
         message_id: &str,
@@ -277,21 +195,12 @@ impl QueueClient {
             .await
     }
 
-    /// The Dequeue operation retrieves one or more messages from the front of the queue.
+    /// Retrieves one or more messages from the front of the queue.
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the dequeue operation. Use `number_of_messages` to specify
-    ///   how many messages to retrieve (up to 32) and set the visibility timeout
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the dequeued messages if successful. The messages will be invisible
-    /// to other consumers for the duration specified in the visibility timeout
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
+    /// * `options` - Optional configuration for the request. Use `number_of_messages` to specify
+    ///   how many messages to retrieve (up to 32) and set the visibility timeout.
     pub async fn receive_messages(
         &self,
         options: Option<QueueClientReceiveMessagesOptions<'_>>,
@@ -303,17 +212,8 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the peek operation. Use `number_of_messages`
-    ///   to specify how many messages to peek (up to 32)
-    ///
-    /// # Returns
-    ///
-    /// Returns a `Result` containing the messages at the front of the queue if successful.
-    /// The messages remain visible to other consumers
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the queue doesn't exist or if the request fails
+    /// * `options` - Optional configuration for the request. Use `number_of_messages`
+    ///   to specify how many messages to peek (up to 32).
     pub async fn peek_messages(
         &self,
         options: Option<QueueClientPeekMessagesOptions<'_>>,
@@ -321,7 +221,7 @@ impl QueueClient {
         self.client.peek_messages(options).await
     }
 
-    /// Helper function to extract the first message from a list response and convert it to a single message response
+    /// Helper function to extract the first message from a list response and convert it to a single message response.
     async fn extract_first_message<T, U>(
         response: Response<T, XmlFormat>,
         extract_fn: impl Fn(&T) -> Vec<U>,
@@ -338,7 +238,7 @@ impl QueueClient {
         let first_message = messages.into_iter().next().ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
-                "No messages found in the response",
+                "No messages found in the response.",
             )
         })?;
 

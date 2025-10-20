@@ -36,7 +36,6 @@ use rand::{
 use rand_chacha::ChaCha20Rng;
 use std::{
     borrow::Cow,
-    cell::OnceCell,
     collections::HashMap,
     env,
     sync::{Arc, Mutex, OnceLock, RwLock},
@@ -51,8 +50,8 @@ pub struct Recording {
     #[allow(dead_code)]
     span: EnteredSpan,
     proxy: Option<Arc<Proxy>>,
-    test_mode_policy: OnceCell<Arc<RecordingModePolicy>>,
-    recording_policy: OnceCell<Arc<RecordingPolicy>>,
+    test_mode_policy: OnceLock<Arc<RecordingModePolicy>>,
+    recording_policy: OnceLock<Arc<RecordingPolicy>>,
     service_directory: String,
     recording_file: String,
     recording_assets_file: Option<String>,
@@ -60,6 +59,10 @@ pub struct Recording {
     variables: RwLock<HashMap<String, String>>,
     rand: OnceLock<Mutex<ChaCha20Rng>>,
 }
+
+// It's not 100% clear to me that Recording is Send, but it seems to be.
+// TODO: See if there's a way to remove this explicit unsafe impl.
+unsafe impl Send for Recording {}
 
 impl Recording {
     /// Adds a [`Sanitizer`] to sanitize PII for the current test.
@@ -361,8 +364,8 @@ impl Recording {
             test_mode,
             span,
             proxy,
-            test_mode_policy: OnceCell::new(),
-            recording_policy: OnceCell::new(),
+            test_mode_policy: OnceLock::new(),
+            recording_policy: OnceLock::new(),
             service_directory: service_directory.into(),
             recording_file,
             recording_assets_file,
@@ -380,8 +383,8 @@ impl Recording {
             test_mode: TestMode::Playback,
             span: span.entered(),
             proxy: None,
-            test_mode_policy: OnceCell::new(),
-            recording_policy: OnceCell::new(),
+            test_mode_policy: OnceLock::new(),
+            recording_policy: OnceLock::new(),
             service_directory: String::from("sdk/core"),
             recording_file: String::from("none"),
             recording_assets_file: None,

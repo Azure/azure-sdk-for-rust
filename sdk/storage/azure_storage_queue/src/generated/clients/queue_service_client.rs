@@ -92,7 +92,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.getProperties")]
     pub async fn get_properties(
         &self,
@@ -151,7 +151,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     ///
     /// ## Response Headers
     ///
@@ -217,7 +217,7 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.getQueues")]
     pub fn list_queues(
         &self,
@@ -291,7 +291,7 @@ impl QueueServiceClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: ListQueuesResponse = xml::read_xml(&body)?;
+                    let res: ListQueuesResponse = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
@@ -311,7 +311,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `queue_service_properties` - The storage service properties to set.
-    /// * `options` - Optional parameters for the request.
+    /// * `options` - Optional configuration for the request.
     #[tracing::function("Storage.Queues.setProperties")]
     pub async fn set_properties(
         &self,
