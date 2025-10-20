@@ -126,14 +126,10 @@ impl AsHeaders for RecordingOptions {
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
-        let it_self = self.skip.as_headers()?;
-
-        let it_remove = if let Some(remove) = self.remove_recording {
-            RemoveRecording(remove).as_headers()
-        } else {
-            Ok(Vec::new().into_iter())
-        }?;
-
-        Ok(it_self.chain(it_remove).collect::<Vec<_>>().into_iter())
+        let mut headers: Vec<_> = self.skip.as_headers()?.collect();
+        if let Some(remove) = self.remove_recording {
+            headers.extend(RemoveRecording(remove).as_headers()?);
+        }
+        Ok(headers.into_iter())
     }
 }

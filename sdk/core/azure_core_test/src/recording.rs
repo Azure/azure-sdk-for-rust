@@ -157,6 +157,48 @@ impl Recording {
         options.per_try_policies.push(recording_policy);
     }
 
+    /// Update a recording with settings appropriate for a performance test.
+    ///
+    /// Instruments the [`ClientOptions`] to support recording and playing back of session records.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use azure_core_test::{recorded, perf::PerfTest, TestContext};
+    /// # use std::sync::{OnceLock, Arc};
+    /// # struct MyServiceClient;
+    /// # impl MyServiceClient {
+    /// #   fn new(endpoint: impl AsRef<str>, options: Option<MyServiceClientOptions>) -> Self { todo!() }
+    /// #   async fn invoke(&self) -> azure_core::Result<()> { todo!() }
+    /// # }
+    /// # #[derive(Default)]
+    /// # struct MyServiceClientOptions { client_options: azure_core::http::ClientOptions };
+    /// # #[derive(Default)]
+    /// # struct MyPerfTest { client: OnceLock<MyServiceClient> };
+    /// #[async_trait::async_trait]
+    /// impl PerfTest for MyPerfTest {
+    ///   async fn setup(&self, ctx: Arc<TestContext>) -> azure_core::Result<()> {
+    ///     let recording = ctx.recording();
+    ///
+    ///     let mut options = MyServiceClientOptions::default();
+    ///     recording.instrument_perf(&mut options.client_options)?;
+    ///
+    ///     let client = MyServiceClient::new("https://azure.net", Some(options));
+    ///     client.invoke().await
+    ///   }
+    ///   async fn run(&self, ctx: Arc<TestContext>) -> azure_core::Result<()>{ todo!()}
+    ///   async fn cleanup(&self, ctx: Arc<TestContext>) -> azure_core::Result<()>{ todo!()}
+    /// }
+    /// ```
+    ///
+    /// Note that this function is a no-op for live tests - it only affects recorded tests
+    /// in playback mode.
+    ///
+    pub fn instrument_perf(&self, options: &mut ClientOptions) -> azure_core::Result<()> {
+        self.instrument(options);
+        self.remove_recording(false)
+    }
+
     /// Get random data from the OS or recording.
     ///
     /// This will always be the OS cryptographically secure pseudo-random number generator (CSPRNG) when running live.

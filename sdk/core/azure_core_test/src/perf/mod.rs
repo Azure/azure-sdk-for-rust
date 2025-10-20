@@ -4,7 +4,7 @@
 #![doc = include_str!("README.md")]
 #![cfg(not(target_arch = "wasm32"))]
 
-use crate::{Recording, TestContext};
+use crate::TestContext;
 use azure_core::{
     error::{ErrorKind, ResultExt},
     time::Duration,
@@ -541,15 +541,6 @@ impl PerfRunner {
 
         command
     }
-}
-
-/// Instrument a client options appropriately for a perf test.
-///
-/// # Arguments:
-///
-/// - recording: Test recording.
-pub fn instrument_perf(recording: &Recording) -> azure_core::Result<()> {
-    recording.remove_recording(false)
 }
 
 #[cfg(test)]

@@ -52,20 +52,26 @@ Each perf test also has a set of command line options that are specific to the i
 Here is an example of test metadata for a performance test:
 
 ```rust
+# use azure_core_test::perf::{PerfTestMetadata, PerfTestOption, PerfRunner, CreatePerfTestReturn};
+# struct FakePerfTest;
+# impl FakePerfTest {
+#   fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn { todo!() }
+#   fn test_metadata() -> PerfTestMetadata {
 PerfTestMetadata {
     name: "get_secret",
     description: "Get a secret from Key Vault",
     options: vec![PerfTestOption {
-        name: "vault_url",
+        name: "url",
         display_message: "The URL of the Key Vault to use in the test",
         mandatory: true,
-        short_activator: 'u',
+        short_activator: Some('u'),
         long_activator: "vault-url",
         expected_args_len: 1,
         ..Default::default()
     }],
     create_test: Self::create_new_test,
 }
+# } }
 ```
 
 This defines a test named `get_secret` with a single required "vault_url" option.
@@ -73,6 +79,26 @@ This defines a test named `get_secret` with a single required "vault_url" option
 For this test, the `create_new_test` function looks like:
 
 ```rust
+use std::sync::OnceLock;
+use azure_core_test::perf::{PerfRunner, CreatePerfTestReturn, PerfTestMetadata, PerfTest};
+use futures::FutureExt;
+# use azure_core_test::TestContext;
+# use std::sync::Arc;
+# struct MyServiceClient;
+# struct GetSecrets { vault_url: String, client: OnceLock<MyServiceClient>, random_key_name:OnceLock<String>};
+# #[async_trait::async_trait]impl PerfTest for GetSecrets {
+#  async fn setup(&self, ctx: Arc<TestContext>) -> azure_core::Result<()> {todo!()}
+#  async fn run(&self, ctx: Arc<TestContext>) -> azure_core::Result<()>{todo!()}
+#  async fn cleanup(&self, ctx: Arc<TestContext>) -> azure_core::Result<()>{todo!()}
+# }
+# impl GetSecrets {
+#   fn test_metadata() -> PerfTestMetadata {
+#       PerfTestMetadata {
+#           name: "get_secret",
+#           description: "Get a secret from Key Vault",
+#           options: Vec::new(),
+#           create_test: Self::create_new_test,
+#       }}
 fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn {
     async move {
         let vault_url_ref: Option<&String> = runner.try_get_test_arg("vault_url")?;
@@ -87,6 +113,7 @@ fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn {
     }
     .boxed()
 }
+# }
 ```
 
 ### Test invocation
@@ -94,6 +121,18 @@ fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn {
 The final piece of code which is necessary to run the performance tests is logic to hook up the tests with a test runner.
 
 ```rust
+use azure_core_test::perf::{PerfRunner, CreatePerfTestReturn, PerfTestMetadata};
+# struct GetSecrets{}
+# impl GetSecrets{
+#   fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn { todo!() }
+#   fn test_metadata() -> PerfTestMetadata {
+    PerfTestMetadata{
+#     name: "get_secret",
+#     description: "Get a secret from Key Vault",
+#     options: Vec::new(),
+#     create_test: Self::create_new_test,
+#   }
+# } }
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     let runner = PerfRunner::new(
