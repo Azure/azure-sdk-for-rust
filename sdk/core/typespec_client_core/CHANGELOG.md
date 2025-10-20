@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- `RetryOptions::with_retry_statuses()` enables configuring which status codes should trigger a retry.
+
 ### Breaking Changes
 
 - Moved deserializers and serializers for optional base64-encoded bytes to `base64::option` module. `base64` module now deserializes or serializes non-optional fields congruent with the `time` module.

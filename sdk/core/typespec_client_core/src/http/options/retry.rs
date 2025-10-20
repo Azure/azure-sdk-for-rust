@@ -2,8 +2,12 @@
 // Licensed under the MIT License.
 
 use crate::{
-    http::policies::{
-        ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryHeaders, RetryPolicy,
+    http::{
+        policies::{
+            ExponentialRetryPolicy, FixedRetryPolicy, NoRetryPolicy, Policy, RetryHeaders,
+            RetryPolicy,
+        },
+        StatusCode,
     },
     time::Duration,
 };
@@ -56,6 +60,10 @@ impl Default for RetryMode {
 pub struct RetryOptions {
     /// The algorithm to use for calculating retry delays.
     mode: RetryMode,
+
+    /// The status codes that should trigger retries. If `None`, the default set of status codes
+    /// will be used as described in the documentation for [`RetryOptions::with_retry_statuses`].
+    status_codes: Option<Vec<StatusCode>>,
 }
 
 impl RetryOptions {
@@ -63,6 +71,7 @@ impl RetryOptions {
     pub fn exponential(options: ExponentialRetryOptions) -> Self {
         Self {
             mode: RetryMode::Exponential(options),
+            status_codes: None,
         }
     }
 
@@ -70,6 +79,7 @@ impl RetryOptions {
     pub fn fixed(options: FixedRetryOptions) -> Self {
         Self {
             mode: RetryMode::Fixed(options),
+            status_codes: None,
         }
     }
 
@@ -77,6 +87,7 @@ impl RetryOptions {
     pub fn custom<T: RetryPolicy + 'static>(policy: Arc<T>) -> Self {
         Self {
             mode: RetryMode::Custom(policy),
+            status_codes: None,
         }
     }
 
@@ -84,7 +95,36 @@ impl RetryOptions {
     pub fn none() -> Self {
         Self {
             mode: RetryMode::None,
+            status_codes: None,
         }
+    }
+
+    /// Set status codes that should trigger retries.
+    ///
+    /// By default, retries are attempted for these status codes:
+    /// - 408 (Request Timeout)
+    /// - 429 (Too Many Requests)
+    /// - 500 (Internal Server Error)
+    /// - 502 (Bad Gateway)
+    /// - 503 (Service Unavailable)
+    /// - 504 (Gateway Timeout)
+    ///
+    /// Use this method to override the default set. Passing an empty
+    /// vector will disable status-based retries.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use typespec_client_core::http::{RetryOptions, ExponentialRetryOptions, StatusCode};
+    /// let opts = RetryOptions::exponential(ExponentialRetryOptions::default())
+    ///     .with_retry_statuses(vec![
+    ///         StatusCode::ServiceUnavailable,
+    ///         StatusCode::TooManyRequests,
+    ///     ]);
+    /// ```
+    pub fn with_retry_statuses(mut self, statuses: Vec<StatusCode>) -> Self {
+        self.status_codes = Some(statuses);
+        self
     }
 
     pub(crate) fn to_policy(&self, retry_headers: RetryHeaders) -> Arc<dyn Policy> {
@@ -95,12 +135,14 @@ impl RetryOptions {
                 options.max_total_elapsed,
                 options.max_delay,
                 retry_headers,
+                self.status_codes.clone(),
             )),
             RetryMode::Fixed(options) => Arc::new(FixedRetryPolicy::new(
                 options.delay,
                 options.max_retries,
                 options.max_total_elapsed,
                 retry_headers,
+                self.status_codes.clone(),
             )),
             RetryMode::Custom(c) => c.clone(),
             RetryMode::None => Arc::new(NoRetryPolicy::new(retry_headers)),
