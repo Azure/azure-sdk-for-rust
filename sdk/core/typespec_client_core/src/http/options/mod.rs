@@ -12,7 +12,7 @@ pub use transport::*;
 use crate::http::{
     headers::RETRY_AFTER,
     policies::{Policy, RetryHeaders},
-    Context,
+    Context, StatusCode,
 };
 use std::borrow::Cow;
 use std::fmt::Debug;
@@ -64,7 +64,15 @@ pub struct ClientMethodOptions<'a> {
 pub struct PipelineOptions {
     /// The set of headers which should be considered when
     /// determining the interval to wait for retry attempts.
+    /// This field doesn't apply to custom retry policies.
     pub retry_headers: RetryHeaders,
+
+    /// The status codes that should trigger retries. This
+    /// field doesn't apply to custom retry policies.
+    ///
+    /// When empty, the default retry status codes are used as
+    /// described by [`crate::http::policies::RetryPolicy::get_retry_status_codes`].
+    pub retry_status_codes: Vec<StatusCode>,
 }
 
 impl Default for PipelineOptions {
@@ -73,6 +81,7 @@ impl Default for PipelineOptions {
             retry_headers: RetryHeaders {
                 retry_headers: vec![RETRY_AFTER],
             },
+            retry_status_codes: Vec::new(),
         }
     }
 }
