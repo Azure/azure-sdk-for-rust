@@ -64,7 +64,7 @@ where
 pub trait UrlExt: crate::private::Sealed {
     /// Appends a path segment to the URL's path, handling slashes appropriately and preserving query parameters.
     ///
-    /// This always assume the existing URL terminates with a directory, and the `path` you pass in is a separate directory or file segment.
+    /// This always assumes the existing URL terminates with a directory, and the `path` you pass in is a separate directory or file segment.
     ///
     /// # Examples
     ///
