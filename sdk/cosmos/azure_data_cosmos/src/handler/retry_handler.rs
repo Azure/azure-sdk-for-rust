@@ -68,7 +68,6 @@ pub struct BackoffRetryHandler {
 }
 
 impl BackoffRetryHandler {
-
     /// Creates a new retry handler with default retry policies
     ///
     /// Initializes a `BackoffRetryHandler` with a `BaseRetryPolicy` using default
@@ -86,7 +85,6 @@ impl BackoffRetryHandler {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl AbstractRetryHandler for BackoffRetryHandler {
-
     /// Sends an HTTP request with automatic retry and exponential backoff
     ///
     /// This implementation of the `AbstractRetryHandler::send` method provides robust
