@@ -20,7 +20,7 @@ use typespec_client_core::http::Request;
 #[derive(Debug, Clone)]
 pub struct ShouldRetryResult {
     pub should_retry: bool,
-    pub backoff_time: Duration,
+    pub back_off_time: Duration,
 }
 
 impl ShouldRetryResult {
@@ -36,7 +36,7 @@ impl ShouldRetryResult {
     pub fn no_retry() -> Self {
         Self {
             should_retry: false,
-            backoff_time: Duration::ZERO,
+            back_off_time: Duration::ZERO,
         }
     }
 
@@ -52,12 +52,12 @@ impl ShouldRetryResult {
     ///
     /// let result = ShouldRetryResult::retry_after(Duration::from_secs(5));
     /// assert!(result.should_retry);
-    /// assert_eq!(result.backoff_time, Duration::from_secs(5));
+    /// assert_eq!(result.back_off_time, Duration::from_secs(5));
     /// ```
     pub fn retry_after(backoff: Duration) -> Self {
         Self {
             should_retry: true,
-            backoff_time: backoff,
+            back_off_time: backoff,
         }
     }
 }

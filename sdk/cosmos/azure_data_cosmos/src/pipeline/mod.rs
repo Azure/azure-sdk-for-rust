@@ -17,7 +17,7 @@ use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use url::Url;
 
-use crate::handler::retry_handler::{AbstractRetryHandler, BackoffRetryHandler};
+use crate::handler::retry_handler::{AbstractRetryHandler, BackOffRetryHandler};
 use crate::{
     constants,
     models::ThroughputProperties,
@@ -30,7 +30,7 @@ use crate::{
 pub struct CosmosPipeline {
     pub endpoint: Url,
     pipeline: azure_core::http::Pipeline,
-    retry_handler: BackoffRetryHandler,
+    retry_handler: BackOffRetryHandler,
 }
 
 impl CosmosPipeline {
@@ -51,7 +51,7 @@ impl CosmosPipeline {
         CosmosPipeline {
             endpoint,
             pipeline,
-            retry_handler: BackoffRetryHandler::new(),
+            retry_handler: BackOffRetryHandler::new(),
         }
     }
 

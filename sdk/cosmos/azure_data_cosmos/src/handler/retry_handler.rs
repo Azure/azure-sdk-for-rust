@@ -30,7 +30,7 @@ pub trait AbstractRetryHandler: Send + Sync {
     /// Sends an HTTP request with automatic retry logic
     ///
     /// This method wraps the provided sender callback with retry logic, automatically
-    /// handling transient failures and implementing exponential backoff. The method
+    /// handling transient failures and implementing exponential  back off. The method
     /// will continue retrying until either:
     /// - The request succeeds (non-error 2xx status)
     /// - The retry policy determines no more retries should be attempted
@@ -58,23 +58,23 @@ pub trait AbstractRetryHandler: Send + Sync {
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + CosmosConditionalSend;
 }
 
-/// Concrete retry handler implementation with exponential backoff.
+/// Concrete retry handler implementation with exponential back off.
 /// This handler provides automatic retry capabilities for Cosmos DB operations using
 /// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
-pub struct BackoffRetryHandler {
+pub struct BackOffRetryHandler {
     base_retry_policy: BaseRetryPolicy,
 }
 
-impl BackoffRetryHandler {
+impl BackOffRetryHandler {
     /// Creates a new retry handler with default retry policies
     ///
     /// Initializes a `BackoffRetryHandler` with a `BaseRetryPolicy` using default
     /// configuration values:
     /// - Max throttle retry count: 3
     /// - Max throttle wait time: 100 seconds
-    /// - Throttle backoff factor: 30
+    /// - Throttle back off factor: 30
     pub fn new() -> Self {
         Self {
             base_retry_policy: BaseRetryPolicy::new(),
@@ -84,8 +84,8 @@ impl BackoffRetryHandler {
 
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-impl AbstractRetryHandler for BackoffRetryHandler {
-    /// Sends an HTTP request with automatic retry and exponential backoff
+impl AbstractRetryHandler for BackOffRetryHandler {
+    /// Sends an HTTP request with automatic retry and exponential back off
     ///
     /// This implementation of the `AbstractRetryHandler::send` method provides robust
     /// retry logic with the following behavior:
@@ -122,12 +122,12 @@ impl AbstractRetryHandler for BackoffRetryHandler {
                             return result;
                         }
 
-                        if retry_result.backoff_time > Duration::ZERO {
+                        if retry_result.back_off_time > Duration::ZERO {
                             tracing::warn!(
-                                "Retry backoff requested for {:?}.",
-                                retry_result.backoff_time
+                                "Retry back off requested for {:?}.",
+                                retry_result.back_off_time
                             );
-                            sleep(retry_result.backoff_time).await;
+                            sleep(retry_result.back_off_time).await;
                         }
                     } else {
                         // Success - return immediately
@@ -139,8 +139,8 @@ impl AbstractRetryHandler for BackoffRetryHandler {
                     if !retry_result.should_retry {
                         return result;
                     }
-                    if retry_result.backoff_time > Duration::ZERO {
-                        sleep(retry_result.backoff_time).await;
+                    if retry_result.back_off_time > Duration::ZERO {
+                        sleep(retry_result.back_off_time).await;
                     }
                 }
             }

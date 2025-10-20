@@ -37,32 +37,32 @@ async fn test_retry_policy_handles_429_status() {
     let result1 = policy.should_retry_response(&response_429).await;
     assert!(result1.should_retry, "Should retry on first 429 response");
     assert!(
-        result1.backoff_time > Duration::ZERO,
+        result1.back_off_time > Duration::ZERO,
         "Should have backoff time"
     );
-    println!("First retry - backoff time: {:?}", result1.backoff_time);
+    println!("First retry - backoff time: {:?}", result1.back_off_time);
 
     // Second retry attempt
     let result2 = policy.should_retry_response(&response_429).await;
     assert!(result2.should_retry, "Should retry on second 429 response");
     assert!(
-        result2.backoff_time > Duration::ZERO,
+        result2.back_off_time > Duration::ZERO,
         "Should have backoff time"
     );
     assert!(
-        result2.backoff_time >= result1.backoff_time,
+        result2.back_off_time >= result1.back_off_time,
         "Backoff should increase with exponential backoff"
     );
-    println!("Second retry - backoff time: {:?}", result2.backoff_time);
+    println!("Second retry - backoff time: {:?}", result2.back_off_time);
 
     // Third retry attempt
     let result3 = policy.should_retry_response(&response_429).await;
     assert!(result3.should_retry, "Should retry on third 429 response");
     assert!(
-        result3.backoff_time > Duration::ZERO,
+        result3.back_off_time > Duration::ZERO,
         "Should have backoff time"
     );
-    println!("Third retry - backoff time: {:?}", result3.backoff_time);
+    println!("Third retry - backoff time: {:?}", result3.back_off_time);
 
     // Fourth attempt should NOT retry (exceeded max_attempt_count of 3)
     let result4 = policy.should_retry_response(&response_429).await;
@@ -71,7 +71,7 @@ async fn test_retry_policy_handles_429_status() {
         "Should NOT retry after exceeding max attempts"
     );
     assert_eq!(
-        result4.backoff_time,
+        result4.back_off_time,
         Duration::ZERO,
         "Should have zero backoff when not retrying"
     );
@@ -91,7 +91,7 @@ async fn test_retry_policy_does_not_retry_on_success() {
         "Should NOT retry on successful response"
     );
     assert_eq!(
-        result.backoff_time,
+        result.back_off_time,
         Duration::ZERO,
         "Should have zero backoff for success"
     );
@@ -115,7 +115,7 @@ async fn test_retry_policy_does_not_retry_on_client_errors() {
         let result = policy.should_retry_response(&response).await;
         assert!(!result.should_retry, "Should NOT retry on {}", description);
         assert_eq!(
-            result.backoff_time,
+            result.back_off_time,
             Duration::ZERO,
             "Should have zero backoff for {}",
             description
@@ -145,11 +145,11 @@ async fn test_retry_policy_backoff_calculation() {
             // (though the exact multiplier depends on internal logic)
             println!(
                 "Attempt {}: backoff = {:?} (previous = {:?})",
-                attempt, result.backoff_time, previous_backoff
+                attempt, result.back_off_time, previous_backoff
             );
         }
 
-        previous_backoff = result.backoff_time;
+        previous_backoff = result.back_off_time;
     }
 }
 
@@ -169,10 +169,10 @@ async fn test_retry_policy_respects_max_wait_time() {
         let result = policy.should_retry_response(&response_429).await;
 
         if result.should_retry {
-            total_delay += result.backoff_time;
+            total_delay += result.back_off_time;
             println!(
                 "Attempt {}: backoff = {:?}, cumulative = {:?}",
-                attempt, result.backoff_time, total_delay
+                attempt, result.back_off_time, total_delay
             );
 
             // Total cumulative delay should never exceed max_wait_time
@@ -214,7 +214,7 @@ async fn test_retry_counter_increments() {
             retry_count += 1;
             println!(
                 "Attempt {}: Retry #{} - backoff: {:?}",
-                attempt, retry_count, result.backoff_time
+                attempt, retry_count, result.back_off_time
             );
         } else {
             println!(
