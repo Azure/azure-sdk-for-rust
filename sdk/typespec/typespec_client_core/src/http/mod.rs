@@ -80,14 +80,22 @@ pub trait UrlExt: crate::private::Sealed {
 
 impl UrlExt for Url {
     fn append_path(&mut self, p: impl AsRef<str>) {
-        if self.path() == "/" || p.as_ref().starts_with('/') {
+        if self.path() == "/" {
             self.set_path(p.as_ref());
-        } else if !p.as_ref().is_empty() {
-            let mut new_path = self.path().to_owned();
-            if !new_path.ends_with('/') {
+        } else if !p.as_ref().is_empty() && p.as_ref() != "/" {
+            let mut combinator = if self.path().ends_with('/') { 1 } else { 0 };
+            combinator += if p.as_ref().starts_with('/') { 1 } else { 0 };
+
+            let mut new_path = if combinator < 2 {
+                self.path().to_owned()
+            } else {
+                self.path()[..self.path().len() - 1].to_owned()
+            };
+            if combinator == 0 {
                 new_path.push('/');
             }
             new_path.push_str(p.as_ref());
+
             self.set_path(&new_path);
         }
     }
@@ -141,11 +149,11 @@ mod test {
 
         url = Url::parse("https://www.microsoft.com/foo?q=q").unwrap();
         url.append_path("/bar");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/bar?q=q");
+        assert_eq!(url.as_str(), "https://www.microsoft.com/foo/bar?q=q");
 
         url = Url::parse("https://www.microsoft.com/foo/?q=q").unwrap();
         url.append_path("/bar");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/bar?q=q");
+        assert_eq!(url.as_str(), "https://www.microsoft.com/foo/bar?q=q");
 
         url = Url::parse("https://www.microsoft.com/foo?q=q").unwrap();
         url.append_path("bar/");
@@ -157,11 +165,11 @@ mod test {
 
         url = Url::parse("https://www.microsoft.com/foo?q=q").unwrap();
         url.append_path("/bar/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/bar/?q=q");
+        assert_eq!(url.as_str(), "https://www.microsoft.com/foo/bar/?q=q");
 
         url = Url::parse("https://www.microsoft.com/foo/?q=q").unwrap();
         url.append_path("/bar/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/bar/?q=q");
+        assert_eq!(url.as_str(), "https://www.microsoft.com/foo/bar/?q=q");
 
         url = Url::parse("https://www.microsoft.com?q=q").unwrap();
         url.append_path("/");
@@ -179,13 +187,13 @@ mod test {
         url.append_path("");
         assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
 
-        url = Url::parse("https://www.microsoft.com?q=q").unwrap();
+        url = Url::parse("https://www.microsoft.com/foo?q=q").unwrap();
         url.append_path("/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
+        assert_eq!(url.as_str(), "https://www.microsoft.com/foo?q=q");
 
         url = Url::parse("https://www.microsoft.com/foo/?q=q").unwrap();
         url.append_path("/");
-        assert_eq!(url.as_str(), "https://www.microsoft.com/?q=q");
+        assert_eq!(url.as_str(), "https://www.microsoft.com/foo/?q=q");
 
         url = Url::parse("https://www.microsoft.com/foo?q=q").unwrap();
         url.append_path("");
