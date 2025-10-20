@@ -1,3 +1,5 @@
+<!-- cSpell:ignore WL6WTRCUBG -->
+
 # Contributing to the Azure Cosmos DB SDK for Rust.
 
 First, review the Azure Core SDK Contributing guide: [CONTRIBUTING.md](../../CONTRIBUTING.md).
