@@ -25,7 +25,6 @@ use crate::{pipeline::signature_target::SignatureTarget, resource_context::Resou
 
 use crate::utils::url_encode;
 
-
 const AZURE_VERSION: &str = "2020-07-15";
 const COSMOS_AAD_SCOPE: &str = "https://cosmos.azure.com/.default";
 
@@ -112,8 +111,7 @@ impl Policy for AuthorizationPolicy {
 /// NOTE: Resource tokens are not yet supported.
 async fn generate_authorization(
     auth_token: &Credential,
-    _url: &Url,
-
+    #[allow(unused_variables)] url: &Url,
     // Unused unless feature="key_auth", but I don't want to mess with excluding it since it makes call sites more complicated
     #[allow(unused_variables)] signature_target: SignatureTarget<'_>,
 ) -> azure_core::Result<String> {
@@ -134,8 +132,6 @@ async fn generate_authorization(
 
     Ok(url_encode(token))
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -199,9 +195,8 @@ mod tests {
         .await
         .unwrap();
 
-        let expected: String = url_encode(
-            format!("type=aad&ver=1.0&sig=test_token+{}", COSMOS_AAD_SCOPE).as_bytes()
-        );
+        let expected: String =
+            url_encode(format!("type=aad&ver=1.0&sig=test_token+{}", COSMOS_AAD_SCOPE).as_bytes());
         assert_eq!(ret, expected);
     }
 
@@ -271,7 +266,6 @@ mod tests {
 
         assert_eq!(ret, expected);
     }
-
 
     #[test]
     fn uses_constant_scope_value() {

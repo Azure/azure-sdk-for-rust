@@ -2,9 +2,9 @@
 
 #![cfg(feature = "key_auth")]
 
-use std::sync::{Arc, Mutex};
 use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
 use azure_core::time::{Duration, OffsetDateTime};
+use std::sync::{Arc, Mutex};
 
 const PUBLIC_COSMOS_SCOPE: &str = "https://cosmos.azure.com/.default";
 
@@ -52,8 +52,8 @@ impl TokenCredential for ScopeCapturingCredential {
 async fn aad_authentication_uses_constant_scope() -> Result<(), Box<dyn std::error::Error>> {
     let captured = CapturedScopes::new();
 
-    let cred = Arc::new(ScopeCapturingCredential { 
-        captured: captured.clone()
+    let cred = Arc::new(ScopeCapturingCredential {
+        captured: captured.clone(),
     });
 
     // Trigger token request to capture scope
@@ -61,7 +61,10 @@ async fn aad_authentication_uses_constant_scope() -> Result<(), Box<dyn std::err
 
     // Verify scope was captured correctly
     let scopes = captured.take();
-    assert!(!scopes.is_empty(), "Expected at least one authentication request");
+    assert!(
+        !scopes.is_empty(),
+        "Expected at least one authentication request"
+    );
     assert!(
         scopes.iter().all(|s| s == PUBLIC_COSMOS_SCOPE),
         "Expected all scopes to be '{}', but got: {:?}",
