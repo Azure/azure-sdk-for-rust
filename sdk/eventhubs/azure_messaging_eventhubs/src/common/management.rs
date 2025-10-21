@@ -61,7 +61,6 @@ impl ManagementInstance {
         let response = self
             .recoverable_connection
             .get_management_client()
-            .await?
             .call(EVENTHUB_ENTITY_TYPE.to_string(), application_properties)
             .await?;
 
@@ -114,7 +113,6 @@ impl ManagementInstance {
         let response = self
             .recoverable_connection
             .get_management_client()
-            .await?
             .call(PARTITION_ENTITY_TYPE.to_string(), application_properties)
             .await?;
 

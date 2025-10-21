@@ -399,7 +399,7 @@ impl ConsumerClient {
         Ok(ManagementInstance::new(self.recoverable_connection.clone()))
     }
 
-    async fn ensure_connection(&self) -> Result<()> {
+    async fn ensure_connection(&self) -> azure_core_amqp::Result<()> {
         self.recoverable_connection.ensure_connection().await?;
         Ok(())
     }
@@ -552,7 +552,7 @@ impl StartPosition {
 
 pub mod builders {
     use super::*;
-    use azure_core::Result;
+    use crate::Result;
     use std::sync::Arc;
 
     /// A builder for creating a [`ConsumerClient`].
@@ -694,7 +694,7 @@ pub mod builders {
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<super::ConsumerClient> {
             let custom_endpoint = match self.custom_endpoint {
-                Some(endpoint) => Some(Url::parse(&endpoint)?),
+                Some(endpoint) => Some(Url::parse(&endpoint).map_err(azure_core::Error::from)?),
                 None => None,
             };
             trace!("Opening consumer client on {fully_qualified_namespace}.");
@@ -718,8 +718,10 @@ pub mod builders {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use crate::{common::tests::force_errors, ConsumerClient, StartLocation, StartPosition};
-    use azure_core::{time::Duration, Result};
+    use crate::{
+        common::tests::force_errors, ConsumerClient, Result, StartLocation, StartPosition,
+    };
+    use azure_core::time::Duration;
     use azure_core_amqp::error::AmqpErrorKind;
     use azure_core_test::{recorded, TestContext};
     use std::{

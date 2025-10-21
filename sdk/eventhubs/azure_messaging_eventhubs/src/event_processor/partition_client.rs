@@ -95,7 +95,7 @@ impl PartitionClient {
     /// # Example
     /// ```
     /// # use azure_messaging_eventhubs::processor::PartitionClient;
-    /// # async fn example(partition_client: PartitionClient) -> azure_core::Result<()> {
+    /// # async fn example(partition_client: PartitionClient) -> Result<(), Box<dyn std::error::Error>> {
     /// partition_client.close().await?;
     /// # Ok(())
     /// # }

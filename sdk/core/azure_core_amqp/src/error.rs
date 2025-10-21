@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
+use azure_core::error::ErrorKind as AzureErrorKind;
 use std::str::FromStr;
 
 /// A convenience alias for `Result` where the error type is hard coded to [`AmqpError`].
@@ -410,6 +411,19 @@ impl From<AmqpSymbol> for AmqpErrorCondition {
 impl From<azure_core::Error> for AmqpError {
     fn from(error: azure_core::Error) -> Self {
         AmqpErrorKind::AzureCore(error).into()
+    }
+}
+
+impl TryFrom<AmqpError> for azure_core::Error {
+    type Error = AmqpError;
+    fn try_from(value: AmqpError) -> std::result::Result<Self, Self::Error> {
+        match value.kind {
+            AmqpErrorKind::AzureCore(e) => Ok(e),
+            _ => Err(AmqpError::from(azure_core::Error::with_message(
+                AzureErrorKind::Other,
+                "Amqp error is not an Azure Error",
+            ))),
+        }
     }
 }
 

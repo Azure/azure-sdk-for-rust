@@ -193,9 +193,8 @@ impl EventProcessor {
     /// use azure_core::time::Duration;
     /// use azure_messaging_eventhubs::ProcessorStrategy;
     /// use azure_messaging_eventhubs::CheckpointStore;
-    /// use azure_core::Result;
     ///
-    /// async fn run_processor(consumer_client: ConsumerClient, checkpoint_store: impl CheckpointStore+Send+Sync+'static) -> Result<()> {
+    /// async fn run_processor(consumer_client: ConsumerClient, checkpoint_store: impl CheckpointStore+Send+Sync+'static) -> Result<(), Box<dyn std::error::Error>> {
     ///   // Create an instance of the EventProcessor
     ///   let event_processor = EventProcessor::builder()
     ///       .with_load_balancing_strategy(ProcessorStrategy::Balanced)

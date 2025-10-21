@@ -450,7 +450,7 @@ impl ProducerClient {
 
 pub mod builders {
     use super::ProducerClient;
-    use crate::RetryOptions;
+    use crate::{Result, RetryOptions};
     use azure_core::{http::Url, Error};
     use std::sync::Arc;
 
@@ -551,9 +551,9 @@ pub mod builders {
             fully_qualified_namespace: &str,
             eventhub: &str,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
-        ) -> azure_core::Result<ProducerClient> {
+        ) -> Result<ProducerClient> {
             let url = format!("amqps://{}/{}", fully_qualified_namespace, eventhub);
-            let url = Url::parse(&url)?;
+            let url = Url::parse(&url).map_err(azure_core::Error::from)?;
 
             let custom_endpoint = match self.custom_endpoint {
                 Some(endpoint) => Some(Url::parse(&endpoint).map_err(Error::from)?),
@@ -579,8 +579,8 @@ pub mod builders {
 #[cfg(test)]
 mod tests {
     use crate::common::tests::force_errors;
-    use crate::{models::EventData, EventDataBatchOptions, ProducerClient};
-    use azure_core::{time::Duration, Result};
+    use crate::{models::EventData, EventDataBatchOptions, ProducerClient, Result};
+    use azure_core::time::Duration;
     use azure_core_amqp::error::AmqpErrorKind;
     use azure_core_test::{recorded, TestContext};
     use std::sync::Arc;

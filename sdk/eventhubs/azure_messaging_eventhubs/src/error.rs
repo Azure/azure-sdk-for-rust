@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 // Licensed under the MIT License.
 
+use azure_core::error::ErrorKind as AzureErrorKind;
 use azure_core_amqp::{AmqpDescribedError, AmqpError};
 
 /// A specialized `Result` type for Event Hubs operations.
@@ -94,12 +95,6 @@ impl std::fmt::Debug for EventHubsError {
     }
 }
 
-impl From<EventHubsError> for azure_core::Error {
-    fn from(e: EventHubsError) -> Self {
-        Self::new(azure_core::error::ErrorKind::Other, Box::new(e))
-    }
-}
-
 impl From<ErrorKind> for EventHubsError {
     fn from(kind: ErrorKind) -> Self {
         Self { kind }
@@ -118,6 +113,19 @@ impl From<azure_core::Error> for EventHubsError {
     fn from(e: azure_core::Error) -> Self {
         Self {
             kind: ErrorKind::AzureCore(e),
+        }
+    }
+}
+
+impl TryFrom<EventHubsError> for azure_core::Error {
+    type Error = azure_core::Error;
+    fn try_from(value: EventHubsError) -> std::result::Result<Self, Self::Error> {
+        match value.kind {
+            ErrorKind::AzureCore(e) => Ok(e),
+            _ => Err(azure_core::Error::with_message(
+                AzureErrorKind::Other,
+                "EventHubs error is not an Azure Error",
+            )),
         }
     }
 }

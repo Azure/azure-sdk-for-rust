@@ -42,10 +42,13 @@ impl RecoverableManagementClient {
         trace!("Create management session.");
         recover_azure_operation(
             || async {
-                let amqp_connection = connection
-                    .ensure_connection()
-                    .await
-                    .map_err(|e| AmqpError::from(azure_core::Error::from(e)))?;
+                let amqp_connection = connection.ensure_connection().await.map_err(|e| {
+                    AmqpError::from(azure_core::Error::with_error(
+                        AzureErrorKind::Other,
+                        e,
+                        "Error ensuring connection",
+                    ))
+                })?;
 
                 let session = AmqpSession::new();
                 session.begin(amqp_connection.as_ref(), None).await?;
@@ -58,7 +61,13 @@ impl RecoverableManagementClient {
                     .authorizer
                     .authorize_path(&connection, &management_path)
                     .await
-                    .map_err(|e| AmqpError::from(azure_core::Error::from(e)))?;
+                    .map_err(|e| {
+                        AmqpError::from(azure_core::Error::with_error(
+                            AzureErrorKind::Other,
+                            e,
+                            "Error ensuring connection",
+                        ))
+                    })?;
 
                 trace!("Create management client.");
                 let management = Arc::new(AmqpManagement::new(
@@ -106,7 +115,13 @@ impl AmqpManagementApis for RecoverableManagementClient {
                     let result = connection
                         .ensure_amqp_management()
                         .await
-                        .map_err(|e| AmqpError::from(azure_core::Error::from(e)))?
+                        .map_err(|e| {
+                            AmqpError::from(azure_core::Error::with_error(
+                                AzureErrorKind::Other,
+                                e,
+                                "Error ensuring connection",
+                            ))
+                        })?
                         .call(operation_type, application_properties)
                         .await;
                     if let Err(ref e) = result {

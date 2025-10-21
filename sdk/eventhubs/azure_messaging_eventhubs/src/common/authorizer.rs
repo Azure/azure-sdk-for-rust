@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::{
-    common::recoverable::RecoverableConnection,
-    error::{ErrorKind, EventHubsError, Result},
-};
+use crate::{common::recoverable::RecoverableConnection, error::Result};
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
@@ -13,7 +10,7 @@ use azure_core::{
     http::Url,
     time::{Duration, OffsetDateTime},
 };
-use azure_core_amqp::AmqpClaimsBasedSecurityApis as _;
+use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpError};
 use rand::{rng, Rng};
 use std::{
     collections::HashMap,
@@ -95,7 +92,7 @@ impl Authorizer {
         self: &Arc<Self>,
         connection: &Arc<RecoverableConnection>,
         path: &Url,
-    ) -> Result<AccessToken> {
+    ) -> azure_core_amqp::Result<AccessToken> {
         debug!("Authorizing path: {path}");
         let mut scopes = self.authorization_scopes.lock().await;
 
@@ -107,7 +104,7 @@ impl Authorizer {
                 .credential
                 .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
                 .await
-                .map_err(EventHubsError::from)?;
+                .map_err(AmqpError::from)?;
 
             debug!("Token for path {path} expires at {}", token.expires_on);
 
@@ -116,9 +113,10 @@ impl Authorizer {
             // insert returns some if it *fails* to insert, None if it succeeded.
             let present = scopes.insert(path.clone(), token);
             if present.is_some() {
-                return Err(EventHubsError::from(
-                    ErrorKind::UnableToAddAuthenticationToken,
-                ));
+                return Err(AmqpError::from(azure_core::Error::with_message(
+                    AzureErrorKind::Other,
+                    "Unable to add authentication token",
+                )));
             }
 
             debug!("Token verified.");
@@ -133,7 +131,12 @@ impl Authorizer {
         }
         Ok(scopes
             .get(path)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken))?
+            .ok_or_else(|| {
+                AmqpError::from(azure_core::Error::with_message(
+                    AzureErrorKind::Other,
+                    "Unable to add authentication token",
+                ))
+            })?
             .clone())
     }
 
@@ -153,7 +156,7 @@ impl Authorizer {
         connection: &Arc<RecoverableConnection>,
         url: &Url,
         new_token: &AccessToken,
-    ) -> Result<()> {
+    ) -> azure_core_amqp::Result<()> {
         // Test Hook: Disable interacting with Event Hubs service if the test doesn't want it.
         #[cfg(test)]
         {
@@ -173,7 +176,6 @@ impl Authorizer {
 
         connection
             .get_cbs_client()
-            .await?
             .authorize_path(
                 url.to_string(),
                 None,
@@ -181,7 +183,6 @@ impl Authorizer {
                 new_token.expires_on,
             )
             .await
-            .map_err(EventHubsError::from)
     }
 
     async fn refresh_tokens_task(self: Arc<Self>) {
