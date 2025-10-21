@@ -9,20 +9,24 @@
 //! 4. The retry policy respects maximum retry limits
 
 use azure_core::http::{RawResponse, StatusCode};
+use azure_core::time::Duration;
 use azure_data_cosmos::retry_policies::{
-    resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryPolicy,
+    resource_throttle_retry_policy::ResourceThrottleRetryPolicy, RetryPolicy, RetryResult,
 };
-use std::time::Duration;
 
 /// Helper function to create a mock RawResponse with a given status code
-fn create_mock_response(status: StatusCode) -> RawResponse {
+fn create_mock_response(status: StatusCode) -> azure_core::Result<RawResponse> {
     use typespec_client_core::http::headers::Headers;
 
     // Create headers
     let mut headers = Headers::new();
     headers.insert("content-type", "application/json");
 
-    RawResponse::from_bytes(status, headers, r#"{"id":12,"name":"Too Many Requests"}"#)
+    azure_core::Result::from(Ok(RawResponse::from_bytes(
+        status,
+        headers,
+        r#"{"id":12,"name":"Too Many Requests"}"#,
+    )))
 }
 
 #[tokio::test]
@@ -34,48 +38,55 @@ async fn test_retry_policy_handles_429_status() {
     let response_429 = create_mock_response(StatusCode::TooManyRequests);
 
     // First retry attempt
-    let result1 = policy.should_retry_response(&response_429).await;
-    assert!(result1.should_retry, "Should retry on first 429 response");
-    assert!(
-        result1.back_off_time > Duration::ZERO,
-        "Should have backoff time"
-    );
-    println!("First retry - backoff time: {:?}", result1.back_off_time);
+    let result1 = policy.should_retry(&response_429).await;
+    match result1 {
+        RetryResult::Retry { after } => {
+            assert!(after > Duration::ZERO, "Should have backoff time");
+            println!("First retry - backoff time: {:?}", after);
+        }
+        RetryResult::DoNotRetry => panic!("Should retry on first 429 response"),
+    }
 
     // Second retry attempt
-    let result2 = policy.should_retry_response(&response_429).await;
-    assert!(result2.should_retry, "Should retry on second 429 response");
+    let result2 = policy.should_retry(&response_429).await;
+    let backoff2 = match result2 {
+        RetryResult::Retry { after } => {
+            assert!(after > Duration::ZERO, "Should have backoff time");
+            after
+        }
+        RetryResult::DoNotRetry => panic!("Should retry on second 429 response"),
+    };
+
+    // Extract backoff1 for comparison
+    let backoff1 = match result1 {
+        RetryResult::Retry { after } => after,
+        _ => panic!("Expected retry result"),
+    };
+
     assert!(
-        result2.back_off_time > Duration::ZERO,
-        "Should have backoff time"
-    );
-    assert!(
-        result2.back_off_time >= result1.back_off_time,
+        backoff2 >= backoff1,
         "Backoff should increase with exponential backoff"
     );
-    println!("Second retry - backoff time: {:?}", result2.back_off_time);
+    println!("Second retry - backoff time: {:?}", backoff2);
 
     // Third retry attempt
-    let result3 = policy.should_retry_response(&response_429).await;
-    assert!(result3.should_retry, "Should retry on third 429 response");
-    assert!(
-        result3.back_off_time > Duration::ZERO,
-        "Should have backoff time"
-    );
-    println!("Third retry - backoff time: {:?}", result3.back_off_time);
+    let result3 = policy.should_retry(&response_429).await;
+    match result3 {
+        RetryResult::Retry { after } => {
+            assert!(after > Duration::ZERO, "Should have backoff time");
+            println!("Third retry - backoff time: {:?}", after);
+        }
+        RetryResult::DoNotRetry => panic!("Should retry on third 429 response"),
+    }
 
     // Fourth attempt should NOT retry (exceeded max_attempt_count of 3)
-    let result4 = policy.should_retry_response(&response_429).await;
-    assert!(
-        !result4.should_retry,
-        "Should NOT retry after exceeding max attempts"
-    );
-    assert_eq!(
-        result4.back_off_time,
-        Duration::ZERO,
-        "Should have zero backoff when not retrying"
-    );
-    println!("Fourth attempt - should not retry");
+    let result4 = policy.should_retry(&response_429).await;
+    match result4 {
+        RetryResult::DoNotRetry => {
+            println!("Fourth attempt - should not retry");
+        }
+        RetryResult::Retry { .. } => panic!("Should NOT retry after exceeding max attempts"),
+    }
 }
 
 #[tokio::test]
@@ -85,16 +96,13 @@ async fn test_retry_policy_does_not_retry_on_success() {
     // Simulate a 200 OK response (success)
     let response_200 = create_mock_response(StatusCode::Ok);
 
-    let result = policy.should_retry_response(&response_200).await;
-    assert!(
-        !result.should_retry,
-        "Should NOT retry on successful response"
-    );
-    assert_eq!(
-        result.back_off_time,
-        Duration::ZERO,
-        "Should have zero backoff for success"
-    );
+    let result = policy.should_retry(&response_200).await;
+    match result {
+        RetryResult::DoNotRetry => {
+            // Success - should not retry
+        }
+        RetryResult::Retry { .. } => panic!("Should NOT retry on successful response"),
+    }
 }
 
 #[tokio::test]
@@ -112,14 +120,13 @@ async fn test_retry_policy_does_not_retry_on_client_errors() {
 
     for (status, description) in test_cases {
         let response = create_mock_response(status);
-        let result = policy.should_retry_response(&response).await;
-        assert!(!result.should_retry, "Should NOT retry on {}", description);
-        assert_eq!(
-            result.back_off_time,
-            Duration::ZERO,
-            "Should have zero backoff for {}",
-            description
-        );
+        let result = policy.should_retry(&response).await;
+        match result {
+            RetryResult::DoNotRetry => {
+                // Success - should not retry on client errors
+            }
+            RetryResult::Retry { .. } => panic!("Should NOT retry on {}", description),
+        }
     }
 }
 
@@ -133,23 +140,21 @@ async fn test_retry_policy_backoff_calculation() {
     let mut previous_backoff = Duration::ZERO;
 
     for attempt in 1..=3 {
-        let result = policy.should_retry_response(&response_429).await;
-        assert!(
-            result.should_retry,
-            "Attempt {} should trigger retry",
-            attempt
-        );
-
-        if attempt > 1 {
-            // With exponential backoff, each attempt should have longer delay
-            // (though the exact multiplier depends on internal logic)
-            println!(
-                "Attempt {}: backoff = {:?} (previous = {:?})",
-                attempt, result.back_off_time, previous_backoff
-            );
+        let result = policy.should_retry(&response_429).await;
+        match result {
+            RetryResult::Retry { after } => {
+                if attempt > 1 {
+                    // With exponential backoff, each attempt should have longer delay
+                    // (though the exact multiplier depends on internal logic)
+                    println!(
+                        "Attempt {}: backoff = {:?} (previous = {:?})",
+                        attempt, after, previous_backoff
+                    );
+                }
+                previous_backoff = after;
+            }
+            RetryResult::DoNotRetry => panic!("Attempt {} should trigger retry", attempt),
         }
-
-        previous_backoff = result.back_off_time;
     }
 }
 
@@ -162,32 +167,35 @@ async fn test_retry_policy_respects_max_wait_time() {
     let response_429 = create_mock_response(StatusCode::TooManyRequests);
 
     let mut total_delay = Duration::ZERO;
-    let max_wait = Duration::from_secs(max_wait_secs);
+    let max_wait = Duration::seconds(max_wait_secs as i64);
 
     // Keep retrying until we hit the cumulative wait time limit
     for attempt in 1..=10 {
-        let result = policy.should_retry_response(&response_429).await;
+        let result = policy.should_retry(&response_429).await;
 
-        if result.should_retry {
-            total_delay += result.back_off_time;
-            println!(
-                "Attempt {}: backoff = {:?}, cumulative = {:?}",
-                attempt, result.back_off_time, total_delay
-            );
+        match result {
+            RetryResult::Retry { after } => {
+                total_delay += after;
+                println!(
+                    "Attempt {}: backoff = {:?}, cumulative = {:?}",
+                    attempt, after, total_delay
+                );
 
-            // Total cumulative delay should never exceed max_wait_time
-            assert!(
-                total_delay <= max_wait,
-                "Cumulative delay {:?} should not exceed max wait time {:?}",
-                total_delay,
-                max_wait
-            );
-        } else {
-            println!(
-                "Stopped retrying at attempt {} due to max wait time limit",
-                attempt
-            );
-            break;
+                // Total cumulative delay should never exceed max_wait_time
+                assert!(
+                    total_delay <= max_wait,
+                    "Cumulative delay {:?} should not exceed max wait time {:?}",
+                    total_delay,
+                    max_wait
+                );
+            }
+            RetryResult::DoNotRetry => {
+                println!(
+                    "Stopped retrying at attempt {} due to max wait time limit",
+                    attempt
+                );
+                break;
+            }
         }
     }
 }
@@ -208,20 +216,23 @@ async fn test_retry_counter_increments() {
     let mut retry_count = 0;
 
     for attempt in 1..=10 {
-        let result = policy.should_retry_response(&response_429).await;
+        let result = policy.should_retry(&response_429).await;
 
-        if result.should_retry {
-            retry_count += 1;
-            println!(
-                "Attempt {}: Retry #{} - backoff: {:?}",
-                attempt, retry_count, result.back_off_time
-            );
-        } else {
-            println!(
-                "Attempt {}: No more retries (total retries = {})",
-                attempt, retry_count
-            );
-            break;
+        match result {
+            RetryResult::Retry { after } => {
+                retry_count += 1;
+                println!(
+                    "Attempt {}: Retry #{} - backoff: {:?}",
+                    attempt, retry_count, after
+                );
+            }
+            RetryResult::DoNotRetry => {
+                println!(
+                    "Attempt {}: No more retries (total retries = {})",
+                    attempt, retry_count
+                );
+                break;
+            }
         }
     }
 

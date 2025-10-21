@@ -17,7 +17,7 @@ use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use url::Url;
 
-use crate::handler::retry_handler::{AbstractRetryHandler, BackOffRetryHandler};
+use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
 use crate::{
     constants,
     models::ThroughputProperties,

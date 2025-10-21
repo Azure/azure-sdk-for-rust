@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::retry_policies::BaseRetryPolicy;
+use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
+use crate::retry_policies::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
 use azure_core::http::{request::Request, RawResponse};
-use std::time::Duration;
-use tokio::time::sleep;
+use std::sync::Arc;
+use typespec_client_core::async_runtime::get_async_runtime;
 
 // Helper trait to conditionally require Send on non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
@@ -26,11 +27,11 @@ impl<T> CosmosConditionalSend for T {}
 #[allow(dead_code)]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-pub trait AbstractRetryHandler: Send + Sync {
+pub trait RetryHandler: Send + Sync {
     /// Sends an HTTP request with automatic retry logic
     ///
     /// This method wraps the provided sender callback with retry logic, automatically
-    /// handling transient failures and implementing exponential  back off. The method
+    /// handling transient failures and implementing exponential backoff. The method
     /// will continue retrying until either:
     /// - The request succeeds (non-error 2xx status)
     /// - The retry policy determines no more retries should be attempted
@@ -63,40 +64,58 @@ pub trait AbstractRetryHandler: Send + Sync {
 /// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
-pub struct BackOffRetryHandler {
-    base_retry_policy: BaseRetryPolicy,
-}
+pub struct BackOffRetryHandler {}
 
 impl BackOffRetryHandler {
-    /// Creates a new retry handler with default retry policies
+
+    /// Creates a new instance of `BackOffRetryHandler`
     ///
-    /// Initializes a `BackoffRetryHandler` with a `BaseRetryPolicy` using default
-    /// configuration values:
-    /// - Max throttle retry count: 3
-    /// - Max throttle wait time: 100 seconds
-    /// - Throttle back off factor: 30
+    /// This constructor initializes a retry handler with exponential backoff capabilities.
+    /// The handler will dynamically select appropriate retry policies based on the request
+    /// characteristics (e.g., `ResourceThrottleRetryPolicy` for rate limiting scenarios).
+    ///
+    /// # Returns
+    ///
+    /// A new `BackOffRetryHandler` instance ready to handle request retries with
+    /// automatic policy selection and exponential backoff logic.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use azure_data_cosmos::handler::retry_handler::BackOffRetryHandler;
+    ///
+    /// let retry_handler = BackOffRetryHandler::new();
+    /// // Use retry_handler.send() to make requests with automatic retry
+    /// ```
     pub fn new() -> Self {
-        Self {
-            base_retry_policy: BaseRetryPolicy::new(),
-        }
+        Self {}
+    }
+
+    /// Returns the appropriate retry policy based on the request
+    ///
+    /// This method examines the underlying operation and resource types and determines
+    /// retry policy should be used for this specific request.
+    /// # Arguments
+    /// * `request` - The HTTP request to analyze
+    pub fn get_policy_for_request(&self, _request: &Request) -> Arc<dyn RetryPolicy> {
+        // For now, always return ResourceThrottleRetryPolicy. Future implementation should check
+        // the request operation type and resource type and accordingly return the respective retry
+        // policy.
+        Arc::new(ResourceThrottleRetryPolicy::new(5, 200, 10))
     }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-impl AbstractRetryHandler for BackOffRetryHandler {
+impl RetryHandler for BackOffRetryHandler {
     /// Sends an HTTP request with automatic retry and exponential back off
     ///
-    /// This implementation of the `AbstractRetryHandler::send` method provides robust
-    /// retry logic with the following behavior:
+    /// This implementation of the `RetryHandler::send` method provides robust
+    /// retry logic.
     ///
     /// # Arguments
     /// * `request` - Mutable HTTP request (may be modified by retry policy between attempts)
     /// * `sender` - Callback that performs the actual HTTP request
-    ///
-    /// # Returns
-    /// * `Ok(RawResponse)` - Successful response (may be from initial or retry attempt)
-    /// * `Err(Error)` - Final error after all retry attempts exhausted
     async fn send<Sender, Fut>(
         &self,
         request: &mut Request,
@@ -107,42 +126,17 @@ impl AbstractRetryHandler for BackOffRetryHandler {
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + CosmosConditionalSend,
     {
         // Get the appropriate retry policy based on the request
-        let retry_policy = self.base_retry_policy.get_policy_for_request(request);
+        let retry_policy = self.get_policy_for_request(request);
         retry_policy.on_before_send_request(request);
 
         loop {
             // Invoke the provided sender callback instead of calling inner_send_async directly
             let result = sender(request).await;
+            let retry_result = retry_policy.should_retry(&result).await;
 
-            match &result {
-                Ok(resp) => {
-                    if resp.status().is_server_error() || resp.status().is_client_error() {
-                        let retry_result = retry_policy.should_retry_response(resp).await;
-                        if !retry_result.should_retry {
-                            return result;
-                        }
-
-                        if retry_result.back_off_time > Duration::ZERO {
-                            tracing::warn!(
-                                "Retry back off requested for {:?}.",
-                                retry_result.back_off_time
-                            );
-                            sleep(retry_result.back_off_time).await;
-                        }
-                    } else {
-                        // Success - return immediately
-                        return result;
-                    }
-                }
-                Err(err) => {
-                    let retry_result = retry_policy.should_retry_exception(err).await;
-                    if !retry_result.should_retry {
-                        return result;
-                    }
-                    if retry_result.back_off_time > Duration::ZERO {
-                        sleep(retry_result.back_off_time).await;
-                    }
-                }
+            match retry_result {
+                RetryResult::DoNotRetry => return result,
+                RetryResult::Retry { after } => get_async_runtime().sleep(after).await,
             }
         }
     }

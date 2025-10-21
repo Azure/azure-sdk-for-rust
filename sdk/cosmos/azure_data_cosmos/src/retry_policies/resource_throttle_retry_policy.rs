@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{RetryPolicy, ShouldRetryResult};
+use super::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
 use azure_core::http::{RawResponse, StatusCode};
+use azure_core::time::Duration;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::time::Duration;
 use typespec_client_core::http::Request;
 
 /// Retry policy for handling resource throttling (429 TooManyRequests) errors
@@ -14,13 +14,6 @@ use typespec_client_core::http::Request;
 /// This policy implements exponential backoff for 429 status codes, respecting both
 /// maximum retry attempts and cumulative wait time limits. It's designed to handle
 /// Azure Cosmos DB throttling scenarios where the service limits request rates.
-///
-/// # Features
-/// - Exponential backoff with configurable delay factor
-/// - Maximum retry attempt limit
-/// - Cumulative wait time tracking to prevent excessive delays
-/// - Thread-safe retry counter using atomic operations
-///
 /// # Example
 /// ```
 /// use azure_data_cosmos::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
@@ -54,27 +47,16 @@ impl ResourceThrottleRetryPolicy {
     /// ```
     pub fn new(
         max_attempt_count: usize,
-        max_wait_time_secs: u64,
+        max_wait_time_secs: i64,
         backoff_delay_factor: u32,
     ) -> Self {
         Self {
             max_attempt_count,
             backoff_delay_factor,
-            max_wait_time: Duration::from_secs(max_wait_time_secs),
+            max_wait_time: Duration::seconds(max_wait_time_secs),
             current_attempt_count: AtomicUsize::new(0),
             cumulative_retry_delay: Arc::new(AtomicUsize::new(0)),
         }
-    }
-
-    /// Checks if the given HTTP status code indicates resource throttling
-    ///
-    /// # Arguments
-    /// * `status_code` - The HTTP status code to check
-    ///
-    /// # Returns
-    /// `true` if the status code is 429 (TooManyRequests), `false` otherwise
-    fn is_valid_throttle_status_code(&self, status_code: StatusCode) -> bool {
-        status_code == StatusCode::TooManyRequests
     }
 
     /// Determines if a retry should be attempted based on timing constraints
@@ -86,72 +68,40 @@ impl ResourceThrottleRetryPolicy {
     /// * `retry_after` - Optional duration suggested by the server (from Retry-After header)
     ///
     /// # Returns
-    /// A tuple of (should_retry: bool, retry_delay: Duration)
-    /// - `should_retry`: true if retry is allowed within timing constraints
-    /// - `retry_delay`: The calculated delay duration (with backoff applied)
-    fn check_if_retry_needed(&self, retry_after: Option<Duration>) -> (bool, Duration) {
-        let mut retry_delay = retry_after.unwrap_or(Duration::from_secs(0));
-        if self.backoff_delay_factor > 1 {
-            retry_delay *= self.backoff_delay_factor;
-        }
+    /// A `RetryResult` indicating if the request can be retried.`
+    fn check_if_retry_needed(&self, retry_after: Option<Duration>) -> RetryResult {
+        let retry_delay = retry_after.unwrap_or(Duration::seconds(5)) * self.backoff_delay_factor;
+
         let cumulative = self.cumulative_retry_delay.load(Ordering::Relaxed) as u64;
-        let new_cumulative = cumulative + retry_delay.as_millis() as u64;
+        let cumulative = cumulative + retry_delay.as_seconds_f64() as u64;
+
         if retry_delay < self.max_wait_time
-            && new_cumulative <= self.max_wait_time.as_millis() as u64
+            && cumulative <= self.max_wait_time.as_seconds_f64() as u64
         {
-            if retry_delay == Duration::ZERO {
-                retry_delay = Duration::from_secs(5);
-            }
             self.cumulative_retry_delay
-                .store(new_cumulative as usize, Ordering::Relaxed);
-            return (true, retry_delay);
+                .store(cumulative as usize, Ordering::Relaxed);
+            return RetryResult::Retry { after: retry_delay };
         }
-        (false, Duration::ZERO)
+        RetryResult::DoNotRetry
     }
 
-    /// Common retry logic for both exceptions and responses with exponential backoff
+    /// Common retry logic for both errors and responses with exponential backoff
     ///
     /// This method encapsulates the shared retry decision logic used by both
-    /// `should_retry_exception` and `should_retry_response`. It provides a centralized
-    /// place for retry decision making to ensure consistency across different failure modes.
-    ///
-    /// # Retry Logic
-    /// 1. Checks if current attempt count is below `max_attempt_count`
-    /// 2. Calculates exponential backoff delay using `backoff_delay_factor`
-    /// 3. Verifies cumulative delay doesn't exceed `max_wait_time`
-    /// 4. Increments attempt counter atomically if retry is approved
-    ///
-    /// # Arguments
-    /// * `retry_after` - Optional duration to wait before retrying (from server header or default)
-    ///
-    /// # Returns
-    /// `ShouldRetryResult` containing:
-    /// - `should_retry`: true if retry is approved, false otherwise
-    /// - `backoff_time`: The calculated delay duration (0 if not retrying)
-    fn should_retry_with_backoff(&self, retry_after: Option<Duration>) -> ShouldRetryResult {
+    /// `should_retry_error` and `should_retry_response`. It provides a centralized
+    /// place for retry decision-making to ensure consistency across different failure modes.
+    fn should_retry_with_backoff(&self, retry_after: Option<Duration>) -> RetryResult {
         let attempt = self.current_attempt_count.load(Ordering::Relaxed);
         if attempt < self.max_attempt_count {
-            let (should_retry, delay) = self.check_if_retry_needed(retry_after);
-            if should_retry {
+            let retry_result = self.check_if_retry_needed(retry_after);
+
+            if matches!(retry_result, RetryResult::Retry { .. }) {
                 self.current_attempt_count.fetch_add(1, Ordering::Relaxed);
-                return ShouldRetryResult::retry_after(delay);
+                return retry_result;
             }
         }
-        ShouldRetryResult::no_retry()
-    }
-}
 
-#[async_trait]
-impl RetryPolicy for ResourceThrottleRetryPolicy {
-    /// Hook called before each request is sent (including retries)
-    ///
-    /// Currently a no-op for this policy. Future implementations may add
-    /// request-specific headers or logging here.
-    ///
-    /// # Arguments
-    /// * `_request` - Mutable reference to the HTTP request being sent
-    fn on_before_send_request(&self, _request: &mut Request) {
-        // At the moment, this is a No-op for the policy.
+        RetryResult::DoNotRetry
     }
 
     /// Determines whether to retry an operation that failed with an exception
@@ -164,26 +114,24 @@ impl RetryPolicy for ResourceThrottleRetryPolicy {
     /// * `err` - The error that occurred during the operation
     ///
     /// # Returns
-    /// `ShouldRetryResult` with:
-    /// - `should_retry`: true if error is 429 and retry limits not exceeded
-    /// - `backoff_time`: Calculated delay with exponential backoff
+    /// A `RetryResult` indicating if the request can be retried.
     ///
     /// # Note
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the error context.
-    async fn should_retry_exception(&self, err: &azure_core::Error) -> ShouldRetryResult {
+    fn should_retry_error(&self, err: &azure_core::Error) -> RetryResult {
         // Check if the error has an HTTP status code and if it's a valid throttle status
         // Early return for invalid or missing status codes
         let status = err
             .http_status()
-            .filter(|&s| self.is_valid_throttle_status_code(s));
+            .filter(|&s| s == StatusCode::TooManyRequests);
         if status.is_none() {
             // For non-HTTP errors or non-throttle status codes, don't retry
-            return ShouldRetryResult::no_retry();
+            return RetryResult::DoNotRetry;
         }
 
         // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
-        self.should_retry_with_backoff(Some(Duration::from_millis(500)))
+        self.should_retry_with_backoff(Some(Duration::milliseconds(500)))
     }
 
     /// Determines whether to retry an operation based on the HTTP response
@@ -196,20 +144,59 @@ impl RetryPolicy for ResourceThrottleRetryPolicy {
     /// * `response` - The HTTP response received from the server
     ///
     /// # Returns
-    /// `ShouldRetryResult` with:
-    /// - `should_retry`: true if status is 429 and retry limits not exceeded
-    /// - `backoff_time`: Calculated delay with exponential backoff
+    /// A `RetryResult` indicating if the request can be retried.
     ///
     /// # Note
     /// Currently uses a fixed 500ms base retry delay. Future versions may parse
     /// the `x-ms-retry-after-ms` header from the response headers to respect
     /// server-suggested retry delays.
-    async fn should_retry_response(&self, response: &RawResponse) -> ShouldRetryResult {
-        if !self.is_valid_throttle_status_code(response.status()) {
-            return ShouldRetryResult::no_retry();
+    fn should_retry_response(&self, response: &RawResponse) -> RetryResult {
+        if response.status() != StatusCode::TooManyRequests {
+            return RetryResult::DoNotRetry;
         }
 
         // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
-        self.should_retry_with_backoff(Some(Duration::from_millis(500)))
+        self.should_retry_with_backoff(Some(Duration::milliseconds(500)))
+    }
+}
+
+#[async_trait]
+impl RetryPolicy for ResourceThrottleRetryPolicy {
+    /// Hook called before each request is sent (including retries)
+    ///
+    /// Currently, a no-op for this policy. Future implementations may add
+    /// request-specific headers or logging here.
+    ///
+    /// # Arguments
+    /// * `_request` - Mutable reference to the HTTP request being sent
+    fn on_before_send_request(&self, _request: &mut Request) {
+        // At the moment, this is a No-op for the policy.
+    }
+
+    /// Determines whether an HTTP request should be retried based on the response or error
+    ///
+    /// This method evaluates the result of an HTTP request attempt and decides whether
+    /// the operation should be retried, and if so, how long to wait before the next attempt.
+    ///
+    /// # Arguments
+    ///
+    /// * `response` - A reference to the result of the HTTP request attempt. This can be:
+    ///   - `Ok(RawResponse)` - A successful HTTP response (which may still indicate an error via status code)
+    ///   - `Err(azure_core::Error)` - A network or client-side error
+    ///
+    /// # Returns
+    ///
+    /// A `RetryResult` indicating the retry decision.
+    async fn should_retry(&self, response: &azure_core::Result<RawResponse>) -> RetryResult {
+        match response {
+            Ok(resp) => {
+                if resp.status().is_server_error() || resp.status().is_client_error() {
+                    return self.should_retry_response(resp);
+                }
+
+                RetryResult::DoNotRetry
+            }
+            Err(err) => self.should_retry_error(err),
+        }
     }
 }

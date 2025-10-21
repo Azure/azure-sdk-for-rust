@@ -22,7 +22,6 @@ serde.workspace = true
 tracing.workspace = true
 typespec_client_core = { workspace = true, features = ["derive"] }
 url.workspace = true
-tokio = { workspace = true, features = ["time"] }
 
 [dev-dependencies]
 azure_identity.workspace = true
