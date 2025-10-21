@@ -30,7 +30,7 @@ serde_amqp = { workspace = true, optional = true }
 serde_bytes = { workspace = true, optional = true }
 tokio.workspace = true
 tracing.workspace = true
-typespec = { workspace = true, features = ["amqp"] }
+typespec.workspace = true
 typespec_macros.workspace = true
 
 [dev-dependencies]

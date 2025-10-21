@@ -9,12 +9,12 @@ use super::{
     CheckpointStore, ProcessorStrategy,
 };
 use crate::{
-    models::ConsumerClientDetails, ConsumerClient, OpenReceiverOptions, StartLocation,
-    StartPosition,
+    error::Result, models::ConsumerClientDetails, ConsumerClient, EventHubsError,
+    OpenReceiverOptions, StartLocation, StartPosition,
 };
 //use async_io::Timer;
 use async_lock::Mutex as AsyncMutex;
-use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration, Error, Result};
+use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration, Error};
 use futures::{
     channel::mpsc::{channel, Receiver, Sender},
     SinkExt, StreamExt,
@@ -361,7 +361,8 @@ impl EventProcessor {
             return Err(Error::with_message(
                 AzureErrorKind::Other,
                 "Consumers map is no longer valid.",
-            ));
+            )
+            .into());
         }
 
         // Since we can only have a single EventReceiver on a partition, we don't actually attempt to create the receiver until
@@ -394,19 +395,12 @@ impl EventProcessor {
         // Send the partition client to the next partition client receiver
         {
             let mut sender = self.next_partition_client_sender.clone();
-            let r = sender.send(partition_client).await.map_err(|e| {
-                azure_core::Error::with_message(
+            sender.send(partition_client).await.map_err(|e| {
+                EventHubsError::from(azure_core::Error::with_message(
                     AzureErrorKind::Other,
                     format!("Failed to send partition client: {:?}", e),
-                )
-            });
-            if let Err(e) = r {
-                info!("Failed to send partition client: {:?}", e);
-                return Err(Error::with_message(
-                    AzureErrorKind::Other,
-                    "Failed to send partition client",
-                ));
-            }
+                ))
+            })?;
         }
         info!(
             "add_partition_client: Partition client added for partition: {:?}",
@@ -545,9 +539,8 @@ impl EventProcessor {
 
 pub mod builders {
     use super::{CheckpointStore, EventProcessor};
-    use crate::event_processor::models::StartPositions;
-    use crate::ConsumerClient;
-    use azure_core::{time::Duration, Result};
+    use crate::{error::Result, event_processor::models::StartPositions, ConsumerClient};
+    use azure_core::time::Duration;
     use std::sync::Arc;
 
     const DEFAULT_PREFETCH: u32 = 300;

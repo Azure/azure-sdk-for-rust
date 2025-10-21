@@ -1,11 +1,13 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::messaging::{AmqpDelivery, AmqpSource, AmqpTarget};
-use super::session::AmqpSession;
-use super::value::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
-use super::ReceiverSettleMode;
-use azure_core::error::Result;
+use crate::{
+    error::Result,
+    messaging::{AmqpDelivery, AmqpSource, AmqpTarget},
+    session::AmqpSession,
+    value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
+    ReceiverSettleMode,
+};
 
 #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 type ReceiverImplementation = super::fe2o3::receiver::Fe2o3AmqpReceiver;

@@ -6,7 +6,7 @@ use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::models::StartPositions;
 use azure_messaging_eventhubs::{
     ConsumerClient, EventProcessor, InMemoryCheckpointStore, ProcessorStrategy, ProducerClient,
-    SendEventOptions, StartLocation, StartPosition,
+    Result, SendEventOptions, StartLocation, StartPosition,
 };
 use futures::StreamExt;
 use std::collections::HashMap;
@@ -101,7 +101,7 @@ async fn create_processor(
     consumer_client: ConsumerClient,
     update_interval: Duration,
     start_positions: Option<StartPositions>,
-) -> azure_core::Result<Arc<EventProcessor>> {
+) -> Result<Arc<EventProcessor>> {
     let mut builder = EventProcessor::builder()
         .with_load_balancing_strategy(ProcessorStrategy::Balanced)
         .with_update_interval(update_interval)
@@ -117,7 +117,7 @@ async fn create_processor(
 
 async fn start_processor_running(
     event_processor: &Arc<EventProcessor>,
-) -> JoinHandle<azure_core::Result<()>> {
+) -> JoinHandle<azure_messaging_eventhubs::Result<()>> {
     let event_processor = Arc::clone(event_processor);
     tokio::spawn(async move { event_processor.run().await })
 }

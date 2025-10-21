@@ -1,12 +1,17 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
 use std::str::FromStr;
 
-use crate::{AmqpOrderedMap, AmqpSymbol, AmqpValue};
+/// A convenience alias for `Result` where the error type is hard coded to [`AmqpError`].
+pub type Result<T> = std::result::Result<T, AmqpError>;
 
 /// Type of AMQP error.
 pub enum AmqpErrorKind {
+    /// Azure Core error.
+    AzureCore(azure_core::Error),
+
     /// Described error - An error described by the remote peer.
     AmqpDescribedError(AmqpDescribedError),
 
@@ -53,6 +58,9 @@ pub enum AmqpErrorKind {
     DetachError(Box<dyn std::error::Error + Send + Sync>),
     /// Transport Implementation Error
     TransportImplementationError(Box<dyn std::error::Error + Send + Sync>),
+
+    /// A send was rejected.
+    SendRejected,
 }
 
 /// AMQP protocol defined error conditions
@@ -399,6 +407,12 @@ impl From<AmqpSymbol> for AmqpErrorCondition {
     }
 }
 
+impl From<azure_core::Error> for AmqpError {
+    fn from(error: azure_core::Error) -> Self {
+        AmqpErrorKind::AzureCore(error).into()
+    }
+}
+
 /// An AMQP described error.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AmqpDescribedError {
@@ -489,13 +503,15 @@ impl std::error::Error for AmqpError {
             | AmqpErrorKind::ConnectionDetachedByRemote(s)
             | AmqpErrorKind::LinkStateError(s)
             | AmqpErrorKind::ConnectionDropped(s) => Some(s.as_ref()),
-            AmqpErrorKind::ManagementStatusCode(_, _) => None,
+            AmqpErrorKind::AzureCore(e) => Some(e),
             AmqpErrorKind::TransferLimitExceeded(e) => Some(e.as_ref()),
             AmqpErrorKind::FramingError(e) => Some(e.as_ref()),
             AmqpErrorKind::IdleTimeoutElapsed(e) => Some(e.as_ref()),
-            AmqpErrorKind::NonTerminalDeliveryState => None,
-            AmqpErrorKind::IllegalDeliveryState => None,
-            AmqpErrorKind::AmqpDescribedError(_) => None,
+            AmqpErrorKind::ManagementStatusCode(_, _)
+            | AmqpErrorKind::NonTerminalDeliveryState
+            | AmqpErrorKind::IllegalDeliveryState
+            | AmqpErrorKind::SendRejected
+            | AmqpErrorKind::AmqpDescribedError(_) => None,
         }
     }
 }
@@ -503,6 +519,9 @@ impl std::error::Error for AmqpError {
 impl std::fmt::Display for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
+            AmqpErrorKind::AzureCore(e) => {
+                write!(f, "Azure Core Error: {}", e)
+            }
             AmqpErrorKind::ManagementStatusCode(status_code, d) => {
                 if let Some(d) = d {
                     write!(
@@ -534,6 +553,9 @@ impl std::fmt::Display for AmqpError {
             }
             AmqpErrorKind::DetachError(err) => {
                 write!(f, "AMQP Detach Error: {} ", err)
+            }
+            AmqpErrorKind::SendRejected => {
+                write!(f, "AMQP Send Rejected with no error information")
             }
             AmqpErrorKind::TransportImplementationError(s) => {
                 write!(f, "Transport Implementation Error: {}", s)
@@ -577,17 +599,5 @@ impl std::fmt::Debug for AmqpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "AmqpError: {}", self)?;
         Ok(())
-    }
-}
-
-impl From<AmqpError> for azure_core::Error {
-    fn from(e: AmqpError) -> Self {
-        Self::new(azure_core::error::ErrorKind::Amqp, e)
-    }
-}
-
-impl From<AmqpErrorKind> for azure_core::Error {
-    fn from(e: AmqpErrorKind) -> Self {
-        AmqpError::from(e).into()
     }
 }

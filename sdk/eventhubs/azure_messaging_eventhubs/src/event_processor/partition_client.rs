@@ -3,16 +3,17 @@
 
 use super::processor::ProcessorConsumersMap;
 use crate::{
+    error::Result,
     models::{Checkpoint, ConsumerClientDetails, ReceivedEventData},
     processor::CheckpointStore,
     EventReceiver,
 };
-use azure_core::Result;
-use azure_core_amqp::message::AmqpAnnotationKey;
-use azure_core_amqp::AmqpValue;
+use azure_core_amqp::{message::AmqpAnnotationKey, AmqpValue};
 use futures::Stream;
-use std::pin::Pin;
-use std::sync::{Arc, OnceLock, Weak};
+use std::{
+    pin::Pin,
+    sync::{Arc, OnceLock, Weak},
+};
 use tracing::{debug, trace, warn};
 
 /// Represents a client for interacting with a specific partition in Event Hubs.
@@ -62,7 +63,7 @@ impl PartitionClient {
     ///
     /// # Returns
     /// A stream of `Result<ReceivedEventData>` representing the received events.
-    pub fn stream_events(&self) -> impl Stream<Item = azure_core::Result<ReceivedEventData>> + '_ {
+    pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
         let event_receiver = self.event_receiver.get();
         if let Some(event_receiver) = event_receiver {
             Box::pin(event_receiver.stream_events())
@@ -73,7 +74,8 @@ impl PartitionClient {
                 Err(azure_core::error::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     "Event receiver is not set for this partition.",
-                ))
+                )
+                .into())
             }))
         }
     }
@@ -163,7 +165,16 @@ impl PartitionClient {
             offset: offset_option,
             sequence_number: sequence_number_option,
         };
-        self.checkpoint_store.update_checkpoint(checkpoint).await
+        self.checkpoint_store
+            .update_checkpoint(checkpoint)
+            .await
+            .map_err(|e| {
+                e.with_context(format!(
+                    "Failed to update checkpoint for partition {}",
+                    self.partition_id
+                ))
+                .into()
+            })
     }
 
     pub(crate) fn set_event_receiver(&self, event_receiver: EventReceiver) -> Result<()> {

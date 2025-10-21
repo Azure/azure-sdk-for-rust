@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use super::recoverable::RecoverableConnection;
-use crate::error::{ErrorKind, EventHubsError};
+use crate::{
+    common::recoverable::RecoverableConnection,
+    error::{ErrorKind, EventHubsError, Result},
+};
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
@@ -10,7 +12,6 @@ use azure_core::{
     error::ErrorKind as AzureErrorKind,
     http::Url,
     time::{Duration, OffsetDateTime},
-    Result,
 };
 use azure_core_amqp::AmqpClaimsBasedSecurityApis as _;
 use rand::{rng, Rng};
@@ -105,7 +106,8 @@ impl Authorizer {
             let token = self
                 .credential
                 .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                .await?;
+                .await
+                .map_err(EventHubsError::from)?;
 
             debug!("Token for path {path} expires at {}", token.expires_on);
 
@@ -114,7 +116,9 @@ impl Authorizer {
             // insert returns some if it *fails* to insert, None if it succeeded.
             let present = scopes.insert(path.clone(), token);
             if present.is_some() {
-                return Err(EventHubsError::from(ErrorKind::UnableToAddAuthenticationToken).into());
+                return Err(EventHubsError::from(
+                    ErrorKind::UnableToAddAuthenticationToken,
+                ));
             }
 
             debug!("Token verified.");
@@ -177,6 +181,7 @@ impl Authorizer {
                 new_token.expires_on,
             )
             .await
+            .map_err(EventHubsError::from)
     }
 
     async fn refresh_tokens_task(self: Arc<Self>) {

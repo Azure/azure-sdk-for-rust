@@ -99,7 +99,7 @@ async fn consumer_error(ctx: TestContext) -> azure_core::Result<()> {
             trace!("Consumer closed successfully");
         }
         Err(e) => {
-            return Err(e);
+            return Err(e.into());
         }
     }
 

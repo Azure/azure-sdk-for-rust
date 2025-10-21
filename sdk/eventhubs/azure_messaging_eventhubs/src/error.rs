@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 // Licensed under the MIT License.
 
-use azure_core_amqp::AmqpDescribedError;
+use azure_core_amqp::{AmqpDescribedError, AmqpError};
+
+/// A specialized `Result` type for Event Hubs operations.
+pub type Result<T> = std::result::Result<T, EventHubsError>;
 
 /// Represents the different kinds of errors that can occur in the Eventhubs module.
 #[derive(Debug)]
@@ -37,10 +40,13 @@ pub enum ErrorKind {
     /// The message was rejected.
     SendRejected(Option<AmqpDescribedError>),
 
+    /// Represents an Azure Core error
+    AzureCore(azure_core::Error),
+
     /// Represents the source of the AMQP error.
     /// This is used to wrap an AMQP error in an Even Hubs error.
     ///
-    AmqpError(Box<dyn std::error::Error + Send + Sync>),
+    AmqpError(AmqpError),
 }
 
 /// Represents an error that can occur in the Event Hubs module.
@@ -52,7 +58,8 @@ pub struct EventHubsError {
 impl std::error::Error for EventHubsError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
-            ErrorKind::AmqpError(source) => Some(source.as_ref()),
+            ErrorKind::AmqpError(source) => Some(source),
+            ErrorKind::AzureCore(e) => Some(e),
             _ => None,
         }
     }
@@ -61,6 +68,7 @@ impl std::error::Error for EventHubsError {
 impl std::fmt::Display for EventHubsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
+            ErrorKind::AzureCore(e) => write!(f, "Azure Core Error: {}", e),
             ErrorKind::UnableToAddConnection => f.write_str("Unable to add connection."),
             ErrorKind::MissingMessageSender => f.write_str("Missing message sender."),
             ErrorKind::MissingMessageReceiver => f.write_str("Missing message receiver."),
@@ -95,5 +103,21 @@ impl From<EventHubsError> for azure_core::Error {
 impl From<ErrorKind> for EventHubsError {
     fn from(kind: ErrorKind) -> Self {
         Self { kind }
+    }
+}
+
+impl From<AmqpError> for EventHubsError {
+    fn from(e: AmqpError) -> Self {
+        Self {
+            kind: ErrorKind::AmqpError(e),
+        }
+    }
+}
+
+impl From<azure_core::Error> for EventHubsError {
+    fn from(e: azure_core::Error) -> Self {
+        Self {
+            kind: ErrorKind::AzureCore(e),
+        }
     }
 }

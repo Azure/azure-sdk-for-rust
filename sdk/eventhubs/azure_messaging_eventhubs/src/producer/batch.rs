@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use std::sync::Mutex;
-
 use super::ProducerClient;
-
-use crate::models::EventData;
-use azure_core::{error::Result, http::Url, Error, Uuid};
+use crate::{error::Result, models::EventData, EventHubsError};
+use azure_core::{http::Url, Error, Uuid};
 use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
+use std::sync::Mutex;
 use tracing::debug;
 
 /// Represents the options that can be set when adding event data to an [`EventDataBatch`].
@@ -117,11 +115,12 @@ impl<'a> EventDataBatch<'a> {
         self.len() == 0
     }
 
-    fn arithmetic_error() -> azure_core::Error {
+    fn arithmetic_error() -> EventHubsError {
         azure_core::Error::with_message(
             azure_core::error::ErrorKind::DataConversion,
             "Arithmetic error calculating Batch size.",
         )
+        .into()
     }
 
     fn calculate_actual_size_for_payload(length: usize) -> Result<u64> {
@@ -296,7 +295,7 @@ impl<'a> EventDataBatch<'a> {
         if let Some(partition_id) = self.partition_id.as_ref() {
             let batch_path = format!("{}/Partitions/{}", self.producer.base_url(), partition_id);
 
-            Url::parse(&batch_path).map_err(azure_core::Error::from)
+            Url::parse(&batch_path).map_err(|e| azure_core::Error::from(e).into())
         } else {
             Ok(self.producer.base_url().clone())
         }

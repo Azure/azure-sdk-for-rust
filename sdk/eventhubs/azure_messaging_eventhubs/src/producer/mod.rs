@@ -6,11 +6,12 @@ use crate::{
         recoverable::{RecoverableConnection, RecoverableSender},
         ManagementInstance,
     },
+    error::Result,
     models::{AmqpMessage, EventData, EventHubPartitionProperties, EventHubProperties},
-    RetryOptions,
+    EventHubsError, RetryOptions,
 };
 use azure_core::{
-    error::{Error, ErrorKind as AzureErrorKind, Result},
+    error::{Error, ErrorKind as AzureErrorKind},
     http::Url,
     Uuid,
 };
@@ -220,14 +221,16 @@ impl ProducerClient {
                 trace!("Send was rejected: {:?}", reason);
                 if let Some(reason) = reason {
                     return Err(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
+                        azure_core::error::ErrorKind::Other,
                         AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)),
-                    ));
+                    )
+                    .into());
                 }
                 Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Amqp,
+                    azure_core::error::ErrorKind::Other,
                     "Send was rejected by the Event Hub.",
-                ))
+                )
+                .into())
             }
             AmqpSendOutcome::Modified(reason) => {
                 trace!("Send was modified: {:?}", reason);
@@ -336,15 +339,15 @@ impl ProducerClient {
             AmqpSendOutcome::Rejected(reason) => {
                 trace!("Batch was rejected: {:?}", reason);
                 if let Some(reason) = reason {
-                    return Err(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)),
-                    ));
+                    return Err(EventHubsError::from(AmqpError::from(
+                        AmqpErrorKind::AmqpDescribedError(reason),
+                    )));
                 }
                 Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Amqp,
+                    azure_core::error::ErrorKind::Other,
                     "Batch was rejected by the Event Hub.",
-                ))
+                )
+                .into())
             }
             AmqpSendOutcome::Modified(reason) => {
                 trace!("Batch was modified: {:?}", reason);
@@ -427,7 +430,7 @@ impl ProducerClient {
 
     /// Forces an error on the connection.
     #[cfg(test)]
-    pub fn force_error(&self, error: azure_core::Error) -> Result<()> {
+    pub fn force_error(&self, error: AmqpError) -> Result<()> {
         self.connection.force_error(error)
     }
 
@@ -630,14 +633,11 @@ mod tests {
             },
             |producer| {
                 producer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::LinkClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
-                                azure_core::error::ErrorKind::Other,
-                                "Forced error",
-                            )),
-                        )),
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::LinkClosedByRemote(Box::new(azure_core::error::Error::new(
+                            azure_core::error::ErrorKind::Other,
+                            "Forced error",
+                        ))),
                     ))
                     .unwrap();
             },
@@ -697,13 +697,12 @@ mod tests {
             },
             |producer| {
                 producer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::SessionDetachedByRemote(
-                            Box::new(azure_core::error::Error::new(
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::SessionDetachedByRemote(Box::new(
+                            azure_core::error::Error::new(
                                 azure_core::error::ErrorKind::Other,
                                 "Forced error",
-                            )),
+                            ),
                         )),
                     ))
                     .unwrap();
@@ -764,13 +763,12 @@ mod tests {
             },
             |producer| {
                 producer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::ConnectionClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::ConnectionClosedByRemote(Box::new(
+                            azure_core::error::Error::new(
                                 azure_core::error::ErrorKind::Other,
                                 "Forced error",
-                            )),
+                            ),
                         )),
                     ))
                     .unwrap();
@@ -809,13 +807,12 @@ mod tests {
             },
             |producer| {
                 producer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::ConnectionClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::ConnectionClosedByRemote(Box::new(
+                            azure_core::error::Error::new(
                                 azure_core::error::ErrorKind::Other,
                                 "Forced error",
-                            )),
+                            ),
                         )),
                     ))
                     .unwrap();
@@ -854,13 +851,12 @@ mod tests {
             },
             |producer| {
                 producer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::SessionClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::SessionClosedByRemote(Box::new(
+                            azure_core::error::Error::new(
                                 azure_core::error::ErrorKind::Other,
                                 "Forced error",
-                            )),
+                            ),
                         )),
                     ))
                     .unwrap();
@@ -899,14 +895,11 @@ mod tests {
             },
             |producer| {
                 producer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::LinkClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
-                                azure_core::error::ErrorKind::Other,
-                                "Forced error",
-                            )),
-                        )),
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::LinkClosedByRemote(Box::new(azure_core::error::Error::new(
+                            azure_core::error::ErrorKind::Other,
+                            "Forced error",
+                        ))),
                     ))
                     .unwrap();
             },

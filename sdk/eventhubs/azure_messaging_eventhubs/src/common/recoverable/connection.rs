@@ -13,12 +13,13 @@ use crate::{
         retry::ErrorRecoveryAction,
         user_agent::{get_package_name, get_package_version, get_platform_info, get_user_agent},
     },
+    error::Result,
     models::AmqpValue,
     producer::DEFAULT_EVENTHUBS_APPLICATION,
     ErrorKind, EventHubsError, RetryOptions,
 };
 use async_lock::Mutex as AsyncMutex;
-use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Result, Uuid};
+use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
@@ -84,7 +85,7 @@ pub(crate) struct RecoverableConnection {
     pub(super) retry_options: RetryOptions,
 
     #[cfg(test)]
-    forced_error: Mutex<Option<azure_core::Error>>,
+    forced_error: Mutex<Option<AmqpError>>,
 }
 
 unsafe impl Send for RecoverableConnection {}
@@ -133,7 +134,7 @@ impl RecoverableConnection {
     }
 
     #[cfg(test)]
-    pub(crate) fn force_error(&self, error: azure_core::Error) -> Result<()> {
+    pub(crate) fn force_error(&self, error: AmqpError) -> Result<()> {
         let mut err = self.forced_error.lock().map_err(|e| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
@@ -142,7 +143,7 @@ impl RecoverableConnection {
     }
 
     #[cfg(test)]
-    pub(crate) fn get_forced_error(&self) -> azure_core::Result<()> {
+    pub(crate) fn get_forced_error(&self) -> azure_core_amqp::error::Result<()> {
         let v = self
             .forced_error
             .lock()
@@ -258,7 +259,7 @@ impl RecoverableConnection {
         if let Some(connection) = connection.as_ref() {
             return Ok(connection.clone());
         }
-        Err(EventHubsError::from(ErrorKind::MissingConnection).into())
+        Err(EventHubsError::from(ErrorKind::MissingConnection))
     }
 
     /// Creates a new management client for the Event Hubs service.
@@ -396,7 +397,7 @@ impl RecoverableConnection {
         }
 
         warn!("Management client is None, cannot ensure management client.");
-        Err(EventHubsError::from(ErrorKind::MissingConnection).into())
+        Err(EventHubsError::from(ErrorKind::MissingConnection))
     }
 
     /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
@@ -483,14 +484,18 @@ impl RecoverableConnection {
     pub(super) async fn recover_from_error(
         connection: Weak<RecoverableConnection>,
         reason: ErrorRecoveryAction,
-    ) -> Result<()> {
+    ) -> azure_core_amqp::error::Result<()> {
         // If the connection is None, we cannot recover.
         let Some(connection) = connection.upgrade() else {
             warn!(
                 "Connection is None, cannot recover from error: {:?}",
                 reason
             );
-            return Err(EventHubsError::from(ErrorKind::MissingConnection).into());
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Missing Connection",
+            )
+            .into());
         };
 
         // Log the error and attempt to recover.
@@ -525,7 +530,8 @@ impl RecoverableConnection {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     "Unknown error recovery action",
-                ));
+                )
+                .into());
             }
         }
 
@@ -567,6 +573,7 @@ impl RecoverableConnection {
                 debug!("Link state error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectLink
             }
+            AmqpErrorKind::SendRejected => ErrorRecoveryAction::ReturnError,
             AmqpErrorKind::AmqpDescribedError(described_error) => {
                 debug!("AMQP described error: {:?}", described_error);
                 if matches!(

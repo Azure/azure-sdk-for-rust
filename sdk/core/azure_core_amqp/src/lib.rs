@@ -25,7 +25,7 @@ mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
 pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions};
-pub use error::{AmqpDescribedError, AmqpError};
+pub use error::*;
 pub use management::{AmqpManagement, AmqpManagementApis};
 pub use messaging::{AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpSource, AmqpTarget};
 pub use receiver::{AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, ReceiverCreditMode};
@@ -91,17 +91,17 @@ pub enum ReceiverSettleMode {
 #[cfg(feature = "ffi")]
 pub trait Serializable {
     /// Serializes the type into the provided byte buffer.
-    fn serialize(&self, buffer: &mut [u8]) -> azure_core::Result<()>;
+    fn serialize(&self, buffer: &mut [u8]) -> crate::error::Result<()>;
 
     /// Returns the size in bytes that the type will occupy when serialized.
-    fn encoded_size(&self) -> azure_core::Result<usize>;
+    fn encoded_size(&self) -> crate::error::Result<usize>;
 }
 
 /// Trait for types that can be deserialized from a byte buffer.
 #[cfg(feature = "ffi")]
 pub trait Deserializable<T> {
     /// Deserializes the type from the provided byte buffer.
-    fn decode(data: &[u8]) -> azure_core::Result<T>;
+    fn decode(data: &[u8]) -> crate::error::Result<T>;
 }
 
 #[cfg(feature = "ffi")]

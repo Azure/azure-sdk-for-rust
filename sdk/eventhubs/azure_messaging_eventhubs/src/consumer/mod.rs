@@ -7,16 +7,19 @@ pub(crate) mod event_receiver;
 
 use crate::{
     common::{recoverable::RecoverableConnection, ManagementInstance},
+    error::Result,
     models::{ConsumerClientDetails, EventHubPartitionProperties, EventHubProperties},
     RetryOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
-    error::{Error, ErrorKind as AzureErrorKind, Result},
+    error::{Error, ErrorKind as AzureErrorKind},
     http::Url,
     time::Duration,
     Uuid,
 };
+#[cfg(test)]
+use azure_core_amqp::AmqpError;
 use azure_core_amqp::{
     message::AmqpSourceFilter, AmqpDescribed, AmqpOrderedMap, AmqpReceiverOptions, AmqpSource,
     AmqpSymbol, AmqpValue, ReceiverCreditMode,
@@ -90,7 +93,7 @@ impl ConsumerClient {
             "amqps://{}/{}/ConsumerGroups/{}",
             fully_qualified_namespace, eventhub_name, consumer_group
         );
-        let url = Url::parse(&url)?;
+        let url = Url::parse(&url).map_err(azure_core::Error::from)?;
 
         trace!("Creating consumer client for {url}.");
         let retry_options = options.retry_options.unwrap_or_default();
@@ -165,7 +168,7 @@ impl ConsumerClient {
 
     /// Forces an error on the connection.
     #[cfg(test)]
-    pub fn force_error(&self, error: azure_core::Error) -> Result<()> {
+    pub fn force_error(&self, error: AmqpError) -> Result<()> {
         self.recoverable_connection.force_error(error)
     }
 
@@ -259,7 +262,7 @@ impl ConsumerClient {
         );
 
         let source_url = format!("{}/Partitions/{}", &self.endpoint, &partition_id);
-        let source_url = Url::parse(&source_url)?;
+        let source_url = Url::parse(&source_url).map_err(azure_core::Error::from)?;
 
         let message_source = AmqpSource::builder()
             .with_address(source_url.to_string())
@@ -886,14 +889,11 @@ pub(crate) mod tests {
             },
             |consumer| {
                 consumer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::LinkClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
-                                azure_core::error::ErrorKind::Other,
-                                "Forced error",
-                            )),
-                        )),
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::LinkClosedByRemote(Box::new(azure_core::error::Error::new(
+                            azure_core::error::ErrorKind::Other,
+                            "Forced error",
+                        ))),
                     ))
                     .unwrap();
             },
@@ -937,13 +937,12 @@ pub(crate) mod tests {
             },
             |consumer| {
                 consumer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::SessionClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::SessionClosedByRemote(Box::new(
+                            azure_core::error::Error::new(
                                 azure_core::error::ErrorKind::Other,
                                 "Forced error",
-                            )),
+                            ),
                         )),
                     ))
                     .unwrap();
@@ -987,13 +986,12 @@ pub(crate) mod tests {
             },
             |consumer| {
                 consumer
-                    .force_error(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Amqp,
-                        azure_core_amqp::AmqpError::from(AmqpErrorKind::ConnectionClosedByRemote(
-                            Box::new(azure_core::error::Error::new(
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::ConnectionClosedByRemote(Box::new(
+                            azure_core::error::Error::new(
                                 azure_core::error::ErrorKind::Other,
                                 "Forced error",
-                            )),
+                            ),
                         )),
                     ))
                     .unwrap();
