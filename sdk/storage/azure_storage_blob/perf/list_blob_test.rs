@@ -110,7 +110,10 @@ impl PerfTest for ListBlobTest {
 
         let mut iterator = self.client.get().unwrap().list_blobs(None)?;
         while let Some(blob_segment) = iterator.try_next().await? {
-            let _body = blob_segment.into_body()?;
+            let body = blob_segment.into_body()?;
+            for blob in body.segment.blob_items.iter() {
+                std::hint::black_box(blob);
+            }
         }
 
         Ok(())
