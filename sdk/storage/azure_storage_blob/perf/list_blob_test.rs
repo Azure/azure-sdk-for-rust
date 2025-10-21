@@ -13,7 +13,7 @@ use futures::{FutureExt, TryStreamExt};
 
 pub struct ListBlobTest {
     count: u32,
-    endpoint: String,
+    endpoint: Option<String>,
     client: OnceLock<BlobContainerClient>,
 }
 
@@ -27,19 +27,10 @@ impl ListBlobTest {
             println!("Parsed count: {}", count);
 
             let endpoint: Option<&String> = runner.try_get_test_arg("endpoint")?;
-            let endpoint = match endpoint {
-                Some(e) => e.clone(),
-                None => format!(
-                    "https://{}.blob.core.windows.net",
-                    std::env::var("AZURE_STORAGE_ACCOUNT_NAME")
-                        .expect("AZURE_STORAGE_ACCOUNT_NAME is not set")
-                ),
-            };
-            println!("Using endpoint: {}", endpoint);
 
             Ok(Box::new(ListBlobTest {
                 count,
-                endpoint,
+                endpoint: endpoint.cloned(),
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
@@ -83,7 +74,15 @@ impl PerfTest for ListBlobTest {
         let recording = context.recording();
         let credential = recording.credential();
         let container_name = format!("perf-container-{}", uuid::Uuid::new_v4());
-        let client = BlobContainerClient::new(&self.endpoint, container_name, credential, None)?;
+        let endpoint = match &self.endpoint {
+            Some(e) => e.clone(),
+            None => format!(
+                "https://{}.blob.core.windows.net",
+                recording.var("AZURE_STORAGE_ACCOUNT_NAME", None)
+            ),
+        };
+        println!("Using endpoint: {}", endpoint);
+        let client = BlobContainerClient::new(&endpoint, container_name, credential, None)?;
         self.client.set(client).map_err(|_| {
             azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
         })?;
