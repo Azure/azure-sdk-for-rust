@@ -60,7 +60,7 @@ impl AppendBlobClient {
         if !endpoint.scheme().starts_with("http") {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{endpoint} must use http(s)"),
+                format!("{endpoint} must use https"),
             ));
         }
         let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(

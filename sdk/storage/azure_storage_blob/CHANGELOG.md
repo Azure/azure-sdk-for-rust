@@ -5,7 +5,6 @@
 ### Features Added
 
 - Added support for SAS (Shared Access Signature) authentication scheme.
-- Added support for unauthenticated client access (public access clients).
 
 ### Breaking Changes
 

@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let blob_client = BlobContainerClient::new(
         "https://yourstorageaccount.blob.core.windows.net",
         "yourcontainername",
-        Some(credential.clone()),
+        credential.clone(),
         None,
     )?;
 

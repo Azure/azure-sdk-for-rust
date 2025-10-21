@@ -18,7 +18,7 @@ pub fn create_test_checkpoint_store(recording: &Recording) -> Result<Arc<BlobChe
     let blob_container_client = BlobContainerClient::new(
         &recording.var("AZURE_STORAGE_BLOB_ENDPOINT", None),
         &recording.var("AZURE_STORAGE_BLOB_CONTAINER", None),
-        Some(credential.clone()),
+        credential.clone(),
         Some(options),
     )?;
 

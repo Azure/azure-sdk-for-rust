@@ -62,7 +62,7 @@ impl GeneratedBlobContainerClient {
             if !container_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{container_url} must use http(s)"),
+                    format!("{container_url} must use https"),
                 ));
             }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
@@ -103,7 +103,7 @@ impl BlobContainerClient {
     pub fn new(
         endpoint: &str,
         container_name: &str,
-        credential: Option<Arc<dyn TokenCredential>>,
+        credential: Arc<dyn TokenCredential>,
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
@@ -112,7 +112,29 @@ impl BlobContainerClient {
             .expect("Invalid endpoint URL: Cannot append container_name to the blob endpoint.")
             .extend([container_name]);
 
-        let client = GeneratedBlobContainerClient::from_url(url, credential, options)?;
+        let client = GeneratedBlobContainerClient::from_url(url, Some(credential), options)?;
+        Ok(Self { client })
+    }
+
+    /// Creates a new BlobContainerClient, without providing any authentication information.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    /// * `container_name` - The name of the container.
+    /// * `options` - Optional configuration for the client.
+    pub fn with_no_credential(
+        endpoint: &str,
+        container_name: &str,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<Self> {
+        let mut url = Url::parse(endpoint)?;
+
+        url.path_segments_mut()
+            .expect("Invalid endpoint URL: Cannot append container_name to the blob endpoint.")
+            .extend([container_name]);
+
+        let client = GeneratedBlobContainerClient::from_url(url, None, options)?;
         Ok(Self { client })
     }
 
@@ -125,10 +147,27 @@ impl BlobContainerClient {
     /// * `options` - Optional configuration for the client.
     pub fn from_container_url(
         container_url: Url,
-        credential: Option<Arc<dyn TokenCredential>>,
+        credential: Arc<dyn TokenCredential>,
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
-        let client = GeneratedBlobContainerClient::from_url(container_url, credential, options)?;
+        let client =
+            GeneratedBlobContainerClient::from_url(container_url, Some(credential), options)?;
+
+        Ok(Self { client })
+    }
+
+    /// Creates a new BlobContainerClient from a container URL containing the SAS (shared access signature) query parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_url` - The full URL of the container, including the SAS query parameters.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn from_container_sas_url(
+        container_url: Url,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedBlobContainerClient::from_url(container_url, None, options)?;
 
         Ok(Self { client })
     }

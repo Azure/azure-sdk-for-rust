@@ -53,7 +53,7 @@ impl GeneratedAppendBlobClient {
             if !blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{blob_url} must use http(s)"),
+                    format!("{blob_url} must use https"),
                 ));
             }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
@@ -96,7 +96,7 @@ impl AppendBlobClient {
         endpoint: &str,
         container_name: &str,
         blob_name: &str,
-        credential: Option<Arc<dyn TokenCredential>>,
+        credential: Arc<dyn TokenCredential>,
         options: Option<AppendBlobClientOptions>,
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
@@ -105,7 +105,31 @@ impl AppendBlobClient {
             .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
             .extend([container_name, blob_name]);
 
-        let client = GeneratedAppendBlobClient::from_url(url, credential, options)?;
+        let client = GeneratedAppendBlobClient::from_url(url, Some(credential), options)?;
+        Ok(Self { client })
+    }
+
+    /// Creates a new AppendBlobClient, without providing any authentication information.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    /// * `container_name` - The name of the container containing this Append blob.
+    /// * `blob_name` - The name of the Append blob to interact with.
+    /// * `options` - Optional configuration for the client.
+    pub fn with_no_credential(
+        endpoint: &str,
+        container_name: &str,
+        blob_name: &str,
+        options: Option<AppendBlobClientOptions>,
+    ) -> Result<Self> {
+        let mut url = Url::parse(endpoint)?;
+
+        url.path_segments_mut()
+            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
+            .extend([container_name, blob_name]);
+
+        let client = GeneratedAppendBlobClient::from_url(url, None, options)?;
         Ok(Self { client })
     }
 
@@ -118,10 +142,26 @@ impl AppendBlobClient {
     /// * `options` - Optional configuration for the client.
     pub fn from_blob_url(
         blob_url: Url,
-        credential: Option<Arc<dyn TokenCredential>>,
+        credential: Arc<dyn TokenCredential>,
         options: Option<AppendBlobClientOptions>,
     ) -> Result<Self> {
-        let client = GeneratedAppendBlobClient::from_url(blob_url, credential, options)?;
+        let client = GeneratedAppendBlobClient::from_url(blob_url, Some(credential), options)?;
+
+        Ok(Self { client })
+    }
+
+    /// Creates a new AppendBlobClient from a blob URL containing the SAS (shared access signature) query parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the Append blob, including the SAS query parameters.
+    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `options` - Optional configuration for the client.
+    pub fn from_blob_sas_url(
+        blob_url: Url,
+        options: Option<AppendBlobClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedAppendBlobClient::from_url(blob_url, None, options)?;
 
         Ok(Self { client })
     }

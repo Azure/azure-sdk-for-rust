@@ -548,7 +548,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let container_client = BlobContainerClient::new(
             &endpoint,
             container_name,
-            Some(recording.credential()),
+            recording.credential(),
             Some(container_client_options.clone()),
         )?;
         container_client.create_container(None).await?;
@@ -558,7 +558,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             &endpoint,
             container_name,
             blob_name,
-            Some(recording.credential()),
+            recording.credential(),
             Some(blob_client_options.clone()),
         )?;
 
@@ -586,7 +586,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
         let blob_client_from_url = BlobClient::from_blob_url(
             blob_url,
-            Some(recording.credential()),
+            recording.credential(),
             Some(blob_client_options.clone()),
         )?;
 
@@ -610,7 +610,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
         let blob_client_from_url_parse = BlobClient::from_blob_url(
             blob_url,
-            Some(recording.credential()),
+            recording.credential(),
             Some(blob_client_options.clone()),
         )?;
 

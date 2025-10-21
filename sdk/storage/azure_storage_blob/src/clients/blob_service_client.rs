@@ -55,7 +55,7 @@ impl GeneratedBlobServiceClient {
             if !url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{url} must use http(s)"),
+                    format!("{url} must use https"),
                 ));
             }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
@@ -94,12 +94,28 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the client.
     pub fn new(
         endpoint: &str,
-        credential: Option<Arc<dyn TokenCredential>>,
+        credential: Arc<dyn TokenCredential>,
         options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
         let url = Url::parse(endpoint)?;
 
-        let client = GeneratedBlobServiceClient::from_url(url, credential, options)?;
+        let client = GeneratedBlobServiceClient::from_url(url, Some(credential), options)?;
+        Ok(Self { client })
+    }
+
+    /// Creates a new BlobServiceClient, without providing any authentication information.
+    ///
+    /// # Arguments
+    ///
+    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    /// * `options` - Optional configuration for the client.
+    pub fn with_no_credential(
+        endpoint: &str,
+        options: Option<BlobServiceClientOptions>,
+    ) -> Result<Self> {
+        let url = Url::parse(endpoint)?;
+
+        let client = GeneratedBlobServiceClient::from_url(url, None, options)?;
         Ok(Self { client })
     }
 
@@ -112,10 +128,22 @@ impl BlobServiceClient {
     /// * `options` - Optional configuration for the client.
     pub fn from_url(
         url: Url,
-        credential: Option<Arc<dyn TokenCredential>>,
+        credential: Arc<dyn TokenCredential>,
         options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
-        let client = GeneratedBlobServiceClient::from_url(url, credential, options)?;
+        let client = GeneratedBlobServiceClient::from_url(url, Some(credential), options)?;
+
+        Ok(Self { client })
+    }
+
+    /// Creates a new BlobServiceClient from the URL of the Azure storage account containing the SAS (shared access signature) query parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - The full URL of the Azure storage account, including the SAS query parameters.
+    /// * `options` - Optional configuration for the client.
+    pub fn from_sas_url(url: Url, options: Option<BlobServiceClientOptions>) -> Result<Self> {
+        let client = GeneratedBlobServiceClient::from_url(url, None, options)?;
 
         Ok(Self { client })
     }
