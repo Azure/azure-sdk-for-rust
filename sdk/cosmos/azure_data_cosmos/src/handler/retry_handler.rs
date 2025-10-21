@@ -67,7 +67,6 @@ pub trait RetryHandler: Send + Sync {
 pub struct BackOffRetryHandler {}
 
 impl BackOffRetryHandler {
-
     /// Creates a new instance of `BackOffRetryHandler`
     ///
     /// This constructor initializes a retry handler with exponential backoff capabilities.
