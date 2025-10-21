@@ -25,7 +25,9 @@ use crate::{pipeline::signature_target::SignatureTarget, resource_context::Resou
 
 use crate::utils::url_encode;
 
+
 const AZURE_VERSION: &str = "2020-07-15";
+const COSMOS_AAD_SCOPE: &str = "https://cosmos.azure.com/.default";
 
 #[derive(Debug, Clone)]
 enum Credential {
@@ -110,7 +112,7 @@ impl Policy for AuthorizationPolicy {
 /// NOTE: Resource tokens are not yet supported.
 async fn generate_authorization(
     auth_token: &Credential,
-    url: &Url,
+    _url: &Url,
 
     // Unused unless feature="key_auth", but I don't want to mess with excluding it since it makes call sites more complicated
     #[allow(unused_variables)] signature_target: SignatureTarget<'_>,
@@ -118,7 +120,7 @@ async fn generate_authorization(
     let token = match auth_token {
         Credential::Token(token_credential) => {
             let token = token_credential
-                .get_token(&[&scope_from_url(url)], None)
+                .get_token(&[COSMOS_AAD_SCOPE], None)
                 .await?
                 .token
                 .secret()
@@ -133,13 +135,7 @@ async fn generate_authorization(
     Ok(url_encode(token))
 }
 
-/// This function generates the scope string from the passed url. The scope string is used to
-/// request the AAD token.
-fn scope_from_url(url: &Url) -> String {
-    let scheme = url.scheme();
-    let hostname = url.host_str().unwrap();
-    format!("{scheme}://{hostname}/.default")
-}
+
 
 #[cfg(test)]
 mod tests {
@@ -154,7 +150,7 @@ mod tests {
 
     use crate::{
         pipeline::{
-            authorization_policy::{generate_authorization, scope_from_url, Credential},
+            authorization_policy::{generate_authorization, Credential, COSMOS_AAD_SCOPE},
             signature_target::SignatureTarget,
         },
         resource_context::{ResourceLink, ResourceType},
@@ -204,9 +200,8 @@ mod tests {
         .unwrap();
 
         let expected: String = url_encode(
-            b"type=aad&ver=1.0&sig=test_token+https://test_account.example.com/.default",
+            format!("type=aad&ver=1.0&sig=test_token+{}", COSMOS_AAD_SCOPE).as_bytes()
         );
-
         assert_eq!(ret, expected);
     }
 
@@ -277,9 +272,9 @@ mod tests {
         assert_eq!(ret, expected);
     }
 
+
     #[test]
-    fn scope_from_url_extracts_correct_scope() {
-        let scope = scope_from_url(&Url::parse("https://example.com/dbs/test_db/colls").unwrap());
-        assert_eq!(scope, "https://example.com/.default");
+    fn uses_constant_scope_value() {
+        assert_eq!(COSMOS_AAD_SCOPE, "https://cosmos.azure.com/.default");
     }
 }
