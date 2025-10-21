@@ -355,6 +355,7 @@ dependencies = [
  "pin-project",
  "reqwest",
  "serde",
+ "serde_json",
  "serde_test",
  "serial_test",
  "time",
