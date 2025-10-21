@@ -179,6 +179,9 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 ///    fn sleep(&self, duration: typespec_client_core::time::Duration) -> TaskFuture {
 ///      unimplemented!("Custom sleep not implemented");
 ///    }
+///    fn yield_now(&self) -> TaskFuture {
+///      unimplemented!("Custom yield not implemented");
+///    }
 ///  }
 ///
 ///  set_async_runtime(Arc::new(CustomRuntime)).expect("Failed to set async runtime");
