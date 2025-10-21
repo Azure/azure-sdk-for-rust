@@ -30,7 +30,7 @@ clap.workspace = true
 reqwest.workspace = true
 time.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 
 [lints]
 workspace = true
