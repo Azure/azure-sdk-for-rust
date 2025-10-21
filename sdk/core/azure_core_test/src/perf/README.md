@@ -49,103 +49,17 @@ A perf test has a name (`get_secret`, `list_blobs`, `upload_blob`, etc), a short
 
 Each perf test also has a set of command line options that are specific to the individual test, these are defined by a `PerfTestOptions` structure. It contains fields like help text for the option, activators
 
-Here is an example of test metadata for a performance test:
+An example of perf test metadata [can be found here](https://github.com/Azure/azure-sdk-for-rust/blob/e47a38f93e7ac2797754c103da7fe8b177e46365/sdk/keyvault/azure_security_keyvault_keys/perf/create_key.rs#L26C1-L41C1)
 
-```rust
-# use azure_core_test::perf::{PerfTestMetadata, PerfTestOption, PerfRunner, CreatePerfTestReturn};
-# struct FakePerfTest;
-# impl FakePerfTest {
-#   fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn { todo!() }
-#   fn test_metadata() -> PerfTestMetadata {
-PerfTestMetadata {
-    name: "get_secret",
-    description: "Get a secret from Key Vault",
-    options: vec![PerfTestOption {
-        name: "url",
-        display_message: "The URL of the Key Vault to use in the test",
-        mandatory: true,
-        short_activator: Some('u'),
-        long_activator: "vault-url",
-        expected_args_len: 1,
-        ..Default::default()
-    }],
-    create_test: Self::create_new_test,
-}
-# } }
-```
+This defines a test named `create_key` with a single required "vault_url" option.
 
-This defines a test named `get_secret` with a single required "vault_url" option.
-
-For this test, the `create_new_test` function looks like:
-
-```rust
-use std::sync::OnceLock;
-use azure_core_test::perf::{PerfRunner, CreatePerfTestReturn, PerfTestMetadata, PerfTest};
-use futures::FutureExt;
-# use azure_core_test::TestContext;
-# use std::sync::Arc;
-# struct MyServiceClient;
-# struct GetSecrets { vault_url: String, client: OnceLock<MyServiceClient>, random_key_name:OnceLock<String>};
-# #[async_trait::async_trait]impl PerfTest for GetSecrets {
-#  async fn setup(&self, ctx: Arc<TestContext>) -> azure_core::Result<()> {todo!()}
-#  async fn run(&self, ctx: Arc<TestContext>) -> azure_core::Result<()>{todo!()}
-#  async fn cleanup(&self, ctx: Arc<TestContext>) -> azure_core::Result<()>{todo!()}
-# }
-# impl GetSecrets {
-#   fn test_metadata() -> PerfTestMetadata {
-#       PerfTestMetadata {
-#           name: "get_secret",
-#           description: "Get a secret from Key Vault",
-#           options: Vec::new(),
-#           create_test: Self::create_new_test,
-#       }}
-fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn {
-    async move {
-        let vault_url_ref: Option<&String> = runner.try_get_test_arg("vault_url")?;
-        let vault_url = vault_url_ref
-            .expect("vault_url argument is mandatory")
-            .clone();
-        Ok(Box::new(GetSecrets {
-            vault_url,
-            random_key_name: OnceLock::new(),
-            client: OnceLock::new(),
-        }) as Box<dyn PerfTest>)
-    }
-    .boxed()
-}
-# }
-```
+An example of the `create_new_test` function [can be found here](https://github.com/Azure/azure-sdk-for-rust/blob/e47a38f93e7ac2797754c103da7fe8b177e46365/sdk/keyvault/azure_security_keyvault_keys/perf/get_key.rs#L42-L58)
 
 ### Test invocation
 
 The final piece of code which is necessary to run the performance tests is logic to hook up the tests with a test runner.
 
-```rust
-use azure_core_test::perf::{PerfRunner, CreatePerfTestReturn, PerfTestMetadata};
-# struct GetSecrets{}
-# impl GetSecrets{
-#   fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn { todo!() }
-#   fn test_metadata() -> PerfTestMetadata {
-    PerfTestMetadata{
-#     name: "get_secret",
-#     description: "Get a secret from Key Vault",
-#     options: Vec::new(),
-#     create_test: Self::create_new_test,
-#   }
-# } }
-#[tokio::main]
-async fn main() -> azure_core::Result<()> {
-    let runner = PerfRunner::new(
-        env!("CARGO_MANIFEST_DIR"),
-        file!(),
-        vec![GetSecrets::test_metadata()],
-    )?;
-
-    runner.run().await?;
-
-    Ok(())
-}
-```
+An example of this, from the Keyvault Keys performance tests [can be found here](https://github.com/Azure/azure-sdk-for-rust/blob/e47a38f93e7ac2797754c103da7fe8b177e46365/sdk/keyvault/azure_security_keyvault_keys/perf/perf_tests.rs#L24-L35)
 
 This declares a perf test runner with a set of defined test metadata and runs the performance test. If your performance test suite has more than one performance test, then it should be added to the final parameter to the `PerfRunner::new()` function.
 
