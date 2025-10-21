@@ -904,6 +904,7 @@ impl BlobContainerClient {
                             }),
                         )
                         .await?;
+                    // Because serialization can be a CPU intensive operation, offload it to a separate task.
                     let (res, rsp) = async move {
                         let (status, headers, body) = rsp.deconstruct();
                         let res: ListBlobsFlatSegmentResponse = xml::from_xml(&body)?;
