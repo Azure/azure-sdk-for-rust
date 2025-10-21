@@ -74,7 +74,7 @@ impl PerfTest for CreateKey {
         let credential = recording.credential();
 
         let mut client_options = KeyClientOptions::default();
-        recording.instrument(&mut client_options.client_options);
+        recording.instrument_perf(&mut client_options.client_options)?;
 
         let vault_url = self
             .vault_url

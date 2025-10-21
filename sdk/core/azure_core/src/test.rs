@@ -31,6 +31,11 @@ impl TestMode {
     pub fn current() -> typespec::Result<Self> {
         std::env::var("AZURE_TEST_MODE").map_or_else(|_| Ok(TestMode::default()), |v| v.parse())
     }
+
+    /// Gets the `TestMode` from the `AZURE_TEST_MODE` environment variable or returns `None` if undefined.
+    pub fn current_opt() -> typespec::Result<Option<Self>> {
+        std::env::var("AZURE_TEST_MODE").map_or_else(|_| Ok(None), |v| v.parse().map(Some))
+    }
 }
 
 impl fmt::Debug for TestMode {
