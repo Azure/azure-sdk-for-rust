@@ -30,17 +30,11 @@ impl Fe2o3AmqpConnection {
         &self.connection
     }
 
-    fn connection_not_set() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "Connection is not set",
-        )
+    fn connection_not_set() -> AmqpError {
+        AmqpError::with_message("Connection is not set")
     }
-    fn connection_already_set() -> azure_core::Error {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "Connection is already set",
-        )
+    fn connection_already_set() -> AmqpError {
+        AmqpError::with_message("Connection is already set")
     }
 }
 
@@ -139,7 +133,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         let mut connection = self
             .connection
             .get()
-            .ok_or::<azure_core::Error>(Self::connection_not_set())?
+            .ok_or_else(Self::connection_not_set)?
             .lock()
             .await;
         connection

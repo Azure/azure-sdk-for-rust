@@ -3,7 +3,7 @@
 // cspell:: words amqp servicebus sastoken
 
 use crate::{cbs::AmqpClaimsBasedSecurityApis, error::Result, session::AmqpSession, AmqpError};
-use azure_core::{credentials::Secret, time::OffsetDateTime, Error as AzureError};
+use azure_core::{credentials::Secret, time::OffsetDateTime};
 use fe2o3_amqp_cbs::token::CbsToken;
 use fe2o3_amqp_types::primitives::Timestamp;
 use std::borrow::BorrowMut;
@@ -25,25 +25,13 @@ impl Fe2o3ClaimsBasedSecurity {
     }
 
     fn cbs_already_attached() -> AmqpError {
-        AzureError::with_message(
-            azure_core::error::ErrorKind::Other,
-            "Claims Based Security is already attached",
-        )
-        .into()
+        AmqpError::with_message("Claims Based Security is already attached")
     }
     fn cbs_not_set() -> AmqpError {
-        AzureError::with_message(
-            azure_core::error::ErrorKind::Other,
-            "Claims Based Security is not set",
-        )
-        .into()
+        AmqpError::with_message("Claims Based Security is not set")
     }
     fn cbs_not_attached() -> AmqpError {
-        AzureError::with_message(
-            azure_core::error::ErrorKind::Other,
-            "Claims Based Security is not attached",
-        )
-        .into()
+        AmqpError::with_message("Claims Based Security is not attached")
     }
 }
 
@@ -100,10 +88,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
                     .unix_timestamp()
                     .checked_mul(1_000)
                     .ok_or_else(|| {
-                        azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::DataConversion,
-                            "Unable to convert time to unix timestamp.",
-                        )
+                        AmqpError::with_message("Unable to convert time to unix timestamp.")
                     })?,
             )),
         );

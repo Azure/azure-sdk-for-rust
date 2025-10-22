@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-#[cfg(all(feature = "ffi", feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 use crate::fe2o3::error::Fe2o3SerializationError;
-#[cfg(all(feature = "ffi", feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 use crate::AmqpError;
 #[cfg(feature = "ffi")]
 use crate::Deserializable;

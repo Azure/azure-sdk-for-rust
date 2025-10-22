@@ -34,6 +34,7 @@ typespec.workspace = true
 typespec_macros.workspace = true
 
 [dev-dependencies]
+serde_json.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]

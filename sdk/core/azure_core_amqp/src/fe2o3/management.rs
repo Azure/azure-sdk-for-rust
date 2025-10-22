@@ -50,18 +50,10 @@ impl Fe2o3AmqpManagement {
     }
 
     fn amqp_management_already_attached() -> AmqpError {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "AMQP Management is already attached",
-        )
-        .into()
+        AmqpError::with_message("AMQP Management is already attached")
     }
     fn amqp_management_not_attached() -> AmqpError {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "AMQP Management is not attached",
-        )
-        .into()
+        AmqpError::with_message("AMQP Management is not attached")
     }
 }
 
