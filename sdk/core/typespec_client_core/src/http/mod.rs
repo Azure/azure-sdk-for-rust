@@ -97,7 +97,7 @@ impl UrlExt for Url {
         debug_assert_eq!(new_path.capacity(), new_len);
         new_path.push_str(self.path());
         if needs_separator {
-            new_path.push_str("/");
+            new_path.push('/');
         }
         new_path.push_str(path);
         debug_assert_eq!(new_path.capacity(), new_len);
