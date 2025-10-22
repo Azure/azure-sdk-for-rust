@@ -14,7 +14,7 @@ use super::{
     QueryRequestType, QueryType, RehydratePriority,
 };
 use azure_core::{
-    base64::option::{deserialize, serialize},
+    base64::{deserialize, serialize},
     fmt::SafeDebug,
     time::OffsetDateTime,
 };
@@ -256,7 +256,7 @@ pub struct BlobItemInternal {
 
     /// The name of the blob.
     #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
-    pub name: Option<BlobName>,
+    pub name: Option<String>,
 
     /// The object replication metadata of the blob.
     #[serde(rename = "OrMetadata", skip_serializing_if = "Option::is_none")]
