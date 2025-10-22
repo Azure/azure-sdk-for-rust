@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-#[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "ffi", feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
 use crate::fe2o3::error::Fe2o3SerializationError;
+#[cfg(all(feature = "ffi", feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
+use crate::AmqpError;
 #[cfg(feature = "ffi")]
 use crate::Deserializable;
 use crate::{
-    error::{AmqpError, Result},
+    error::Result,
     simple_value::AmqpSimpleValue,
     value::{AmqpList, AmqpOrderedMap, AmqpSymbol, AmqpTimestamp, AmqpValue},
 };
@@ -1278,7 +1280,10 @@ impl AmqpMessage {
     }
 
     /// Serialize the AMQP message to a vector of bytes.
-    #[allow(unused_variables)]
+    #[cfg_attr(
+        all(feature = "fe2o3_amqp", target_arch = "wasm32"),
+        allow(unused_variables)
+    )]
     pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>> {
         #[cfg(all(feature = "fe2o3_amqp", not(target_arch = "wasm32")))]
         {
