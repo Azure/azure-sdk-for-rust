@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::time::{parse_rfc3339, to_rfc3339, OffsetDateTime};
 use std::{
     collections::HashMap,
     io::{Error, ErrorKind},
@@ -60,4 +61,109 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
         .collect();
 
     Ok(format_expression.join(" and "))
+}
+
+/// Convert an OffsetDateTime to RFC3339 string with exactly 7 decimal precision.
+///
+/// # Arguments
+/// * `datetime` - OffsetDateTime to format.
+pub fn format_datetime(datetime: &OffsetDateTime) -> Result<String, Error> {
+    let rfc3339_str = to_rfc3339(datetime);
+
+    // Find the position of the decimal point and timezone indicator
+    if let Some(dot_pos) = rfc3339_str.find('.') {
+        // Find where the timezone / offset part starts (Z, +, or -)
+        let tz_pos = rfc3339_str[dot_pos..]
+            .find(['Z', '+', '-'])
+            .map(|pos| dot_pos + pos)
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::InvalidData,
+                    format!(
+                        "Invalid RFC3339 format: missing timezone in '{}'",
+                        rfc3339_str
+                    ),
+                )
+            })?;
+
+        // Extract the decimal portion and timezone
+        let fractional = &rfc3339_str[dot_pos + 1..tz_pos];
+        let timezone = &rfc3339_str[tz_pos..];
+
+        // Pad or truncate to exactly 7 digits
+        let seven_digit_fractional = if fractional.len() >= 7 {
+            fractional[..7].to_string()
+        } else {
+            format!("{:0<7}", fractional)
+        };
+
+        // Reconstruct the string
+        Ok(format!(
+            "{}.{}{}",
+            &rfc3339_str[..dot_pos],
+            seven_digit_fractional,
+            timezone
+        ))
+    } else {
+        // No fractional seconds, need to add full padding before the timezone
+        // Search from the end to avoid matching '-' in the date part
+        let tz_pos = rfc3339_str.rfind(['Z', '+', '-']).ok_or_else(|| {
+            Error::new(
+                ErrorKind::InvalidData,
+                format!(
+                    "Invalid RFC3339 format: missing timezone in '{}'",
+                    rfc3339_str
+                ),
+            )
+        })?;
+
+        let base = &rfc3339_str[..tz_pos];
+        let timezone = &rfc3339_str[tz_pos..];
+        Ok(format!("{}.0000000{}", base, timezone))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_datetime_with_7_decimals() -> Result<(), Error> {
+        // Test with microsecond precision (6 digits) - should pad to 7
+        let dt = parse_rfc3339("2025-09-22T19:20:10.622383Z").unwrap();
+        let formatted = format_datetime(&dt)?;
+        assert_eq!(formatted, "2025-09-22T19:20:10.6223830Z");
+
+        // Test with nanosecond precision (9 digits) - should truncate to 7
+        let dt = parse_rfc3339("2025-09-22T19:20:00.622429456Z").unwrap();
+        let formatted = format_datetime(&dt)?;
+        assert_eq!(formatted, "2025-09-22T19:20:00.6224294Z");
+
+        // Test with no fractional seconds - should pad with zeros
+        let dt = parse_rfc3339("2025-09-22T19:20:00Z").unwrap();
+        let formatted = format_datetime(&dt)?;
+        assert_eq!(formatted, "2025-09-22T19:20:00.0000000Z");
+
+        // Test with millisecond precision (3 digits) - should pad to 7
+        let dt = parse_rfc3339("2025-09-22T19:20:00.123Z").unwrap();
+        let formatted = format_datetime(&dt)?;
+        assert_eq!(formatted, "2025-09-22T19:20:00.1230000Z");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_datetime_with_offset() -> Result<(), Error> {
+        // Test with timezone offset
+        let dt = parse_rfc3339("2025-09-22T19:20:10.622383-05:00").unwrap();
+        let formatted = format_datetime(&dt)?;
+        assert_eq!(formatted, "2025-09-22T19:20:10.6223830-05:00");
+
+        // Test with positive timezone offset
+        let dt = parse_rfc3339("2025-09-22T19:20:10.1+03:30").unwrap();
+        let formatted = format_datetime(&dt)?;
+        assert_eq!(formatted, "2025-09-22T19:20:10.1000000+03:30");
+
+        Ok(())
+    }
 }

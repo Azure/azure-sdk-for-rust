@@ -1245,9 +1245,9 @@ pub struct BlobContainerClientDeleteOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobContainerClient::find_blobs_by_tags()`
+/// Options to be passed to `BlobContainerClient::filter_blobs()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobContainerClientFindBlobsByTagsOptions<'a> {
+pub struct BlobContainerClientFilterBlobsOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -1269,6 +1269,9 @@ pub struct BlobContainerClientFindBlobsByTagsOptions<'a> {
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
+
+    /// Filters the results to return only to return only blobs whose tags match the specified expression.
+    pub where_param: Option<String>,
 }
 
 /// Options to be passed to `BlobContainerClient::get_access_policy()`
@@ -1523,9 +1526,9 @@ pub struct BlobContainerClientSetMetadataOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlobServiceClient::find_blobs_by_tags()`
+/// Options to be passed to `BlobServiceClient::filter_blobs()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlobServiceClientFindBlobsByTagsOptions<'a> {
+pub struct BlobServiceClientFilterBlobsOptions<'a> {
     /// An opaque, globally-unique, client-generated string identifier for the request.
     pub client_request_id: Option<String>,
 
@@ -1547,6 +1550,9 @@ pub struct BlobServiceClientFindBlobsByTagsOptions<'a> {
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations)
     pub timeout: Option<i32>,
+
+    /// Filters the results to return only to return only blobs whose tags match the specified expression.
+    pub where_param: Option<String>,
 }
 
 /// Options to be passed to `BlobServiceClient::get_account_info()`

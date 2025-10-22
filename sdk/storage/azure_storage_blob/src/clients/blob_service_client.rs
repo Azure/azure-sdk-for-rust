@@ -5,10 +5,9 @@ use crate::{
     generated::clients::BlobServiceClient as GeneratedBlobServiceClient,
     generated::models::BlobServiceClientGetAccountInfoResult,
     models::{
-        BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
-        BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersSegmentOptions,
-        BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
-        ListContainersSegmentResponse,
+        BlobServiceClientGetAccountInfoOptions, BlobServiceClientGetPropertiesOptions,
+        BlobServiceClientListContainersSegmentOptions, BlobServiceClientSetPropertiesOptions,
+        BlobServiceProperties, FilterBlobSegment, ListContainersSegmentResponse,
     },
     pipeline::StorageHeadersPolicy,
     BlobContainerClient, BlobServiceClientOptions,
@@ -97,31 +96,6 @@ impl BlobServiceClient {
         options: Option<BlobServiceClientListContainersSegmentOptions<'_>>,
     ) -> Result<PageIterator<Response<ListContainersSegmentResponse, XmlFormat>>> {
         self.client.list_containers_segment(options)
-    }
-
-    /// Returns a list of blobs across all containers whose tags match a given search expression.
-    ///
-    /// # Arguments
-    ///
-    /// * `filter_expression` - The expression to find blobs whose tags matches the specified condition.
-    ///   eg.
-    /// ```text
-    /// "\"yourtagname\"='firsttag' and \"yourtagname2\"='secondtag'"
-    /// ```
-    ///   To specify a container, eg.
-    /// ```text
-    /// "@container='containerName' and \"Name\"='C'"
-    /// ```
-    /// See [`format_filter_expression()`](crate::format_filter_expression) for help with the expected String format.
-    /// * `options` - Optional parameters for the request.
-    pub async fn find_blobs_by_tags(
-        &self,
-        filter_expression: &str,
-        options: Option<BlobServiceClientFindBlobsByTagsOptions<'_>>,
-    ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
-        self.client
-            .find_blobs_by_tags(filter_expression, options)
-            .await
     }
 
     /// Sets properties for a Storage account's Blob service endpoint, including properties for Storage Analytics and CORS rules.
