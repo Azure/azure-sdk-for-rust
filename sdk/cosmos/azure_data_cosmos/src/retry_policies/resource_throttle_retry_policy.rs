@@ -205,12 +205,10 @@ impl RetryPolicy for ResourceThrottleRetryPolicy {
 #[cfg(test)]
 mod tests {
     use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
+    use crate::retry_policies::RetryPolicy;
     use crate::retry_policies::RetryResult;
     use azure_core::http::{RawResponse, StatusCode};
     use azure_core::time::Duration;
-    use crate::retry_policies::{
-        RetryPolicy,
-    };
 
     /// Helper function to create a mock RawResponse with a given status code
     fn create_mock_response(status: StatusCode) -> azure_core::Result<RawResponse> {
