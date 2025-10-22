@@ -43,7 +43,7 @@ impl GeneratedBlockBlobClient {
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.BlockBlob")]
     pub fn from_url(
-        blob_url: Url,
+        block_blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
@@ -56,10 +56,10 @@ impl GeneratedBlockBlobClient {
             .push(storage_headers_policy);
 
         let per_retry_policies = if let Some(token_credential) = credential {
-            if !blob_url.scheme().starts_with("https") {
+            if !block_blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{blob_url} must use https"),
+                    format!("{block_blob_url} must use https"),
                 ));
             }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
@@ -81,7 +81,7 @@ impl GeneratedBlockBlobClient {
         );
 
         Ok(Self {
-            endpoint: blob_url,
+            endpoint: block_blob_url,
             version: options.version,
             pipeline,
         })
@@ -107,9 +107,15 @@ impl BlockBlobClient {
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
-        url.path_segments_mut()
-            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
-            .extend([container_name, blob_name]);
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name, blob_name]);
+        }
 
         let client = GeneratedBlockBlobClient::from_url(url, Some(credential), options)?;
         Ok(Self { client })
@@ -131,9 +137,15 @@ impl BlockBlobClient {
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
-        url.path_segments_mut()
-            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
-            .extend([container_name, blob_name]);
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name, blob_name]);
+        }
 
         let client = GeneratedBlockBlobClient::from_url(url, None, options)?;
         Ok(Self { client })
@@ -143,7 +155,7 @@ impl BlockBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `block_blob_url` - The full URL of the Block blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `blob_url` - The full URL of the Block blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn from_blob_url(
@@ -160,19 +172,19 @@ impl BlockBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `block_blob_url` - The full URL of the Block blob, including the SAS query parameters.
+    /// * `blob_sas_url` - The full URL of the Block blob, including the SAS query parameters.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn from_blob_sas_url(
-        blob_url: Url,
+        blob_sas_url: Url,
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
-        let client = GeneratedBlockBlobClient::from_url(blob_url, None, options)?;
+        let client = GeneratedBlockBlobClient::from_url(blob_sas_url, None, options)?;
 
         Ok(Self { client })
     }
 
-    /// Gets the URL of the Storage account this client is connected to.
+    /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.client.endpoint
     }

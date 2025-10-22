@@ -116,9 +116,15 @@ impl BlobClient {
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
-        url.path_segments_mut()
-            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
-            .extend([container_name, blob_name]);
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name, blob_name]);
+        }
 
         let client = GeneratedBlobClient::from_url(url, Some(credential), options)?;
         Ok(Self { client })
@@ -140,9 +146,15 @@ impl BlobClient {
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
-        url.path_segments_mut()
-            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
-            .extend([container_name, blob_name]);
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name, blob_name]);
+        }
 
         let client = GeneratedBlobClient::from_url(url, None, options)?;
         Ok(Self { client })
@@ -169,10 +181,13 @@ impl BlobClient {
     ///
     /// # Arguments
     ///
-    /// * `blob_url` - The full URL of the blob, including the SAS query parameters.
+    /// * `blob_sas_url` - The full URL of the blob, including the SAS query parameters.
     /// * `options` - Optional configuration for the client.
-    pub fn from_blob_sas_url(blob_url: Url, options: Option<BlobClientOptions>) -> Result<Self> {
-        let client = GeneratedBlobClient::from_url(blob_url, None, options)?;
+    pub fn from_blob_sas_url(
+        blob_sas_url: Url,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedBlobClient::from_url(blob_sas_url, None, options)?;
 
         Ok(Self { client })
     }
@@ -213,7 +228,7 @@ impl BlobClient {
         }
     }
 
-    /// Gets the URL of the Storage account this client is connected to.
+    /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.client.endpoint
     }

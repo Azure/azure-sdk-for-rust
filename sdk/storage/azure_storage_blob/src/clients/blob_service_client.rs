@@ -34,12 +34,12 @@ impl GeneratedBlobServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `url` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`.
+    /// * `blob_service_url` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.Service")]
     pub fn from_url(
-        url: Url,
+        blob_service_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
@@ -52,10 +52,10 @@ impl GeneratedBlobServiceClient {
             .push(storage_headers_policy);
 
         let per_retry_policies = if let Some(token_credential) = credential {
-            if !url.scheme().starts_with("https") {
+            if !blob_service_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{url} must use https"),
+                    format!("{blob_service_url} must use https"),
                 ));
             }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
@@ -77,7 +77,7 @@ impl GeneratedBlobServiceClient {
         );
 
         Ok(Self {
-            endpoint: url,
+            endpoint: blob_service_url,
             version: options.version,
             pipeline,
         })
@@ -126,7 +126,7 @@ impl BlobServiceClient {
     /// * `url` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
-    pub fn from_url(
+    pub fn from_service_url(
         url: Url,
         credential: Arc<dyn TokenCredential>,
         options: Option<BlobServiceClientOptions>,
@@ -140,10 +140,13 @@ impl BlobServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `url` - The full URL of the Azure storage account, including the SAS query parameters.
+    /// * `blob_service_sas_url` - The full URL of the Azure storage account, including the SAS query parameters.
     /// * `options` - Optional configuration for the client.
-    pub fn from_sas_url(url: Url, options: Option<BlobServiceClientOptions>) -> Result<Self> {
-        let client = GeneratedBlobServiceClient::from_url(url, None, options)?;
+    pub fn from_sas_url(
+        blob_service_sas_url: Url,
+        options: Option<BlobServiceClientOptions>,
+    ) -> Result<Self> {
+        let client = GeneratedBlobServiceClient::from_url(blob_service_sas_url, None, options)?;
 
         Ok(Self { client })
     }
@@ -170,7 +173,7 @@ impl BlobServiceClient {
         BlobContainerClient { client }
     }
 
-    /// Gets the URL of the Storage account this client is connected to.
+    /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.client.endpoint
     }

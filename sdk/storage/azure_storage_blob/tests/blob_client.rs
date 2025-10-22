@@ -18,6 +18,7 @@ use azure_storage_blob::{
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions,
 };
 use azure_storage_blob_test::{create_test_blob, get_blob_name, get_container_client};
+use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error, time::Duration};
 use tokio::time;
 use typespec_client_core::http::Url;
@@ -542,6 +543,11 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             "test-container-forward-back-slashes",
             "forward/back\\forward/back\\",
         ),
+        // Test of already encoded characters but we want them preserved as-is
+        (
+            "test-container-already-encoded1111111",
+            "data%20set%ferris%3D1%the%23crab%2D2",
+        ),
     ];
     for (container_name, blob_name) in test_cases {
         // Create Container & Container Client
@@ -576,6 +582,23 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_new.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
+        // Check Name Equality
+        let mut list_blobs_response = container_client.list_blobs(None)?;
+        let page = list_blobs_response.try_next().await?;
+        let list_blob_segment_response = page.unwrap().into_body()?;
+        let blob_items = list_blob_segment_response.segment.blob_items;
+        assert_eq!(1, blob_items.len());
+        let listed_blob_name = blob_items[0]
+            .name
+            .as_ref()
+            .unwrap()
+            .content
+            .as_ref()
+            .unwrap();
+
+        // Apply normalization of `\` to `/` for comparison since Azure Blob Storage normalizes `\` to `/` in blob names on Service side
+        assert_eq!(listed_blob_name, &blob_name.replace('\\', "/"));
+
         // Test Case 2: Initialize BlobClient using from_blob_url(), separate path segments
         let mut blob_url = Url::parse(&endpoint)?;
         blob_url
@@ -604,18 +627,39 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_from_url.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Test Case 3: Initialize BlobClient using from_blob_url(), Url::parse() on full URL
-        let blob_url_string = format!("{}{}/{}", endpoint, container_name, blob_name);
-        let blob_url = Url::parse(&blob_url_string)?;
+        // Check Name Equality
+        let mut list_blobs_response = container_client.list_blobs(None)?;
+        let page = list_blobs_response.try_next().await?;
+        let list_blob_segment_response = page.unwrap().into_body()?;
+        let blob_items = list_blob_segment_response.segment.blob_items;
+        assert_eq!(1, blob_items.len());
+        let listed_blob_name = blob_items[0]
+            .name
+            .as_ref()
+            .unwrap()
+            .content
+            .as_ref()
+            .unwrap();
 
-        let blob_client_from_url_parse = BlobClient::from_blob_url(
+        // Apply normalization of `\` to `/` for comparison since Azure Blob Storage normalizes `\` to `/` in blob names on Service side
+        assert_eq!(listed_blob_name, &blob_name.replace('\\', "/"));
+
+        // Test Case 3: Initialize BlobClient using from_blob_url(), using Url methods to build full URL properly
+        let mut blob_url = Url::parse(&endpoint)?;
+        blob_url
+            .path_segments_mut()
+            .expect("failed to get path segments")
+            .push(container_name)
+            .push(blob_name);
+
+        let blob_client_from_url = BlobClient::from_blob_url(
             blob_url,
             recording.credential(),
             Some(blob_client_options.clone()),
         )?;
 
         // Upload Blob
-        blob_client_from_url_parse
+        blob_client_from_url
             .upload(
                 RequestContent::from(b"hello rusty world".to_vec()),
                 true,
@@ -625,8 +669,25 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             .await?;
 
         // Get Properties
-        let properties = blob_client_from_url_parse.get_properties(None).await?;
+        let properties = blob_client_from_url.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
+
+        // Check Name Equality
+        let mut list_blobs_response = container_client.list_blobs(None)?;
+        let page = list_blobs_response.try_next().await?;
+        let list_blob_segment_response = page.unwrap().into_body()?;
+        let blob_items = list_blob_segment_response.segment.blob_items;
+        assert_eq!(1, blob_items.len());
+        let listed_blob_name = blob_items[0]
+            .name
+            .as_ref()
+            .unwrap()
+            .content
+            .as_ref()
+            .unwrap();
+
+        // Apply normalization of `\` to `/` for comparison since Azure Blob Storage normalizes `\` to `/` in blob names on Service side
+        assert_eq!(listed_blob_name, &blob_name.replace('\\', "/"));
 
         // Test Case 4: Initialize BlobClient using ContainerClient accessor
         let blob_client_from_cc = container_client.blob_client(blob_name);
@@ -644,6 +705,23 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         // Get Properties
         let properties = blob_client_from_cc.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
+
+        // Check Name Equality
+        let mut list_blobs_response = container_client.list_blobs(None)?;
+        let page = list_blobs_response.try_next().await?;
+        let list_blob_segment_response = page.unwrap().into_body()?;
+        let blob_items = list_blob_segment_response.segment.blob_items;
+        assert_eq!(1, blob_items.len());
+        let listed_blob_name = blob_items[0]
+            .name
+            .as_ref()
+            .unwrap()
+            .content
+            .as_ref()
+            .unwrap();
+
+        // Apply normalization of `\` to `/` for comparison since Azure Blob Storage normalizes `\` to `/` in blob names on Service side
+        assert_eq!(listed_blob_name, &blob_name.replace('\\', "/"));
 
         container_client.delete_container(None).await?;
     }

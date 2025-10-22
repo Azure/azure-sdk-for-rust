@@ -35,12 +35,12 @@ impl GeneratedPageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `blob_url` - The full URL of the Page blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `page_blob_url` - The full URL of the Page blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.PageBlob")]
     pub fn from_url(
-        blob_url: Url,
+        page_blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<PageBlobClientOptions>,
     ) -> Result<Self> {
@@ -53,10 +53,10 @@ impl GeneratedPageBlobClient {
             .push(storage_headers_policy);
 
         let per_retry_policies = if let Some(token_credential) = credential {
-            if !blob_url.scheme().starts_with("https") {
+            if !page_blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{blob_url} must use https"),
+                    format!("{page_blob_url} must use https"),
                 ));
             }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
@@ -78,7 +78,7 @@ impl GeneratedPageBlobClient {
         );
 
         Ok(Self {
-            endpoint: blob_url,
+            endpoint: page_blob_url,
             version: options.version,
             pipeline,
         })
@@ -104,9 +104,15 @@ impl PageBlobClient {
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
-        url.path_segments_mut()
-            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
-            .extend([container_name, blob_name]);
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name, blob_name]);
+        }
 
         let client = GeneratedPageBlobClient::from_url(url, Some(credential), options)?;
         Ok(Self { client })
@@ -129,9 +135,15 @@ impl PageBlobClient {
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
-        url.path_segments_mut()
-            .expect("Invalid endpoint URL: Cannot append container_name and blob_name to the blob endpoint.")
-            .extend([container_name, blob_name]);
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name, blob_name]);
+        }
 
         let client = GeneratedPageBlobClient::from_url(url, None, options)?;
         Ok(Self { client })
@@ -158,19 +170,19 @@ impl PageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `blob_url` - The full URL of the Page blob, including the SAS query parameters.
+    /// * `blob_sas_url` - The full URL of the Page blob, including the SAS query parameters.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn from_blob_sas_url(
-        blob_url: Url,
+        blob_sas_url: Url,
         options: Option<PageBlobClientOptions>,
     ) -> Result<Self> {
-        let client = GeneratedPageBlobClient::from_url(blob_url, None, options)?;
+        let client = GeneratedPageBlobClient::from_url(blob_sas_url, None, options)?;
 
         Ok(Self { client })
     }
 
-    /// Gets the URL of the Storage account this client is connected to.
+    /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.client.endpoint
     }

@@ -108,9 +108,15 @@ impl BlobContainerClient {
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
-        url.path_segments_mut()
-            .expect("Invalid endpoint URL: Cannot append container_name to the blob endpoint.")
-            .extend([container_name]);
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name]);
+        }
 
         let client = GeneratedBlobContainerClient::from_url(url, Some(credential), options)?;
         Ok(Self { client })
@@ -130,9 +136,15 @@ impl BlobContainerClient {
     ) -> Result<Self> {
         let mut url = Url::parse(endpoint)?;
 
-        url.path_segments_mut()
-            .expect("Invalid endpoint URL: Cannot append container_name to the blob endpoint.")
-            .extend([container_name]);
+        {
+            let mut path_segments = url.path_segments_mut().map_err(|_| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                )
+            })?;
+            path_segments.extend([container_name]);
+        }
 
         let client = GeneratedBlobContainerClient::from_url(url, None, options)?;
         Ok(Self { client })
@@ -160,14 +172,14 @@ impl BlobContainerClient {
     ///
     /// # Arguments
     ///
-    /// * `container_url` - The full URL of the container, including the SAS query parameters.
+    /// * `container_sas_url` - The full URL of the container, including the SAS query parameters.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn from_container_sas_url(
-        container_url: Url,
+        container_sas_url: Url,
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
-        let client = GeneratedBlobContainerClient::from_url(container_url, None, options)?;
+        let client = GeneratedBlobContainerClient::from_url(container_sas_url, None, options)?;
 
         Ok(Self { client })
     }
@@ -194,7 +206,7 @@ impl BlobContainerClient {
         BlobClient { client }
     }
 
-    /// Gets the URL of the Storage account this client is connected to.
+    /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.client.endpoint
     }
