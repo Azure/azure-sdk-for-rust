@@ -545,7 +545,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         ),
         // Test of already encoded characters but we want them preserved as-is
         (
-            "test-container-already-encoded1111111",
+            "test-container-already-encoded",
             "data%20set%ferris%3D1%the%23crab%2D2",
         ),
     ];
