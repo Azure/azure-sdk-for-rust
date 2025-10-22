@@ -80,24 +80,29 @@ pub trait UrlExt: crate::private::Sealed {
 
 impl UrlExt for Url {
     fn append_path(&mut self, p: impl AsRef<str>) {
+        let path = p.as_ref().trim_start_matches('/');
         if self.path() == "/" {
-            self.set_path(p.as_ref());
-        } else if !p.as_ref().is_empty() && p.as_ref() != "/" {
-            let mut combinator = if self.path().ends_with('/') { 1 } else { 0 };
-            combinator += if p.as_ref().starts_with('/') { 1 } else { 0 };
-
-            let mut new_path = if combinator < 2 {
-                self.path().to_owned()
-            } else {
-                self.path()[..self.path().len() - 1].to_owned()
-            };
-            if combinator == 0 {
-                new_path.push('/');
-            }
-            new_path.push_str(p.as_ref());
-
-            self.set_path(&new_path);
+            self.set_path(path);
+            return;
         }
+        if path.is_empty() {
+            return;
+        }
+        let needs_separator = !self.path().ends_with('/');
+        let mut new_len = self.path().len() + path.len();
+        if needs_separator {
+            new_len += 1;
+        }
+        let mut new_path = String::with_capacity(new_len);
+        debug_assert_eq!(new_path.capacity(), new_len);
+        new_path.push_str(self.path());
+        if needs_separator {
+            new_path.push_str("/");
+        }
+        new_path.push_str(path);
+        debug_assert_eq!(new_path.capacity(), new_len);
+
+        self.set_path(&new_path);
     }
 }
 
