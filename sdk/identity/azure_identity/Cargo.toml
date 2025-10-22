@@ -30,6 +30,7 @@ azure_core_test.workspace = true
 azure_security_keyvault_secrets = { path = "../../keyvault/azure_security_keyvault_secrets" }
 clap.workspace = true
 reqwest.workspace = true
+serde_json.workspace = true
 serde_test.workspace = true
 serial_test.workspace = true
 tokio.workspace = true

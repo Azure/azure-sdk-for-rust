@@ -1,0 +1,23 @@
+[package]
+name = "azure_data_cosmos_native"
+publish = false
+description = "The Cosmos Native Client is a C library, written in Rust but exporting a C-compatible API, that provides a full SDK for Azure Cosmos DB."
+version = "0.27.0"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "azurecosmos"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+azure_data_cosmos = { path = "../azure_data_cosmos" }
+
+[build-dependencies]
+cbindgen = "0.29.0"
+
+[lints]
+workspace = true

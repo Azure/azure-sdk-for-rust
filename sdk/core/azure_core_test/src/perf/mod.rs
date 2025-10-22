@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![doc = include_str!("README.md")]
 #![cfg(not(target_arch = "wasm32"))]
 
 use crate::TestContext;
@@ -298,7 +297,7 @@ impl PerfRunner {
         let test_instance = (test.create_test)(self.clone()).await?;
         let test_instance: Arc<dyn PerfTest> = Arc::from(test_instance);
 
-        let test_mode = crate::TestMode::current()?;
+        let test_mode = crate::TestMode::current_opt()?.unwrap_or(crate::TestMode::Live);
 
         let context = Arc::new(
             crate::recorded::start(
@@ -479,10 +478,17 @@ impl PerfRunner {
                     .value_parser(clap::value_parser!(u32))
                     .global(false),
             )
-            .arg(clap::arg!(--sync).global(true).required(false))
+            .arg(clap::arg!(--sync "Run synchronous tests (ignored)")
+                .global(true)
+                .required(false))
+            .arg(clap::arg!(--"test-proxy" <URL> "The URL of the test proxy, ignored.")
+                .global(true)
+                .value_parser(clap::value_parser!(String))
+                .required(false))
             .arg(
                 clap::arg!(--parallel <COUNT> "The number of concurrent tasks to use when running each test")
                     .required(false)
+                    .short('p')
                     .default_value("1")
                     .value_parser(clap::value_parser!(u32))
                     .global(true),
@@ -491,6 +497,7 @@ impl PerfRunner {
             .arg(
                 clap::arg!(--duration <SECONDS> "The duration of each test in seconds")
                     .required(false)
+                    .short('d')
                     .default_value("30")
                     .value_parser(clap::value_parser!(i64))
                     .global(true),
