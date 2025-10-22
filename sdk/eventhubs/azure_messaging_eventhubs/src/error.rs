@@ -14,9 +14,6 @@ pub enum ErrorKind {
     /// A simple error.
     SimpleMessage(Cow<'static, str>),
 
-    /// The host is missing in the endpoint.
-    MissingHostInEndpoint,
-
     /// The management response is invalid.
     InvalidManagementResponse,
 
@@ -65,7 +62,6 @@ impl std::fmt::Display for EventHubsError {
             ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
             ErrorKind::InvalidManagementResponse => f.write_str("Invalid management response"),
             ErrorKind::AmqpError(source) => write!(f, "AmqpError: {:?}", source),
-            ErrorKind::MissingHostInEndpoint => f.write_str("Missing host in endpoint"),
         }
     }
 }
