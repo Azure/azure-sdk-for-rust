@@ -61,7 +61,7 @@ extends:
         justificationForDisabling: "To reduce redundant CG runs across all our pipeline jobs we are disabling and only running in our main build job."
       eslint:
         enabled: false
-        justificationForDisabling: "ESLint is not interesting for this repo as it is rust code mostly and any JS/TS in the repo is updated outside of this repo."
+        justificationForDisabling: "ESLint is not interesting for this repo as it is mostly Rust code and any JS/TS in the repo is updated outside of this repo."
       credscan:
         suppressionsFile: $(Build.SourcesDirectory)/eng/CredScanSuppression.json
         baselineFiles: $(Build.SourcesDirectory)/eng/rust.gdnbaselines
