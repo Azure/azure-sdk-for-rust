@@ -102,26 +102,17 @@ impl AmqpManagementApis for RecoverableManagementClient {
                 let application_properties = application_properties.clone();
 
                 async move {
-                    let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
-                        AmqpError::from(azure_core::Error::with_message(
-                            AzureErrorKind::Other,
-                            "Missing Connection",
-                        ))
-                    })?;
+                    let connection = self
+                        .recoverable_connection
+                        .upgrade()
+                        .ok_or_else(|| AmqpError::with_message("Missing Connection"))?;
 
                     #[cfg(test)]
                     connection.get_forced_error()?;
 
                     let result = connection
                         .ensure_amqp_management()
-                        .await
-                        .map_err(|e| {
-                            AmqpError::from(azure_core::Error::with_error(
-                                AzureErrorKind::Other,
-                                e,
-                                "Error ensuring connection",
-                            ))
-                        })?
+                        .await?
                         .call(operation_type, application_properties)
                         .await;
                     if let Err(ref e) = result {
@@ -134,12 +125,7 @@ impl AmqpManagementApis for RecoverableManagementClient {
             &self
                 .recoverable_connection
                 .upgrade()
-                .ok_or_else(|| {
-                    AmqpError::from(azure_core::Error::with_message(
-                        AzureErrorKind::Other,
-                        "Missing Connection",
-                    ))
-                })?
+                .ok_or_else(|| AmqpError::with_message("Missing Connection"))?
                 .retry_options,
             Self::should_retry_management_response,
             Some(|connection, reason| {

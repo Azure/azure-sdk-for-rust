@@ -129,7 +129,8 @@ impl AmqpError {
         &self.kind
     }
 
-    pub(crate) fn with_message<C>(message: C) -> AmqpError
+    /// Returns a simple message AMQP error.
+    pub fn with_message<C>(message: C) -> AmqpError
     where
         C: Into<Cow<'static, str>>,
     {

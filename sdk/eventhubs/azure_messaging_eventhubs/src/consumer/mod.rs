@@ -9,15 +9,9 @@ use crate::{
     common::{recoverable::RecoverableConnection, ManagementInstance},
     error::Result,
     models::{ConsumerClientDetails, EventHubPartitionProperties, EventHubProperties},
-    RetryOptions,
+    EventHubsError, RetryOptions,
 };
-use azure_core::{
-    credentials::TokenCredential,
-    error::{Error, ErrorKind as AzureErrorKind},
-    http::Url,
-    time::Duration,
-    Uuid,
-};
+use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 #[cfg(test)]
 use azure_core_amqp::AmqpError;
 use azure_core_amqp::{
@@ -153,8 +147,7 @@ impl ConsumerClient {
         trace!("Closing consumer client for {}.", self.endpoint);
         let recoverable_connection =
             Arc::try_unwrap(self.recoverable_connection).map_err(|_| {
-                Error::with_message(
-                    AzureErrorKind::Other,
+                EventHubsError::with_message(
                     "Could not close consumer recoverable connection, multiple references exist",
                 )
             })?;
@@ -183,10 +176,7 @@ impl ConsumerClient {
                 .endpoint
                 .host()
                 .ok_or_else(|| {
-                    Error::with_message(
-                        AzureErrorKind::Other,
-                        "Could not find host in consumer client",
-                    )
+                    EventHubsError::with_message("Could not find host in consumer client")
                 })?
                 .to_string(),
             client_id: self.recoverable_connection.get_connection_id().to_string(),

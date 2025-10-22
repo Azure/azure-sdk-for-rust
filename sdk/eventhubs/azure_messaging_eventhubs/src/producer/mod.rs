@@ -220,17 +220,11 @@ impl ProducerClient {
             AmqpSendOutcome::Rejected(reason) => {
                 trace!("Send was rejected: {:?}", reason);
                 if let Some(reason) = reason {
-                    return Err(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Other,
-                        AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)),
-                    )
-                    .into());
+                    return Err(AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)).into());
                 }
-                Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
+                Err(EventHubsError::with_message(
                     "Send was rejected by the Event Hub.",
-                )
-                .into())
+                ))
             }
             AmqpSendOutcome::Modified(reason) => {
                 trace!("Send was modified: {:?}", reason);
@@ -343,11 +337,9 @@ impl ProducerClient {
                         AmqpErrorKind::AmqpDescribedError(reason),
                     )));
                 }
-                Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
+                Err(EventHubsError::with_message(
                     "Batch was rejected by the Event Hub.",
-                )
-                .into())
+                ))
             }
             AmqpSendOutcome::Modified(reason) => {
                 trace!("Batch was modified: {:?}", reason);

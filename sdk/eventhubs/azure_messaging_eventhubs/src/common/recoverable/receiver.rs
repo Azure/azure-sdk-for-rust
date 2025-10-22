@@ -76,9 +76,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
         let retry_options = {
             self.recoverable_connection
                 .upgrade()
-                .ok_or_else(|| {
-                    azure_core::Error::with_message(AzureErrorKind::Other, "Missing connection")
-                })?
+                .ok_or_else(|| AmqpError::with_message("Missing connection"))?
                 .retry_options
                 .clone()
         };
@@ -86,9 +84,10 @@ impl AmqpReceiverApis for RecoverableReceiver {
             || async move {
                 debug!("Starting receive_delivery operation");
                 let receiver = {
-                    let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
-                        azure_core::Error::with_message(AzureErrorKind::Other, "Missing connection")
-                    })?;
+                    let connection = self
+                        .recoverable_connection
+                        .upgrade()
+                        .ok_or_else(|| AmqpError::with_message("Missing connection"))?;
 
                     // Check for forced error.
                     #[cfg(test)]
@@ -102,11 +101,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
                         )
                         .await
                         .map_err(|e| {
-                            azure_core::Error::with_error(
-                                AzureErrorKind::Other,
-                                e,
-                                "Failed to ensure receiver",
-                            )
+                            AmqpError::with_message(format!("Failed to ensure receiver: {e}"))
                         })?
                 };
                 if let Some(delivery_timeout) = self.timeout {

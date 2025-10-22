@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 // Licensed under the MIT License.
 
-use azure_core::error::ErrorKind as AzureErrorKind;
 use azure_core_amqp::{AmqpDescribedError, AmqpError};
+use std::borrow::Cow;
 
 /// A specialized `Result` type for Event Hubs operations.
 pub type Result<T> = std::result::Result<T, EventHubsError>;
@@ -11,32 +11,14 @@ pub type Result<T> = std::result::Result<T, EventHubsError>;
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum ErrorKind {
-    /// The session was missing for the partition.
-    MissingSession,
+    /// A simple error.
+    SimpleMessage(Cow<'static, str>),
 
     /// The host is missing in the endpoint.
     MissingHostInEndpoint,
 
-    /// Missing Message Sender
-    MissingMessageSender,
-
-    /// Missing Message Receiver
-    MissingMessageReceiver,
-
-    /// The connection is not yet open.
-    MissingConnection,
-
-    /// The management client is not yet open.
-    MissingManagementClient,
-
     /// The management response is invalid.
     InvalidManagementResponse,
-
-    /// Unable to add authentication token.
-    UnableToAddAuthenticationToken,
-
-    /// Unable to add a connection.
-    UnableToAddConnection,
 
     /// The message was rejected.
     SendRejected(Option<AmqpDescribedError>),
@@ -56,6 +38,15 @@ pub struct EventHubsError {
     pub kind: ErrorKind,
 }
 
+impl EventHubsError {
+    pub(crate) fn with_message<C>(message: C) -> EventHubsError
+    where
+        C: Into<Cow<'static, str>>,
+    {
+        Self::from(ErrorKind::SimpleMessage(message.into()))
+    }
+}
+
 impl std::error::Error for EventHubsError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.kind {
@@ -69,21 +60,11 @@ impl std::error::Error for EventHubsError {
 impl std::fmt::Display for EventHubsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.kind {
+            ErrorKind::SimpleMessage(msg) => write!(f, "{}", msg),
             ErrorKind::AzureCore(e) => write!(f, "Azure Core Error: {}", e),
-            ErrorKind::UnableToAddConnection => f.write_str("Unable to add connection."),
-            ErrorKind::MissingMessageSender => f.write_str("Missing message sender."),
-            ErrorKind::MissingMessageReceiver => f.write_str("Missing message receiver."),
             ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
             ErrorKind::InvalidManagementResponse => f.write_str("Invalid management response"),
-            ErrorKind::UnableToAddAuthenticationToken => {
-                f.write_str("Unable to add authentication token")
-            }
-            ErrorKind::MissingSession => {
-                f.write_str("The session for the specified partition is missing.")
-            }
             ErrorKind::AmqpError(source) => write!(f, "AmqpError: {:?}", source),
-            ErrorKind::MissingConnection => f.write_str("Connection is not yet open."),
-            ErrorKind::MissingManagementClient => f.write_str("Missing management client."),
             ErrorKind::MissingHostInEndpoint => f.write_str("Missing host in endpoint"),
         }
     }
@@ -118,12 +99,11 @@ impl From<azure_core::Error> for EventHubsError {
 }
 
 impl TryFrom<EventHubsError> for azure_core::Error {
-    type Error = azure_core::Error;
+    type Error = EventHubsError;
     fn try_from(value: EventHubsError) -> std::result::Result<Self, Self::Error> {
         match value.kind {
             ErrorKind::AzureCore(e) => Ok(e),
-            _ => Err(azure_core::Error::with_message(
-                AzureErrorKind::Other,
+            _ => Err(EventHubsError::with_message(
                 "EventHubs error is not an Azure Error",
             )),
         }

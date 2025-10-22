@@ -116,11 +116,7 @@ impl<'a> EventDataBatch<'a> {
     }
 
     fn arithmetic_error() -> EventHubsError {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
-            "Arithmetic error calculating Batch size.",
-        )
-        .into()
+        EventHubsError::with_message("Arithmetic error calculating Batch size.")
     }
 
     fn calculate_actual_size_for_payload(length: usize) -> Result<u64> {

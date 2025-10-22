@@ -85,12 +85,7 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
                     let claims_based_security_client = self
                         .recoverable_connection
                         .upgrade()
-                        .ok_or_else(|| {
-                            AmqpError::from(azure_core::Error::with_message(
-                                AzureErrorKind::Other,
-                                "Missing Connection",
-                            ))
-                        })?
+                        .ok_or_else(|| AmqpError::with_message("Missing Connection"))?
                         .ensure_amqp_cbs()
                         .await
                         .map_err(|e| {
@@ -108,12 +103,7 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
             &self
                 .recoverable_connection
                 .upgrade()
-                .ok_or_else(|| {
-                    AmqpError::from(azure_core::Error::with_message(
-                        AzureErrorKind::Other,
-                        "Missing connection",
-                    ))
-                })?
+                .ok_or_else(|| AmqpError::with_message("Missing connection"))?
                 .retry_options,
             Self::should_retry_claims_based_security_response,
             Some(move |connection: Weak<RecoverableConnection>, reason| {

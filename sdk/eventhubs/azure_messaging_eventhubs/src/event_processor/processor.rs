@@ -97,12 +97,10 @@ impl ProcessorConsumersMap {
         partition_client: Arc<PartitionClient>,
     ) -> Result<bool> {
         info!("Adding partition client for partition: {}", partition_id);
-        let mut consumers = self.consumers.lock().map_err(|_| {
-            azure_core::Error::with_message(
-                AzureErrorKind::Other,
-                "Could not lock consumers mutex.",
-            )
-        })?;
+        let mut consumers = self
+            .consumers
+            .lock()
+            .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
         if consumers.contains_key(partition_id) {
             info!(
                 "Partition client already exists for partition: {}",
@@ -117,12 +115,10 @@ impl ProcessorConsumersMap {
 
     pub fn remove_partition_client(&self, partition_id: &str) -> Result<()> {
         info!("Removing partition client for partition: {}", partition_id);
-        let mut consumers = self.consumers.lock().map_err(|_| {
-            azure_core::Error::with_message(
-                AzureErrorKind::Other,
-                "Could not lock consumers mutex.",
-            )
-        })?;
+        let mut consumers = self
+            .consumers
+            .lock()
+            .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
         consumers.remove(partition_id);
         info!("Consumers for partition now: {:?}", consumers.keys());
         Ok(())
@@ -263,10 +259,7 @@ impl EventProcessor {
         // Implement shutdown logic if needed
 
         let mut is_running = self.is_running.lock().map_err(|_| {
-            Error::with_message(
-                AzureErrorKind::Other,
-                "Failed to acquire lock on is_running for shutdown",
-            )
+            EventHubsError::with_message("Failed to acquire lock on is_running for shutdown")
         })?;
 
         *is_running = false;
@@ -275,12 +268,10 @@ impl EventProcessor {
 
     fn is_shutdown(&self) -> Result<bool> {
         // Implement shutdown logic if needed
-        let is_running = self.is_running.lock().map_err(|_| {
-            Error::with_message(
-                AzureErrorKind::Other,
-                "Failed to acquire lock on is_running",
-            )
-        })?;
+        let is_running = self
+            .is_running
+            .lock()
+            .map_err(|_| EventHubsError::with_message("Failed to acquire lock on is_running"))?;
         if *is_running {
             Ok(false)
         } else {
@@ -357,11 +348,9 @@ impl EventProcessor {
             }
         } else {
             error!("Consumers map is no longer valid.");
-            return Err(Error::with_message(
-                AzureErrorKind::Other,
+            return Err(EventHubsError::with_message(
                 "Consumers map is no longer valid.",
-            )
-            .into());
+            ));
         }
 
         // Since we can only have a single EventReceiver on a partition, we don't actually attempt to create the receiver until
@@ -420,10 +409,7 @@ impl EventProcessor {
             // Wait for the next partition client to be available
             let mut clients = self.next_partition_clients.lock().await;
             let next_client = clients.next().await.ok_or_else(|| {
-                azure_core::Error::with_message(
-                    AzureErrorKind::Other,
-                    "No next partition client available: ",
-                )
+                EventHubsError::with_message("No next partition client available: ")
             })?;
 
             info!(
@@ -445,10 +431,7 @@ impl EventProcessor {
                 client.get_partition_id()
             );
             let client = Arc::try_unwrap(client).map_err(|_| {
-                azure_core::Error::with_message(
-                    AzureErrorKind::Other,
-                    "Partition client still has multiple references.",
-                )
+                EventHubsError::with_message("Partition client still has multiple references.")
             })?;
             let res = client.close().await;
             if let Err(e) = res {

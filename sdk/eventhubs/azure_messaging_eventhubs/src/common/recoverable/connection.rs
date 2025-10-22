@@ -16,7 +16,7 @@ use crate::{
     error::Result,
     models::AmqpValue,
     producer::DEFAULT_EVENTHUBS_APPLICATION,
-    ErrorKind, EventHubsError, RetryOptions,
+    RetryOptions,
 };
 use async_lock::Mutex as AsyncMutex;
 use azure_core::{
@@ -138,9 +138,12 @@ impl RecoverableConnection {
 
     #[cfg(test)]
     pub(crate) fn force_error(&self, error: AmqpError) -> Result<()> {
-        let mut err = self.forced_error.lock().map_err(|e| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
-        })?;
+        use crate::EventHubsError;
+
+        let mut err = self
+            .forced_error
+            .lock()
+            .map_err(|e| EventHubsError::with_message(e.to_string()))?;
         *err = Some(error);
         Ok(())
     }
@@ -262,10 +265,7 @@ impl RecoverableConnection {
         if let Some(connection) = connection.as_ref() {
             return Ok(connection.clone());
         }
-        Err(AmqpError::from(azure_core::Error::with_message(
-            AzureErrorKind::Other,
-            "Missing Connection.",
-        )))
+        Err(AmqpError::with_message("Missing Connection."))
     }
 
     /// Creates a new management client for the Event Hubs service.
@@ -393,7 +393,9 @@ impl RecoverableConnection {
         Ok(connection)
     }
 
-    pub(super) async fn ensure_amqp_management(self: &Arc<Self>) -> Result<Arc<AmqpManagement>> {
+    pub(super) async fn ensure_amqp_management(
+        self: &Arc<Self>,
+    ) -> azure_core_amqp::Result<Arc<AmqpManagement>> {
         let mut management_client = self.mgmt_client.lock().await;
         if management_client.is_none() {
             *management_client = Some(
@@ -409,11 +411,13 @@ impl RecoverableConnection {
         }
 
         warn!("Management client is None, cannot ensure management client.");
-        Err(EventHubsError::from(ErrorKind::MissingConnection))
+        Err(AmqpError::with_message("Missing Management Client"))
     }
 
     /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
-    pub(super) async fn ensure_amqp_cbs(self: &Arc<Self>) -> Result<Arc<AmqpClaimsBasedSecurity>> {
+    pub(super) async fn ensure_amqp_cbs(
+        self: &Arc<Self>,
+    ) -> azure_core_amqp::Result<Arc<AmqpClaimsBasedSecurity>> {
         let span = span!(
             tracing::Level::DEBUG,
             "ensure_amqp_cbs",
@@ -435,7 +439,7 @@ impl RecoverableConnection {
         source_url: &Url,
         message_source: &AmqpSource,
         receiver_options: &AmqpReceiverOptions,
-    ) -> Result<Arc<AmqpReceiver>> {
+    ) -> azure_core_amqp::Result<Arc<AmqpReceiver>> {
         let mut receiver_instances = self.receiver_instances.lock().await;
         if !receiver_instances.contains_key(source_url) {
             self.ensure_connection().await?;
@@ -458,7 +462,7 @@ impl RecoverableConnection {
 
         Ok(receiver_instances
             .get(source_url)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::MissingMessageReceiver))?
+            .ok_or_else(|| AmqpError::with_message("Missing message receiver"))?
             .clone())
     }
 
@@ -511,11 +515,7 @@ impl RecoverableConnection {
                 "Connection is None, cannot recover from error: {:?}",
                 reason
             );
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "Missing Connection",
-            )
-            .into());
+            return Err(AmqpError::with_message("Missing Connection"));
         };
 
         // Log the error and attempt to recover.
@@ -547,11 +547,9 @@ impl RecoverableConnection {
             }
             _ => {
                 warn!("Recover action {reason:?} should already have been handled.");
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Unknown error recovery action",
-                )
-                .into());
+                return Err(AmqpError::with_message(format!(
+                    "Unknown error recovery action: {reason:?}"
+                )));
             }
         }
 
