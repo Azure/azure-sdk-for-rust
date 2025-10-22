@@ -26,3 +26,8 @@ pub use typespec::Bytes;
 pub use uuid::Uuid;
 
 pub use sleep::sleep;
+
+mod private {
+    pub trait Sealed {}
+    impl Sealed for crate::http::Url {}
+}
