@@ -32,12 +32,12 @@ impl GeneratedAppendBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `append_blob_url` - The full URL of the Append blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `blob_url` - The full URL of the Append blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.AppendBlob")]
     pub fn from_url(
-        append_blob_url: Url,
+        blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<AppendBlobClientOptions>,
     ) -> Result<Self> {
@@ -50,10 +50,10 @@ impl GeneratedAppendBlobClient {
             .push(storage_headers_policy);
 
         let per_retry_policies = if let Some(token_credential) = credential {
-            if !append_blob_url.scheme().starts_with("https") {
+            if !blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{append_blob_url} must use https"),
+                    format!("{blob_url} must use https"),
                 ));
             }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
@@ -75,7 +75,7 @@ impl GeneratedAppendBlobClient {
         );
 
         Ok(Self {
-            endpoint: append_blob_url,
+            endpoint: blob_url,
             version: options.version,
             pipeline,
         })

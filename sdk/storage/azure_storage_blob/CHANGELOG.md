@@ -8,14 +8,14 @@
   - `AppendBlobClient::from_blob_url()`
   - `BlobClient::from_blob_url()`
   - `BlobContainerClient::from_container_url()`
-  - `BlobServiceClient::from_service_url()`
+  - `BlobServiceClient::new()` (unchanged)
   - `BlockBlobClient::from_blob_url()`
   - `PageBlobClient::from_blob_url()`
 - This also includes support for client construction directly from URLs containing SAS (shared access signature) query parameters:
   - `AppendBlobClient::from_blob_sas_url()`
   - `BlobClient::from_blob_sas_url()`
   - `BlobContainerClient::from_container_sas_url()`
-  - `BlobServiceClient::from_service_sas_url()`
+  - `BlobServiceClient::from_sas_url()`
   - `BlockBlobClient::from_blob_sas_url()`
   - `PageBlobClient::from_blob_sas_url()`
 - Added support for client construction without providing authentication information `with_no_credential()` to all clients.
@@ -24,7 +24,7 @@
 
 - Removed the `container_name()` and `blob_name()` accessors on relevant clients.
 - Removed the `endpoint` struct field on all clients, as this value is now returned directly from the underlying generated client.
-- Changed the `container_name` and `blob_name` parameters from owned `String` to `&str` reference on client constructor methods (`new()`).
+- Changed the `container_name` and `blob_name` parameters from owned `String` to `&str` reference on relevant client constructor methods (`new()`).
 
 ### Bugs Fixed
 

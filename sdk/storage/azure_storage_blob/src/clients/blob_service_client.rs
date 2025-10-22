@@ -119,34 +119,14 @@ impl BlobServiceClient {
         Ok(Self { client })
     }
 
-    /// Creates a new BlobServiceClient from the URL of the Azure storage account.
-    ///
-    /// # Arguments
-    ///
-    /// * `url` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`.
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    pub fn from_service_url(
-        url: Url,
-        credential: Arc<dyn TokenCredential>,
-        options: Option<BlobServiceClientOptions>,
-    ) -> Result<Self> {
-        let client = GeneratedBlobServiceClient::from_url(url, Some(credential), options)?;
-
-        Ok(Self { client })
-    }
-
     /// Creates a new BlobServiceClient from the URL of the Azure storage account containing the SAS (shared access signature) query parameters.
     ///
     /// # Arguments
     ///
-    /// * `blob_service_sas_url` - The full URL of the Azure storage account, including the SAS query parameters.
+    /// * `sas_url` - The full URL of the Azure storage account, including the SAS query parameters.
     /// * `options` - Optional configuration for the client.
-    pub fn from_sas_url(
-        blob_service_sas_url: Url,
-        options: Option<BlobServiceClientOptions>,
-    ) -> Result<Self> {
-        let client = GeneratedBlobServiceClient::from_url(blob_service_sas_url, None, options)?;
+    pub fn from_sas_url(sas_url: Url, options: Option<BlobServiceClientOptions>) -> Result<Self> {
+        let client = GeneratedBlobServiceClient::from_url(sas_url, None, options)?;
 
         Ok(Self { client })
     }

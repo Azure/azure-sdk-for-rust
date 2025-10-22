@@ -517,48 +517,34 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
     );
 
+    let container_name = "test-container-encoding-edge-cases";
+    // Create Container & Container Client
+    let container_client = BlobContainerClient::new(
+        &endpoint,
+        container_name,
+        recording.credential(),
+        Some(container_client_options.clone()),
+    )?;
+    container_client.create_container(None).await?;
+
     // Test Data for Parameterization
     let test_cases = [
         // Basic + paths - combines simple case with forward slashes (virtual directories)
-        ("test-container-basic", "folder/subfolder/file.txt"),
+        "folder/subfolder/file.txt",
         // Reserved URL characters requiring encoding - combines spaces, %, ?, &, =, #, + in one test
-        (
-            "test-container-encoded",
-            "Q4 2024/report 50%+tax?final=true&approved#section-1.pdf",
-        ),
+        "Q4 2024/report 50%+tax?final=true&approved#section-1.pdf",
         // Unicode (multi-script) + unreserved chars - combines UTF-8 with chars that don't need encoding
-        ("test-container-unicode", "カニのフェリス_🦀.txt"),
+        "カニのフェリス_🦀.txt",
         // Consecutive special chars
-        (
-            "test-container-edge-cases",
-            "path\\\\with___...~~~consecutive///chars",
-        ),
+        "path\\\\with___...~~~consecutive///chars",
         // Additional reserved chars: parentheses, brackets, colon, quotes, leading/trailing spaces
-        (
-            "test-container-more-special",
-            " file (copy) [2024]:version'1'.txt ",
-        ),
+        " file (copy) [2024]:version'1'.txt ",
         // Mix of forward and backslashes to test normalization/preservation
-        (
-            "test-container-forward-back-slashes",
-            "forward/back\\forward/back\\",
-        ),
+        "forward/back\\forward/back\\",
         // Test of already encoded characters but we want them preserved as-is
-        (
-            "test-container-already-encoded",
-            "data%20set%ferris%3D1%the%23crab%2D2",
-        ),
+        "data%20set%ferris%3D1%the%23crab%2D2",
     ];
-    for (container_name, blob_name) in test_cases {
-        // Create Container & Container Client
-        let container_client = BlobContainerClient::new(
-            &endpoint,
-            container_name,
-            recording.credential(),
-            Some(container_client_options.clone()),
-        )?;
-        container_client.create_container(None).await?;
-
+    for blob_name in test_cases {
         // Test Case 1: Initialize BlobClient using new() constructor
         let blob_client_new = BlobClient::new(
             &endpoint,
@@ -581,23 +567,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         // Get Properties
         let properties = blob_client_new.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
-
-        // Check Name Equality
-        let mut list_blobs_response = container_client.list_blobs(None)?;
-        let page = list_blobs_response.try_next().await?;
-        let list_blob_segment_response = page.unwrap().into_body()?;
-        let blob_items = list_blob_segment_response.segment.blob_items;
-        assert_eq!(1, blob_items.len());
-        let listed_blob_name = blob_items[0]
-            .name
-            .as_ref()
-            .unwrap()
-            .content
-            .as_ref()
-            .unwrap();
-
-        // Apply normalization of `\` to `/` for comparison since Azure Blob Storage normalizes `\` to `/` in blob names on Service side
-        assert_eq!(listed_blob_name, &blob_name.replace('\\', "/"));
 
         // Test Case 2: Initialize BlobClient using from_blob_url(), separate path segments
         let mut blob_url = Url::parse(&endpoint)?;
@@ -627,23 +596,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_from_url.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Check Name Equality
-        let mut list_blobs_response = container_client.list_blobs(None)?;
-        let page = list_blobs_response.try_next().await?;
-        let list_blob_segment_response = page.unwrap().into_body()?;
-        let blob_items = list_blob_segment_response.segment.blob_items;
-        assert_eq!(1, blob_items.len());
-        let listed_blob_name = blob_items[0]
-            .name
-            .as_ref()
-            .unwrap()
-            .content
-            .as_ref()
-            .unwrap();
-
-        // Apply normalization of `\` to `/` for comparison since Azure Blob Storage normalizes `\` to `/` in blob names on Service side
-        assert_eq!(listed_blob_name, &blob_name.replace('\\', "/"));
-
         // Test Case 3: Initialize BlobClient using from_blob_url(), using Url methods to build full URL properly
         let mut blob_url = Url::parse(&endpoint)?;
         blob_url
@@ -672,23 +624,6 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_from_url.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Check Name Equality
-        let mut list_blobs_response = container_client.list_blobs(None)?;
-        let page = list_blobs_response.try_next().await?;
-        let list_blob_segment_response = page.unwrap().into_body()?;
-        let blob_items = list_blob_segment_response.segment.blob_items;
-        assert_eq!(1, blob_items.len());
-        let listed_blob_name = blob_items[0]
-            .name
-            .as_ref()
-            .unwrap()
-            .content
-            .as_ref()
-            .unwrap();
-
-        // Apply normalization of `\` to `/` for comparison since Azure Blob Storage normalizes `\` to `/` in blob names on Service side
-        assert_eq!(listed_blob_name, &blob_name.replace('\\', "/"));
-
         // Test Case 4: Initialize BlobClient using ContainerClient accessor
         let blob_client_from_cc = container_client.blob_client(blob_name);
 
@@ -705,26 +640,36 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         // Get Properties
         let properties = blob_client_from_cc.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
-
-        // Check Name Equality
-        let mut list_blobs_response = container_client.list_blobs(None)?;
-        let page = list_blobs_response.try_next().await?;
-        let list_blob_segment_response = page.unwrap().into_body()?;
-        let blob_items = list_blob_segment_response.segment.blob_items;
-        assert_eq!(1, blob_items.len());
-        let listed_blob_name = blob_items[0]
-            .name
-            .as_ref()
-            .unwrap()
-            .content
-            .as_ref()
-            .unwrap();
-
-        // Apply normalization of `\` to `/` for comparison since Azure Blob Storage normalizes `\` to `/` in blob names on Service side
-        assert_eq!(listed_blob_name, &blob_name.replace('\\', "/"));
-
-        container_client.delete_container(None).await?;
     }
+
+    // Check name equality for all test cases
+    let mut list_blobs_response = container_client.list_blobs(None)?;
+    let page = list_blobs_response.try_next().await?;
+    let list_blob_segment_response = page.unwrap().into_body()?;
+    let blob_items = list_blob_segment_response.segment.blob_items;
+
+    // Ensure we have the expected number of blobs
+    assert_eq!(test_cases.len(), blob_items.len());
+
+    // Extract all blob names from list_blobs() response
+    let listed_blob_names: Vec<String> = blob_items
+        .iter()
+        .map(|blob| blob.name.clone().unwrap().content.unwrap())
+        .collect();
+
+    // Verify each test case blob name appears in the list (with normalization)
+    for blob_name in test_cases {
+        let normalized_name = blob_name.replace('\\', "/");
+        assert!(
+            listed_blob_names.contains(&normalized_name),
+            "Blob name '{}' (normalized: '{}') not found in list: {:?}",
+            blob_name,
+            normalized_name,
+            listed_blob_names
+        );
+    }
+
+    container_client.delete_container(None).await?;
 
     Ok(())
 }

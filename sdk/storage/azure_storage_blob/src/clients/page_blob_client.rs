@@ -35,12 +35,12 @@ impl GeneratedPageBlobClient {
     ///
     /// # Arguments
     ///
-    /// * `page_blob_url` - The full URL of the Page blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    /// * `blob_url` - The full URL of the Page blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.PageBlob")]
     pub fn from_url(
-        page_blob_url: Url,
+        blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<PageBlobClientOptions>,
     ) -> Result<Self> {
@@ -53,10 +53,10 @@ impl GeneratedPageBlobClient {
             .push(storage_headers_policy);
 
         let per_retry_policies = if let Some(token_credential) = credential {
-            if !page_blob_url.scheme().starts_with("https") {
+            if !blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{page_blob_url} must use https"),
+                    format!("{blob_url} must use https"),
                 ));
             }
             let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenCredentialPolicy::new(
@@ -78,7 +78,7 @@ impl GeneratedPageBlobClient {
         );
 
         Ok(Self {
-            endpoint: page_blob_url,
+            endpoint: blob_url,
             version: options.version,
             pipeline,
         })
