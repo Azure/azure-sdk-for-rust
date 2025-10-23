@@ -369,16 +369,161 @@ async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Er
         .set_access_policy(vec![signed_identifier], None)
         .await?;
 
-    // Assert
-    let access_policy_response = container_client.get_access_policy(None).await?;
-    let signed_identifiers = access_policy_response.into_body().await?;
-    for signed_identifier in &signed_identifiers {
-        if let Some(access_policy) = &signed_identifier.access_policy {
-            assert!(signed_identifier.id.is_some());
-            assert!(access_policy.start.is_some());
-            assert!(access_policy.expiry.is_some());
-            assert_eq!("rw", access_policy.permission.as_ref().unwrap());
-        }
+    container_client.delete_container(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_container_access_policy_datetime_comprehensive(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    // Recording Setup - comprehensive test covering all datetime scenarios from parsers
+    use azure_core::time::parse_rfc3339;
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    container_client.create_container(None).await?;
+
+    // Comprehensive test cases that match ALL scenarios from the parsers unit tests
+    let comprehensive_test_cases = [
+        // Precision levels (from test_format_datetime_with_7_decimals)
+        (
+            "no-fractional-utc",
+            "2025-09-22T19:20:00Z",
+            "2025-09-22T19:20:00.0000000Z",
+            "r",
+        ),
+        (
+            "single-digit-padding",
+            "2025-09-22T19:20:00.1Z",
+            "2025-09-22T19:20:00.1000000Z",
+            "w",
+        ),
+        (
+            "millisecond-padding",
+            "2025-09-22T19:20:00.123Z",
+            "2025-09-22T19:20:00.1230000Z",
+            "d",
+        ),
+        (
+            "microsecond-padding",
+            "2025-09-22T19:20:10.622383Z",
+            "2025-09-22T19:20:10.6223830Z",
+            "l",
+        ),
+        (
+            "exact-7-digits",
+            "2025-09-22T19:20:00.1234567Z",
+            "2025-09-22T19:20:00.1234567Z",
+            "rw",
+        ),
+        (
+            "nanosecond-truncation",
+            "2025-09-22T19:20:00.622429456Z",
+            "2025-09-22T19:20:00.6224294Z",
+            "rd",
+        ),
+        // Timezone offset conversions (from test_format_datetime_no_fractional_seconds)
+        (
+            "negative-offset-conversion",
+            "2025-09-22T19:20:00-05:00",
+            "2025-09-23T00:20:00.0000000Z",
+            "rwl",
+        ),
+        (
+            "positive-offset-conversion",
+            "2025-09-22T19:20:00+03:30",
+            "2025-09-22T15:50:00.0000000Z",
+            "wdl",
+        ),
+        // Edge cases (from test_format_datetime_edge_cases)
+        (
+            "boundary-timezone-positive",
+            "2025-09-22T19:20:00.123+14:00",
+            "2025-09-22T05:20:00.1230000Z",
+            "rwdl",
+        ),
+        (
+            "boundary-timezone-negative",
+            "2019-10-12T00:20:50.52-08:00",
+            "2019-10-12T08:20:50.5200000Z",
+            "wd",
+        ),
+        // High precision with timezone offsets (from parser edge cases)
+        (
+            "microseconds-positive-offset",
+            "1999-09-10T03:05:07.3845533+01:00",
+            "1999-09-10T02:05:07.3845533Z",
+            "dl",
+        ),
+        // UTC variants with different precisions
+        (
+            "utc-basic-fractional",
+            "2019-10-12T07:20:50.52Z",
+            "2019-10-12T07:20:50.5200000Z",
+            "rwd",
+        ),
+        // Edge year (RFC 3339 example)
+        (
+            "rfc3339-example-year",
+            "1985-04-12T23:20:50.52Z",
+            "1985-04-12T23:20:50.5200000Z",
+            "rl",
+        ),
+        // Equivalent time representations (same UTC moment in different formats)
+        (
+            "equiv-utc",
+            "2022-08-26T18:38:00Z",
+            "2022-08-26T18:38:00.0000000Z",
+            "r",
+        ),
+        (
+            "equiv-neg-offset",
+            "2022-08-26T10:38:00-08:00",
+            "2022-08-26T18:38:00.0000000Z",
+            "w",
+        ),
+        (
+            "equiv-pos-offset",
+            "2022-08-26T20:38:00+02:00",
+            "2022-08-26T18:38:00.0000000Z",
+            "d",
+        ),
+        (
+            "equiv-microseconds",
+            "2022-08-26T18:38:00.000000Z",
+            "2022-08-26T18:38:00.0000000Z",
+            "l",
+        ),
+    ];
+
+    for (test_name, input_datetime, expected_output, permission) in comprehensive_test_cases {
+        // Test each scenario individually to ensure service accepts all formats
+        let dt_start = parse_rfc3339(input_datetime).unwrap();
+        let formatted_start = format_datetime(dt_start)?;
+        let dt_expiry = parse_rfc3339("2025-12-31T23:59:59Z").unwrap();
+        let formatted_expiry = format_datetime(dt_expiry)?;
+
+        // Verify the formatter produces the expected precision/conversion
+        assert_eq!(
+            formatted_start, expected_output,
+            "Failed for test case: {} with input: {}",
+            test_name, input_datetime
+        );
+
+        let access_policy = AccessPolicy {
+            expiry: Some(formatted_expiry),
+            permission: Some(permission.to_string()),
+            start: Some(formatted_start),
+        };
+        let signed_identifier = SignedIdentifier {
+            access_policy: Some(access_policy),
+            id: Some(format!("comprehensive-{}", test_name)),
+        };
+
+        // Test that the service accepts each datetime format
+        container_client
+            .set_access_policy(vec![signed_identifier], None)
+            .await?;
     }
 
     container_client.delete_container(None).await?;

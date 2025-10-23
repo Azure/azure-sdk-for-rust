@@ -173,4 +173,24 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_format_datetime_edge_cases() -> Result<(), Error> {
+        // Test with exactly 7 fractional digits - should not truncate or pad
+        let dt = parse_rfc3339("2025-09-22T19:20:00.1234567Z").unwrap();
+        let formatted = format_datetime(dt)?;
+        assert_eq!(formatted, "2025-09-22T19:20:00.1234567Z");
+
+        // Test with single fractional digit - should pad to 7
+        let dt = parse_rfc3339("2025-09-22T19:20:00.1Z").unwrap();
+        let formatted = format_datetime(dt)?;
+        assert_eq!(formatted, "2025-09-22T19:20:00.1000000Z");
+
+        // Test with boundary timezone offset
+        let dt = parse_rfc3339("2025-09-22T19:20:00.123+14:00").unwrap();
+        let formatted = format_datetime(dt)?;
+        assert_eq!(formatted, "2025-09-22T05:20:00.1230000Z");
+
+        Ok(())
+    }
 }
