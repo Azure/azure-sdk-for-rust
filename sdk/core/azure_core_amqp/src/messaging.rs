@@ -1281,7 +1281,7 @@ impl AmqpMessage {
 
     /// Serialize the AMQP message to a vector of bytes.
     #[cfg_attr(
-        all(feature = "fe2o3_amqp", target_arch = "wasm32"),
+        any(not(feature = "fe2o3_amqp"), target_arch = "wasm32"),
         allow(unused_variables)
     )]
     pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>> {
