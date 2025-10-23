@@ -10,14 +10,14 @@ use typespec_client_core::async_runtime::get_async_runtime;
 
 // Helper trait to conditionally require Send on non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
-pub trait CosmosConditionalSend: Send {}
+pub trait ConditionalSend: Send {}
 #[cfg(not(target_arch = "wasm32"))]
-impl<T: Send> CosmosConditionalSend for T {}
+impl<T: Send> ConditionalSend for T {}
 
 #[cfg(target_arch = "wasm32")]
 pub trait CosmosConditionalSend {}
 #[cfg(target_arch = "wasm32")]
-impl<T> CosmosConditionalSend for T {}
+impl<T> ConditionalSend for T {}
 
 /// Trait defining the interface for retry handlers in Cosmos DB operations
 ///
@@ -56,7 +56,7 @@ pub trait RetryHandler: Send + Sync {
     ) -> azure_core::Result<RawResponse>
     where
         Sender: Fn(&mut Request) -> Fut + Send + Sync,
-        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + CosmosConditionalSend;
+        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend;
 }
 
 /// Concrete retry handler implementation with exponential back off.
@@ -64,7 +64,7 @@ pub trait RetryHandler: Send + Sync {
 /// a pluggable retry policy system. It wraps HTTP requests with intelligent retry logic
 /// that handles both transient network errors and HTTP error responses.
 #[derive(Debug, Clone)]
-pub struct BackOffRetryHandler {}
+pub struct BackOffRetryHandler;
 
 impl BackOffRetryHandler {
     /// Creates a new instance of `BackOffRetryHandler`
@@ -96,7 +96,7 @@ impl BackOffRetryHandler {
     /// retry policy should be used for this specific request.
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    pub fn get_policy_for_request(&self, _request: &Request) -> Arc<dyn RetryPolicy> {
+    pub fn policy_for_request(&self, _request: &Request) -> Arc<dyn RetryPolicy> {
         // For now, always return ResourceThrottleRetryPolicy. Future implementation should check
         // the request operation type and resource type and accordingly return the respective retry
         // policy.
@@ -122,11 +122,11 @@ impl RetryHandler for BackOffRetryHandler {
     ) -> azure_core::Result<RawResponse>
     where
         Sender: Fn(&mut Request) -> Fut + Send + Sync,
-        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + CosmosConditionalSend,
+        Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
     {
         // Get the appropriate retry policy based on the request
-        let retry_policy = self.get_policy_for_request(request);
-        retry_policy.on_before_send_request(request);
+        let retry_policy = self.policy_for_request(request);
+        retry_policy.before_send_request(request);
 
         loop {
             // Invoke the provided sender callback instead of calling inner_send_async directly

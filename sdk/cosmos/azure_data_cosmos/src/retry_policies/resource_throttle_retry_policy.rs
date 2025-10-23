@@ -6,8 +6,6 @@ use async_trait::async_trait;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
-use typespec_client_core::http::Request;
 
 /// Retry policy for handling resource throttling (429 TooManyRequests) errors
 ///
@@ -27,7 +25,7 @@ pub struct ResourceThrottleRetryPolicy {
     backoff_delay_factor: u32,
     max_wait_time: Duration,
     current_attempt_count: AtomicUsize,
-    cumulative_retry_delay: Arc<AtomicUsize>,
+    cumulative_retry_delay: AtomicUsize,
 }
 
 impl ResourceThrottleRetryPolicy {
@@ -55,7 +53,7 @@ impl ResourceThrottleRetryPolicy {
             backoff_delay_factor,
             max_wait_time: Duration::seconds(max_wait_time_secs),
             current_attempt_count: AtomicUsize::new(0),
-            cumulative_retry_delay: Arc::new(AtomicUsize::new(0)),
+            cumulative_retry_delay: AtomicUsize::new(0),
         }
     }
 
@@ -93,6 +91,7 @@ impl ResourceThrottleRetryPolicy {
     fn should_retry_with_backoff(&self, retry_after: Option<Duration>) -> RetryResult {
         let attempt = self.current_attempt_count.load(Ordering::Relaxed);
         if attempt < self.max_attempt_count {
+            tracing::trace!("Current retry attempt: {:?}, backoff time: {:?}", attempt, retry_after);
             let retry_result = self.check_if_retry_needed(retry_after);
 
             if matches!(retry_result, RetryResult::Retry { .. }) {
@@ -101,6 +100,7 @@ impl ResourceThrottleRetryPolicy {
             }
         }
 
+        tracing::trace!("Exhausted all retry attempts and reached maximum retry: {:?}. The request will not be retried.", self.max_attempt_count);
         RetryResult::DoNotRetry
     }
 
@@ -122,16 +122,13 @@ impl ResourceThrottleRetryPolicy {
     fn should_retry_error(&self, err: &azure_core::Error) -> RetryResult {
         // Check if the error has an HTTP status code and if it's a valid throttle status
         // Early return for invalid or missing status codes
-        let status = err
-            .http_status()
-            .filter(|&s| s == StatusCode::TooManyRequests);
-        if status.is_none() {
-            // For non-HTTP errors or non-throttle status codes, don't retry
-            return RetryResult::DoNotRetry;
+        if err.http_status() == Some(StatusCode::TooManyRequests) {
+
+            // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
+            return self.should_retry_with_backoff(Some(Duration::milliseconds(500)));
         }
 
-        // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
-        self.should_retry_with_backoff(Some(Duration::milliseconds(500)))
+        RetryResult::DoNotRetry
     }
 
     /// Determines whether to retry an operation based on the HTTP response
@@ -151,27 +148,18 @@ impl ResourceThrottleRetryPolicy {
     /// the `x-ms-retry-after-ms` header from the response headers to respect
     /// server-suggested retry delays.
     fn should_retry_response(&self, response: &RawResponse) -> RetryResult {
-        if response.status() != StatusCode::TooManyRequests {
-            return RetryResult::DoNotRetry;
+        if response.status() == StatusCode::TooManyRequests {
+
+            // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
+            return self.should_retry_with_backoff(Some(Duration::milliseconds(500)))
         }
 
-        // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
-        self.should_retry_with_backoff(Some(Duration::milliseconds(500)))
+        RetryResult::DoNotRetry
     }
 }
 
 #[async_trait]
 impl RetryPolicy for ResourceThrottleRetryPolicy {
-    /// Hook called before each request is sent (including retries)
-    ///
-    /// Currently, a no-op for this policy. Future implementations may add
-    /// request-specific headers or logging here.
-    ///
-    /// # Arguments
-    /// * `_request` - Mutable reference to the HTTP request being sent
-    fn on_before_send_request(&self, _request: &mut Request) {
-        // At the moment, this is a No-op for the policy.
-    }
 
     /// Determines whether an HTTP request should be retried based on the response or error
     ///
@@ -189,13 +177,10 @@ impl RetryPolicy for ResourceThrottleRetryPolicy {
     /// A `RetryResult` indicating the retry decision.
     async fn should_retry(&self, response: &azure_core::Result<RawResponse>) -> RetryResult {
         match response {
-            Ok(resp) => {
-                if resp.status().is_server_error() || resp.status().is_client_error() {
-                    return self.should_retry_response(resp);
-                }
-
-                RetryResult::DoNotRetry
-            }
+            Ok(resp) if resp.status().is_server_error() || resp.status().is_client_error() => {
+                self.should_retry_response(resp)
+            },
+            Ok(_) => RetryResult::DoNotRetry,
             Err(err) => self.should_retry_error(err),
         }
     }
@@ -224,8 +209,9 @@ mod tests {
             r#"{"id":12,"name":"Too Many Requests"}"#,
         )))
     }
+
     #[tokio::test]
-    async fn test_retry_policy_handles_429_status() {
+    async fn retry_policy_handles_429_status() {
         // Create a retry policy with 3 max retries, 100 second max wait time, and backoff factor of 2
         let policy = ResourceThrottleRetryPolicy::new(3, 100, 2);
 
@@ -253,9 +239,8 @@ mod tests {
         };
 
         // Extract backoff1 for comparison
-        let backoff1 = match result1 {
-            RetryResult::Retry { after } => after,
-            _ => panic!("Expected retry result"),
+        let RetryResult::Retry { after: backoff1 } = result1 else {
+            panic!("Expected retry result")
         };
 
         assert!(
@@ -276,28 +261,18 @@ mod tests {
 
         // Fourth attempt should NOT retry (exceeded max_attempt_count of 3)
         let result4 = policy.should_retry(&response_429).await;
-        match result4 {
-            RetryResult::DoNotRetry => {
-                println!("Fourth attempt - should not retry");
-            }
-            RetryResult::Retry { .. } => panic!("Should NOT retry after exceeding max attempts"),
-        }
+        assert_eq!(result4, RetryResult::DoNotRetry);
     }
 
     #[tokio::test]
-    async fn test_retry_policy_does_not_retry_on_success() {
+    async fn retry_policy_does_not_retry_on_success() {
         let policy = ResourceThrottleRetryPolicy::new(3, 100, 2);
 
         // Simulate a 200 OK response (success)
         let response_200 = create_mock_response(StatusCode::Ok);
 
         let result = policy.should_retry(&response_200).await;
-        match result {
-            RetryResult::DoNotRetry => {
-                // Success - should not retry
-            }
-            RetryResult::Retry { .. } => panic!("Should NOT retry on successful response"),
-        }
+        assert_eq!(result, RetryResult::DoNotRetry);
     }
 
     #[tokio::test]
@@ -316,12 +291,7 @@ mod tests {
         for (status, description) in test_cases {
             let response = create_mock_response(status);
             let result = policy.should_retry(&response).await;
-            match result {
-                RetryResult::DoNotRetry => {
-                    // Success - should not retry on client errors
-                }
-                RetryResult::Retry { .. } => panic!("Should NOT retry on {}", description),
-            }
+            assert_eq!(result, RetryResult::DoNotRetry);
         }
     }
 
