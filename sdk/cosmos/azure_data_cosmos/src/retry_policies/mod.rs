@@ -29,6 +29,13 @@ pub enum RetryResult {
     Retry { after: Duration },
 }
 
+impl RetryResult {
+    /// Returns `true` if the result indicates a retry should be performed.
+    pub fn is_retry(&self) -> bool {
+        matches!(self, RetryResult::Retry { .. })
+    }
+}
+
 /// Trait defining the retry policy interface for Cosmos DB operations
 ///
 /// This trait provides a contract for implementing retry logic for transient failures

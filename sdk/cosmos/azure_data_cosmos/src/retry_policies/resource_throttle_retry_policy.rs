@@ -98,7 +98,7 @@ impl ResourceThrottleRetryPolicy {
             );
             let retry_result = self.check_if_retry_needed(retry_after);
 
-            if matches!(retry_result, RetryResult::Retry { .. }) {
+            if retry_result.is_retry() {
                 self.current_attempt_count.fetch_add(1, Ordering::Relaxed);
                 return retry_result;
             }
