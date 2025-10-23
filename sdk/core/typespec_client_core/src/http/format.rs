@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::http::response::ResponseBody;
+use crate::{error::ErrorKind, http::response::ResponseBody};
 use serde::de::DeserializeOwned;
 
 /// A marker trait used to indicate the serialization format used for a response body.
@@ -14,7 +14,10 @@ use serde::de::DeserializeOwned;
 /// This is just a marker trait, it has no methods.
 /// Instead, the method to actually perform the deserialization is defined in the [`DeserializeWith`] trait.
 /// This trait is parameterized by a type that implements the [`Format`] trait.
-pub trait Format: std::fmt::Debug {}
+pub trait Format: std::fmt::Debug {
+    /// Deserialize
+    fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> crate::Result<T>;
+}
 
 /// A trait used to describe a type that can be deserialized using the specified [`Format`].
 ///
@@ -22,6 +25,11 @@ pub trait Format: std::fmt::Debug {}
 /// The `F` type parameter allows for different implementations of the `deserialize_with` method based on the specific [`Format`] marker type used.
 ///
 /// Defining our own trait allows us to implement it on foreign types and better customize deserialization for different scenarios.
+///
+/// # Notes
+///
+/// This trait does not define a default implementation using [`Format::deserialize`];
+/// otherwise, [`NoFormat`] would inadvertently implement [`Response::into_body`](crate::http::Response::into_body) for non-deserializable types.
 pub trait DeserializeWith<F: Format>: Sized {
     /// Deserialize the response body using the specified format.
     ///
@@ -50,7 +58,11 @@ impl<D: DeserializeOwned> DeserializeWith<JsonFormat> for D {
 #[derive(Debug, Clone)]
 pub struct JsonFormat;
 
-impl Format for JsonFormat {}
+impl Format for JsonFormat {
+    fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> crate::Result<T> {
+        crate::json::from_json(body)
+    }
+}
 
 /// A [`Format`] that deserializes response bodies using XML.
 ///
@@ -62,7 +74,11 @@ impl Format for JsonFormat {}
 pub struct XmlFormat;
 
 #[cfg(feature = "xml")]
-impl Format for XmlFormat {}
+impl Format for XmlFormat {
+    fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> crate::Result<T> {
+        crate::xml::from_xml(body.as_ref())
+    }
+}
 
 #[cfg(feature = "xml")]
 impl<D: DeserializeOwned> DeserializeWith<XmlFormat> for D {
@@ -79,4 +95,11 @@ impl<D: DeserializeOwned> DeserializeWith<XmlFormat> for D {
 #[derive(Debug, Clone)]
 pub struct NoFormat;
 
-impl Format for NoFormat {}
+impl Format for NoFormat {
+    fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(_body: S) -> crate::Result<T> {
+        Err(crate::Error::new(
+            ErrorKind::DataConversion,
+            "not supported",
+        ))
+    }
+}

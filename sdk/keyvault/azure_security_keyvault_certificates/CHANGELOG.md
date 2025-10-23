@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Removed `wait()` function from `Poller<CertificateOperation>`.
+
 ### Bugs Fixed
 
 ### Other Changes
