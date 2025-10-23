@@ -277,7 +277,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_retry_policy_does_not_retry_on_client_errors() {
+    async fn retry_policy_does_not_retry_on_client_errors() {
         let policy = ResourceThrottleRetryPolicy::new(3, 100, 2);
 
         // Test various client errors that should NOT trigger retry
@@ -289,7 +289,7 @@ mod tests {
             (StatusCode::Conflict, "409 Conflict"),
         ];
 
-        for (status, description) in test_cases {
+        for (status, _description) in test_cases {
             let response = create_mock_response(status);
             let result = policy.should_retry(&response).await;
             assert_eq!(result, RetryResult::DoNotRetry);
@@ -297,7 +297,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_retry_policy_backoff_calculation() {
+    async fn retry_policy_backoff_calculation() {
         let backoff_factor = 3;
         let policy = ResourceThrottleRetryPolicy::new(5, 1000, backoff_factor);
 
@@ -325,7 +325,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_retry_policy_respects_max_wait_time() {
+    async fn retry_policy_respects_max_wait_time() {
         // Set very low max_wait_time to test the limit
         let max_wait_secs = 5;
         let policy = ResourceThrottleRetryPolicy::new(10, max_wait_secs, 100);
@@ -371,10 +371,8 @@ mod tests {
     // The should_retry_exception method in ResourceThrottleRetryPolicy checks for
     // 429 status using err.http_status(), which returns None for manually constructed errors.
     // In real scenarios, errors would come from actual HTTP responses.
-
-    /// Integration-style test that demonstrates the retry counter increments
     #[tokio::test]
-    async fn test_retry_counter_increments() {
+    async fn retry_counter_increments() {
         let policy = ResourceThrottleRetryPolicy::new(5, 100, 2);
         let response_429 = create_mock_response(StatusCode::TooManyRequests);
 
