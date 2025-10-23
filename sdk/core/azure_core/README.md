@@ -546,6 +546,9 @@ impl AsyncRuntime for CustomRuntime {
     fn sleep(&self, duration: Duration) -> TaskFuture {
       unimplemented!("Custom sleep not implemented");
     }
+    fn yield_now(&self) -> TaskFuture {
+        unimplemented!("Custom yield not implemented");
+    }
   }
 
   set_async_runtime(Arc::new(CustomRuntime)).expect("Failed to set async runtime");

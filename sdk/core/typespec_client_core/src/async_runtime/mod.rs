@@ -115,6 +115,9 @@ pub trait AsyncRuntime: Send + Sync {
     /// # Returns
     /// A future that resolves after the specified duration has elapsed.
     fn sleep(&self, duration: Duration) -> TaskFuture;
+
+    /// Yield the current task back to the runtime scheduler.
+    fn yield_now(&self) -> TaskFuture;
 }
 
 static ASYNC_RUNTIME_IMPLEMENTATION: OnceLock<Arc<dyn AsyncRuntime>> = OnceLock::new();
@@ -175,6 +178,9 @@ pub fn get_async_runtime() -> Arc<dyn AsyncRuntime> {
 ///    }
 ///    fn sleep(&self, duration: typespec_client_core::time::Duration) -> TaskFuture {
 ///      unimplemented!("Custom sleep not implemented");
+///    }
+///    fn yield_now(&self) -> TaskFuture {
+///      unimplemented!("Custom yield not implemented");
 ///    }
 ///  }
 ///

@@ -260,6 +260,10 @@ impl AsyncRuntime for TestRuntime {
     fn sleep(&self, _duration: Duration) -> TaskFuture {
         unimplemented!("TestRuntime does not support sleeping");
     }
+
+    fn yield_now(&self) -> TaskFuture {
+        unimplemented!("TestRuntime does not support yielding");
+    }
 }
 
 // This test is ignored because by default, cargo test runs all tests in parallel, but

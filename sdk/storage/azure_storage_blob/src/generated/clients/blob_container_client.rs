@@ -25,6 +25,7 @@ use crate::generated::{
     },
 };
 use azure_core::{
+    async_runtime::get_async_runtime,
     credentials::TokenCredential,
     error::CheckSuccessOptions,
     fmt::SafeDebug,
@@ -904,6 +905,8 @@ impl BlobContainerClient {
                             }),
                         )
                         .await?;
+                    // Because serialization can be a CPU intensive operation, yield the CPU before executing it..
+                    get_async_runtime().yield_now().await;
                     let (status, headers, body) = rsp.deconstruct();
                     let res: ListBlobsFlatSegmentResponse = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();

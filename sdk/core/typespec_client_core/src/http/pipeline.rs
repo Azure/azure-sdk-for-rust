@@ -76,10 +76,10 @@ impl Pipeline {
         let retry_policy = options.retry.to_policy(pipeline_options.retry_headers);
         pipeline.push(retry_policy);
 
-        pipeline.push(Arc::new(LoggingPolicy::new(options.logging)));
-
         pipeline.extend_from_slice(&per_try_policies);
         pipeline.extend_from_slice(&options.per_try_policies);
+
+        pipeline.push(Arc::new(LoggingPolicy::new(options.logging)));
 
         let transport: Arc<dyn Policy> =
             Arc::new(TransportPolicy::new(options.transport.unwrap_or_default()));

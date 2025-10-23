@@ -25,4 +25,10 @@ impl AsyncRuntime for TokioRuntime {
                 .expect("Failed to convert duration to tokio format"),
         ))
     }
+
+    fn yield_now(&self) -> TaskFuture {
+        Box::pin(async {
+            tokio::task::yield_now().await;
+        })
+    }
 }

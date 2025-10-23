@@ -161,6 +161,18 @@ impl AsyncRuntime for StdRuntime {
             duration,
         })
     }
+
+    fn yield_now(&self) -> TaskFuture {
+        #[cfg(target_arch = "wasm32")]
+        {
+            panic!("yield_now is not supported on wasm32")
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            std::thread::yield_now();
+            Box::pin(future::ready(()))
+        }
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
