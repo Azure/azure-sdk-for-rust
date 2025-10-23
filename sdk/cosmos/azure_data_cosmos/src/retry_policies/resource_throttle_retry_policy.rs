@@ -91,7 +91,11 @@ impl ResourceThrottleRetryPolicy {
     fn should_retry_with_backoff(&self, retry_after: Option<Duration>) -> RetryResult {
         let attempt = self.current_attempt_count.load(Ordering::Relaxed);
         if attempt < self.max_attempt_count {
-            tracing::trace!("Current retry attempt: {:?}, backoff time: {:?}", attempt, retry_after);
+            tracing::trace!(
+                "Current retry attempt: {:?}, backoff time: {:?}",
+                attempt,
+                retry_after
+            );
             let retry_result = self.check_if_retry_needed(retry_after);
 
             if matches!(retry_result, RetryResult::Retry { .. }) {
@@ -123,7 +127,6 @@ impl ResourceThrottleRetryPolicy {
         // Check if the error has an HTTP status code and if it's a valid throttle status
         // Early return for invalid or missing status codes
         if err.http_status() == Some(StatusCode::TooManyRequests) {
-
             // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
             return self.should_retry_with_backoff(Some(Duration::milliseconds(500)));
         }
@@ -149,9 +152,8 @@ impl ResourceThrottleRetryPolicy {
     /// server-suggested retry delays.
     fn should_retry_response(&self, response: &RawResponse) -> RetryResult {
         if response.status() == StatusCode::TooManyRequests {
-
             // Get the retry_after field from `x-ms-retry-after-ms` header from backend.
-            return self.should_retry_with_backoff(Some(Duration::milliseconds(500)))
+            return self.should_retry_with_backoff(Some(Duration::milliseconds(500)));
         }
 
         RetryResult::DoNotRetry
@@ -160,7 +162,6 @@ impl ResourceThrottleRetryPolicy {
 
 #[async_trait]
 impl RetryPolicy for ResourceThrottleRetryPolicy {
-
     /// Determines whether an HTTP request should be retried based on the response or error
     ///
     /// This method evaluates the result of an HTTP request attempt and decides whether
@@ -179,7 +180,7 @@ impl RetryPolicy for ResourceThrottleRetryPolicy {
         match response {
             Ok(resp) if resp.status().is_server_error() || resp.status().is_client_error() => {
                 self.should_retry_response(resp)
-            },
+            }
             Ok(_) => RetryResult::DoNotRetry,
             Err(err) => self.should_retry_error(err),
         }
