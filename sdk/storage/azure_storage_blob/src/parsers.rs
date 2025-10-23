@@ -67,8 +67,10 @@ pub fn format_filter_expression(tags: &HashMap<String, String>) -> Result<String
 ///
 /// # Arguments
 /// * `datetime` - OffsetDateTime to format.
-pub fn format_datetime(datetime: &OffsetDateTime) -> Result<String, Error> {
-    let rfc3339_str = to_rfc3339(datetime);
+pub fn format_datetime(datetime: OffsetDateTime) -> Result<String, Error> {
+    // Convert to UTC first
+    let utc_datetime = datetime.to_utc();
+    let rfc3339_str = to_rfc3339(&utc_datetime.into());
 
     // Find the position of the decimal point and timezone indicator
     if let Some(dot_pos) = rfc3339_str.find('.') {
@@ -131,38 +133,43 @@ mod tests {
     fn test_format_datetime_with_7_decimals() -> Result<(), Error> {
         // Test with microsecond precision (6 digits) - should pad to 7
         let dt = parse_rfc3339("2025-09-22T19:20:10.622383Z").unwrap();
-        let formatted = format_datetime(&dt)?;
+        let formatted = format_datetime(dt)?;
         assert_eq!(formatted, "2025-09-22T19:20:10.6223830Z");
 
         // Test with nanosecond precision (9 digits) - should truncate to 7
         let dt = parse_rfc3339("2025-09-22T19:20:00.622429456Z").unwrap();
-        let formatted = format_datetime(&dt)?;
+        let formatted = format_datetime(dt)?;
         assert_eq!(formatted, "2025-09-22T19:20:00.6224294Z");
 
         // Test with no fractional seconds - should pad with zeros
         let dt = parse_rfc3339("2025-09-22T19:20:00Z").unwrap();
-        let formatted = format_datetime(&dt)?;
+        let formatted = format_datetime(dt)?;
         assert_eq!(formatted, "2025-09-22T19:20:00.0000000Z");
 
         // Test with millisecond precision (3 digits) - should pad to 7
         let dt = parse_rfc3339("2025-09-22T19:20:00.123Z").unwrap();
-        let formatted = format_datetime(&dt)?;
+        let formatted = format_datetime(dt)?;
         assert_eq!(formatted, "2025-09-22T19:20:00.1230000Z");
 
         Ok(())
     }
 
     #[test]
-    fn test_format_datetime_with_offset() -> Result<(), Error> {
-        // Test with timezone offset
-        let dt = parse_rfc3339("2025-09-22T19:20:10.622383-05:00").unwrap();
-        let formatted = format_datetime(&dt)?;
-        assert_eq!(formatted, "2025-09-22T19:20:10.6223830-05:00");
+    fn test_format_datetime_no_fractional_seconds() -> Result<(), Error> {
+        // Test with no fractional seconds in UTC - exercises the else branch
+        let dt = parse_rfc3339("2025-09-22T19:20:00Z").unwrap();
+        let formatted = format_datetime(dt)?;
+        assert_eq!(formatted, "2025-09-22T19:20:00.0000000Z");
 
-        // Test with positive timezone offset
-        let dt = parse_rfc3339("2025-09-22T19:20:10.1+03:30").unwrap();
-        let formatted = format_datetime(&dt)?;
-        assert_eq!(formatted, "2025-09-22T19:20:10.1000000+03:30");
+        // Test with no fractional seconds and offset - should convert to UTC
+        let dt = parse_rfc3339("2025-09-22T19:20:00-05:00").unwrap();
+        let formatted = format_datetime(dt)?;
+        assert_eq!(formatted, "2025-09-23T00:20:00.0000000Z");
+
+        // Test with no fractional seconds and positive offset - should convert to UTC
+        let dt = parse_rfc3339("2025-09-22T19:20:00+03:30").unwrap();
+        let formatted = format_datetime(dt)?;
+        assert_eq!(formatted, "2025-09-22T15:50:00.0000000Z");
 
         Ok(())
     }

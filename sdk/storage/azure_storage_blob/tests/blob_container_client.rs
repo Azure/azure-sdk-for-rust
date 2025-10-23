@@ -6,6 +6,7 @@ use azure_core::{
     time::{Duration, OffsetDateTime},
 };
 use azure_core_test::{recorded, TestContext};
+use azure_storage_blob::format_datetime;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
     BlobContainerClientChangeLeaseResultHeaders, BlobContainerClientGetAccountInfoResultHeaders,
@@ -324,5 +325,62 @@ async fn test_get_account_info(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(sku_name.is_some());
     assert_eq!(AccountKind::StorageV2, account_kind.unwrap());
 
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_container_access_policy(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+
+    use azure_core::time::parse_rfc3339;
+    let recording = ctx.recording();
+    let container_client = get_container_client(recording, false).await?;
+    container_client.create_container(None).await?;
+
+    // // Set Access Policy w/ Policy Defined
+    // let access_policy = AccessPolicy {
+    //     expiry: Some(format_datetime(
+    //         OffsetDateTime::now_utc() + Duration::seconds(10),
+    //     )?),
+    //     permission: Some("rw".to_string()),
+    //     start: Some(format_datetime(OffsetDateTime::now_utc())?),
+    // };
+    // let signed_identifier = SignedIdentifier {
+    //     access_policy: Some(access_policy),
+    //     id: Some("testid".into()),
+    // };
+
+    // Set Access Policy w/ Policy Defined
+    let dt_start = parse_rfc3339("2025-07-22T19:01:10.622383-05:00").unwrap();
+    let formatted_start = format_datetime(dt_start)?;
+    let dt_expiry = parse_rfc3339("2025-12-22T19:01:20.622383-05:00").unwrap();
+    let formatted_expiry = format_datetime(dt_expiry)?;
+    let access_policy = AccessPolicy {
+        expiry: Some(formatted_expiry),
+        permission: Some("rw".to_string()),
+        start: Some(formatted_start),
+    };
+    let signed_identifier = SignedIdentifier {
+        access_policy: Some(access_policy),
+        id: Some("testid".into()),
+    };
+
+    container_client
+        .set_access_policy(vec![signed_identifier], None)
+        .await?;
+
+    // Assert
+    let access_policy_response = container_client.get_access_policy(None).await?;
+    let signed_identifiers = access_policy_response.into_body().await?;
+    for signed_identifier in &signed_identifiers {
+        if let Some(access_policy) = &signed_identifier.access_policy {
+            assert!(signed_identifier.id.is_some());
+            assert!(access_policy.start.is_some());
+            assert!(access_policy.expiry.is_some());
+            assert_eq!("rw", access_policy.permission.as_ref().unwrap());
+        }
+    }
+
+    container_client.delete_container(None).await?;
     Ok(())
 }
