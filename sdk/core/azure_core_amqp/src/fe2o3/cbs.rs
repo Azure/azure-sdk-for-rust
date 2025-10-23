@@ -94,7 +94,7 @@ impl AmqpClaimsBasedSecurityApis for Fe2o3ClaimsBasedSecurity {
         );
         self.cbs
             .get()
-            .ok_or(Self::cbs_not_attached())?
+            .ok_or_else(Self::cbs_not_attached)?
             .lock()
             .await
             .borrow_mut()
