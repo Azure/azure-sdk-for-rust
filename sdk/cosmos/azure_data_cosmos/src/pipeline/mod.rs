@@ -5,7 +5,7 @@ mod authorization_policy;
 mod signature_target;
 
 use std::sync::Arc;
-
+use typespec_client_core::http::RetryOptions;
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
     pager::PagerState,
@@ -37,8 +37,9 @@ impl CosmosPipeline {
     pub fn new(
         endpoint: Url,
         auth_policy: AuthorizationPolicy,
-        client_options: ClientOptions,
+        mut client_options: ClientOptions,
     ) -> Self {
+        client_options.retry = RetryOptions::none();
         let pipeline = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
