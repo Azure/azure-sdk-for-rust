@@ -4,8 +4,6 @@
 mod authorization_policy;
 mod signature_target;
 
-use std::sync::Arc;
-use typespec_client_core::http::RetryOptions;
 pub use authorization_policy::AuthorizationPolicy;
 use azure_core::http::{
     pager::PagerState,
@@ -15,6 +13,8 @@ use azure_core::http::{
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
+use std::sync::Arc;
+use typespec_client_core::http::RetryOptions;
 use url::Url;
 
 use crate::handler::retry_handler::{BackOffRetryHandler, RetryHandler};
