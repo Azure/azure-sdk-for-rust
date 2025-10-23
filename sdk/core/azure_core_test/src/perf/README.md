@@ -7,7 +7,7 @@ Performance tests are defined in a "perf" directory under the package root.
 By convention, all performance tests are named "perf" and are invoked via:
 
 ```bash
-cargo test --package <package name> --test perf -- {perf test name} {perf test arguments}
+cargo bench --package <package name> --bench perf -- {perf test name} {perf test arguments}
 ```
 
 where `package name` is the name of the rust package, `perf test name` is the name of the test you want to run, and `perf test arguments` is the arguments to that test.
@@ -70,7 +70,7 @@ The process of authoring tests starts with the cargo.toml file for your package.
 Add the following to the `cargo.toml` file:
 
 ```toml
-[[test]]
+[[bench]]
 name = "perf"
 path = "perf/get_secret.rs"
 harness = false
@@ -81,13 +81,13 @@ This declares a test named `perf` (which is required for the perf automation tes
 After this, to invoke your perf test, you simply use:
 
 ```bash
-cargo test --package azure_storage_blob --test perf -- {performance test command line}
+cargo bench --package azure_storage_blob --bench perf -- {performance test command line}
 ```
 
 For example,
 
 ```bash
-cargo test --package azure_storage_blob --test perf -- list_blob --help
+cargo bench --package azure_storage_blob --bench perf -- list_blob --help
 ```
 
 returns the help text for the `list_blob`test:

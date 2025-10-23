@@ -41,7 +41,7 @@ rustc_version.workspace = true
 [lints]
 workspace = true
 
-[[test]]
+[[bench]]
 name = "perf"
 path = "perf/get_secret.rs"
 harness = false

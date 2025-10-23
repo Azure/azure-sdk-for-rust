@@ -10,7 +10,7 @@
 //!
 //! To run the test, use the following command line arguments:
 //!
-//! cargo test --package azure_security_keyvault_keys --test perf -- --duration 10 --parallel 20 get_key -u https://<my_vault>.vault.azure.net/
+//! cargo bench --package azure_security_keyvault_keys --bench perf -- --duration 10 --parallel 20 get_key -u https://<my_vault>.vault.azure.net/
 //!
 
 mod create_key;

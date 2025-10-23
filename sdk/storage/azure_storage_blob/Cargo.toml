@@ -38,7 +38,7 @@ futures.workspace = true
 tokio = { workspace = true, features = ["macros"] }
 tracing.workspace = true
 
-[[test]]
+[[bench]]
 name = "perf"
 path = "perf/perf_tests.rs"
 harness = false

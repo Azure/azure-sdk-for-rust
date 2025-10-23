@@ -509,6 +509,8 @@ impl PerfRunner {
                     .value_parser(clap::value_parser!(i64))
                     .global(true),
             )
+            // Cargo bench passes --bench to the test binary to instruct it to run benchmarks only.
+            .arg(clap::arg!(--bench).required(false).global(true))
             .arg(
                 clap::arg!(--"test-results" <FILE> "The file to write test results to")
                     .required(false)
