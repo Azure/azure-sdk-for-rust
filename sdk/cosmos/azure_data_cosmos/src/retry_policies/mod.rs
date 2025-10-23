@@ -64,5 +64,5 @@ pub trait RetryPolicy: Send + Sync {
     /// # Returns
     ///
     /// A `RetryResult` indicating the retry decision.
-    async fn should_retry(&self, response: &azure_core::Result<RawResponse>) -> RetryResult;
+    async fn should_retry(&mut self, response: &azure_core::Result<RawResponse>) -> RetryResult;
 }

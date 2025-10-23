@@ -5,7 +5,6 @@ use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetry
 use crate::retry_policies::{RetryPolicy, RetryResult};
 use async_trait::async_trait;
 use azure_core::http::{request::Request, RawResponse};
-use std::sync::Arc;
 use typespec_client_core::async_runtime::get_async_runtime;
 
 // Helper trait to conditionally require Send on non-WASM targets
@@ -96,11 +95,11 @@ impl BackOffRetryHandler {
     /// retry policy should be used for this specific request.
     /// # Arguments
     /// * `request` - The HTTP request to analyze
-    pub fn retry_policy_for_request(&self, _request: &Request) -> Arc<dyn RetryPolicy> {
+    pub fn retry_policy_for_request(&self, _request: &Request) -> Box<ResourceThrottleRetryPolicy> {
         // For now, always return ResourceThrottleRetryPolicy. Future implementation should check
         // the request operation type and resource type and accordingly return the respective retry
         // policy.
-        Arc::new(ResourceThrottleRetryPolicy::new(5, 200, 10))
+        Box::new(ResourceThrottleRetryPolicy::new(5, 200, 10))
     }
 }
 
@@ -125,7 +124,7 @@ impl RetryHandler for BackOffRetryHandler {
         Fut: std::future::Future<Output = azure_core::Result<RawResponse>> + ConditionalSend,
     {
         // Get the appropriate retry policy based on the request
-        let retry_policy = self.retry_policy_for_request(request);
+        let mut retry_policy = self.retry_policy_for_request(request);
         retry_policy.before_send_request(request);
 
         loop {
