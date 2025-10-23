@@ -26,7 +26,7 @@ use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
+        policies::{BearerTokenAuthorizationPolicy, Policy},
         AsyncResponse, JsonFormat, NoFormat, RequestContent, Response, StatusCode, Url, XmlFormat,
     },
     Bytes, Result,

@@ -16,7 +16,7 @@ use crate::{
 use azure_core::{
     credentials::TokenCredential,
     http::{
-        policies::{BearerTokenCredentialPolicy, Policy},
+        policies::{BearerTokenAuthorizationPolicy, Policy},
         NoFormat, PageIterator, RequestContent, Response, Url, XmlFormat,
     },
     Result,

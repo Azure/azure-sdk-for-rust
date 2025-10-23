@@ -13,6 +13,7 @@
 - Removed `CustomHeaders` policy.
 - Removed `ErrorKind::MockFramework`.
 - Removed `xml::read_xml_str()`.
+- Renamed `BearerTokenCredentialPolicy` to `BearerTokenAuthorizationPolicy`.
 - Renamed `xml::read_xml()` to `xml::from_xml()` congruent with `json::from_json()`.
 
 ### Bugs Fixed
